@@ -12,12 +12,13 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "../../../../utils/humanDateForamt";
 import dayjs from "dayjs";
 import { Chip } from "@mui/material";
+import WidgetTable from "../../../../components/Tables/WidgetTable";
 
 const Collections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
-const [selectedMonthData, setSelectedMonthData] = useState([]);
-const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
+  const [selectedMonthData, setSelectedMonthData] = useState([]);
+  const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
   const axios = useAxiosPrivate();
 
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
@@ -54,33 +55,34 @@ const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
       flex: 1,
       cellRenderer: (params) => `${inrFormat(params.value)}`,
     },
-     {
-          field: "status",
-          headerName: "Status",
-          flex: 1,
-          cellRenderer: (params) => {
-          
-            const statusColorMap = {
-             Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-             Unpaid: { backgroundColor: "#FFEBEE", color: "#B71C1C" }, // Light red bg, dark red font
-            };
-    
-            const { backgroundColor, color } = statusColorMap[params.data.rentStatus] || {
-              backgroundColor: "gray",
-              color: "white",
-            };
-    
-            return (
-              <Chip
-                label={params.data.rentStatus}
-                style={{
-                  backgroundColor,
-                  color,
-                }}
-              />
-            );
-          },
-        },
+    {
+      field: "status",
+      headerName: "Status",
+      flex: 1,
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          Unpaid: { backgroundColor: "#FFEBEE", color: "#B71C1C" }, // Light red bg, dark red font
+        };
+
+        const { backgroundColor, color } = statusColorMap[
+          params.data.rentStatus
+        ] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+
+        return (
+          <Chip
+            label={params.data.rentStatus}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
+        );
+      },
+    },
   ];
 
   const sortedData = useMemo(() => {
@@ -125,15 +127,15 @@ const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
 
     return {
       chartData: [
-        { name: "Paid", data: paid },
-        { name: "Unpaid", data: unpaid },
+        { name: "Collected", data: paid },
+        { name: "Due", data: unpaid },
       ],
       tooltipMeta,
     };
   }, [sortedData]);
 
-  const barValues = barGraphData.chartData.map((item)=>item.data)
- const completed=  barValues[0].reduce((sum,item)=>(item + sum),0);
+  const barValues = barGraphData.chartData.map((item) => item.data);
+  const completed = barValues[0].reduce((sum, item) => item + sum, 0);
 
   const barGraphOptions = {
     chart: {
@@ -222,21 +224,23 @@ const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
     (acc, client) => acc + (client.revenue || 0),
     0
   );
-const handleMonthChange = (monthLabel) => {
-  setSelectedMonthLabel(monthLabel);
+  const handleMonthChange = (monthLabel) => {
+    setSelectedMonthLabel(monthLabel);
 
-  const matchingData = flatClientData.filter((item) => {
-    const itemMonth = dayjs(item.date).format("MMM-YYYY");
-    return itemMonth === monthLabel;
-  });
+    const matchingData = flatClientData.filter((item) => {
+      const itemMonth = dayjs(item.date).format("MMM-YYYY");
+      return itemMonth === monthLabel;
+    });
 
-  setSelectedMonthData(matchingData);
-};
+    setSelectedMonthData(matchingData);
+  };
 
-const currentMonthTotal = useMemo(() => {
-  return selectedMonthData.reduce((sum, client) => sum + (client.revenue || 0), 0);
-}, [selectedMonthData]);
-
+  const currentMonthTotal = useMemo(() => {
+    return selectedMonthData.reduce(
+      (sum, client) => sum + (client.revenue || 0),
+      0
+    );
+  }, [selectedMonthData]);
 
   if (isCoWorkingLoading) {
     return <div>Loading...</div>;
@@ -259,7 +263,7 @@ const currentMonthTotal = useMemo(() => {
             title={"Collected"}
             // description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
             description={`Total : INR ${inrFormat(grandTotal)}`}
-            data={`${(completed/12).toFixed(0) || 0}%`}
+            data={`${(completed / 12).toFixed(0) || 0}%`}
           />
           <DataCard
             title={"Due"}
@@ -270,20 +274,15 @@ const currentMonthTotal = useMemo(() => {
         </WidgetSection>
       </WidgetSection>
 
-      <WidgetSection
-        border
-        title="Collections"
-        TitleAmount={`INR ${inrFormat(currentMonthTotal)}`}
-        className="bg-white rounded-md shadow-sm"
-      >
-        <YearWiseTable
-          data={flatClientData}
-          columns={kraColumn}
-          dateColumn="date"
-          handleSubmit={() => console.log("Export triggered")}
-          onMonthChange={handleMonthChange}
-        />
-      </WidgetSection>
+      <WidgetTable
+        data={flatClientData}
+        columns={kraColumn}
+        dateColumn="date"
+        totalKey="revenue"
+        tableTitle={"Collections"}
+        handleSubmit={() => console.log("Export triggered")}
+      />
+
 
       {viewDetails && (
         <MuiModal

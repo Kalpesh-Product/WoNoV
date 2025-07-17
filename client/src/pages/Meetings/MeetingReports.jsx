@@ -236,7 +236,13 @@ const MeetingReports = () => {
             />
             <DetalisFormatted
               title="Department"
-              detail={selectedMeeting?.department || "Top Management"}
+              detail={
+                selectedMeeting?.department?.length
+                  ? selectedMeeting.department
+                      .map((item) => item.name)
+                      .join(", ")
+                  : "Top Management"
+              }
             />
 
             {/* Section 3: Venue Details */}
