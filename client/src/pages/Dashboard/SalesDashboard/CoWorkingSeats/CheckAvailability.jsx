@@ -84,18 +84,16 @@ const CheckAvailability = () => {
       fontFamily: "Poppins-Regular",
       stacked: true, // ✅ Stack bars
       stackType: "100%", // ✅ Normalize to 100%
-      // events: {
-      //   dataPointSelection: (event, chartContext, config) => {
-          
-      //     const buildingName =
-      //       updatedOptions.xaxis.categories[config.dataPointIndex];
-      //       const encodedName = encodeURIComponent(buildingName);
-      //     navigate(
-      //       `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodedName}`,
-      //       { state: buildingName }
-      //     );
-      //   },
-      // },
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const buildingName = chartData[config.dataPointIndex]?.name;
+          const encodedName = encodeURIComponent(buildingName);
+          navigate(
+            `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodedName}`,
+            { state: buildingName }
+          );
+        },
+      },
       toolbar: {
         show: false,
       },

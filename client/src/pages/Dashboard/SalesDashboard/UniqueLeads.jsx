@@ -1,15 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import BarGraph from "../../../components/graphs/BarGraph";
-import {
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
+import { useEffect, useMemo, useState } from "react";
+import { Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -82,8 +72,6 @@ const UniqueLeads = () => {
 
     return Array.from(yearsSet).sort(); // optional: sort FYs ascending
   }, [leadsData]);
-
-  
 
   const selectedMonthData = useMemo(() => {
     if (!selectedMonth || !selectedFY || leadsData.length === 0) return null;
@@ -252,9 +240,7 @@ const UniqueLeads = () => {
     );
   }, [leadsData]);
 
-
   const formatMonths = useMemo(() => {
-    
     const fyMatch = selectedFY.match(/\d{4}/);
     if (!fyMatch) return null;
 
@@ -267,6 +253,31 @@ const UniqueLeads = () => {
       return dayjs(new Date(actualYear, actualMonthIndex)).format("MMM-YY");
     });
   }, [selectedFY]);
+
+  const filteredLeads = useMemo(() => {
+    if (!selectedMonth || !selectedFY || leadsData.length === 0) return [];
+
+    const [fyStart] = selectedFY.match(/\d{4}/) || [];
+    const fyStartYear = parseInt(fyStart);
+    const fyEndYear = fyStartYear + 1;
+
+    return leadsData.filter((lead) => {
+      const leadDate = dayjs(lead?.startDate);
+      const leadMonthIndex = leadDate.month();
+      const leadYear = leadDate.year();
+
+      const isInFY =
+        leadMonthIndex >= 3 ? leadYear === fyStartYear : leadYear === fyEndYear;
+
+      const formattedLeadMonth = leadDate.format("MMM-YY");
+
+      if (!isInFY) return false;
+      if (selectedMonth !== "All" && formattedLeadMonth !== selectedMonth)
+        return false;
+
+      return true;
+    });
+  }, [selectedMonth, selectedFY, leadsData]);
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -299,11 +310,13 @@ const UniqueLeads = () => {
             label="Select Financial Year"
             sx={{ width: 200 }}
           >
-            {availableFinancialYears.filter((year)=> year !== "FY NaN-aN").map((fy) => (
-              <MenuItem key={fy} value={fy}>
-                {fy}
-              </MenuItem>
-            ))}
+            {availableFinancialYears
+              .filter((year) => year !== "FY NaN-aN")
+              .map((fy) => (
+                <MenuItem key={fy} value={fy}>
+                  {fy}
+                </MenuItem>
+              ))}
           </Select>
         </FormControl>
         <FormControl size="small">
@@ -313,7 +326,6 @@ const UniqueLeads = () => {
             onChange={handleMonthChange}
             label="Select Month"
             sx={{ width: 200 }}
-          
           >
             <MenuItem value="All">All</MenuItem>
             {formatMonths.map((month) => (
@@ -341,10 +353,10 @@ const UniqueLeads = () => {
         TitleAmount={`Total Leads : ${totalLeads}`}
       >
         <div>
-          <YearWiseTable
-            data={leadsData.map((item) => ({
+          <AgTable
+            data={filteredLeads.map((item) => ({
               _id: item._id,
-              dateOfContact: item.dateOfContact,
+              dateOfContact: humanDate(item.dateOfContact),
               companyName: item.companyName,
               pocName: item.pocName,
               contactNumber: item.contactNumber,
