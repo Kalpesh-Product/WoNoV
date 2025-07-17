@@ -219,7 +219,7 @@ const updateRoom = async (req, res, next) => {
 
     // Only update fields if they were provided and changed
     const updatedFields = {};
-    if (typeof isActive === "boolean" && isActive !== room.isActive)
+    if (typeof isActive === "boolean")
       updatedFields.isActive = isActive;
     if (name && name !== room.name) updatedFields.name = name;
     if (description && description !== room.description) {
