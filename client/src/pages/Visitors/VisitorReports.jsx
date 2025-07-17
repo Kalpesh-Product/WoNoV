@@ -9,6 +9,7 @@ import humanDate from "../../utils/humanDateForamt";
 import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import PageFrame from "../../components/Pages/PageFrame";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const VisitorReports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,7 +32,9 @@ const VisitorReports = () => {
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
     { field: "visitorType", headerName: "Type" },
-    { field: "name", headerName: "Name",
+    {
+      field: "name",
+      headerName: "Name",
       cellRenderer: (params) => (
         <div role="button" onClick={() => handleDetailsClick(params.data)}>
           <span className="underline text-primary cursor-pointer">
@@ -39,14 +42,33 @@ const VisitorReports = () => {
           </span>
         </div>
       ),
-     },
+    },
     { field: "address", headerName: "Address" },
     { field: "email", headerName: "Email" },
     { field: "phone", headerName: "Phone No" },
     { field: "purpose", headerName: "Purpose" },
     { field: "toMeet", headerName: "To Meet" },
-    { field: "checkIn", headerName: "Check In" },
-    { field: "checkOut", headerName: "Check Out" },
+    {
+      field: "dateOfVisit",
+      headerName: "Date Of Visit",
+      cellRenderer: (params) => {
+        return humanDate(params.value);
+      },
+    },
+    {
+      field: "checkIn",
+      headerName: "Check In",
+      cellRenderer: (params) => {
+        return humanTime(params.value);
+      },
+    },
+    {
+      field: "checkOut",
+      headerName: "Check Out",
+      cellRenderer: (params) => {
+        return humanTime(params.value);
+      },
+    },
     // {
     //   field: "actions",
     //   headerName: "Actions",
@@ -70,18 +92,21 @@ const VisitorReports = () => {
     phone: visitor.phoneNumber || "-",
     purpose: visitor.purposeOfVisit || "-",
     toMeet: visitor.toMeet?.firstName || "Kalpesh Naik",
-    checkIn: humanTime(visitor.checkIn),
-    checkOut: humanTime(visitor.checkOut),
+    checkIn: visitor.checkIn,
+    checkOut: visitor.checkOut,
     rawData: visitor, // Pass full object for modal
-    visitorType : visitor.visitorFlag || "-",
+    visitorType: visitor.visitorFlag || "-",
+    date: visitor.checkIn,
+    dateOfVisit: visitor.checkIn,
   }));
 
   return (
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
         <div>
-          <AgTable
+          <YearWiseTable
             exportData
+            dateColumn={"date"}
             search={true}
             searchColumn={"name"}
             tableTitle={"Visitor Reports"}
@@ -95,7 +120,8 @@ const VisitorReports = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Visitor Details">
+        title="Visitor Details"
+      >
         {selectedVisitor && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <div className="font-bold">Personal Information</div>

@@ -23,6 +23,7 @@ import humanTime from "../../../utils/humanTime";
 import humanDate from "./../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
+import StatusChip from "../../../components/StatusChip";
 
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -199,16 +200,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
-        const statusColorMap = {
-          "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400" },
-          Closed: { backgroundColor: "#90EE90", color: "#02730a" },
-        };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return <Chip label={params.value} style={{ backgroundColor, color }} />;
+        return <StatusChip status={params.value.toLowerCase()} />;
       },
     },
     { field: "acceptedBy", headerName: "Accepted By" },

@@ -14,6 +14,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
+import StatusChip from "../../../components/StatusChip";
 
 const RecievedTickets = ({ title, departmentId }) => {
   const [open, setOpen] = useState(false);
@@ -115,7 +116,9 @@ const RecievedTickets = ({ title, departmentId }) => {
 
   const fetchSubOrdinates = async () => {
     try {
-      const response = await axios.get(`/api/users/assignees?deptId=${departmentId}`);
+      const response = await axios.get(
+        `/api/users/assignees?deptId=${departmentId}`
+      );
 
       return response.data;
     } catch (error) {
@@ -228,13 +231,7 @@ const RecievedTickets = ({ title, departmentId }) => {
         };
         return (
           <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
+            <StatusChip status={params.value.toLowerCase()} />
           </>
         );
       },
@@ -242,7 +239,7 @@ const RecievedTickets = ({ title, departmentId }) => {
     {
       field: "actions",
       headerName: "Actions",
-            pinned : 'right',
+      pinned: "right",
       cellRenderer: (params) => (
         <div className="flex items-center gap-2">
           <div
