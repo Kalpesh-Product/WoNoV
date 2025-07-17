@@ -25,10 +25,6 @@ const assetsSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  quantity: {
-    type: Number,
-    required: true,
-  },
   price: {
     type: Number,
     required: true,
@@ -36,10 +32,6 @@ const assetsSchema = new mongoose.Schema({
   warranty: {
     type: Number,
     required: true,
-  },
-  image: {
-    url: String,
-    id: String,
   },
   brand: {
     type: String,
@@ -64,9 +56,9 @@ const assetsSchema = new mongoose.Schema({
       ref: "UserData",
     },
   },
-  category: {
+  subCategory: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "AssetCategory",
+    ref: "SubCategory",
   },
   isUnderMaintenance: {
     type: Boolean,
