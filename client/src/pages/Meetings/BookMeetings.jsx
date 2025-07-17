@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+  Autocomplete,
   Chip,
   CircularProgress,
   LinearProgress,
@@ -29,6 +30,7 @@ import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import { IoMdClose } from "react-icons/io";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -41,6 +43,9 @@ const BookMeetings = () => {
   const [modalMode, setModalMode] = useState("");
   const locations = auth.user.company.workLocations;
   const isEmployee = auth.user.company.companyName === "BizNest";
+  const company = "6799f0cd6a01edbe1bc3fcea";
+  const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
+  const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
 
   // ------------------------------Initializations ------------------------------------//
 
@@ -132,6 +137,32 @@ const BookMeetings = () => {
     acc[seatCount].push(room);
     return acc;
   }, {});
+
+  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
+    queryKey: ["participants", company],
+    queryFn: async () => {
+      if (company === "6799f0cd6a01edbe1bc3fcea") {
+        const response = await axios.get("/api/users/fetch-users");
+        return response.data
+          .filter((user) => user._id !== auth.user?._id)
+          .filter((u) => u.isActive === true);
+      } else {
+        const response = await axios.get("/api/sales/co-working-clients");
+        const activeClients = response.data.filter((item) => item.isActive);
+        const flattened = activeClients.flatMap((client) =>
+          client.members.map((member) => ({
+            ...member,
+            clientName: client.clientName,
+          }))
+        );
+        // Flatten members and inject clientName for context
+        return flattened.filter((item) => {
+          return item.client?._id === company;
+        });
+      }
+    },
+    enabled: shouldFetchParticipants && !!company,
+  });
 
   useEffect(() => {
     setValue("meetingRoom", ""); // Reset meeting room selection
@@ -226,48 +257,6 @@ const BookMeetings = () => {
       field: "location",
       headerName: "Location",
     },
-    // {
-    //   field: "actions",
-    //   headerName: "Actions",
-    //   cellRenderer: (params) => {
-    //     const rawReview = params.data?.reviews;
-
-    //     const meetingReviews = Array.isArray(rawReview)
-    //       ? rawReview
-    //       : rawReview
-    //       ? [rawReview]
-    //       : [];
-    //     const userName = `${auth.user?.firstName} ${auth.user?.lastName}`;
-
-    //     return (
-    //       <div className="p-2 flex items-center gap-2">
-    //         {meetingReviews.length > 0 ? (
-    //           "Review added"
-    //         ) : (
-    //           <>
-    //             {userName === params.data.bookedBy ? (
-    //               <span
-    //                 onClick={() => handleAddReview(params.data)}
-    //                 className="cursor-pointer"
-    //               >
-    //                 <MdOutlineRateReview size={20} />
-    //               </span>
-    //             ) : (
-    //               ""
-    //             )}
-    //           </>
-    //         )}
-    //         <span
-    //           className="text-subtitle cursor-pointer"
-    //           onClick={() => handleViewDetails(params.data)}
-    //         >
-    //           <MdOutlineRemoveRedEye />
-    //         </span>
-    //       </div>
-    //     );
-    //   },
-    // },
-
     {
       field: "actions",
       headerName: "Actions",
@@ -485,7 +474,8 @@ const BookMeetings = () => {
             onSubmit={handleEditSubmit(onEditSubmit)}
             className="flex flex-col gap-4"
           >
-            <Controller
+         <div className="flex gap-4">
+             <Controller
               name="startDate"
               control={control}
               render={({ field }) => (
@@ -517,7 +507,9 @@ const BookMeetings = () => {
                 />
               )}
             />
-            <Controller
+         </div>
+          <div>
+              <Controller
               name="startTime"
               control={editControl}
               rules={{
@@ -558,8 +550,9 @@ const BookMeetings = () => {
                 />
               )}
             />
+          </div>
 
-            {/* <Controller
+            <Controller
               name="participants"
               control={control}
               render={({ field }) => (
@@ -601,7 +594,7 @@ const BookMeetings = () => {
                   )}
                 />
               )}
-            /> */}
+            />
 
             <PrimaryButton
               title="Update Meeting"
