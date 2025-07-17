@@ -4,7 +4,7 @@ const auditLogger = (req, res, next) => {
   try {
     const startTime = Date.now();
 
-    const validMethods = ["GET", "POST", "PATCH", "PUT", "DELETE"];
+    const validMethods = ["POST", "PATCH", "PUT", "DELETE"];
     const cleanUrl = req.originalUrl.split("?")[0];
     const pathSegments = cleanUrl.split("/").filter(Boolean);
 
@@ -18,11 +18,6 @@ const auditLogger = (req, res, next) => {
 
     // Skip invalid HTTP methods
     if (!validMethods.includes(req.method)) return next();
-
-    // Skip GET methods except logout
-    if (req.method === "GET" && lastSegment !== "logout") {
-      return next();
-    }
 
     // Skip refresh token route
     if (req.originalUrl.includes("refresh")) return next();
