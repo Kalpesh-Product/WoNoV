@@ -8,6 +8,8 @@ import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import PageFrame from "../../../../../components/Pages/PageFrame";
 import { useSelector } from "react-redux";
+import { useForm } from "react-hook-form";
+import YearWiseTable from "../../../../../components/Tables/YearWiseTable";
 
 const Agreements = () => {
   const axios = useAxiosPrivate();
@@ -16,6 +18,12 @@ const Agreements = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [newAgreement, setNewAgreement] = useState("");
+
+  const {handleSubmit, control, setValue} = useForm({
+    defaultValues: {
+      agreementName : ""
+    }
+  })
 
   const agreementColumn = [
     {
@@ -112,10 +120,8 @@ const Agreements = () => {
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
-        <AgTable
-          key={agreements.length}
+        <YearWiseTable
           search={true}
-          searchColumn={"Agreement Name"}
           tableTitle={`${name}'s Agreement List`}
           buttonTitle={"Add Agreement"}
           handleClick={() => setModalOpen(true)}
