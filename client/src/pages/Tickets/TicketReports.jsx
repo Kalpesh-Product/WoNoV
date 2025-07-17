@@ -95,6 +95,7 @@ const TicketReports = () => {
       ),
     },
   ];
+  console.log("selected meeting", selectedMeeting);
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -130,7 +131,7 @@ const TicketReports = () => {
                     ? `${item.closedBy.firstName} ${item.closedBy.lastName}`
                     : "None",
                   closedAt: item.closedAt
-                    ? humanTime(item.closedAt)
+                    ? (item.closedAt)
                     : "None",
                   rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
                     item.reject?.rejectedBy?.lastName || ""
@@ -203,11 +204,23 @@ const TicketReports = () => {
               detail={selectedMeeting.acceptedBy || "None"}
             />
             <DetalisFormatted
-              title={"Accepted At"}
-              detail={selectedMeeting.date || "N/A"}
+              title={"Accepted Date"}
+              detail={humanDate(selectedMeeting?.acceptedAt) || "N/A"}
             />
             <DetalisFormatted
-              title="Closed by"
+              title={"Accepted At"}
+              detail={humanTime(selectedMeeting?.acceptedAt) || "N/A"}
+            />
+            <DetalisFormatted
+              title="Closed Date"
+              detail={humanDate(selectedMeeting?.closedAt)}
+            />
+            <DetalisFormatted
+              title="Closed At"
+              detail={humanTime(selectedMeeting?.closedAt)}
+            />
+            <DetalisFormatted
+              title="Closed By"
               detail={selectedMeeting?.closedBy}
             />
 
