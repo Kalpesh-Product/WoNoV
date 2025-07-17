@@ -254,7 +254,7 @@ const TotalRevenue = () => {
     simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
       flatten.push({
         vertical: "Virtual Office",
-        revenue: item.revenue,
+        revenue: item.taxableAmount,
         date: item.rentDate,
       });
     });

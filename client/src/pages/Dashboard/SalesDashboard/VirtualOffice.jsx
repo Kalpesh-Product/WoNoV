@@ -32,14 +32,31 @@ const VirtualOffice = () => {
     },
   });
 
+  const monthShortNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
   const transformRevenues = (revenues) => {
     const monthlyMap = new Map();
 
     revenues.forEach((item, index) => {
       const rentDate = new Date(item.rentDate);
-      const monthKey = `${rentDate.toLocaleString("default", {
-        month: "short",
-      })}-${rentDate.getFullYear().toString().slice(-2)}`;
+      const year = rentDate.getFullYear();
+      const month = rentDate.getMonth(); // 0-indexed
+
+      const monthKey = `${monthShortNames[month]}-${year.toString().slice(-2)}`;
+      const keyDate = new Date(year, month, 1); // Used for sorting
 
       const actual = item.taxableAmount;
 
@@ -47,6 +64,7 @@ const VirtualOffice = () => {
         monthlyMap.set(monthKey, {
           id: index + 1,
           month: monthKey,
+          keyDate, // store for sorting
           taxable: 0,
           revenue: [],
         });
@@ -57,17 +75,19 @@ const VirtualOffice = () => {
 
       monthData.revenue.push({
         id: index + 1,
-        clientName: item.client.clientName,
+        clientName: item.client?.clientName || "N/A",
         revenue: inrFormat(actual),
-        channel: item.channel,
-        status: item.status || "Paid",
+        channel: item.Channel || item.channel,
+        status: item.status === true ? "Paid" : "Unpaid",
       });
     });
 
-    return Array.from(monthlyMap.values()).map((monthData) => ({
-      ...monthData,
-      actual: inrFormat(monthData.taxable),
-    }));
+    return Array.from(monthlyMap.values())
+      .sort((a, b) => a.keyDate - b.keyDate)
+      .map(({ keyDate, ...monthData }) => ({
+        ...monthData,
+        actual: inrFormat(monthData.taxable),
+      }));
   };
 
   // Memoize or recompute transformed data only when API data is loaded
