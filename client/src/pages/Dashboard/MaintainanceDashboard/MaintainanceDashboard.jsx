@@ -61,8 +61,6 @@ const MaintainanceDashboard = () => {
     queryKey: ["fetchedMonthlyKPA"],
     queryFn: fetchDepartments,
   });
-
-  console.log("department KPA : ", departmentKra.length);
   //----------------------KPA Data-----------------------//
   const monthlyGroups = {};
 
