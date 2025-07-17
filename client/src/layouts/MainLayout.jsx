@@ -42,9 +42,18 @@ const MainLayout = () => {
 
 
   
+const unreadCount = notifications.reduce((total, notification) => {
+  const count = notification.users.filter(
+    user =>
+      user.userActions?.hasRead === false &&
+      user.userActions?.whichUser?._id === auth.user._id
+  ).length;
+  return total + count;
+}, 0);
 
-  const unseenInUsers = notifications.filter((n) => !n.users);
-    console.log("notification", unseenInUsers)
+console.log("Unread count for logged-in user:", unreadCount);
+
+
 
   // Detect mobile view
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -78,7 +87,7 @@ const MainLayout = () => {
         )}
         <Header
           notifications={notifications}
-          unseenCount={2}
+          unseenCount={unreadCount || 0}
           onRefreshNotifications={refetchNotifications}
           isRefreshingNotifications={isNotificationsLoading}
         />
