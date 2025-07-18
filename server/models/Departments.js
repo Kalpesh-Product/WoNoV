@@ -41,6 +41,12 @@ const departmentSchema = new mongoose.Schema({
       },
     },
   ],
+  assetCategories: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AssetCategory",
+    },
+  ],
 });
 
 const Department = mongoose.model("Department", departmentSchema);
