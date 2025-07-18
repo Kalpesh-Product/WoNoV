@@ -7,6 +7,7 @@ const sharp = require("sharp");
 const {
   handleFileUpload,
   handleFileDelete,
+  handleDocumentUpload,
 } = require("../../config/cloudinaryConfig");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
@@ -15,15 +16,36 @@ const AssetSubCategory = require("../../models/assets/AssetSubCategories");
 
 const getAssetsWithDepartments = async (req, res, next) => {
   try {
+    const user = req.user;
+
+    const foundUser = await User.findOne({ _id: user })
+      .populate([{ path: "departments", select: "name" }])
+      .lean()
+      .exec();
+
+    const userDepartments = foundUser.departments || [];
+
+    const isTopManagement = userDepartments.some(
+      (dept) => dept.name === "Top Management"
+    );
+
+    const departmentMatch = {
+      isActive: true,
+    };
+
+    // If not Top Management, restrict to user department IDs
+    if (!isTopManagement) {
+      const userDeptIds = userDepartments.map((dept) => dept._id);
+      departmentMatch._id = { $in: userDeptIds };
+    }
+
     const departmentsWithAssets = await Department.aggregate([
       {
-        $match: {
-          isActive: true,
-        },
+        $match: departmentMatch,
       },
       {
         $lookup: {
-          from: "assets", // collection name in MongoDB (plural and lowercase)
+          from: "assets",
           localField: "_id",
           foreignField: "department",
           as: "assets",
@@ -39,6 +61,7 @@ const getAssetsWithDepartments = async (req, res, next) => {
     next(error);
   }
 };
+
 const getAssets = async (req, res, next) => {
   try {
     const userId = req.user;
@@ -110,7 +133,6 @@ const addAsset = async (req, res, next) => {
       rentedMonths,
       tangable,
       locationId,
-      warrantyDocument,
     } = req.body;
 
     const foundUser = await User.findOne({ _id: user })
@@ -252,7 +274,6 @@ const addAsset = async (req, res, next) => {
         purchaseDate,
         price,
         warranty,
-        warrantyDocument,
         brand,
         department: departmentId,
         location: locationId || null,
@@ -326,6 +347,7 @@ const editAsset = async (req, res, next) => {
       subCategoryId,
       vendorId,
       name,
+      isDammaged,
       purchaseDate,
       price,
       brand,
@@ -335,9 +357,11 @@ const editAsset = async (req, res, next) => {
       rentedMonths,
       tangable,
       locationId,
-      warrantyDocument,
       status,
     } = req.body;
+
+    const assetImageFile = req.files?.assetImage?.[0];
+    const warrantyDocumentFile = req.files?.warrantyDocument?.[0];
 
     if (!assetId)
       throw new CustomError(
@@ -347,7 +371,7 @@ const editAsset = async (req, res, next) => {
         logSourceKey
       );
 
-    const foundAsset = await Asset.findById(assetId).lean();
+    const foundAsset = await Asset.findById(assetId);
     if (!foundAsset)
       throw new CustomError(
         "Asset not found",
@@ -358,17 +382,16 @@ const editAsset = async (req, res, next) => {
 
     const foundUser = await User.findById(user)
       .select("company departments role")
-      .populate("role", "roleTitle")
-      .lean();
+      .populate("role", "roleTitle");
 
     if (!foundUser)
       throw new CustomError("No user found", logPath, logAction, logSourceKey);
 
     const company = foundUser.company;
 
-    const foundCompany = await Company.findById(company)
-      .select("selectedDepartments companyName")
-      .lean();
+    const foundCompany = await Company.findById(company).select(
+      "selectedDepartments companyName"
+    );
     if (!foundCompany)
       throw new CustomError(
         "Company not found",
@@ -377,7 +400,7 @@ const editAsset = async (req, res, next) => {
         logSourceKey
       );
 
-    const department = await Department.findById(departmentId).lean();
+    const department = await Department.findById(departmentId);
     if (!department)
       throw new CustomError(
         "Invalid department",
@@ -386,7 +409,7 @@ const editAsset = async (req, res, next) => {
         logSourceKey
       );
 
-    const category = await Category.findById(categoryId).lean();
+    const category = await Category.findById(categoryId);
     if (!category)
       throw new CustomError(
         "Category not found",
@@ -406,9 +429,9 @@ const editAsset = async (req, res, next) => {
         logSourceKey
       );
 
-    const subCategory = await AssetSubCategory.findById(subCategoryId)
-      .populate({ path: "category" })
-      .lean();
+    const subCategory = await AssetSubCategory.findById(subCategoryId).populate(
+      "category"
+    );
     if (!subCategory)
       throw new CustomError(
         "Sub-category not found",
@@ -418,7 +441,7 @@ const editAsset = async (req, res, next) => {
       );
 
     if (vendorId) {
-      const foundVendor = await Vendor.findById(vendorId).lean();
+      const foundVendor = await Vendor.findById(vendorId);
       if (!foundVendor)
         throw new CustomError(
           "Vendor not found",
@@ -428,14 +451,12 @@ const editAsset = async (req, res, next) => {
         );
     }
 
+    // === Asset Image Upload ===
     let assetImage = foundAsset.assetImage || null;
+    if (assetImageFile) {
+      if (assetImage?.id) await handleFileDelete(assetImage.id);
 
-    if (req.file) {
-      if (assetImage?.id) {
-        await handleFileDelete(assetImage.id);
-      }
-
-      const buffer = await sharp(req.file.buffer)
+      const buffer = await sharp(assetImageFile.buffer)
         .resize(1262, 284, { fit: "contain" })
         .webp({ quality: 80 })
         .toBuffer();
@@ -451,25 +472,46 @@ const editAsset = async (req, res, next) => {
       };
     }
 
+    // === Warranty Document Upload ===
+    let warrantyDocInfo = foundAsset.warrantyDocument || null;
+    if (warrantyDocumentFile) {
+      const uploadResult = await handleDocumentUpload(
+        warrantyDocumentFile.buffer,
+        `${foundCompany.companyName}/departments/assets/warrantyDocuments/${name}`,
+        warrantyDocumentFile.originalname
+      );
+      warrantyDocInfo = {
+        link: uploadResult.secure_url,
+        documentId: uploadResult.public_id,
+      };
+    }
+
     const updatePayload = {
       assetType,
-      rentedMonths: ownershipType === "Rental" ? rentedMonths : undefined,
       tangable,
       ownershipType,
       vendor: vendorId || null,
       company,
-      name,
+      name: name?.trim(),
       purchaseDate,
       price,
+      isDammaged: isDammaged ? isDammaged : foundAsset.isDammaged,
       warranty,
-      warrantyDocument,
-      brand,
+      warrantyDocument: warrantyDocInfo,
+      brand: brand?.trim(),
       department: departmentId,
       location: locationId || null,
       subCategory: subCategoryId,
       assetImage,
       status: status || "Active",
     };
+
+    // Handle rental logic
+    if (ownershipType === "Rental") {
+      updatePayload.rentedMonths = rentedMonths;
+    } else {
+      updatePayload.rentedMonths = null;
+    }
 
     const updatedAsset = await Asset.findByIdAndUpdate(assetId, updatePayload, {
       new: true,
