@@ -16,15 +16,36 @@ const AssetSubCategory = require("../../models/assets/AssetSubCategories");
 
 const getAssetsWithDepartments = async (req, res, next) => {
   try {
+    const user = req.user;
+
+    const foundUser = await User.findOne({ _id: user })
+      .populate([{ path: "departments", select: "name" }])
+      .lean()
+      .exec();
+
+    const userDepartments = foundUser.departments || [];
+
+    const isTopManagement = userDepartments.some(
+      (dept) => dept.name === "Top Management"
+    );
+
+    const departmentMatch = {
+      isActive: true,
+    };
+
+    // If not Top Management, restrict to user department IDs
+    if (!isTopManagement) {
+      const userDeptIds = userDepartments.map((dept) => dept._id);
+      departmentMatch._id = { $in: userDeptIds };
+    }
+
     const departmentsWithAssets = await Department.aggregate([
       {
-        $match: {
-          isActive: true,
-        },
+        $match: departmentMatch,
       },
       {
         $lookup: {
-          from: "assets", // collection name in MongoDB (plural and lowercase)
+          from: "assets",
           localField: "_id",
           foreignField: "department",
           as: "assets",
@@ -40,6 +61,7 @@ const getAssetsWithDepartments = async (req, res, next) => {
     next(error);
   }
 };
+
 const getAssets = async (req, res, next) => {
   try {
     const userId = req.user;
