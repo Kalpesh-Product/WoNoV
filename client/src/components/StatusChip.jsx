@@ -2,10 +2,9 @@ import { Chip } from "@mui/material";
 
 const statusColorMap = {
   Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
-  "in-progress": { backgroundColor: "#F0F9FF", color: "#1E3A8A" },
-  "in progress": { backgroundColor: "#CFFAFE", color: "#075985" },
+  "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400"},
   resolved: { backgroundColor: "#90EE90", color: "#006400" },
-  open: { backgroundColor: "#FFFDE7", color: "#B58900" },
+  Open: { backgroundColor: "#FF9F93", color: "#B71C1C" },
   completed: { backgroundColor: "#D3D3D3", color: "#696969" },
   Approved: { backgroundColor: "#90EE90", color: "#006400" },
   Paid: { backgroundColor: "#90EE90", color: "#006400" },
