@@ -20,6 +20,7 @@ import { useTopDepartment } from "../../hooks/useTopDepartment";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
 import humanTime from "../../utils/humanTime";
+import StatusChip from "../../components/StatusChip";
 const WidgetSection = lazy(() => import("../../components/WidgetSection"));
 
 const MeetingDashboard = () => {
@@ -197,7 +198,13 @@ const MeetingDashboard = () => {
   const meetingColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "roomName", label: "Meeting Rooms", align: "left" },
-    { id: "unitName", label: "Location", align: "left" },
+    {
+      id: "status",
+      label: "Status",
+      align: "left",
+      renderCell: (row) => <StatusChip status={row.status} />, // 👈 use your component
+    },
+
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
@@ -988,10 +995,13 @@ const MeetingDashboard = () => {
                       meetingType: item.meetingType,
                       endTime: humanTime(item.endTime),
                       unitName: item.location?.unitName,
+                      status: item.meetingStatus,
                     })),
                 ]}
                 columns={meetingColumns}
-                rowsToDisplay={meetingsInternal.length}
+                rowsToDisplay={
+                  meetingsInternal.length > 0 ? meetingsInternal.length > 0 : 8
+                }
                 scroll={true}
               />,
               <MuiTable
@@ -1005,10 +1015,13 @@ const MeetingDashboard = () => {
                       meetingType: item.meetingType,
                       endTime: humanTime(item.endTime),
                       unitName: item.location?.unitName,
+                      status: item.meetingStatus,
                     })),
                 ]}
                 columns={meetingColumns}
-                rowsToDisplay={meetingsExternal.length}
+                rowsToDisplay={
+                  meetingsExternal.length > 0 ? meetingsExternal.length > 0 : 8
+                }
                 scroll={true}
               />,
             ],

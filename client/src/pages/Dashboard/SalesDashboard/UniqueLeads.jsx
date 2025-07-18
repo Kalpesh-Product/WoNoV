@@ -83,7 +83,7 @@ const UniqueLeads = () => {
     const domainsMap = {};
 
     leadsData.forEach((lead) => {
-      const leadDate = dayjs(lead?.startDate);
+      const leadDate = dayjs(lead?.dateOfContact);
       const leadMonthIndex = leadDate.month();
       const leadYear = leadDate.year();
 
@@ -231,7 +231,7 @@ const UniqueLeads = () => {
   const availableMonths = useMemo(() => {
     const uniqueMonths = new Set(
       leadsData
-        .map((lead) => dayjs(lead.startDate).format("MMMM"))
+        .map((lead) => dayjs(lead.dateOfContact).format("MMMM"))
         .filter((m) => m !== "Invalid Date")
     );
 
@@ -262,7 +262,7 @@ const UniqueLeads = () => {
     const fyEndYear = fyStartYear + 1;
 
     return leadsData.filter((lead) => {
-      const leadDate = dayjs(lead?.startDate);
+      const leadDate = dayjs(lead?.dateOfContact);
       const leadMonthIndex = leadDate.month();
       const leadYear = leadDate.year();
 
@@ -354,9 +354,10 @@ const UniqueLeads = () => {
       >
         <div>
           <AgTable
-            data={filteredLeads.map((item) => ({
+            data={filteredLeads.map((item,index) => ({
               _id: item._id,
-              dateOfContact: humanDate(item.dateOfContact),
+              srNo : index + 1,
+              dateOfContact: (item.dateOfContact),
               companyName: item.companyName,
               pocName: item.pocName,
               contactNumber: item.contactNumber,
@@ -369,8 +370,8 @@ const UniqueLeads = () => {
               remarksComments: item.remarksComments,
             }))}
             columns={[
-              { headerName: "Sr. No", field: "srno", width: 100 },
-              { headerName: "Date of Contact", field: "dateOfContact" },
+              { headerName: "Sr. No", field: "srNo", width: 100 },
+              { headerName: "Date of Contact", field: "dateOfContact", cellRenderer : (params)=>(humanDate(params.value)) },
               {
                 headerName: "Company Name",
                 field: "companyName",

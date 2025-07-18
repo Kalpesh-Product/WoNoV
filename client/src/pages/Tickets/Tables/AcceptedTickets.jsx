@@ -196,7 +196,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
-        return <StatusChip status={params.value.toLowerCase()} />;
+        return <StatusChip status={params.value} />;
       },
     },
     { field: "acceptedBy", headerName: "Accepted By" },
@@ -237,6 +237,39 @@ const AcceptedTickets = ({ title, departmentId }) => {
       },
     },
   ];
+  console.log("rows : ", [
+              ...acceptedTickets.map((ticket, index) => ({
+                ...ticket,
+                srNo: index + 1,
+                id: ticket._id,
+                raisedUser: `${ticket.raisedBy?.firstName || ""} ${
+                  ticket.raisedBy?.lastName || ""
+                }`,
+
+                description: ticket.description,
+                raisedByDepartment:
+                  ticket.raisedBy?.departments?.map((dept) => dept.name) ||
+                  "N/A",
+                raisedToDepartment: ticket.raisedToDepartment?.name,
+                ticketTitle: ticket?.ticket || "No Title",
+                status: ticket.status || "Pending",
+                acceptedBy: ticket?.acceptedBy
+                  ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                  : `${
+                      ticket.assignees.map(
+                        (item) => `${item.firstName} ${item.lastName}`
+                      )[0]
+                    }`,
+                assignees: `${
+                  ticket.assignees.map((item) => item.firstName)[0]
+                }`,
+                acceptedAt: ticket.acceptedAt
+                  ? humanTime(ticket.acceptedAt)
+                  : "-",
+                priority: ticket.priority,
+                image: ticket.image ? ticket.image.url : null,
+              })),
+            ])
 
   return (
     <div className="p-4 border-default border-borderGray rounded-md">

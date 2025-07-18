@@ -386,6 +386,7 @@ import HouseKeepingOnboard from "../pages/Dashboard/AdminDashboard/HouseKeepingO
 import HrKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrKPA";
 import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTasks";
 import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
+import VendorTable from "../components/Pages/VendorTable";
 
 export const routes = createBrowserRouter([
   {
@@ -883,6 +884,10 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "vendor",
+                            element: <VendorTable />,
+                          },
+                          {
+                            path: "vendor/vendor-onboard",
                             element: <Vendor />,
                           },
                           {

@@ -43,7 +43,7 @@ const Calender = () => {
     queryKey: ["meetings-calendar"],
     queryFn: async () => {
       try {
-        const respone = await axios.get("/api/meetings/my-meetings");
+        const respone = await axios.get("/api/meetings/get-meetings");
         return respone.data;
       } catch (error) {
         console.error(error);
@@ -322,7 +322,7 @@ const Calender = () => {
                 title="Booked By"
                 detail={
                   selectedEvent.extendedProps.bookedBy
-                    ? selectedEvent.extendedProps.bookedBy
+                    ? `${selectedEvent.extendedProps.bookedBy?.firstName || ""} ${selectedEvent.extendedProps.bookedBy?.lastName || ""}` 
                     : selectedEvent.extendedProps?.clientBookedBy?.employeeName
                 }
               />

@@ -10,6 +10,7 @@ import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import { CircularProgress } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 
 const AltRevenues = () => {
   const axios = useAxiosPrivate();
@@ -283,6 +284,7 @@ const AltRevenues = () => {
   const series = [
     {
       name: "Actual Revenue",
+      group: "FY 2024-25",
       data: alternateRevenue.map((item) =>
         item.revenue?.reduce((sum, c) => sum + c.taxableAmount, 0)
       ),
@@ -373,19 +375,13 @@ const AltRevenues = () => {
           <CircularProgress />
         </div>
       ) : (
-        <WidgetSection
-          title={"Annual Monthly Alternate Revenues"}
-          titleLabel={"FY 2024-25"}
-          TitleAmount={`INR ${inrFormat(totalActual)}`}
-          border
-        >
-          <BarGraph
-            data={series}
-            options={options}
-            height={400}
-            // TitleAmount={`INR ${inrFormat(totalActual)}`}
-          />
-        </WidgetSection>
+        <YearlyGraph
+          title={"ANNUAL MONTHLY ALTERNATE REVENUES"}
+          titleAmount={`INR ${inrFormat(totalActual)}`}
+          data={series}
+          options={options}
+          dateKey={"dateKey"}
+        />
       )}
 
       {!isLoadingAlternateRevenue ? (
