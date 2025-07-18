@@ -40,6 +40,7 @@ const adminCategories = [
 
 const Inventory = () => {
   const department = usePageDepartment();
+  console.log("department : ", department)
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);

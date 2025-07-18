@@ -15,6 +15,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { queryClient } from "../../../main";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
 
 const AssetsCategories = () => {
   const axios = useAxiosPrivate();
@@ -40,8 +41,8 @@ const AssetsCategories = () => {
       queryClient.invalidateQueries(["assetCategories"]);
     },
     onError: (error) => {
-      // toast.error(error.response.data.message || "Failed to disable category");
-      toast.error("Access Required To Disable.");
+      toast.error(error.response.data.message || "Failed to disable category");
+      // toast.error("Access Required To Disable.");
     },
   });
 
@@ -57,16 +58,23 @@ const AssetsCategories = () => {
         }
 
         return (
-          <div className="p-2">
-            <PrimaryButton
-              title="Disable"
-              isLoading={isRevoking}
-              disabled={isRevoking}
-              handleSubmit={() => {
-                disableCategory(params.data.mongoId);
-              }}
-            />
-          </div>
+          <ThreeDotMenu
+            rowId={params.data._id}
+            menuItems={[
+              {
+                label: "View",
+                // onClick: () => handleView(params.data),
+              },
+              {
+                label: "Edit",
+                // onClick: () => handleEdit(params.data),
+              },
+              // {
+              //   label: "Delete",
+              //   onClick: () => handleDelete(params.data),
+              // },
+            ]}
+          />
         );
       },
     },
@@ -165,10 +173,12 @@ const AssetsCategories = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add Category">
+        title="Add Category"
+      >
         <form
           onSubmit={handleSubmit(handleAddCategory)}
-          className="flex flex-col items-center gap-6 w-full">
+          className="flex flex-col items-center gap-6 w-full"
+        >
           {/* Category Name Input */}
           <Controller
             name="categoryName"
@@ -196,12 +206,10 @@ const AssetsCategories = () => {
                 <InputLabel>Department</InputLabel>
                 <Select {...field} label="Department">
                   <MenuItem value="">Select Department</MenuItem>
-                  {auth.user.company.selectedDepartments.length > 0 ? (
-                    auth.user.company.selectedDepartments.map((dep) => (
-                      <MenuItem
-                        key={dep.department._id}
-                        value={dep.department._id}>
-                        {dep.department.name}
+                  {auth.user.departments.length > 0 ? (
+                    auth.user.departments.map((dep) => (
+                      <MenuItem key={dep._id} value={dep._id}>
+                        {dep.name}
                       </MenuItem>
                     ))
                   ) : (

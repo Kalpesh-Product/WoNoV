@@ -51,6 +51,10 @@ const assetsSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  isDammaged: {
+    type: Boolean,
+    default: false,
+  },
   department: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",

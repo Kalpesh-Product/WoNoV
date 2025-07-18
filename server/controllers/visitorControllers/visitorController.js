@@ -8,6 +8,7 @@ const CoworkingMember = require("../../models/sales/CoworkingMembers");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const Company = require("../../models/hr/Company");
 const emitter = require("../../utils/eventEmitter");
+const Department = require("../../models/Departments");
 
 const fetchVisitors = async (req, res, next) => {
   const { company } = req;
@@ -356,27 +357,33 @@ const addVisitor = async (req, res, next) => {
     // Notification that visitor was added
 
     // Fetch department employees (or the specific person being visited)
+    const foundDepartment = await Department.findById(department).select(
+      "name"
+    );
+
+    const userDetails = await UserData.findById({
+      _id: toMeet,
+    });
+
     const deptEmployees = await UserData.find({
       departments: { $in: department },
-    }).lean();
-
-    const initiator = await UserData.findById(user).lean();
+    });
+    console.log(department);
+    console.log("To Meet", toMeet);
 
     // Emit the visitor notification
     emitter.emit("notification", {
       initiatorData: user,
-      // users: deptEmployees.map((emp) => ({
-      userActions: {
-        // whichUser: emp._id,
-        whichUser: toMeet || clientToMeet || initiator._id, // send to the person being visited or fallback to initiator
-        hasRead: false,
-      },
-      // })),
+      users: deptEmployees.map((emp) => ({
+        userActions: {
+          whichUser: emp._id,
+          // whichUser: toMeet || clientToMeet || initiator._id, // send to the person being visited or fallback to initiator
+          hasRead: false,
+        },
+      })),
       type: "add visitor",
       module: "Visitors",
-      message: `Visitor ${firstName} ${lastName} has been registered to meet ${
-        toMeet || clientToMeet
-      } in ${department} department.`,
+      message: `Visitor ${firstName} ${lastName} has been registered to meet ${userDetails.firstName} ${userDetails.lastName} from ${foundDepartment.name} department.`,
     });
 
     await createLog({

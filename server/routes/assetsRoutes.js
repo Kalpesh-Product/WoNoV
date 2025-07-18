@@ -4,6 +4,7 @@ const {
   addAsset,
   editAsset,
   getAssets,
+  getAssetsWithDepartments,
 } = require("../controllers/assetsControllers/assetsControllers");
 const {
   addSubCategory,
@@ -23,8 +24,16 @@ const {
 
 // Asset Management Routes
 router.post("/create-asset", upload.single("asset-image"), addAsset);
-router.patch("/update-asset/:assetId", upload.single("asset-image"), editAsset);
+router.patch(
+  "/update-asset/:assetId",
+  upload.fields([
+    { name: "assetImage", maxCount: 1 },
+    { name: "warrantyDocument", maxCount: 1 },
+  ]),
+  editAsset
+);
 router.get("/get-assets", getAssets);
+router.get("/get-assets-with-departments", getAssetsWithDepartments);
 router.post("/create-asset-category", addAssetCategory);
 router.post("/create-asset-subcategory", addSubCategory);
 router.patch("/disable-asset-category/:assetCategoryId", disableCategory);

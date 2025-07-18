@@ -1,12 +1,10 @@
-const Category = require("../../models/assets/AssetCategory");
 const Department = require("../../models/Departments");
 const Company = require("../../models/hr/Company");
 const { createLog } = require("../../utils/moduleLogs");
 const mongoose = require("mongoose");
-const Asset = require("../../models/assets/Assets");
-const assetCategory = require("../../models/assets/AssetCategory");
 const AssetCategory = require("../../models/assets/AssetCategory");
 const CustomError = require("../../utils/customErrorlogs");
+const AssetSubCategory = require("../../models/assets/AssetSubCategories");
 
 const addAssetCategory = async (req, res, next) => {
   const { assetCategoryName, departmentId } = req.body;
@@ -16,6 +14,7 @@ const addAssetCategory = async (req, res, next) => {
   const logSourceKey = "category";
 
   try {
+    // Validation
     if (!assetCategoryName || !departmentId) {
       throw new CustomError(
         "Missing required fields",
@@ -25,28 +24,23 @@ const addAssetCategory = async (req, res, next) => {
       );
     }
 
-    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(departmentId) ||
+      !mongoose.Types.ObjectId.isValid(company)
+    ) {
       throw new CustomError(
-        "Invalid department ID",
+        "Invalid ID(s) provided",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    const departmentExists = await Department.findById(departmentId);
-    if (!departmentExists) {
+    // Check Department & Company
+    const department = await Department.findById(departmentId);
+    if (!department) {
       throw new CustomError(
         "Department doesn't exist",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(company)) {
-      throw new CustomError(
-        "Invalid company ID",
         logPath,
         logAction,
         logSourceKey
@@ -63,46 +57,46 @@ const addAssetCategory = async (req, res, next) => {
       );
     }
 
-    const newAssetCategory = new AssetCategory({
+    // Check for duplicate category in same company & department
+    const existingCategory = await AssetCategory.findOne({
       categoryName: assetCategoryName,
       department: departmentId,
-      company,
+      company: company,
     });
 
-    const savedAssetCategory = await newAssetCategory.save();
-
-    const addCompanyAssetCategory = await Company.findByIdAndUpdate(
-      { _id: company },
-      {
-        $push: {
-          "selectedDepartments.$[elem].assetCategories": savedAssetCategory._id,
-        },
-      },
-      {
-        new: true,
-        arrayFilters: [{ "elem.department": departmentId }],
-      }
-    );
-
-    if (!addCompanyAssetCategory) {
+    if (existingCategory) {
       throw new CustomError(
-        "Failed to add asset category",
+        "Category already exists in this department",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
+    // Create Asset Category
+    const newAssetCategory = new AssetCategory({
+      categoryName: assetCategoryName,
+      department: departmentId,
+      company,
+    });
+
+    const savedCategory = await newAssetCategory.save();
+
+    // Push category to department.assetCategories
+    department.assetCategories.push(savedCategory._id);
+    await department.save({ validateBeforeSave: false });
+
+    // Logging
     await createLog({
       path: logPath,
       action: logAction,
       remarks: "Category added successfully",
       status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
+      user,
+      ip,
+      company,
       sourceKey: logSourceKey,
-      sourceId: savedAssetCategory._id,
+      sourceId: savedCategory._id,
       changes: {
         categoryName: assetCategoryName,
         department: departmentId,
@@ -126,9 +120,10 @@ const addSubCategory = async (req, res, next) => {
   const { company, user, ip } = req;
   const logPath = "assets/AssetLog";
   const logAction = "Add Asset Sub Category";
-  const logSourceKey = "category";
+  const logSourceKey = "subcategory";
 
   try {
+    // Validate inputs
     if (!assetSubCategoryName || !assetCategoryId) {
       throw new CustomError(
         "Missing required fields",
@@ -138,17 +133,21 @@ const addSubCategory = async (req, res, next) => {
       );
     }
 
-    if (!mongoose.Types.ObjectId.isValid(assetCategoryId)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(assetCategoryId) ||
+      !mongoose.Types.ObjectId.isValid(company)
+    ) {
       throw new CustomError(
-        "Invalid category ID",
+        "Invalid ID(s) provided",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    const categoryExists = await AssetCategory.findById(assetCategoryId);
-    if (!categoryExists) {
+    // Check if parent category exists
+    const category = await AssetCategory.findById(assetCategoryId);
+    if (!category) {
       throw new CustomError(
         "Category doesn't exist",
         logPath,
@@ -157,15 +156,7 @@ const addSubCategory = async (req, res, next) => {
       );
     }
 
-    if (!mongoose.Types.ObjectId.isValid(company)) {
-      throw new CustomError(
-        "Invalid company ID",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
+    // Check if company exists
     const companyExists = await Company.findById(company);
     if (!companyExists) {
       throw new CustomError(
@@ -176,37 +167,47 @@ const addSubCategory = async (req, res, next) => {
       );
     }
 
-    const subcategory = await AssetCategory.findByIdAndUpdate(
-      { _id: assetCategoryId },
-      { $push: { subCategories: { name: assetSubCategoryName } } },
-      { new: true }
-    );
+    // Optional: Check if subcategory already exists in this category
+    const duplicate = await AssetSubCategory.findOne({
+      subCategoryName: assetSubCategoryName,
+      category: assetCategoryId,
+    });
 
-    if (!subcategory) {
+    if (duplicate) {
       throw new CustomError(
-        "Failed to add subcategory",
+        "Subcategory already exists in this category",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
+    // Create new subcategory
+    const newSubCategory = new AssetSubCategory({
+      subCategoryName: assetSubCategoryName,
+      category: assetCategoryId,
+    });
+
+    const savedSubCategory = await newSubCategory.save();
+
+    // Log the operation
     await createLog({
       path: logPath,
       action: logAction,
       remarks: "Subcategory added successfully",
       status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
+      user,
+      ip,
+      company,
       sourceKey: logSourceKey,
-      sourceId: subcategory._id,
+      sourceId: savedSubCategory._id,
       changes: {
         subCategoryName: assetSubCategoryName,
+        category: assetCategoryId,
       },
     });
 
-    return res.status(200).json({ message: "Sub category added successfully" });
+    return res.status(201).json({ message: "Subcategory added successfully" });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
@@ -226,28 +227,10 @@ const disableCategory = async (req, res, next) => {
   const logSourceKey = "category";
 
   try {
+    // Validate required inputs
     if (!assetCategoryId) {
       throw new CustomError(
-        "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(company)) {
-      throw new CustomError(
-        "Invalid company ID",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    const companyExists = await Company.findById(company);
-    if (!companyExists) {
-      throw new CustomError(
-        "Company doesn't exist",
+        "Missing assetCategoryId",
         logPath,
         logAction,
         logSourceKey
@@ -263,8 +246,29 @@ const disableCategory = async (req, res, next) => {
       );
     }
 
-    const categoryExists = await AssetCategory.findById(assetCategoryId);
-    if (!categoryExists) {
+    if (!mongoose.Types.ObjectId.isValid(company)) {
+      throw new CustomError(
+        "Invalid company ID",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // Check company
+    const companyExists = await Company.findById(company);
+    if (!companyExists) {
+      throw new CustomError(
+        "Company doesn't exist",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // Check category
+    const category = await AssetCategory.findById(assetCategoryId);
+    if (!category) {
       throw new CustomError(
         "Category doesn't exist",
         logPath,
@@ -273,29 +277,24 @@ const disableCategory = async (req, res, next) => {
       );
     }
 
-    const disabledCategory = await AssetCategory.findByIdAndUpdate(
-      { _id: assetCategoryId },
-      { isActive: false },
-      { new: true }
-    );
-
-    if (!disabledCategory) {
-      throw new CustomError(
-        "Failed to disable category",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+    // Optional: check if already disabled
+    if (!category.isActive) {
+      return res.status(200).json({ message: "Category is already disabled" });
     }
 
+    // Disable the category
+    category.isActive = false;
+    const disabledCategory = await category.save({ validateBeforeSave: false });
+
+    // Log the action
     await createLog({
       path: logPath,
       action: logAction,
       remarks: "Category disabled successfully",
       status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
+      user,
+      ip,
+      company,
       sourceKey: logSourceKey,
       sourceId: disabledCategory._id,
       changes: {
@@ -321,31 +320,13 @@ const disableSubCategory = async (req, res, next) => {
   const { company, user, ip } = req;
   const logPath = "assets/AssetLog";
   const logAction = "Disable Asset Sub Category";
-  const logSourceKey = "category";
+  const logSourceKey = "subcategory";
 
   try {
+    // Validation
     if (!assetSubCategoryId) {
       throw new CustomError(
-        "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(company)) {
-      throw new CustomError(
-        "Invalid company ID",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    const companyExists = await Company.findById(company);
-    if (!companyExists) {
-      throw new CustomError(
-        "Company doesn't exist",
+        "Missing assetSubCategoryId",
         logPath,
         logAction,
         logSourceKey
@@ -361,37 +342,61 @@ const disableSubCategory = async (req, res, next) => {
       );
     }
 
-    const disabledSubCategory = await AssetCategory.findOneAndUpdate(
-      { "subCategories._id": assetSubCategoryId },
-      { $set: { "subCategories.$.isActive": false } },
-      { new: true }
-    );
-
-    if (!disabledSubCategory) {
+    if (!mongoose.Types.ObjectId.isValid(company)) {
       throw new CustomError(
-        "Failed to disable subcategory",
+        "Invalid company ID",
         logPath,
         logAction,
         logSourceKey
       );
     }
 
-    const updatedSubCategory = disabledSubCategory.subCategories.find(
-      (sub) => sub._id.toString() === assetSubCategoryId
-    );
+    // Check if company exists
+    const companyExists = await Company.findById(company);
+    if (!companyExists) {
+      throw new CustomError(
+        "Company doesn't exist",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
 
+    // Find subcategory
+    const subcategory = await AssetSubCategory.findById(assetSubCategoryId);
+    if (!subcategory) {
+      throw new CustomError(
+        "Subcategory doesn't exist",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // Optional: handle already disabled
+    if (!subcategory.isActive) {
+      return res
+        .status(200)
+        .json({ message: "Subcategory is already disabled" });
+    }
+
+    // Disable subcategory
+    subcategory.isActive = false;
+    const updatedSubcategory = await subcategory.save();
+
+    // Log action
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: "Sub Category disabled successfully",
+      remarks: "Subcategory disabled successfully",
       status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
+      user,
+      ip,
+      company,
       sourceKey: logSourceKey,
-      sourceId: disabledSubCategory._id,
+      sourceId: updatedSubcategory._id,
       changes: {
-        subCategoryName: updatedSubCategory.name,
+        subCategoryName: updatedSubcategory.subCategoryName,
         isActive: false,
       },
     });
@@ -420,19 +425,14 @@ const getCategory = async (req, res, next) => {
 
     const companyExists = await Company.findById(company);
     if (!companyExists) {
-      return res.status(400).json({ message: "Company doesn't exists" });
+      return res.status(400).json({ message: "Company doesn't exist" });
     }
 
     const assetCategories = await AssetCategory.find({
-      company,
       isActive: { $ne: false },
-    });
+    }).populate("department", "name"); // Optional: populate department name
 
-    if (!assetCategories) {
-      res.status(400).json({ message: "Failed to fetch categories" });
-    }
-
-    res.status(200).json(assetCategories);
+    return res.status(200).json(assetCategories);
   } catch (error) {
     next(error);
   }
@@ -448,19 +448,20 @@ const getSubCategory = async (req, res, next) => {
 
     const companyExists = await Company.findById(company);
     if (!companyExists) {
-      return res.status(400).json({ message: "Company doesn't exists" });
+      return res.status(400).json({ message: "Company doesn't exist" });
     }
 
-    const assetSubCategories = await AssetCategory.find({
-      company,
+    // Get all categories for this company
+    const categories = await AssetCategory.find().select("_id");
+
+    const categoryIds = categories.map((cat) => cat._id);
+
+    const assetSubCategories = await AssetSubCategory.find({
+      category: { $in: categoryIds },
       isActive: { $ne: false },
-    });
+    }).populate("category", "categoryName"); // Optional: populate category name
 
-    if (!assetSubCategories) {
-      res.status(400).json({ message: "Failed to fetch categories" });
-    }
-
-    res.status(200).json(assetSubCategories);
+    return res.status(200).json(assetSubCategories);
   } catch (error) {
     next(error);
   }
