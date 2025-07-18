@@ -1,6 +1,9 @@
 const { default: mongoose } = require("mongoose");
 const kraKpaRole = require("../../models/performances/kraKpaRole");
 const kraKpaTask = require("../../models/performances/kraKpaTask");
+const emitter = require("../../utils/eventEmitter");
+const Department = require("../../models/Departments");
+const UserData = require("../../models/hr/UserData");
 
 const createDeptBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -71,6 +74,35 @@ const createDeptBasedTask = async (req, res, next) => {
     });
 
     const savedNewRoleKraKpa = await newRoleKraKpa.save();
+
+    // * Emit notification event for kra/kpa creation *
+
+    // Emit the task notification
+    const foundDepartment = await Department.findById(department).select(
+      "name"
+    );
+
+    const userDetails = await UserData.findById({
+      _id: user,
+    });
+
+    const deptEmployees = await UserData.find({
+      departments: { $in: department },
+    });
+    console.log(department);
+
+    emitter.emit("notification", {
+      initiatorData: user, // user._id is expected if used downstream
+      users: deptEmployees.map((emp) => ({
+        userActions: {
+          whichUser: emp._id, // send to department admin or fallback to self
+          hasRead: false,
+        },
+      })),
+      type: "add kra/kpa",
+      module: "Performance",
+      message: `A new ${taskType} "${task}" was added by ${userDetails.firstName} ${userDetails.lastName} in ${foundDepartment.name} department.`,
+    });
 
     return res.status(201).json({
       message: `${taskType} added successfully`,
