@@ -8,9 +8,9 @@ const HouseKeepingLayout = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Members List", path: "members-list" },
-    { label: "Member Onboard", path: "member-onboard" },
-    { label: "Assign Rotation", path: "member-schedule" },
+    { label: "Housekeeping Members List", path: "members-list" },
+    { label: "Housekeeping Member Onboard", path: "member-onboard" },
+    { label: "Housekeeping Assign Rotation", path: "member-schedule" },
   ];
 
   useEffect(() => {
