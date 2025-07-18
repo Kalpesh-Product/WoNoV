@@ -24,10 +24,25 @@ import {
 } from "./AssetsData/Data";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import { useSelector } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 const AssetsDashboard = () => {
-  const assetsData = useSelector((state) => state.assets.selectedDepartment);
-  console.log("id : ", assetsData);
+  const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  const axios = useAxiosPrivate();
+
+  const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
+    queryKey: ["assets"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/assets/get-assets`
+        );
+      } catch (error) {
+        console.error(error.message);
+      }
+    },
+  });
   const meetingsWidgets = [
     {
       layout: 1,

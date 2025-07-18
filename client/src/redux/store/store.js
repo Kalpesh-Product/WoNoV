@@ -39,7 +39,7 @@ const rootreducer = combineReducers({
   client: clientReducer,
   sales: salesReducer,
   hr: hrReducer,
-  performance: performanceReducer,
+  performance: performanceReducer, 
   finance: financeReducer,
   user: userReducer,
   assets: assetReducer,
