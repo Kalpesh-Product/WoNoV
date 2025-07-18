@@ -36,9 +36,29 @@ const TasksViewDepartment = () => {
   const [openMultiModal, setOpenMultiModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState({});
   const [modalMode, setModalMode] = useState("");
+  const EXCEPTIONAL_DEPARTMENT_IDS = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    // more exceptional department IDs...
+  ];
 
-   const allowedDept = auth.user.departments.some((item) => {
-    return item._id.toString() === deptId.toString() ;
+  // Check if the selected department is in user's list
+  const isUserDepartment = auth?.user?.departments?.some(
+    (dept) => dept._id === deptId
+  );
+
+  // Check if the user has any department that is exceptional
+  const isExceptionalDepartment = auth?.user?.departments?.some((dept) =>
+    EXCEPTIONAL_DEPARTMENT_IDS.includes(dept._id)
+  );
+
+  const hasAccess = isUserDepartment || isExceptionalDepartment;
+
+  const resdepartment =
+    auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+    (isExceptionalDepartment ? "EXCEPTIONAL DEPARTMENT" : "UNKNOWN");
+
+  const allowedDept = auth.user.departments.some((item) => {
+    return item._id.toString() === deptId.toString();
   });
 
   const showCheckBox = allowedDept;
@@ -284,8 +304,7 @@ const TasksViewDepartment = () => {
               <WidgetSection padding layout={1}>
                 <YearWiseTable
                   checkbox={showCheckBox}
-                  key={departmentKra.length}
-                  buttonTitle={"Add Task"}
+                  buttonTitle={hasAccess ? "Add Task" : undefined}
                   handleSubmit={() => setOpenModal(true)}
                   tableTitle={`${department} DEPARTMENT TASKS`}
                   data={(departmentKra || [])
