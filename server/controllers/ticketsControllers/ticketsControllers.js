@@ -19,6 +19,7 @@ const CustomError = require("../../utils/customErrorlogs");
 const Ticket = require("../../models/tickets/Tickets");
 const validateUsers = require("../../utils/validateUsers");
 const UserData = require("../../models/hr/UserData");
+const emitter = require("../../utils/eventEmitter");
 
 const raiseTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
@@ -179,6 +180,32 @@ const raiseTicket = async (req, res, next) => {
     });
 
     const savedTicket = await newTicket.save();
+
+    // Populate the user data
+
+    const userDetails = await UserData.findById({
+      _id: user,
+    });
+
+    const deptEmployees = await UserData.find({
+      departments: { $in: departmentId },
+    });
+
+    const employeeIds = deptEmployees.map((emp) => emp._id);
+
+    // * Emit notification event for ticket creation *
+    emitter.emit("notification", {
+      initiatorData: user, // user._id is expected if used downstream
+      users: deptEmployees.map((emp) => ({
+        userActions: {
+          whichUser: emp._id, // send to department admin or fallback to self
+          hasRead: false,
+        },
+      })),
+      type: "raise ticket",
+      module: "Tickets",
+      message: `A new ticket "${ticketTitle}" was raised by ${userDetails.firstName} ${userDetails.lastName} in ${foundDepartment.name} department.`,
+    });
 
     // Log the successful ticket creation
     await createLog({
