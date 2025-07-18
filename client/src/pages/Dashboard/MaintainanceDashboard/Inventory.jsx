@@ -89,6 +89,7 @@ const Inventory = () => {
     setValue("department", selectedAsset?.department);
     setValue("openingInventoryUnits", selectedAsset?.openingInventoryUnits);
     setValue("openingPerUnitPrice", selectedAsset?.openingPerUnitPrice);
+    setValue("openingInventoryValue", selectedAsset?.openingInventoryValue);
     setValue("newPurchaseUnits", selectedAsset?.newPurchaseUnits);
     setValue("newPurchasePerUnitPrice", selectedAsset?.newPurchasePerUnitPrice);
     setValue(
@@ -96,7 +97,7 @@ const Inventory = () => {
       selectedAsset?.newPurchaseInventoryValue
     );
     setValue("closingInventoryUnits", selectedAsset?.closingInventoryUnits);
-    setValue("category", selectedAsset?.category);
+    setValue("category", selectedAsset?.category || selectedAsset?.Category);
   }, [selectedAsset]);
 
   const { data: inventoryData, isPending: isInventoryLoading } = useQuery({

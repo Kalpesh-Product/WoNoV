@@ -491,6 +491,7 @@ const AddVisitor = () => {
                             {...field}
                             format="DD-MM-YYYY"
                             label={"Scheduled Date"}
+                            disablePast
                             disabled={visitorType !== "Scheduled"}
                             value={visitType}
                             onChange={(e) => field.onChange(e)}

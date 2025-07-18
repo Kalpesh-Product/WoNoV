@@ -359,7 +359,7 @@ const SalesDashboard = () => {
       const domain = lead.serviceCategory?.serviceName;
       if (!domain) return;
 
-      const createdMonth = `${dayjs(lead.startDate).month()}`; // 0 = Jan, 11 = Dec
+      const createdMonth = `${dayjs(lead.dateOfContact).month()}`; // 0 = Jan, 11 = Dec
 
       // Initialize if domain not yet seen
       if (!domainMap[domain]) {

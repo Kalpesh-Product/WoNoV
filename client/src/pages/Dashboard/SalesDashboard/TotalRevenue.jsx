@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { CircularProgress } from "@mui/material";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import WidgetTable from "../../../components/Tables/WidgetTable";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 
 const TotalRevenue = () => {
   const axios = useAxiosPrivate();
@@ -85,6 +86,7 @@ const TotalRevenue = () => {
 
   const normalizedData = filteredByYear.map((domain) => ({
     name: domain.name,
+    group: "FY 2024-25",
     data: domain.data.map((val, idx) => {
       const totalThisMonth = filteredByYear.reduce(
         (sum, item) => sum + item.data[idx],
@@ -279,7 +281,7 @@ const TotalRevenue = () => {
     return flatten;
   }, [simpleRevenue]);
 
-  console.log("unified : ", unifiedRevenueData)
+  console.log("unified : ", unifiedRevenueData);
 
   const revenueByVertical = useMemo(() => {
     const grouped = {};
@@ -299,7 +301,7 @@ const TotalRevenue = () => {
     }));
   }, [unifiedRevenueData]);
 
-    console.log("revenueByVertical : ", revenueByVertical)
+  console.log("revenueByVertical : ", revenueByVertical);
 
   const totalAnnualRevenue = useMemo(() => {
     return revenueByVertical.reduce(
@@ -315,14 +317,13 @@ const TotalRevenue = () => {
           <CircularProgress />
         </div>
       ) : (
-        <WidgetSection
-          layout={1}
-          title={"Annual Monthly Mix Revenues FY 2024-25"}
-          border
-          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
-        >
-          <BarGraph height={400} data={normalizedData} options={options} />
-        </WidgetSection>
+        <YearlyGraph
+          title={"ANNUAL MONTHLY MIX REVENUES"}
+          titleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
+          data={normalizedData}
+          options={options}
+          dateKey={"dateKey"}
+        />
       )}
 
       <WidgetTable
@@ -336,7 +337,7 @@ const TotalRevenue = () => {
           { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
         ]}
         amount={`INR ${inrFormat(totalAnnualRevenue)}`}
-       data={unifiedRevenueData}
+        data={unifiedRevenueData}
       />
     </div>
   );

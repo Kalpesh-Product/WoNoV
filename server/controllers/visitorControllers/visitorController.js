@@ -7,6 +7,7 @@ const UserData = require("../../models/hr/UserData");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const Company = require("../../models/hr/Company");
+const emitter = require("../../utils/eventEmitter");
 
 const fetchVisitors = async (req, res, next) => {
   const { company } = req;
@@ -351,6 +352,32 @@ const addVisitor = async (req, res, next) => {
     });
 
     const savedVisitor = await newVisitor.save();
+
+    // Notification that visitor was added
+
+    // Fetch department employees (or the specific person being visited)
+    const deptEmployees = await UserData.find({
+      departments: { $in: department },
+    }).lean();
+
+    const initiator = await UserData.findById(user).lean();
+
+    // Emit the visitor notification
+    emitter.emit("notification", {
+      initiatorData: user,
+      // users: deptEmployees.map((emp) => ({
+      userActions: {
+        // whichUser: emp._id,
+        whichUser: toMeet || clientToMeet || initiator._id, // send to the person being visited or fallback to initiator
+        hasRead: false,
+      },
+      // })),
+      type: "add visitor",
+      module: "Visitors",
+      message: `Visitor ${firstName} ${lastName} has been registered to meet ${
+        toMeet || clientToMeet
+      } in ${department} department.`,
+    });
 
     await createLog({
       path: logPath,
