@@ -82,6 +82,7 @@ const AttendanceRequests = () => {
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "name", headerName: "Name", flex: 1 },
+    { field: "addedBy", headerName: "Added By", flex: 1 },
     { field: "requestDay", headerName: "Date" },
     { field: "inTime", headerName: "Start Time" },
     { field: "outTime", headerName: "End Time" },
@@ -120,6 +121,7 @@ const AttendanceRequests = () => {
     : pendingRequests.map((item) => ({
         ...item,
         empId: item.user?.empId,
+        addedBy: item.addedBy ? `${item.addedBy.firstName} ${item.addedBy.lastName}` : "—",
         reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
         requestDay: humanDate(item.inTime) || "N/A",
@@ -177,8 +179,12 @@ const AttendanceRequests = () => {
                   Request Information
                 </span>
               </div>
-
+           
               <div className="grid grid-cols-1 gap-4">
+                 <DetalisFormatted
+                  title="Raised By"
+                  detail={selectedRequest?.addedBy || "N/A"}
+                />
                 <DetalisFormatted
                   title="Raised Date"
                   detail={humanDate(selectedRequest?.createdAt)}
@@ -219,6 +225,7 @@ const AttendanceRequests = () => {
                   title="Original End Time"
                   detail={selectedRequest?.originalOutTime}
                 />
+              
               </div>
             </div>
           </div>

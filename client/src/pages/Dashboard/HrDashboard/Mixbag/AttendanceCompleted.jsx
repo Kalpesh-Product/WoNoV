@@ -46,6 +46,7 @@ const AttendanceCompleted = () => {
         </span>
       ),
     },
+    { field: "addedBy", headerName: "Added By", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "inTime", headerName: "Start Time" },
     { field: "outTime", headerName: "End Time" },
@@ -57,6 +58,8 @@ const AttendanceCompleted = () => {
     : data.map((item) => ({
         ...item,
         empId: item.user?.empId,
+        addedBy:
+          item.addedBy ? `${item.addedBy.firstName} ${item.addedBy.lastName}` : "—",
         reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
         date: item.inTime,
@@ -96,6 +99,10 @@ const AttendanceCompleted = () => {
             <DetalisFormatted title="Name" detail={selectedRequest?.name} />
             <DetalisFormatted title="Reason" detail={selectedRequest?.reason} />
             <DetalisFormatted title="Date" detail={selectedRequest?.date} />
+            <DetalisFormatted
+              title="Raised By"
+              detail={selectedRequest?.addedBy || "N/A"}
+            />
             <DetalisFormatted
               title="Start Time"
               detail={selectedRequest?.inTime}

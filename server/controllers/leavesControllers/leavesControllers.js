@@ -154,6 +154,7 @@ const requestLeave = async (req, res, next) => {
 
     const newLeave = new Leave({
       company,
+      addedBy: user,
       takenBy: foundUser._id,
       leaveType: updatedLeaveType ? updatedLeaveType : leaveType,
       fromDate,
@@ -164,29 +165,6 @@ const requestLeave = async (req, res, next) => {
     });
 
     await newLeave.save();
-
-    // Success log with details of the leave request
-
-    // await createLog({
-    //   path: logPath,
-    //   action: logAction,
-    //   remarks: "Leave request sent successfully",
-    //   status: "Success",
-    //   user,
-    //   ip,
-    //   company,
-    //   sourceKey: logSourceKey,
-    //   sourceId: newLeave._id,
-    //   changes: {
-    //     fromDate,
-    //     toDate,
-    //     leaveType: updatedLeaveType ? updatedLeaveType : leaveType,
-    //     leavePeriod,
-    //     hours,
-    //     description,
-    //     requester: foundUser._id,
-    //   },
-    // });
 
     return res.status(201).json({ message: "Leave request sent" });
   } catch (error) {
@@ -204,6 +182,7 @@ const fetchAllLeaves = async (req, res, next) => {
   try {
     const leaves = await Leave.find()
       .populate([
+        { path: "addedBy", select: "firstName lastName" },
         { path: "takenBy", select: "firstName lastName" },
         { path: "approvedBy", select: "firstName lastName" },
         { path: "rejectedBy", select: "firstName lastName" },
@@ -251,7 +230,12 @@ const fetchUserLeaves = async (req, res, next) => {
     const user = await UserData.findOne({ empId: id });
     const leaves = await Leave.find({
       takenBy: user._id,
-    });
+    }).populate([
+      { path: "addedBy", select: "firstName lastName" },
+      { path: "takenBy", select: "firstName lastName" },
+      { path: "approvedBy", select: "firstName lastName" },
+      { path: "rejectedBy", select: "firstName lastName" },
+    ]);
 
     if (!leaves) {
       return res.status(204).json({ message: "No leaves found" });
