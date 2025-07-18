@@ -17,15 +17,48 @@ const YearlyGraph = ({
   secondParam = false,
   chartHeight,
   currentYear,
-   onYearChange,
+  onYearChange,
+  dateKey, // 👈 New prop
 }) => {
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
-  const [selectedYearIndex, setSelectedYearIndex] = useState(currentYear ? 1 : 0);
+
+  const getYearIndexFromDate = (dateInput) => {
+    const date = new Date(dateInput);
+    const month = date.getMonth(); // 0 = Jan
+    const year = date.getFullYear();
+
+    if (
+      (year === 2024 && month >= 3) || // Apr–Dec 2024
+      (year === 2025 && month <= 2) // Jan–Mar 2025
+    )
+      return 0;
+
+    if (
+      (year === 2025 && month >= 3) || // Apr–Dec 2025
+      (year === 2026 && month <= 2) // Jan–Mar 2026
+    )
+      return 1;
+
+    return 0; // fallback
+  };
+
+  const [selectedYearIndex, setSelectedYearIndex] = useState(() => {
+    if (dateKey && data?.length > 0) {
+      const dateValue = data[0]?.dateKey;
+
+      if (dateValue) return getYearIndexFromDate(dateValue);
+    }
+    return currentYear ? 1 : 0;
+  });
+
   const selectedYear = fiscalYears[selectedYearIndex];
 
   useEffect(() => {
-    if (onYearChange) onYearChange(selectedYear);
-  }, [selectedYear, onYearChange]);
+    if (!dateKey && onYearChange) {
+      onYearChange(selectedYear);
+    }
+  }, [selectedYear, onYearChange, dateKey]);
+
   const yearCategories = {
     "FY 2024-25": [
       "Apr-24",
@@ -56,14 +89,13 @@ const YearlyGraph = ({
       "Mar-26",
     ],
   };
-  let filteredData;
 
+  let filteredData;
   if (dataPoint === "name") {
     filteredData = data.filter((item) => item.name === selectedYear);
   } else {
     filteredData = data.filter((item) => item.group === selectedYear);
   }
-  
 
   const updatedOptions = {
     ...options,
@@ -86,16 +118,15 @@ const YearlyGraph = ({
   const goToNextYear = () => {
     setSelectedYearIndex((prev) => Math.min(fiscalYears.length - 1, prev + 1));
   };
+
   return (
     <div>
       <WidgetSection
         normalCase
         border
         title={title || "Title not given"}
-        // titleLabel={selectedYear}
         TitleAmount={titleAmount || ""}
         TitleAmountGreen={TitleAmountGreen}
-        // titleFont={"1rem"}
         TitleAmountRed={TitleAmountRed}
       >
         <BarGraph

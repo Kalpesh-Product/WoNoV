@@ -7,6 +7,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { CircularProgress } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 
 const MeetingRevenue = () => {
   const axios = useAxiosPrivate();
@@ -30,6 +31,7 @@ const MeetingRevenue = () => {
     ? [
         {
           name: "Actual Revenue",
+          group: "FY 2024-25",
           data: meetingsData.map((item) =>
             item?.revenue?.reduce((sum, c) => sum + (c.taxable || 0), 0)
           ),
@@ -120,14 +122,12 @@ const MeetingRevenue = () => {
         </div>
       ) : (
         <>
-          <WidgetSection
-            title={"Annual Monthly Meetings Revenues"}
-            titleLabel={"FY 2024-25"}
-            TitleAmount={`INR ${inrFormat(totalActual)}`}
-            border
-          >
-            <BarGraph data={series} options={options} height={400} />
-          </WidgetSection>
+          <YearlyGraph
+            title={"ANNUAL MONTHLY MEETINGS REVENUES"}
+            titleAmount={`INR ${inrFormat(totalActual)}`}
+            data={series}
+            options={options}
+          />
 
           <WidgetTable
             data={flattenedRevenueData}
@@ -168,7 +168,7 @@ const MeetingRevenue = () => {
               {
                 headerName: "Status",
                 field: "status",
-                pinned : "right",
+                pinned: "right",
                 cellRenderer: (params) => <StatusChip status={params.value} />,
               },
             ]}

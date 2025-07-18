@@ -12,6 +12,7 @@ import { parseRevenue } from "../../../utils/removeCommaInNum";
 import { Skeleton } from "@mui/material";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import WidgetTable from "../../../components/Tables/WidgetTable";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 
 const VirtualOffice = () => {
   const axios = useAxiosPrivate();
@@ -101,12 +102,15 @@ const VirtualOffice = () => {
     return parseFloat(item?.actual.replace(/,/g, ""));
   });
 
-  const series = [
-    {
-      name: "Revenue",
-      data: graphNumbers,
-    },
-  ];
+const series = [
+  {
+    name: "Revenue",
+    group: "FY 2024-25",
+    data: graphNumbers,
+    dateKey: virtualOfficeRevenue?.[0]?.rentDate, // 👈 add this
+  },
+];
+
   const options = {
     chart: {
       stacked: false,
@@ -177,14 +181,13 @@ const VirtualOffice = () => {
   return (
     <div className="flex flex-col gap-4">
       {!isLoadingVirtualOfficeRevenue ? (
-        <WidgetSection
-          title={"Annual Monthly Virtual Office Revenues"}
-          titleLabel={"FY 2024-25"}
-          border
-          TitleAmount={`INR ${inrFormat(totalActual)}`}
-        >
-          <NormalBarGraph data={series} options={options} height={400} />
-        </WidgetSection>
+        <YearlyGraph
+          title={"ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"}
+          titleAmount={`INR ${inrFormat(totalActual)}`}
+          data={series}
+          options={options}
+          dateKey={"dateKey"}
+        />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
       )}

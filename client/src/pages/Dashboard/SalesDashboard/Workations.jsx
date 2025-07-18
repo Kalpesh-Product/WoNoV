@@ -7,6 +7,7 @@ import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 
 const Workations = () => {
   const axios = useAxiosPrivate();
@@ -131,7 +132,7 @@ const Workations = () => {
     },
     colors: ["#54C4A7", "#EB5C45"],
     noData: {
-      text: "No Data Available", // Text to show when no data is available
+      text: "", // Text to show when no data is available
       align: "center", // Position of the text
       verticalAlign: "middle", // Vertical alignment of the text
       offsetX: 0, // Horizontal offset
@@ -147,6 +148,7 @@ const Workations = () => {
   const series = [
     {
       name: "Actual Revenue",
+      group: "FY 2024-25",
       data: [
         "Apr-24",
         "May-24",
@@ -171,6 +173,11 @@ const Workations = () => {
           : null; // Return `null` for months with no data
       }),
     },
+    {
+      name: "Actual Revenue",
+      group: "FY 2025-26",
+      data: [],
+    },
   ];
 
   const totalActual = transformRevenuesData.reduce(
@@ -193,14 +200,13 @@ const Workations = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <WidgetSection
-        title={"Annual Monthly Workation Revenues"}
-        titleLabel={"FY 2024-25"}
-        border
-        TitleAmount={`INR ${inrFormat(totalActual)}`}
-      >
-        <NormalBarGraph data={series} options={options} height={400} />
-      </WidgetSection>
+      <YearlyGraph
+        title={"ANNUAL MONTHLY WORKATION REVENUES"}
+        titleAmount={`INR ${inrFormat(totalActual)}`}
+        data={series}
+        options={options}
+        dateKey={"dateKey"}
+      />
       <WidgetTable
         data={tableData}
         tableTitle={"Monthly Revenue with Client Details"}
@@ -242,7 +248,9 @@ const Workations = () => {
             field: "status",
             flex: 1,
             pinned: "right",
-            cellRenderer: (params) => <StatusChip status={params.value ? params.value : "Unpaid"} />,
+            cellRenderer: (params) => (
+              <StatusChip status={params.value ? params.value : "Unpaid"} />
+            ),
           },
         ]}
       />
