@@ -129,119 +129,6 @@ const ListOfAssets = () => {
   //   },
   // });
 
-  const assetsList = [
-    {
-      _id: "1",
-      department: { name: "IT" },
-      name: "Laptop",
-      brand: "Dell",
-      price: "80,000",
-      quantity: 10,
-      purchaseDate: "2023-06-15T00:00:00.000Z",
-      warranty: 24,
-      vendor: { name: "Tech Supplies Ltd." },
-    },
-    {
-      _id: "2",
-      department: { name: "IT" },
-      name: "Printer",
-      brand: "HP",
-      price: "15,000",
-      quantity: 3,
-      purchaseDate: "2023-04-20T00:00:00.000Z",
-      warranty: 12,
-      vendor: { name: "Office Solutions" },
-    },
-    {
-      _id: "3",
-      department: { name: "IT" },
-      name: "Projector",
-      brand: "Epson",
-      price: "45,000",
-      quantity: 2,
-      purchaseDate: "2023-05-10T00:00:00.000Z",
-      warranty: 18,
-      vendor: { name: "AV World" },
-    },
-    {
-      _id: "4",
-      department: { name: "IT" },
-      name: "Router",
-      brand: "Cisco",
-      price: "12,000",
-      quantity: 5,
-      purchaseDate: "2023-07-01T00:00:00.000Z",
-      warranty: 24,
-      vendor: { name: "Network Hub" },
-    },
-    {
-      _id: "5",
-      department: { name: "Admin" },
-      name: "DSLR Camera",
-      brand: "Canon",
-      price: "60,000",
-      quantity: 2,
-      purchaseDate: "2023-01-05T00:00:00.000Z",
-      warranty: 12,
-      vendor: { name: "CamPro Store" },
-    },
-    {
-      _id: "6",
-      department: { name: "Maintenance" },
-      name: "Air Conditioner",
-      brand: "LG",
-      price: "40,000",
-      quantity: 4,
-      purchaseDate: "2022-11-25T00:00:00.000Z",
-      warranty: 36,
-      vendor: { name: "Climate Tech" },
-    },
-    {
-      _id: "7",
-      department: { name: "IT" },
-      name: "Desktop Computer",
-      brand: "Lenovo",
-      price: "55,000",
-      quantity: 8,
-      purchaseDate: "2023-02-12T00:00:00.000Z",
-      warranty: 24,
-      vendor: { name: "CompuZone" },
-    },
-    {
-      _id: "8",
-      department: { name: "IT" },
-      name: "Monitor",
-      brand: "Samsung",
-      price: "12,000",
-      quantity: 6,
-      purchaseDate: "2023-03-30T00:00:00.000Z",
-      warranty: 18,
-      vendor: { name: "Display World" },
-    },
-    {
-      _id: "9",
-      department: { name: "IT" },
-      name: "Laptop",
-      brand: "Apple",
-      price: "70,000",
-      quantity: 3,
-      purchaseDate: "2023-09-10T00:00:00.000Z",
-      warranty: 12,
-      vendor: { name: "iTech Solutions" },
-    },
-    {
-      _id: "10",
-      department: { name: "Admin" },
-      name: "Office Chair",
-      brand: "Creality",
-      price: "75,000",
-      quantity: 1,
-      purchaseDate: "2023-08-18T00:00:00.000Z",
-      warranty: 24,
-      vendor: { name: "Innovate Machines" },
-    },
-  ];
-
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -263,28 +150,11 @@ const ListOfAssets = () => {
   return (
     <>
       <AgTable
-        key={assetsList.length}
         search={true}
         searchColumn={"Asset Number"}
         tableTitle={"List of Assets"}
         buttonTitle={"Add Asset"}
-        data={[
-          ...assetsList.map((asset, index) => ({
-            srNo: index + 1,
-            department: asset.department.name,
-            category: asset.name,
-            brand: asset.brand,
-            price: asset.price,
-            quantity: asset.quantity,
-            purchaseDate: new Intl.DateTimeFormat("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }).format(new Date(asset.purchaseDate)),
-            warranty: asset.warranty,
-            vendorName: asset.vendor.name,
-          })),
-        ]}
+        data={[]}
         columns={assetColumns}
         handleClick={handleAddAsset}
       />
@@ -306,7 +176,8 @@ const ListOfAssets = () => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}>
+                        } `}
+                      >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -316,7 +187,8 @@ const ListOfAssets = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}>
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             component="label"
@@ -331,7 +203,8 @@ const ListOfAssets = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
+                            }}
+                          >
                             Select Image
                             <input
                               type="file"
@@ -357,7 +230,8 @@ const ListOfAssets = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}>
+                            }}
+                          >
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -374,7 +248,8 @@ const ListOfAssets = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -394,7 +269,8 @@ const ListOfAssets = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -415,7 +291,8 @@ const ListOfAssets = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -435,7 +312,8 @@ const ListOfAssets = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}

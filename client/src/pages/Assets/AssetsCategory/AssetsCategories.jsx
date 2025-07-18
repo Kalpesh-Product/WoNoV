@@ -156,14 +156,7 @@ const AssetsCategories = () => {
         buttonTitle="Add Category"
         handleClick={() => setModalOpen(true)}
         data={
-          assetPending
-            ? []
-            : assetsCategories.map((category, index) => ({
-                id: index + 1,
-                mongoId: category._id,
-                categoryName: category.categoryName,
-                isActive: category.isActive,
-              }))
+          []
         }
         columns={categoriesColumn}
         tableHeight={350}
