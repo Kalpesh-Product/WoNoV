@@ -473,7 +473,7 @@ const editAsset = async (req, res, next) => {
       name: name?.trim(),
       purchaseDate,
       price,
-      isDammaged,
+      isDammaged: isDammaged ? isDammaged : foundAsset.isDammaged,
       warranty,
       warrantyDocument: warrantyDocInfo,
       brand: brand?.trim(),
