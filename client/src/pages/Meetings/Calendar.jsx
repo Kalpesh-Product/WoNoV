@@ -43,7 +43,7 @@ const Calender = () => {
     queryKey: ["meetings-calendar"],
     queryFn: async () => {
       try {
-        const respone = await axios.get("/api/meetings/my-meetings");
+        const respone = await axios.get("/api/meetings/get-meetings");
         return respone.data;
       } catch (error) {
         console.error(error);

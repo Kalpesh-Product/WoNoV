@@ -363,33 +363,34 @@ const getTasks = async (req, res, next) => {
     // const team = await UserData.find({});
 
     if (dept) {
-      //      const admins = await User.aggregate([
-      //   {
-      //     $match: {
-      //       departments: { $in: [dept] },
-      //     },
-      //   },
-      //   {
-      //     $lookup: {
-      //       from: "roles", // collection name (lowercase + plural of model name)
-      //       localField: "role",
-      //       foreignField: "_id",
-      //       as: "roleInfo",
-      //     },
-      //   },
-      //   {
-      //     $unwind: "$roleInfo",
-      //   },
-      //   {
-      //     $match: {
-      //       "roleInfo.roleTitle": { $regex: /Admin$/, $options: "i" },
-      //     },
-      //   },
-      // ]);
+      const admins = await User.aggregate([
+        {
+          $match: {
+            departments: { $in: [dept] },
+          },
+        },
+        {
+          $lookup: {
+            from: "roles",
+            localField: "role",
+            foreignField: "_id",
+            as: "roleInfo",
+          },
+        },
+        {
+          $unwind: "$roleInfo",
+        },
+        {
+          $match: {
+            "roleInfo.roleTitle": { $regex: /Admin$/, $options: "i" },
+          },
+        },
+      ]);
 
+      console.log("admins", admins);
       query.department = dept;
       query.status = "Pending";
-      // query.assignedBy =
+      query.assignedBy = { $in: admins };
     }
 
     const tasks = await Task.find(query)

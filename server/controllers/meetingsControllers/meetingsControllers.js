@@ -387,7 +387,11 @@ const getMeetings = async (req, res, next) => {
           populate: { path: "departments", select: "name" },
         },
         { path: "clientBookedBy", select: "employeeName email" },
-        { path: "receptionist", select: "firstName lastName" },
+        {
+          path: "receptionist",
+          select: "firstName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
         { path: "client", select: "clientName" },
         // { path: "externalClient", select: "companyName pocName mobileNumber" },
         { path: "internalParticipants", select: "firstName lastName email" },
@@ -404,7 +408,9 @@ const getMeetings = async (req, res, next) => {
     let filteredMeetings = meetings;
     if (
       !roles.includes("Administration Admin") &&
-      !roles.includes("Administration Employee")
+      !roles.includes("Administration Employee") &&
+      !roles.includes("Master Admin") &&
+      !roles.includes("Super Admin")
     ) {
       filteredMeetings = meetings.filter((meeting) => {
         if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments))
@@ -452,21 +458,28 @@ const getMeetings = async (req, res, next) => {
 
       const isClient = meeting.client ? true : false;
 
-      const receptionist = meeting.receptionist
-        ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        : "";
+      const isReceptionist = meeting.receptionist.departments.some(
+        (dept) => dept.name === "Administration"
+      );
+
+      let receptionist;
+      if (isReceptionist) {
+        receptionist = meeting.receptionist
+          ? [
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
+          : "";
+      }
 
       return {
         _id: meeting._id,
         name: meeting.bookedBy?.name,
-        receptionist: receptionist,
-        bookedBy: { ...meeting.bookedBy },
+        receptionist: isReceptionist ? receptionist : "N/A",
+        // bookedBy: { ...meeting.bookedBy },
         clientBookedBy: meeting.clientBookedBy,
         department: meeting?.bookedBy?.departments,
         roomName: meeting.bookedRoom.name,
@@ -553,7 +566,11 @@ const getMyMeetings = async (req, res, next) => {
           populate: { path: "departments" },
         },
         { path: "clientBookedBy", select: "employeeName email" },
-        { path: "receptionist", select: "firstName lastName" },
+        {
+          path: "receptionist",
+          select: "firstName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
         { path: "client", select: "clientName" },
         // {
         //   path: "externalClient",
@@ -604,20 +621,28 @@ const getMyMeetings = async (req, res, next) => {
             meeting.bookedBy.firstName,
             meeting.bookedBy.middleName,
             meeting.bookedBy.lastName,
+            meeting.bookedBy.departments,
           ]
             .filter(Boolean)
             .join(" ")
         : "";
 
-      const receptionist = meeting.receptionist
-        ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        : "";
+      const isReceptionist = meeting.receptionist.departments.some(
+        (dept) => dept.name === "Administration"
+      );
+
+      let receptionist;
+      if (isReceptionist) {
+        receptionist = meeting.receptionist
+          ? [
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
+          : "";
+      }
 
       return {
         _id: meeting._id,
