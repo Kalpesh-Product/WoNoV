@@ -22,8 +22,12 @@ import {
   recentAssetsColumns,
   recentAssetsData,
 } from "./AssetsData/Data";
+import usePageDepartment from "../../hooks/usePageDepartment";
+import { useSelector } from "react-redux";
 
 const AssetsDashboard = () => {
+  const assetsData = useSelector((state) => state.assets.selectedDepartment);
+  console.log("id : ", assetsData);
   const meetingsWidgets = [
     {
       layout: 1,
@@ -32,7 +36,8 @@ const AssetsDashboard = () => {
           layout={1}
           border
           title={"Assets Value"}
-          titleLabel={"FY 2024-25"}>
+          titleLabel={"FY 2024-25"}
+        >
           <BarGraph
             height={400}
             data={assetUtilizationSeries}
@@ -110,7 +115,8 @@ const AssetsDashboard = () => {
         <WidgetSection
           layout={1}
           title={"Assigned v/s Unassigned Assets"}
-          border>
+          border
+        >
           <PieChartMui
             data={assetAvailabilityData}
             options={assetAvailabilityOptions}

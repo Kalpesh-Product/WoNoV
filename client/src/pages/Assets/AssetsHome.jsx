@@ -4,19 +4,15 @@ import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setSelectedDepartment } from "../../redux/slices/performanceSlice";
+import { setSelectedDepartment } from "../../redux/slices/assetsSlice";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
-import PageFrame from "../../components/Pages/PageFrame";
 import { inrFormat } from "../../utils/currencyFormat";
-import usePageDepartment from "../../hooks/usePageDepartment";
 
 const AssetsHome = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const dispatch = useDispatch();
-  const department = usePageDepartment()
-  console.log("department : ", department)
   const navigate = useNavigate();
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
   const currentDepartment = auth.user?.departments?.[0]?.name;
@@ -25,7 +21,7 @@ const AssetsHome = () => {
     additionalTopUserIds: [
       "67b83885daad0f7bab2f188b",
       "67b83885daad0f7bab2f1852",
-    //   "681a10b13fc9dc666ede401c",
+      "681a10b13fc9dc666ede401c",
     ], //Mac//Kashif//Nigel
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
