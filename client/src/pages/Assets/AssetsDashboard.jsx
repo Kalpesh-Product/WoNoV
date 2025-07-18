@@ -36,7 +36,7 @@ const AssetsDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/assets/get-assets`
+          `/api/assets/get-assets?departmentId=${departmentId}`
         );
       } catch (error) {
         console.error(error.message);
