@@ -387,6 +387,7 @@ import HrKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrKPA";
 import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTasks";
 import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
 import VendorTable from "../components/Pages/VendorTable";
+import AssetsHome from "../pages/Assets/AssetsHome";
 
 export const routes = createBrowserRouter([
   {
@@ -2021,9 +2022,13 @@ export const routes = createBrowserRouter([
                 element: <AssetsLayout />, // Parent component for tickets
                 children: [
                   {
-                    path: "", // Default route for /app/assets
-                    element: <AssetsDashboard />, // Dashboard is rendered by default
+                    path: "", 
+                    element: <AssetsHome />, // Dashboard is rendered by default
                     index: true,
+                  },
+                  {
+                    path: ":department", // Default route for /app/assets
+                    element: <AssetsDashboard />, // Dashboard is rendered by default
                   },
                   {
                     path: "categories",

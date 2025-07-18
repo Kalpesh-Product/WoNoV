@@ -94,7 +94,7 @@ const Shifts = () => {
       isDeleted: true,
     };
     setModalMode("delete");
-    setOpenModal(true)
+    setOpenModal(true);
     setSelectedItem(item);
     // updateMutation.mutate(payload);
   };
@@ -223,21 +223,6 @@ const Shifts = () => {
                   label: "Edit",
                   onClick: () => handleEdit(params.data),
                 },
-                // {
-                //   label: `${
-                //     params.data.status ? "Mark As Inactive" : "Mark As Active"
-                //   }`,
-                //   onClick: () =>
-                //     updateMutation.mutate({
-                //       type: "shifts",
-                //       itemId: params.data._id,
-                //       name: params.data.shift,
-                //       startTime: params.data.startTime,
-                //       endTime: params.data.endTime,
-                //       isActive: !params.data.status, // Correct toggle
-                //     }),
-                // },
-
                 {
                   label: "Delete",
                   onClick: () => handleDelete(params.data),
@@ -450,16 +435,14 @@ const Shifts = () => {
                 <Controller
                   name="isActive"
                   control={editControl}
-                  render={({ field, fieldState }) => (
-                    <FormControl fullWidth error={!!fieldState.error}>
-                      <Select {...field} size="small" displayEmpty>
-                        <MenuItem value="" disabled>
-                          Select Active Status
-                        </MenuItem>
-                        <MenuItem value="true">Yes</MenuItem>
-                        <MenuItem value="false">No</MenuItem>
-                      </Select>
-                    </FormControl>
+                  render={({ field }) => (
+                    <TextField {...field} size="small" select fullWidth>
+                      <MenuItem value="" disabled>
+                        Select Active Status
+                      </MenuItem>
+                      <MenuItem value="true">Yes</MenuItem>
+                      <MenuItem value="false">No</MenuItem>
+                    </TextField>
                   )}
                 />
 
