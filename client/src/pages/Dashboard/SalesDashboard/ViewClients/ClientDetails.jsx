@@ -18,7 +18,6 @@ const ClientDetails = () => {
       serviceDescription: "",
       sector: "",
       hoCity: "",
-
       hoState: "",
       unitName: "",
       unitNo: "",

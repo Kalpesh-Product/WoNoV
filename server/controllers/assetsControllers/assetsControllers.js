@@ -98,7 +98,11 @@ const getAssets = async (req, res, next) => {
     }
 
     // Combine with departments, include empty ones
-    const result = departments.map((dept) => ({
+    const result = (
+      departmentId
+        ? departments.filter((dept) => dept._id.toString() === departmentId)
+        : departments
+    ).map((dept) => ({
       departmentId: dept._id.toString(),
       departmentName: dept.name,
       assets: assetMap[dept._id.toString()] || [],

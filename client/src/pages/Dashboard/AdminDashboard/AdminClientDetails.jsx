@@ -1,14 +1,12 @@
-import { Avatar, Button, Chip, TextField } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import PrimaryButton from "../../../components/PrimaryButton";
-import { Controller, useForm } from "react-hook-form";
-import SecondaryButton from "../../../components/SecondaryButton";
-import { toast } from "sonner";
+import { useEffect } from "react";
 import { useSelector } from "react-redux";
+import { useForm } from "react-hook-form";
+import humanDate from "../../../utils/humanDateForamt";
 
 const AdminClientDetails = () => {
   const selectedClient = useSelector((state) => state.client.selectedClient);
-  const { control, handleSubmit, reset } = useForm({
+
+  const { control, reset } = useForm({
     defaultValues: {
       clientName: "",
       serviceName: "",
@@ -23,6 +21,7 @@ const AdminClientDetails = () => {
       cabinDesks: 0,
       openDesks: 0,
       totalDesks: 0,
+      bookingType: "",
       ratePerOpenDesk: 0,
       ratePerCabinDesk: 0,
       annualIncrement: 0,
@@ -66,6 +65,7 @@ const AdminClientDetails = () => {
         annualIncrement: selectedClient.annualIncrement,
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
+        bookingType: selectedClient.bookingType,
         startDate: selectedClient.startDate,
         endDate: selectedClient.endDate,
         lockinPeriod: selectedClient.lockinPeriod,
@@ -84,160 +84,115 @@ const AdminClientDetails = () => {
     }
   }, [selectedClient, reset]);
 
+  const displayField = (label, value, isDate = false) => (
+    <div className="py-2 flex justify-between items-start gap-2">
+      <div className="w-[100%] justify-start flex">
+        <span className="font-pmedium text-gray-600 text-content">{label}</span>
+      </div>
+      <div className="">
+        <span>:</span>
+      </div>
+      <div className="w-full">
+        <span className="text-gray-500">
+          {isDate ? humanDate(value) : value || "N/A"}
+        </span>
+      </div>
+    </div>
+  );
 
-  const [isEditing, setIsEditing] = useState(false);
-
-  const handleEditToggle = () => {
-    setIsEditing(!isEditing);
-  };
-
-  const onSubmit = (data) => {
-    setIsEditing(!isEditing);
-    toast.success("User details updated successfully");
-  };
-
-  const handleReset = () => {
-    reset();
-  };
+  const { _defaultValues } = control;
 
   return (
-    <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">
+    <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4">
       <div className="flex justify-between items-center">
-        <div>
-          <span className="text-subtitle font-pmedium text-primary">
-            Client Details
-          </span>
-        </div>
-        {/* <div>
-          <PrimaryButton handleSubmit={handleEditToggle} title={"Edit"} />
-        </div> */}
+        <span className="text-subtitle font-pmedium text-primary">
+          Client Details
+        </span>
       </div>
 
       <div className="h-[51vh] overflow-y-auto">
-        <div>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Section:  Customer Details */}
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Customer Details
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {["clientName", "service", "sector", "hoCity", "hoState", "unitNo",].map(
-                    (fieldKey) => (
-                      <div key={fieldKey}>
-                        {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                                fullWidth
-                              />
-                            )}
-                          />
-                        ) : (
-                          <div className="py-2 flex justify-between items-center gap-2">
-                            <div className="w-[100%] justify-start flex">
-                              <span className="font-pmedium text-gray-600 text-content">
-                                {fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                              </span>{" "}
-                            </div>
-                            <div className="">
-                              <span>:</span>
-                            </div>
-                            <div className="w-full">
-                              <span className="text-gray-500">
-                                {control._defaultValues[fieldKey]}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Company Details
-                  </span>
-                </div>
-
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "localPocName",
-                    "localPocEmail",
-                    "localPocPhone",
-                    "hoPocName",
-                    "hoPocEmail",
-                    "hoPocPhone",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
-                        <Controller
-                          name={fieldKey}
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
-                        />
-                      ) : (
-                        <div className="py-2 flex justify-between items-start gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+        <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Customer Details */}
+          <div>
+            <div className="py-4 border-b border-borderGray">
+              <span className="text-subtitle font-pmedium">
+                Customer Details
+              </span>
             </div>
+            <div className="p-4 flex flex-col gap-2">
+              {displayField("Client Name", _defaultValues.clientName)}
+              {displayField("Sector", _defaultValues.sector)}
+              {displayField("HO City", _defaultValues.hoCity)}
+              {displayField("HO State", _defaultValues.hoState)}
+              {displayField("Booking Type", _defaultValues.bookingType)}
+            </div>
+          </div>
 
-            {/* <div className="flex items-center justify-center gap-2 py-4">
-              <PrimaryButton
-                title={isEditing ? "Submit" : "Edit"}
-                handleSubmit={
-                  isEditing ? handleSubmit(onSubmit) : handleEditToggle
-                }
-              />
-              {isEditing && (
-                <SecondaryButton title={"Reset"} handleSubmit={handleReset} />
+          {/* Company Details */}
+          <div>
+            <div className="py-4 border-b border-borderGray">
+              <span className="text-subtitle font-pmedium">
+                Company Details
+              </span>
+            </div>
+            <div className="p-4 flex flex-col gap-2">
+              {displayField("Unit No", _defaultValues.unitNo)}
+              {displayField("Cabin Desks", _defaultValues.cabinDesks)}
+              {displayField(
+                "Rate Per Cabin Desk",
+                _defaultValues.ratePerCabinDesk
               )}
-            </div> */}
-          </form>
+              {displayField("Open Desks", _defaultValues.openDesks)}
+              {displayField(
+                "Rate Per Open Desk",
+                _defaultValues.ratePerOpenDesk
+              )}
+            </div>
+          </div>
+
+          {/* Agreement Details */}
+          <div>
+            <div className="py-4 border-b border-borderGray">
+              <span className="text-subtitle font-pmedium">
+                Agreement Details
+              </span>
+            </div>
+            <div className="p-4 flex flex-col gap-2">
+              {displayField("Annual Increment", _defaultValues.annualIncrement)}
+              {displayField(
+                "Per Desk Meeting Credits",
+                _defaultValues.perDeskMeetingCredits
+              )}
+              {displayField(
+                "Total Meeting Credits",
+                _defaultValues.totalMeetingCredits
+              )}
+              {displayField("Start Date", _defaultValues.startDate, true)}
+              {displayField("End Date", _defaultValues.endDate, true)}
+              {displayField("Lock-in Period", _defaultValues.lockinPeriod)}
+              {displayField("Rent Date", _defaultValues.rentDate, true)}
+              {displayField(
+                "Next Increment",
+                _defaultValues.nextIncrement,
+                true
+              )}
+            </div>
+          </div>
+
+          {/* POC Details */}
+          <div>
+            <div className="py-4 border-b border-borderGray">
+              <span className="text-subtitle font-pmedium">POC Details</span>
+            </div>
+            <div className="p-4 flex flex-col gap-2">
+              {displayField("Local POC Name", _defaultValues.localPocName)}
+              {displayField("Local POC Email", _defaultValues.localPocEmail)}
+              {displayField("Local POC Phone", _defaultValues.localPocPhone)}
+              {displayField("HO POC Name", _defaultValues.hoPocName)}
+              {displayField("HO POC Email", _defaultValues.hoPocEmail)}
+              {displayField("HO POC Phone", _defaultValues.hoPocPhone)}
+            </div>
+          </div>
         </div>
       </div>
     </div>
