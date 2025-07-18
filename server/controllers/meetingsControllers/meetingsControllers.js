@@ -621,7 +621,6 @@ const getMyMeetings = async (req, res, next) => {
             meeting.bookedBy.firstName,
             meeting.bookedBy.middleName,
             meeting.bookedBy.lastName,
-            meeting.bookedBy.departments,
           ]
             .filter(Boolean)
             .join(" ")
