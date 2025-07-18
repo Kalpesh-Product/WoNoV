@@ -9,12 +9,13 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
 
   const [openModal, setOpenModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedTask, setSelectedTask] = useState([]);
 
   const { data: taskList = [], isLoading } = useQuery({
     queryKey: ["assigned-tasks"],
@@ -25,18 +26,35 @@ const AssignedTaskReports = () => {
   });
 
   const handleViewDetails = (params) => {
-    setSelectedTask(params.data);
+    setSelectedTask(params);
     setOpenModal(true);
   };
+  console.log("selectedTask : ", selectedTask);
 
   const myTaskReportsColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "taskName", headerName: "Task", width: 250 },
+    {
+      field: "taskName",
+      headerName: "Task",
+      width: 250,
+      cellRenderer: (params) => (
+        <span
+          className="text-primary underline cursor-pointer"
+          onClick={() => handleViewDetails(params.data)}
+        >
+          {params.value}
+        </span>
+      ),
+    },
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
     { field: "completedDate", headerName: "Completed Date" },
-    { field: "completedTime", headerName: "Completed Time" },
+    {
+      field: "completedTime",
+      headerName: "Completed Time",
+      cellRenderer: (params) => humanTime(params.value),
+    },
     { field: "department", headerName: "Department" },
     // { field: "endDate", headerName: "End Date" },
     // {
@@ -53,29 +71,15 @@ const AssignedTaskReports = () => {
     //     </div>
     //   ),
     // },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 100,
-      cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
-          <span
-            className="text-subtitle cursor-pointer"
-            onClick={() => handleViewDetails(params.data)}
-          >
-            <MdOutlineRemoveRedEye />
-          </span>
-        </div>
-      ),
-    },
   ];
 
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
-        <AgTable
+        <YearWiseTable
           exportData
           search={true}
+          dateColumn={"assignedDate"}
           tableTitle={"Assigned Tasks Reports"}
           data={
             isLoading
@@ -84,10 +88,10 @@ const AssignedTaskReports = () => {
                   srNo: index + 1,
                   ...task,
                   taskName: task.taskName,
-                  assignedDate: humanDate(task.assignedDate),
-                  dueDate: humanDate(task.dueDate),
-                  completedDate: humanDate(task.completedDate),
-                  completedTime: humanTime(task.completedDate),
+                  assignedDate: task.assignedDate,
+                  dueDate: task.dueDate,
+                  completedDate: task.completedDate,
+                  completedTime: task.completedDate,
                   assignedBy: `${task.assignedBy.firstName} ${task.assignedBy.lastName}`,
                   department: task.department?.name,
                   description: task.description,
@@ -103,7 +107,7 @@ const AssignedTaskReports = () => {
         onClose={() => setOpenModal(false)}
         title={"Task Details"}
       >
-        {selectedTask ? (
+        {selectedTask && (
           <div className="grid grid-cols-1 gap-4">
             <DetalisFormatted
               title="Task Name"
@@ -119,16 +123,19 @@ const AssignedTaskReports = () => {
             />
             <DetalisFormatted
               title="Assigned Date"
-              detail={selectedTask.assignedDate}
+              detail={humanDate(selectedTask.assignedDate)}
             />
-            <DetalisFormatted title="Due Date" detail={selectedTask.dueDate} />
+            <DetalisFormatted
+              title="Due Date"
+              detail={humanDate(selectedTask.dueDate)}
+            />
             <DetalisFormatted
               title="Completed Date"
-              detail={selectedTask.completedDate}
+              detail={humanDate(selectedTask.completedDate)}
             />
             <DetalisFormatted
               title="Completed Time"
-              detail={selectedTask.completedTime}
+              detail={humanTime(selectedTask.completedTime)}
             />
             <DetalisFormatted
               title="Department"
@@ -141,8 +148,6 @@ const AssignedTaskReports = () => {
             />
             <DetalisFormatted title="Remarks" detail={selectedTask.remarks} />
           </div>
-        ) : (
-          <CircularProgress />
         )}
       </MuiModal>
     </div>

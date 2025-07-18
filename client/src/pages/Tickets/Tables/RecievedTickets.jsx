@@ -14,6 +14,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
+import StatusChip from "../../../components/StatusChip";
 
 const RecievedTickets = ({ title, departmentId }) => {
   const [open, setOpen] = useState(false);
@@ -115,7 +116,9 @@ const RecievedTickets = ({ title, departmentId }) => {
 
   const fetchSubOrdinates = async () => {
     try {
-      const response = await axios.get(`/api/users/assignees?deptId=${departmentId}`);
+      const response = await axios.get(
+        `/api/users/assignees?deptId=${departmentId}`
+      );
 
       return response.data;
     } catch (error) {
@@ -169,6 +172,7 @@ const RecievedTickets = ({ title, departmentId }) => {
       image: ticket.image?.url,
     }));
   };
+  
 
   const handleRejectSubmit = () => {
     if (!rejectionReason.trim()) {
@@ -194,6 +198,7 @@ const RecievedTickets = ({ title, departmentId }) => {
   // Example usage
   const rows = isLoading ? [] : transformTicketsData(tickets);
 
+
   const handleOpenAssignModal = (ticketId) => {
     setSelectedTicketId(ticketId);
     setOpen(true);
@@ -214,27 +219,9 @@ const RecievedTickets = ({ title, departmentId }) => {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
-        const statusColorMap = {
-          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          "in-progress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
-          completed: { backgroundColor: "#D3D3D3", color: "#696969" }, // Light gray bg, dark gray font
-        };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
         return (
           <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
+            <StatusChip status={params.value} />
           </>
         );
       },
@@ -242,7 +229,7 @@ const RecievedTickets = ({ title, departmentId }) => {
     {
       field: "actions",
       headerName: "Actions",
-            pinned : 'right',
+      pinned: "right",
       cellRenderer: (params) => (
         <div className="flex items-center gap-2">
           <div

@@ -1,46 +1,79 @@
 import React from "react";
 import PrimaryButton from "../components/PrimaryButton";
 import SecondaryButton from "../components/SecondaryButton";
+import useAuth from "../hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../hooks/useAxiosPrivate";
 
 const Notifications = () => {
-  const notifications = [
-    {
-      id: 1,
-      title: "Meeting on frontend development",
-      description: "UI / UX mockup reference",
-      date: "2025-01-10T09:00:00", // ISO string format from the backend
-      type: "meeting",
-      actionTaken: false,
-    },
-    {
-      id: 2,
-      title: "New Ticket Created",
-      description: "You have a new ticket assigned to you",
-      date: "2025-01-09T15:00:00", // Yesterday
-      type: "ticket",
-      actionTaken: false,
-    },
-    {
-      id: 3,
-      title: "Project Review Meeting Scheduled",
-      description:
-        "A meeting has been scheduled to review the project progress",
-      date: "2025-01-08T10:30:00", // Older
-      type: "meeting",
-      actionTaken: false,
-    },
-    {
-      id: 4,
-      title: "Project Review Meeting Scheduled",
-      description:
-        "A meeting has been scheduled to review the project progress",
-      date: "2025-01-09T15:30:00", 
-      type: "meeting",
-      actionTaken: false,
-    },
-  ];
+  // const notifications = [
+  //   {
+  //     id: 1,
+  //     title: "Meeting on frontend development",
+  //     description: "UI / UX mockup reference",
+  //     date: "2025-01-10T09:00:00", // ISO string format from the backend
+  //     type: "meeting",
+  //     actionTaken: false,
+  //   },
+  //   {
+  //     id: 2,
+  //     title: "New Ticket Created",
+  //     description: "You have a new ticket assigned to you",
+  //     date: "2025-01-09T15:00:00", // Yesterday
+  //     type: "ticket",
+  //     actionTaken: false,
+  //   },
+  //   {
+  //     id: 3,
+  //     title: "Project Review Meeting Scheduled",
+  //     description:
+  //       "A meeting has been scheduled to review the project progress",
+  //     date: "2025-01-08T10:30:00", // Older
+  //     type: "meeting",
+  //     actionTaken: false,
+  //   },
+  //   {
+  //     id: 4,
+  //     title: "Project Review Meeting Scheduled",
+  //     description:
+  //       "A meeting has been scheduled to review the project progress",
+  //     date: "2025-01-09T15:30:00",
+  //     type: "meeting",
+  //     actionTaken: false,
+  //   },
+  // ];
 
   // Helper function to determine the section (Today, Yesterday, Older)
+  const { auth } = useAuth();
+  const axios = useAxiosPrivate();
+
+  const {
+    data: notifications = [],
+    isLoading: isNotificationsLoading,
+    refetch: refetchNotifications,
+  } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await axios.get("/api/notifications/get-my-notifications");
+
+      const filtered = res.data.filter(
+        (n) => n.initiatorData?._id !== auth?.user?._id
+      );
+
+      return filtered;
+    },
+    refetchInterval: 15000,
+  });
+
+  const unreadCount = notifications.reduce((total, notification) => {
+    const count = notification.users.filter(
+      (user) =>
+        user.userActions?.hasRead === false &&
+        user.userActions?.whichUser?._id === auth.user._id
+    ).length;
+    return total + count;
+  }, 0);
+
   const getSection = (date) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -53,25 +86,27 @@ const Notifications = () => {
 
   // Categorize notifications into sections
   const todayNotifications = notifications.filter(
-    (notification) => getSection(new Date(notification.date)) === "Today"
+    (notification) => getSection(new Date(notification.createdAt)) === "Today"
   );
   const yesterdayNotifications = notifications.filter(
-    (notification) => getSection(new Date(notification.date)) === "Yesterday"
+    (notification) =>
+      getSection(new Date(notification.createdAt)) === "Yesterday"
   );
   const olderNotifications = notifications.filter(
-    (notification) => getSection(new Date(notification.date)) === "Older"
+    (notification) => getSection(new Date(notification.createdAt)) === "Older"
   );
 
   const calculateTimeDue = (date) => {
     const now = new Date();
     const diffInMilliseconds = now - new Date(date);
     const hours = Math.floor(diffInMilliseconds / (1000 * 60 * 60));
-    const minutes = Math.floor((diffInMilliseconds % (1000 * 60 * 60)) / (1000 * 60));
-  
+    const minutes = Math.floor(
+      (diffInMilliseconds % (1000 * 60 * 60)) / (1000 * 60)
+    );
+
     if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
     return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
   };
-  
 
   // Render notifications by section
   const renderNotifications = (sectionName, sectionNotifications) => (
@@ -80,42 +115,40 @@ const Notifications = () => {
         <>
           <div className="text-xl font-semibold pb-4">{sectionName}</div>
           {sectionNotifications.map((notification) => (
-            <div key={notification.id} className="mb-6">
+            <div key={notification._id} className="mb-4">
               {/* Main Section */}
-              <div className="border-2 border-gray-300 p-4 rounded-md flex items-start gap-4">
+              <div className="border-2 border-gray-300 p-4 rounded-md flex w-full justify-between items-center">
                 {/* Message Section */}
                 <div className="flex flex-col w-full gap-4">
                   <div className="flex flex-col gap-2">
-                    <span className="text-subtitle">
-                      {notification.title}
-                    </span>
+                    <span className="text-subtitle">{notification.module}</span>
                     <span className="text-content">
-                      {notification.description}
+                      {notification.message}
                     </span>
                   </div>
-                  <div className="flex gap-4">
+                  {/* <div className="flex gap-4">
                     <PrimaryButton title={"Accept"} />
                     {notification.type !== "ticket" && (
                       <SecondaryButton title={"Decline"} />
                     )}
-                  </div>
+                  </div> */}
                 </div>
                 {/* Timing and type */}
-                <div className="flex flex-col items-end w-[15%] justify-end gap-4">
+                <div className="flex flex-col gap-2 justify-end items-end w-full">
                   {/* Timing Section */}
                   <div>
                     <span className="text-content text-gray-500">
-                      {getSection(new Date(notification.date)) === "Today"
-                        ? calculateTimeDue(notification.date)
-                        : getSection(new Date(notification.date))}
+                      {getSection(new Date(notification.createdAt)) === "Today"
+                        ? calculateTimeDue(notification.createdAt)
+                        : getSection(new Date(notification.createdAt))}
                     </span>
                   </div>
 
                   {/* Type Section */}
                   <div>
                     <span
-                      className={`text-content p-2 rounded-md ${
-                        notification.type === "meeting"
+                      className={`text-content py-2 px-4 rounded-md ${
+                        notification.module === "Meeting"
                           ? "bg-red-200 text-red-600"
                           : "bg-blue-200 text-blue-600"
                       }`}

@@ -31,6 +31,7 @@ import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { IoMdClose } from "react-icons/io";
+import StatusChip from "../../components/StatusChip";
 
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
@@ -248,7 +249,7 @@ const BookMeetings = () => {
     buildingName: location.buildingName,
   }));
 
-  const myMeetingsColumn = [
+ const myMeetingsColumn = [
     { field: "id", headerName: "Sr No", sort: "desc" },
     { field: "agenda", headerName: "Agenda", flex: 1 },
     { field: "date", headerName: "Date" },
@@ -260,41 +261,41 @@ const BookMeetings = () => {
     {
       field: "actions",
       headerName: "Actions",
-      pinned: "right",
       cellRenderer: (params) => {
         const rawReview = params.data?.reviews;
+
         const meetingReviews = Array.isArray(rawReview)
           ? rawReview
           : rawReview
           ? [rawReview]
           : [];
-
-        const isBookedByCurrentUser =
-          `${auth.user?.firstName} ${auth.user?.lastName}` ===
-          params.data.bookedBy;
-
-        const menuItems = [
-          {
-            label: "View",
-            onClick: () => handleViewDetails(params.data),
-          },
-        ];
-
-        // Allow editing only for meetings booked by the current user
-        if (isBookedByCurrentUser) {
-          menuItems.push({
-            label: "Update",
-            onClick: () => handleMeetingDetails(params.data),
-          });
-
-          menuItems.push({
-            label: "Review",
-            onClick: () => handleAddReview(params.data),
-          });
-        }
+        const userName = `${auth.user?.firstName} ${auth.user?.lastName}`;
 
         return (
-          <ThreeDotMenu rowId={params.data.meetingId} menuItems={menuItems} />
+          <div className="p-2 flex items-center gap-2">
+            {meetingReviews.length > 0 ? (
+              "Review added"
+            ) : (
+              <>
+                {userName === params.data.bookedBy ? (
+                  <span
+                    onClick={() => handleAddReview(params.data)}
+                    className="cursor-pointer"
+                  >
+                    <MdOutlineRateReview size={20} />
+                  </span>
+                ) : (
+                  ""
+                )}
+              </>
+            )}
+            <span
+              className="text-subtitle cursor-pointer"
+              onClick={() => handleViewDetails(params.data)}
+            >
+              <MdOutlineRemoveRedEye />
+            </span>
+          </div>
         );
       },
     },
@@ -438,6 +439,7 @@ const BookMeetings = () => {
               dateColumn={"date"}
               data={[
                 ...myMeetings.map((meeting, index) => ({
+                  ...meeting,
                   id: index + 1,
                   meetingId: meeting._id,
                   bookedBy: meeting.bookedBy,
@@ -472,85 +474,84 @@ const BookMeetings = () => {
         >
           <form
             onSubmit={handleEditSubmit(onEditSubmit)}
-            className="flex flex-col gap-4"
+            className="grid grid-cols-2 gap-4"
           >
-         <div className="flex gap-4">
-             <Controller
-              name="startDate"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  {...field}
-                  label={"Select Start Date"}
-                  format="DD-MM-YYYY"
-                  slotProps={{ textField: { size: "small" } }}
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) => {
-                    field.onChange(date ? date.toISOString() : null);
-                  }}
-                />
-              )}
-            />
-            <Controller
-              name="endDate"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  {...field}
-                  label={"Select End Date"}
-                  format="DD-MM-YYYY"
-                  slotProps={{ textField: { size: "small" } }}
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) => {
-                    field.onChange(date ? date.toISOString() : null);
-                  }}
-                />
-              )}
-            />
-         </div>
-          <div>
+         
               <Controller
-              name="startTime"
-              control={editControl}
-              rules={{
-                required: "Start time is required",
-              }}
-              render={({ field }) => (
-                <TimePicker
-                  {...field}
-                  label="Select Start Time"
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      error: !!editingErrors.startTime,
-                      helperText: editingErrors.startTime?.message,
-                    },
-                  }}
-                />
-              )}
-            />
+                name="startDate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    {...field}
+                    label={"Select Start Date"}
+                    format="DD-MM-YYYY"
+                    slotProps={{ textField: { size: "small" } }}
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) => {
+                      field.onChange(date ? date.toISOString() : null);
+                    }}
+                  />
+                )}
+              />
+              <Controller
+                name="endDate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    {...field}
+                    label={"Select End Date"}
+                    format="DD-MM-YYYY"
+                    slotProps={{ textField: { size: "small" } }}
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) => {
+                      field.onChange(date ? date.toISOString() : null);
+                    }}
+                  />
+                )}
+              />
 
-            <Controller
-              name="endTime"
-              control={editControl}
-              rules={{
-                required: "End time is required",
-              }}
-              render={({ field }) => (
-                <TimePicker
-                  {...field}
-                  label="Select End Time"
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      error: !!editingErrors.endTime,
-                      helperText: editingErrors?.endTime?.message,
-                    },
-                  }}
-                />
-              )}
-            />
-          </div>
+              <Controller
+                name="startTime"
+                control={editControl}
+                rules={{
+                  required: "Start time is required",
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    label="Select Start Time"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!editingErrors.startTime,
+                        helperText: editingErrors.startTime?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
+
+              <Controller
+                name="endTime"
+                control={editControl}
+                rules={{
+                  required: "End time is required",
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    label="Select End Time"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!editingErrors.endTime,
+                        helperText: editingErrors?.endTime?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
+    
 
             <Controller
               name="participants"
@@ -600,6 +601,7 @@ const BookMeetings = () => {
               title="Update Meeting"
               type="submit"
               isLoading={updateMutation.isLoading}
+              externalStyles={"col-span-2"}
             />
           </form>
         </MuiModal>

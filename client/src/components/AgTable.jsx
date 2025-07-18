@@ -14,7 +14,7 @@ import PrimaryButton from "./PrimaryButton";
 import SecondaryButton from "./SecondaryButton";
 import { MdFilterAlt, MdFilterAltOff } from "react-icons/md";
 import { IoIosSearch } from "react-icons/io";
-
+import { IoFilter } from "react-icons/io5";
 const AgTableComponent = React.memo(
   ({
     data,
@@ -28,7 +28,7 @@ const AgTableComponent = React.memo(
     tableTitle,
     handleClick,
     buttonTitle,
-    tableHeight,
+    tableHeight = 400,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
     checkAll,
@@ -38,7 +38,7 @@ const AgTableComponent = React.memo(
     batchButton,
     hideTitle,
     tableRef,
-    onSelectionChange
+    onSelectionChange,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -126,13 +126,23 @@ const AgTableComponent = React.memo(
       setFilterDrawerOpen(false);
     };
 
-const handleSelectionChanged = useCallback((params) => {
-  const rows = params.api.getSelectedRows();
-  setSelectedRows(rows);
-  if (typeof onSelectionChange === "function") {
-    onSelectionChange(rows);
-  }
-}, [onSelectionChange]);
+    const clearFilters = () => {
+      setFilters({});
+      setAppliedFilters({});
+      setSearchQuery("");
+      setFilteredData(data);
+    };
+
+    const handleSelectionChanged = useCallback(
+      (params) => {
+        const rows = params.api.getSelectedRows();
+        setSelectedRows(rows);
+        if (typeof onSelectionChange === "function") {
+          onSelectionChange(rows);
+        }
+      },
+      [onSelectionChange]
+    );
 
     const handleActionClick = () => {
       handleBatchAction(selectedRows);
@@ -160,7 +170,8 @@ const handleSelectionChanged = useCallback((params) => {
               tableTitle
                 ? "justify-between w-full items-center"
                 : "justify-end w-full"
-            } `}>
+            } `}
+          >
             {!hideTitle && (
               <div className="flex items-center justify-between pb-4">
                 <span className="font-pmedium text-title text-primary uppercase">
@@ -213,7 +224,8 @@ const handleSelectionChanged = useCallback((params) => {
         <div
           className={`flex ${
             search ? "justify-between" : "justify-end"
-          }  items-center py-2`}>
+          }  items-center py-2`}
+        >
           {search ? (
             <TextField
               label="Search"
@@ -237,45 +249,15 @@ const handleSelectionChanged = useCallback((params) => {
             ) : (
               <div className="flex items-center gap-4">
                 <div className="flex justify-end items-center w-full">
-                  <PrimaryButton
-                    title={<MdFilterAlt />}
-                    handleSubmit={() => setFilterDrawerOpen(true)}
-                    externalStyles={"rounded-r-none"}
-                  />
-                  <SecondaryButton
-                    title={<MdFilterAltOff />}
-                    externalStyles={"rounded-l-none"}
-                    handleSubmit={() => {
-                      setFilters({});
-                      setAppliedFilters({});
-                      setSearchQuery("");
-                      setFilteredData(data);
-                    }}
-                  />
+                  <div
+                    className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
+                    onClick={() => setFilterDrawerOpen(true)}
+                  >
+                    <IoFilter />
+                  </div>
                 </div>
               </div>
             )}
-            {/* <div className="flex items-center gap-4">
-              {exportData ? (
-                <PrimaryButton
-                  title={"Export"}
-                  handleSubmit={() => {
-                    if (gridRef.current) {
-                      gridRef.current.api.exportDataAsCsv({
-                        fileName: `${tableTitle || "table-data"}.csv`,
-                      });
-                    }
-                  }}
-                />
-              ) : (
-                ""
-              )}
-              {buttonTitle ? (
-                <PrimaryButton title={buttonTitle} handleSubmit={handleClick} />
-              ) : (
-                ""
-              )}
-            </div> */}
           </div>
         </div>
         <div className="flex gap-2">
@@ -293,7 +275,8 @@ const handleSelectionChanged = useCallback((params) => {
         <MuiAside
           open={isFilterDrawerOpen}
           onClose={() => setFilterDrawerOpen(false)}
-          title="Advanced Filter">
+          title="Advanced Filter"
+        >
           {columns.map((column) =>
             dropdownColumns.includes(column.field) ? (
               <TextField
@@ -307,7 +290,8 @@ const handleSelectionChanged = useCallback((params) => {
                 value={filters[column.field] || ""}
                 onChange={(e) =>
                   handleFilterChange(column.field, e.target.value)
-                }>
+                }
+              >
                 <MenuItem value="">All</MenuItem>
                 {columnOptions[column.field]?.map((option) => (
                   <MenuItem key={option} value={option}>
@@ -329,15 +313,20 @@ const handleSelectionChanged = useCallback((params) => {
               />
             )
           )}
-          <div className="flex items-center justify-center py-4">
+          <div className="flex items-center gap-4 justify-center py-4">
             <PrimaryButton title="Apply Filters" handleSubmit={applyFilters} />
+            <SecondaryButton
+              title="Clear Filters"
+              handleSubmit={clearFilters}
+            />
           </div>
         </MuiAside>
 
         <div
           ref={tableRef}
           className="ag-theme-quartz border-none w-full font-pregular"
-          style={{ height: tableHeight || 500 }}>
+          style={{ height: 440 }}
+        >
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}

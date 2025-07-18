@@ -8,6 +8,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
+import StatusChip from "../../../components/StatusChip";
 
 const ClosedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -61,32 +62,12 @@ const ClosedTickets = ({ title, departmentId }) => {
     { field: "srNo", headerName: "Sr No" },
     { field: "raisedBy", headerName: "Raised By" },
     { field: "fromDepartment", headerName: "From Department" },
-    { field: "ticketTitle", headerName: "Ticket Title", width : 250 },
+    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
-        const statusColorMap = {
-          pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
-          "in-progress": { backgroundColor: "#ADD8E6", color: "#00008B" },
-          resolved: { backgroundColor: "#90EE90", color: "#006400" },
-          open: { backgroundColor: "#E6E6FA", color: "#4B0082" },
-          Closed: { backgroundColor: "#cce7fc", color: "#259bf5" },
-        };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <Chip
-            label={params.value}
-            style={{
-              backgroundColor,
-              color,
-            }}
-          />
-        );
+        return <StatusChip status={params.value} />;
       },
     },
     { field: "closedAt", headerName: "Closed At" },

@@ -23,6 +23,7 @@ import humanTime from "../../../utils/humanTime";
 import humanDate from "./../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
+import StatusChip from "../../../components/StatusChip";
 
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -195,16 +196,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
-        const statusColorMap = {
-          "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400" },
-          Closed: { backgroundColor: "#90EE90", color: "#02730a" },
-        };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return <Chip label={params.value} style={{ backgroundColor, color }} />;
+        return <StatusChip status={params.value} />;
       },
     },
     { field: "acceptedBy", headerName: "Accepted By" },
@@ -245,6 +237,39 @@ const AcceptedTickets = ({ title, departmentId }) => {
       },
     },
   ];
+  console.log("rows : ", [
+              ...acceptedTickets.map((ticket, index) => ({
+                ...ticket,
+                srNo: index + 1,
+                id: ticket._id,
+                raisedUser: `${ticket.raisedBy?.firstName || ""} ${
+                  ticket.raisedBy?.lastName || ""
+                }`,
+
+                description: ticket.description,
+                raisedByDepartment:
+                  ticket.raisedBy?.departments?.map((dept) => dept.name) ||
+                  "N/A",
+                raisedToDepartment: ticket.raisedToDepartment?.name,
+                ticketTitle: ticket?.ticket || "No Title",
+                status: ticket.status || "Pending",
+                acceptedBy: ticket?.acceptedBy
+                  ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                  : `${
+                      ticket.assignees.map(
+                        (item) => `${item.firstName} ${item.lastName}`
+                      )[0]
+                    }`,
+                assignees: `${
+                  ticket.assignees.map((item) => item.firstName)[0]
+                }`,
+                acceptedAt: ticket.acceptedAt
+                  ? humanTime(ticket.acceptedAt)
+                  : "-",
+                priority: ticket.priority,
+                image: ticket.image ? ticket.image.url : null,
+              })),
+            ])
 
   return (
     <div className="p-4 border-default border-borderGray rounded-md">

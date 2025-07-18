@@ -65,6 +65,75 @@ const ItDashboard = () => {
     ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
     : 0;
 
+  //------------------------Graph round functions-------------------//
+  const expenseSeries = useMemo(() => {
+    // Initialize monthly buckets
+    const months = Array.from({ length: 12 }, (_, index) =>
+      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+    );
+
+    const fyData = {
+      "FY 2024-25": Array(12).fill(0),
+      "FY 2025-26": Array(12).fill(0),
+    };
+
+    hrFinance.forEach((item) => {
+      const date = dayjs(item.dueDate);
+      const year = date.year();
+      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+
+      if (year === 2024 && monthIndex >= 3) {
+        // Apr 2024 to Dec 2024 (month 3 to 11)
+        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+      } else if (year === 2025) {
+        if (monthIndex <= 2) {
+          // Jan to Mar 2025 (months 0–2)
+          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+        } else if (monthIndex >= 3) {
+          // Apr 2025 to Dec 2025 (months 3–11)
+          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+        }
+      } else if (year === 2026 && monthIndex <= 2) {
+        // Jan to Mar 2026
+        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+      }
+    });
+
+    return [
+      {
+        name: "total",
+        group: "FY 2024-25",
+        data: fyData["FY 2024-25"],
+      },
+      {
+        name: "total",
+        group: "FY 2025-26",
+        data: fyData["FY 2025-26"],
+      },
+    ];
+  }, [hrFinance]);
+
+  const maxExpenseValue = Math.max(
+    ...expenseSeries.flatMap((series) => series.data)
+  );
+  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+  //------------------------Graph round functions-------------------//
+  //----------------------KPA Data-----------------------//
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(
+        `api/performance/get-tasks?dept=${department?._id}&type=KPA`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
+    queryKey: ["fetchedMonthlyKPA"],
+    queryFn: fetchDepartments,
+  });
+  //----------------------KPA Data-----------------------//
   //----------------------------Tasks Data-------------------------------//
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasks"],
@@ -229,7 +298,9 @@ const ItDashboard = () => {
     },
 
     yaxis: {
-      max: 600000,
+      min: 0,
+      max: roundedMax,
+      tickAmount : 4,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
         formatter: (val) => `${val / 100000}`,
@@ -717,7 +788,11 @@ const ItDashboard = () => {
           data={`INR ${inrFormat(averageMonthlyExpense)}`}
           description={"Monthly Expense"}
         />,
-        <DataCard data={0} title={"Average"} description={"Yearly Expense"} />,
+        <DataCard
+          data={departmentKra.length || 0}
+          title={"Total"}
+          description={"Monthly KPA"}
+        />,
       ],
     },
     {

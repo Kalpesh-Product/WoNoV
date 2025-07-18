@@ -134,7 +134,7 @@ const ComplianceData = () => {
           data={fileRows}
           tableTitle={`Compliance Documents`}
           buttonTitle="Add Document"
-          tableHeight={300}
+          // tableHeight={300}
           hideFilter
           search={fileRows.length >= 10}
           loading={isLoading}

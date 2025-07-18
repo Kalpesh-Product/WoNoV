@@ -416,14 +416,31 @@ const MeetingFormLayout = () => {
               <Controller
                 name="endTime"
                 control={control}
-                render={({ field }) => (
+                rules={{
+                  validate: (value) => {
+                    if (!value) return "End time is required";
+
+                    const start = new Date(startTime);
+                    const end = new Date(value);
+
+                    if (end <= start) {
+                      return "End time must be after start time";
+                    }
+
+                    return true;
+                  },
+                }}
+                render={({ field, fieldState }) => (
                   <TimePicker
                     {...field}
-                    slotProps={{ textField: { size: "small" } }}
-                    label={"Select an End Time"}
-                    viewRenderers={(params) => (
-                      <TextField {...params} fullWidth size="small" />
-                    )}
+                    label="Select an End Time"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!fieldState.error,
+                        helperText: fieldState.error?.message,
+                      },
+                    }}
                   />
                 )}
               />

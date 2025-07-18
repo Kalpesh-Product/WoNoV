@@ -3,8 +3,8 @@ import TabLayout from "../../../../components/Tabs/TabLayout"; // Adjust the pat
 const HrFinance = () => {
   const tabs = [
     { label: "Budget", path: "budget" },
-    { label: "Voucher", path: "voucher" },
     { label: "Payment Schedule", path: "payment-schedule" },
+    { label: "Voucher", path: "voucher" },
     { label: "Payroll", path: "payroll" },
   ];
 

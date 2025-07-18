@@ -825,7 +825,7 @@ const ExternalMeetingCLients = () => {
             />
             <DetalisFormatted
               title="Department"
-              detail={selectedMeeting.department || "Top Management"}
+              detail={selectedMeeting.department?.map((item)=>item.name) || "Top Management"}
             />
 
             <br />

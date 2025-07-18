@@ -20,6 +20,8 @@ const MainLayout = () => {
   const [showFooter, setShowFooter] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dummyRef = useRef(null);
+  const notificationAudioRef = useRef(new Audio("/audio/notification.mp3"));
+  const prevUnreadCountRef = useRef(0);
   const axios = useAxiosPrivate();
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   const {
@@ -37,23 +39,28 @@ const MainLayout = () => {
 
       return filtered;
     },
-    // refetchInterval: 15000,
+    refetchInterval: 15000,
   });
 
+  const unreadCount = notifications.reduce((total, notification) => {
+    const count = notification.users.filter(
+      (user) =>
+        user.userActions?.hasRead === false &&
+        user.userActions?.whichUser?._id === auth.user._id
+    ).length;
+    return total + count;
+  }, 0);
 
-  
-const unreadCount = notifications.reduce((total, notification) => {
-  const count = notification.users.filter(
-    user =>
-      user.userActions?.hasRead === false &&
-      user.userActions?.whichUser?._id === auth.user._id
-  ).length;
-  return total + count;
-}, 0);
-
-console.log("Unread count for logged-in user:", unreadCount);
-
-
+  // 🔊 Play sound when new unread notification is detected
+  // useEffect(() => {
+  //   const previous = prevUnreadCountRef.current;
+  //   if (unreadCount > previous) {
+  //     notificationAudioRef.current
+  //       .play()
+  //       .catch((e) => console.warn("Audio blocked or failed:", e));
+  //   }
+  //   prevUnreadCountRef.current = unreadCount;
+  // }, [unreadCount]);
 
   // Detect mobile view
   const isMobile = useMediaQuery("(max-width: 768px)");

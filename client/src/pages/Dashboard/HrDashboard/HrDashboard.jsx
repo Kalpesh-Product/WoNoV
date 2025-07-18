@@ -100,6 +100,59 @@ const HrDashboard = () => {
   );
 
   //--------------------HR BUDGET---------------------------//
+  //------------------------Graph round functions-------------------//
+  const expenseSeries = useMemo(() => {
+    // Initialize monthly buckets
+    const months = Array.from({ length: 12 }, (_, index) =>
+      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+    );
+
+    const fyData = {
+      "FY 2024-25": Array(12).fill(0),
+      "FY 2025-26": Array(12).fill(0),
+    };
+
+    hrFinance.forEach((item) => {
+      const date = dayjs(item.dueDate);
+      const year = date.year();
+      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+
+      if (year === 2024 && monthIndex >= 3) {
+        // Apr 2024 to Dec 2024 (month 3 to 11)
+        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+      } else if (year === 2025) {
+        if (monthIndex <= 2) {
+          // Jan to Mar 2025 (months 0–2)
+          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+        } else if (monthIndex >= 3) {
+          // Apr 2025 to Dec 2025 (months 3–11)
+          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+        }
+      } else if (year === 2026 && monthIndex <= 2) {
+        // Jan to Mar 2026
+        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+      }
+    });
+
+    return [
+      {
+        name: "total",
+        group: "FY 2024-25",
+        data: fyData["FY 2024-25"],
+      },
+      {
+        name: "total",
+        group: "FY 2025-26",
+        data: fyData["FY 2025-26"],
+      },
+    ];
+  }, [hrFinance]);
+
+  const maxExpenseValue = Math.max(
+    ...expenseSeries.flatMap((series) => series.data)
+  );
+  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+  //------------------------Graph round functions-------------------//
   //--------------------HR BUDGET---------------------------//
 
   //-------------------HR Expense graph start--------------------//
@@ -222,7 +275,9 @@ const HrDashboard = () => {
       },
     },
     yaxis: {
-      max: 5000000,
+      min: 0,
+      max: roundedMax,
+      tickAmount: 4,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
         formatter: (val) => `${Math.round(val / 100000)}`,
@@ -378,101 +433,99 @@ const HrDashboard = () => {
     "March",
   ];
 
-// Init counters
-const departmentMonthlyTotals = {};
-const departmentMonthlyAchieved = {};
-fyMonths.forEach((m) => {
-  departmentMonthlyTotals[m] = 0;
-  departmentMonthlyAchieved[m] = 0;
-});
-
-if (Array.isArray(tasksRawData)) {
-  tasksRawData.forEach((dept) => {
-    dept.tasks?.forEach((task) => {
-      const [day, month, year] = task.assignedDate.split("-").map(Number);
-      const dateObj = new Date(year, month - 1, day);
-      const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
-
-      departmentMonthlyTotals[fyMonth]++;
-      if (task.status === "Completed") {
-        departmentMonthlyAchieved[fyMonth]++;
-      }
-    });
+  // Init counters
+  const departmentMonthlyTotals = {};
+  const departmentMonthlyAchieved = {};
+  fyMonths.forEach((m) => {
+    departmentMonthlyTotals[m] = 0;
+    departmentMonthlyAchieved[m] = 0;
   });
-}
 
-const overallMonthlyTotals = {};
-const overallMonthlyAchieved = {};
-fyMonths.forEach((m) => {
-  overallMonthlyTotals[m] = 0;
-  overallMonthlyAchieved[m] = 0;
-});
+  if (Array.isArray(tasksRawData)) {
+    tasksRawData.forEach((dept) => {
+      dept.tasks?.forEach((task) => {
+        const [day, month, year] = task.assignedDate.split("-").map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
 
-if (Array.isArray(tasksOverallRedux)) {
-  tasksOverallRedux.forEach((dept) => {
-    dept.tasks?.forEach((task) => {
-      const [day, month, year] = task.assignedDate.split("-").map(Number);
-      const dateObj = new Date(year, month - 1, day);
-      const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
-
-      overallMonthlyTotals[fyMonth]++;
-      if (task.status === "Completed") {
-        overallMonthlyAchieved[fyMonth]++;
-      }
+        departmentMonthlyTotals[fyMonth]++;
+        if (task.status === "Completed") {
+          departmentMonthlyAchieved[fyMonth]++;
+        }
+      });
     });
-  });
-}
+  }
 
+  const overallMonthlyTotals = {};
+  const overallMonthlyAchieved = {};
+  fyMonths.forEach((m) => {
+    overallMonthlyTotals[m] = 0;
+    overallMonthlyAchieved[m] = 0;
+  });
+
+  if (Array.isArray(tasksOverallRedux)) {
+    tasksOverallRedux.forEach((dept) => {
+      dept.tasks?.forEach((task) => {
+        const [day, month, year] = task.assignedDate.split("-").map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
+
+        overallMonthlyTotals[fyMonth]++;
+        if (task.status === "Completed") {
+          overallMonthlyAchieved[fyMonth]++;
+        }
+      });
+    });
+  }
 
   // Final structure
-const tasksData = [
-  {
-    name: "Completed KPA",
-    group: "FY 2025-26",
-    data: fyMonths.map((month) => {
-      const total = departmentMonthlyTotals[month];
-      const achieved = departmentMonthlyAchieved[month];
-      const percent = total > 0 ? (achieved / total) * 100 : 0;
-      return { x: month, y: +percent.toFixed(1), raw: achieved };
-    }),
-  },
-  {
-    name: "Remaining KPA",
-    group: "FY 2025-26",
-    data: fyMonths.map((month) => {
-      const total = departmentMonthlyTotals[month];
-      const achieved = departmentMonthlyAchieved[month];
-      const remaining = total - achieved;
-      const percent = total > 0 ? (remaining / total) * 100 : 0;
-      return { x: month, y: +percent.toFixed(1), raw: remaining };
-    }),
-  },
-];
+  const tasksData = [
+    {
+      name: "Completed KPA",
+      group: "FY 2025-26",
+      data: fyMonths.map((month) => {
+        const total = departmentMonthlyTotals[month];
+        const achieved = departmentMonthlyAchieved[month];
+        const percent = total > 0 ? (achieved / total) * 100 : 0;
+        return { x: month, y: +percent.toFixed(1), raw: achieved };
+      }),
+    },
+    {
+      name: "Remaining KPA",
+      group: "FY 2025-26",
+      data: fyMonths.map((month) => {
+        const total = departmentMonthlyTotals[month];
+        const achieved = departmentMonthlyAchieved[month];
+        const remaining = total - achieved;
+        const percent = total > 0 ? (remaining / total) * 100 : 0;
+        return { x: month, y: +percent.toFixed(1), raw: remaining };
+      }),
+    },
+  ];
 
- const tasksGraphData = [
-  {
-    name: "Completed Tasks",
-    group: "FY 2025-26",
-    data: fyMonths.map((month) => {
-      const total = overallMonthlyTotals[month];
-      const achieved = overallMonthlyAchieved[month];
-      const percent = total > 0 ? (achieved / total) * 100 : 0;
-      return { x: month, y: +percent.toFixed(1), raw: achieved };
-    }),
-  },
-  {
-    name: "Remaining Tasks",
-    group: "FY 2025-26",
-    data: fyMonths.map((month) => {
-      const total = overallMonthlyTotals[month];
-      const achieved = overallMonthlyAchieved[month];
-      const remaining = total - achieved;
-      const percent = total > 0 ? (remaining / total) * 100 : 0;
-      return { x: month, y: +percent.toFixed(1), raw: remaining };
-    }),
-  },
-];
-
+  const tasksGraphData = [
+    {
+      name: "Completed Tasks",
+      group: "FY 2025-26",
+      data: fyMonths.map((month) => {
+        const total = overallMonthlyTotals[month];
+        const achieved = overallMonthlyAchieved[month];
+        const percent = total > 0 ? (achieved / total) * 100 : 0;
+        return { x: month, y: +percent.toFixed(1), raw: achieved };
+      }),
+    },
+    {
+      name: "Remaining Tasks",
+      group: "FY 2025-26",
+      data: fyMonths.map((month) => {
+        const total = overallMonthlyTotals[month];
+        const achieved = overallMonthlyAchieved[month];
+        const remaining = total - achieved;
+        const percent = total > 0 ? (remaining / total) * 100 : 0;
+        return { x: month, y: +percent.toFixed(1), raw: remaining };
+      }),
+    },
+  ];
 
   const tasksOptions = {
     chart: {
@@ -982,39 +1035,41 @@ const tasksData = [
 
   //----------------------------------Second pie-chart config data start--------------------------------
 
-const cityData = {};
+  const cityData = {};
 
-usersQuery.data?.forEach((emp) => {
-  let rawCity = emp?.homeAddress?.city || "Others";
-  let normalizedCity = rawCity.trim().toLowerCase();
-  let displayCity =
-    normalizedCity.charAt(0).toUpperCase() + normalizedCity.slice(1);
+  usersQuery.data?.forEach((emp) => {
+    let rawCity = emp?.homeAddress?.city || "Others";
+    let normalizedCity = rawCity.trim().toLowerCase();
+    let displayCity =
+      normalizedCity.charAt(0).toUpperCase() + normalizedCity.slice(1);
 
-  cityData[displayCity] = (cityData[displayCity] || 0) + 1;
-});
+    cityData[displayCity] = (cityData[displayCity] || 0) + 1;
+  });
 
-// 🔁 Group small-count cities into 'Others'
-const processedCityData = {};
-let othersCount = 0;
+  // 🔁 Group small-count cities into 'Others'
+  const processedCityData = {};
+  let othersCount = 0;
 
-Object.entries(cityData).forEach(([city, count]) => {
-  if (count <= 1) {
-    othersCount += count;
-  } else {
-    processedCityData[city] = count;
+  Object.entries(cityData).forEach(([city, count]) => {
+    if (count <= 1) {
+      othersCount += count;
+    } else {
+      processedCityData[city] = count;
+    }
+  });
+
+  if (othersCount > 0) {
+    processedCityData["Others"] =
+      (processedCityData["Others"] || 0) + othersCount;
   }
-});
 
-if (othersCount > 0) {
-  processedCityData["Others"] = (processedCityData["Others"] || 0) + othersCount;
-}
-
-// ✅ Convert to array for PieChartMui
-const pieChartData = Object.entries(processedCityData).map(([city, count]) => ({
-  label: city,
-  value: count,
-}));
-
+  // ✅ Convert to array for PieChartMui
+  const pieChartData = Object.entries(processedCityData).map(
+    ([city, count]) => ({
+      label: city,
+      value: count,
+    })
+  );
 
   const techGoaVisitorsOptions = {
     chart: {
@@ -1128,7 +1183,7 @@ const pieChartData = Object.entries(processedCityData).map(([city, count]) => ({
             onYearChange={setSelectedFiscalYear}
           />
         </Suspense>,
-                <Suspense
+        <Suspense
           fallback={
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {/* Simulating chart skeleton */}

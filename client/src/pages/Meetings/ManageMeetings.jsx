@@ -58,7 +58,10 @@ const ManageMeetings = () => {
     { name: "Desk is cleaned", checked: true },
     { name: "Chairs are clean and neatly arranged", checked: true },
     { name: "AC is cooling", checked: true },
-    { name: "TV, HDMI cable, LAN cable are available and active", checked: true },
+    {
+      name: "TV, HDMI cable, LAN cable are available and active",
+      checked: true,
+    },
     { name: "TV & AC remotes in place", checked: true },
     { name: "Air freshener sprayed", checked: true },
     { name: "Water bottle & glass placed", checked: true },
@@ -99,9 +102,9 @@ const ManageMeetings = () => {
       return response.data;
     },
   });
-  const filteredMeetings = meetings
-    .filter((item) => item.meetingStatus !== "Completed")
-  
+  const filteredMeetings = meetings.filter(
+    (item) => item.meetingStatus !== "Completed"
+  );
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
     ...meeting,
@@ -113,8 +116,11 @@ const ManageMeetings = () => {
     endTime: meeting.endTime,
     extendTime: meeting.extendTime,
     srNo: index + 1,
-    department: meeting.bookedBy && [...meeting.bookedBy.departments.map((dept)=> dept.name) ].join(",") 
+    department:
+      meeting.bookedBy &&
+      [...meeting.bookedBy.departments.map((dept) => dept.name)].join(","),
   }));
+
 
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
@@ -337,7 +343,7 @@ const ManageMeetings = () => {
     {
       field: "date",
       headerName: "Date",
-      cellRenderer: (params) => (params.value),
+      cellRenderer: (params) => params.value,
     },
     {
       field: "startTime",
@@ -614,16 +620,13 @@ const ManageMeetings = () => {
             <div className="font-bold">Basic Info</div>
             <DetalisFormatted
               title="Title"
-              detail={selectedMeeting?.title || "Title"}
+              detail={selectedMeeting?.subject || "Title"}
             />
             <DetalisFormatted
               title="Agenda"
               detail={selectedMeeting.agenda || "N/A"}
             />
-            <DetalisFormatted
-              title="Date"
-              detail={(selectedMeeting?.date)}
-            />
+            <DetalisFormatted title="Date" detail={selectedMeeting?.date} />
             <DetalisFormatted
               title="Time"
               detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
@@ -700,15 +703,17 @@ const ManageMeetings = () => {
             {selectedMeeting.participants?.length > 0 && (
               <DetalisFormatted
                 title="Participants"
-                detail={selectedMeeting.participants
-                  .map((p) => {
-                    return p.firstName
-                      ? `${p.firstName} ${p.lastName}`
-                      : p.employeeName
-                      ? p.employeeName
-                      :  "N/A";
-                  })
-                  .join(", ") || "N/A"}
+                detail={
+                  selectedMeeting.participants
+                    .map((p) => {
+                      return p.firstName
+                        ? `${p.firstName} ${p.lastName}`
+                        : p.employeeName
+                        ? p.employeeName
+                        : "N/A";
+                    })
+                    .join(", ") || "N/A"
+                }
               />
             )}
 
@@ -723,7 +728,10 @@ const ManageMeetings = () => {
             />
             <DetalisFormatted
               title="Department"
-              detail={selectedMeeting.department || "Unknown"}
+              detail={
+                selectedMeeting.department ||
+                "Unknown"
+              }
             />
             <DetalisFormatted
               title="Company"
