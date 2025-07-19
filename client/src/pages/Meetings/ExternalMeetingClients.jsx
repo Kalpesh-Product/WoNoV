@@ -249,34 +249,29 @@ const ExternalMeetingCLients = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       toast.success(data.message || "UPDATED");
-      setDetailsModal(false)
+      setDetailsModal(false);
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
-  useEffect(()=>{
-    if(selectedMeeting){
-      setEditValue("startTime", dayjs(new Date(selectedMeeting?.startTime)))
-      setEditValue("endTime", dayjs(new Date(selectedMeeting?.endTime)))
-    }
-  },[selectedMeeting])
 
   const { isPending: isPaymentPending, mutate: updatePayment } = useMutation({
     mutationKey: ["meeting-payment"],
     mutationFn: async (data) => {
-      try {
-        await axios.patch(
-          `/api/meetings/update-meeting/${data.meetingId}`,
-          data
-        );
-        setOpenPaymentModal(false);
-      } catch (error) {
-        toast.error(error.message);
-      }
+      const response = await axios.patch(
+        `/api/meetings/update-meeting/${data.meetingId}`,
+        data
+      );
+      return response.data;
     },
     onSuccess: () => {
       toast.success("payment details updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      setOpenPaymentModal(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
   //------------------------------API--------------------------------//
@@ -294,6 +289,15 @@ const ExternalMeetingCLients = () => {
       setChecklists(initialChecklists);
     }
   }, [meetings]);
+
+  useEffect(() => {
+    if (selectedMeeting) {
+      setEditValue("startTime", dayjs(new Date(selectedMeeting?.startTime)));
+      setEditValue("endTime", dayjs(new Date(selectedMeeting?.endTime)));
+    }
+  }, [selectedMeeting]);
+
+  console.log("selected meeting : ");
 
   //---------------------------------Event handlers----------------------------------------//
 
@@ -526,7 +530,8 @@ const ExternalMeetingCLients = () => {
       cellRenderer: (params) => {
         const status = params.data.meetingStatus;
         const housekeepingStatus = params.data.housekeepingStatus;
-
+        const isPaid = params.data.paymentStatus === true;
+        console.log("isPaid : ", isPaid);
         const isUpcoming = status === "Upcoming";
         const isCancelled = status === "Cancelled";
         const isOngoing = status === "Ongoing";
@@ -535,7 +540,7 @@ const ExternalMeetingCLients = () => {
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
 
         const menuItems = [
-          {
+          !isPaid && {
             label: "Update Payment Details",
             onClick: () => handleOpenPaymentModal(params.data),
           },
@@ -600,13 +605,6 @@ const ExternalMeetingCLients = () => {
             columns={columns}
           />
         ) : (
-          // <AgTable
-          //   key={transformedMeetings.length}
-          //   search
-          //   tableTitle={"Manage Meetings"}
-          //   data={transformedMeetings || []}
-          //   columns={columns}
-          // />
           <CircularProgress />
         )}
       </PageFrame>
