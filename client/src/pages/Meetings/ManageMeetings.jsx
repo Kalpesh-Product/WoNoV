@@ -14,6 +14,7 @@ import {
   AvatarGroup,
   Avatar,
   CircularProgress,
+  Autocomplete,
 } from "@mui/material";
 import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -31,19 +32,20 @@ import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import useAuth from "../../hooks/useAuth";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [checklists, setChecklists] = useState({});
-    const department = usePageDepartment()
-  console.log("department : ", department)
+  const department = usePageDepartment();
   const [newItem, setNewItem] = useState("");
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
+  const { auth } = useAuth();
 
   const statusColors = {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
@@ -72,6 +74,20 @@ const ManageMeetings = () => {
   ];
   // const meetings = useSelector((state) => state.meetings?.data);
 
+  //-----------------------API-----------------------------//
+  //-------------------------------API-------------------------------//
+  const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
+    queryKey: ["participants"],
+    queryFn: async () => {
+      const response = await axios.get("/api/users/fetch-users");
+      return response.data
+        .filter((user) => user._id !== auth.user?._id)
+        .filter((u) => u.isActive === true);
+    },
+  });
+  //-------------------------------API-------------------------------//
+  //-----------------------API-----------------------------//
+
   //-----------------------------Form--------------------------------//
   const {
     handleSubmit: cancelMeetingSubmit,
@@ -95,6 +111,63 @@ const ManageMeetings = () => {
     },
   });
 
+  const {
+    handleSubmit: handleEditMeetingSubmit,
+    control: editControl,
+    setValue: setEditValue,
+    formState: { errors: editErrors },
+  } = useForm({
+    defaultValues: {
+      startTime: null,
+      endTime: null,
+      internalParticipants: [],
+    },
+  });
+
+  const { mutate: updateMeeting, isPending: isUpdatePending } = useMutation({
+    mutationKey: ["update-meeting"],
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        "/api/meetings/update-meeting-details",
+        { ...data, meetingId: selectedMeetingId }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "UPDATED");
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update meeting");
+    },
+  });
+
+  const onEditSubmit = (data) => {
+    const payload = {
+      ...data,
+      internalParticipants: data.internalParticipants?.map((p) => p._id),
+    };
+    updateMeeting(payload);
+    console.log("Final payload:", payload);
+    // Send `payload` in your mutation or API call
+  };
+
+  useEffect(() => {
+    if (selectedMeeting) {
+      setEditValue("startTime", dayjs(new Date(selectedMeeting.startTime)));
+      setEditValue("endTime", dayjs(new Date(selectedMeeting.endTime)));
+
+      // Set participants
+      const formattedParticipants = selectedMeeting.participants?.map((p) => ({
+        _id: p._id,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        email: p.email,
+      }));
+      setEditValue("internalParticipants", formattedParticipants || []);
+    }
+  }, [selectedMeeting]);
+
   //-----------------------------Form--------------------------------//
 
   //------------------------------API--------------------------------//
@@ -115,6 +188,7 @@ const ManageMeetings = () => {
     bookedBy: meeting.bookedBy
       ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
       : meeting.clientBookedBy?.employeeName || "Unknown",
+    bookedById : meeting.bookedBy? meeting.bookedBy._id : "",
     startTime: meeting.startTime,
     endTime: meeting.endTime,
     extendTime: meeting.extendTime,
@@ -123,7 +197,6 @@ const ManageMeetings = () => {
       meeting.bookedBy &&
       [...meeting.bookedBy.departments.map((dept) => dept.name)].join(","),
   }));
-
 
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
@@ -248,6 +321,12 @@ const ManageMeetings = () => {
     setSelectedMeetingId(data._id);
     setDetailsModal(true);
   };
+  const handleEditMeeting = (mode, data) => {
+    setModalMode(mode);
+    setSelectedMeeting(data);
+    setSelectedMeetingId(data._id);
+    setDetailsModal(true);
+  };
 
   const handleAddChecklistItem = () => {
     if (!newItem.trim() || !selectedMeetingId) return;
@@ -336,6 +415,8 @@ const ManageMeetings = () => {
 
     housekeepingMutation.mutate(payload);
   };
+
+  console.log("selected : ", selectedMeeting, selectedMeetingId);
 
   //---------------------------------Event handlers----------------------------------------//
 
@@ -457,6 +538,10 @@ const ManageMeetings = () => {
           !isCancelled && {
             label: "Cancel",
             onClick: () => handleSelectedMeeting("cancel", params.data),
+          },
+          isUpcoming && {
+            label: "Edit",
+            onClick: () => handleEditMeeting("edit", params.data),
           },
         ].filter(Boolean);
 
@@ -613,6 +698,8 @@ const ManageMeetings = () => {
             ? "Cancel Meeting"
             : modalMode === "extend"
             ? "Extend Meeting"
+            : modalMode === "edit"
+            ? "Edit Meeting"
             : ""
         }
         open={detailsModal}
@@ -652,57 +739,8 @@ const ManageMeetings = () => {
               title="Company"
               detail={selectedMeeting.client || "N/A"}
             />
-            {/* fffff */}
-
-            {/* <DetalisFormatted
-              title={"Booked By"}
-              detail={
-                selectedMeeting?.bookedBy ||
-                selectedMeeting?.clientBookedBy ||
-                "N/A"
-              }
-            />
-            <DetalisFormatted
-              title={"Client Name"}
-              detail={selectedMeeting?.client}
-            />
-            <DetalisFormatted
-              title={"Date"}
-              detail={humanDate(selectedMeeting?.date)}
-            />
-            <DetalisFormatted
-              title={"Start Time"}
-              detail={humanTime(selectedMeeting?.startTime)}
-            />
-            <DetalisFormatted
-              title={"End Time"}
-              detail={humanTime(selectedMeeting?.endTime)}
-            />
-            {selectedMeeting.extendTime && (
-              <DetalisFormatted
-                title={"Extended Time"}
-                detail={humanTime(selectedMeeting?.extendTime)}
-              />
-            )} */}
             <br />
             <div className="font-bold">People Involved</div>
-            {/* <div className="col-span-1 ">
-              <DetalisFormatted
-                title={"Participants"}
-                detail={selectedMeeting?.participants.map((item) => (
-                  <span>{`${item.firstName || item.employeeName || "unknown"} ${
-                    item.lastName || ""
-                  }`}</span>
-                ))}
-              />
-            </div>
-            <DetalisFormatted
-              title={"House Keeping Status"}
-              detail={selectedMeeting?.housekeepingStatus}
-            /> */}
-
-            {/* dddd */}
-
             {selectedMeeting.participants?.length > 0 && (
               <DetalisFormatted
                 title="Participants"
@@ -731,25 +769,14 @@ const ManageMeetings = () => {
             />
             <DetalisFormatted
               title="Department"
-              detail={
-                selectedMeeting.department ||
-                "Unknown"
-              }
+              detail={selectedMeeting.department || "Unknown"}
             />
             <DetalisFormatted
               title="Company"
               detail={selectedMeeting.client || "Unknown"}
             />
-
             <br />
             <div className="font-bold">Venue Details</div>
-            {/* <DetalisFormatted
-              title={"Room Name"}
-              detail={selectedMeeting?.roomName}
-              upperCase
-            /> */}
-
-            {/* vvvv */}
             <DetalisFormatted title="Room" detail={selectedMeeting.roomName} />
             <DetalisFormatted
               title="Location"
@@ -763,11 +790,6 @@ const ManageMeetings = () => {
               title="Housekeeping Status"
               detail={selectedMeeting.housekeepingStatus}
             />
-
-            {/* <DetalisFormatted
-              title={"Department"}
-              detail={selectedMeeting?.department}
-            /> */}
           </div>
         )}
         {modalMode === "cancel" && (
@@ -878,6 +900,110 @@ const ManageMeetings = () => {
                 type={"submit"}
                 disabled={isExtendPending}
                 isLoading={isExtendPending}
+              />
+            </form>
+          </div>
+        )}
+        {modalMode === "edit" && (
+          <div>
+            <form
+              onSubmit={handleEditMeetingSubmit(onEditSubmit)}
+              className="grid grid-cols-2 gap-4"
+            >
+              <Controller
+                name="startTime"
+                control={editControl}
+                rules={{
+                  required: "Start time is required",
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!editErrors.startTime,
+                        helperText: editErrors.startTime?.message,
+                      },
+                    }}
+                    label={"Start Time"}
+                  />
+                )}
+              />
+              <Controller
+                name="endTime"
+                control={editControl}
+                rules={{
+                  required: "End time is required",
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!editErrors.endTime,
+                        helperText: editErrors.endTime?.message,
+                      },
+                    }}
+                    label={"End Time"}
+                  />
+                )}
+              />
+              <div className="col-span-2">
+                <Controller
+                  name="internalParticipants"
+                  control={editControl}
+                  render={({ field }) => {
+                    const selectedParticipantIds =
+                      field.value?.map((p) => p._id) || [];
+                    const bookedById = selectedMeeting?.bookedById;
+        
+
+                    const availableOptions = employees.filter(
+                      (emp) =>
+                        !selectedParticipantIds.includes(emp._id) &&
+                        emp._id !== bookedById
+                    );
+
+                    const mergedOptions = [...field.value, ...availableOptions];
+
+                    return (
+                      <Autocomplete
+                        {...field}
+                        multiple
+                        options={mergedOptions}
+                        getOptionLabel={(option) =>
+                          `${option.firstName} ${option.lastName}`
+                        }
+                        value={field.value || []}
+                        onChange={(_, newValue) => field.onChange(newValue)}
+                        isOptionEqualToValue={(option, value) =>
+                          option._id === value._id
+                        }
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Participants"
+                            size="small"
+                            error={!!editErrors.internalParticipants}
+                            helperText={
+                              editErrors.internalParticipants?.message
+                            }
+                          />
+                        )}
+                      />
+                    );
+                  }}
+                />
+              </div>
+
+              <PrimaryButton
+                title={"Update Meeting"}
+                type={"submit"}
+                externalStyles={"col-span-2"}
+                disabled={isUpdatePending}
+                isLoading={isUpdatePending}
               />
             </form>
           </div>
