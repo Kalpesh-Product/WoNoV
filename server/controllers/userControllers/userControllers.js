@@ -604,6 +604,7 @@ const bulkInsertUsers = async (req, res, next) => {
     const roleMap = new Map(roles.map((role) => [role.roleID, role._id]));
 
     const newUsers = [];
+    const newAgreements = [];
 
     const rowPromises = [];
 
@@ -642,7 +643,7 @@ const bulkInsertUsers = async (req, res, next) => {
                   10
                 );
 
-                let agreements = {
+                let agreementObj = {
                   name: row["Work Schedule Policy"] || "",
                   empId: row["Emp ID"],
                   url: row["Work Schedule Policy"] || "",
@@ -650,6 +651,8 @@ const bulkInsertUsers = async (req, res, next) => {
                   isActive: true,
                   isDeleted: false,
                 };
+
+                newAgreements.push(agreementObj);
 
                 const userObj = {
                   empId: row["Emp ID"],
@@ -764,7 +767,17 @@ const bulkInsertUsers = async (req, res, next) => {
       );
     }
 
+    if (newAgreements.length === 0) {
+      return res
+        .status(400)
+        .json({
+          message: "No valid data found in CSV while bulk inserting agreements",
+        });
+    }
+
     const uploadedUserData = await User.insertMany(newUsers);
+
+    // const transformedAgreements = uploadedUserData.
 
     return res.status(201).json({
       message: "Bulk data inserted successfully",
