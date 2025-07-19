@@ -366,7 +366,7 @@ const Header = ({
                                 <span>{n.message}</span>
                               </div>
                               <div className="col-span-1 flex justify-end items-start">
-                                {hasRead && (
+                                {!hasRead && (
                                   <button
                                     onClick={() => updateRead(n._id)}
                                     className="p-2 rounded-full bg-green-300 text-green-600"

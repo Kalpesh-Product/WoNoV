@@ -39,7 +39,10 @@ const ClosedTickets = ({ title, departmentId }) => {
           srNo: index + 1,
           id: ticket._id,
           raisedBy: ticket.raisedBy?.firstName || "Unknown",
-          fromDepartment: ticket.raisedToDepartment?.name || "N/A",
+
+          fromDepartment: ticket.raisedBy?.departments?.map(
+            (item) => item.name || "N/A"
+          ),
           ticketTitle: ticket?.ticket || "No Title",
           status: ticket.status || "Pending",
           description: ticket.description || "-",

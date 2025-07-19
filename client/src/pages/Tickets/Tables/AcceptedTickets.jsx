@@ -80,7 +80,6 @@ const AcceptedTickets = ({ title, departmentId }) => {
     },
   });
 
-
   // Fetch Accepted Tickets
   const { data: acceptedTickets = [], isLoading } = useQuery({
     queryKey: ["accepted-tickets"],
@@ -238,38 +237,33 @@ const AcceptedTickets = ({ title, departmentId }) => {
     },
   ];
   console.log("rows : ", [
-              ...acceptedTickets.map((ticket, index) => ({
-                ...ticket,
-                srNo: index + 1,
-                id: ticket._id,
-                raisedUser: `${ticket.raisedBy?.firstName || ""} ${
-                  ticket.raisedBy?.lastName || ""
-                }`,
+    ...acceptedTickets.map((ticket, index) => ({
+      ...ticket,
+      srNo: index + 1,
+      id: ticket._id,
+      raisedUser: `${ticket.raisedBy?.firstName || ""} ${
+        ticket.raisedBy?.lastName || ""
+      }`,
 
-                description: ticket.description,
-                raisedByDepartment:
-                  ticket.raisedBy?.departments?.map((dept) => dept.name) ||
-                  "N/A",
-                raisedToDepartment: ticket.raisedToDepartment?.name,
-                ticketTitle: ticket?.ticket || "No Title",
-                status: ticket.status || "Pending",
-                acceptedBy: ticket?.acceptedBy
-                  ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
-                  : `${
-                      ticket.assignees.map(
-                        (item) => `${item.firstName} ${item.lastName}`
-                      )[0]
-                    }`,
-                assignees: `${
-                  ticket.assignees.map((item) => item.firstName)[0]
-                }`,
-                acceptedAt: ticket.acceptedAt
-                  ? humanTime(ticket.acceptedAt)
-                  : "-",
-                priority: ticket.priority,
-                image: ticket.image ? ticket.image.url : null,
-              })),
-            ])
+      description: ticket.description,
+      raisedByDepartment:
+        ticket.raisedBy?.departments?.map((dept) => dept.name) || "N/A",
+      raisedToDepartment: ticket.raisedToDepartment?.name,
+      ticketTitle: ticket?.ticket || "No Title",
+      status: ticket.status || "Pending",
+      acceptedBy: ticket?.acceptedBy
+        ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+        : `${
+            ticket.assignees.map(
+              (item) => `${item.firstName} ${item.lastName}`
+            )[0]
+          }`,
+      assignees: `${ticket.assignees.map((item) => item.firstName)[0]}`,
+      acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
+      priority: ticket.priority,
+      image: ticket.image ? ticket.image.url : null,
+    })),
+  ]);
 
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
@@ -300,7 +294,9 @@ const AcceptedTickets = ({ title, departmentId }) => {
                 raisedByDepartment:
                   ticket.raisedBy?.departments?.map((dept) => dept.name) ||
                   "N/A",
-                raisedToDepartment: ticket.raisedToDepartment?.name,
+                raisedToDepartment: ticket.raisedBy?.departments?.map(
+                  (item) => item.name || "N/A"
+                ),
                 ticketTitle: ticket?.ticket || "No Title",
                 status: ticket.status || "Pending",
                 acceptedBy: ticket?.acceptedBy
