@@ -1464,9 +1464,13 @@ const updateMeetingDetails = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid meeting ID" });
     }
 
-    if (externalParticipants && !payment) {
-      return res.status(400).json({ message: "Payment amount required" });
-    }
+    // if (
+    //   externalParticipants &&
+    //   externalParticipants.length > 0 &&
+    //   !paymentAmount
+    // ) {
+    //   return res.status(400).json({ message: "Payment amount required" });
+    // }
 
     const meeting = await Meeting.findById(meetingId).populate([
       { path: "bookedRoom" },
@@ -1597,33 +1601,33 @@ const updateMeetingDetails = async (req, res, next) => {
       { path: "externalClient", select: "clientCompany" },
     ]);
 
-    if (externalParticipants && externalParticipants.length > 0) {
-      const meetingRevenue = await MeetingRevenue.findByIdAndUpdate({
-        meeting: updatedMeeting._id,
-        totalAmount: paymentAmount,
-      });
+    // if (externalParticipants && externalParticipants.length > 0) {
+    //   const meetingRevenue = await MeetingRevenue.findByIdAndUpdate({
+    //     meeting: updatedMeeting._id,
+    //     totalAmount: paymentAmount,
+    //   });
 
-      if (!meetingRevenue) {
-        return res
-          .status(400)
-          .json({ message: "Failed to update the meeting revenue" });
-      }
+    //   if (!meetingRevenue) {
+    //     return res
+    //       .status(400)
+    //       .json({ message: "Failed to update the meeting revenue" });
+    //   }
 
-      const updatedVisitor = await Visitor.findOneAndUpdate(
-        {
-          clientCompany: updatedMeeting.externalClient.clientCompany,
-        },
-        {
-          meeting: updatedMeeting._id,
-        }
-      );
+    //   const updatedVisitor = await Visitor.findOneAndUpdate(
+    //     {
+    //       clientCompany: updatedMeeting.externalClient.clientCompany,
+    //     },
+    //     {
+    //       meeting: updatedMeeting._id,
+    //     }
+    //   );
 
-      if (!updatedVisitor) {
-        return res
-          .status(400)
-          .json({ message: "Failed to update the visitor" });
-      }
-    }
+    //   if (!updatedVisitor) {
+    //     return res
+    //       .status(400)
+    //       .json({ message: "Failed to update the visitor" });
+    //   }
+    // }
 
     if (!updatedMeeting) {
       return res.status(500).json({ message: "Failed to update meeting" });
