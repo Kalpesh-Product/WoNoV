@@ -142,7 +142,7 @@ const ManageMeetings = () => {
     mutationFn: async (data) => {
       const response = await axios.patch(
         "/api/meetings/update-meeting-details",
-        { ...data, meetingId: selectedMeetingId }
+        { ...data, meetingId: selectedMeetingId, internalParticipants: [] }
       );
       return response.data;
     },
@@ -258,7 +258,7 @@ const ManageMeetings = () => {
       toast.success(data.message);
     },
     onError: (error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
   });
 
