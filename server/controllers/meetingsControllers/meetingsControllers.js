@@ -1228,8 +1228,6 @@ const updateMeeting = async (req, res, next) => {
       { path: "externalClient", select: "clientCompany" },
     ]);
 
-    // console.log("meeting", updatedMeeting);
-
     if (!updatedMeeting) {
       throw new CustomError(
         "Meeting not found",
@@ -1240,7 +1238,6 @@ const updateMeeting = async (req, res, next) => {
     }
 
     if (updatedMeeting.meetingType !== "External") {
-      console.log("type", updatedMeeting);
       throw new CustomError(
         "Meeting type is not external",
         logPath,
@@ -1478,10 +1475,10 @@ const updateMeetingDetails = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid meeting ID" });
     }
 
-    const meeting = await Meeting.findById(meetingId).populate(
+    const meeting = await Meeting.findById(meetingId).populate([
       { path: "bookedRoom" },
-      { path: "bookedBy", select: "firstName lastName" }
-    );
+      { path: "bookedBy", select: "firstName lastName" },
+    ]);
     if (!meeting) {
       return res.status(404).json({ message: "Meeting not found" });
     }
