@@ -41,7 +41,7 @@ const ExternalMeetingCLients = () => {
   const [checklists, setChecklists] = useState({});
   const [newItem, setNewItem] = useState("");
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
-  const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [selectedMeeting, setSelectedMeeting] = useState([]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
 
@@ -71,7 +71,10 @@ const ExternalMeetingCLients = () => {
     { name: "Desk is cleaned", checked: false },
     { name: "Chairs are clean and neatly arranged", checked: false },
     { name: "AC is cooling", checked: false },
-    { name: "TV, HDMI cable, LAN cable are available and active", checked: false },
+    {
+      name: "TV, HDMI cable, LAN cable are available and active",
+      checked: false,
+    },
     { name: "TV & AC remotes in place", checked: false },
     { name: "Air freshener sprayed", checked: false },
     { name: "Water bottle & glass placed", checked: false },
@@ -118,6 +121,19 @@ const ExternalMeetingCLients = () => {
     },
   });
 
+  const {
+    handleSubmit: handleEditMeetingSubmit,
+    control: editMeetingControl,
+    reset: resetEditMeeting,
+    setValue: setEditValue,
+    formState: { errors: editErrors },
+  } = useForm({
+    defaultValues: {
+      startTime: null,
+      endTime: null,
+    },
+  });
+
   //-----------------------------Form--------------------------------//
 
   //------------------------------API--------------------------------//
@@ -128,8 +144,9 @@ const ExternalMeetingCLients = () => {
       return response.data;
     },
   });
-  const filteredMeetings = meetings
-    .filter((item) => item.meetingStatus !== "Completed")
+  const filteredMeetings = meetings.filter(
+    (item) => item.meetingStatus !== "Completed"
+  );
 
   const transformedMeetings = filteredMeetings
     .filter((m) => m.meetingType === "External")
@@ -217,6 +234,27 @@ const ExternalMeetingCLients = () => {
     }
   );
 
+  const { mutate: editMeeting, isPending: isEditPending } = useMutation({
+    mutationFn: async (data) => {
+      const respone = await axios.patch(
+        `/api/meetings/update-meeting-details`,
+        {
+          ...data,
+          meetingId: selectedMeetingId,
+        }
+      );
+
+      return respone.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success(data.message || "UPDATED");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   const { isPending: isPaymentPending, mutate: updatePayment } = useMutation({
     mutationKey: ["meeting-payment"],
     mutationFn: async (data) => {
@@ -258,9 +296,10 @@ const ExternalMeetingCLients = () => {
     setChecklistModalOpen(true); // ✅ Open checklist modal
   };
 
-  const handleExtendMeetingModal = (mode, meetingId) => {
+  const handleEditMeeting = (mode, data) => {
     setModalMode(mode);
-    setSelectedMeeting(meetingId);
+    setSelectedMeeting(data);
+    setSelectedMeetingId(data?._id);
     setDetailsModal(true);
   };
 
@@ -473,32 +512,6 @@ const ExternalMeetingCLients = () => {
         );
       },
     },
-    // {
-    //   field: "participants",
-    //   headerName: "Participants",
-    //   cellRenderer: (params) => {
-    //     const participants = Array.isArray(params.data?.participants)
-    //       ? params.data?.participants
-    //       : [];
-    //     return (
-    //       <div className="flex justify-start items-center">
-    //         <AvatarGroup max={4}>
-    //           {participants?.map((participant, index) => {
-    //             return (
-    //               <Avatar
-    //                 key={index}
-    //                 alt={participant.firstName}
-    //                 // src={participant.avatar}
-    //                 src="https://ui-avatars.com/api/?name=Alice+Johnson&background=random"
-    //                 sx={{ width: 23, height: 23 }}
-    //               />
-    //             );
-    //           })}
-    //         </AvatarGroup>
-    //       </div>
-    //     );
-    //   },
-    // },
     {
       field: "action",
       headerName: "Action",
@@ -526,6 +539,10 @@ const ExternalMeetingCLients = () => {
               onClick: () =>
                 handleOpenChecklistModal("update", params.data._id),
             },
+          isUpcoming && {
+            label: "Edit",
+            onClick: () => handleEditMeeting("edit", params.data),
+          },
           !isOngoing &&
             !isHousekeepingPending && {
               label: "Mark As Ongoing",
@@ -535,10 +552,10 @@ const ExternalMeetingCLients = () => {
             label: "Mark As Completed",
             onClick: () => handleCompleted("complete", params.data._id),
           },
-          !isUpcoming && {
-            label: "Extend Meeting",
-            onClick: () => handleExtendMeetingModal("extend", params.data),
-          },
+          // !isUpcoming && {
+          //   label: "Extend Meeting",
+          //   onClick: () => handleExtendMeetingModal("extend", params.data),
+          // },
           !isCancelled && {
             label: "Cancel",
             onClick: () => handleSelectedMeeting("cancel", params.data),
@@ -575,6 +592,7 @@ const ExternalMeetingCLients = () => {
             data={transformedMeetings || []}
             columns={columns}
           />
+        ) : (
           // <AgTable
           //   key={transformedMeetings.length}
           //   search
@@ -582,7 +600,6 @@ const ExternalMeetingCLients = () => {
           //   data={transformedMeetings || []}
           //   columns={columns}
           // />
-        ) : (
           <CircularProgress />
         )}
       </PageFrame>
@@ -706,6 +723,8 @@ const ExternalMeetingCLients = () => {
             ? "Cancel Meeting"
             : modalMode === "extend"
             ? "Extend Meeting"
+            : modalMode === "edit"
+            ? "Edit Meeting"
             : ""
         }
         open={detailsModal}
@@ -722,10 +741,7 @@ const ExternalMeetingCLients = () => {
               title="Agenda"
               detail={selectedMeeting.agenda || "N/A"}
             />
-            <DetalisFormatted
-              title="Date"
-              detail={(selectedMeeting?.date)}
-            />
+            <DetalisFormatted title="Date" detail={selectedMeeting?.date} />
             <DetalisFormatted
               title="Time"
               detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
@@ -825,7 +841,10 @@ const ExternalMeetingCLients = () => {
             />
             <DetalisFormatted
               title="Department"
-              detail={selectedMeeting.department?.map((item)=>item.name) || "Top Management"}
+              detail={
+                selectedMeeting.department?.map((item) => item.name) ||
+                "Top Management"
+              }
             />
 
             <br />
@@ -995,6 +1014,64 @@ const ExternalMeetingCLients = () => {
                 type={"submit"}
                 disabled={isExtendPending}
                 isLoading={isExtendPending}
+              />
+            </form>
+          </div>
+        )}
+
+        {modalMode === "edit" && (
+          <div>
+            <form
+              onSubmit={handleEditMeetingSubmit((data) => editMeeting(data))}
+              className="grid grid-cols-2 gap-4"
+            >
+              <Controller
+                name="startTime"
+                control={editMeetingControl}
+                rules={{
+                  required: "Start time is required",
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!editErrors.startTime,
+                        helperText: editErrors.startTime?.message,
+                      },
+                    }}
+                    label={"Start Time"}
+                  />
+                )}
+              />
+              <Controller
+                name="endTime"
+                control={editMeetingControl}
+                rules={{
+                  required: "End time is required",
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!editErrors.endTime,
+                        helperText: editErrors.endTime?.message,
+                      },
+                    }}
+                    label={"End Time"}
+                  />
+                )}
+              />
+
+              <PrimaryButton
+                title={"Update Meeting"}
+                type={"submit"}
+                externalStyles={"col-span-2"}
+                disabled={isEditPending}
+                isLoading={isEditPending}
               />
             </form>
           </div>
