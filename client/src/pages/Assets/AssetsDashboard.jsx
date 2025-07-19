@@ -22,8 +22,27 @@ import {
   recentAssetsColumns,
   recentAssetsData,
 } from "./AssetsData/Data";
+import usePageDepartment from "../../hooks/usePageDepartment";
+import { useSelector } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 const AssetsDashboard = () => {
+  const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  const axios = useAxiosPrivate();
+
+  const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
+    queryKey: ["assets"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/assets/get-assets`
+        );
+      } catch (error) {
+        console.error(error.message);
+      }
+    },
+  });
   const meetingsWidgets = [
     {
       layout: 1,
@@ -32,7 +51,8 @@ const AssetsDashboard = () => {
           layout={1}
           border
           title={"Assets Value"}
-          titleLabel={"FY 2024-25"}>
+          titleLabel={"FY 2024-25"}
+        >
           <BarGraph
             height={400}
             data={assetUtilizationSeries}
@@ -110,7 +130,8 @@ const AssetsDashboard = () => {
         <WidgetSection
           layout={1}
           title={"Assigned v/s Unassigned Assets"}
-          border>
+          border
+        >
           <PieChartMui
             data={assetAvailabilityData}
             options={assetAvailabilityOptions}

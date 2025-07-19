@@ -6,6 +6,8 @@ const { formatDate, formatTime } = require("../../utils/formatDateTime");
 const { createLog } = require("../../utils/moduleLogs");
 const validateUsers = require("../../utils/validateUsers");
 const Department = require("../../models/Departments");
+const UserData = require("../../models/hr/UserData");
+const emitter = require("../../utils/eventEmitter");
 
 const createTasks = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -116,6 +118,40 @@ const createTasks = async (req, res, next) => {
     });
 
     await newTask.save();
+
+    // Emit the task notification
+    const foundDepartment = await Department.findById(department).select(
+      "name"
+    );
+
+    const userDetails = await UserData.findById({
+      _id: user,
+    });
+
+    const deptEmployees = await UserData.find({
+      departments: { $in: department },
+    });
+    console.log(department);
+
+    // const deptEmployees = await UserData.find({
+    //   departments: { $in: [department] },
+    // });
+
+    // const employeeIds = deptEmployees.map((emp) => emp._id);
+
+    // * Emit notification event for task creation *
+    emitter.emit("notification", {
+      initiatorData: user, // user._id is expected if used downstream
+      users: deptEmployees.map((emp) => ({
+        userActions: {
+          whichUser: emp._id, // send to department admin or fallback to self
+          hasRead: false,
+        },
+      })),
+      type: "add task",
+      module: "Tasks",
+      message: `A new task "${taskName}" was added by ${userDetails.firstName} ${userDetails.lastName} in ${foundDepartment.name} department.`,
+    });
 
     // Log success with createLog
     await createLog({

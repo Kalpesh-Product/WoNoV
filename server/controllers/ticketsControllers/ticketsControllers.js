@@ -190,6 +190,7 @@ const raiseTicket = async (req, res, next) => {
     const deptEmployees = await UserData.find({
       departments: { $in: departmentId },
     });
+    console.log(departmentId);
 
     const employeeIds = deptEmployees.map((emp) => emp._id);
 

@@ -13,6 +13,8 @@ const {
   handleFileDelete,
 } = require("../../config/cloudinaryConfig");
 const Department = require("../../models/Departments");
+const UserData = require("../../models/hr/UserData");
+const emitter = require("../../utils/eventEmitter");
 
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
@@ -274,6 +276,42 @@ const requestBudget = async (req, res, next) => {
 
     const newBudgetRequest = new Budget(budgetData);
     const savedBudget = await newBudgetRequest.save();
+
+    // Notification for budget request
+    const foundDepartment = await Department.findById(departmentId).select(
+      "name"
+    );
+
+    const userDetails = await UserData.findById({
+      _id: user,
+    });
+
+    const deptEmployees = await UserData.find({
+      departments: { $in: departmentId },
+    });
+
+    console.log(departmentId);
+    console.log(deptEmployees);
+
+    // const deptEmployees = await UserData.find({
+    //   departments: { $in: [department] },
+    // });
+
+    // const employeeIds = deptEmployees.map((emp) => emp._id);
+
+    // * Emit notification event for task creation *
+    emitter.emit("notification", {
+      initiatorData: user, // user._id is expected if used downstream
+      users: deptEmployees.map((emp) => ({
+        userActions: {
+          whichUser: emp._id, // send to department admin or fallback to self
+          hasRead: false,
+        },
+      })),
+      type: "Request Budget",
+      module: "Finance",
+      message: `A new Budget was requested by ${foundDepartment.name} department.`,
+    });
 
     await createLog({
       path: logPath,
