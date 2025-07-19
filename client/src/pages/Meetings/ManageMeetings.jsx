@@ -133,7 +133,7 @@ const ManageMeetings = () => {
       startTime: null,
       endTime: null,
       internalParticipants: [],
-      externalParticipants: [],
+      clientParticipants: [],
     },
   });
 
@@ -160,6 +160,7 @@ const ManageMeetings = () => {
     const payload = {
       ...data,
       internalParticipants: data.internalParticipants?.map((p) => p._id),
+      clientParticipants: data.clientParticipants?.map((p) => p._id),
     };
     updateMeeting(payload);
     console.log("Final payload:", payload);
@@ -187,7 +188,7 @@ const ManageMeetings = () => {
         })) || [];
 
       setEditValue("internalParticipants", formattedInternal);
-      setEditValue("externalParticipants", formattedExternal);
+      setEditValue("clientParticipants", formattedExternal);
     }
   }, [selectedMeeting]);
 
@@ -256,7 +257,9 @@ const ManageMeetings = () => {
     onSuccess: (data) => {
       toast.success(data.message);
     },
-    onError: (error) => {},
+    onError: (error) => {
+      toast.error(error.message)
+    },
   });
 
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
@@ -1034,7 +1037,7 @@ const ManageMeetings = () => {
               ) : (
                 <div className="col-span-2">
                   <Controller
-                    name="externalParticipants"
+                    name="clientParticipants"
                     control={editControl}
                     render={({ field }) => {
                       const selectedExternalIds =
@@ -1078,9 +1081,9 @@ const ManageMeetings = () => {
                                 {...params}
                                 label="External Participants"
                                 size="small"
-                                error={!!editErrors.externalParticipants}
+                                error={!!editErrors.clientParticipants}
                                 helperText={
-                                  editErrors.externalParticipants?.message
+                                  editErrors.clientParticipants?.message
                                 }
                               />
                             ) : (
