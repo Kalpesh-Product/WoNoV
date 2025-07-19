@@ -77,7 +77,7 @@ const ManageMeetings = () => {
   //-----------------------API-----------------------------//
   //-------------------------------API-------------------------------//
   const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
-    queryKey: ["participants"],
+    queryKey: ["biznest-participants"],
     queryFn: async () => {
       const response = await axios.get("/api/users/fetch-users");
       return response.data
@@ -85,6 +85,18 @@ const ManageMeetings = () => {
         .filter((u) => u.isActive === true);
     },
   });
+  const { data: clientEmployees = [], isLoading: isClientEmployeesLoading } =
+    useQuery({
+      queryKey: ["client-participants"],
+      queryFn: async () => {
+        const response = await axios.get("/api/sales/co-working-clients");
+        return response.data.flatMap((item) => item.members);
+      },
+    });
+  console.log(
+    "client data : ",
+    clientEmployees.flatMap((item) => item.members)
+  );
   //-------------------------------API-------------------------------//
   //-----------------------API-----------------------------//
 
@@ -121,6 +133,7 @@ const ManageMeetings = () => {
       startTime: null,
       endTime: null,
       internalParticipants: [],
+      externalParticipants: [],
     },
   });
 
@@ -136,6 +149,7 @@ const ManageMeetings = () => {
     onSuccess: (data) => {
       toast.success(data.message || "UPDATED");
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      setDetailsModal(false);
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update meeting");
@@ -157,14 +171,23 @@ const ManageMeetings = () => {
       setEditValue("startTime", dayjs(new Date(selectedMeeting.startTime)));
       setEditValue("endTime", dayjs(new Date(selectedMeeting.endTime)));
 
-      // Set participants
-      const formattedParticipants = selectedMeeting.participants?.map((p) => ({
-        _id: p._id,
-        firstName: p.firstName,
-        lastName: p.lastName,
-        email: p.email,
-      }));
-      setEditValue("internalParticipants", formattedParticipants || []);
+      const formattedInternal =
+        selectedMeeting.participants?.map((p) => ({
+          _id: p._id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          email: p.email,
+        })) || [];
+
+      const formattedExternal =
+        selectedMeeting.participants?.map((p) => ({
+          _id: p._id,
+          employeeName: p.employeeName,
+          email: p.email,
+        })) || [];
+
+      setEditValue("internalParticipants", formattedInternal);
+      setEditValue("externalParticipants", formattedExternal);
     }
   }, [selectedMeeting]);
 
@@ -179,7 +202,8 @@ const ManageMeetings = () => {
     },
   });
   const filteredMeetings = meetings.filter(
-    (item) => item.meetingStatus !== "Completed"
+    (item) =>
+      item.meetingStatus !== "Completed" && item.meetingType === "Internal"
   );
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
@@ -188,11 +212,13 @@ const ManageMeetings = () => {
     bookedBy: meeting.bookedBy
       ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
       : meeting.clientBookedBy?.employeeName || "Unknown",
-    bookedById : meeting.bookedBy? meeting.bookedBy._id : "",
+    bookedById: meeting.bookedBy ? meeting.bookedBy._id : "",
     startTime: meeting.startTime,
     endTime: meeting.endTime,
     extendTime: meeting.extendTime,
     srNo: index + 1,
+    company: meeting.client || "",
+    clientBookedBy: meeting.clientBookedBy || "",
     department:
       meeting.bookedBy &&
       [...meeting.bookedBy.departments.map((dept) => dept.name)].join(","),
@@ -422,6 +448,7 @@ const ManageMeetings = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr No", sort: "desc" },
+    { field: "client", headerName: "Company" },
     { field: "bookedBy", headerName: "Booked By" },
     { field: "roomName", headerName: "Room Name" },
     {
@@ -522,6 +549,10 @@ const ManageMeetings = () => {
               onClick: () =>
                 handleOpenChecklistModal("update", params.data._id),
             },
+          isUpcoming && {
+            label: "Edit",
+            onClick: () => handleEditMeeting("edit", params.data),
+          },
           !isOngoing &&
             !isHousekeepingPending && {
               label: "Mark As Ongoing",
@@ -538,10 +569,6 @@ const ManageMeetings = () => {
           !isCancelled && {
             label: "Cancel",
             onClick: () => handleSelectedMeeting("cancel", params.data),
-          },
-          isUpcoming && {
-            label: "Edit",
-            onClick: () => handleEditMeeting("edit", params.data),
           },
         ].filter(Boolean);
 
@@ -950,53 +977,122 @@ const ManageMeetings = () => {
                   />
                 )}
               />
-              <div className="col-span-2">
-                <Controller
-                  name="internalParticipants"
-                  control={editControl}
-                  render={({ field }) => {
-                    const selectedParticipantIds =
-                      field.value?.map((p) => p._id) || [];
-                    const bookedById = selectedMeeting?.bookedById;
-        
+              {!selectedMeeting?.clientBookedBy ? (
+                <div className="col-span-2">
+                  <Controller
+                    name="internalParticipants"
+                    control={editControl}
+                    render={({ field }) => {
+                      const selectedParticipantIds =
+                        field.value?.map((p) => p._id) || [];
+                      const bookedById = selectedMeeting?.bookedById;
 
-                    const availableOptions = employees.filter(
-                      (emp) =>
-                        !selectedParticipantIds.includes(emp._id) &&
-                        emp._id !== bookedById
-                    );
+                      const availableOptions = employees.filter(
+                        (emp) =>
+                          !selectedParticipantIds.includes(emp._id) &&
+                          emp._id !== bookedById
+                      );
 
-                    const mergedOptions = [...field.value, ...availableOptions];
+                      const mergedOptions = [
+                        ...field.value,
+                        ...availableOptions,
+                      ];
 
-                    return (
-                      <Autocomplete
-                        {...field}
-                        multiple
-                        options={mergedOptions}
-                        getOptionLabel={(option) =>
-                          `${option.firstName} ${option.lastName}`
-                        }
-                        value={field.value || []}
-                        onChange={(_, newValue) => field.onChange(newValue)}
-                        isOptionEqualToValue={(option, value) =>
-                          option._id === value._id
-                        }
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Participants"
-                            size="small"
-                            error={!!editErrors.internalParticipants}
-                            helperText={
-                              editErrors.internalParticipants?.message
-                            }
-                          />
-                        )}
-                      />
-                    );
-                  }}
-                />
-              </div>
+                      return (
+                        <Autocomplete
+                          {...field}
+                          multiple
+                          options={mergedOptions}
+                          getOptionLabel={(option) =>
+                            `${option.firstName} ${option.lastName}`
+                          }
+                          value={field.value || []}
+                          onChange={(_, newValue) => field.onChange(newValue)}
+                          isOptionEqualToValue={(option, value) =>
+                            option._id === value._id
+                          }
+                          renderInput={(params) =>
+                            !isEmployeesLoading ? (
+                              <TextField
+                                {...params}
+                                label="Participants"
+                                size="small"
+                                error={!!editErrors.internalParticipants}
+                                helperText={
+                                  editErrors.internalParticipants?.message
+                                }
+                              />
+                            ) : (
+                              <CircularProgress size={10} />
+                            )
+                          }
+                        />
+                      );
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="col-span-2">
+                  <Controller
+                    name="externalParticipants"
+                    control={editControl}
+                    render={({ field }) => {
+                      const selectedExternalIds =
+                        field.value?.map((p) => p._id) || [];
+
+                      const bookedByEmployeeName =
+                        selectedMeeting?.clientBookedBy?.employeeName;
+
+                      // Find the booking employee from clientEmployees
+                      const bookedByEmployee = clientEmployees.find(
+                        (emp) => emp.employeeName === bookedByEmployeeName
+                      );
+                      const bookedByCompanyId = bookedByEmployee?.client?._id;
+
+                      // Filter members of the same company, excluding the person who booked
+                      const companyMembers = clientEmployees.filter(
+                        (emp) =>
+                          emp.client?._id === bookedByCompanyId &&
+                          emp.employeeName !== bookedByEmployeeName &&
+                          !selectedExternalIds.includes(emp._id)
+                      );
+                      const mergedExternalOptions = [
+                        ...field.value,
+                        ...companyMembers,
+                      ];
+
+                      return (
+                        <Autocomplete
+                          {...field}
+                          multiple
+                          options={mergedExternalOptions}
+                          getOptionLabel={(option) => `${option.employeeName}`}
+                          value={field.value || []}
+                          onChange={(_, newValue) => field.onChange(newValue)}
+                          isOptionEqualToValue={(option, value) =>
+                            option._id === value._id
+                          }
+                          renderInput={(params) =>
+                            !isClientEmployeesLoading ? (
+                              <TextField
+                                {...params}
+                                label="External Participants"
+                                size="small"
+                                error={!!editErrors.externalParticipants}
+                                helperText={
+                                  editErrors.externalParticipants?.message
+                                }
+                              />
+                            ) : (
+                              <CircularProgress size={10} />
+                            )
+                          }
+                        />
+                      );
+                    }}
+                  />
+                </div>
+              )}
 
               <PrimaryButton
                 title={"Update Meeting"}
