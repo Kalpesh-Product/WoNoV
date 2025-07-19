@@ -38,6 +38,7 @@ const administrationRoutes = require("./routes/administrationRoutes");
 const financeRoutes = require("./routes/financeRoutes");
 const weeklyUnitRoutes = require("./routes/weeklyUnitRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const agreementRoutes = require("./routes/agreementRoutes");
 const getLogs = require("./controllers/logController");
 const auditLogger = require("./middlewares/auditLogger");
 require("./listeners/logEventListener");
@@ -85,6 +86,7 @@ app.use(
 app.use("/api/notifications", verifyJwt, notificationRoutes);
 app.use("/api/editor", websiteRoutes);
 app.use("/api/users", verifyJwt, auditLogger, userRoutes);
+app.use("/api/agreement", verifyJwt, auditLogger, agreementRoutes);
 app.use("/api/roles", verifyJwt, auditLogger, roleRoutes);
 app.use("/api/vendors", verifyJwt, auditLogger, vendorRoutes);
 app.use("/api/events", verifyJwt, auditLogger, eventRoutes);

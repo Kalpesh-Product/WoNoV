@@ -38,6 +38,12 @@ const attendanceCorrectionSchema = new mongoose.Schema(
     reason: {
       type: String,
     },
+    // Requested on behalf of someone
+    addedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+      required: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",

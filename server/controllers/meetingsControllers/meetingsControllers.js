@@ -387,7 +387,11 @@ const getMeetings = async (req, res, next) => {
           populate: { path: "departments", select: "name" },
         },
         { path: "clientBookedBy", select: "employeeName email" },
-        { path: "receptionist", select: "firstName lastName" },
+        {
+          path: "receptionist",
+          select: "firstName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
         { path: "client", select: "clientName" },
         // { path: "externalClient", select: "companyName pocName mobileNumber" },
         { path: "internalParticipants", select: "firstName lastName email" },
@@ -404,7 +408,9 @@ const getMeetings = async (req, res, next) => {
     let filteredMeetings = meetings;
     if (
       !roles.includes("Administration Admin") &&
-      !roles.includes("Administration Employee")
+      !roles.includes("Administration Employee") &&
+      !roles.includes("Master Admin") &&
+      !roles.includes("Super Admin")
     ) {
       filteredMeetings = meetings.filter((meeting) => {
         if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments))
@@ -452,21 +458,28 @@ const getMeetings = async (req, res, next) => {
 
       const isClient = meeting.client ? true : false;
 
-      const receptionist = meeting.receptionist
-        ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        : "";
+      const isReceptionist = meeting.receptionist.departments.some(
+        (dept) => dept.name === "Administration"
+      );
+
+      let receptionist;
+      if (isReceptionist) {
+        receptionist = meeting.receptionist
+          ? [
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
+          : "";
+      }
 
       return {
         _id: meeting._id,
         name: meeting.bookedBy?.name,
-        receptionist: receptionist,
-        bookedBy: { ...meeting.bookedBy },
+        receptionist: isReceptionist ? receptionist : "N/A",
+        // bookedBy: { ...meeting.bookedBy },
         clientBookedBy: meeting.clientBookedBy,
         department: meeting?.bookedBy?.departments,
         roomName: meeting.bookedRoom.name,
@@ -553,7 +566,11 @@ const getMyMeetings = async (req, res, next) => {
           populate: { path: "departments" },
         },
         { path: "clientBookedBy", select: "employeeName email" },
-        { path: "receptionist", select: "firstName lastName" },
+        {
+          path: "receptionist",
+          select: "firstName lastName departments",
+          populate: { path: "departments", select: "name" },
+        },
         { path: "client", select: "clientName" },
         // {
         //   path: "externalClient",
@@ -609,15 +626,22 @@ const getMyMeetings = async (req, res, next) => {
             .join(" ")
         : "";
 
-      const receptionist = meeting.receptionist
-        ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        : "";
+      const isReceptionist = meeting.receptionist.departments.some(
+        (dept) => dept.name === "Administration"
+      );
+
+      let receptionist;
+      if (isReceptionist) {
+        receptionist = meeting.receptionist
+          ? [
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
+          : "";
+      }
 
       return {
         _id: meeting._id,
@@ -1204,8 +1228,6 @@ const updateMeeting = async (req, res, next) => {
       { path: "externalClient", select: "clientCompany" },
     ]);
 
-    // console.log("meeting", updatedMeeting);
-
     if (!updatedMeeting) {
       throw new CustomError(
         "Meeting not found",
@@ -1216,7 +1238,6 @@ const updateMeeting = async (req, res, next) => {
     }
 
     if (updatedMeeting.meetingType !== "External") {
-      console.log("type", updatedMeeting);
       throw new CustomError(
         "Meeting type is not external",
         logPath,
@@ -1444,8 +1465,6 @@ const updateMeetingDetails = async (req, res, next) => {
   try {
     const {
       meetingId,
-      startDate,
-      endDate,
       startTime,
       endTime,
       internalParticipants,
@@ -1456,10 +1475,10 @@ const updateMeetingDetails = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid meeting ID" });
     }
 
-    const meeting = await Meeting.findById(meetingId).populate(
+    const meeting = await Meeting.findById(meetingId).populate([
       { path: "bookedRoom" },
-      { path: "bookedBy", select: "firstName lastName" }
-    );
+      { path: "bookedBy", select: "firstName lastName" },
+    ]);
     if (!meeting) {
       return res.status(404).json({ message: "Meeting not found" });
     }
@@ -1468,25 +1487,19 @@ const updateMeetingDetails = async (req, res, next) => {
     const BookingModel = isClient ? CoworkingMembers : User;
     const bookedUserId = isClient ? meeting.clientBookedBy : meeting.bookedBy;
 
-    const startDateObj = new Date(startDate);
-    const endDateObj = new Date(endDate);
+    const currDate = new Date();
     const startTimeObj = new Date(startTime);
     const endTimeObj = new Date(endTime);
 
-    if (
-      isNaN(startDateObj.getTime()) ||
-      isNaN(endDateObj.getTime()) ||
-      isNaN(startTimeObj.getTime()) ||
-      isNaN(endTimeObj.getTime())
-    ) {
+    if (isNaN(startTimeObj.getTime()) || isNaN(endTimeObj.getTime())) {
       return res.status(400).json({ message: "Invalid date/time format" });
     }
 
     const conflictingMeeting = await Meeting.findOne({
       _id: { $ne: meetingId },
       bookedRoom: meeting.bookedRoom._id,
-      startDate: { $lte: endDateObj },
-      endDate: { $gte: startDateObj },
+      startDate: { $lte: currDate },
+      endDate: { $gte: currDate },
       $or: [
         {
           $and: [
@@ -1573,8 +1586,6 @@ const updateMeetingDetails = async (req, res, next) => {
     }
 
     const changes = {
-      startDate: startDateObj,
-      endDate: endDateObj,
       startTime: startTimeObj,
       endTime: endTimeObj,
       creditsUsed: newCreditsUsed,

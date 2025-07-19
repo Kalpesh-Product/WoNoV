@@ -56,6 +56,14 @@ export default function PendingLeaveRequests() {
           params.data?.takenBy?.lastName || ""
         }`,
     },
+    {
+      headerName: "Added By",
+      field: "addedBy",
+      valueGetter: (params) =>
+        params.data?.addedBy ?`${params.data?.addedBy?.firstName || ""} ${
+          params.data?.addedBy?.lastName || ""
+        }` : "—",
+    },
     { headerName: "Leave Type", field: "leaveType" },
     { headerName: "Leave Period", field: "leavePeriod" },
     { headerName: "From Date", field: "fromDate" },

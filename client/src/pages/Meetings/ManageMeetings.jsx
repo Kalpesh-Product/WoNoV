@@ -764,8 +764,8 @@ const ManageMeetings = () => {
             />
             <DetalisFormatted
               title="Receptionist"
-              // detail={selectedMeeting.receptionist}
-              detail={`N/A`}
+              detail={selectedMeeting.receptionist}
+              // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"

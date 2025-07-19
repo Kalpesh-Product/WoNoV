@@ -450,6 +450,7 @@ const getAttendanceRequests = async (req, res, next) => {
       })
         .populate([
           { path: "user", select: "firstName middleName lastName empId" },
+          { path: "addedBy", select: "firstName middleName lastName empId" },
           { path: "approvedBy", select: "firstName middleName lastName empId" },
         ])
         .lean()
@@ -462,6 +463,7 @@ const getAttendanceRequests = async (req, res, next) => {
     })
       .populate([
         { path: "user", select: "firstName middleName lastName empId" },
+        { path: "addedBy", select: "firstName middleName lastName empId" },
         { path: "approvedBy", select: "firstName middleName lastName empId" },
       ])
       .lean()
@@ -610,6 +612,7 @@ const correctAttendance = async (req, res, next) => {
       originalOutTime: foundDate.outTime || null,
       originalBreaks: originalBreaks,
       reason,
+      addedBy: user,
       user: foundUser._id,
       company,
     });
