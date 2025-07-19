@@ -61,7 +61,7 @@ const AssetsHome = () => {
           <span
             role="button"
             onClick={() => {
-              dispatch(setSelectedDepartment(currentDepartmentId));
+              dispatch(setSelectedDepartment(params.data?.departmentId));
               navigate(`/app/assets/${params.value}`);
             }}
             className="text-primary font-pregular hover:underline cursor-pointer"
@@ -91,6 +91,7 @@ const AssetsHome = () => {
           ...item,
           srNo: index + 1,
           department: item.name || "N/A",
+          departmentId :item._id,
           noOfAssets: assets.length || 0,
           value: assetValue || 0,
           inUse: assets.filter((a) => a.status === "Active").length,

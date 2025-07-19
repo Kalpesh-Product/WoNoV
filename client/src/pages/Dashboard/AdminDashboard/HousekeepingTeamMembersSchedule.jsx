@@ -71,7 +71,6 @@ const HousekeepingTeamMembersSchedule = () => {
   }, [selectedUser]);
   const selectedLocation = watch("location");
 
-
   const { data: houseKeepingData, isPending: isHouseKeepingPending } = useQuery(
     {
       queryKey: ["housekeeping-staff"],
@@ -85,7 +84,6 @@ const HousekeepingTeamMembersSchedule = () => {
       },
     }
   );
-
 
   //----------------------------------------API---------------------------------------//
   const {
@@ -160,7 +158,7 @@ const HousekeepingTeamMembersSchedule = () => {
       },
     });
 
-    console.log("unit schedule : ",unitSchedule)
+  console.log("unit schedule : ", unitSchedule);
   useEffect(() => {
     setMultipleRanges([]);
   }, [watchedUnitId]);
@@ -168,7 +166,7 @@ const HousekeepingTeamMembersSchedule = () => {
   useEffect(() => {
     if (!unitSchedule || !unitSchedule.length) return;
 
-    console.log("unitSchedule : ", unitSchedule)
+    console.log("unitSchedule : ", unitSchedule);
 
     const matchedSchedules = unitSchedule.filter(
       (schedule) =>
@@ -179,18 +177,13 @@ const HousekeepingTeamMembersSchedule = () => {
         !isNaN(new Date(schedule.startDate)) &&
         !isNaN(new Date(schedule.endDate))
     );
-    console.log("matched schedule : ", matchedSchedules)
+    console.log("matched schedule : ", matchedSchedules);
 
     if (matchedSchedules.length) {
       const detailedRanges = [];
 
       matchedSchedules.forEach((item) => {
-        const {
-          housekeepingMember,
-          startDate,
-          endDate,
-          _id,
-        } = item;
+        const { housekeepingMember, startDate, endDate, _id } = item;
 
         // Add original employee schedule
         if (
@@ -203,7 +196,9 @@ const HousekeepingTeamMembersSchedule = () => {
             key: `main-${_id}`,
             startDate: new Date(startDate),
             endDate: new Date(endDate),
-            employeeName: `${housekeepingMember.firstName} ${housekeepingMember.lastName || ""}`,
+            employeeName: `${housekeepingMember.firstName} ${
+              housekeepingMember.lastName || ""
+            }`,
             isActive: housekeepingMember.isActive ? "Active" : "Inactive",
           });
         }
@@ -311,6 +306,7 @@ const HousekeepingTeamMembersSchedule = () => {
   //----------------------------------------API---------------------------------------//
   const unitColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "buildingName", headerName: "Building", flex: 1 },
     {
       field: "unitNo",
       headerName: "Unit No",
@@ -334,8 +330,9 @@ const HousekeepingTeamMembersSchedule = () => {
         </span>
       ),
     },
+
     { field: "unitName", headerName: "Unit Name" },
-    { field: "buildingName", headerName: "Building" },
+
     {
       field: "lead",
       headerName: "Primary Lead",
@@ -366,38 +363,38 @@ const HousekeepingTeamMembersSchedule = () => {
   ];
 
   //---------------------------------------Event Handlers------------------------------//
-  useEffect(()=>{
-    console.log("slected user : ", selectedUser)
-  },[selectedUser])
+  useEffect(() => {
+    console.log("slected user : ", selectedUser);
+  }, [selectedUser]);
 
-const handleViewUser = async (user) => {
-  try {
-    const response = await axios.get(
-      `/api/company/get-housekeeping-schedule?unitId=${user?._id}&`
-    );
-    const matchingSchedule = response.data.data?.[0]; // adjust as needed
-    console.log("matching schedule : ", matchingSchedule)
+  const handleViewUser = async (user) => {
+    try {
+      const response = await axios.get(
+        `/api/company/get-housekeeping-schedule?unitId=${user?._id}&`
+      );
+      const matchingSchedule = response.data.data?.[0]; // adjust as needed
+      console.log("matching schedule : ", matchingSchedule);
 
-    if (matchingSchedule) {
-      setSelectedUser({
-        ...user,
-        startDate: matchingSchedule.startDate,
-        endDate: matchingSchedule.endDate,
-        substitutions: matchingSchedule.substitutions || [],
-        isEmployeeActive: matchingSchedule.employee?.isActive ?? true,
-      });
-    } else {
-      toast.warning("No schedule found for this unit.");
-      setSelectedUser(user);
+      if (matchingSchedule) {
+        setSelectedUser({
+          ...user,
+          startDate: matchingSchedule.startDate,
+          endDate: matchingSchedule.endDate,
+          substitutions: matchingSchedule.substitutions || [],
+          isEmployeeActive: matchingSchedule.employee?.isActive ?? true,
+        });
+      } else {
+        toast.warning("No schedule found for this unit.");
+        setSelectedUser(user);
+      }
+
+      setModalMode("view");
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching schedule details:", error);
+      toast.error("Failed to load schedule details.");
     }
-
-    setModalMode("view");
-    setIsModalOpen(true);
-  } catch (error) {
-    console.error("Error fetching schedule details:", error);
-    toast.error("Failed to load schedule details.");
-  }
-};
+  };
   const handleAddUser = () => {
     setModalMode("add");
     setIsModalOpen(true);
@@ -634,16 +631,16 @@ const handleViewUser = async (user) => {
 
         {modalMode === "view" && selectedUser && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <DetalisFormatted title="Name" detail={`${selectedUser?.adminLead?.firstName} ${selectedUser?.adminLead?.lastName}`} />
+            <DetalisFormatted
+              title="Name"
+              detail={`${selectedUser?.adminLead?.firstName} ${selectedUser?.adminLead?.lastName}`}
+            />
             <DetalisFormatted
               title="Member Status"
               gap={"w-full"}
               detail={selectedUser.isEmployeeActive ? "Active" : "InActive"}
             />
-            <DetalisFormatted
-              title="Unit Name"
-              detail={selectedUser?.unitNo}
-            />
+            <DetalisFormatted title="Unit Name" detail={selectedUser?.unitNo} />
             <DetalisFormatted
               title="Building Name"
               gap={"w-full"}

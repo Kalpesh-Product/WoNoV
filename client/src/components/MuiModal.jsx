@@ -15,10 +15,10 @@ const MuiModal = ({ open, onClose, title, children, headerBackground }) => {
         >
           <motion.div
             
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+            initial={{ y: 30 }}
+            animate={{ y: 0 }}
        
-            exit={{ scale: 0 }}
+            exit={{ y: -30 }}
    
             className="w-2/5 bg-white shadow-xl rounded-lg outline-none max-h-[90vh] overflow-y-auto"
           >

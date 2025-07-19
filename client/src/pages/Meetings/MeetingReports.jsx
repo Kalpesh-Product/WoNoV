@@ -15,6 +15,7 @@ import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
+import StatusChip from "../../components/StatusChip";
 
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
@@ -73,29 +74,7 @@ const MeetingReports = () => {
     {
       field: "meetingStatus",
       headerName: "Status",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          Ongoing: { backgroundColor: "#d9e8fe", color: "#385391" }, // Light blue bg, dark blue font
-          Cancelled: { backgroundColor: "#f7e1e1", color: "#a5333e" }, // Light red bg, dark red font
-          Upcoming: { backgroundColor: "#fcf7be", color: "#b87e33" },
-        };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
-        );
-      },
+      cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
       field: "action",

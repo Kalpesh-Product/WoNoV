@@ -12,6 +12,7 @@ import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import humanTime from "../../utils/humanTime";
+import StatusChip from "../../components/StatusChip";
 
 const TicketReports = () => {
   const { auth } = useAuth();
@@ -58,21 +59,7 @@ const TicketReports = () => {
     {
       field: "status",
       headerName: "Status",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400" },
-          Closed: { backgroundColor: "#90EE90", color: "#02730a" },
-          Rejected: { backgroundColor: "#FFE0DC", color: "#C2410C" },
-          Open: { backgroundColor: "#E6E6FA", color: "#4B0082" },
-          Escalated: { backgroundColor: "#E6E6FA", color: "#4B0082" },
-        };
-
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return <Chip label={params.value} style={{ backgroundColor, color }} />;
-      },
+      cellRenderer: (params) => <StatusChip label={params.value} />,
     },
     {
       field: "actions",
@@ -130,9 +117,7 @@ const TicketReports = () => {
                   closedBy: item?.closedBy
                     ? `${item.closedBy.firstName} ${item.closedBy.lastName}`
                     : "None",
-                  closedAt: item.closedAt
-                    ? (item.closedAt)
-                    : "None",
+                  closedAt: item.closedAt ? item.closedAt : "None",
                   rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
                     item.reject?.rejectedBy?.lastName || ""
                   }`,

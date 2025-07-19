@@ -26,23 +26,25 @@ import usePageDepartment from "../../hooks/usePageDepartment";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 
 const AssetsDashboard = () => {
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
   const axios = useAxiosPrivate();
-
-  const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
-    queryKey: ["assets"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/assets/get-assets`
-        );
-      } catch (error) {
-        console.error(error.message);
-      }
-    },
-  });
+//-----------------------MAIN API CALL------------------------------------//
+const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
+  queryKey: ["assets"],
+  queryFn: async () => {
+    try {
+      const response = await axios.get(
+        `/api/assets/get-assets?departmentId=${departmentId}`
+      );
+    } catch (error) {
+      console.error(error.message);
+    }
+  },
+});
+//-----------------------MAIN API CALL------------------------------------//
   const meetingsWidgets = [
     {
       layout: 1,
@@ -53,9 +55,9 @@ const AssetsDashboard = () => {
           title={"Assets Value"}
           titleLabel={"FY 2024-25"}
         >
-          <BarGraph
+          <NormalBarGraph
             height={400}
-            data={assetUtilizationSeries}
+            data={[]}
             options={assetUtilizationOptions}
           />
         </WidgetSection>,
