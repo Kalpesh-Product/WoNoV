@@ -249,11 +249,18 @@ const ExternalMeetingCLients = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       toast.success(data.message || "UPDATED");
+      setDetailsModal(false)
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
+  useEffect(()=>{
+    if(selectedMeeting){
+      setEditValue("startTime", dayjs(new Date(selectedMeeting?.startTime)))
+      setEditValue("endTime", dayjs(new Date(selectedMeeting?.endTime)))
+    }
+  },[selectedMeeting])
 
   const { isPending: isPaymentPending, mutate: updatePayment } = useMutation({
     mutationKey: ["meeting-payment"],
