@@ -136,6 +136,7 @@ const userDataSchema = new mongoose.Schema({
   },
   refreshToken: { type: String },
   dateOfExit: { type: Date },
+  shift: { type: String, required: true },
   policies: {
     // shift: { type: String, required: true },
     workSchedulePolicy: { type: String, required: true },

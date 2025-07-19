@@ -95,6 +95,7 @@ const TasksViewDepartment = () => {
         dueTime: data.dueTime,
         description: data.description,
         department: deptId,
+        taskType:"Department"
       });
       return response.data;
     },

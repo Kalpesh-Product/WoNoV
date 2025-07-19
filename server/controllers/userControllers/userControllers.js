@@ -41,6 +41,7 @@ const createUser = async (req, res, next) => {
       startDate,
       workLocation,
       reportsTo,
+      shift,
       policies,
       homeAddress,
       bankInformation,
@@ -63,6 +64,7 @@ const createUser = async (req, res, next) => {
       !departments ||
       !designation ||
       !startDate ||
+      !shift ||
       !workLocation
     ) {
       throw new CustomError(
@@ -177,6 +179,7 @@ const createUser = async (req, res, next) => {
       startDate,
       workLocation,
       reportsTo,
+      shift,
       policies,
       homeAddress,
       bankInformation,
@@ -639,6 +642,15 @@ const bulkInsertUsers = async (req, res, next) => {
                   10
                 );
 
+                let agreements = {
+                  name: row["Work Schedule Policy"] || "",
+                  empId: row["Emp ID"],
+                  url: row["Work Schedule Policy"] || "",
+                  id: row["Work Schedule Policy"] || "",
+                  isActive: true,
+                  isDeleted: false,
+                };
+
                 const userObj = {
                   empId: row["Emp ID"],
                   firstName: row["First Name"],
@@ -667,12 +679,13 @@ const bulkInsertUsers = async (req, res, next) => {
                   designation: row["Designation"],
                   startDate: new Date(row["Date Of Joining"]),
                   workLocation: row["Work Building"],
-                  policies: {
-                    shift: row["Shift Policy"] || "General",
-                    workSchedulePolicy: row["Work Schedule Policy"] || "",
-                    leavePolicy: row["Leave Policy"] || "",
-                    holidayPolicy: row["Holiday Policy"] || "",
-                  },
+                  shift: row["Shift Policy"] || "General",
+                  // policies: {
+                  //   shift: row["Shift Policy"] || "General",
+                  //   workSchedulePolicy: row["Work Schedule Policy"] || "",
+                  //   leavePolicy: row["Leave Policy"] || "",
+                  //   holidayPolicy: row["Holiday Policy"] || "",
+                  // },
                   homeAddress: {
                     addressLine1: row["Address"] || "",
                     addressLine2: row["Present Address"] || "",
@@ -751,21 +764,7 @@ const bulkInsertUsers = async (req, res, next) => {
       );
     }
 
-    await User.insertMany(newUsers);
-
-    // Log the successful bulk insertion
-    await createLog({
-      path: "hr/HrLog",
-      action: "Bulk Insert Users",
-      remarks: "Bulk data inserted successfully",
-      status: "Success",
-      user: req.user,
-      ip: req.ip,
-      company: req.company,
-      sourceKey: "user",
-      sourceId: null, // No single sourceId for bulk operations
-      changes: { insertedCount: newUsers.length },
-    });
+    const uploadedUserData = await User.insertMany(newUsers);
 
     return res.status(201).json({
       message: "Bulk data inserted successfully",

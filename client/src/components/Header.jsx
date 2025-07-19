@@ -34,6 +34,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { HiOutlineRefresh } from "react-icons/hi";
 import { toast } from "sonner";
 import { queryClient } from "../main";
+import relativeTime from "dayjs/plugin/relativeTime";
+import dayjs from "dayjs";
 
 const Header = ({
   notifications = [],
@@ -42,6 +44,7 @@ const Header = ({
   isRefreshingNotifications = false,
 }) => {
   const axios = useAxiosPrivate();
+  dayjs.extend(relativeTime);
   const [isHovered, setIsHovered] = useState(false);
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   const navigate = useNavigate();
@@ -120,7 +123,8 @@ const Header = ({
               {!isMobile && (
                 <button
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="p-2 text-gray-500 text-xl">
+                  className="p-2 text-gray-500 text-xl"
+                >
                   {isSidebarOpen ? <GiHamburgerMenu /> : <IoIosArrowForward />}
                 </button>
               )}
@@ -152,13 +156,15 @@ const Header = ({
             <div className="flex w-full justify-end gap-4">
               <button
                 onClick={(e) => setNotificationAnchorEl(e.currentTarget)}
-                className="relative bg-[#1E3D73] text-white rounded-md ">
+                className="relative bg-[#1E3D73] text-white rounded-md "
+              >
                 <Badge
                   badgeContent={unseenCount > 9 ? "9+" : unseenCount}
                   color="error"
                   className="bg-primary rounded-md p-2"
                   anchorOrigin={{ vertical: "top", horizontal: "right" }}
-                  overlap="circular">
+                  overlap="circular"
+                >
                   <IoMdNotificationsOutline size={20} />
                 </Badge>
               </button>
@@ -184,7 +190,8 @@ const Header = ({
           <div
             className="w-full relative"
             onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}>
+            onMouseLeave={() => setIsHovered(false)}
+          >
             {!isMobile && (
               <>
                 <h1 className="text-xl font-semibold text-start">
@@ -224,14 +231,16 @@ const Header = ({
         transformOrigin={{
           vertical: "top",
           horizontal: "center",
-        }}>
+        }}
+      >
         <div className="p-4 w-48">
           <List>
             {/* Profile Option */}
             <ListItem
               button
               onClick={handleProfileClick}
-              className="hover:text-primary transition-all duration-100 text-gray-500 cursor-pointer">
+              className="hover:text-primary transition-all duration-100 text-gray-500 cursor-pointer"
+            >
               <ListItemIcon>
                 <FaUserTie className="text-gray-500" />
               </ListItemIcon>
@@ -244,7 +253,8 @@ const Header = ({
             <ListItem
               button
               onClick={handleSignOut}
-              className="hover:text-red-600 transition-all duration-100 text-gray-500 cursor-pointer">
+              className="hover:text-red-600 transition-all duration-100 text-gray-500 cursor-pointer"
+            >
               <ListItemIcon>
                 <FiLogOut className="text-gray-500" />
               </ListItemIcon>
@@ -261,7 +271,8 @@ const Header = ({
         anchorEl={notificationAnchorEl}
         onClose={() => setNotificationAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}>
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
         <div className="p-4 w-[30rem] max-h-[400px] overflow-y-auto">
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-5 rounded-full">
@@ -270,12 +281,14 @@ const Header = ({
                 badgeContent={unseenCount > 9 ? "9+" : unseenCount}
                 color="error"
                 anchorOrigin={{ vertical: "top", horizontal: "right" }}
-                overlap="circular"></Badge>
+                overlap="circular"
+              ></Badge>
             </div>
             <IconButton
               size="small"
               onClick={onRefreshNotifications}
-              disabled={isRefreshingNotifications}>
+              disabled={isRefreshingNotifications}
+            >
               <HiOutlineRefresh
                 className={`${isRefreshingNotifications ? "animate-spin" : ""}`}
               />
@@ -316,31 +329,53 @@ const Header = ({
                           <li
                             key={n._id || index}
                             className={`text-sm p-2 rounded ${
-                              !n.seen
+                              !n.hasRead
                                 ? "bg-gray-200 border-borderGray border-default"
                                 : "border-default border-borderGray"
-                            }`}>
-                            <div className="flex justify-between w-full items-center">
-                              <div
-                                role="button"
-                                onClick={() => {
-                                  if (navigations[module]) {
-                                    navigate(navigations[module]);
-                                    setNotificationAnchorEl(null);
-                                  }
-                                }}
-                                className="flex flex-col gap-1">
-                                <span className="font-pmedium">{n.module}</span>
+                            }`}
+                          >
+                            <div className="flex w-full justify-between items-center gap-4 mb-2">
+                              <div className="flex justify-between w-full items-center">
+                                <div
+                                  role="button"
+                                  onClick={() => {
+                                    if (navigations[module]) {
+                                      navigate(navigations[module]);
+                                      setNotificationAnchorEl(null);
+                                    }
+                                  }}
+                                  className="flex flex-col gap-1 w-full"
+                                >
+                                  <div className="flex justify-between w-full">
+                                    <div className="flex justify-start w-full">
+                                      <span className="font-pmedium">
+                                        {n.module}
+                                      </span>
+                                    </div>
+
+                                    <div className="text-xs text-gray-500 w-full flex justify-end">
+                                      {dayjs(n.createdAt).fromNow()}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="w-full grid grid-cols-5">
+                              <div className="col-span-4 flex items-end">
                                 <span>{n.message}</span>
                               </div>
-                              {!hasRead && (
-                                <button
-                                  onClick={() => updateRead(n._id)}
-                                  className="p-2 rounded-full bg-green-300 text-green-600"
-                                  title="Mark as Read">
-                                  <FaCheck />
-                                </button>
-                              )}
+                              <div className="col-span-1 flex justify-end items-start">
+                                {hasRead && (
+                                  <button
+                                    onClick={() => updateRead(n._id)}
+                                    className="p-2 rounded-full bg-green-300 text-green-600"
+                                    title="Mark as Read"
+                                  >
+                                    <FaCheck />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </li>
                         );
@@ -355,7 +390,8 @@ const Header = ({
                           setNotificationAnchorEl(null);
                           navigate("/app/notifications");
                         }}
-                        className="text-primary text-content font-pregular hover:underline">
+                        className="text-primary text-content font-pregular hover:underline"
+                      >
                         View more
                       </button>
                     </div>

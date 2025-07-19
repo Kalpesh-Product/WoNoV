@@ -15,6 +15,7 @@ const AssetsHome = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
+  console.log("id in parent : ", currentDepartmentId);
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
@@ -60,8 +61,8 @@ const AssetsHome = () => {
           <span
             role="button"
             onClick={() => {
-              dispatch(setSelectedDepartment(params.data.mongoId));
-               navigate(`/app/assets/${params.value}`);
+              dispatch(setSelectedDepartment(params.data?.departmentId));
+              navigate(`/app/assets/${params.value}`);
             }}
             className="text-primary font-pregular hover:underline cursor-pointer"
           >
@@ -90,6 +91,7 @@ const AssetsHome = () => {
           ...item,
           srNo: index + 1,
           department: item.name || "N/A",
+          departmentId :item._id,
           noOfAssets: assets.length || 0,
           value: assetValue || 0,
           inUse: assets.filter((a) => a.status === "Active").length,
@@ -106,7 +108,9 @@ const AssetsHome = () => {
         padding
         border
         title={"DEPARTMENT WISE ASSETS"}
-        TitleAmount={`TOTAL ASSET VALUE : INR ${inrFormat(totalAssetValue) || 0}`}
+        TitleAmount={`TOTAL ASSET VALUE : INR ${
+          inrFormat(totalAssetValue) || 0
+        }`}
       >
         <AgTable data={tableData} columns={departmentColumns} hideFilter />
       </WidgetSection>

@@ -34,6 +34,10 @@ const meetingClientRevenueSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    meeting: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Meeting",
+    },
     taxable: {
       type: Number,
       // required: true,

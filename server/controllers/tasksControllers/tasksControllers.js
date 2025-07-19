@@ -20,7 +20,7 @@ const createTasks = async (req, res, next) => {
       taskName,
       department,
       description,
-      // taskType,
+      taskType,
       // status,
       // priority,
       // assignees,
@@ -35,8 +35,8 @@ const createTasks = async (req, res, next) => {
       !description ||
       !dueDate ||
       !assignedDate ||
-      !dueTime
-      // !taskType
+      !dueTime ||
+      !taskType
     ) {
       throw new CustomError(
         "Missing required fields",
@@ -104,7 +104,7 @@ const createTasks = async (req, res, next) => {
 
     const newTask = new Task({
       taskName,
-      // taskType,
+      taskType,
       department,
       description,
       // status,
@@ -399,15 +399,18 @@ const getTasks = async (req, res, next) => {
     // const team = await UserData.find({});
 
     if (dept) {
-      //      const admins = await User.aggregate([
+      // const admins = await User.aggregate([
       //   {
       //     $match: {
-      //       departments: { $in: [dept] },
+      //       departments: { $in: [new mongoose.Types.ObjectId(dept)] },
       //     },
       //   },
       //   {
+      //     $unwind: "$role", // Unwind role array
+      //   },
+      //   {
       //     $lookup: {
-      //       from: "roles", // collection name (lowercase + plural of model name)
+      //       from: "roles",
       //       localField: "role",
       //       foreignField: "_id",
       //       as: "roleInfo",
@@ -418,14 +421,23 @@ const getTasks = async (req, res, next) => {
       //   },
       //   {
       //     $match: {
-      //       "roleInfo.roleTitle": { $regex: /Admin$/, $options: "i" },
+      //       "roleInfo.roleTitle": {
+      //         $regex: /Admin$/,
+      //         $options: "i",
+      //       },
       //     },
+      //   },
+      //   {
+      //     $project: { _id: 1 }, // Only need user IDs
       //   },
       // ]);
 
+      // const adminIds = admins.map((admin) => admin._id);
+
       query.department = dept;
       query.status = "Pending";
-      // query.assignedBy =
+      query.taskType = "Department";
+      // query.assignedBy = { $in: adminIds };
     }
 
     const tasks = await Task.find(query)
@@ -466,7 +478,7 @@ const getMyTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
     const { flag } = req.query;
-    const query = { company, assignedBy: user };
+    const query = { company, assignedBy: user, taskType: "Self" };
 
     if (flag === "pending") {
       query.status = "Pending";
@@ -812,61 +824,12 @@ const getTeamMembersTasks = async (req, res, next) => {
   }
 };
 
-// const getAllDeptTasks = async (req, res, next) => {
-//   try {
-//     const { roles, departments, company } = req;
-
-//     let departmentMap = new Map();
-//     let query = { company };
-
-//     if (
-//       !roles.includes("Master Admin") &&
-//       !roles.includes("Super Admin") &&
-//       !roles.includes("HR Admin")
-//     ) {
-//       query.department = { $in: departments };
-//     }
-
-//     const fetchedDepartments = await Department.find();
-
-//     const tasks = await Task.find(query)
-//       .populate([{ path: "department", select: "name" }])
-//       .select("-company")
-//       .lean();
-
-//     tasks.forEach((task) => {
-//       const dept = task.department || "Unknown";
-
-//       if (!departmentMap.has(dept)) {
-//         departmentMap.set(dept, {
-//           department: dept,
-//           totalTasks: 0,
-//           pendingTasks: 0,
-//           completedTasks: 0,
-//         });
-//       }
-
-//       const department = departmentMap.get(dept);
-
-//       department.totalTasks++;
-//       if (task.status === "Pending") department.pendingTasks++;
-//       if (task.status === "Completed") department.completedTasks++;
-//     });
-
-//     const result = Array.from(departmentMap.values());
-
-//     return res.status(200).json(result);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 const getAllDeptTasks = async (req, res, next) => {
   try {
     const { roles, departments, company } = req;
 
     let departmentMap = new Map();
-    let query = { company };
+    let query = { company, taskType: "Department" };
 
     const isSuperAdmin =
       roles.includes("Master Admin") ||

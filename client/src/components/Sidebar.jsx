@@ -95,6 +95,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const generalItems = [
     { name: "Calendar", icon: <FaRegCalendarAlt />, route: "calendar" },
     { name: "Access", icon: <SiAuthelia />, route: "access" },
+        {
+      name: "Notifications",
+      icon: <IoMdNotifications />,
+      route: "notifications",
+    },
     {
       name: "Profile",
       icon: <FaUserTie />,
@@ -109,11 +114,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
     },
    
     { name: "Chat", icon: <HiOutlineChatAlt2 />, route: "#" },
-    {
-      name: "Notifications",
-      icon: <IoMdNotifications />,
-      route: "#",
-    },
+
   ];
 
   const defaultModules = [

@@ -95,6 +95,7 @@ const DailyTasks = () => {
         dueTime: data.dueTime,
         description: data.description,
         department: deptId,
+        taskType:"Self"
       });
       return response.data;
     },

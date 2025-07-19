@@ -7,6 +7,12 @@ const leaveSchema = new mongoose.Schema(
       ref: "CompanyData",
       required: true,
     },
+    // Requested on behalf of someone
+    addedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+      required: true,
+    },
     takenBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",

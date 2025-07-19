@@ -2021,13 +2021,13 @@ export const routes = createBrowserRouter([
                 path: "assets", // Parent path
                 element: <AssetsLayout />, // Parent component for tickets
                 children: [
+                  // {
+                  //   path: "", 
+                  //   element: <AssetsHome />, 
+                  //   index: true,
+                  // },
                   {
-                    path: "", 
-                    element: <AssetsHome />, // Dashboard is rendered by default
-                    index: true,
-                  },
-                  {
-                    path: ":department", // Default route for /app/assets
+                    path: "", // Default route for /app/assets
                     element: <AssetsDashboard />, // Dashboard is rendered by default
                   },
                   {
