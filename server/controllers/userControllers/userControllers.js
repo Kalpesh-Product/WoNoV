@@ -670,12 +670,12 @@ const bulkInsertUsers = async (req, res, next) => {
                   designation: row["Designation"],
                   startDate: new Date(row["Date Of Joining"]),
                   workLocation: row["Work Building"],
-                  policies: {
-                    shift: row["Shift Policy"] || "General",
-                    workSchedulePolicy: row["Work Schedule Policy"] || "",
-                    leavePolicy: row["Leave Policy"] || "",
-                    holidayPolicy: row["Holiday Policy"] || "",
-                  },
+                  // policies: {
+                  //   shift: row["Shift Policy"] || "General",
+                  //   workSchedulePolicy: row["Work Schedule Policy"] || "",
+                  //   leavePolicy: row["Leave Policy"] || "",
+                  //   holidayPolicy: row["Holiday Policy"] || "",
+                  // },
                   homeAddress: {
                     addressLine1: row["Address"] || "",
                     addressLine2: row["Present Address"] || "",

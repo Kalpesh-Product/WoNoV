@@ -1468,8 +1468,6 @@ const updateMeetingDetails = async (req, res, next) => {
   try {
     const {
       meetingId,
-      startDate,
-      endDate,
       startTime,
       endTime,
       internalParticipants,
@@ -1492,25 +1490,19 @@ const updateMeetingDetails = async (req, res, next) => {
     const BookingModel = isClient ? CoworkingMembers : User;
     const bookedUserId = isClient ? meeting.clientBookedBy : meeting.bookedBy;
 
-    const startDateObj = new Date(startDate);
-    const endDateObj = new Date(endDate);
+    const currDate = new Date();
     const startTimeObj = new Date(startTime);
     const endTimeObj = new Date(endTime);
 
-    if (
-      isNaN(startDateObj.getTime()) ||
-      isNaN(endDateObj.getTime()) ||
-      isNaN(startTimeObj.getTime()) ||
-      isNaN(endTimeObj.getTime())
-    ) {
+    if (isNaN(startTimeObj.getTime()) || isNaN(endTimeObj.getTime())) {
       return res.status(400).json({ message: "Invalid date/time format" });
     }
 
     const conflictingMeeting = await Meeting.findOne({
       _id: { $ne: meetingId },
       bookedRoom: meeting.bookedRoom._id,
-      startDate: { $lte: endDateObj },
-      endDate: { $gte: startDateObj },
+      startDate: { $lte: currDate },
+      endDate: { $gte: currDate },
       $or: [
         {
           $and: [
@@ -1597,8 +1589,6 @@ const updateMeetingDetails = async (req, res, next) => {
     }
 
     const changes = {
-      startDate: startDateObj,
-      endDate: endDateObj,
       startTime: startTimeObj,
       endTime: endTimeObj,
       creditsUsed: newCreditsUsed,
