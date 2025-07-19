@@ -93,10 +93,6 @@ const ManageMeetings = () => {
         return response.data.flatMap((item) => item.members);
       },
     });
-  console.log(
-    "client data : ",
-    clientEmployees.flatMap((item) => item.members)
-  );
   //-------------------------------API-------------------------------//
   //-----------------------API-----------------------------//
 
