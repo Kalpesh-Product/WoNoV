@@ -162,7 +162,7 @@ const ManageMeetings = () => {
       internalParticipants: data.internalParticipants?.map((p) => p._id),
       clientParticipants: data.clientParticipants?.map((p) => p._id),
     };
-    // updateMeeting(payload);
+    updateMeeting(payload);
     console.log("Final payload:", payload);
     // Send `payload` in your mutation or API call
   };
@@ -257,7 +257,9 @@ const ManageMeetings = () => {
     onSuccess: (data) => {
       toast.success(data.message);
     },
-    onError: (error) => {},
+    onError: (error) => {
+      toast.error(error.message)
+    },
   });
 
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
