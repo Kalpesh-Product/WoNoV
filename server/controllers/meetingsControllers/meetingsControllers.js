@@ -1271,7 +1271,8 @@ const updateMeeting = async (req, res, next) => {
       totalAmount: paymentAmount,
       paymentDate: updatedMeeting.startDate,
       remarks: paymentMode,
-      meetingRoomName: updatedMeeting.bookedRoom.name,
+      // meetingRoomName: updatedMeeting.bookedRoom.name,
+      meeting: updatedMeeting._id,
       hoursBooked: durationInHours,
     });
 
@@ -1303,19 +1304,6 @@ const updateMeeting = async (req, res, next) => {
         logSourceKey
       );
     }
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Meeting updated successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: updatedMeeting._id,
-      changes: { meetingId },
-    });
 
     return res.status(200).json({ message: "Meeting updated successfully" });
   } catch (error) {
@@ -1469,10 +1457,15 @@ const updateMeetingDetails = async (req, res, next) => {
       endTime,
       internalParticipants,
       externalParticipants,
+      paymentAmount,
     } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(meetingId)) {
       return res.status(400).json({ message: "Invalid meeting ID" });
+    }
+
+    if (externalParticipants && !payment) {
+      return res.status(400).json({ message: "Payment amount required" });
     }
 
     const meeting = await Meeting.findById(meetingId).populate([
@@ -1592,13 +1585,45 @@ const updateMeetingDetails = async (req, res, next) => {
       internalParticipants: !isClient ? internalUsers : [],
       clientParticipants: isClient ? internalUsers : [],
       externalParticipants: externalParticipants || [],
+      paymentAmount: externalParticipants ? paymentAmount : 0,
     };
 
     const updatedMeeting = await Meeting.findByIdAndUpdate(
       meetingId,
       { $set: changes },
       { new: true }
-    );
+    ).populate([
+      { path: "bookedRoom" },
+      { path: "externalClient", select: "clientCompany" },
+    ]);
+
+    if (externalParticipants && externalParticipants.length > 0) {
+      const meetingRevenue = await MeetingRevenue.findByIdAndUpdate({
+        meeting: updatedMeeting._id,
+        totalAmount: paymentAmount,
+      });
+
+      if (!meetingRevenue) {
+        return res
+          .status(400)
+          .json({ message: "Failed to update the meeting revenue" });
+      }
+
+      const updatedVisitor = await Visitor.findOneAndUpdate(
+        {
+          clientCompany: updatedMeeting.externalClient.clientCompany,
+        },
+        {
+          meeting: updatedMeeting._id,
+        }
+      );
+
+      if (!updatedVisitor) {
+        return res
+          .status(400)
+          .json({ message: "Failed to update the visitor" });
+      }
+    }
 
     if (!updatedMeeting) {
       return res.status(500).json({ message: "Failed to update meeting" });
