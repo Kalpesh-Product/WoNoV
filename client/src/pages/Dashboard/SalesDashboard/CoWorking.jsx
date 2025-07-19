@@ -123,17 +123,13 @@ const CoWorking = () => {
           totalTerm: client.totalTerm || 0,
           rentDate: client.rentDate,
           rentStatus: client.rentStatus,
-          pastDueDate: dayjs(client.pastDueDate).format("DD-MM-YYYY"),
+          pastDueDate: client.pastDueDate,
           annualIncrement: client.annualIncrement || 0,
-          nextIncrementDate: dayjs(client.nextIncrementDate).format(
-            "DD-MM-YYYY"
-          ),
+          nextIncrementDate: client.nextIncrementDate,
         })),
       }));
 
   const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
-
-
 
   return (
     <div className="flex flex-col gap-4">
@@ -154,6 +150,7 @@ const CoWorking = () => {
         <WidgetTable
           data={flattenedRevenueData}
           dateColumn={"rentDate"}
+          formatDate
           tableTitle={"MONTHLY REVENUE WITH CLIENT DETAILS"}
           totalKey="revenue"
           columns={[
@@ -179,9 +176,12 @@ const CoWorking = () => {
               headerName: "Next Increment Date",
               field: "nextIncrementDate",
             },
-            { headerName: "Rent Status", field: "rentStatus", pinned: "right", cellRenderer : (params)=>(
-              <StatusChip status={params.value} />
-            ) },
+            {
+              headerName: "Rent Status",
+              field: "rentStatus",
+              pinned: "right",
+              cellRenderer: (params) => <StatusChip status={params.value} />,
+            },
           ]}
         />
       ) : (
