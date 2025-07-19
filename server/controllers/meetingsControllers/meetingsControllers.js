@@ -1456,6 +1456,7 @@ const updateMeetingDetails = async (req, res, next) => {
       startTime,
       endTime,
       internalParticipants,
+      clientParticipants,
       externalParticipants,
       paymentAmount,
     } = req.body;
@@ -1479,6 +1480,13 @@ const updateMeetingDetails = async (req, res, next) => {
     if (!meeting) {
       return res.status(404).json({ message: "Meeting not found" });
     }
+
+    const internalMeetingParticipants =
+      internalParticipants && internalParticipants.length > 0
+        ? internalParticipants
+        : clientParticipants && clientParticipants.length > 0
+        ? clientParticipants
+        : [];
 
     const isClient = !!meeting.clientBookedBy;
     const BookingModel = isClient ? CoworkingMembers : User;
@@ -1526,8 +1534,8 @@ const updateMeetingDetails = async (req, res, next) => {
     }
 
     let internalUsers = [];
-    if (internalParticipants) {
-      const invalidIds = internalParticipants.filter(
+    if (internalMeetingParticipants) {
+      const invalidIds = internalMeetingParticipants.filter(
         (id) => !mongoose.Types.ObjectId.isValid(id)
       );
       if (invalidIds.length > 0) {
@@ -1537,9 +1545,9 @@ const updateMeetingDetails = async (req, res, next) => {
       }
 
       const users = await BookingModel.find({
-        _id: { $in: internalParticipants },
+        _id: { $in: internalMeetingParticipants },
       });
-      const unmatchedIds = internalParticipants.filter(
+      const unmatchedIds = internalMeetingParticipants.filter(
         (id) => !users.find((u) => u._id.toString() === id.toString())
       );
 
