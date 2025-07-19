@@ -41,6 +41,7 @@ const createUser = async (req, res, next) => {
       startDate,
       workLocation,
       reportsTo,
+      shift,
       policies,
       homeAddress,
       bankInformation,
@@ -63,6 +64,7 @@ const createUser = async (req, res, next) => {
       !departments ||
       !designation ||
       !startDate ||
+      !shift ||
       !workLocation
     ) {
       throw new CustomError(
@@ -177,6 +179,7 @@ const createUser = async (req, res, next) => {
       startDate,
       workLocation,
       reportsTo,
+      shift,
       policies,
       homeAddress,
       bankInformation,
