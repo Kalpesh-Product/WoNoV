@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import AssetModal from "./AssetModal";
@@ -34,6 +34,7 @@ const ListOfAssets = () => {
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [selectedForEdit, setSelectedForEdit] =useState([])
   const [previewImage, setPreviewImage] = useState(null);
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
 
@@ -67,6 +68,36 @@ const ListOfAssets = () => {
     },
     mode: "onChange",
   });
+  const {
+    handleSubmit: handleEditSubmit,
+    control: editControl,
+    formState: { errors: editErrors },
+    watch: editWatch,
+    reset: editRequest,
+    setValue,
+  } = useForm({
+    defaultValues: {
+      departmentId: "",
+      categoryId: "",
+      subCategoryId: "",
+      vendorId: "",
+      name: "",
+      purchaseDate: null,
+      quantity: 0,
+      price: 0,
+      brand: "",
+      assetType: "",
+      warranty: 0,
+      ownershipType: "",
+      rentedMonths: 0,
+      tangable: "",
+      locationId: "",
+      location: "",
+      floor: "",
+      warrantyDocument: null,
+    },
+    mode: "onChange",
+  });
   const selectedCategory = watch("categoryId");
   const selectedLocation = watch("location");
   const selectedUnit = watch("floor");
@@ -77,7 +108,9 @@ const ListOfAssets = () => {
     queryKey: ["assetsList"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/assets/get-assets?departmentId=${departmentId}`);
+        const response = await axios.get(
+          `/api/assets/get-assets?departmentId=${departmentId}`
+        );
         const filtered = response.data.flatMap((item) => item.assets);
         return filtered;
       } catch (error) {
@@ -86,13 +119,14 @@ const ListOfAssets = () => {
     },
   });
 
-
   const { data: assetSubCategories = [], isPending: isSubCategoriesPending } =
     useQuery({
       queryKey: ["assetSubCategories"],
       queryFn: async () => {
         try {
-          const response = await axios.get(`/api/assets/get-subcategory?departmentId=${departmentId}`);
+          const response = await axios.get(
+            `/api/assets/get-subcategory?departmentId=${departmentId}`
+          );
           return response.data;
         } catch (error) {
           console.error(error.message);
@@ -154,6 +188,83 @@ const ListOfAssets = () => {
       toast.error(error.message);
     },
   });
+useEffect(() => {
+  const selected = assetsList.find(
+    (item) => item._id === selectedAsset?._id
+  );
+  if (selected) {
+    setSelectedForEdit(selected);
+  }
+}, [selectedAsset, assetsList]);
+
+
+useEffect(() => {
+  console.log("selected", selectedForEdit)
+  if (modalMode === "edit" && selectedForEdit) {
+    editRequest({
+      departmentId: selectedForEdit?.department?._id || "",
+      categoryId: selectedForEdit?.category?._id || "",
+      subCategoryId: selectedForEdit?.subCategory?.subCategoryName || "",
+      vendorId: selectedForEdit?.vendor?._id || "",
+      name: selectedForEdit?.name || "",
+      purchaseDate: selectedForEdit?.purchaseDate || null,
+      quantity: selectedForEdit?.quantity || 0,
+      price: selectedForEdit?.price || 0,
+      brand: selectedForEdit?.brand || "",
+      assetType: selectedForEdit?.assetType || "",
+      warranty: selectedForEdit?.warranty || 0,
+      ownershipType: selectedForEdit?.ownershipType || "",
+      rentedMonths: selectedForEdit?.rentedMonths || 0,
+      tangable:
+        typeof selectedForEdit?.tangable === "boolean"
+          ? String(selectedForEdit.tangable)
+          : "",
+      location: selectedForEdit?.location || "",
+      floor: selectedForEdit?.floor?._id || "",
+      assetImage: null,
+      warrantyDocument: null,
+    });
+  }
+}, [modalMode, selectedForEdit]);
+
+
+  const { mutate: editAsset, isPending: isUpdateAsset } = useMutation({
+    mutationKey: ["editAsset"],
+    mutationFn: async (data) => {
+      const formData = new FormData();
+      formData.append("departmentId", departmentId);
+      formData.append("categoryId", data.categoryId);
+      formData.append("subCategoryId", data.subCategoryId);
+      formData.append("vendorId", data.vendorId);
+      formData.append("name", data.name);
+      formData.append("purchaseDate", data.purchaseDate);
+      formData.append("quantity", Number(data.quantity));
+      formData.append("price", Number(data.price));
+      formData.append("brand", data.brand);
+      formData.append("assetType", data.assetType);
+      formData.append("warranty", Number(data.warranty));
+      formData.append("ownershipType", data.ownershipType);
+      formData.append("rentedMonths", Number(data.rentedMonths));
+      formData.append("tangable", data.tangable);
+      formData.append("locationId", data.floor);
+      if (data.warrantyDocument) {
+        formData.append("warrantyDocument", data.warrantyDocument);
+      }
+
+      const response = await axios.post("/api/assets/create-asset", formData);
+      return response.data;
+    },
+    onSuccess: function (data) {
+      queryClient.invalidateQueries({ queryKey: ["assetsList"] });
+      toast.success(data.message);
+      setIsModalOpen(false);
+      reset();
+    },
+    onError: function (error) {
+      toast.error(error.message);
+    },
+  });
+
   const { data: assetCategories = [], isPending: isCategoriesPending } =
     useQuery({
       queryKey: ["assetCategories"],
@@ -215,6 +326,11 @@ const ListOfAssets = () => {
     setModalMode("add");
     setSelectedAsset(null);
   };
+  const handleEdit = (data) => {
+    setIsModalOpen(true);
+    setModalMode("edit");
+    setSelectedAsset(data);
+  };
 
   const handleFormSubmit = (data) => {
     if (modalMode === "add") {
@@ -246,7 +362,7 @@ const ListOfAssets = () => {
           menuItems={[
             {
               label: "Edit",
-              // onClick: () => handleEdit(params.data),
+              onClick: () => handleEdit(params.data),
             },
             {
               label: "Assign",
@@ -643,7 +759,378 @@ const ListOfAssets = () => {
             />
           </form>
         )}
-        {modalMode === "edit" && ""}
+        {modalMode === "edit" && (
+          <form
+            onSubmit={handleEditSubmit((data) => editAsset(data))}
+            className="grid grid-cols-2 gap-4"
+          >
+            <Controller
+              name="categoryId"
+              control={editControl}
+              rules={{ required: "Category is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  error={!!editErrors.categoryId}
+                  helperText={editErrors?.categoryId?.message}
+                  label="Category"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select a Category</em>
+                  </MenuItem>
+                  {isCategoriesPending
+                    ? []
+                    : assetCategories.map((item) => (
+                        <MenuItem key={item._id} value={item._id}>
+                          {item.categoryName}
+                        </MenuItem>
+                      ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="subCategoryId"
+              control={editControl}
+              rules={{ required: "Sub Category is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  disabled={!selectedCategory}
+                  size="small"
+                  error={!!editErrors.subCategoryId}
+                  helperText={editErrors?.subCategoryId?.message}
+                  label="Sub Category"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select a Sub Category</em>
+                  </MenuItem>
+                  {filteredSubCategories?.map((item) => (
+                    <MenuItem key={item._id} value={item._id}>
+                      {item.subCategoryName}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="vendorId"
+              control={editControl}
+              rules={{ required: "Vendor is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Vendor"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select a Vendor</em>
+                  </MenuItem>
+                  {isVendorDetails
+                    ? []
+                    : vendorDetails.map((item) => (
+                        <MenuItem key={item._id} value={item._id}>
+                          {item.companyName || item.name}
+                        </MenuItem>
+                      ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="name"
+              control={editControl}
+              rules={{
+                required: "Name is required",
+                validate: { isAlphanumeric, noOnlyWhitespace },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Asset Name"
+                  error={!!editErrors.name}
+                  helperText={editErrors?.name?.message}
+                />
+              )}
+            />
+            <Controller
+              name="purchaseDate"
+              control={editControl}
+              rules={{ required: "Purchase date is required" }}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  format="DD-MM-YYYY"
+                  label="Purchase Date"
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                      error: !!editErrors.purchaseDate,
+                      helperText: editErrors?.purchaseDate?.message,
+                    },
+                  }}
+                />
+              )}
+            />
+            <Controller
+              name="quantity"
+              control={editControl}
+              rules={{ required: "Quantity is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Quantity"
+                  error={!!editErrors.quantity}
+                  helperText={editErrors?.quantity?.message}
+                />
+              )}
+            />
+            <Controller
+              name="price"
+              control={editControl}
+              rules={{ required: "Price is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Price"
+                  error={!!editErrors.price}
+                  helperText={editErrors?.price?.message}
+                />
+              )}
+            />
+            <Controller
+              name="brand"
+              control={editControl}
+              rules={{
+                required: "Brand is required",
+                validate: { isAlphanumeric, noOnlyWhitespace },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Asset brand"
+                  error={!!editErrors.brand}
+                  helperText={editErrors?.brand?.message}
+                />
+              )}
+            />
+            <Controller
+              name="assetType"
+              control={editControl}
+              rules={{ required: "Asset Type is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Asset Type"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select an Asset Type</em>
+                  </MenuItem>
+                  <MenuItem value="Physical">Physical</MenuItem>
+                  <MenuItem value="Digital">Digital</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="warranty"
+              control={editControl}
+              rules={{ required: "Warranty is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Warranty (Months)"
+                  error={!!editErrors.warranty}
+                  helperText={editErrors?.warranty?.message}
+                />
+              )}
+            />
+            <Controller
+              name="ownershipType"
+              control={editControl}
+              rules={{ required: "Ownership Type is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Ownership Type"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select an Ownership Type</em>
+                  </MenuItem>
+                  <MenuItem value="Owned">Owned</MenuItem>
+                  <MenuItem value="Rental">Rental</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="rentedMonths"
+              control={editControl}
+              rules={{ required: "Rented Months is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Rented Months"
+                  error={!!editErrors.rentedMonths}
+                  helperText={editErrors?.rentedMonths?.message}
+                />
+              )}
+            />
+            <Controller
+              name="tangable"
+              control={editControl}
+              rules={{ required: "Tangable is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Tangable"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select Tangable</em>
+                  </MenuItem>
+                  <MenuItem value="true">Yes</MenuItem>
+                  <MenuItem value="false">No</MenuItem>
+                </TextField>
+              )}
+            />
+
+            <Controller
+              name="location"
+              control={editControl}
+              rules={{ required: "Building is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  error={!!editErrors.location}
+                  helperText={editErrors?.location?.message}
+                  label="Building"
+                >
+                  <MenuItem value="" disabled>
+                    Select Building
+                  </MenuItem>
+                  {locationsLoading ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} />
+                    </MenuItem>
+                  ) : locationsError ? (
+                    <MenuItem disabled>Error fetching units</MenuItem>
+                  ) : (
+                    uniqueBuildings.map(([id, name]) => (
+                      <MenuItem key={id} value={name}>
+                        {name}
+                      </MenuItem>
+                    ))
+                  )}
+                </TextField>
+              )}
+            />
+
+            {/* Meeting Room Dropdown */}
+            <Controller
+              name="floor"
+              control={editControl}
+              rules={{ required: "Unit is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Select Unit"
+                  size="small"
+                  fullWidth
+                  disabled={!selectedLocation}
+                  value={field.value}
+                  error={!!editErrors.floor}
+                  helperText={editErrors?.floor?.message}
+                  onChange={(event) => field.onChange(event.target.value)}
+                >
+                  <MenuItem value="" disabled>
+                    Select Unit
+                  </MenuItem>
+                  {units
+                    .filter(
+                      (unit) =>
+                        unit.building &&
+                        unit.building.buildingName === selectedLocation
+                    )
+                    .map((unit) => (
+                      <MenuItem key={unit._id} value={unit._id}>
+                        {unit.unitNo}
+                      </MenuItem>
+                    ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="assetImage"
+              control={editControl}
+              rules={{ required: "Asset Image is required" }}
+              render={({ field }) => (
+                <UploadFileInput
+                  value={field.value}
+                  label="Asset Image"
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            <Controller
+              name="warrantyDocument"
+              control={editControl}
+              rules={{ required: "Warranty Document is required" }}
+              render={({ field }) => (
+                <UploadFileInput
+                  value={field.value}
+                  label="Warranty Document"
+                  allowedExtensions={["pdf"]}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+
+            <PrimaryButton
+              title={"Update Asset"}
+              type={"submit"}
+              isLoading={isUpdateAsset}
+              disabled={isUpdateAsset}
+              externalStyles={"col-span-2"}
+            />
+          </form>
+        )}
       </MuiModal>
     </PageFrame>
   );
