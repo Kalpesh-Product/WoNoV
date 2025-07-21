@@ -23,6 +23,9 @@ const AssetsCategories = () => {
   const [selectedAsset, setSelectedAsset] = useState([]);
   const [modalMode, setModalMode] = useState("");
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["assetCategories"] });
+  }, []);
 
   //--------------------FORMS------------------------------//
 
@@ -83,17 +86,20 @@ const AssetsCategories = () => {
     },
   });
 
-  const { data: assetCategories, isPending: isCategoriesPending } = useQuery({
-    queryKey: ["assetCategories"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-category");
-        return response.data;
-      } catch (error) {
-        console.error(error.message);
-      }
-    },
-  });
+  const { data: assetCategories = [], isPending: isCategoriesPending } =
+    useQuery({
+      queryKey: ["assetCategories"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/assets/get-category?departmentId=${departmentId}`
+          );
+          return response.data;
+        } catch (error) {
+          console.error(error.message);
+        }
+      },
+    });
 
   //--------------------API------------------------------//
 
