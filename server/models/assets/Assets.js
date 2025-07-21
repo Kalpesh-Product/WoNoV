@@ -85,6 +85,10 @@ const assetsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "AssignAsset",
     },
+    image: {
+      id: String,
+      url: String,
+    },
   },
   { timestamps: true }
 );

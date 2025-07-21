@@ -261,7 +261,7 @@ const AssetsCategories = () => {
               name="categoryName"
               control={editControl}
               defaultValue=""
-              rules={{ required: "Category Name is required" }}
+              // rules={{ required: "Category Name is required" }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -277,7 +277,7 @@ const AssetsCategories = () => {
             <Controller
               name="status"
               control={editControl}
-              rules={{ required: "Status is required" }}
+              // rules={{ required: "Status is required" }}
               render={({ field }) => (
                 <TextField
                   select

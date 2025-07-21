@@ -21,6 +21,7 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useSelector } from "react-redux";
+import { useEffect } from "react";
 
 const AssetsSubCategories = () => {
   const axios = useAxiosPrivate();
@@ -33,20 +34,23 @@ const AssetsSubCategories = () => {
   //--------------------FORMS------------------------------//
 
   const {
-    control,
-    handleSubmit,
+    control:editControl,
+    handleSubmit: handleEditSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     defaultValues: {
       subCategoryName: "",
       assetCategoryId: "",
+      "status":""
     },
   });
   //--------------------FORMS------------------------------//
   //--------------------API------------------------------//
   const { mutate: createSubCategory, isPending: pendingCreate } = useMutation({
     mutationFn: async (data) => {
+      console.log("data",data)
       const response = await axios.post(
         "/api/assets/create-asset-subcategory",
         { ...data, assetSubCategoryName: data.subCategoryName }
@@ -89,6 +93,25 @@ const AssetsSubCategories = () => {
     },
   });
 
+    const { mutate: editSubCategory, isPending: pendingEdit } = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        "/api/assets/update-asset-subcategory",
+        data
+      );
+      return response.data;
+      // console.log("edit form : ", data);
+    },
+    onSuccess: function (data) {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["assetSubCategories"] });
+      setModalOpen(false);
+    },
+    onError: function (data) {
+      toast.error(data.response.data.message || "Failed to add category");
+    },
+  });
+
   //--------------------API------------------------------//
 
   //--------------------Event handlers------------------------------//
@@ -98,12 +121,23 @@ const AssetsSubCategories = () => {
     createSubCategory(data);
   };
 
+    const handleEdit = (data) => {
+    setModalMode("edit");
+    setSelectedAsset(data);
+    setModalOpen(true);
+  };
+
   const getRowStyle = (params) => {
     if (!params.data.isActive) {
       return { backgroundColor: "#d3d3d3", color: "#666" }; // Gray out disabled rows
     }
     return null;
   };
+
+   useEffect(() => {
+      setValue("subCategoryName", selectedAsset?.subCategoryName);
+      setValue("status", selectedAsset?.isActive);
+    }, [selectedAsset]);
   //--------------------Event handlers------------------------------//
   //--------------------Table Data------------------------------//
   const categoriesColumn = [
@@ -138,9 +172,6 @@ const AssetsSubCategories = () => {
       headerName: "Action",
       flex: 1,
       cellRenderer: (params) => {
-        if (!params.data.isActive) {
-          return null; // Hide button if isActive is false
-        }
 
         return (
           <ThreeDotMenu
@@ -148,7 +179,7 @@ const AssetsSubCategories = () => {
             menuItems={[
               {
                 label: "Edit",
-                // onClick: () => handleEdit(params.data),
+                onClick: () => handleEdit(params.data),
               },
               // {
               //   label: "Delete",
@@ -228,7 +259,7 @@ const AssetsSubCategories = () => {
             <Controller
               name="assetCategoryId"
               control={control}
-              rules={{ required: "Asset Categody is Required" }}
+              rules={{ required: "Asset Category is Required" }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -261,6 +292,63 @@ const AssetsSubCategories = () => {
           </form>
         )}
 
+   {modalMode === "edit" && (
+          <form
+            onSubmit={handleEditSubmit((data) => {
+              const payload = {
+                ...data,
+                assetSubCategoryId: selectedAsset?._id,
+                status: data.status === "true",
+              };
+              editSubCategory(payload);
+            })}
+            className="grid grid-cols-1 gap-4 w-full"
+          >
+            {/* Category Name Input */}
+            <Controller
+              name="subCategoryName"
+              control={editControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Sub Category Name"
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  error={!!errors.subCategoryName}
+                  helperText={errors.subCategoryName?.message}
+                />
+              )}
+            />
+            <Controller
+              name="status"
+              control={editControl}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  fullWidth
+                  size="small"
+                  label="Select Status"
+                  error={!!errors.status}
+                  helperText={errors.status?.message}
+                >
+                  <MenuItem value="" disabled>
+                    Select a status
+                  </MenuItem>
+                  <MenuItem value="true">Active</MenuItem>
+                  <MenuItem value="false">Inactive</MenuItem>
+                </TextField>
+              )}
+            />
+
+            <PrimaryButton
+              title="Submit"
+              disabled={pendingCreate}
+              isLoading={pendingCreate}
+            />
+          </form>
+        )}
         {modalMode === "view" && (
           <div className="grid grid-cols-1 gap-4">
             <DetalisFormatted
