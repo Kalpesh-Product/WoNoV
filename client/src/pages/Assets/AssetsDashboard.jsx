@@ -77,7 +77,7 @@ const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
           icon={<MdFormatListBulleted />}
         />,
         <Card
-          route={"/app/meetings/calendar"}
+          route={"#"}
           title={"Mix Bag"}
           icon={<MdFormatListBulleted />}
         />,

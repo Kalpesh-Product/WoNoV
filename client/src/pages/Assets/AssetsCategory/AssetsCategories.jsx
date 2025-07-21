@@ -86,20 +86,20 @@ const AssetsCategories = () => {
     },
   });
 
-  const { data: assetCategories=[], isPending: isCategoriesPending } = useQuery({
-    queryKey: ["assetCategories"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/assets/get-category?departmentId=${departmentId}`
-        );
-        return response.data;
-      } catch (error) {
-        console.error(error.message);
-      }
-    },
-  });
-  console.log("asset category length", assetCategories)
+  const { data: assetCategories = [], isPending: isCategoriesPending } =
+    useQuery({
+      queryKey: ["assetCategories"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            `/api/assets/get-category?departmentId=${departmentId}`
+          );
+          return response.data;
+        } catch (error) {
+          console.error(error.message);
+        }
+      },
+    });
 
   //--------------------API------------------------------//
 
@@ -193,7 +193,7 @@ const AssetsCategories = () => {
   return (
     <PageFrame>
       <AgTable
-
+        key={tableData._id}
         search={true}
         searchColumn="Category Name"
         tableTitle="Assets Categories"

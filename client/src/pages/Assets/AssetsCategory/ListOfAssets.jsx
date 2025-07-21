@@ -77,7 +77,7 @@ const ListOfAssets = () => {
     queryKey: ["assetsList"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/assets/get-assets");
+        const response = await axios.get(`/api/assets/get-assets?departmentId=${departmentId}`);
         const filtered = response.data.flatMap((item) => item.assets);
         return filtered;
       } catch (error) {
@@ -85,24 +85,14 @@ const ListOfAssets = () => {
       }
     },
   });
-  const { data: assetsCategories = [], isPending: assetPending } = useQuery({
-    queryKey: ["assetsCategories"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/assets/get-category");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
-    },
-  });
+
 
   const { data: assetSubCategories = [], isPending: isSubCategoriesPending } =
     useQuery({
       queryKey: ["assetSubCategories"],
       queryFn: async () => {
         try {
-          const response = await axios.get("/api/assets/get-subcategory");
+          const response = await axios.get(`/api/assets/get-subcategory?departmentId=${departmentId}`);
           return response.data;
         } catch (error) {
           console.error(error.message);
@@ -169,7 +159,9 @@ const ListOfAssets = () => {
       queryKey: ["assetCategories"],
       queryFn: async () => {
         try {
-          const response = await axios.get("/api/assets/get-category");
+          const response = await axios.get(
+            `/api/assets/get-category?departmentId=${departmentId}`
+          );
           return response.data;
         } catch (error) {
           console.error(error.message);
