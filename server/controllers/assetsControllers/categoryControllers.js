@@ -406,14 +406,13 @@ const getSubCategory = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid company ID" });
     }
 
-    const companyExists = await Compaany.findById(company);
+    const companyExists = await Company.findById(company);
     if (!companyExists) {
       return res.status(400).json({ message: "Company doesn't exist" });
     }
 
     // Get all categories for this company
     const categories = await AssetCategory.find().select("_id");
-
     const categoryIds = categories.map((cat) => cat._id);
 
     const assetSubCategories = await AssetSubCategory.find({
