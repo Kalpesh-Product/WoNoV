@@ -8,7 +8,13 @@ import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
+import {
+  Button,
+  CircularProgress,
+  FormHelperText,
+  MenuItem,
+  TextField,
+} from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
@@ -17,6 +23,10 @@ import { inrFormat } from "../../../utils/currencyFormat";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { useSelector } from "react-redux";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import { useMemo } from "react";
+import UploadFileInput from "../../../components/UploadFileInput";
+import { queryClient } from "../../../main";
+import dayjs from "dayjs";
 
 const ListOfAssets = () => {
   const { auth } = useAuth();
@@ -33,6 +43,7 @@ const ListOfAssets = () => {
     control,
     formState: { errors },
     watch,
+    reset,
   } = useForm({
     defaultValues: {
       departmentId: "",
@@ -50,9 +61,15 @@ const ListOfAssets = () => {
       rentedMonths: 0,
       tangable: "",
       locationId: "",
+      location: "",
+      floor: "",
+      warrantyDocument: null,
     },
+    mode: "onChange",
   });
   const selectedCategory = watch("categoryId");
+  const selectedLocation = watch("location");
+  const selectedUnit = watch("floor");
   //---------------------Forms----------------------//
 
   //-----------------------API----------------------//
@@ -115,28 +132,33 @@ const ListOfAssets = () => {
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
       const formData = new FormData();
-
+      formData.append("departmentId", departmentId);
+      formData.append("categoryId", data.categoryId);
+      formData.append("subCategoryId", data.subCategoryId);
+      formData.append("vendorId", data.vendorId);
       formData.append("name", data.name);
-      formData.append("assetType", data.assetType);
-      formData.append("vendor", data.vendor);
       formData.append("purchaseDate", data.purchaseDate);
       formData.append("quantity", Number(data.quantity));
       formData.append("price", Number(data.price));
-      formData.append("warranty", Number(data.warranty));
-      if (data.image) {
-        formData.append("image", data.image);
-      }
       formData.append("brand", data.brand);
-      formData.append("department", data.department);
-      formData.append("status", data.status);
-      formData.append("assignedTo", data.assignedTo);
+      formData.append("assetType", data.assetType);
+      formData.append("warranty", Number(data.warranty));
+      formData.append("ownershipType", data.ownershipType);
+      formData.append("rentedMonths", Number(data.rentedMonths));
+      formData.append("tangable", data.tangable);
+      formData.append("locationId", data.floor);
+      if (data.warrantyDocument) {
+        formData.append("warrantyDocument", data.warrantyDocument);
+      }
 
-      const response = await axios.post("/api/assets/create-asset");
+      const response = await axios.post("/api/assets/create-asset", formData);
       return response.data;
     },
     onSuccess: function (data) {
+      queryClient.invalidateQueries({ queryKey: ["assetsList"] });
       toast.success(data.message);
       setIsModalOpen(false);
+      reset();
     },
     onError: function (error) {
       toast.error(error.message);
@@ -154,6 +176,40 @@ const ListOfAssets = () => {
         }
       },
     });
+
+  const {
+    data: units = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-simple-units");
+
+      return response.data;
+    },
+  });
+
+  const selectedUnitId = useMemo(() => {
+    if (!selectedUnit || !selectedLocation) return null;
+    const unit = units.find(
+      (unit) =>
+        unit.unitNo === selectedUnit &&
+        unit.building?.buildingName === selectedLocation // use ?. here too
+    );
+    return unit ? unit._id : null;
+  }, [selectedUnit, selectedLocation, units]);
+
+  const uniqueBuildings = Array.from(
+    new Map(
+      units.length > 0
+        ? units.map((loc) => [
+            loc.building?._id ?? `unknown-${loc.unitNo}`,
+            loc.building?.buildingName ?? "Unknown Building",
+          ])
+        : []
+    ).entries()
+  );
   //-----------------------API----------------------//
   //-----------------------Event handlers----------------------//
   const handleDetailsClick = (asset) => {
@@ -231,9 +287,16 @@ const ListOfAssets = () => {
         handleSubmit={handleAddAsset}
       />
 
-      <MuiModal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+      <MuiModal
+        open={isModalOpen}
+        title={"Add asset"}
+        onClose={() => setIsModalOpen(false)}
+      >
         {modalMode === "add" && (
-          <form className="grid grid-cols-2 gap-4">
+          <form
+            onSubmit={handleSubmit((data) => addAsset(data))}
+            className="grid grid-cols-2 gap-4"
+          >
             <Controller
               name="categoryId"
               control={control}
@@ -270,6 +333,7 @@ const ListOfAssets = () => {
                   {...field}
                   select
                   fullWidth
+                  disabled={!selectedCategory}
                   size="small"
                   error={!!errors.subCategoryId}
                   helperText={errors?.subCategoryId?.message}
@@ -318,6 +382,272 @@ const ListOfAssets = () => {
                 required: "Name is required",
                 validate: { isAlphanumeric, noOnlyWhitespace },
               }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Asset Name"
+                  error={!!errors.name}
+                  helperText={errors?.name?.message}
+                />
+              )}
+            />
+            <Controller
+              name="purchaseDate"
+              control={control}
+              rules={{ required: "Purchase date is required" }}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  format="DD-MM-YYYY"
+                  label="Purchase Date"
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                      error: !!errors.purchaseDate,
+                      helperText: errors?.purchaseDate?.message,
+                    },
+                  }}
+                />
+              )}
+            />
+            <Controller
+              name="quantity"
+              control={control}
+              rules={{ required: "Quantity is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Quantity"
+                  error={!!errors.quantity}
+                  helperText={errors?.quantity?.message}
+                />
+              )}
+            />
+            <Controller
+              name="price"
+              control={control}
+              rules={{ required: "Price is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Price"
+                  error={!!errors.price}
+                  helperText={errors?.price?.message}
+                />
+              )}
+            />
+            <Controller
+              name="brand"
+              control={control}
+              rules={{
+                required: "Brand is required",
+                validate: { isAlphanumeric, noOnlyWhitespace },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Asset brand"
+                  error={!!errors.brand}
+                  helperText={errors?.brand?.message}
+                />
+              )}
+            />
+            <Controller
+              name="assetType"
+              control={control}
+              rules={{ required: "Asset Type is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Asset Type"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select an Asset Type</em>
+                  </MenuItem>
+                  <MenuItem value="Physical">Physical</MenuItem>
+                  <MenuItem value="Digital">Digital</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="warranty"
+              control={control}
+              rules={{ required: "Warranty is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Warranty (Months)"
+                  error={!!errors.warranty}
+                  helperText={errors?.warranty?.message}
+                />
+              )}
+            />
+            <Controller
+              name="ownershipType"
+              control={control}
+              rules={{ required: "Ownership Type is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Ownership Type"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select an Ownership Type</em>
+                  </MenuItem>
+                  <MenuItem value="Owned">Owned</MenuItem>
+                  <MenuItem value="Rental">Rental</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="rentedMonths"
+              control={control}
+              rules={{ required: "Rented Months is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Rented Months"
+                  error={!!errors.rentedMonths}
+                  helperText={errors?.rentedMonths?.message}
+                />
+              )}
+            />
+            <Controller
+              name="tangable"
+              control={control}
+              rules={{ required: "Tangable is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Tangable"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select Tangable</em>
+                  </MenuItem>
+                  <MenuItem value="true">Yes</MenuItem>
+                  <MenuItem value="false">No</MenuItem>
+                </TextField>
+              )}
+            />
+
+            <Controller
+              name="location"
+              control={control}
+              rules={{ required: "Building is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  error={!!errors.location}
+                  helperText={errors?.location?.message}
+                  label="Building"
+                >
+                  <MenuItem value="" disabled>
+                    Select Building
+                  </MenuItem>
+                  {locationsLoading ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} />
+                    </MenuItem>
+                  ) : locationsError ? (
+                    <MenuItem disabled>Error fetching units</MenuItem>
+                  ) : (
+                    uniqueBuildings.map(([id, name]) => (
+                      <MenuItem key={id} value={name}>
+                        {name}
+                      </MenuItem>
+                    ))
+                  )}
+                </TextField>
+              )}
+            />
+
+            {/* Meeting Room Dropdown */}
+            <Controller
+              name="floor"
+              control={control}
+              rules={{ required: "Unit is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Select Unit"
+                  size="small"
+                  fullWidth
+                  disabled={!selectedLocation}
+                  value={field.value}
+                  error={!!errors.floor}
+                  helperText={errors?.floor?.message}
+                  onChange={(event) => field.onChange(event.target.value)}
+                >
+                  <MenuItem value="" disabled>
+                    Select Unit
+                  </MenuItem>
+                  {units
+                    .filter(
+                      (unit) =>
+                        unit.building &&
+                        unit.building.buildingName === selectedLocation
+                    )
+                    .map((unit) => (
+                      <MenuItem key={unit._id} value={unit._id}>
+                        {unit.unitNo}
+                      </MenuItem>
+                    ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="assetImage"
+              control={control}
+              rules={{ required: "Asset Image is required" }}
+              render={({ field }) => (
+                <UploadFileInput
+                  value={field.value}
+                  label="Asset Image"
+                  onChange={field.onChange}
+                />
+              )}
+            />
+
+            <PrimaryButton
+              title={"Add Asset"}
+              type={"submit"}
+              isLoading={isAddingAsset}
+              disabled={isAddingAsset}
+              externalStyles={"col-span-2"}
             />
           </form>
         )}
