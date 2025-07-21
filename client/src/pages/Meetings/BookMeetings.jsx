@@ -249,7 +249,7 @@ const BookMeetings = () => {
     buildingName: location.buildingName,
   }));
 
- const myMeetingsColumn = [
+  const myMeetingsColumn = [
     { field: "id", headerName: "Sr No", sort: "desc" },
     { field: "agenda", headerName: "Agenda", flex: 1 },
     { field: "date", headerName: "Date" },
@@ -321,6 +321,9 @@ const BookMeetings = () => {
       {
         state: {
           meetingRoomId: selectedRoomId,
+          perHourCredit: selectedRoom?.perHourCredit,
+          perHourPrice: selectedRoom?.perHourPrice,
+          seats: selectedRoom?.seats,
         },
       }
     );
@@ -476,82 +479,80 @@ const BookMeetings = () => {
             onSubmit={handleEditSubmit(onEditSubmit)}
             className="grid grid-cols-2 gap-4"
           >
-         
-              <Controller
-                name="startDate"
-                control={control}
-                render={({ field }) => (
-                  <DatePicker
-                    {...field}
-                    label={"Select Start Date"}
-                    format="DD-MM-YYYY"
-                    slotProps={{ textField: { size: "small" } }}
-                    value={field.value ? dayjs(field.value) : null}
-                    onChange={(date) => {
-                      field.onChange(date ? date.toISOString() : null);
-                    }}
-                  />
-                )}
-              />
-              <Controller
-                name="endDate"
-                control={control}
-                render={({ field }) => (
-                  <DatePicker
-                    {...field}
-                    label={"Select End Date"}
-                    format="DD-MM-YYYY"
-                    slotProps={{ textField: { size: "small" } }}
-                    value={field.value ? dayjs(field.value) : null}
-                    onChange={(date) => {
-                      field.onChange(date ? date.toISOString() : null);
-                    }}
-                  />
-                )}
-              />
+            <Controller
+              name="startDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  label={"Select Start Date"}
+                  format="DD-MM-YYYY"
+                  slotProps={{ textField: { size: "small" } }}
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                />
+              )}
+            />
+            <Controller
+              name="endDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  label={"Select End Date"}
+                  format="DD-MM-YYYY"
+                  slotProps={{ textField: { size: "small" } }}
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                />
+              )}
+            />
 
-              <Controller
-                name="startTime"
-                control={editControl}
-                rules={{
-                  required: "Start time is required",
-                }}
-                render={({ field }) => (
-                  <TimePicker
-                    {...field}
-                    label="Select Start Time"
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        error: !!editingErrors.startTime,
-                        helperText: editingErrors.startTime?.message,
-                      },
-                    }}
-                  />
-                )}
-              />
+            <Controller
+              name="startTime"
+              control={editControl}
+              rules={{
+                required: "Start time is required",
+              }}
+              render={({ field }) => (
+                <TimePicker
+                  {...field}
+                  label="Select Start Time"
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      error: !!editingErrors.startTime,
+                      helperText: editingErrors.startTime?.message,
+                    },
+                  }}
+                />
+              )}
+            />
 
-              <Controller
-                name="endTime"
-                control={editControl}
-                rules={{
-                  required: "End time is required",
-                }}
-                render={({ field }) => (
-                  <TimePicker
-                    {...field}
-                    label="Select End Time"
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        error: !!editingErrors.endTime,
-                        helperText: editingErrors?.endTime?.message,
-                      },
-                    }}
-                  />
-                )}
-              />
-    
+            <Controller
+              name="endTime"
+              control={editControl}
+              rules={{
+                required: "End time is required",
+              }}
+              render={({ field }) => (
+                <TimePicker
+                  {...field}
+                  label="Select End Time"
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      error: !!editingErrors.endTime,
+                      helperText: editingErrors?.endTime?.message,
+                    },
+                  }}
+                />
+              )}
+            />
 
             <Controller
               name="participants"

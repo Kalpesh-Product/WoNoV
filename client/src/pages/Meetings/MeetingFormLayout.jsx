@@ -47,6 +47,7 @@ const MeetingFormLayout = () => {
   const meetingRoomName = searchParams.get("meetingRoom") || "";
   const locationState = useLocation();
   const meetingRoomId = locationState.state?.meetingRoomId || "";
+  const { perHourCredit, perHourPrice } = locationState.state;
   const [events, setEvents] = useState([]);
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -346,6 +347,16 @@ const MeetingFormLayout = () => {
             <div className="w-full flex gap-8 items-center justify-end">
               <span className="text-content">
                 Selected Room : {meetingRoomName}
+              </span>
+            </div>
+            <div className="w-full flex gap-8 items-center justify-start">
+              <span className="text-content">
+                Per Hour Credit : {perHourCredit}
+              </span>
+            </div>
+            <div className="w-full flex gap-8 items-center justify-end">
+              <span className="text-content">
+                Per Hour Price : {perHourPrice}
               </span>
             </div>
           </div>

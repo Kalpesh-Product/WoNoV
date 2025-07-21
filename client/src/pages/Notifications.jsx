@@ -6,42 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 
 const Notifications = () => {
-  // const notifications = [
-  //   {
-  //     id: 1,
-  //     title: "Meeting on frontend development",
-  //     description: "UI / UX mockup reference",
-  //     date: "2025-01-10T09:00:00", // ISO string format from the backend
-  //     type: "meeting",
-  //     actionTaken: false,
-  //   },
-  //   {
-  //     id: 2,
-  //     title: "New Ticket Created",
-  //     description: "You have a new ticket assigned to you",
-  //     date: "2025-01-09T15:00:00", // Yesterday
-  //     type: "ticket",
-  //     actionTaken: false,
-  //   },
-  //   {
-  //     id: 3,
-  //     title: "Project Review Meeting Scheduled",
-  //     description:
-  //       "A meeting has been scheduled to review the project progress",
-  //     date: "2025-01-08T10:30:00", // Older
-  //     type: "meeting",
-  //     actionTaken: false,
-  //   },
-  //   {
-  //     id: 4,
-  //     title: "Project Review Meeting Scheduled",
-  //     description:
-  //       "A meeting has been scheduled to review the project progress",
-  //     date: "2025-01-09T15:30:00",
-  //     type: "meeting",
-  //     actionTaken: false,
-  //   },
-  // ];
 
   // Helper function to determine the section (Today, Yesterday, Older)
   const { auth } = useAuth();

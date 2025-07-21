@@ -1,8 +1,3 @@
-import BarGraph from "../../../components/graphs/BarGraph";
-import WidgetSection from "../../../components/WidgetSection";
-import AgTable from "../../../components/AgTable";
-import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
-import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
@@ -13,6 +8,8 @@ import { Skeleton } from "@mui/material";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import StatusChip from "../../../components/StatusChip";
+import humanDate from "../../../utils/humanDateForamt";
 
 const VirtualOffice = () => {
   const axios = useAxiosPrivate();
@@ -102,14 +99,16 @@ const VirtualOffice = () => {
     return parseFloat(item?.actual.replace(/,/g, ""));
   });
 
-const series = [
-  {
-    name: "Revenue",
-    group: "FY 2024-25",
-    data: graphNumbers,
-    dateKey: virtualOfficeRevenue?.[0]?.rentDate, // 👈 add this
-  },
-];
+  console.log("graph numbers : ", graphNumbers);
+
+  const series = [
+    {
+      name: "Revenue",
+      group: "FY 2024-25",
+      data: graphNumbers,
+      dateKey: virtualOfficeRevenue?.[0]?.rentDate, // 👈 add this
+    },
+  ];
 
   const options = {
     chart: {
@@ -178,6 +177,8 @@ const series = [
         clientName: item.client?.clientName,
       }));
 
+  console.log("tableData : ", humanDate("2025-04-10T00:00:00.000Z"));
+
   return (
     <div className="flex flex-col gap-4">
       {!isLoadingVirtualOfficeRevenue ? (
@@ -207,7 +208,12 @@ const series = [
               flex: 1,
               cellRenderer: (params) => inrFormat(params.value || 0),
             },
-            { headerName: "Status", field: "status", flex: 1 },
+            {
+              headerName: "Status",
+              field: "status",
+              flex: 1,
+              cellRenderer: (params) => <StatusChip status={params.value ? "Paid" : "Unpaid"} />,
+            },
           ]}
         />
       ) : (

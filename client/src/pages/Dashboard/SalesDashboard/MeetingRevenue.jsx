@@ -18,7 +18,7 @@ const MeetingRevenue = () => {
     isError,
     error,
   } = useQuery({
-    queryKey: ["meetings"],
+    queryKey: ["meetings-revenue"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/get-meeting-revenue");
       return Array.isArray(response.data) ? response.data : [];
@@ -99,7 +99,7 @@ const MeetingRevenue = () => {
       gst: client.gst ?? 0,
       totalAmount: client.totalAmount ?? 0,
       date: client.date,
-      paymentDate: humanDate(client.paymentDate),
+      paymentDate: (client.paymentDate),
       remarks: client.remarks || "-",
     })),
   }));
@@ -133,6 +133,7 @@ const MeetingRevenue = () => {
             data={flattenedRevenueData}
             tableTitle={"Monthly Revenue with Client Details"}
             dateColumn={"date"}
+            formatDate
             totalKey="taxable"
             columns={[
               { headerName: "Sr No", field: "srNo", width: 100 },
