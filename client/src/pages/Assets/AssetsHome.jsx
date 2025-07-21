@@ -4,7 +4,7 @@ import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setSelectedDepartment } from "../../redux/slices/assetsSlice";
+import { setSelectedDepartment, setSelectedDepartmentName } from "../../redux/slices/assetsSlice";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
@@ -26,7 +26,8 @@ const AssetsHome = () => {
     ], //Mac//Kashif//Nigel
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
-      navigate(`/app/assets/${currentDepartment}`);
+      dispatch(setSelectedDepartmentName(currentDepartment));
+      navigate(`/app/assets/view-assets/${currentDepartment}`);
     },
   });
 
@@ -62,7 +63,8 @@ const AssetsHome = () => {
             role="button"
             onClick={() => {
               dispatch(setSelectedDepartment(params.data?.departmentId));
-              navigate(`/app/assets/${params.value}`);
+              dispatch(setSelectedDepartmentName(params.value));
+              navigate(`/app/assets/view-assets/${params.value}`);
             }}
             className="text-primary font-pregular hover:underline cursor-pointer"
           >

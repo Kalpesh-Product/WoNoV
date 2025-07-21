@@ -127,7 +127,7 @@ const AttendanceRequests = () => {
         requestDay: humanDate(item.inTime) || "N/A",
         inTime: humanTime(item.inTime),
         outTime: humanTime(item.outTime),
-        originalInTime: humanTime(item.originalInTime),
+        originalInTime: (item.originalInTime),
         originalOutTime: humanTime(item.originalOutTime),
         createdDate: item.createdDate,
         status: item.status,
@@ -138,7 +138,7 @@ const AttendanceRequests = () => {
       <PageFrame>
         <YearWiseTable
           key={tableData.length}
-          formatDate
+          
           dateColumn={"createdDate"}
           columns={columns}
           data={!isLoading ? tableData : []}

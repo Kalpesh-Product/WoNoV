@@ -2027,12 +2027,16 @@ export const routes = createBrowserRouter([
                   //   index: true,
                   // },
                   {
-                    path: "", // Default route for /app/assets
-                    element: <AssetsDashboard />, // Dashboard is rendered by default
+                    path: "",
+                    element: <AssetsDashboard />, 
                   },
                   {
-                    path: "categories",
-                    element: <AssetsCategoriesLayout />, // This is your first page
+                    path: "view-assets",
+                    element: <AssetsHome />, 
+                  },
+                  {
+                    path: "view-assets/:department",
+                    element: <AssetsCategoriesLayout />,
                     children: [
                       {
                         path: "assets-categories",

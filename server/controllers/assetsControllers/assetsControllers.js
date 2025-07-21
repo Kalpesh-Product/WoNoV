@@ -318,7 +318,6 @@ const addAsset = async (req, res, next) => {
         rentedMonths,
         tangable,
         location: locationId,
-        warrantyDocument,
       },
     });
 
