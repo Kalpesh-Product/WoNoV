@@ -369,7 +369,7 @@ const getCategory = async (req, res, next) => {
   const { departmentId } = req.query;
 
   try {
-    const query = { company };
+    let query = { company };
 
     if (departmentId) {
       if (!mongoose.Types.ObjectId.isValid(departmentId)) {
