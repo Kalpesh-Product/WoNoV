@@ -4,6 +4,8 @@ const statusColorMap = {
   Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
   "In Progress": { backgroundColor: "#FFECC5", color: "#CC8400"},
   resolved: { backgroundColor: "#90EE90", color: "#006400" },
+  Active: { backgroundColor: "#90EE90", color: "#006400" },
+  Inactive: { backgroundColor: "#FF9F93", color: "#B71C1C" },
   Open: { backgroundColor: "#FF9F93", color: "#B71C1C" },
   completed: { backgroundColor: "#D3D3D3", color: "#696969" },
   Approved: { backgroundColor: "#90EE90", color: "#006400" },
