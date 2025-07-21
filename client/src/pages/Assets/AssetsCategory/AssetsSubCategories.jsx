@@ -82,7 +82,7 @@ const AssetsSubCategories = () => {
     },
   });
 
-  const { data: assetSubCategories, isPending: isSubCategoriesPending } =
+  const { data: assetSubCategories=[], isPending: isSubCategoriesPending } =
     useQuery({
       queryKey: ["assetSubCategories"],
       queryFn: async () => {

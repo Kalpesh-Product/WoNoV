@@ -170,9 +170,7 @@ const AssetsCategories = () => {
       headerName: "Action",
       flex: 1,
       cellRenderer: (params) => {
-        if (!params.data.isActive) {
-          return null; // Hide button if isActive is false
-        }
+
 
         return (
           <ThreeDotMenu
@@ -220,7 +218,7 @@ const AssetsCategories = () => {
         data={tableData}
         columns={categoriesColumn}
         tableHeight={350}
-        getRowStyle={getRowStyle}
+        // getRowStyle={getRowStyle}
       />
 
       <MuiModal
