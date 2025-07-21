@@ -35,11 +35,11 @@ const requestAsset = async (req, res, next) => {
   const logPath = "assets/AssetLog";
   const logAction = "Assign Asset";
   const logSourceKey = "assignAsset";
-  const { assetId, departmentId, location, quantity } = req.body;
+  const { assetId, departmentId, location } = req.body;
   const { ip, user, company } = req;
 
   try {
-    if (!assetId || !user || !departmentId || !quantity || !location) {
+    if (!assetId || !user || !departmentId || !location) {
       throw new CustomError(
         "All fields are required.",
         logPath,
@@ -93,9 +93,9 @@ const processAssetRequest = async (req, res, next) => {
   const { user, ip, company } = req;
 
   try {
-    const { requestId, action } = req.body;
+    const { requestedAssetId, action } = req.body;
 
-    if (!requestId || !action) {
+    if (!requestedAssetId || !action) {
       throw new CustomError(
         "Request ID and action are required.",
         logPath,
@@ -113,7 +113,7 @@ const processAssetRequest = async (req, res, next) => {
       );
     }
 
-    const request = await AssignAsset.findById(requestId);
+    const request = await AssignAsset.findById(requestedAssetId);
     if (!request) {
       throw new CustomError(
         "Assignment request not found.",
