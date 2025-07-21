@@ -190,6 +190,14 @@ const bulkInsertLeads = async (req, res, next) => {
       return res.status(400).json({ message: "Please provide a CSV sheet" });
     }
 
+    const units = await Unit.find().lean();
+    const unitsMap = new Map(units.map((u) => [u.unitNo, u._id]));
+
+    const services = await ClientService.find().lean();
+    const servicesMap = new Map(
+      services.map((s) => [s.name.toLowerCase(), s._id])
+    );
+
     const newLeads = [];
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
 
@@ -197,70 +205,70 @@ const bulkInsertLeads = async (req, res, next) => {
       .pipe(csvParser())
       .on("data", async (row) => {
         try {
-          const proposedLocationsRaw = row["Proposed Location Unit ID"] || "";
+          const proposedLocationsRaw = row["Proposed Location"] || "";
           const proposedLocations = proposedLocationsRaw
-            .split(/[,/]/) // Split using comma or slash as delimiter
-            .map((id) => id.trim()) // Trim spaces
-            .filter((id) => id.length > 0) // Remove empty values
-            .map((id) => id.trim()); // Convert to ObjectId
+            .split(/[,/]/)
+            .map((id) => id.trim())
+            .filter((id) => id && id !== "-")
+            .map((unitNo) => unitsMap.get(unitNo))
+            .filter(Boolean);
+
+          const rawService = row["Sales Category"]?.trim().toLowerCase();
+          const serviceCategoryId = rawService && servicesMap.get(rawService);
 
           const lead = {
             company,
-            dateOfContact: new Date(
-              row["Date of Contact"].split("/").reverse().join("-")
-            ),
-            companyName: row["Company Name"].trim(),
-            serviceCategory: !row["Sales Category ID"].trim().length
-              ? null
-              : row["Sales Category ID"].trim(),
-            leadStatus: row["Lead Status"],
-            proposedLocations: proposedLocations.find(
-              (loc) => loc.trim() === "-"
-            )
-              ? null
-              : proposedLocations,
-            sector: row["Sector"],
-            headOfficeLocation: row["HO Location"].trim(),
-            officeInGoa: row["Office in Goa"].toLowerCase() === "yes",
-            pocName: row["POC Name"],
-            designation: row["Designation"],
-            contactNumber: row["Contact Number"],
-            emailAddress: row["Email Address"],
-            leadSource: row["Lead Source"],
-            period: row["Period"],
-            openDesks: !row["Open Desks"].trim().length
-              ? null
-              : parseInt(row["Open Desks"].trim(), 10),
-            cabinDesks: !row["Cabin Desks"].trim().length
-              ? null
-              : parseInt(row["Cabin Desks"].trim(), 10),
-            totalDesks: !row["Total Desks"].trim().length
-              ? null
-              : parseInt(row["Total Desks"].trim(), 10),
+            dateOfContact: row["Date of Contact"]
+              ? new Date(row["Date of Contact"])
+              : null,
+            companyName: row["Company Name"]?.trim() || "",
+            serviceCategory: serviceCategoryId || null,
+            leadStatus: row["Lead Status"] || "",
+            proposedLocations: proposedLocations.length
+              ? proposedLocations
+              : null,
+            sector: row["Sector"] || "",
+            headOfficeLocation: row["HO Location"]?.trim() || "",
+            officeInGoa: row["Office in Goa"]?.toLowerCase().trim() === "yes",
+            pocName: row["POC Name"] || "",
+            designation: row["Designation"] || "",
+            contactNumber: row["Contact Number"] || "",
+            emailAddress: row["Email Address"] || "",
+            leadSource: row["Lead Source"] || row["Source"] || "",
+            period: row["Period"] || "",
+            openDesks: row["Open Desks"]?.trim()
+              ? parseInt(row["Open Desks"], 10)
+              : null,
+            cabinDesks: row["Cabin Desks"]?.trim()
+              ? parseInt(row["Cabin Desks"], 10)
+              : null,
+            totalDesks: row["Total Desks"]?.trim()
+              ? parseInt(row["Total Desks"], 10)
+              : null,
             clientBudget:
-              row["Client Budget"].trim() === "-" ||
-              !row["Client Budget"].trim().length
+              row["Client Budget"]?.trim() === "-" ||
+              !row["Client Budget"]?.trim().length
                 ? null
                 : parseFloat(row["Client Budget"]),
             remarksComments: row["Remarks/Comments"] || "",
             startDate:
-              row["Start Date"].trim() === "-" ||
-              row["Start Date"].trim() === "TBD" ||
-              !row["Start Date"].trim().length
-                ? null
-                : new Date(row["Start Date"].split("/").reverse().join("-")),
+              row["Start Date"]?.trim() &&
+              row["Start Date"] !== "-" &&
+              row["Start Date"] !== "TBD"
+                ? new Date(row["Start Date"])
+                : null,
             lastFollowUpDate:
-              row["Last Follup Date"].trim() === "-" ||
-              !row["Last Follup Date"].trim().length
-                ? null
-                : new Date(
-                    row["Last Follup Date"].split("/").reverse().join("-")
-                  ),
+              row["Last Follup Date"]?.trim() && row["Last Follup Date"] !== "-"
+                ? new Date(row["Last Follup Date"])
+                : null,
           };
 
           newLeads.push(lead);
         } catch (err) {
           console.error("Error processing row:", err);
+          return res
+            .status(400)
+            .json({ message: "Invalid data format in row" });
         }
       })
       .on("end", async () => {
@@ -271,12 +279,15 @@ const bulkInsertLeads = async (req, res, next) => {
             count: newLeads.length,
           });
         } catch (error) {
-          res.status(500).json(error);
+          console.error("Insert error:", error);
+          res.status(500).json({ message: "Error inserting leads" });
         }
       });
   } catch (error) {
-    res.status(500).json(error);
+    next(error);
   }
 };
+
+module.exports = bulkInsertLeads;
 
 module.exports = { createLead, getLeads, bulkInsertLeads };

@@ -1,4 +1,3 @@
-import React from "react";
 import { financialYearMonths } from "../SalesData/SalesData";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
@@ -10,7 +9,7 @@ import dayjs from "dayjs";
 
 const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
   const navigate = useNavigate();
-
+  console.log("onga bonga", data);
   // ✅ Dynamically Count Clients Per Domain
   const transformedData = data.map((monthData) => {
     const domainCounts = {
@@ -52,6 +51,8 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
     },
   ];
 
+  console.log(transformedData.map((item) => item["Co-Working"]));
+
   const barChartOptions = {
     chart: {
       type: "bar",
@@ -60,7 +61,7 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       fontFamily: "Poppins-Regular",
     },
     xaxis: {
-      categories: financialYearMonths,
+      categories: financialYearMonths.slice(0, 13),
       title: { text: "Financial Year Months" },
     },
     yaxis: {
