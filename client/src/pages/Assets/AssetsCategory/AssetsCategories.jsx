@@ -83,15 +83,17 @@ const AssetsCategories = () => {
   });
   const { mutate: editCategory, isPending: pendingEdit } = useMutation({
     mutationFn: async (data) => {
-      // const response = await axios.patch("/api/assets/create-asset-category", data);
-      // return response.data;
-      console.log("edit form : ", data);
+      const response = await axios.patch(
+        "/api/assets/update-asset-category",
+        data
+      );
+      return response.data;
+      // console.log("edit form : ", data);
     },
     onSuccess: function (data) {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["assetCategories"] });
       setModalOpen(false);
-      reset();
     },
     onError: function (data) {
       toast.error(data.response.data.message || "Failed to add category");
@@ -268,8 +270,9 @@ const AssetsCategories = () => {
             onSubmit={handleEditSubmit((data) => {
               const payload = {
                 ...data,
-                status : data.status === "true"
-              }
+                assetCategoryId: selectedAsset?._id,
+                status: data.status === "true",
+              };
               editCategory(payload);
             })}
             className="grid grid-cols-1 gap-4 w-full"
@@ -306,7 +309,9 @@ const AssetsCategories = () => {
                   error={!!errors.status}
                   helperText={errors.status?.message}
                 >
-                  <MenuItem value="" disabled>Select a status</MenuItem>
+                  <MenuItem value="" disabled>
+                    Select a status
+                  </MenuItem>
                   <MenuItem value="true">Active</MenuItem>
                   <MenuItem value="false">Inactive</MenuItem>
                 </TextField>
