@@ -35,7 +35,7 @@ router.patch(
   editAsset
 );
 router.get("/get-assets", getAssets);
-router.get("/get-assets-with-departmsents", getAssetsWithDepartments);
+router.get("/get-assets-with-departments", getAssetsWithDepartments);
 router.post("/create-asset-category", addAssetCategory);
 router.post("/create-asset-subcategory", addSubCategory);
 router.patch("/update-asset-category", updateCategory);
