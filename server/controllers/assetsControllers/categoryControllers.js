@@ -220,7 +220,7 @@ const addSubCategory = async (req, res, next) => {
 };
 
 const updateCategory = async (req, res, next) => {
-  const { assetCategoryId, name, status } = req.body;
+  const { assetCategoryId, categoryName, status } = req.body;
   const { company, user, ip } = req;
   const logPath = "assets/AssetLog";
   const logAction = "Disable Asset Category";
@@ -257,17 +257,11 @@ const updateCategory = async (req, res, next) => {
       );
     }
 
-    // Optional: check if already disabled
-    if (!category.isActive && !status) {
-      return res.status(200).json({ message: "Category is already disabled" });
-    }
-
-    console.log("name", typeof status);
     // Edit the category
     const updatedCategory = await AssetCategory.findByIdAndUpdate(
       { _id: assetCategoryId },
       {
-        categoryName: name ? name : category.categoryName,
+        categoryName: categoryName ? categoryName : category.categoryName,
         isActive: typeof status === "boolean" ? status : category.isActive,
       }
     );
@@ -304,7 +298,7 @@ const updateCategory = async (req, res, next) => {
 };
 
 const updateSubCategory = async (req, res, next) => {
-  const { assetSubCategoryId, name, status } = req.body;
+  const { assetSubCategoryId, subCategoryName, status } = req.body;
   const { company, user, ip } = req;
   const logPath = "assets/AssetLog";
   const logAction = "Disable Asset Sub Category";
@@ -341,17 +335,13 @@ const updateSubCategory = async (req, res, next) => {
       );
     }
 
-    if (!subcategory.isActive && !status) {
-      return res
-        .status(200)
-        .json({ message: "Sub category is already disabled" });
-    }
-
     // Edit the subcategory
     const updatedSubCategory = await AssetSubCategory.findByIdAndUpdate(
       { _id: assetSubCategoryId },
       {
-        subCategoryName: name ? name : subcategory.subCategoryName,
+        subCategoryName: subCategoryName
+          ? subCategoryName
+          : subcategory.subCategoryName,
         isActive: typeof status === "boolean" ? status : subcategory.isActive,
       }
     );
