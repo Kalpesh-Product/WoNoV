@@ -13,13 +13,15 @@ const {
   disableSubCategory,
   getCategory,
   getSubCategory,
+  updateCategory,
+  updateSubCategory,
 } = require("../controllers/assetsControllers/categoryControllers");
 
 const {
-  assignAsset,
   processAssetRequest,
   revokeAsset,
   getAssetRequests,
+  requestAsset,
 } = require("../controllers/assetsControllers/assignAssetController");
 
 // Asset Management Routes
@@ -33,19 +35,16 @@ router.patch(
   editAsset
 );
 router.get("/get-assets", getAssets);
-router.get("/get-assets-with-departments", getAssetsWithDepartments);
+router.get("/get-assets-with-departmsents", getAssetsWithDepartments);
 router.post("/create-asset-category", addAssetCategory);
 router.post("/create-asset-subcategory", addSubCategory);
-router.patch("/disable-asset-category/:assetCategoryId", disableCategory);
-router.patch(
-  "/disable-asset-subcategory/:assetSubCategoryId",
-  disableSubCategory
-);
+router.patch("/update-asset-category", updateCategory);
+router.patch("/update-asset-subcategory", updateSubCategory);
 router.get("/get-category", getCategory);
 router.get("/get-subcategory/", getSubCategory);
 
 // Asset Assignment Routes
-router.post("/new-asset-assignment", assignAsset);
+router.post("/new-asset-assignment", requestAsset);
 router.post("/process-asset-request", processAssetRequest);
 router.post("/revoke-asset", revokeAsset);
 router.get("/get-asset-requests", getAssetRequests);
