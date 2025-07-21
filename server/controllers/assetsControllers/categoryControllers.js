@@ -391,19 +391,24 @@ const getCategory = async (req, res, next) => {
 
 const getSubCategory = async (req, res, next) => {
   const company = req.company;
+  const { departmentId } = req.query;
 
   try {
+    let query = { company };
+    if (departmentId) {
+      if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+        return res.status(400).json({ message: "Invalid department ID" });
+      }
+
+      query = { ...query, department: departmentId };
+    }
+
     if (!mongoose.Types.ObjectId.isValid(company)) {
       return res.status(400).json({ message: "Invalid company ID" });
     }
 
-    const companyExists = await Company.findById(company);
-    if (!companyExists) {
-      return res.status(400).json({ message: "Company doesn't exist" });
-    }
-
     // Get all categories for this company
-    const categories = await AssetCategory.find().select("_id");
+    const categories = await AssetCategory.find(query).select("_id");
     const categoryIds = categories.map((cat) => cat._id);
 
     const assetSubCategories = await AssetSubCategory.find({
