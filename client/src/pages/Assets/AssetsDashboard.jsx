@@ -64,16 +64,11 @@ const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
       ],
     },
     {
-      layout: 6,
+      layout: 5,
       widgets: [
         <Card
-          route={"/app/assets/categories"}
-          title={"Categories"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"/app/assets/categories/list-of-assets"}
-          title={"Assets List"}
+          route={"/app/assets/view-assets"}
+          title={"View Assets"}
           icon={<RiPagesLine />}
         />,
         <Card
