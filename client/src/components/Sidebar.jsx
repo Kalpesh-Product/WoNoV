@@ -72,6 +72,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       icon: <FaTasks />,
       route: "tasks",
     },
+        {
+      name: "Assets",
+      icon: <FaBoxesStacked />,
+      route: "assets",
+    },
     {
       name: "Performance",
       icon: <FaTasks />,
@@ -108,11 +113,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       icon: <TbReportSearch />,
       route: "#",
     },
-     {
-      name: "Assets",
-      icon: <FaBoxesStacked />,
-      route: "#",
-    },
+ 
     { name: "Chat", icon: <HiOutlineChatAlt2 />, route: "#" },
 
   ];
