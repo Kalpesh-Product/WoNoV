@@ -23,6 +23,9 @@ const AssetsCategories = () => {
   const [selectedAsset, setSelectedAsset] = useState([]);
   const [modalMode, setModalMode] = useState("");
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["assetCategories"] });
+  }, []);
 
   //--------------------FORMS------------------------------//
 
@@ -83,7 +86,7 @@ const AssetsCategories = () => {
     },
   });
 
-  const { data: assetCategories, isPending: isCategoriesPending } = useQuery({
+  const { data: assetCategories=[], isPending: isCategoriesPending } = useQuery({
     queryKey: ["assetCategories"],
     queryFn: async () => {
       try {
@@ -96,6 +99,7 @@ const AssetsCategories = () => {
       }
     },
   });
+  console.log("asset category length", assetCategories)
 
   //--------------------API------------------------------//
 
@@ -189,7 +193,7 @@ const AssetsCategories = () => {
   return (
     <PageFrame>
       <AgTable
-        key={tableData._id}
+
         search={true}
         searchColumn="Category Name"
         tableTitle="Assets Categories"

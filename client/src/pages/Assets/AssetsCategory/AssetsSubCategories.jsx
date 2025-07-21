@@ -97,7 +97,9 @@ const AssetsSubCategories = () => {
     queryKey: ["assetCategories"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/assets/get-category");
+        const response = await axios.get(
+          `/api/assets/get-category?departmentId=${departmentId}`
+        );
         return response.data;
       } catch (error) {
         console.error(error.message);
