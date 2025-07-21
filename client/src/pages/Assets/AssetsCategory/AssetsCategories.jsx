@@ -45,23 +45,6 @@ const AssetsCategories = () => {
   });
   //--------------------FORMS------------------------------//
   //--------------------API------------------------------//
-  const { mutate: disableCategory, isPending: isRevoking } = useMutation({
-    mutationFn: async (assetCatgoryId) => {
-      const response = await axios.patch(
-        `/api/assets/disable-asset-category/${assetCatgoryId}`
-      );
-
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["assetCategories"] });
-    },
-    onError: (error) => {
-      toast.error(error.response.data.message || "Failed to disable category");
-      // toast.error("Access Required To Disable.");
-    },
-  });
 
   const { mutate: createCategory, isPending: pendingCreate } = useMutation({
     mutationFn: async (data) => {
@@ -170,8 +153,6 @@ const AssetsCategories = () => {
       headerName: "Action",
       flex: 1,
       cellRenderer: (params) => {
-
-
         return (
           <ThreeDotMenu
             rowId={params.data._id}
