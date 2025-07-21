@@ -11,6 +11,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const ListOfAssets = () => {
   const { auth } = useAuth();
@@ -148,7 +149,7 @@ const ListOfAssets = () => {
   };
 
   return (
-    <>
+    <PageFrame>
       <AgTable
         search={true}
         searchColumn={"Asset Number"}
@@ -451,7 +452,7 @@ const ListOfAssets = () => {
           </div>
         )}
       </MuiModal>
-    </>
+    </PageFrame>
   );
 };
 

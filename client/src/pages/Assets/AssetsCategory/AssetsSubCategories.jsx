@@ -15,6 +15,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { queryClient } from "../../../main";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AssetsSubCategories = () => {
   const axios = useAxiosPrivate();
@@ -37,7 +38,7 @@ const AssetsSubCategories = () => {
     },
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries(["assetCategories"]);
+      queryClient.invalidateQueries({ queryKey: ["assetCategories"] });
     },
     onError: (error) => {
       // toast.error(error.response.data.message || "Failed to disable category");
@@ -124,7 +125,7 @@ const AssetsSubCategories = () => {
   };
 
   return (
-    <>
+    <PageFrame>
       <AgTable
         key={assetsCategories.length}
         search={true}
@@ -208,7 +209,7 @@ const AssetsSubCategories = () => {
           />
         </form>
       </MuiModal>
-    </>
+    </PageFrame>
   );
 };
 

@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { queryClient } from "../../../main";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AssetsCategories = () => {
   const axios = useAxiosPrivate();
@@ -38,7 +39,7 @@ const AssetsCategories = () => {
     },
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries(["assetCategories"]);
+      queryClient.invalidateQueries({ queryKey: ["assetCategories"] });
     },
     onError: (error) => {
       toast.error(error.response.data.message || "Failed to disable category");
@@ -147,7 +148,7 @@ const AssetsCategories = () => {
   };
 
   return (
-    <>
+    <PageFrame>
       <AgTable
         key={assetsCategories.length}
         search={true}
@@ -155,9 +156,7 @@ const AssetsCategories = () => {
         tableTitle="Assets Categories"
         buttonTitle="Add Category"
         handleClick={() => setModalOpen(true)}
-        data={
-          []
-        }
+        data={[]}
         columns={categoriesColumn}
         tableHeight={350}
         getRowStyle={getRowStyle}
@@ -220,7 +219,7 @@ const AssetsCategories = () => {
           />
         </form>
       </MuiModal>
-    </>
+    </PageFrame>
   );
 };
 
