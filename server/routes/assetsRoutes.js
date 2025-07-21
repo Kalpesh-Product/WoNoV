@@ -46,7 +46,7 @@ router.get("/get-subcategory", getSubCategory);
 // Asset Assignment Routes
 router.post("/new-asset-assignment", requestAsset);
 router.patch("/process-asset-request", processAssetRequest);
-router.patch("/revoke-asset", revokeAsset);
+router.patch("/revoke-asset/:assigneddAssetId", revokeAsset);
 router.get("/get-asset-requests", getAssetRequests);
 
 module.exports = router;

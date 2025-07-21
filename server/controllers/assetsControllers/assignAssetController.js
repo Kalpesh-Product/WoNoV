@@ -14,8 +14,11 @@ const getAssetRequests = async (req, res, next) => {
       status: "Pending",
     })
       .populate([
-        { path: "asset" },
-        { path: "department" },
+        {
+          path: "asset",
+          populate: { path: "subCategory", populate: "category" },
+        },
+        { path: "department", select: "name" },
         {
           path: "location",
           select: "unitName unitNo",
@@ -159,15 +162,15 @@ const processAssetRequest = async (req, res, next) => {
         );
       }
       request.status = "Approved";
+      asset.isAssigned = true;
+      asset.assignedAsset = approvedaAsset._id;
+
+      await asset.save();
     } else {
       request.status = "Rejected";
     }
 
     const approvedaAsset = await request.save();
-
-    asset.isAssigned = true;
-    asset.assignedAsset = approvedaAsset._id;
-    await asset.save();
 
     return res.status(200).json({
       message: `Asset assignment request ${action.toLowerCase()} successfully.`,
@@ -187,7 +190,7 @@ const revokeAsset = async (req, res, next) => {
   const logPath = "assets/AssetLog";
   const logAction = "Revoke Asset";
   const logSourceKey = "assignAsset";
-  const { assigneddAssetId } = req.body;
+  const { assigneddAssetId } = req.params;
   const { user, ip, company } = req;
 
   let removedFrom = null;
@@ -222,7 +225,7 @@ const revokeAsset = async (req, res, next) => {
     }
 
     if (assignedAsset.assignee) {
-      const assignedUser = await User.findById(assignedAsset.assignee);
+      const assignedUser = await User.findById({ _id: assignedAsset.assignee });
       if (!assignedUser) {
         throw new CustomError(
           "User not found.",
@@ -240,13 +243,26 @@ const revokeAsset = async (req, res, next) => {
 
     // Remove the assigned user from the asset's assignedTo field
 
-    const asset = await Asset.findById(assigneddAssetId.sset);
+    assignedAsset.isRevoked = true;
+    const revokedAsset = await assignedAsset.save();
 
-    await assignedAsset.save();
+    if (!revokedAsset) {
+      return res.status(400).json({ message: "Failed to revoke asset" });
+    }
 
-    asset.isAssigned = false;
-    asset.assignedAsset = null;
-    await asset.save();
+    const asset = await Asset.findOne({ assignedAsset: assigneddAssetId });
+
+    if (asset && asset.isAssigned) {
+      asset.isAssigned = false;
+      asset.assignedAsset = null;
+      const updatedAsset = await asset.save();
+
+      if (!updatedAsset) {
+        return res
+          .status(400)
+          .json({ message: "Failed to update asset status" });
+      }
+    }
 
     return res.status(200).json({ message: "Asset successfully revoked" });
   } catch (error) {
