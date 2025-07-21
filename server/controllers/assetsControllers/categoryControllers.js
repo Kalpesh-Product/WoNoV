@@ -376,19 +376,20 @@ const updateSubCategory = async (req, res, next) => {
 
 const getCategory = async (req, res, next) => {
   const company = req.company;
+  const { departmentId } = req.query;
 
   try {
-    if (!mongoose.Types.ObjectId.isValid(company)) {
-      return res.status(400).json({ message: "Invalid company ID" });
-    }
+    const query = { company };
 
-    const companyExists = await Company.findById(company);
-    if (!companyExists) {
-      return res.status(400).json({ message: "Company doesn't exist" });
-    }
+    if (departmentId) {
+      if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+        return res.status(400).json({ message: "Invalid department ID" });
+      }
 
+      query = { ...query, department: departmentId };
+    }
     const assetCategories = await AssetCategory.find({
-      isActive: { $ne: false },
+      company,
     }).populate("department", "name"); // Optional: populate department name
 
     return res.status(200).json(assetCategories);
@@ -405,7 +406,7 @@ const getSubCategory = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid company ID" });
     }
 
-    const companyExists = await Company.findById(company);
+    const companyExists = await Compaany.findById(company);
     if (!companyExists) {
       return res.status(400).json({ message: "Company doesn't exist" });
     }
@@ -417,7 +418,6 @@ const getSubCategory = async (req, res, next) => {
 
     const assetSubCategories = await AssetSubCategory.find({
       category: { $in: categoryIds },
-      isActive: { $ne: false },
     }).populate("category", "categoryName"); // Optional: populate category name
 
     return res.status(200).json(assetSubCategories);
