@@ -12,6 +12,8 @@ import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const ListOfAssets = () => {
   const { auth } = useAuth();
@@ -20,6 +22,8 @@ const ListOfAssets = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+
+  //---------------------Forms----------------------//
   const {
     handleSubmit,
     control,
@@ -40,7 +44,23 @@ const ListOfAssets = () => {
       assignedTo: "",
     },
   });
+  //---------------------Forms----------------------//
 
+  //-----------------------API----------------------//
+  const { data: assetsList = [], isPending: isAssetsListPending } = useQuery({
+    queryKey: ["assetsList"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/assets/get-assets");
+        const filtered = response.data.flatMap((item) => item.assets);
+        return filtered;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
+  console.log("assets : ", assetsList);
   const { data: assetsCategories = [], isPending: assetPending } = useQuery({
     queryKey: ["assetsCategories"],
     queryFn: async () => {
@@ -63,7 +83,6 @@ const ListOfAssets = () => {
       }
     },
   });
-
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -95,41 +114,8 @@ const ListOfAssets = () => {
       toast.error(error.message);
     },
   });
-
-  const assetColumns = [
-    { field: "srNo", headerName: "Sr No" },
-    { field: "department", headerName: "Department" },
-    // { field: "assetNumber", headerName: "Asset Number" },
-    { field: "category", headerName: "Category" },
-    { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price (INR)" },
-    { field: "quantity", headerName: "Quantity" },
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <PrimaryButton
-          title="Details"
-          handleSubmit={() => handleDetailsClick(params.data)}
-        />
-      ),
-    },
-  ];
-
-  // const { data: assetsList = [] } = useQuery({
-  //   queryKey: ["assetsList"],
-  //   queryFn: async () => {
-  //     try {
-  //       const response = await axios.get("/api/assets/get-assets");
-  //       return response.data;
-  //     } catch (error) {
-  //       throw new Error(error.response.data.message);
-  //     }
-  //   },
-  // });
-
+  //-----------------------API----------------------//
+  //-----------------------Event handlers----------------------//
   const handleDetailsClick = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
@@ -147,15 +133,53 @@ const ListOfAssets = () => {
       addAsset(data);
     }
   };
+  //-----------------------Event handlers----------------------//
+  //-----------------------Table Data----------------------//
+  const assetColumns = [
+    { field: "srNo", headerName: "Sr No" },
+    { field: "assetId", headerName: "Asset Id" },
+    { field: "department", headerName: "Department" },
+    { field: "subCategory", headerName: "Sub-Category" },
+    { field: "brand", headerName: "Brand" },
+    {
+      field: "price",
+      headerName: "Price (INR)",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    { field: "purchaseDate", headerName: "Purchase Date" },
+    { field: "warranty", headerName: "Warranty (Months)" },
+    {
+      field: "actions",
+      headerName: "Actions",
+      pinned : "right",
+      cellRenderer: (params) => (
+        <PrimaryButton
+          title="Details"
+          handleSubmit={() => handleDetailsClick(params.data)}
+        />
+      ),
+    },
+  ];
+
+  const tableData = isAssetsListPending
+    ? []
+    : assetsList.map((item) => ({
+        ...item,
+        department: item?.department?.name,
+        subCategory: item?.subCategory?.subCategoryName,
+      }));
+  console.log("tableData : ", tableData);
+  //-----------------------Table Data----------------------//
 
   return (
     <PageFrame>
-      <AgTable
+      <YearWiseTable
         search={true}
+        dateColumn={"purchaseDate"}
         searchColumn={"Asset Number"}
         tableTitle={"List of Assets"}
         buttonTitle={"Add Asset"}
-        data={[]}
+        data={tableData}
         columns={assetColumns}
         handleClick={handleAddAsset}
       />
