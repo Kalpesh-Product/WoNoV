@@ -369,7 +369,7 @@ const getCategory = async (req, res, next) => {
   const { departmentId } = req.query;
 
   try {
-    const query = { company };
+    let query = { company };
 
     if (departmentId) {
       if (!mongoose.Types.ObjectId.isValid(departmentId)) {
@@ -378,9 +378,10 @@ const getCategory = async (req, res, next) => {
 
       query = { ...query, department: departmentId };
     }
-    const assetCategories = await AssetCategory.find({
-      company,
-    }).populate("department", "name"); // Optional: populate department name
+    const assetCategories = await AssetCategory.find(query).populate(
+      "department",
+      "name"
+    ); // Optional: populate department name
 
     return res.status(200).json(assetCategories);
   } catch (error) {
