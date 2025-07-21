@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import {
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
-} from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
@@ -20,6 +14,7 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useSelector } from "react-redux";
+import { useEffect } from "react";
 
 const AssetsCategories = () => {
   const axios = useAxiosPrivate();
@@ -27,7 +22,7 @@ const AssetsCategories = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState([]);
   const [modalMode, setModalMode] = useState("");
-  const departmentId = useSelector((state)=>state.assets.selectedDepartment)
+  const departmentId = useSelector((state) => state.assets.selectedDepartment);
 
   //--------------------FORMS------------------------------//
 
@@ -37,6 +32,17 @@ const AssetsCategories = () => {
     formState: { errors },
     reset,
   } = useForm();
+
+  const {
+    handleSubmit: handleEditSubmit,
+    control: editControl,
+    setValue,
+  } = useForm({
+    defaultValues: {
+      categoryName: "",
+      status: "",
+    },
+  });
   //--------------------FORMS------------------------------//
   //--------------------API------------------------------//
   const { mutate: disableCategory, isPending: isRevoking } = useMutation({
@@ -75,6 +81,22 @@ const AssetsCategories = () => {
       toast.error(data.response.data.message || "Failed to add category");
     },
   });
+  const { mutate: editCategory, isPending: pendingEdit } = useMutation({
+    mutationFn: async (data) => {
+      // const response = await axios.patch("/api/assets/create-asset-category", data);
+      // return response.data;
+      console.log("edit form : ", data);
+    },
+    onSuccess: function (data) {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["assetCategories"] });
+      setModalOpen(false);
+      reset();
+    },
+    onError: function (data) {
+      toast.error(data.response.data.message || "Failed to add category");
+    },
+  });
 
   const { data: assetCategories, isPending: isCategoriesPending } = useQuery({
     queryKey: ["assetCategories"],
@@ -96,6 +118,17 @@ const AssetsCategories = () => {
     // Add API call here
     createCategory(data);
   };
+  const handleEdit = (data) => {
+    setModalMode("edit");
+    setSelectedAsset(data);
+    setModalOpen(true);
+  };
+
+  useEffect(() => {
+    console.log("selected Asset : ", selectedAsset);
+    setValue("categoryName", selectedAsset?.categoryName);
+    setValue("status", selectedAsset?.isActive);
+  }, [selectedAsset]);
 
   const getRowStyle = (params) => {
     if (!params.data.isActive) {
@@ -145,7 +178,7 @@ const AssetsCategories = () => {
             menuItems={[
               {
                 label: "Edit",
-                // onClick: () => handleEdit(params.data),
+                onClick: () => handleEdit(params.data),
               },
               // {
               //   label: "Delete",
@@ -179,8 +212,8 @@ const AssetsCategories = () => {
         tableTitle="Assets Categories"
         buttonTitle="Add Category"
         handleClick={() => {
-          setModalMode("add")
-          setModalOpen(true)
+          setModalMode("add");
+          setModalOpen(true);
         }}
         data={tableData}
         columns={categoriesColumn}
@@ -220,6 +253,63 @@ const AssetsCategories = () => {
                   error={!!errors.categoryName}
                   helperText={errors.categoryName?.message}
                 />
+              )}
+            />
+
+            <PrimaryButton
+              title="Submit"
+              disabled={pendingCreate}
+              isLoading={pendingCreate}
+            />
+          </form>
+        )}
+        {modalMode === "edit" && (
+          <form
+            onSubmit={handleEditSubmit((data) => {
+              const payload = {
+                ...data,
+                status : data.status === "true"
+              }
+              editCategory(payload);
+            })}
+            className="grid grid-cols-1 gap-4 w-full"
+          >
+            {/* Category Name Input */}
+            <Controller
+              name="categoryName"
+              control={editControl}
+              defaultValue=""
+              rules={{ required: "Category Name is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Category Name"
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  error={!!errors.categoryName}
+                  helperText={errors.categoryName?.message}
+                />
+              )}
+            />
+            <Controller
+              name="status"
+              control={editControl}
+              rules={{ required: "Status is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  fullWidth
+                  size="small"
+                  label="Select Status"
+                  error={!!errors.status}
+                  helperText={errors.status?.message}
+                >
+                  <MenuItem value="" disabled>Select a status</MenuItem>
+                  <MenuItem value="true">Active</MenuItem>
+                  <MenuItem value="false">Inactive</MenuItem>
+                </TextField>
               )}
             />
 

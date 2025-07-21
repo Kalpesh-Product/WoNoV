@@ -59,8 +59,6 @@ const ListOfAssets = () => {
       }
     },
   });
-
-  console.log("assets : ", assetsList);
   const { data: assetsCategories = [], isPending: assetPending } = useQuery({
     queryKey: ["assetsCategories"],
     queryFn: async () => {
@@ -168,7 +166,6 @@ const ListOfAssets = () => {
         department: item?.department?.name,
         subCategory: item?.subCategory?.subCategoryName,
       }));
-  console.log("tableData : ", tableData);
   //-----------------------Table Data----------------------//
 
   return (

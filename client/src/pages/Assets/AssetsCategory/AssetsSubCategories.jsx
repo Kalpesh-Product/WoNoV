@@ -214,10 +214,10 @@ const AssetsSubCategories = () => {
         onClose={() => setModalOpen(false)}
         title={
           modalMode === "add"
-            ? "Add Category"
+            ? "Add Sub Category"
             : modalMode === "view"
-            ? "View Category"
-            : "Edit Category"
+            ? "View Sub Category"
+            : "Edit Sub Category"
         }
       >
         {modalMode === "add" && (
