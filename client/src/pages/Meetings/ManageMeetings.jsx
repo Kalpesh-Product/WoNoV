@@ -60,17 +60,17 @@ const ManageMeetings = () => {
   };
 
   const defaultChecklist = [
-    { name: "Desk is cleaned", checked: true },
-    { name: "Chairs are clean and neatly arranged", checked: true },
-    { name: "AC is cooling", checked: true },
+    { name: "Desk is cleaned", checked: false },
+    { name: "Chairs are clean and neatly arranged", checked: false },
+    { name: "AC is cooling", checked: false },
     {
       name: "TV, HDMI cable, LAN cable are available and active",
-      checked: true,
+      checked: false,
     },
-    { name: "TV & AC remotes in place", checked: true },
-    { name: "Air freshener sprayed", checked: true },
-    { name: "Water bottle & glass placed", checked: true },
-    { name: "Tissue placed on the table", checked: true },
+    { name: "TV & AC remotes in place", checked: false },
+    { name: "Air freshener sprayed", checked: false },
+    { name: "Water bottle & glass placed", checked: false },
+    { name: "Tissue placed on the table", checked: false },
   ];
   // const meetings = useSelector((state) => state.meetings?.data);
 
