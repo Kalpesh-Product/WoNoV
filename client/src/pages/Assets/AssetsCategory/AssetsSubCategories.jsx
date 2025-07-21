@@ -34,23 +34,35 @@ const AssetsSubCategories = () => {
   //--------------------FORMS------------------------------//
 
   const {
-    control:editControl,
-    handleSubmit: handleEditSubmit,
+    control,
+    handleSubmit,
     formState: { errors },
     reset,
+  } = useForm({
+    defaultValues: {
+      subCategoryName: "",
+      assetCategoryId: "",
+    },
+  });
+
+  const {
+    control: editControl,
+    handleSubmit: handleEditSubmit,
+    formState: { errors: editErrors },
+    reset: editReset,
     setValue,
   } = useForm({
     defaultValues: {
       subCategoryName: "",
       assetCategoryId: "",
-      "status":""
+      status: "",
     },
   });
   //--------------------FORMS------------------------------//
   //--------------------API------------------------------//
   const { mutate: createSubCategory, isPending: pendingCreate } = useMutation({
     mutationFn: async (data) => {
-      console.log("data",data)
+      console.log("data", data);
       const response = await axios.post(
         "/api/assets/create-asset-subcategory",
         { ...data, assetSubCategoryName: data.subCategoryName }
@@ -93,7 +105,7 @@ const AssetsSubCategories = () => {
     },
   });
 
-    const { mutate: editSubCategory, isPending: pendingEdit } = useMutation({
+  const { mutate: editSubCategory, isPending: pendingEdit } = useMutation({
     mutationFn: async (data) => {
       const response = await axios.patch(
         "/api/assets/update-asset-subcategory",
@@ -121,7 +133,7 @@ const AssetsSubCategories = () => {
     createSubCategory(data);
   };
 
-    const handleEdit = (data) => {
+  const handleEdit = (data) => {
     setModalMode("edit");
     setSelectedAsset(data);
     setModalOpen(true);
@@ -134,10 +146,10 @@ const AssetsSubCategories = () => {
     return null;
   };
 
-   useEffect(() => {
-      setValue("subCategoryName", selectedAsset?.subCategoryName);
-      setValue("status", selectedAsset?.isActive);
-    }, [selectedAsset]);
+  useEffect(() => {
+    setValue("subCategoryName", selectedAsset?.subCategoryName);
+    setValue("status", selectedAsset?.isActive);
+  }, [selectedAsset]);
   //--------------------Event handlers------------------------------//
   //--------------------Table Data------------------------------//
   const categoriesColumn = [
@@ -172,7 +184,6 @@ const AssetsSubCategories = () => {
       headerName: "Action",
       flex: 1,
       cellRenderer: (params) => {
-
         return (
           <ThreeDotMenu
             rowId={params.data._id}
@@ -292,7 +303,7 @@ const AssetsSubCategories = () => {
           </form>
         )}
 
-   {modalMode === "edit" && (
+        {modalMode === "edit" && (
           <form
             onSubmit={handleEditSubmit((data) => {
               const payload = {
@@ -315,8 +326,8 @@ const AssetsSubCategories = () => {
                   fullWidth
                   size="small"
                   variant="outlined"
-                  error={!!errors.subCategoryName}
-                  helperText={errors.subCategoryName?.message}
+                  error={!!editErrors.subCategoryName}
+                  helperText={editErrors.subCategoryName?.message}
                 />
               )}
             />
@@ -330,8 +341,8 @@ const AssetsSubCategories = () => {
                   fullWidth
                   size="small"
                   label="Select Status"
-                  error={!!errors.status}
-                  helperText={errors.status?.message}
+                  error={!!editErrors.status}
+                  helperText={editErrors.status?.message}
                 >
                   <MenuItem value="" disabled>
                     Select a status
