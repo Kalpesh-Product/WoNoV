@@ -14,7 +14,6 @@ const getAssetRequests = async (req, res, next) => {
 
     let query = { company, status: { $ne: "Approved" } };
 
-    console.log("status", query);
     if (departmentId) {
       if (!mongoose.Types.ObjectId.isValid(departmentId)) {
         return res
