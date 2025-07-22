@@ -725,7 +725,6 @@ const ListOfAssets = () => {
             <Controller
               name="assetImage"
               control={control}
-              rules={{ required: "Asset Image is required" }}
               render={({ field }) => (
                 <UploadFileInput
                   value={field.value}

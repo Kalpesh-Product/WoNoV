@@ -14,6 +14,7 @@ import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
+import StatusChip from "../../../components/StatusChip";
 
 const AssignAssets = () => {
   const axios = useAxiosPrivate();
@@ -170,7 +171,12 @@ const AssignAssets = () => {
       cellRenderer: (params) => humanDate(params.value),
     },
     { field: "warranty", headerName: "Warranty (Months)" },
-    // { field: "location", headerName: "Location" },
+    {
+      field: "isAssigned",
+      headerName: "Status",
+      pinned : "right",
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -194,6 +200,7 @@ const AssignAssets = () => {
         srNo: index + 1,
         department: item?.department?.name,
         subCategory: item?.subCategory?.subCategoryName,
+        isAssigned: item?.isAssigned ? "Assigned" : "Available",
       }));
 
   console.log("table data : ", tableData);

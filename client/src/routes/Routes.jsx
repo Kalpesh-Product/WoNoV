@@ -470,6 +470,10 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "vendor",
+                            element: <VendorTable />,
+                          },
+                          {
+                            path: "vendor/vendor-onboard",
                             element: <Vendor />,
                           },
                           {
@@ -605,6 +609,10 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "vendor",
+                            element: <VendorTable />,
+                          },
+                          {
+                            path: "vendor/vendor-onboard",
                             element: <Vendor />,
                           },
                           {
@@ -1037,6 +1045,10 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "vendor",
+                            element: <VendorTable />,
+                          },
+                          {
+                            path: "vendor/vendor-onboard",
                             element: <Vendor />,
                           },
                           {
@@ -1167,16 +1179,21 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "vendor",
-                            element: <Vendor />,
+                            element: <VendorTable />,
                           },
                           {
-                            path: "monthly-invoice-reports",
-                            element: <MonthlyInvoiceCommon />,
+                            path: "vendor/vendor-onboard",
+                            element: <Vendor />,
                           },
                           {
                             path: "vendor/:id",
                             element: <ViewVendor />,
                           },
+                          {
+                            path: "monthly-invoice-reports",
+                            element: <MonthlyInvoiceCommon />,
+                          },
+
                           {
                             path: "amc-records",
                             element: <ItAmcRecords />,
@@ -1505,6 +1522,10 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "vendor",
+                            element: <VendorTable />,
+                          },
+                          {
+                            path: "vendor/vendor-onboard",
                             element: <Vendor />,
                           },
                           {
@@ -1749,7 +1770,15 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "vendor",
+                            element: <VendorTable />,
+                          },
+                          {
+                            path: "vendor/vendor-onboard",
                             element: <Vendor />,
+                          },
+                          {
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
                           },
                           {
                             path: "monthly-invoice-reports",
@@ -1758,10 +1787,6 @@ export const routes = createBrowserRouter([
                           {
                             path: "payroll-reports",
                             element: <PayrollReports />,
-                          },
-                          {
-                            path: "vendor/:id",
-                            element: <ViewVendor />,
                           },
                         ],
                       },
@@ -2023,17 +2048,17 @@ export const routes = createBrowserRouter([
                 element: <AssetsLayout />, // Parent component for tickets
                 children: [
                   // {
-                  //   path: "", 
-                  //   element: <AssetsHome />, 
+                  //   path: "",
+                  //   element: <AssetsHome />,
                   //   index: true,
                   // },
                   {
                     path: "",
-                    element: <AssetsDashboard />, 
+                    element: <AssetsDashboard />,
                   },
                   {
                     path: "view-assets",
-                    element: <AssetsHome />, 
+                    element: <AssetsHome />,
                   },
                   {
                     path: "view-assets/:department",
@@ -2054,9 +2079,9 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
-                   {
+                  {
                     path: "manage-assets",
-                    element: <ManageAssetsHome />, 
+                    element: <ManageAssetsHome />,
                   },
                   {
                     path: "manage-assets/:department",
@@ -2076,7 +2101,7 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
-       
+
                   {
                     path: "reports",
                     element: <AssetReports />,
