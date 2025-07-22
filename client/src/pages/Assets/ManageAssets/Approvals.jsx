@@ -48,7 +48,7 @@ const Approvals = () => {
 
    const { mutate: approveAsset, isPending: isApproving } = useMutation({
       mutationFn: async (data) => {
-        console.log("data",data)
+        console.log("approve",data)
         const response = await axios.patch("/api/assets/process-asset-request", {
           requestedAssetId: data?._id,
           action:"Approved"
@@ -66,8 +66,9 @@ const Approvals = () => {
 
    const { mutate: rejectAsset, isPending: isRejecting } = useMutation({
       mutationFn: async (data) => {
+        console.log("reject",data)
         const response = await axios.patch("/api/assets/process-asset-request", {
-          requestedAssetId: selectedAsset?._id,
+          requestedAssetId: data?._id,
           action:"Rejected"
         });
         return response.data;
@@ -123,9 +124,9 @@ const Approvals = () => {
         rowId={params.data.assetId}
         menuItems={[
           { label: "View", onClick: () => handleView(params.data) },
-          params.data.status === "Pending" && params.data.status === "Approved"
-            ? { label: "Reject", onClick: () => approveAsset(params.data) }
-            : { label: "Approve", onClick: () => rejectAsset(params.data) }
+          params.data.status === "Pending" &&  
+            { label: "Approve", onClick: () => approveAsset(params.data) },
+            { label: "Reject", onClick: () => rejectAsset(params.data) }
         ]}
       />
     );
