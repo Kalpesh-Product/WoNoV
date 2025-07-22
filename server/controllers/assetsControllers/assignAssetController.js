@@ -171,13 +171,33 @@ const assignAsset = async (req, res, next) => {
       );
     }
 
-    const assignedAssetExists = await AssignAsset.findOne({
-      asset: assetId,
-      status: "Approved",
-    });
-
-    if (assignedAssetExists) {
+    if (asset.isAssigned) {
       return res.status(400).json({ message: "Asset is already assigned" });
+    }
+
+    if (asset.status === "Inactive") {
+      throw new CustomError(
+        "Asset is currently inactive",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+    if (asset.isUnderMaintenance) {
+      throw new CustomError(
+        "Asset is currently under maintenance",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+    if (asset.isDamaged) {
+      throw new CustomError(
+        "Asset is currently damaged",
+        logPath,
+        logAction,
+        logSourceKey
+      );
     }
 
     // Create a new asset assignment request
@@ -191,7 +211,12 @@ const assignAsset = async (req, res, next) => {
       status: "Approved",
     });
 
-    await assignEntry.save();
+    const assignedAsset = await assignEntry.save();
+
+    asset.isAssigned = true;
+    asset.assignedAsset = assignedAsset._id;
+
+    await asset.save();
 
     return res.status(200).json({
       message: "Asset assigned successfully.",
@@ -255,6 +280,10 @@ const processAssetRequest = async (req, res, next) => {
       );
     }
 
+    if (asset.isAssigned) {
+      return res.status(400).json({ message: "Asset is already assigned" });
+    }
+
     if (action === "Approved") {
       if (asset.status === "Inactive") {
         throw new CustomError(
@@ -283,7 +312,7 @@ const processAssetRequest = async (req, res, next) => {
       request.status = "Approved";
       request.approvedBy = user;
       asset.isAssigned = true;
-      asset.assignedAsset = approvedaAsset._id;
+      asset.assignedAsset = request._id;
 
       await asset.save();
     } else {
@@ -291,7 +320,7 @@ const processAssetRequest = async (req, res, next) => {
       request.rejectededBy = user;
     }
 
-    const approvedaAsset = await request.save();
+    await request.save();
 
     return res.status(200).json({
       message: `Asset assignment request ${action.toLowerCase()} successfully.`,
