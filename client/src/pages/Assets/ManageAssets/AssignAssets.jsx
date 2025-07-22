@@ -157,8 +157,9 @@ const AssignAssets = () => {
   //-----------------------Table Data----------------------//
   const assetsColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "department", headerName: "Department" },
     { field: "assetId", headerName: "Asset ID" },
+    { field: "name", headerName: "Asset Name" },
+    // { field: "department", headerName: "Department" },
     { field: "brand", headerName: "Brand" },
     {
       field: "price",
@@ -213,7 +214,6 @@ const AssignAssets = () => {
       <PageFrame>
         <AgTable
           search={true}
-          searchColumn={"assetNumber"}
           tableTitle={"Assign Assets"}
           data={tableData}
           columns={assetsColumns}
