@@ -34,7 +34,8 @@ const getAssetRequests = async (req, res, next) => {
           path: "asset",
           populate: { path: "subCategory", populate: "category" },
         },
-        { path: "department", select: "name" },
+        { path: "fromDepartment", select: "name" },
+        { path: "toDepartment", select: "name" },
         {
           path: "location",
           select: "unitName unitNo",
