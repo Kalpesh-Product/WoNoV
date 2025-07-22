@@ -768,26 +768,35 @@ const HrDashboard = () => {
     { id: "day", label: "Day", align: "left" },
   ];
   //------------------Birthdays----------//
-
   const getUpcomingBirthdays = (employeeList) => {
     const today = dayjs();
 
     return employeeList
+      .filter((emp) => emp.dateOfBirth) // ✅ filter out if dateOfBirth is missing/null
       .map((emp) => {
         const birthDate = dayjs(emp.dateOfBirth);
 
+        // Prevent invalid dates like Feb 29 on non-leap years
+        const normalizedDate = dayjs(
+          `${today.year()}-${birthDate.format("MM-DD")}`,
+          "YYYY-MM-DD",
+          true // strict parsing
+        );
+
+        if (!normalizedDate.isValid()) return null;
+
         return {
           title: `${emp.firstName} ${emp.lastName}`,
-          start: birthDate
-            .year(today.year()) // keep the year consistent
-            .format("YYYY-MM-DD"),
+          start: normalizedDate.format("YYYY-MM-DD"),
         };
       })
       .filter((item) => {
+        if (!item) return false; // skip nulls from invalid date handling
         const birthday = dayjs(item.start);
-        return birthday.month() === today.month(); // filter only current month
+        return birthday.month() === today.month(); // current month only
       });
   };
+
   const birthdays = getUpcomingBirthdays(
     usersQuery.isLoading ? [] : usersQuery.data
   );
@@ -1238,10 +1247,11 @@ const HrDashboard = () => {
         !usersQuery.isLoading ? (
           <MuiTable
             key={birthdays.length}
-            Title="Current Months Birthday List"
+            Title="Current Month's Birthday List"
             columns={columns}
-            rows={[
-              ...[...birthdays].map((bd, index) => {
+            rows={birthdays
+              .filter((bd) => bd.start) // Only entries with a start date
+              .map((bd, index) => {
                 const date = dayjs(bd.start);
                 return {
                   id: index + 1,
@@ -1249,8 +1259,7 @@ const HrDashboard = () => {
                   start: date.format("DD-MM-YYYY"),
                   day: date.format("dddd"),
                 };
-              }),
-            ]}
+              })}
             rowsToDisplay={40}
             scroll={true}
             className="h-full"
