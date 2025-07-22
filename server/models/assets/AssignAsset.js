@@ -6,7 +6,11 @@ const assignAssetSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Asset",
     },
-    department: {
+    fromDepartment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+    },
+    toDepartment: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
     },

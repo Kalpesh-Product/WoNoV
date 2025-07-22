@@ -20,7 +20,7 @@ const getAssetRequests = async (req, res, next) => {
           .json({ message: "Invalid department id provided" });
       }
 
-      query = { ...query, department: departmentId };
+      query = { ...query, toDepartment: departmentId };
     }
 
     if (status) {
@@ -54,11 +54,11 @@ const requestAsset = async (req, res, next) => {
   const logPath = "assets/AssetLog";
   const logAction = "Assign Asset";
   const logSourceKey = "assignAsset";
-  const { assetId, departmentId, location } = req.body;
+  const { assetId, toDepartmentId, fromDepartmentId, location } = req.body;
   const { ip, user, company } = req;
 
   try {
-    if (!assetId || !departmentId || !location) {
+    if (!assetId || !toDepartmentId || !fromDepartmentId || !location) {
       throw new CustomError(
         "All fields are required.",
         logPath,
@@ -80,7 +80,8 @@ const requestAsset = async (req, res, next) => {
     // Create a new asset assignment request
     const assignEntry = new AssignAsset({
       asset: assetId,
-      department: departmentId,
+      fromDepartment: fromDepartmentId,
+      toDepartment: toDepartmentId,
       assignee: user,
       company: company,
       location,
@@ -109,11 +110,18 @@ const assignAsset = async (req, res, next) => {
   const logPath = "assets/AssetLog";
   const logAction = "Assign Asset";
   const logSourceKey = "assignAsset";
-  const { assetId, departmentId, location, assignee } = req.body;
+  const { assetId, toDepartmentId, fromDepartmentId, location, assignee } =
+    req.body;
   const { ip, user, company, roles } = req;
 
   try {
-    if (!assetId || !departmentId || !location || !assignee) {
+    if (
+      !assetId ||
+      !toDepartmentId ||
+      !fromDepartmentId ||
+      !location ||
+      !assignee
+    ) {
       throw new CustomError(
         "All fields are required.",
         logPath,
@@ -131,7 +139,7 @@ const assignAsset = async (req, res, next) => {
 
     const idMap = {
       assetId,
-      departmentId,
+      departmentId: toDepartmentId,
       location,
       assignee,
     };
@@ -154,7 +162,17 @@ const assignAsset = async (req, res, next) => {
       );
     }
 
-    const departments = await Department.findById(departmentId);
+    const departments = await Department.findById(toDepartmentId);
+    if (!departments) {
+      throw new CustomError(
+        "Department not found.",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const fromDepartments = await Department.findById(fromDepartmentId);
     if (!departments) {
       throw new CustomError(
         "Department not found.",
@@ -228,7 +246,8 @@ const assignAsset = async (req, res, next) => {
     // Create a new asset assignment request
     const assignEntry = new AssignAsset({
       asset: assetId,
-      department: departmentId,
+      fromDepartment: fromDepartmentId,
+      toDepartment: toDepartmentId,
       assignee: user,
       company: company,
       location,
