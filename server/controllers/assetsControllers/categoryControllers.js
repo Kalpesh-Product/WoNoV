@@ -381,7 +381,14 @@ const getCategory = async (req, res, next) => {
     const assetCategories = await AssetCategory.find(query).populate(
       "department",
       "name"
-    ); // Optional: populate department name
+    );
+
+    const categoryIds = assetCategories.map((cat) => cat._id);
+    const assetSubCategories = await AssetSubCategory.find({
+      category: { $in: categoryIds },
+    });
+
+    const subCategories = assetSubCategories.map((sub) => sub.subCategoryName);
 
     return res.status(200).json(assetCategories);
   } catch (error) {
@@ -413,7 +420,13 @@ const getSubCategory = async (req, res, next) => {
 
     const assetSubCategories = await AssetSubCategory.find({
       category: { $in: categoryIds },
-    }).populate("category", "categoryName"); // Optional: populate category name
+    }).populate([
+      {
+        path: "category",
+        select: "categoryName",
+        populate: { path: "department", select: "name" },
+      },
+    ]); // Optional: populate category name
 
     return res.status(200).json(assetSubCategories);
   } catch (error) {
