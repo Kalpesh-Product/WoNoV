@@ -388,6 +388,7 @@ import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTask
 import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
 import VendorTable from "../components/Pages/VendorTable";
 import AssetsHome from "../pages/Assets/AssetsHome";
+import ManageAssetsHome from "../pages/Assets/ManageAssetsHome";
 
 export const routes = createBrowserRouter([
   {
@@ -2053,12 +2054,12 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
-                  {
-                    path: "schedule-meeting",
-                    element: <MeetingFormLayout />, // This is your second page
+                   {
+                    path: "manage-assets",
+                    element: <ManageAssetsHome />, 
                   },
                   {
-                    path: "manage-assets",
+                    path: "manage-assets/:department",
                     element: <ManageAssets />,
                     children: [
                       {
@@ -2075,10 +2076,7 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
-                  {
-                    path: "calendar",
-                    element: <MeetingCalendar />,
-                  },
+       
                   {
                     path: "reports",
                     element: <AssetReports />,

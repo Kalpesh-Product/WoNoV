@@ -3,6 +3,7 @@ import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
 import { TextField, MenuItem } from "@mui/material";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AssignAssets = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -119,7 +120,7 @@ const AssignAssets = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <PageFrame>
         <AgTable
           search={true}
           searchColumn={"assetNumber"}
@@ -127,7 +128,7 @@ const AssignAssets = () => {
           data={rows}
           columns={assetsColumns}
         />
-      </div>
+      </PageFrame>
 
       {/* Modal for Assigning Asset */}
       <MuiModal

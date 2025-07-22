@@ -12,7 +12,7 @@ import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
 
-const AssetsHome = () => {
+const ManageAssetsHome = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const dispatch = useDispatch();
@@ -30,7 +30,7 @@ const AssetsHome = () => {
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       dispatch(setSelectedDepartmentName(currentDepartment));
-      navigate(`/app/assets/view-assets/${currentDepartment}`);
+      navigate(`/app/assets/manage-assets/${currentDepartment}`);
     },
   });
 
@@ -51,9 +51,8 @@ const AssetsHome = () => {
   const assetsRaw = isLoading
     ? []
     : departmentAssets.flatMap((item) => item.assets);
-  console.log("flat : ", assetsRaw);
+
   const totalAssetValue = assetsRaw.reduce((sum, item) => sum + item.price, 0);
-  console.log("flat : ", totalAssetValue);
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100 },
     {
@@ -67,7 +66,7 @@ const AssetsHome = () => {
             onClick={() => {
               dispatch(setSelectedDepartment(params.data?.departmentId));
               dispatch(setSelectedDepartmentName(params.value));
-              navigate(`/app/assets/view-assets/${params.value}`);
+              navigate(`/app/assets/manage-assets/${params.value}`);
             }}
             className="text-primary font-pregular hover:underline cursor-pointer"
           >
@@ -123,4 +122,4 @@ const AssetsHome = () => {
   );
 };
 
-export default AssetsHome;
+export default ManageAssetsHome;

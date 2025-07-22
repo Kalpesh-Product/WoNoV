@@ -5,7 +5,6 @@ const AssetsCategoriesLayout = () => {
   const departmentName = useSelector(
     (state) => state.assets.selectedDepartmentName
   );
-  console.log("selected department : ", departmentName);
   const basePath = `/app/assets/view-assets/${departmentName}`;
 
   const tabs = [

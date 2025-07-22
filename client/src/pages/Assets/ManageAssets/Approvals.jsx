@@ -13,6 +13,7 @@ import SecondaryButton from "../../../components/SecondaryButton";
 import MuiModal from "../../../components/MuiModal";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const Approvals = () => {
    const axios = useAxiosPrivate();
@@ -168,7 +169,7 @@ const Approvals = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <PageFrame>
         <AgTable
           search={true}
           searchColumn={"kra"}
@@ -176,7 +177,7 @@ const Approvals = () => {
           data={requestedAssets}
           columns={assetsColumns}
         />
-      </div>
+      </PageFrame>
 
       {/* Confirmation Dialog */}
       <MuiModal

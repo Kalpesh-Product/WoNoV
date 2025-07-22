@@ -14,6 +14,7 @@ import AgTable from "../../../components/AgTable";
 import MuiModal from "../../../components/MuiModal";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const AssignedAssets = () => {
   const locations = ["ST", "DTC"];
@@ -137,17 +138,6 @@ const AssignedAssets = () => {
     }
   }, [selectedAsset, reset]);
 
-  // 🔥 Fix: Force re-render after revocation
-  // const [updatedRows, setUpdatedRows] = useState(assetRows);
-
-  // Function to handle "Revoke" action
-  // const handleRevoke = (id) => {
-  //   setAssetRows((prevRows) =>
-  //     prevRows.map((row) =>
-  //       row.id === id ? { ...row, status: "Revoked", isRevoked: true } : row
-  //     )
-  //   );
-  // };
 
   // Function to handle "Revoke" action
   const handleRevoke = () => {
@@ -185,11 +175,6 @@ const AssignedAssets = () => {
     );
     setDetailsModalOpen(false);
   };
-
-  // 🔄 Ensures AgTable re-renders when `assetRows` changes
-  // useEffect(() => {
-  //   setUpdatedRows([...assetRows]); // Force UI update
-  // }, [assetRows]);
 
   const assetsColumns = [
     { field: "id", headerName: "ID", width: 100 },
@@ -230,7 +215,7 @@ const AssignedAssets = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <PageFrame>
         <AgTable
           search={true}
           searchColumn={"assetNumber"}
@@ -243,7 +228,7 @@ const AssignedAssets = () => {
             color: params.data.isRevoked ? "#a0a0a0" : "black",
           })}
         />
-      </div>
+      </PageFrame>
 
       {/* Confirmation Modal for Revoking */}
       <MuiModal
