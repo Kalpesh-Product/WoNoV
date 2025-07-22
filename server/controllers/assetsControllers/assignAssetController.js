@@ -10,12 +10,25 @@ const { default: mongoose } = require("mongoose");
 const getAssetRequests = async (req, res, next) => {
   try {
     const { user, company } = req;
+    const { departmentId, status } = req.query;
+
+    let query = { company, status: "Pending" };
+    if (departmentId) {
+      if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+        return res
+          .status(400)
+          .json({ message: "Invalid department id provided" });
+      }
+
+      query = { ...query, department: departmentId };
+    }
+
+    if (status) {
+      query = { ...query, status };
+    }
 
     // Fetch assigned assets for the user's company
-    const assignedAssets = await AssignAsset.find({
-      company,
-      status: "Pending",
-    })
+    const assignedAssets = await AssignAsset.find(query)
       .populate([
         {
           path: "asset",
@@ -97,7 +110,7 @@ const assignAsset = async (req, res, next) => {
   const logAction = "Assign Asset";
   const logSourceKey = "assignAsset";
   const { assetId, departmentId, location, assignee } = req.body;
-  const { ip, user, company } = req;
+  const { ip, user, company, roles } = req;
 
   try {
     if (!assetId || !departmentId || !location || !assignee) {
@@ -170,6 +183,20 @@ const assignAsset = async (req, res, next) => {
         logSourceKey
       );
     }
+
+    const allowedRoles = [
+      "Master Admin",
+      "Super Admin",
+      "Administration Admin",
+      "Maintenance Admin",
+      "IT Admin",
+    ];
+
+    const isAdmin = allowedRoles.some((allowed) =>
+      roles.find((role) => allowed.includes(role))
+    );
+
+    console.log("admin", isAdmin);
 
     if (asset.isAssigned) {
       return res.status(400).json({ message: "Asset is already assigned" });
