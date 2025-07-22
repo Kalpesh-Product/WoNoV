@@ -45,7 +45,6 @@ const getAssetRequests = async (req, res, next) => {
       ])
       .sort({ dateOfAssigning: -1 }); // Sort by latest assignments
 
-    console.log("dept", assignedAssets);
     res.status(200).json(assignedAssets);
   } catch (error) {
     next(error);
