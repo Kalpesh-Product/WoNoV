@@ -22,6 +22,7 @@ const {
   revokeAsset,
   getAssetRequests,
   requestAsset,
+  assignAsset,
 } = require("../controllers/assetsControllers/assignAssetController");
 
 // Asset Management Routes
@@ -44,7 +45,8 @@ router.get("/get-category", getCategory);
 router.get("/get-subcategory", getSubCategory);
 
 // Asset Assignment Routes
-router.post("/new-asset-assignment", requestAsset);
+router.post("/new-asset-assignment", assignAsset);
+router.post("/request-asset", requestAsset);
 router.patch("/process-asset-request", processAssetRequest);
 router.patch("/revoke-asset/:assigneddAssetId", revokeAsset);
 router.get("/get-asset-requests", getAssetRequests);

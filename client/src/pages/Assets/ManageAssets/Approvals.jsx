@@ -11,8 +11,11 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import DangerButton from "../../../components/DangerButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import MuiModal from "../../../components/MuiModal";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 
 const Approvals = () => {
+   const axios = useAxiosPrivate();
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAction, setSelectedAction] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -22,6 +25,18 @@ const Approvals = () => {
     setSelectedAsset(asset);
     setOpenDialog(true);
   };
+
+   const { data: requestedAssets, isPending: isRequestedAssetsPending } = useQuery({
+      queryKey: ["requestedAssets"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/assets/get-asset-requests");
+          return response.data;
+        } catch (error) {
+          console.error(error.message);
+        }
+      },
+    });
 
   const handleConfirmAction = () => {
     if (selectedAction === "approve") {
@@ -69,6 +84,7 @@ const Approvals = () => {
       ),
     },
   ];
+
 
   const rows = [
     {
@@ -157,7 +173,7 @@ const Approvals = () => {
           search={true}
           searchColumn={"kra"}
           tableTitle={"Assigned Assets"}
-          data={rows}
+          data={requestedAssets}
           columns={assetsColumns}
         />
       </div>

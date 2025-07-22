@@ -234,7 +234,7 @@ const AssetsSubCategories = () => {
         data={tableData}
         columns={categoriesColumn}
         tableHeight={350}
-        getRowStyle={getRowStyle}
+        // getRowStyle={getRowStyle}
       />
 
       <MuiModal
