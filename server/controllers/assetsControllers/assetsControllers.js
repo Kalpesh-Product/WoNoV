@@ -85,7 +85,16 @@ const getAssets = async (req, res, next) => {
     const sortOrder = order === "desc" ? -1 : 1;
 
     const assets = await Asset.find(assetFilter)
-      .populate("department subCategory")
+      .populate([
+        { path: "department", select: "name" },
+        { path: "subCategory", select: "subCategoryName" },
+        {
+          path: "location",
+          select: "unitNo unitName",
+          populate: { path: "building", select: "buildingName" },
+        },
+      ])
+
       .select("-company")
       .sort({ [sortField]: sortOrder });
 
