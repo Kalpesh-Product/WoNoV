@@ -20,7 +20,7 @@ const getAssetRequests = async (req, res, next) => {
           .json({ message: "Invalid department id provided" });
       }
 
-      query = { ...query, toDepartment: departmentId };
+      query = { ...query, fromDepartment: departmentId };
     }
 
     if (status) {
@@ -45,6 +45,7 @@ const getAssetRequests = async (req, res, next) => {
       ])
       .sort({ dateOfAssigning: -1 }); // Sort by latest assignments
 
+    console.log("dept", assignedAssets);
     res.status(200).json(assignedAssets);
   } catch (error) {
     next(error);

@@ -15,7 +15,7 @@ import MuiModal from "../../../components/MuiModal";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import PageFrame from "../../../components/Pages/PageFrame";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useSelector } from "react-redux";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
@@ -43,13 +43,58 @@ const Approvals = () => {
       }
     },
   });
+
   //-----------------------API----------------------//
+
+   const { mutate: approveAsset, isPending: isApproving } = useMutation({
+      mutationFn: async (data) => {
+        console.log("data",data)
+        const response = await axios.patch("/api/assets/process-asset-request", {
+          requestedAssetId: data?._id,
+          action:"Approved"
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Approved");
+        queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to approve asset");
+      },
+    });
+
+   const { mutate: rejectAsset, isPending: isRejecting } = useMutation({
+      mutationFn: async (data) => {
+        const response = await axios.patch("/api/assets/process-asset-request", {
+          requestedAssetId: selectedAsset?._id,
+          action:"Rejected"
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Rejected");
+        queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to reject asset");
+      },
+    });
+
   //-----------------------Event handlers----------------------//
   const handleView = (data) => {
     setModalMode("view");
     setSelectedAsset(data);
     setModalOpen(true);
   };
+  // const handleApprove = (data) => {
+  //   setSelectedAsset(data);
+  //   setModalOpen(true);
+  // };
+  // const handleReject = (data) => {
+  //   setSelectedAsset(data);
+  //   setModalOpen(true);
+  // };
   //-----------------------Event handlers----------------------//
 
   //-----------------------Table Data----------------------//
@@ -67,18 +112,26 @@ const Approvals = () => {
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
-      field: "actions",
-      headerName: "Actions",
-      pinned: "right",
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data.assetId}
-          menuItems={[
-            { label: "View", onClick: () => handleView(params.data) },
-          ]}
-        />
-      ),
-    },
+  field: "actions",
+  headerName: "Actions",
+  pinned: "right",
+  cellRenderer: (params) => {
+
+
+    return (
+      <ThreeDotMenu
+        rowId={params.data.assetId}
+        menuItems={[
+          { label: "View", onClick: () => handleView(params.data) },
+          params.data.status === "Pending" && params.data.status === "Approved"
+            ? { label: "Reject", onClick: () => approveAsset(params.data) }
+            : { label: "Approve", onClick: () => rejectAsset(params.data) }
+        ]}
+      />
+    );
+  },
+}
+
   ];
 
   const tableData = isAssignedPending
