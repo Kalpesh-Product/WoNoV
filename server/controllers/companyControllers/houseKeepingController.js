@@ -202,7 +202,7 @@ const softDeleteHouseKeepingMember = async (req, res, next) => {
         .json({ message: "Staff not found or already deleted." });
     }
 
-    res.status(200).json({ message: "Staff soft deleted successfully." });
+    res.status(200).json({ message: "Staff marked as inactive successfully." });
   } catch (error) {
     next(error);
   }

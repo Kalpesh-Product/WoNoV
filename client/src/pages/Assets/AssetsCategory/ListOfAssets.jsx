@@ -27,6 +27,7 @@ import { useMemo } from "react";
 import UploadFileInput from "../../../components/UploadFileInput";
 import { queryClient } from "../../../main";
 import dayjs from "dayjs";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 const ListOfAssets = () => {
   const { auth } = useAuth();
@@ -189,6 +190,7 @@ const ListOfAssets = () => {
     },
   });
   useEffect(() => {
+    console.log("selected Asset : ", selectedAsset)
     const selected = assetsList.find((item) => item._id === selectedAsset?._id);
     if (selected) {
       setSelectedForEdit(selected);
@@ -310,7 +312,7 @@ const ListOfAssets = () => {
   );
   //-----------------------API----------------------//
   //-----------------------Event handlers----------------------//
-  const handleDetailsClick = (asset) => {
+  const handleView = (asset) => {
     setSelectedAsset(asset);
     setModalMode("view");
     setIsModalOpen(true);
@@ -349,6 +351,10 @@ const ListOfAssets = () => {
         <ThreeDotMenu
           rowId={params.data._id}
           menuItems={[
+            {
+              label: "View",
+              onClick: () => handleView(params.data),
+            },
             {
               label: "Edit",
               onClick: () => handleEdit(params.data),
@@ -950,6 +956,11 @@ const ListOfAssets = () => {
               externalStyles={"col-span-2"}
             />
           </form>
+        )}
+        {modalMode === "view" && (
+          <div className="grid grid-cols-1 gap-4">
+            <DetalisFormatted title={""} detail={""} />
+          </div>
         )}
       </MuiModal>
     </PageFrame>

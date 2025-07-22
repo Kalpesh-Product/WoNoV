@@ -2047,11 +2047,6 @@ export const routes = createBrowserRouter([
                 path: "assets", // Parent path
                 element: <AssetsLayout />, // Parent component for tickets
                 children: [
-                  // {
-                  //   path: "",
-                  //   element: <AssetsHome />,
-                  //   index: true,
-                  // },
                   {
                     path: "",
                     element: <AssetsDashboard />,
