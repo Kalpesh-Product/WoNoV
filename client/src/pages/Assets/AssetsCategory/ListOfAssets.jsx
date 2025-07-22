@@ -196,7 +196,6 @@ const ListOfAssets = () => {
   }, [selectedAsset, assetsList]);
 
   useEffect(() => {
-    console.log("selected", selectedForEdit);
     if (modalMode === "edit" && selectedForEdit) {
       editRequest({
         departmentId: selectedForEdit?.department?._id || "",
