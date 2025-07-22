@@ -20,7 +20,7 @@ const getAssetRequests = async (req, res, next) => {
           .json({ message: "Invalid department id provided" });
       }
 
-      query = { ...query, toDepartment: departmentId };
+      query = { ...query, fromDepartment: departmentId };
     }
 
     if (status) {

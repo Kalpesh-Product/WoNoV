@@ -99,8 +99,7 @@ const AssignedAssets = () => {
           brand: assets?.brand,
         };
       });
-  console.log("assets : ", tableData);
-  console.log("selectedAsset : ", selectedAsset);
+
   //-----------------------Table Data----------------------//
 
   return (

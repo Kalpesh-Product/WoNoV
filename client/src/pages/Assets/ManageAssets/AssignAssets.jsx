@@ -31,7 +31,7 @@ const AssignAssets = () => {
   } = useForm({
     defaultValues: {
       assetId: "",
-      departmentId: "",
+      toDepartmentIdId: "",
       assignee: "",
       building: "",
       unit: "",
@@ -107,6 +107,7 @@ const AssignAssets = () => {
     mutationFn: async (data) => {
       const response = await axios.post("/api/assets/new-asset-assignment", {
         ...data,
+        fromDepartmentId: departmentId,
         assetId: selectedAsset?._id,
       });
       return response.data;
@@ -292,7 +293,7 @@ const AssignAssets = () => {
             className="grid grid-cols-2 gap-4"
           >
             <Controller
-              name="departmentId"
+              name="toDepartmentId"
               control={control}
               rules={{ required: "Department is required" }}
               render={({ field }) => (
