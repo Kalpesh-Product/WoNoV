@@ -175,22 +175,29 @@ const AssignAssets = () => {
     {
       field: "isAssigned",
       headerName: "Status",
-      pinned : "right",
+      pinned: "right",
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
       field: "actions",
       headerName: "Actions",
       pinned: "right",
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data._id}
-          menuItems={[
-            { label: "View", onClick: () => handleViewAsset(params.data) },
-            { label: "Assign", onClick: () => handleAssignAsset(params.data) },
-          ]}
-        />
-      ),
+      cellRenderer: (params) => {
+        const { isAssigned } = params.data;
+
+        const menuItems = [
+          { label: "View", onClick: () => handleViewAsset(params.data) },
+        ];
+
+        if (!isAssigned) {
+          menuItems.push({
+            label: "Assign",
+            onClick: () => handleAssignAsset(params.data),
+          });
+        }
+
+        return <ThreeDotMenu rowId={params.data._id} menuItems={menuItems} />;
+      },
     },
   ];
 
@@ -204,15 +211,13 @@ const AssignAssets = () => {
         isAssigned: item?.isAssigned ? "Assigned" : "Available",
       }));
 
-  console.log("table data : ", tableData);
-  console.log("selected Asset : ", selectedAsset);
-
   //-----------------------Table Data----------------------//
 
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
         <AgTable
+          key={assetsList.length}
           search={true}
           tableTitle={"Assign Assets"}
           data={tableData}

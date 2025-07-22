@@ -62,7 +62,7 @@ const TeamMembers = () => {
     {
       field: "name",
       headerName: "Name",
-      cellRenderer: AvatarCellRenderer,
+      // cellRenderer: AvatarCellRenderer,
       flex: 1.5,
     },
     { field: "role", headerName: "Role", flex: 1 },
