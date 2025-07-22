@@ -15,6 +15,7 @@ const statusColorMap = {
 
 
    Upcoming: { backgroundColor: "#E3F2FD", color: "#1565C0" }, // Light Blue
+   Assigned: { backgroundColor: "#90EE90", color: "#006400" }, // Light Blue
     Ongoing: { backgroundColor: "#FFF3E0", color: "#E65100" }, // Light Orange
     Completed: { backgroundColor: "#E8F5E9", color: "#1B5E20" }, // Light Green
     Cancelled: { backgroundColor: "#FFEBEE", color: "#B71C1C" }, // Light Red

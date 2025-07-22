@@ -376,14 +376,40 @@ const getCategory = async (req, res, next) => {
         return res.status(400).json({ message: "Invalid department ID" });
       }
 
-      query = { ...query, department: departmentId };
+      query.department = departmentId;
     }
+
     const assetCategories = await AssetCategory.find(query).populate(
       "department",
-      "name"
-    ); // Optional: populate department name
+      "_id name"
+    );
 
-    return res.status(200).json(assetCategories);
+    const categoryIds = assetCategories.map((cat) => cat._id);
+
+    const assetSubCategories = await AssetSubCategory.find({
+      category: { $in: categoryIds },
+    }).select("_id subCategoryName category");
+
+    const subCategoryMap = new Map();
+
+    assetSubCategories.forEach((sub) => {
+      const catId = sub.category.toString();
+      if (!subCategoryMap.has(catId)) {
+        subCategoryMap.set(catId, []);
+      }
+      subCategoryMap.get(catId).push({
+        _id: sub._id,
+        subCategoryName: sub.subCategoryName,
+      });
+    });
+
+    const enrichedCategories = assetCategories.map((cat) => {
+      const catObj = cat.toObject();
+      catObj.subCategories = subCategoryMap.get(cat._id.toString()) || [];
+      return catObj;
+    });
+
+    return res.status(200).json(enrichedCategories);
   } catch (error) {
     next(error);
   }
@@ -413,8 +439,13 @@ const getSubCategory = async (req, res, next) => {
 
     const assetSubCategories = await AssetSubCategory.find({
       category: { $in: categoryIds },
-    }).populate("category", "categoryName"); // Optional: populate category name
-
+    }).populate([
+      {
+        path: "category",
+        select: "categoryName",
+        populate: { path: "department", select: "name" },
+      },
+    ]);
     return res.status(200).json(assetSubCategories);
   } catch (error) {
     next(error);

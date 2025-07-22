@@ -34,7 +34,7 @@ const ListOfAssets = () => {
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
-  const [selectedForEdit, setSelectedForEdit] =useState([])
+  const [selectedForEdit, setSelectedForEdit] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
 
@@ -188,45 +188,40 @@ const ListOfAssets = () => {
       toast.error(error.message);
     },
   });
-useEffect(() => {
-  const selected = assetsList.find(
-    (item) => item._id === selectedAsset?._id
-  );
-  if (selected) {
-    setSelectedForEdit(selected);
-  }
-}, [selectedAsset, assetsList]);
+  useEffect(() => {
+    const selected = assetsList.find((item) => item._id === selectedAsset?._id);
+    if (selected) {
+      setSelectedForEdit(selected);
+    }
+  }, [selectedAsset, assetsList]);
 
-
-useEffect(() => {
-  console.log("selected", selectedForEdit)
-  if (modalMode === "edit" && selectedForEdit) {
-    editRequest({
-      departmentId: selectedForEdit?.department?._id || "",
-      categoryId: selectedForEdit?.category?._id || "",
-      subCategoryId: selectedForEdit?.subCategory?.subCategoryName || "",
-      vendorId: selectedForEdit?.vendor?._id || "",
-      name: selectedForEdit?.name || "",
-      purchaseDate: selectedForEdit?.purchaseDate || null,
-      quantity: selectedForEdit?.quantity || 0,
-      price: selectedForEdit?.price || 0,
-      brand: selectedForEdit?.brand || "",
-      assetType: selectedForEdit?.assetType || "",
-      warranty: selectedForEdit?.warranty || 0,
-      ownershipType: selectedForEdit?.ownershipType || "",
-      rentedMonths: selectedForEdit?.rentedMonths || 0,
-      tangable:
-        typeof selectedForEdit?.tangable === "boolean"
-          ? String(selectedForEdit.tangable)
-          : "",
-      location: selectedForEdit?.location || "",
-      floor: selectedForEdit?.floor?._id || "",
-      assetImage: null,
-      warrantyDocument: null,
-    });
-  }
-}, [modalMode, selectedForEdit]);
-
+  useEffect(() => {
+    if (modalMode === "edit" && selectedForEdit) {
+      editRequest({
+        departmentId: selectedForEdit?.department?._id || "",
+        categoryId: selectedForEdit?.category?._id || "",
+        subCategoryId: selectedForEdit?.subCategory?.subCategoryName || "",
+        vendorId: selectedForEdit?.vendor?._id || "",
+        name: selectedForEdit?.name || "",
+        purchaseDate: selectedForEdit?.purchaseDate || null,
+        quantity: selectedForEdit?.quantity || 0,
+        price: selectedForEdit?.price || 0,
+        brand: selectedForEdit?.brand || "",
+        assetType: selectedForEdit?.assetType || "",
+        warranty: selectedForEdit?.warranty || 0,
+        ownershipType: selectedForEdit?.ownershipType || "",
+        rentedMonths: selectedForEdit?.rentedMonths || 0,
+        tangable:
+          typeof selectedForEdit?.tangable === "boolean"
+            ? String(selectedForEdit.tangable)
+            : "",
+        location: selectedForEdit?.location || "",
+        floor: selectedForEdit?.floor?._id || "",
+        assetImage: null,
+        warrantyDocument: null,
+      });
+    }
+  }, [modalMode, selectedForEdit]);
 
   const { mutate: editAsset, isPending: isUpdateAsset } = useMutation({
     mutationKey: ["editAsset"],
@@ -331,12 +326,6 @@ useEffect(() => {
     setModalMode("edit");
     setSelectedAsset(data);
   };
-
-  const handleFormSubmit = (data) => {
-    if (modalMode === "add") {
-      addAsset(data);
-    }
-  };
   //-----------------------Event handlers----------------------//
   //-----------------------Table Data----------------------//
   const assetColumns = [
@@ -363,10 +352,6 @@ useEffect(() => {
             {
               label: "Edit",
               onClick: () => handleEdit(params.data),
-            },
-            {
-              label: "Assign",
-              // onClick: () => handleDelete(params.data),
             },
           ]}
         />
@@ -397,7 +382,7 @@ useEffect(() => {
 
       <MuiModal
         open={isModalOpen}
-        title={"Add asset"}
+        title={modalMode === "add" ? "Add Asset" : "Edit Asset"}
         onClose={() => setIsModalOpen(false)}
       >
         {modalMode === "add" && (
@@ -740,7 +725,6 @@ useEffect(() => {
             <Controller
               name="assetImage"
               control={control}
-              rules={{ required: "Asset Image is required" }}
               render={({ field }) => (
                 <UploadFileInput
                   value={field.value}
@@ -764,84 +748,6 @@ useEffect(() => {
             onSubmit={handleEditSubmit((data) => editAsset(data))}
             className="grid grid-cols-2 gap-4"
           >
-            <Controller
-              name="categoryId"
-              control={editControl}
-              rules={{ required: "Category is required" }}
-              render={({ field }) => (
-                <TextField
-                  select
-                  {...field}
-                  size="small"
-                  fullWidth
-                  error={!!editErrors.categoryId}
-                  helperText={editErrors?.categoryId?.message}
-                  label="Category"
-                >
-                  <MenuItem value="" disabled>
-                    <em>Select a Category</em>
-                  </MenuItem>
-                  {isCategoriesPending
-                    ? []
-                    : assetCategories.map((item) => (
-                        <MenuItem key={item._id} value={item._id}>
-                          {item.categoryName}
-                        </MenuItem>
-                      ))}
-                </TextField>
-              )}
-            />
-            <Controller
-              name="subCategoryId"
-              control={editControl}
-              rules={{ required: "Sub Category is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  fullWidth
-                  disabled={!selectedCategory}
-                  size="small"
-                  error={!!editErrors.subCategoryId}
-                  helperText={editErrors?.subCategoryId?.message}
-                  label="Sub Category"
-                >
-                  <MenuItem value="" disabled>
-                    <em>Select a Sub Category</em>
-                  </MenuItem>
-                  {filteredSubCategories?.map((item) => (
-                    <MenuItem key={item._id} value={item._id}>
-                      {item.subCategoryName}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-            <Controller
-              name="vendorId"
-              control={editControl}
-              rules={{ required: "Vendor is required" }}
-              render={({ field }) => (
-                <TextField
-                  select
-                  {...field}
-                  size="small"
-                  fullWidth
-                  label="Vendor"
-                >
-                  <MenuItem value="" disabled>
-                    <em>Select a Vendor</em>
-                  </MenuItem>
-                  {isVendorDetails
-                    ? []
-                    : vendorDetails.map((item) => (
-                        <MenuItem key={item._id} value={item._id}>
-                          {item.companyName || item.name}
-                        </MenuItem>
-                      ))}
-                </TextField>
-              )}
-            />
             <Controller
               name="name"
               control={editControl}
@@ -881,22 +787,6 @@ useEffect(() => {
                       helperText: editErrors?.purchaseDate?.message,
                     },
                   }}
-                />
-              )}
-            />
-            <Controller
-              name="quantity"
-              control={editControl}
-              rules={{ required: "Quantity is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  fullWidth
-                  type="number"
-                  label="Quantity"
-                  error={!!editErrors.quantity}
-                  helperText={editErrors?.quantity?.message}
                 />
               )}
             />
@@ -1023,76 +913,6 @@ useEffect(() => {
                   </MenuItem>
                   <MenuItem value="true">Yes</MenuItem>
                   <MenuItem value="false">No</MenuItem>
-                </TextField>
-              )}
-            />
-
-            <Controller
-              name="location"
-              control={editControl}
-              rules={{ required: "Building is required" }}
-              render={({ field }) => (
-                <TextField
-                  select
-                  {...field}
-                  size="small"
-                  fullWidth
-                  error={!!editErrors.location}
-                  helperText={editErrors?.location?.message}
-                  label="Building"
-                >
-                  <MenuItem value="" disabled>
-                    Select Building
-                  </MenuItem>
-                  {locationsLoading ? (
-                    <MenuItem disabled>
-                      <CircularProgress size={20} />
-                    </MenuItem>
-                  ) : locationsError ? (
-                    <MenuItem disabled>Error fetching units</MenuItem>
-                  ) : (
-                    uniqueBuildings.map(([id, name]) => (
-                      <MenuItem key={id} value={name}>
-                        {name}
-                      </MenuItem>
-                    ))
-                  )}
-                </TextField>
-              )}
-            />
-
-            {/* Meeting Room Dropdown */}
-            <Controller
-              name="floor"
-              control={editControl}
-              rules={{ required: "Unit is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Select Unit"
-                  size="small"
-                  fullWidth
-                  disabled={!selectedLocation}
-                  value={field.value}
-                  error={!!editErrors.floor}
-                  helperText={editErrors?.floor?.message}
-                  onChange={(event) => field.onChange(event.target.value)}
-                >
-                  <MenuItem value="" disabled>
-                    Select Unit
-                  </MenuItem>
-                  {units
-                    .filter(
-                      (unit) =>
-                        unit.building &&
-                        unit.building.buildingName === selectedLocation
-                    )
-                    .map((unit) => (
-                      <MenuItem key={unit._id} value={unit._id}>
-                        {unit.unitNo}
-                      </MenuItem>
-                    ))}
                 </TextField>
               )}
             />

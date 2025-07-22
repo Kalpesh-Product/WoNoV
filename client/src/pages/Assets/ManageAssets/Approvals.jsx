@@ -11,8 +11,12 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import DangerButton from "../../../components/DangerButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import MuiModal from "../../../components/MuiModal";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import PageFrame from "../../../components/Pages/PageFrame";
 
 const Approvals = () => {
+   const axios = useAxiosPrivate();
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedAction, setSelectedAction] = useState(null);
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -22,6 +26,18 @@ const Approvals = () => {
     setSelectedAsset(asset);
     setOpenDialog(true);
   };
+
+   const { data: requestedAssets, isPending: isRequestedAssetsPending } = useQuery({
+      queryKey: ["requestedAssets"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/assets/get-asset-requests");
+          return response.data;
+        } catch (error) {
+          console.error(error.message);
+        }
+      },
+    });
 
   const handleConfirmAction = () => {
     if (selectedAction === "approve") {
@@ -69,6 +85,7 @@ const Approvals = () => {
       ),
     },
   ];
+
 
   const rows = [
     {
@@ -152,15 +169,15 @@ const Approvals = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <PageFrame>
         <AgTable
           search={true}
           searchColumn={"kra"}
           tableTitle={"Assigned Assets"}
-          data={rows}
+          data={requestedAssets}
           columns={assetsColumns}
         />
-      </div>
+      </PageFrame>
 
       {/* Confirmation Dialog */}
       <MuiModal

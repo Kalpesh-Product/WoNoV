@@ -3,6 +3,9 @@ const User = require("../../models/hr/UserData");
 const AssignAsset = require("../../models/assets/AssignAsset");
 const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
+const Department = require("../../models/Departments");
+const Unit = require("../../models/locations/Unit");
+const { default: mongoose } = require("mongoose");
 
 const getAssetRequests = async (req, res, next) => {
   try {
@@ -42,7 +45,7 @@ const requestAsset = async (req, res, next) => {
   const { ip, user, company } = req;
 
   try {
-    if (!assetId || !user || !departmentId || !location) {
+    if (!assetId || !departmentId || !location) {
       throw new CustomError(
         "All fields are required.",
         logPath,
@@ -76,6 +79,147 @@ const requestAsset = async (req, res, next) => {
     return res.status(200).json({
       message:
         "Asset assignment request created successfully. Pending approval.",
+      assignEntry,
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+      );
+    }
+  }
+};
+
+const assignAsset = async (req, res, next) => {
+  const logPath = "assets/AssetLog";
+  const logAction = "Assign Asset";
+  const logSourceKey = "assignAsset";
+  const { assetId, departmentId, location, assignee } = req.body;
+  const { ip, user, company } = req;
+
+  try {
+    if (!assetId || !departmentId || !location || !assignee) {
+      throw new CustomError(
+        "All fields are required.",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const idsChart = {
+      assetId: "asset",
+      departmentId: "department",
+      location: "location",
+      assignee: "assignee",
+    };
+
+    const idMap = {
+      assetId,
+      departmentId,
+      location,
+      assignee,
+    };
+
+    for (const [key, value] of Object.entries(idMap)) {
+      if (!mongoose.Types.ObjectId.isValid(value)) {
+        return res
+          .status(400)
+          .json({ message: `Invalid ${idsChart[key]} id provided` });
+      }
+    }
+
+    const asset = await Asset.findById({ _id: assetId });
+    if (!asset) {
+      throw new CustomError(
+        "Asset not found.",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const departments = await Department.findById(departmentId);
+    if (!departments) {
+      throw new CustomError(
+        "Department not found.",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const user = await User.findById(assignee);
+    if (!user) {
+      throw new CustomError(
+        "User not found.",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    const foundLocation = await Unit.findById(location);
+    if (!foundLocation) {
+      throw new CustomError(
+        "Location not found.",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    if (asset.isAssigned) {
+      return res.status(400).json({ message: "Asset is already assigned" });
+    }
+
+    if (asset.status === "Inactive") {
+      throw new CustomError(
+        "Asset is currently inactive",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+    if (asset.isUnderMaintenance) {
+      throw new CustomError(
+        "Asset is currently under maintenance",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+    if (asset.isDamaged) {
+      throw new CustomError(
+        "Asset is currently damaged",
+        logPath,
+        logAction,
+        logSourceKey
+      );
+    }
+
+    // Create a new asset assignment request
+    const assignEntry = new AssignAsset({
+      asset: assetId,
+      department: departmentId,
+      assignee: user,
+      company: company,
+      location,
+      approvedBy: user,
+      status: "Approved",
+    });
+
+    const assignedAsset = await assignEntry.save();
+
+    asset.isAssigned = true;
+    asset.assignedAsset = assignedAsset._id;
+
+    await asset.save();
+
+    return res.status(200).json({
+      message: "Asset assigned successfully.",
       assignEntry,
     });
   } catch (error) {
@@ -136,6 +280,10 @@ const processAssetRequest = async (req, res, next) => {
       );
     }
 
+    if (asset.isAssigned) {
+      return res.status(400).json({ message: "Asset is already assigned" });
+    }
+
     if (action === "Approved") {
       if (asset.status === "Inactive") {
         throw new CustomError(
@@ -162,15 +310,17 @@ const processAssetRequest = async (req, res, next) => {
         );
       }
       request.status = "Approved";
+      request.approvedBy = user;
       asset.isAssigned = true;
-      asset.assignedAsset = approvedaAsset._id;
+      asset.assignedAsset = request._id;
 
       await asset.save();
     } else {
       request.status = "Rejected";
+      request.rejectededBy = user;
     }
 
-    const approvedaAsset = await request.save();
+    await request.save();
 
     return res.status(200).json({
       message: `Asset assignment request ${action.toLowerCase()} successfully.`,
@@ -278,6 +428,7 @@ const revokeAsset = async (req, res, next) => {
 
 module.exports = {
   requestAsset,
+  assignAsset,
   processAssetRequest,
   revokeAsset,
   getAssetRequests,

@@ -1,37 +1,150 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
-import { TextField, MenuItem } from "@mui/material";
+import { TextField, MenuItem, CircularProgress } from "@mui/material";
+import PageFrame from "../../../components/Pages/PageFrame";
+import { useSelector } from "react-redux";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { Controller, useForm } from "react-hook-form";
+import { inrFormat } from "../../../utils/currencyFormat";
+import humanDate from "../../../utils/humanDateForamt";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import { toast } from "sonner";
+import { queryClient } from "../../../main";
+import StatusChip from "../../../components/StatusChip";
 
 const AssignAssets = () => {
+  const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [modalMode, setModalMode] = useState("");
+  const [selectedAsset, setSelectedAsset] = useState([]);
+  const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  const {
+    handleSubmit,
+    control,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      assetId: "",
+      departmentId: "",
+      assignee: "",
+      building: "",
+      unit: "",
+    },
+  });
 
-  // Sample data for assignment types and departments
-  const assignTypes = ["Rental", "Permanent"];
-  const locations = ["ST", "DTC"];
-  const locationTypes = ["Front Desk", "Cabin", "Meeting Room"];
-  const departments = [
-    "HR",
-    "IT",
-    "Finance",
-    "Tech",
-    "Admin",
-    "Sales",
-    "Maintenance",
-  ];
-  const floors = ["ST-701A", "ST-701B", "ST-601A", "ST501A", "G-1"];
-  const meetingRooms = [
-    "Baga",
-    "Arambol",
-    "Madrid",
-    "Vagator",
-    "San Francisco",
-  ];
+  const selectedLocation = watch("building");
+  const selectedUnit = watch("floor");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  //-----------------------API----------------------//
+  const { data: employees = [], isLoading } = useQuery({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/users/fetch-users");
+        return response.data;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
+  const { data: assetsList = [], isPending: isAssetsListPending } = useQuery({
+    queryKey: ["assetsList"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/assets/get-assets?departmentId=${departmentId}`
+        );
+        const filtered = response.data.flatMap((item) => item.assets);
+        return filtered;
+      } catch (error) {
+        throw new Error(error.response.data.message);
+      }
+    },
+  });
+
+  const {
+    data: units = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-simple-units");
+
+      return response.data;
+    },
+  });
+
+  const selectedUnitId = useMemo(() => {
+    if (!selectedUnit || !selectedLocation) return null;
+    const unit = units.find(
+      (unit) =>
+        unit.unitNo === selectedUnit &&
+        unit.building?.buildingName === selectedLocation // use ?. here too
+    );
+    return unit ? unit._id : null;
+  }, [selectedUnit, selectedLocation, units]);
+
+  const uniqueBuildings = Array.from(
+    new Map(
+      units.length > 0
+        ? units.map((loc) => [
+            loc.building?._id ?? `unknown-${loc.unitNo}`,
+            loc.building?.buildingName ?? "Unknown Building",
+          ])
+        : []
+    ).entries()
+  );
+
+  const { mutate: assignAsset, isPending: isAssigning } = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.post("/api/assets/new-asset-assignment", {
+        ...data,
+        assetId: selectedAsset?._id,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "ASSIGNED");
+      queryClient.invalidateQueries({ queryKey: ["assetsList"] });
+      setOpenModal(false);
+      reset();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to assign asset");
+    },
+  });
+  //-----------------------API----------------------//
+  //---------------------------------------Data processing----------------------------------------------------//
+  const departmentMap = new Map();
+  employees.forEach((employee) => {
+    employee.departments?.forEach((department) => {
+      departmentMap.set(department._id, department);
+    });
+  });
+  const uniqueDepartments = Array.from(departmentMap.values());
+
+  const departmentEmployees = employees.filter((item) =>
+    item.departments?.some((dept) => dept._id === selectedDepartment)
+  );
+  //---------------------------------------Data processing----------------------------------------------------//
+  //-----------------------Event handlers----------------------//
 
   // Handle Assign button click
-  const handleOpenModal = (asset) => {
+  const handleViewAsset = (asset) => {
+    setModalMode("view");
+    setSelectedAsset(asset);
+    setOpenModal(true);
+  };
+  const handleAssignAsset = (asset) => {
+    setModalMode("assign");
     setSelectedAsset(asset);
     setOpenModal(true);
   };
@@ -40,216 +153,264 @@ const AssignAssets = () => {
     setOpenModal(false);
     setSelectedAsset(null);
   };
-
+  //-----------------------Event handlers----------------------//
+  //-----------------------Table Data----------------------//
   const assetsColumns = [
-    { field: "id", headerName: "ID", flex: 1 },
-    { field: "department", headerName: "Department", flex: 1 },
-    { field: "assetNumber", headerName: "Asset Number", flex: 1 },
-    { field: "category", headerName: "Category", flex: 1 },
-    { field: "brand", headerName: "Brand", flex: 1 },
-    { field: "price", headerName: "Price", flex: 1 },
-    { field: "quantity", headerName: "Quantity", flex: 1 },
-    { field: "purchaseDate", headerName: "Purchase Date", flex: 1 },
-    { field: "warranty", headerName: "Warranty (Months)", flex: 1 },
-    { field: "location", headerName: "Location", flex: 1 },
+    { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "department", headerName: "Department" },
+    { field: "assetId", headerName: "Asset ID" },
+    { field: "brand", headerName: "Brand" },
+    {
+      field: "price",
+      headerName: "Price (INR)",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "purchaseDate",
+      headerName: "Purchase Date",
+      cellRenderer: (params) => humanDate(params.value),
+    },
+    { field: "warranty", headerName: "Warranty (Months)" },
+    {
+      field: "isAssigned",
+      headerName: "Status",
+      pinned : "right",
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
-          <PrimaryButton
-            title={"Assign"}
-            handleSubmit={() => handleOpenModal(params.data)}
-          />
-        </div>
+        <ThreeDotMenu
+          rowId={params.data._id}
+          menuItems={[
+            { label: "View", onClick: () => handleViewAsset(params.data) },
+            { label: "Assign", onClick: () => handleAssignAsset(params.data) },
+          ]}
+        />
       ),
     },
   ];
 
-  const rows = [
-    {
-      id: 1,
-      department: "HR",
-      assetNumber: "0001",
-      category: "Laptop",
-      brand: "Dell",
-      price: "₹55,000",
-      quantity: 2,
-      purchaseDate: "02/01/2025",
-      warranty: 12,
-      location: "ST-701B",
-      modelName: "Dell",
-      status: "Active",
-      assignmentDate: "02/03/2025",
-      assignmentTime: "11:36 AM",
-    },
-    {
-      id: 2,
-      department: "IT",
-      assetNumber: "0002",
-      category: "Printer",
-      brand: "HP",
-      price: "₹15,000",
-      quantity: 1,
-      purchaseDate: "15/02/2025",
-      warranty: 24,
-      location: "ST-601",
-      modelName: "HP",
-      status: "Active",
-      assignmentDate: "02/03/2025",
-      assignmentTime: "12:00 PM",
-    },
-    {
-      id: 3,
-      department: "Finance",
-      assetNumber: "0003",
-      category: "Chair",
-      brand: "Godrej",
-      price: "₹5,000",
-      quantity: 4,
-      purchaseDate: "10/03/2025",
-      warranty: 36,
-      location: "ST-701",
-      modelName: "Godrej",
-      status: "Active",
-      assignmentDate: "02/03/2025",
-      assignmentTime: "10:30 AM",
-    },
-  ];
+  const tableData = isAssetsListPending
+    ? []
+    : assetsList.map((item, index) => ({
+        ...item,
+        srNo: index + 1,
+        department: item?.department?.name,
+        subCategory: item?.subCategory?.subCategoryName,
+        isAssigned: item?.isAssigned ? "Assigned" : "Available",
+      }));
+
+  console.log("table data : ", tableData);
+  console.log("selected Asset : ", selectedAsset);
+
+  //-----------------------Table Data----------------------//
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <PageFrame>
         <AgTable
           search={true}
           searchColumn={"assetNumber"}
           tableTitle={"Assign Assets"}
-          data={rows}
+          data={tableData}
           columns={assetsColumns}
         />
-      </div>
-
-      {/* Modal for Assigning Asset */}
+      </PageFrame>
       <MuiModal
         open={openModal}
-        onClose={handleCloseModal}
-        title="Assign Asset">
-        {selectedAsset && (
-          <div className="flex flex-col px-4">
-            {/* Asset Details Section */}
-            <div className="flex flex-col gap-4">
-              <div className="text-subtitle font-semibold">Asset Details</div>
-              <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
-                <div className="flex items-center justify-between">
-                  <span className="text-content">Asset Number</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.assetNumber}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content">Brand Name</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.brand}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content">Model Name</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.modelName}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content">Location</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.location}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content">Status</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.status}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content">Assignment Date</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.assignmentDate}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content">Assignment Time</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.assignmentTime}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Assignee Details Section */}
-            <div className="flex flex-col gap-4 py-4">
-              <div className="text-subtitle font-semibold">
-                Assignee Details
-              </div>
-              <div className="grid grid-cols-2 gap-8 px-2">
-                <TextField size="small" select label="Assign Type" fullWidth>
-                  {assignTypes.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField select label="Department" size="small" fullWidth>
-                  {departments.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField size="small" label="Assignee Name" fullWidth />
-                {/* <TextField
-                  label="Location"
-                  value={selectedAsset.location}
-                  fullWidth
-                  size="small"
-                  InputProps={{ readOnly: true }}
-                /> */}
-
-                <TextField select label="Location" size="small" fullWidth>
-                  {locations.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField select label="Floor" size="small" fullWidth>
-                  {floors.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField select label="Location Type" size="small" fullWidth>
-                  {locationTypes.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField select label="Meeting Room" size="small" fullWidth>
-                  {meetingRooms.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="mt-4 flex justify-center">
-              <PrimaryButton title="Submit" handleSubmit={handleCloseModal} />
-            </div>
+        onClose={() => setOpenModal(false)}
+        title={modalMode === "assign" ? "Assign Asset" : "View Asset"}
+      >
+        {modalMode === "view" && (
+          <div className="grid grid-cols-1 gap-4">
+            <DetalisFormatted
+              title={"Asset ID"}
+              detail={selectedAsset?.assetId || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Asset Name"}
+              detail={selectedAsset?.name || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Asset Type"}
+              detail={selectedAsset?.assetType || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Brand"}
+              detail={selectedAsset?.brand || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Department"}
+              detail={selectedAsset?.department || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Under Maintenance"}
+              detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"UnitNo"}
+              detail={selectedAsset?.location?.unitNo || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Ownership Type"}
+              detail={selectedAsset?.ownershipType || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Price"}
+              detail={inrFormat(selectedAsset?.price)}
+            />
+            <DetalisFormatted
+              title={"Purchase Date"}
+              detail={humanDate(selectedAsset?.purchaseDate)}
+            />
+            <DetalisFormatted
+              title={"Status"}
+              detail={selectedAsset?.status || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Sub Category"}
+              detail={selectedAsset?.subCategory || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Tangable"}
+              detail={selectedAsset?.tangable ? "Yes" : "No"}
+            />
+            {/* <DetalisFormatted title={"Asset ID"} detail={selectedAsset?.status || "N/A"}/> */}
           </div>
+        )}
+
+        {modalMode === "assign" && (
+          <form
+            onSubmit={handleSubmit((data) => assignAsset(data))}
+            className="grid grid-cols-2 gap-4"
+          >
+            <Controller
+              name="departmentId"
+              control={control}
+              rules={{ required: "Department is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  onChange={(e) => {
+                    field.onChange(e);
+                    setSelectedDepartment(e.target.value);
+                  }}
+                  label="Department"
+                  size="small"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select a Department</em>
+                  </MenuItem>
+                  {uniqueDepartments.map((department) => (
+                    <MenuItem key={department._id} value={department._id}>
+                      {department.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="assignee"
+              control={control}
+              rules={{ required: "Assignee is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  disabled={!selectedDepartment}
+                  size="small"
+                  label="Assignee"
+                >
+                  {departmentEmployees.map((emp) => (
+                    <MenuItem key={emp._id} value={emp._id}>
+                      {emp.firstName} {emp.lastName}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="building"
+              control={control}
+              rules={{ required: "Building is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  error={!!errors.building}
+                  helperText={errors?.building?.message}
+                  label="Building"
+                >
+                  <MenuItem value="" disabled>
+                    Select Building
+                  </MenuItem>
+                  {locationsLoading ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} />
+                    </MenuItem>
+                  ) : locationsError ? (
+                    <MenuItem disabled>Error fetching units</MenuItem>
+                  ) : (
+                    uniqueBuildings.map(([id, name]) => (
+                      <MenuItem key={id} value={name}>
+                        {name}
+                      </MenuItem>
+                    ))
+                  )}
+                </TextField>
+              )}
+            />
+
+            <Controller
+              name="location"
+              control={control}
+              rules={{ required: "Unit is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Select Unit"
+                  size="small"
+                  fullWidth
+                  disabled={!selectedLocation}
+                  value={field.value}
+                  error={!!errors.location}
+                  helperText={errors?.location?.message}
+                  onChange={(event) => field.onChange(event.target.value)}
+                >
+                  <MenuItem value="" disabled>
+                    Select Unit
+                  </MenuItem>
+                  {units
+                    .filter(
+                      (unit) =>
+                        unit.building &&
+                        unit.building.buildingName === selectedLocation
+                    )
+                    .map((unit) => (
+                      <MenuItem key={unit._id} value={unit._id}>
+                        {unit.unitNo}
+                      </MenuItem>
+                    ))}
+                </TextField>
+              )}
+            />
+            <PrimaryButton
+              title={"Assign Asset"}
+              type={"submit"}
+              isLoading={isAssigning}
+              disabled={isAssigning}
+              externalStyles={"col-span-2"}
+            />
+          </form>
         )}
       </MuiModal>
     </div>
