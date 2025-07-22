@@ -192,11 +192,9 @@ const assignAsset = async (req, res, next) => {
       "IT Admin",
     ];
 
-    const isAdmin = allowedRoles.some((allowed) =>
-      roles.find((role) => allowed.includes(role))
+    const isAdmin = allowedRoles.some((allowedRole) =>
+      roles.includes(allowedRole)
     );
-
-    console.log("admin", isAdmin);
 
     if (asset.isAssigned) {
       return res.status(400).json({ message: "Asset is already assigned" });
@@ -235,7 +233,7 @@ const assignAsset = async (req, res, next) => {
       company: company,
       location,
       approvedBy: user,
-      status: "Approved",
+      status: isAdmin ? "Approved" : "Pending",
     });
 
     const assignedAsset = await assignEntry.save();
