@@ -36,7 +36,7 @@ const assignAssetSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Approved", "Rejected", "Pending"],
+      enum: ["Approved", "Rejected", "Pending", "Revoked"],
     },
     isRevoked: {
       type: Boolean,

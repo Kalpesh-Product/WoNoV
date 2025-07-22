@@ -37,7 +37,7 @@ const Approvals = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/assets/get-asset-requests?department=${departmentId}&status=Pending`
+          `/api/assets/get-asset-requests?department=${departmentId}`
         );
         return response.data;
       } catch (error) {

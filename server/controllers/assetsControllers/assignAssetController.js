@@ -12,7 +12,9 @@ const getAssetRequests = async (req, res, next) => {
     const { user, company } = req;
     const { departmentId, status } = req.query;
 
-    let query = { company, status: "Pending" };
+    let query = { company, status: { $ne: "Approved" } };
+
+    console.log("status", query);
     if (departmentId) {
       if (!mongoose.Types.ObjectId.isValid(departmentId)) {
         return res
@@ -441,6 +443,7 @@ const revokeAsset = async (req, res, next) => {
     // Remove the assigned user from the asset's assignedTo field
 
     assignedAsset.isRevoked = true;
+    assignedAsset.status = "Revoked";
     const revokedAsset = await assignedAsset.save();
 
     if (!revokedAsset) {
