@@ -183,7 +183,8 @@ const AssignAssets = () => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => {
-        const { isAssigned } = params.data;
+        const  isAssigned  = params.data.isAssigned !== "Available" ? true : false;
+        console.log("is Assigned : ", isAssigned);
 
         const menuItems = [
           { label: "View", onClick: () => handleViewAsset(params.data) },
