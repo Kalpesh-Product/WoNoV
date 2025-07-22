@@ -87,7 +87,12 @@ const getAssets = async (req, res, next) => {
     const assets = await Asset.find(assetFilter)
       .populate([
         { path: "department", select: "name" },
-        { path: "subCategory", select: "subCategoryName" },
+        { path: "vendor", populate: { path: "departmentId", select: "name" } },
+        {
+          path: "subCategory",
+          select: "subCategoryName",
+          populate: { path: "category", select: "categoryName" },
+        },
         {
           path: "location",
           select: "unitNo unitName",
