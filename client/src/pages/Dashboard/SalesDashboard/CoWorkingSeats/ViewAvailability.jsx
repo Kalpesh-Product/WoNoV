@@ -13,6 +13,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import DoubleDataCard from "../../../../components/DoubleDataCard";
 
 const ViewAvailability = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -112,21 +113,21 @@ const ViewAvailability = () => {
     );
   }
 
-if (isUnitsLoading || isFetching) {
-  return (
-    <div className="h-[80vh] flex justify-center items-center">
-      <CircularProgress />
-    </div>
-  );
-}
+  if (isUnitsLoading || isFetching) {
+    return (
+      <div className="h-[80vh] flex justify-center items-center">
+        <CircularProgress />
+      </div>
+    );
+  }
 
-if (!unitDetails || error) {
-  return (
-    <div className="h-screen flex justify-center items-center">
-      No Data Available
-    </div>
-  );
-}
+  if (!unitDetails || error) {
+    return (
+      <div className="h-screen flex justify-center items-center">
+        No Data Available
+      </div>
+    );
+  }
 
   const tableData = (unitDetails?.clientDetails || []).map((data, index) => ({
     id: index + 1,
@@ -194,25 +195,26 @@ if (!unitDetails || error) {
         </div>
       )}
 
-      <WidgetSection layout={4} padding>
-        <DataCard
+      <WidgetSection layout={3} padding>
+        <DoubleDataCard
           data={totalDesks}
           title="Total Desks"
+          secondTitle="Total Occupancy %"
+          secondData={"100%"}
           description="Last Month : Apr-25"
         />
-        <DataCard
+        <DoubleDataCard
           data={totalActualOccupied}
           title="Occupied Desks"
+          secondTitle="Occupancy %"
+          secondData={occupancyPercent}
           description="Last Month : Apr-25"
         />
-        <DataCard
-          data={occupancyPercent}
-          title="Occupancy %"
-          description="Last Month : Apr-25"
-        />
-        <DataCard
+        <DoubleDataCard
           data={totalDesks - totalActualOccupied}
           title="Free Desks"
+          secondTitle="Free Occupancy %"
+          secondData={(((totalDesks - totalActualOccupied)/totalDesks)*100).toFixed(0)}
           description="Last Month : Apr-25"
         />
       </WidgetSection>
@@ -229,7 +231,11 @@ if (!unitDetails || error) {
             { field: "id", headerName: "Sr. No", width: 100 },
             { field: "client", headerName: "Client Name", flex: 1 },
             { field: "occupiedDesks", headerName: "Occupied Desks" },
-            { field: "occupancyPercent", headerName: "Occupied %", cellRenderer : (params)=>(`${params.value} %`) },
+            {
+              field: "occupancyPercent",
+              headerName: "Occupied %",
+              cellRenderer: (params) => `${params.value} %`,
+            },
           ]}
           data={tableData}
         />
