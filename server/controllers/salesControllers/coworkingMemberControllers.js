@@ -3,7 +3,10 @@ const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const CustomError = require("../../utils/customErrorlogs");
 const { formatDate } = require("../../utils/formatDateTime");
 const { createLog } = require("../../utils/moduleLogs");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
 const mongoose = require("mongoose");
+const Unit = require("../../models/locations/Unit");
 
 const createMember = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -90,6 +93,7 @@ const createMember = async (req, res, next) => {
       .json({ message: "Coworking client member onboarded successfully" });
   } catch (error) {
     if (error instanceof CustomError) {
+
       next(error);
     } else {
       next(
@@ -343,6 +347,116 @@ const updateMember = async (req, res, next) => {
   }
 };
 
+const bulkInsertCoworkingMembers = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const company = req.company; 
+
+    const coworkingClients = await CoworkingClient.find().lean().exec();
+    const coworkingClientsMap = new Map(
+      coworkingClients.map((client) => [client.clientName.trim(), client._id])
+    );
+
+    const units = await Unit.find().lean().exec();
+    const unitMap = new Map(
+      units.map((unit) => [
+        `${unit.building}-${unit.unitNumber}`.trim(),
+        unit._id,
+      ])
+    );
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+    const members = [];
+
+    let hasError = false;
+    let errorMessage = "";
+
+    stream
+      .pipe(csvParser()) 
+      .on("data", (row) => {
+        if (hasError) return; 
+
+        try {
+          const {
+            "Company Name": companyName,
+            "Employee Name": employeeName,
+            Designation: designation,
+            "Mobile No": mobileNo,
+            Email: email,
+            "Blood Group": bloodGroup,
+            DOB: dob,
+            "Emergency Name": emergencyName,
+            "Emergency No.": emergencyNo,
+            "BIZ Nest DOJ": dateOfJoining,
+            Building: building,
+            "Unit No": unitNumber,
+            "Biometric Status (Yes/No)": biometricStatus,
+          } = row;
+
+          const clientId = coworkingClientsMap.get(companyName?.trim());
+          const unitId = unitMap.get(
+            `${unitNumber?.trim()}`
+          );
+
+          if (!clientId) {
+            hasError = true;
+            errorMessage = `Unknown client: ${companyName}`;
+            return;
+          }
+
+          const status =
+            biometricStatus?.toLowerCase() === "yes"
+              ? "Active"
+              : biometricStatus?.toLowerCase() === "no"
+              ? "Inactive"
+              : "Pending";
+
+          members.push({
+            company: company._id,
+            client: clientId,
+            employeeName: employeeName?.trim(),
+            designation: designation?.trim() || undefined,
+            mobileNo: mobileNo?.trim(),
+            email: email?.trim() || undefined,
+            bloodGroup: bloodGroup?.trim() || undefined,
+            dob: dob ? new Date(dob) : undefined,
+            emergencyName: emergencyName?.trim() || undefined,
+            emergencyNo: emergencyNo?.trim() || undefined,
+            dateOfJoining: dateOfJoining ? new Date(dateOfJoining) : undefined,
+            unit: unitId,
+            biometricStatus: status,
+          });
+        } catch (innerErr) {
+          hasError = true;
+          errorMessage = `Error parsing row: ${innerErr.message}`;
+        }
+      })
+      .on("end", async () => {
+        if (hasError) {
+          return res.status(400).json({ message: errorMessage });
+        }
+
+        if (!members.length) {
+          return res
+            .status(400)
+            .json({ message: "No valid member records found." });
+        }
+
+        await CoworkingMembers.insertMany(members);
+        res
+          .status(200)
+          .json({ message: "Coworking members uploaded successfully." });
+      })
+      .on("error", (err) => {
+        res
+          .status(400)
+          .json({ message: `CSV processing error: ${err.message}` });
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createMember,
   getAllMembers,
@@ -350,4 +464,5 @@ module.exports = {
   getMemberByClient,
   updateMember,
   getMembersByUnit,
+  bulkInsertCoworkingMembers,
 };
