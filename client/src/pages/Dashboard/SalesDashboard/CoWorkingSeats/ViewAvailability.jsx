@@ -229,7 +229,7 @@ if (!unitDetails || error) {
             { field: "id", headerName: "Sr. No", width: 100 },
             { field: "client", headerName: "Client Name", flex: 1 },
             { field: "occupiedDesks", headerName: "Occupied Desks" },
-            { field: "occupancyPercent", headerName: "Occupied %" },
+            { field: "occupancyPercent", headerName: "Occupied %", cellRenderer : (params)=>(`${params.value} %`) },
           ]}
           data={tableData}
         />

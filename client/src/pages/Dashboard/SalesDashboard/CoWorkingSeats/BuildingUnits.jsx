@@ -6,6 +6,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useSelector, useDispatch } from "react-redux";
 import { setBuildingName } from "../../../../redux/slices/salesSlice";
 import { useEffect } from "react";
+import { inrFormat } from "../../../../utils/currencyFormat";
 
 export default function BuildingUnits() {
   const dispatch = useDispatch();
@@ -40,9 +41,10 @@ export default function BuildingUnits() {
     unitId: item._id,
     unitNo: item.unitNo,
     unitName: item.unitName,
-    sqft: item.sqft,
-    openDesks: item.openDesks,
-    cabinDesks: item.cabinDesks,
+    sqft: item.sqft || 0,
+    openDesks: item.openDesks || 0,
+    cabinDesks: item.cabinDesks || 0 ,
+    totalDesks: (item.openDesks || 0) + (item.cabinDesks || 0),
     buildingName: item.building?.buildingName || "-",
     fullData: item, // store full unit for edit
   }));
@@ -73,10 +75,17 @@ export default function BuildingUnits() {
     },
     { headerName: "Unit Name", field: "unitName", flex: 1 },
     { headerName: "Building", field: "buildingName", flex: 1 },
-    { headerName: "Sqft", field: "sqft", flex: 1 },
+    { headerName: "Sqft", field: "sqft", flex: 1 , cellRenderer: (params) => inrFormat(params.value),},
     { headerName: "Open Desks", field: "openDesks", flex: 1 },
     { headerName: "Cabin Desks", field: "cabinDesks", flex: 1 },
+    {
+      headerName: "Total Desks",
+      field: "totalDesks",
+      flex: 1,
+      cellRenderer: (params) => inrFormat(params.value),
+    }, // 👈 New column
   ];
+
   return (
     <div className="p-4 flex flex-col gap-4">
       <PageFrame>

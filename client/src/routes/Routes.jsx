@@ -389,6 +389,7 @@ import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartment
 import VendorTable from "../components/Pages/VendorTable";
 import AssetsHome from "../pages/Assets/AssetsHome";
 import ManageAssetsHome from "../pages/Assets/ManageAssetsHome";
+import ViewClientInfo from "../pages/Dashboard/SalesDashboard/ViewClientInfo";
 
 export const routes = createBrowserRouter([
   {
@@ -1302,6 +1303,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "unique-leads",
                         element: <UniqueLeads />,
+                      },
+                      {
+                        path: "unique-leads/:client",
+                        element: <ViewClientInfo />,
                       },
                       {
                         path: "unique-clients",
