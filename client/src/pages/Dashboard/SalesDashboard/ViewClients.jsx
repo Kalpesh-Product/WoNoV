@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
@@ -34,23 +34,53 @@ const ViewClients = () => {
     fetchSourceIfEmpty();
   }, [clientsData, dispatch]);
 
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["clientDetails"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/consolidated-clients");
+        return response.data;
+      } catch (error) {
+        console.error(error.response.data.message);
+      }
+    },
+  });
+  const unifiedClients = useMemo(() => {
+  if (!data || typeof data !== "object") return [];
+
+  return Object.entries(data).flatMap(([key, clients]) => {
+    const clientType = key.replace(/Clients$/, ""); // e.g., "coworkingClients" → "coworking"
+    return clients.map((client) => ({
+      ...client,
+      clientType, // dynamically tagged
+    }));
+  });
+}, [data]);
+
+console.log("data ", unifiedClients);
+  const clientCounts = {
+    coWorking : data?.coworkingClients?.length,
+    virtualOfficeClients :  data?.virtualOfficeClients?.length,
+    meetingClients : data?.meetingClients?.length,
+  }
+
   const verticalsData = [
     {
       id: 1,
       name: "Co-Working",
-      value: 0,
+      value: clientCounts.coWorking,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/co-working",
     },
     {
       id: 2,
       name: "Virtual-Office",
-      value: 0,
+      value: clientCounts.virtualOfficeClients,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office",
     },
     {
       id: 3,
-      name: "Workation",
-      value: 0,
+      name: "Meetings",
+      value: clientCounts.meetingClients,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/workation",
     },
   ];
@@ -74,7 +104,7 @@ const ViewClients = () => {
         ? date.toLocaleString("default", { month: "long" })
         : "Unknown";
 
-      const rawServiceName = client.service?.serviceName || "Unknown";
+      const rawServiceName = client.clientType || "Unknown";
       const formattedServiceName = toTitleCase(rawServiceName);
 
       const transformedClient = {
@@ -96,7 +126,8 @@ const ViewClients = () => {
     }));
   };
 
-  const transformedData = transformClientsGroupedByMonth(clientsData);
+  const transformedData = transformClientsGroupedByMonth(unifiedClients);
+  console.log("transformed data ", transformedData);
 
   return (
     <div className="flex flex-col gap-4">
@@ -104,7 +135,7 @@ const ViewClients = () => {
         <UniqueClients
           data={transformedData}
           hideAccordion
-          additionalData={`CLIENTS : ${clientsData.length}`}
+          additionalData={`CLIENTS : ${unifiedClients.length}`}
         />
       </div>
       <WidgetSection

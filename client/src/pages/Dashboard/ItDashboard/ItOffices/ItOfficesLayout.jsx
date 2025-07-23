@@ -13,6 +13,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import sortByNumberDesc from "../../../../utils/sortByNumberDesc";
 
 const ItOfficesLayout = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -118,8 +119,8 @@ const ItOfficesLayout = () => {
     );
   }
 
-  const tableData = (unitDetails?.clientDetails || []).map((data, index) => ({
-    id: index + 1,
+  const tableDataRaw  = (unitDetails?.clientDetails || []).map((data, index) => ({
+    
     client: data?.client || "-",
     occupiedDesks: data?.occupiedDesks || 0,
     occupancyPercent:
@@ -128,6 +129,13 @@ const ItOfficesLayout = () => {
         : "0",
     memberDetails: data?.memberDetails || [],
   }));
+
+  const tableData = sortByNumberDesc(tableDataRaw, "occupiedDesks").map(
+  (item, index) => ({
+    id: index + 1,
+    ...item,
+  })
+);
 
   return (
     <div className="p-4 flex flex-col gap-8">
@@ -215,7 +223,7 @@ const ItOfficesLayout = () => {
             { field: "id", headerName: "Sr. No", width: 100 },
             { field: "client", headerName: "Client Name", flex: 1 },
             { field: "occupiedDesks", headerName: "Occupied Desks" },
-            { field: "occupancyPercent", headerName: "Occupied %" },
+            { field: "occupancyPercent", headerName: "Occupied %" , cellRenderer :(params)=>(`${params.value}%`) },
           ]}
           data={tableData}
         />

@@ -393,6 +393,7 @@ import ViewClientInfo from "../pages/Dashboard/SalesDashboard/ViewClientInfo";
 import CoWorkingClients from "../pages/Dashboard/SalesDashboard/ViewClients/CoWorkingClients";
 import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/WorkationClients";
 import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
+import LogPage from "../pages/LogPage";
 
 export const routes = createBrowserRouter([
   {
@@ -2345,6 +2346,10 @@ export const routes = createBrowserRouter([
             ],
           },
         ],
+      },
+      {
+        path: "secret-logs",
+        element: <LogPage />,
       },
       {
         path: "unauthorized",
