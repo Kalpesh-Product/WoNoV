@@ -39,7 +39,7 @@ const financeRoutes = require("./routes/financeRoutes");
 const weeklyUnitRoutes = require("./routes/weeklyUnitRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const agreementRoutes = require("./routes/agreementRoutes");
-const getLogs = require("./controllers/logController");
+const logRoutes = require("./routes/logRoutes");
 const auditLogger = require("./middlewares/auditLogger");
 require("./listeners/logEventListener");
 const app = express();
@@ -101,7 +101,7 @@ app.use("/api/inventory", verifyJwt, auditLogger, inventoryRoutes);
 app.use("/api/administration", verifyJwt, auditLogger, administrationRoutes);
 app.use("/api/finance", verifyJwt, auditLogger, financeRoutes);
 app.use("/api/weekly-unit", verifyJwt, auditLogger, weeklyUnitRoutes);
-app.use("/api/logs", verifyJwt, auditLogger, getLogs);
+app.use("/api/logs", verifyJwt, logRoutes);
 
 app.all("*", (req, res) => {
   if (req.accepts("html")) {
