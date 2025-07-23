@@ -224,6 +224,14 @@ const IncomeDetails = () => {
   // const totalAnnualRevenue = filteredByYear.reduce((sum, domain) => {
   //   return sum + domain.data.reduce((acc, monthVal) => acc + monthVal, 0);
   // }, 0);
+  const chartOptions = {
+    colors: ["#0D9488"],
+    yaxis: {
+      labels: {
+        formatter: (val) => `₹${val.toLocaleString("en-IN")}`,
+      },
+    },
+  };
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -242,14 +250,7 @@ const IncomeDetails = () => {
             data={unifiedRevenueData}
             dateKey="date"
             valueKey="revenue"
-            chartOptions={{
-              colors: ["#0D9488"],
-              yaxis: {
-                labels: {
-                  formatter: (val) => `₹${val.toLocaleString("en-IN")}`,
-                },
-              },
-            }}
+            chartOptions={chartOptions}
           />
         </WidgetSection>
       )}
