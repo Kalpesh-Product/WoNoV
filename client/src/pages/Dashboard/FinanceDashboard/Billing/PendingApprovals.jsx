@@ -215,7 +215,7 @@ const PendingApprovals = () => {
 
           {modalType === "view" && selectedBudget && (
             <div className="flex flex-col gap-4">
-              <DetalisFormatted title="Sr No" detail={selectedBudget.srNo} />
+              {/* <DetalisFormatted title="Sr No" detail={selectedBudget.srNo} /> */}
               <DetalisFormatted
                 title="Department"
                 detail={selectedBudget.department}

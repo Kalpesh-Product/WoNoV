@@ -15,13 +15,15 @@ import MuiModal from "../../../components/MuiModal";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import PageFrame from "../../../components/Pages/PageFrame";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useSelector } from "react-redux";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
+import { toast } from "sonner";
+import { queryClient } from "../../../main";
 
 const AssignedAssets = () => {
   const axios = useAxiosPrivate();
@@ -44,6 +46,24 @@ const AssignedAssets = () => {
     },
   });
   //-----------------------API----------------------//
+
+  const { mutate: revokeAsset, isPending: isRevoking } = useMutation({
+    mutationFn: async (data) => {
+      console.log("data", data);
+      const response = await axios.patch(
+        `/api/assets/revoke-asset/${data._id}`
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Revoked");
+      queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to revoke asset");
+    },
+  });
+
   //-----------------------Event handlers----------------------//
   const handleView = (data) => {
     setModalMode("view");
@@ -75,6 +95,10 @@ const AssignedAssets = () => {
           rowId={params.data.assetId}
           menuItems={[
             { label: "View", onClick: () => handleView(params.data) },
+            params.data.status !== "Revoked" && {
+              label: "Revoke",
+              onClick: () => revokeAsset(params.data),
+            },
           ]}
         />
       ),
