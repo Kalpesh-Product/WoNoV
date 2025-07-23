@@ -203,17 +203,17 @@ const MaintenanceOfficesLayout = () => {
           data={totalActualOccupied}
           title="Occupied Desks"
           secondTitle="Occupancy %"
-          secondData={occupancyPercent}
+          secondData={`${occupancyPercent}%`}
           description="Last Month : Apr-25"
         />
         <DoubleDataCard
           data={totalDesks - totalActualOccupied}
           title="Free Desks"
           secondTitle="Free Occupancy %"
-          secondData={(
+          secondData={`${(
             ((totalDesks - totalActualOccupied) / totalDesks) *
             100
-          ).toFixed(0)}
+          ).toFixed(0)}%`}
           description="Last Month : Apr-25"
         />
       </WidgetSection>

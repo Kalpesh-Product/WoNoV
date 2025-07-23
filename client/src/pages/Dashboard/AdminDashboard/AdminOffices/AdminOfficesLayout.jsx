@@ -14,6 +14,7 @@ import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import sortByNumberDesc from "../../../../utils/sortByNumberDesc";
+import DoubleDataCard from "../../../../components/DoubleDataCard";
 
 const AdminOfficesLayout = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -189,28 +190,33 @@ const AdminOfficesLayout = () => {
         </div>
       )}
 
-      <WidgetSection layout={4} padding>
-        <DataCard
+<WidgetSection layout={3} padding>
+        <DoubleDataCard
           data={totalDesks}
           title="Total Desks"
+          secondTitle="Total Occupancy %"
+          secondData={"100%"}
           description="Last Month : Apr-25"
         />
-        <DataCard
+        <DoubleDataCard
           data={totalActualOccupied}
           title="Occupied Desks"
+          secondTitle="Occupancy %"
+          secondData={`${occupancyPercent}%`}
           description="Last Month : Apr-25"
         />
-        <DataCard
-          data={occupancyPercent}
-          title="Occupancy %"
-          description="Last Month : Apr-25"
-        />
-        <DataCard
+        <DoubleDataCard
           data={totalDesks - totalActualOccupied}
           title="Free Desks"
+          secondTitle="Free Occupancy %"
+          secondData={`${(
+            ((totalDesks - totalActualOccupied) / totalDesks) *
+            100
+          ).toFixed(0)}%`}
           description="Last Month : Apr-25"
         />
       </WidgetSection>
+
 
       <WidgetSection
         title={`Occupancy details - ${unitName}`}
