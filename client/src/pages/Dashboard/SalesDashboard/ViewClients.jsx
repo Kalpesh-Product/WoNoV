@@ -163,7 +163,7 @@ const ViewClients = () => {
     localPocEmail: item.localPoc?.email,
     localPocPhone: item.localPoc?.phone,
     hoPocName: item.hOPoc?.name,
-    hoPocEmail: item.hOPoc?.email || "client@gmail.com",
+    hoPocEmail: item.hOPoc?.email || "",
     hoPocPhone: item.hOPoc?.phone,
     isActive: item.isActive,
     createdAt: item.createdAt,
@@ -171,8 +171,6 @@ const ViewClients = () => {
     occupiedImage: item.occupiedImage?.imageUrl,
     members: item.members || [],
   }));
-
-    console.log("table data : ", tableData);
 
 
 

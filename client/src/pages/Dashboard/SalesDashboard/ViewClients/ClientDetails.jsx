@@ -269,7 +269,7 @@ const ClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {control._defaultValues.annualIncrement}
+                            {control._defaultValues.annualIncrement}%
                           </span>
                         </div>
                       </div>

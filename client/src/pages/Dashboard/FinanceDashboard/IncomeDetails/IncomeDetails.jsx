@@ -15,12 +15,24 @@ const IncomeDetails = () => {
   const [selectedYear, setSelectedYear] = useState("2024-25");
 
   const { data: simpleRevenue = [], isLoading: isTotalLoading } = useQuery({
-    queryKey: ["totalRevenue"],
+    queryKey: ["simpleRevenue"],
     queryFn: async () => {
       try {
         const response = await axios.get(
           "/api/sales/simple-consolidated-revenue"
         );
+        return response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  });
+
+  const { data: totalRevenue = [], isLoading } = useQuery({
+    queryKey: ["totalRevenue"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/consolidated-revenue");
         return response.data;
       } catch (error) {
         console.error(error);
@@ -75,163 +87,94 @@ const IncomeDetails = () => {
 
     return flatten;
   }, [simpleRevenue]);
-  const dateList = unifiedRevenueData.map((item) => new Date(item.date));
 
-  // Handle empty list safely
-  const startDate = dateList.length ? new Date(Math.min(...dateList)) : null;
-  console.log("startDate : ", startDate);
-  const endDate = dateList.length ? new Date(Math.max(...dateList)) : null;
-  console.log("endDate : ", endDate);
-
-  const filtered = unifiedRevenueData.filter((item) => {
-    const itemDate = new Date(item.date);
-    return itemDate >= startDate && itemDate <= endDate;
-  });
-
-  console.log("unified : ", unifiedRevenueData);
-
-  const groupedRevenueData = filtered.reduce((acc, curr) => {
-    const existing = acc.find((item) => item.vertical === curr.vertical);
-    if (existing) {
-      existing.revenue += curr.revenue;
-    } else {
-      acc.push({ vertical: curr.vertical, revenue: curr.revenue });
-    }
-    return acc;
-  }, []);
-
-  console.log("groupedRevenueData : ", groupedRevenueData);
-
-  const groupedWithSrNo = groupedRevenueData.map((item, index) => ({
-    srNo: index + 1,
-    ...item,
+  const filteredByYear = totalRevenue?.map((item) => ({
+    name: item.name,
+    data: item.data[selectedYear] || [],
   }));
-  console.log("groupedWithSrNo : ", groupedWithSrNo);
 
-  const months = [
-    "Apr-24",
-    "May-24",
-    "Jun-24",
-    "Jul-24",
-    "Aug-24",
-    "Sep-24",
-    "Oct-24",
-    "Nov-24",
-    "Dec-24",
-    "Jan-25",
-    "Feb-25",
-    "Mar-25",
-  ];
-
-  // const financialDataForTable = months.map((monthLabel, i) => {
-  //   const revenue = isTotalLoading
-  //     ? []
-  //     : totalRevenue.map((category) => ({
-  //         vertical: category.name,
-  //         revenue: inrFormat(category.data?.["2024-25"]?.[i] ?? 0),
-  //         percentage: `${100}%`,
-  //       }));
-
-  //   return {
-  //     month: monthLabel,
-  //     revenue,
-  //   };
-  // });
-
-  // const filteredByYear = totalRevenue.map((item) => ({
-  //   name: item.name,
-  //   data: item.data[selectedYear] || [],
-  // }));
-
-  // const normalizedData = filteredByYear.map((domain) => ({
-  //   name: domain.name,
-  //   data: domain.data.map((val, idx) => {
-  //     const totalThisMonth = filteredByYear.reduce(
-  //       (sum, item) => sum + item.data[idx],
-  //       0
-  //     );
-  //     return totalThisMonth ? Math.round((val / totalThisMonth) * 100) : 0;
-  //   }),
-  // }));
-  // const options = {
-  //   chart: {
-  //     toolbar: false,
-  //     stacked: true,
-  //     fontFamily: "Poppins-Regular",
-  //   },
-  //   xaxis: {
-  //     categories: [
-  //       "Apr-24",
-  //       "May-24",
-  //       "Jun-24",
-  //       "Jul-24",
-  //       "Aug-24",
-  //       "Sep-24",
-  //       "Oct-24",
-  //       "Nov-24",
-  //       "Dec-24",
-  //       "Jan-25",
-  //       "Feb-25",
-  //       "Mar-25",
-  //     ],
-  //     title: { text: "" },
-  //   },
-  //   yaxis: {
-  //     max: 100,
-  //     labels: {
-  //       formatter: (val) => `${val}%`,
-  //     },
-  //   },
-  //   tooltip: {
-  //     y: {
-  //       formatter: function (val, { seriesIndex, dataPointIndex }) {
-  //         const actualVal = filteredByYear[seriesIndex]?.data?.[dataPointIndex];
-  //         return actualVal ? `INR ${actualVal.toLocaleString()}` : "No data";
-  //       },
-  //     },
-  //   },
-  //   plotOptions: {
-  //     bar: {
-  //       horizontal: false,
-  //       columnWidth: "40%",
-  //       borderRadius: 5,
-  //     },
-  //   },
-  //   legend: {
-  //     show: true,
-  //     position: "top",
-  //   },
-  //   colors: [
-  //     "#1E3D73", // Dark Blue (Co-Working)
-  //     "#2196F3", // Bright Blue (Meetings)
-  //     "#11daf5", // Light Mint Green (Virtual Office)
-  //     "#00BCD4", // Cyan Blue (Workation)
-  //     "#1976D2", // Medium Blue (Alt Revenues)
-  //   ],
-  //   dataLabels: {
-  //     enabled: true,
-  //     formatter: function (val) {
-  //       return `${val}%`;
-  //     },
-  //     style: {
-  //       fontSize: "10px",
-  //       fontWeight: "bold",
-  //       colors: ["#fff"],
-  //     },
-  //   },
-  // };
-
-  // const totalAnnualRevenue = filteredByYear.reduce((sum, domain) => {
-  //   return sum + domain.data.reduce((acc, monthVal) => acc + monthVal, 0);
-  // }, 0);
-  const chartOptions = {
-    colors: ["#0D9488"],
+  const normalizedData = filteredByYear.map((domain) => ({
+    name: domain.name,
+    data: domain.data.map((val, idx) => {
+      const totalThisMonth = filteredByYear.reduce(
+        (sum, item) => sum + item.data[idx],
+        0
+      );
+      return totalThisMonth ? Math.round((val / totalThisMonth) * 100) : 0;
+    }),
+  }));
+  console.log("graph data : ", normalizedData)
+  const options = {
+    chart: {
+      toolbar: false,
+      stacked: true,
+      fontFamily: "Poppins-Regular",
+    },
+    xaxis: {
+      categories: [
+        "Apr-24",
+        "May-24",
+        "Jun-24",
+        "Jul-24",
+        "Aug-24",
+        "Sep-24",
+        "Oct-24",
+        "Nov-24",
+        "Dec-24",
+        "Jan-25",
+        "Feb-25",
+        "Mar-25",
+      ],
+      title: { text: "" },
+    },
     yaxis: {
+      max: 100,
       labels: {
-        formatter: (val) => `₹${val.toLocaleString("en-IN")}`,
+        formatter: (val) => `${val}%`,
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: function (val, { seriesIndex, dataPointIndex }) {
+          const actualVal = filteredByYear[seriesIndex]?.data?.[dataPointIndex];
+          return actualVal ? `INR ${actualVal.toLocaleString()}` : "No data";
+        },
+      },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+      },
+    },
+    legend: {
+      show: true,
+      position: "top",
+    },
+    colors: [
+      "#1E3D73", // Dark Blue (Co-Working)
+      "#2196F3", // Bright Blue (Meetings)
+      "#11daf5", // Light Mint Green (Virtual Office)
+      "#00BCD4", // Cyan Blue (Workation)
+      "#1976D2", // Medium Blue (Alt Revenues)
+    ],
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return `${val}%`;
+      },
+      style: {
+        fontSize: "10px",
+        fontWeight: "bold",
+        colors: ["#fff"],
       },
     },
   };
+
+  const totalAnnualRevenue = filteredByYear.reduce((sum, domain) => {
+    return sum + domain.data.reduce((acc, monthVal) => acc + monthVal, 0);
+  }, 0);
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -244,14 +187,9 @@ const IncomeDetails = () => {
           layout={1}
           title={"Annual Monthly Mix Income FY 2024-25"}
           border
-          TitleAmount={`INR ${inrFormat(0)}`}
+          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
         >
-          <FyBarGraph
-            data={unifiedRevenueData}
-            dateKey="date"
-            valueKey="revenue"
-            chartOptions={chartOptions}
-          />
+          <BarGraph height={400} data={normalizedData} options={options} />
         </WidgetSection>
       )}
 
