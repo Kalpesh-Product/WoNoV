@@ -390,6 +390,10 @@ import VendorTable from "../components/Pages/VendorTable";
 import AssetsHome from "../pages/Assets/AssetsHome";
 import ManageAssetsHome from "../pages/Assets/ManageAssetsHome";
 import ViewClientInfo from "../pages/Dashboard/SalesDashboard/ViewClientInfo";
+import CoWorkingClients from "../pages/Dashboard/SalesDashboard/ViewClients/CoWorkingClients";
+import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/WorkationClients";
+import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
+import LogPage from "../pages/LogPage";
 
 export const routes = createBrowserRouter([
   {
@@ -1448,9 +1452,20 @@ export const routes = createBrowserRouter([
                         path: "clients",
                         element: <ViewClients />,
                       },
-
                       {
-                        path: "mix-bag/clients/:clientName",
+                        path: "mix-bag/clients/co-working",
+                        element: <CoWorkingClients />,
+                      },
+                      {
+                        path: "mix-bag/clients/workation",
+                        element: <WorkationClients />,
+                      },
+                      {
+                        path: "mix-bag/clients/virtual-office",
+                        element: <VirtualOfficeClients />,
+                      },
+                      {
+                        path: "mix-bag/clients/co-working/:clientName",
                         element: <ViewClientLayout />,
                         children: [
                           {
@@ -1475,32 +1490,32 @@ export const routes = createBrowserRouter([
                           },
                         ],
                       },
-                      {
-                        path: "clients/:clientName",
-                        element: <ViewClientLayout />,
-                        children: [
-                          {
-                            path: "client-details",
-                            element: <ClientDetails />,
-                          },
-                          {
-                            path: "desks",
-                            element: <Desks />,
-                          },
-                          {
-                            path: "revenue",
-                            element: <ClientRevenue />,
-                          },
-                          {
-                            path: "members",
-                            element: <ClientMembers />,
-                          },
-                          {
-                            path: "members/view-member/:id",
-                            element: <MemberDetails />,
-                          },
-                        ],
-                      },
+                      // {
+                      //   path: "clients/:clientName",
+                      //   element: <ViewClientLayout />,
+                      //   children: [
+                      //     {
+                      //       path: "client-details",
+                      //       element: <ClientDetails />,
+                      //     },
+                      //     {
+                      //       path: "desks",
+                      //       element: <Desks />,
+                      //     },
+                      //     {
+                      //       path: "revenue",
+                      //       element: <ClientRevenue />,
+                      //     },
+                      //     {
+                      //       path: "members",
+                      //       element: <ClientMembers />,
+                      //     },
+                      //     {
+                      //       path: "members/view-member/:id",
+                      //       element: <MemberDetails />,
+                      //     },
+                      //   ],
+                      // },
                       {
                         path: "mix-bag/clients/client-onboarding",
                         element: <ClientOnboarding />,
@@ -2331,6 +2346,10 @@ export const routes = createBrowserRouter([
             ],
           },
         ],
+      },
+      {
+        path: "secret-logs",
+        element: <LogPage />,
       },
       {
         path: "unauthorized",

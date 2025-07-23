@@ -27,24 +27,197 @@ import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
+import useAuth from "../../hooks/useAuth";
+import { inrFormat } from "../../utils/currencyFormat";
 
 const AssetsDashboard = () => {
-  const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  const { auth } = useAuth();
+  const departments = auth.user.departments;
+
   const axios = useAxiosPrivate();
-//-----------------------MAIN API CALL------------------------------------//
-const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
-  queryKey: ["assets"],
-  queryFn: async () => {
-    try {
-      const response = await axios.get(
-        `/api/assets/get-assets?departmentId=${departmentId}`
-      );
-    } catch (error) {
-      console.error(error.message);
-    }
-  },
-});
-//-----------------------MAIN API CALL------------------------------------//
+  //-----------------------MAIN API CALL------------------------------------//
+  const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
+    queryKey: ["assets"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(`/api/assets/get-assets`);
+
+        return response.data;
+      } catch (error) {
+        console.error(error.message);
+      }
+    },
+  });
+
+  const { data: departmentCategories, isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(`/api/assets/get-category`);
+        return response.data;
+      } catch (error) {
+        console.error(error.message);
+      }
+    },
+  });
+  //-----------------------MAIN API CALL------------------------------------//
+
+  const totalAssets = isDepartmentLoading
+    ? []
+    : departmentAssets
+        ?.filter((dept) => dept.assets.length > 0)
+        .flatMap((dept) => dept.assets);
+
+  const totalOwnedAssets = totalAssets.filter((asset) => {
+    return asset.ownershipType === "Owned";
+  }).length;
+  const totalAssignedAssets = totalAssets.filter(
+    (asset) => asset.isAssigned
+  ).length;
+  const totalUnassignedAssets = totalAssets.length - totalAssignedAssets;
+
+  const totalAssetsUnderMaintenance = totalAssets.filter(
+    (asset) => asset.isUnderMaintenance
+  ).length;
+
+  const totalAssetsPrice = totalAssets.reduce(
+    (acc, asset) => acc + asset?.price,
+    0
+  );
+
+  // Assigned and Unassigned Assets Pie Chart
+  const assetAvailabilityData = [
+    {
+      label: "Assigned Assets",
+      value: ((totalAssignedAssets / totalAssets.length) * 100).toFixed(1),
+      count: totalAssignedAssets,
+    },
+    {
+      label: "Unassigned Assets",
+      value: ((totalUnassignedAssets / totalAssets.length) * 100).toFixed(1),
+      count: totalUnassignedAssets,
+    },
+  ];
+
+  const assetAvailabilityOptions = {
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    labels: assetAvailabilityData.map((item) => item.label), // Labels: Assigned & UnAssigned
+    legend: { show: true }, // Hide default ApexCharts legend
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => `${val.toFixed(1)}%`, // Show percentage
+    },
+    tooltip: {
+      y: {
+        formatter: (val, { seriesIndex }) => {
+          const count = assetAvailabilityData[seriesIndex].count; // Get the count of assets
+          return `${count} assets (${val}%)`;
+        },
+      },
+    },
+    colors: ["#28a745", "#dc3545"], // Green for Assigned, Red for UnAssigned
+  };
+
+  // -----------------------Physical vs Digital Assets Pie Data Start--------------------
+
+  const physicalAssets = totalAssets.filter(
+    (asset) => asset.assetType === "Physical"
+  ).length;
+  const digitalAssets = totalAssets.filter(
+    (asset) => asset.assetType === "Digital"
+  ).length;
+
+  const physicalDigitalPieData = [
+    {
+      label: "Physical Assets",
+      value: ((physicalAssets / totalAssets.length) * 100).toFixed(1),
+      count: physicalAssets,
+    },
+    {
+      label: "Digital Assets",
+      value: ((digitalAssets / totalAssets.length) * 100).toFixed(1),
+      count: digitalAssets,
+    },
+  ];
+
+  // ApexCharts Options for Physical vs. Digital Assets
+  const physicalDigitalOptions = {
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    labels: physicalDigitalPieData.map((item) => item.label),
+    legend: { show: true },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => `${val.toFixed(1)}%`,
+    },
+    tooltip: {
+      y: {
+        formatter: (val, { seriesIndex }) => {
+          const count = physicalDigitalPieData[seriesIndex].count;
+          return `${count} assets (${val}%)`;
+        },
+      },
+    },
+    colors: ["#007bff", "#f39c12"], // Blue: Physical, Orange: Digital
+  };
+
+  const assetColumns = [
+    { field: "srNo", headerName: "Sr No" },
+    { field: "assetId", headerName: "Asset Id" },
+    { field: "department", headerName: "Department" },
+    { field: "subCategory", headerName: "Sub-Category" },
+    { field: "brand", headerName: "Brand" },
+    {
+      field: "price",
+      headerName: "Price (INR)",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    { field: "purchaseDate", headerName: "Purchase Date" },
+    { field: "warranty", headerName: "Warranty (Months)" },
+    // {
+    //   field: "actions",
+    //   headerName: "Actions",
+    //   pinned: "right",
+    //   cellRenderer: (params) => (
+    //     <ThreeDotMenu
+    //       rowId={params.data._id}
+    //       menuItems={[
+    //         {
+    //           label: "View",
+    //           onClick: () => handleView(params.data),
+    //         },
+    //         {
+    //           label: "Edit",
+    //           onClick: () => handleEdit(params.data),
+    //         },
+    //       ]}
+    //     />
+    //   ),
+    // },
+  ];
+
+  const tableData = isDepartmentLoading
+    ? []
+    : totalAssets.map((item, index) => {
+         const data = {
+          ...item,
+          srNo: index + 1,
+          assetId: item.assetId,
+          department: item?.department?.name,
+          subCategory: item?.subCategory?.subCategoryName,
+          category: item?.subCategory?.category.categoryName,
+          brand: item?.brand,
+          warranty: item?.warranty,
+          purchaseDate: item?.purchased,
+          price: `INR ${item?.price}`,
+        };
+
+        return data
+      });
+
   const meetingsWidgets = [
     {
       layout: 1,
@@ -76,11 +249,7 @@ const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
           title={"Manage Assets"}
           icon={<MdFormatListBulleted />}
         />,
-        <Card
-          route={"#"}
-          title={"Mix Bag"}
-          icon={<MdFormatListBulleted />}
-        />,
+        <Card route={"#"} title={"Mix Bag"} icon={<MdFormatListBulleted />} />,
         <Card
           route={"/app/assets/reports"}
           title={"Reports"}
@@ -96,28 +265,40 @@ const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
     {
       layout: 3,
       widgets: [
-        <DataCard title={"Total"} data={"10K"} description={"Assets Owned"} />,
+        <DataCard
+          title={"Total"}
+          data={totalOwnedAssets}
+          description={"Assets Owned"}
+        />,
         <DataCard
           title={"Total"}
           data={"75"}
           description={"Assets Categories"}
         />,
-        <DataCard title={"Total"} data={"6Cr"} description={"Assets Value"} />,
+        <DataCard
+          title={"Total"}
+          data={`INR ${inrFormat(totalAssetsPrice)}`}
+          description={"Assets Value"}
+        />,
       ],
     },
     {
       layout: 3,
       widgets: [
-        <DataCard title={"Total"} data={"9K"} description={"Assets In Use"} />,
         <DataCard
           title={"Total"}
-          data={"1K"}
+          data={totalAssignedAssets}
+          description={"Assets In Use"}
+        />,
+        <DataCard
+          title={"Total"}
+          data={totalUnassignedAssets}
           description={"Unassigned Assets"}
         />,
         <DataCard
           title={"Total"}
-          data={"700"}
-          description={"Assets Under Maintainance"}
+          data={totalAssetsUnderMaintenance}
+          description={"Assets Under Maintenance"}
         />,
       ],
     },
@@ -164,8 +345,8 @@ const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
         <WidgetSection layout={1} padding>
           <MuiTable
             Title="Recently Added Assets"
-            columns={recentAssetsColumns}
-            rows={recentAssetsData}
+            columns={assetColumns}
+            rows={tableData}
             rowKey="id"
             rowsToDisplay={8}
             className="h-full"

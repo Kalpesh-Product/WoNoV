@@ -10,6 +10,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import MuiModal from "../../../../components/MuiModal";
 import humanTime from "../../../../utils/humanTime";
+import StatusChip from "../../../../components/StatusChip";
 
 const AttendanceCompleted = () => {
   const axios = useAxiosPrivate();
@@ -50,7 +51,7 @@ const AttendanceCompleted = () => {
     { field: "date", headerName: "Date" },
     { field: "inTime", headerName: "Start Time" },
     { field: "outTime", headerName: "End Time" },
-    { field: "status", headerName: "Status" },
+    { field: "status", headerName: "Status", cellRenderer : (params)=>(<StatusChip status={params.value} />) },
   ];
 
   const tableData = isLoading
@@ -62,7 +63,7 @@ const AttendanceCompleted = () => {
           item.addedBy ? `${item.addedBy.firstName} ${item.addedBy.lastName}` : "—",
         reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
-        date: item.inTime,
+        date: item.createdAt,
         inTime: humanTime(item.inTime),
         outTime: humanTime(item.outTime),
         originalInTime: humanTime(item.originalInTime),

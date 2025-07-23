@@ -365,7 +365,7 @@ const updateSubCategory = async (req, res, next) => {
 };
 
 const getCategory = async (req, res, next) => {
-  const company = req.company;
+  const { company, departments } = req;
   const { departmentId } = req.query;
 
   try {

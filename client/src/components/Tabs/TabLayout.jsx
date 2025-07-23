@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Tabs } from "@mui/material";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import useIsMobile from "../../hooks/useIsMobile";
+import useIsMobile from "../../hooks/useIsMobile"; // adjust the path
 import { AnimatePresence, motion } from "motion/react";
 
 const TabLayout = ({
@@ -9,12 +9,11 @@ const TabLayout = ({
   tabs = [],
   defaultTabPath,
   hideTabsCondition = () => false,
-  hideTabsOnPaths = [],
-  scrollable = false, // ✅ NEW PROP
+  hideTabsOnPaths = [], // NEW PROP
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const isMobile = useIsMobile(768);
+  const isMobile = useIsMobile(768); // use 768px as mobile breakpoint
 
   // Redirect to default tab if on basePath
   useEffect(() => {
@@ -28,6 +27,7 @@ const TabLayout = ({
   );
   const tabPercent = 100 / tabs.length;
 
+  // FINAL DECISION: whether to show tabs
   const showTabs =
     !hideTabsCondition(location.pathname) &&
     !hideTabsOnPaths.some((path) => location.pathname.includes(path));
@@ -37,22 +37,20 @@ const TabLayout = ({
       {showTabs && (
         <Tabs
           value={activeTab}
-          variant={
-            scrollable || isMobile ? "scrollable" : "fullWidth"
-          } // ✅ Respect `scrollable` for desktop
-          scrollButtons={scrollable || isMobile ? "auto" : false} // ✅ Show scroll buttons
+          variant={isMobile ? "scrollable" : "fullWidth"}
+          scrollButtons={isMobile ? "auto" : false}
           TabIndicatorProps={{ style: { display: "none" } }}
           sx={{
             backgroundColor: "white",
             borderRadius: 2,
             border: "1px solid #d1d5db",
-            overflowX: scrollable || isMobile ? "auto" : "hidden",
+            overflowX: isMobile ? "auto" : "hidden",
             "& .MuiTab-root": {
               textTransform: "none",
               fontWeight: "medium",
               padding: "12px 16px",
               borderRight: "0.1px solid #d1d5db",
-              minWidth: scrollable || isMobile ? "160px" : `${tabPercent}%`,
+              minWidth: isMobile ? "fit-content" : "auto",
             },
             "& .Mui-selected": {
               backgroundColor: "#1E3D73",
@@ -72,7 +70,7 @@ const TabLayout = ({
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-                minWidth: scrollable || isMobile ? "160px" : "auto", // ✅ fixed width
+                minWidth: isMobile ? "70%" : `${tabPercent}%`,
               })}
             >
               {tab.label}

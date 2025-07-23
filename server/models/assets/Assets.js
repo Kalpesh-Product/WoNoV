@@ -85,7 +85,7 @@ const assetsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "AssignAsset",
     },
-    image: {
+    assetImage: {
       id: String,
       url: String,
     },

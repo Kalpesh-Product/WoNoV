@@ -24,10 +24,14 @@ const {
   bulkInsertLeads,
 } = require("../controllers/salesControllers/leadsControllers");
 const upload = require("../config/multerConfig");
+const {
+  getConsolidatedClients,
+} = require("../controllers/salesControllers/consolidatedClients");
 
 const {
   addRevenue,
   getRevenues,
+  bulkInsertCoworkingClientRevenues,
 } = require("../controllers/salesControllers/coworkingClientRevenue");
 
 const {
@@ -54,10 +58,12 @@ const {
   getMembersByUnit,
   getMemberByClient,
   createMember,
+  bulkInsertCoworkingMembers,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
 const {
   getVirtualOfficeRevenue,
   createVirtualOfficeRevenue,
+  bulkInsertVirtualOfficeRevenue,
 } = require("../controllers/salesControllers/virtualOfficeRevenueControllers");
 
 const {
@@ -66,8 +72,14 @@ const {
 } = require("../controllers/salesControllers/consolidatedRevenueControllers");
 
 //Coworking routes
+router.get("/consolidated-clients", getConsolidatedClients);
 router.post("/onboard-co-working-client", createCoworkingClient);
 router.post("/onboard-co-working-member", createMember);
+router.post(
+  "/bulk-insert-co-working-client-members",
+  upload.single("members"),
+  bulkInsertCoworkingMembers
+);
 router.get("/co-working-clients", getCoworkingClients);
 router.patch("/update-co-working-clients", updateCoworkingClient);
 router.get("/co-working-members", getMembersByUnit);
@@ -101,11 +113,21 @@ router.get(
   "/coworking-client-revenue/:coworkingId",
   getCoworkingClientRevenues
 );
+router.post(
+  "/bulk-insert-coworking-client-revenue",
+  upload.single("coworking-revenues"),
+  bulkInsertCoworkingClientRevenues
+);
 router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);
 router.get("/get-alternate-revenue", getAlternateRevenues);
 router.post("/create-alternate-revenue", createAlternateRevenue);
 router.get("/get-virtual-office-revenue", getVirtualOfficeRevenue);
+router.post(
+  "/bulk-insert-virtual-office-revenue",
+  upload.single("virtual-office-revenue"),
+  bulkInsertVirtualOfficeRevenue
+);
 router.post("/create-virtual-office-revenue", createVirtualOfficeRevenue);
 router.get("/get-workation-revenue", getWorkationRevenues);
 router.post("/create-workation-revenue", createWorkationRevenue);

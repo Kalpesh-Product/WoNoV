@@ -436,6 +436,7 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
       .on("data", (row) => {
         const {
           "Client Name": clientName,
+          "Client Invoice Name": clientInvoiceName,
           Sector: sector,
           "Booking Type": bookingType,
           "HO City": hoCity,
@@ -479,6 +480,7 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
         const newClientObj = {
           company,
           clientName,
+          clientInvoiceName,
           sector,
           bookingType,
           hoCity,

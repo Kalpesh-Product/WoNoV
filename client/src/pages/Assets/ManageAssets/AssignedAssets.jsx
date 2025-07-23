@@ -110,7 +110,6 @@ const AssignedAssets = () => {
     : assignedAssets.map((item, index) => {
         const assets = item.asset;
         const category = assets?.subCategory?.category?.categoryName;
-        console.log("assets inside data", category);
         return {
           ...assets,
           ...item,
@@ -118,7 +117,7 @@ const AssignedAssets = () => {
           assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
           assetId: item._id,
           assetNumber: item?.asset?.assetId,
-          department: item?.department?.name,
+          department: item?.fromDepartment?.name,
           category: category,
           brand: assets?.brand,
         };

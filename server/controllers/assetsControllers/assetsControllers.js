@@ -65,7 +65,13 @@ const getAssetsWithDepartments = async (req, res, next) => {
 const getAssets = async (req, res, next) => {
   try {
     const userId = req.user;
+    const userDepartments = req.departments;
     const user = await User.findById(userId).lean().exec();
+
+    const isTopManagement = userDepartments.some(
+      (dept) => dept.name === "Top Management"
+    );
+    const userDepartmentIds = userDepartments.map((dept) => dept._id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -75,8 +81,15 @@ const getAssets = async (req, res, next) => {
     let { assigned, departmentId, vendorId, sortBy, order } = req.query;
 
     const departments = await Department.find({ isActive: true }).lean().exec();
-    const assetFilter = { company: companyId };
+
+    const assetFilter = {
+      company: companyId,
+    };
+
+    if (!isTopManagement) assetFilter.department = { $in: userDepartmentIds };
+
     if (departmentId) assetFilter.department = departmentId;
+
     if (vendorId) assetFilter.vendor = vendorId;
     if (assigned === "true") assetFilter.assignedTo = { $ne: null };
     else if (assigned === "false") assetFilter.assignedTo = null;
@@ -305,36 +318,6 @@ const addAsset = async (req, res, next) => {
 
     const insertedAssets = await Asset.insertMany(assetsToInsert);
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: `${insertedAssets.length} Assets added successfully`,
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: insertedAssets[0]._id,
-      changes: {
-        count: insertedAssets.length,
-        departmentId,
-        categoryId,
-        subCategoryId,
-        vendorId,
-        name,
-        purchaseDate,
-        quantity,
-        price,
-        brand,
-        assetType,
-        warranty,
-        ownershipType,
-        rentedMonths,
-        tangable,
-        location: locationId,
-      },
-    });
-
     return res.status(201).json({
       message: `${insertedAssets.length} Assets added successfully`,
       assets: insertedAssets,
@@ -364,7 +347,8 @@ const editAsset = async (req, res, next) => {
       subCategoryId,
       vendorId,
       name,
-      isDammaged,
+      isDamaged,
+      isUnderMaintenance,
       purchaseDate,
       price,
       brand,
@@ -503,6 +487,13 @@ const editAsset = async (req, res, next) => {
       };
     }
 
+    const assetStatus =
+      isDamaged || isUnderMaintenance
+        ? "Inactive"
+        : status
+        ? status
+        : foundAsset.status;
+
     const updatePayload = {
       assetType,
       tangable,
@@ -512,7 +503,10 @@ const editAsset = async (req, res, next) => {
       name: name?.trim(),
       purchaseDate,
       price,
-      isDammaged: isDammaged ? isDammaged : foundAsset.isDammaged,
+      isDamaged: isDamaged ? isDamaged : foundAsset.isDamaged,
+      isUnderMaintenance: isUnderMaintenance
+        ? isUnderMaintenance
+        : foundAsset.isUnderMaintenance,
       warranty,
       warrantyDocument: warrantyDocInfo,
       brand: brand?.trim(),
@@ -520,7 +514,7 @@ const editAsset = async (req, res, next) => {
       location: locationId || null,
       subCategory: subCategoryId,
       assetImage,
-      status: status || "Active",
+      status: assetStatus,
     };
 
     // Handle rental logic
@@ -541,19 +535,6 @@ const editAsset = async (req, res, next) => {
         logAction,
         logSourceKey
       );
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Asset updated successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: updatedAsset._id,
-      changes: updatePayload,
-    });
 
     return res.status(200).json({
       message: "Asset updated successfully",

@@ -13,6 +13,8 @@ import WidgetSection from "../../../../components/WidgetSection";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import sortByNumberDesc from "../../../../utils/sortByNumberDesc";
+import DoubleDataCard from "../../../../components/DoubleDataCard";
 
 const MaintenanceOfficesLayout = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -116,16 +118,24 @@ const MaintenanceOfficesLayout = () => {
     );
   }
 
-  const tableData = (unitDetails?.clientDetails || []).map((data, index) => ({
-    id: index + 1,
-    client: data?.client || "-",
-    occupiedDesks: data?.occupiedDesks || 0,
-    occupancyPercent:
-      totalOccupied > 0
-        ? ((data?.occupiedDesks / totalOccupied) * 100).toFixed(0)
-        : "0",
-    memberDetails: data?.memberDetails || [],
-  }));
+  const tableDataRaw = (unitDetails?.clientDetails || []).map(
+    (data, index) => ({
+      client: data?.client || "-",
+      occupiedDesks: data?.occupiedDesks || 0,
+      occupancyPercent:
+        totalOccupied > 0
+          ? ((data?.occupiedDesks / totalOccupied) * 100).toFixed(0)
+          : "0",
+      memberDetails: data?.memberDetails || [],
+    })
+  );
+
+  const tableData = sortByNumberDesc(tableDataRaw, "occupiedDesks").map(
+    (item, index) => ({
+      id: index + 1,
+      ...item,
+    })
+  );
 
   return (
     <div className="p-4 flex flex-col gap-8">
@@ -145,7 +155,8 @@ const MaintenanceOfficesLayout = () => {
               minWidth: "20%",
               borderRight: "0.1px solid #d1d5db",
             },
-          }}>
+          }}
+        >
           <Tab label="Occupied" />
           <Tab label="Clear" />
         </Tabs>
@@ -155,7 +166,8 @@ const MaintenanceOfficesLayout = () => {
         <div className=" text-center">
           <div
             // onClick={() => setImageOpen(true)}
-            className="h-[32rem] w-full p-4 border border-borderGray rounded-lg">
+            className="h-[32rem] w-full p-4 border border-borderGray rounded-lg"
+          >
             <img
               src={unitDetails?.occupiedImage?.url || occupiedImage}
               alt="Occupied"
@@ -169,7 +181,8 @@ const MaintenanceOfficesLayout = () => {
         <div className=" text-center">
           <div
             // onClick={() => setClearedImageOpen(true)}
-            className="h-[32rem] w-full  p-4 border border-borderGray rounded-lg">
+            className="h-[32rem] w-full  p-4 border border-borderGray rounded-lg"
+          >
             <img
               src={unitDetails?.clearImage?.url || clearedImagePreview}
               alt="Clear"
@@ -178,38 +191,38 @@ const MaintenanceOfficesLayout = () => {
           </div>
         </div>
       )}
-
-      <WidgetSection layout={4} padding>
-        <DataCard
+      <WidgetSection layout={3} padding>
+        <DoubleDataCard
           data={totalDesks}
           title="Total Desks"
+          secondTitle="Total Occupancy %"
+          secondData={"100%"}
           description="Last Month : Apr-25"
-          route="#"
         />
-        <DataCard
+        <DoubleDataCard
           data={totalActualOccupied}
           title="Occupied Desks"
+          secondTitle="Occupancy %"
+          secondData={`${occupancyPercent}%`}
           description="Last Month : Apr-25"
-          route="#"
         />
-        <DataCard
-          data={occupancyPercent}
-          title="Occupancy %"
-          description="Last Month : Apr-25"
-          route="#"
-        />
-        <DataCard
+        <DoubleDataCard
           data={totalDesks - totalActualOccupied}
           title="Free Desks"
+          secondTitle="Free Occupancy %"
+          secondData={`${(
+            ((totalDesks - totalActualOccupied) / totalDesks) *
+            100
+          ).toFixed(0)}%`}
           description="Last Month : Apr-25"
-          route="#"
         />
       </WidgetSection>
 
       <WidgetSection
         title={`Occupancy details - ${unitName}`}
         border
-        TitleAmount={`TOTAL OCCUPIED : ${totalOccupied}`}>
+        TitleAmount={`TOTAL OCCUPIED : ${totalOccupied}`}
+      >
         <AgTable
           tableHeight={300}
           hideFilter
@@ -217,7 +230,11 @@ const MaintenanceOfficesLayout = () => {
             { field: "id", headerName: "Sr. No", width: 100 },
             { field: "client", headerName: "Client Name", flex: 1 },
             { field: "occupiedDesks", headerName: "Occupied Desks" },
-            { field: "occupancyPercent", headerName: "Occupied %" },
+            {
+              field: "occupancyPercent",
+              headerName: "Occupied %",
+              cellRenderer: (params) => `${params.value}%`,
+            },
           ]}
           data={tableData}
         />
@@ -229,7 +246,8 @@ const MaintenanceOfficesLayout = () => {
         onClose={() => {
           setOpenModal(false);
           setMemberDetails({});
-        }}>
+        }}
+      >
         <div className="grid grid-cols-2 gap-8 px-2 pb-8 border-b-default border-borderGray">
           <div className="flex items-center justify-between">
             <span className="text-content">Member Name</span>
@@ -269,7 +287,8 @@ const MaintenanceOfficesLayout = () => {
       <MuiModal
         open={imageOpen}
         onClose={() => setImageOpen(false)}
-        title="Upload occupied space">
+        title="Upload occupied space"
+      >
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
@@ -288,7 +307,8 @@ const MaintenanceOfficesLayout = () => {
       <MuiModal
         open={clearedImageOpen}
         onClose={() => setClearedImageOpen(false)}
-        title="Upload clear space">
+        title="Upload clear space"
+      >
         <div className="flex flex-col items-center justify-center gap-4 p-6">
           <span className="text-subtitle font-pmedium">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">

@@ -11,6 +11,7 @@ const UploadFileInput = ({
   label = "Upload File",
   allowedExtensions = ["jpg", "jpeg", "png", "pdf"],
   previewType = "auto", // "image", "pdf", "none", or "auto"
+  id
 }) => {
   const fileInputRef = useRef(null);
   const [previewUrl, setPreviewUrl] = useState(
@@ -91,7 +92,7 @@ const UploadFileInput = ({
         accept={acceptAttr}
         disabled={disabled}
         hidden
-        id="file-upload"
+        id= {id ?? "file-upload"}
         onChange={handleFileChange}
       />
 
@@ -107,7 +108,7 @@ const UploadFileInput = ({
         InputProps={{
           readOnly: true,
           endAdornment: (
-            <IconButton component="label" htmlFor="file-upload" color="primary">
+            <IconButton component="label" htmlFor={id ?? "file-upload"} color="primary">
               <LuImageUp />
             </IconButton>
           ),

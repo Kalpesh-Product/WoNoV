@@ -133,7 +133,7 @@ const OverallProfitLoss = () => {
     // Skip excluded months
     if (excludedMonths.includes(monthKey)) return;
 
-    const amount = income.taxableAmount || income.revenue || 0;
+    const amount = income.taxableAmount || income.revenue || income.taxable ||  0;
 
     if (!monthWiseIncome[monthKey]) {
       monthWiseIncome[monthKey] = {

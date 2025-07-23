@@ -37,7 +37,7 @@ const Approvals = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/assets/get-asset-requests?department=${departmentId}`
+          `/api/assets/get-asset-requests?department=${departmentId}&status=Unapproved`
         );
         return response.data;
       } catch (error) {
@@ -150,13 +150,12 @@ const Approvals = () => {
           assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
           assetId: item._id,
           assetNumber: item?.asset?.assetId,
-          department: item?.department?.name,
+          department: item?.fromDepartment?.name,
           category: category,
           brand: assets?.brand,
         };
       });
-  console.log("assets : ", tableData);
-  console.log("selectedAsset : ", selectedAsset);
+  
   //-----------------------Table Data----------------------//
 
   return (

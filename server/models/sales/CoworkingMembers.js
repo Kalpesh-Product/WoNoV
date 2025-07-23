@@ -12,14 +12,12 @@ const coworkingMemberSchema = new mongoose.Schema(
     },
     employeeName: {
       type: String,
-      required: true,
     },
     designation: {
       type: String,
     },
     mobileNo: {
       type: String,
-      required: true,
     },
     email: {
       type: String,

@@ -13,6 +13,8 @@ import WidgetSection from "../../../../components/WidgetSection";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import sortByNumberDesc from "../../../../utils/sortByNumberDesc";
+import DoubleDataCard from "../../../../components/DoubleDataCard";
 
 const AdminOfficesLayout = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -118,8 +120,8 @@ const AdminOfficesLayout = () => {
     );
   }
 
-  const tableData = (unitDetails?.clientDetails || []).map((data, index) => ({
-    id: index + 1,
+  const tableDataRaw  = (unitDetails?.clientDetails || []).map((data, index) => ({
+    
     client: data?.client || "-",
     occupiedDesks: data?.occupiedDesks || 0,
     occupancyPercent:
@@ -128,6 +130,13 @@ const AdminOfficesLayout = () => {
         : "0",
     memberDetails: data?.memberDetails || [],
   }));
+
+  const tableData = sortByNumberDesc(tableDataRaw, "occupiedDesks").map(
+  (item, index) => ({
+    id: index + 1,
+    ...item,
+  })
+);
 
   return (
     <div className="p-4 flex flex-col gap-8">
@@ -181,28 +190,33 @@ const AdminOfficesLayout = () => {
         </div>
       )}
 
-      <WidgetSection layout={4} padding>
-        <DataCard
+<WidgetSection layout={3} padding>
+        <DoubleDataCard
           data={totalDesks}
           title="Total Desks"
+          secondTitle="Total Occupancy %"
+          secondData={"100%"}
           description="Last Month : Apr-25"
         />
-        <DataCard
+        <DoubleDataCard
           data={totalActualOccupied}
           title="Occupied Desks"
+          secondTitle="Occupancy %"
+          secondData={`${occupancyPercent}%`}
           description="Last Month : Apr-25"
         />
-        <DataCard
-          data={occupancyPercent}
-          title="Occupancy %"
-          description="Last Month : Apr-25"
-        />
-        <DataCard
+        <DoubleDataCard
           data={totalDesks - totalActualOccupied}
           title="Free Desks"
+          secondTitle="Free Occupancy %"
+          secondData={`${(
+            ((totalDesks - totalActualOccupied) / totalDesks) *
+            100
+          ).toFixed(0)}%`}
           description="Last Month : Apr-25"
         />
       </WidgetSection>
+
 
       <WidgetSection
         title={`Occupancy details - ${unitName}`}
@@ -215,7 +229,7 @@ const AdminOfficesLayout = () => {
             { field: "id", headerName: "Sr. No", width: 100 },
             { field: "client", headerName: "Client Name", flex: 1 },
             { field: "occupiedDesks", headerName: "Occupied Desks" },
-            { field: "occupancyPercent", headerName: "Occupied %" },
+            { field: "occupancyPercent", headerName: "Occupied %", cellRenderer : (params)=>(`${params.value}%`) },
           ]}
           data={tableData}
         />
