@@ -53,7 +53,7 @@ const SalesDashboard = () => {
     const monthsInYear = 12;
     const result = new Array(monthsInYear).fill(0);
 
-    data.forEach((item) => {
+    data?.forEach((item) => {
       const revenueArray = item.data[year];
       if (revenueArray) {
         for (let i = 0; i < monthsInYear; i++) {
