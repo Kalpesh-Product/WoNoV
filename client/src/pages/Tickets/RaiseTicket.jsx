@@ -145,7 +145,7 @@ const RaiseTicket = () => {
   };
 
   const recievedTicketsColumns = [
-    { field: "id", headerName: "Sr No", width: 80, sort: "desc" },
+    { field: "srNo", headerName: "Sr No", width: 80, },
     { field: "raisedBy", headerName: "Raised By", width: 150 },
     { field: "raisedTo", headerName: "To Department", width: 150 },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
@@ -501,7 +501,7 @@ const RaiseTicket = () => {
               search
               dropdownColumns={["status", "priority"]}
               data={tickets?.map((ticket, index) => ({
-                id: index + 1,
+                
                 raisedBy: ticket.raisedBy.firstName,
                 raisedTo: ticket.raisedToDepartment.name,
                 description: ticket.description,

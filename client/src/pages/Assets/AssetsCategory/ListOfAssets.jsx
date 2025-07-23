@@ -96,6 +96,9 @@ const ListOfAssets = () => {
       locationId: "",
       location: "",
       floor: "",
+      isDamaged: false,
+      isUnderMaintenance: false,
+      status: false,
       assetImage: null,
       warrantyDocument: null,
     },
@@ -104,8 +107,6 @@ const ListOfAssets = () => {
   const selectedCategory = watch("categoryId");
   const selectedLocation = watch("location");
   const selectedUnit = watch("floor");
-  const selectedAssetImage = editWatch("assetImage")
-  const selectedWarrantyDoc = editWatch("warrantyDocument")
 
   //---------------------Forms----------------------//
 
@@ -167,6 +168,9 @@ const ListOfAssets = () => {
       formData.append("subCategoryId", data.subCategoryId);
       formData.append("vendorId", data.vendorId);
       formData.append("name", data.name);
+      formData.append("isDamaged", data.isDamaged);
+      formData.append("isUnderMaintenance", data.isUnderMaintenance);
+      formData.append("status", data.status);
       formData.append("purchaseDate", data.purchaseDate);
       formData.append("quantity", Number(data.quantity));
       formData.append("price", Number(data.price));
@@ -203,6 +207,7 @@ const ListOfAssets = () => {
   }, [selectedAsset, assetsList]);
 
   useEffect(() => {
+    console.log("status",selectedForEdit.status)
     if (modalMode === "edit" && selectedForEdit) {
       editRequest({
         assetMongoId: selectedForEdit?._id || "",
@@ -226,6 +231,13 @@ const ListOfAssets = () => {
             : "",
         locationId: selectedForEdit?.location?._id || "",
         floor: selectedForEdit?.floor?._id || "",
+        isUnderMaintenance: typeof selectedForEdit?.isUnderMaintenance === "boolean"
+            ? String(selectedForEdit.isUnderMaintenance)
+            : "",
+        status: selectedForEdit?.status === "Active" ? "Active" :  "Inactive" || "",
+        isDamaged: typeof selectedForEdit?.isDamaged === "boolean"
+            ? String(selectedForEdit.isDamaged)
+            : "",
         assetImage: null,
         warrantyDocument: null,
       });
@@ -235,7 +247,8 @@ const ListOfAssets = () => {
   const { mutate: editAsset, isPending: isUpdateAsset } = useMutation({
     mutationKey: ["editAsset"],
     mutationFn: async (data) => {
-    
+
+       console.log("data for edit",data)
       const formData = new FormData();
       formData.append("departmentId", departmentId);
       formData.append("categoryId", data.categoryId);
@@ -250,6 +263,9 @@ const ListOfAssets = () => {
       formData.append("warranty", Number(data.warranty));
       formData.append("ownershipType", data.ownershipType);
       formData.append("rentedMonths", Number(data.rentedMonths));
+      formData.append("status", data.status); 
+      formData.append("isDamaged", data.isDamaged); 
+      formData.append("isUnderMaintenance", data.isUnderMaintenance); 
       formData.append("tangable", data.tangable);
       formData.append("locationId", data.locationId);
   
@@ -407,7 +423,7 @@ const ListOfAssets = () => {
 
       <MuiModal
         open={isModalOpen}
-        title={modalMode === "add" ? "Add Asset" : "view"? "View Details" : "Edit Asset"}
+        title={modalMode === "add" ? "Add Asset" : modalMode === "view"? "View Details" : "Edit Asset"}
         onClose={() => setIsModalOpen(false)}
       >
         {modalMode === "add" && (
@@ -660,14 +676,14 @@ const ListOfAssets = () => {
             <Controller
               name="tangable"
               control={control}
-              rules={{ required: "Tangable is required" }}
+              rules={{ required: "Tangible is required" }}
               render={({ field }) => (
                 <TextField
                   select
                   {...field}
                   size="small"
                   fullWidth
-                  label="Tangable"
+                  label="Tangible"
                 >
                   <MenuItem value="" disabled>
                     <em>Select Tangable</em>
@@ -849,24 +865,20 @@ const ListOfAssets = () => {
                 />
               )}
             />
-            <Controller
-              name="assetType"
+             <Controller
+              name="rentedMonths"
               control={editControl}
-              rules={{ required: "Asset Type is required" }}
+              rules={{ required: "Rented Months is required" }}
               render={({ field }) => (
                 <TextField
-                  select
                   {...field}
                   size="small"
                   fullWidth
-                  label="Asset Type"
-                >
-                  <MenuItem value="" disabled>
-                    <em>Select an Asset Type</em>
-                  </MenuItem>
-                  <MenuItem value="Physical">Physical</MenuItem>
-                  <MenuItem value="Digital">Digital</MenuItem>
-                </TextField>
+                  type="number"
+                  label="Rented Months"
+                  error={!!editErrors.rentedMonths}
+                  helperText={editErrors?.rentedMonths?.message}
+                />
               )}
             />
             <Controller
@@ -905,26 +917,30 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
-            <Controller
-              name="rentedMonths"
+             <Controller
+              name="assetType"
               control={editControl}
-              rules={{ required: "Rented Months is required" }}
+              rules={{ required: "Asset Type is required" }}
               render={({ field }) => (
                 <TextField
+                  select
                   {...field}
                   size="small"
                   fullWidth
-                  type="number"
-                  label="Rented Months"
-                  error={!!editErrors.rentedMonths}
-                  helperText={editErrors?.rentedMonths?.message}
-                />
+                  label="Asset Type"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select an Asset Type</em>
+                  </MenuItem>
+                  <MenuItem value="Physical">Physical</MenuItem>
+                  <MenuItem value="Digital">Digital</MenuItem>
+                </TextField>
               )}
             />
             <Controller
               name="tangable"
               control={editControl}
-              rules={{ required: "Tangable is required" }}
+              rules={{ required: "Tangible is required" }}
               render={({ field }) => (
                 <TextField
                   select
@@ -941,6 +957,68 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
+            <Controller
+              name="status"
+              control={editControl}
+              rules={{ required: "Status is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Status"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select Status</em>
+                  </MenuItem>
+                  <MenuItem value="Active">Active</MenuItem>
+                  <MenuItem value="Inactive">Inactive</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="isDamaged"
+              control={editControl}
+              rules={{ required: "Damaged is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Damaged"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select Damaged</em>
+                  </MenuItem>
+                  <MenuItem value="true">Yes</MenuItem>
+                  <MenuItem value="false">No</MenuItem>
+                </TextField>
+              )}
+            />
+
+             <Controller
+              name="isUnderMaintenance"
+              control={editControl}
+              rules={{ required: "Under Maintenance is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Under Maintenance"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select Under Maintenance</em>
+                  </MenuItem>
+                  <MenuItem value="true">Yes</MenuItem>
+                  <MenuItem value="false">No</MenuItem>
+                </TextField>
+              )}
+            />
+
             <Controller
               name="assetImage"
               control={editControl}

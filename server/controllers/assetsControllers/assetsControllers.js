@@ -65,7 +65,13 @@ const getAssetsWithDepartments = async (req, res, next) => {
 const getAssets = async (req, res, next) => {
   try {
     const userId = req.user;
+    const userDepartments = req.departments;
     const user = await User.findById(userId).lean().exec();
+
+    const isTopManagement = userDepartments.some(
+      (dept) => dept.name === "Top Management"
+    );
+    const userDepartmentIds = userDepartments.map((dept) => dept._id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -75,8 +81,15 @@ const getAssets = async (req, res, next) => {
     let { assigned, departmentId, vendorId, sortBy, order } = req.query;
 
     const departments = await Department.find({ isActive: true }).lean().exec();
-    const assetFilter = { company: companyId };
+
+    const assetFilter = {
+      company: companyId,
+    };
+
+    if (!isTopManagement) assetFilter.department = { $in: userDepartmentIds };
+
     if (departmentId) assetFilter.department = departmentId;
+
     if (vendorId) assetFilter.vendor = vendorId;
     if (assigned === "true") assetFilter.assignedTo = { $ne: null };
     else if (assigned === "false") assetFilter.assignedTo = null;
@@ -335,6 +348,7 @@ const editAsset = async (req, res, next) => {
       vendorId,
       name,
       isDamaged,
+      isUnderMaintenance,
       purchaseDate,
       price,
       brand,
@@ -473,6 +487,13 @@ const editAsset = async (req, res, next) => {
       };
     }
 
+    const assetStatus =
+      isDamaged || isUnderMaintenance
+        ? "Inactive"
+        : status
+        ? status
+        : foundAsset.status;
+
     const updatePayload = {
       assetType,
       tangable,
@@ -483,6 +504,9 @@ const editAsset = async (req, res, next) => {
       purchaseDate,
       price,
       isDamaged: isDamaged ? isDamaged : foundAsset.isDamaged,
+      isUnderMaintenance: isUnderMaintenance
+        ? isUnderMaintenance
+        : foundAsset.isUnderMaintenance,
       warranty,
       warrantyDocument: warrantyDocInfo,
       brand: brand?.trim(),
@@ -490,7 +514,7 @@ const editAsset = async (req, res, next) => {
       location: locationId || null,
       subCategory: subCategoryId,
       assetImage,
-      status: status || "Active",
+      status: assetStatus,
     };
 
     // Handle rental logic

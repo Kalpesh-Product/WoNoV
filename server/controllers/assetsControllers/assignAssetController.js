@@ -10,9 +10,9 @@ const { default: mongoose } = require("mongoose");
 const getAssetRequests = async (req, res, next) => {
   try {
     const { user, company } = req;
-    const { departmentId, status } = req.query;
+    const { departmentId, status, assignee } = req.query;
 
-    let query = { company, status: { $ne: "Approved" } };
+    let query = { company };
 
     if (departmentId) {
       if (!mongoose.Types.ObjectId.isValid(departmentId)) {
@@ -21,11 +21,30 @@ const getAssetRequests = async (req, res, next) => {
           .json({ message: "Invalid department id provided" });
       }
 
-      query = { ...query, fromDepartment: departmentId };
+      query = { ...query, toDepartment: departmentId };
     }
 
     if (status) {
-      query = { ...query, status };
+      if (status === "Approved") query = { ...query, status: "Approved" };
+      else {
+        query = { ...query, status: { $ne: "Approved" } };
+      }
+    }
+
+    if (assignee) {
+      if (!mongoose.Types.ObjectId.isValid(assignee)) {
+        return res
+          .status(400)
+          .json({ message: "Invalid assignee id provided" });
+      }
+
+      const assetAssignee = await User.findById(assignee);
+
+      if (!assetAssignee) {
+        return res.status(400).json({ message: "Assignee not found" });
+      }
+
+      query = { ...query, assignee };
     }
 
     // Fetch assigned assets for the user's company
