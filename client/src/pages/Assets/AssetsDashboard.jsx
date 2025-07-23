@@ -54,7 +54,6 @@ const AssetsDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/assets/get-category`);
-
         return response.data;
       } catch (error) {
         console.error(error.message);
