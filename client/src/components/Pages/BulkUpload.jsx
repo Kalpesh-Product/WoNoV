@@ -151,7 +151,7 @@ export default function BulkUpload() {
           columns={templateColumns}
           formatDate={true}
           tableTitle={"Bulk Upload Data templates"}
-          // buttonTitle={"Upload Document"}
+          buttonTitle={"Upload Document"}
           handleClick={() => {
             setModalMode("add");
             setOpenModal(true);

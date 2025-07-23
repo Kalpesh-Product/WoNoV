@@ -159,30 +159,29 @@ const WidgetTable = ({
     onMonthChange(total);
   }, [filteredData, onMonthChange]);
 
-const formattedColumns = useMemo(() => {
-  return columns.map((col) => {
-    if (col.field?.toLowerCase().includes("date")) {
-      return {
-        ...col,
-        valueFormatter: (params) => {
-          const date = dayjs(params.value);
-          if (!params.value || !date.isValid()) return "NOT GIVEN"; // ✅ handles undefined/null/invalid
-          if (formatTime) return date.format("hh:mm A");
-          if (formatDate) return date.format("DD-MM-YYYY");
-          return params.value;
-        },
-      };
-    }
-    return col;
-  });
-}, [columns, formatDate, formatTime]);
-
+  const formattedColumns = useMemo(() => {
+    return columns.map((col) => {
+      if (col.field?.toLowerCase().includes("date")) {
+        return {
+          ...col,
+          valueFormatter: (params) => {
+            const date = dayjs(params.value);
+            if (!params.value || !date.isValid()) return "NOT GIVEN"; // ✅ handles undefined/null/invalid
+            if (formatTime) return date.format("hh:mm A");
+            if (formatDate) return date.format("DD-MM-YYYY");
+            return params.value;
+          },
+        };
+      }
+      return col;
+    });
+  }, [columns, formatDate, formatTime]);
 
   const finalTableData = filteredData.map((item, index) => ({
-      ...item,
-      srNo: index + 1,
-      date: (item[dateColumn]), // 🔍 THIS LINE formats the date for display
-    }));
+    ...item,
+    srNo: index + 1,
+    date: item[dateColumn], // 🔍 THIS LINE formats the date for display
+  }));
 
   const handleExportPass = () => {
     if (agGridRef.current) {
@@ -210,8 +209,6 @@ const formattedColumns = useMemo(() => {
       [totalKey]: inrFormat(total),
     }));
   }, [filteredData, groupByKey, totalKey]);
-
-  console.log("data passed : ", groupedData);
 
   return (
     <div className="flex flex-col gap-4">
