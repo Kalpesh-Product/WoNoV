@@ -22,6 +22,8 @@ import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
+import { toast } from "sonner";
+import { queryClient } from "../../../main";
 
 const AssignedAssets = () => {
   const axios = useAxiosPrivate();
@@ -45,20 +47,22 @@ const AssignedAssets = () => {
   });
   //-----------------------API----------------------//
 
-    const { mutate: revokeAsset, isPending: isRevoking } = useMutation({
-      mutationFn: async (data) => {
-        console.log("data",data)
-        const response = await axios.patch(`/api/assets/revoke-asset/${data._id}`);
-        return response.data;
-      },
-      onSuccess: (data) => {
-        toast.success(data.message || "Revoked");
-        queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
-      },
-      onError: (error) => {
-        toast.error(error.message || "Failed to revoke asset");
-      },
-    });
+  const { mutate: revokeAsset, isPending: isRevoking } = useMutation({
+    mutationFn: async (data) => {
+      console.log("data", data);
+      const response = await axios.patch(
+        `/api/assets/revoke-asset/${data._id}`
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Revoked");
+      queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to revoke asset");
+    },
+  });
 
   //-----------------------Event handlers----------------------//
   const handleView = (data) => {
@@ -91,8 +95,10 @@ const AssignedAssets = () => {
           rowId={params.data.assetId}
           menuItems={[
             { label: "View", onClick: () => handleView(params.data) },
-            params.data.status !== "Revoked" &&
-             { label: "Revoke", onClick: () => revokeAsset(params.data) },
+            params.data.status !== "Revoked" && {
+              label: "Revoke",
+              onClick: () => revokeAsset(params.data),
+            },
           ]}
         />
       ),
