@@ -215,7 +215,6 @@ const AssetsDashboard = () => {
           price: `INR ${item?.price}`,
         };
 
-        console.log("asset data:",data)
         return data
       });
 
