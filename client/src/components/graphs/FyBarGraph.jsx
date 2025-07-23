@@ -108,12 +108,13 @@ const FyBarGraph = ({
   ];
 
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-md border border-gray-300">
-      <div className="text-lg font-semibold text-primary">
-        {valueKey} Distribution ({selectedFY})
-      </div>
-
-      <Chart options={mergedChartOptions} series={series} type="bar" height={350} />
+    <div className="flex flex-col gap-4 rounded-md">
+      <Chart
+        options={mergedChartOptions}
+        series={series}
+        type="bar"
+        height={350}
+      />
 
       <div className="flex justify-center items-center gap-4 mt-4">
         <button
@@ -145,6 +146,5 @@ const FyBarGraph = ({
     </div>
   );
 };
-
 
 export default FyBarGraph;

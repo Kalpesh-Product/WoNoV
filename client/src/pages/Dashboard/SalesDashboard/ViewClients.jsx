@@ -74,7 +74,7 @@ const ViewClients = () => {
       ),
     },
     { field: "desks", headerName: "Desks" },
-    { field: "occupancy", headerName: "Occupancy (%)" },
+    { field: "occupancy", headerName: "Occupancy (%)" ,cellRenderer : (params)=>(`${params.value}%`)},
   ];
 
   const transformClientsGroupedByMonth = (clientsArray) => {
