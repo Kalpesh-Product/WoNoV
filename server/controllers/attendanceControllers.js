@@ -833,49 +833,57 @@ const bulkInsertAttendance = async (req, res, next) => {
     const employeeMap = new Map(employees.map((emp) => [emp.empId, emp._id]));
 
     const newAttendanceRecords = [];
-    const invalidRows = [];
+    let responseSent = false;
 
     const stream = Readable.from(req.file.buffer.toString("utf-8").trim());
+    const parser = csvParser();
 
     stream
-      .pipe(csvParser())
+      .pipe(parser)
       .on("data", (row) => {
-        const empId = row["User (Emp ID)"]?.trim();
-        const dateStr = row["Date"]?.trim();
-        const inTimeStr = row["In Time"]?.trim();
-        const outTimeStr = row["Out Time"]?.trim();
+        if (responseSent) return;
 
-        if (!employeeMap.has(empId)) {
-          invalidRows.push(`Employee not found: ${empId}`);
-          return;
+        try {
+          const empId = row["User (Emp ID)"]?.trim();
+          const dateStr = row["Date"]?.trim();
+          const inTimeStr = row["In Time"]?.trim();
+          const outTimeStr = row["Out Time"]?.trim();
+
+          if (!employeeMap.has(empId)) {
+            responseSent = true;
+            parser.destroy(); // Stop further processing
+            return res
+              .status(400)
+              .json({ message: `Employee not found: ${empId}` });
+          }
+
+          const inTime = new Date(`${dateStr} ${inTimeStr}`);
+          const outTime = new Date(`${dateStr} ${outTimeStr}`);
+
+          if (isNaN(inTime.getTime()) || isNaN(outTime.getTime())) {
+            responseSent = true;
+            parser.destroy();
+            return res.status(400).json({
+              message: `Invalid time format for employee ${empId} on ${dateStr}`,
+            });
+          }
+
+          newAttendanceRecords.push({
+            company: new mongoose.Types.ObjectId(companyId),
+            user: employeeMap.get(empId),
+            date: new Date(dateStr),
+            inTime,
+            outTime,
+            entryType: row["Entry Type"] || "web",
+          });
+        } catch (parseError) {
+          responseSent = true;
+          parser.destroy();
+          return res.status(500).json({ message: "Parsing error", error: parseError });
         }
-
-        const inTime = new Date(`${dateStr} ${inTimeStr}`);
-        const outTime = new Date(`${dateStr} ${outTimeStr}`);
-
-        if (isNaN(inTime.getTime()) || isNaN(outTime.getTime())) {
-          invalidRows.push(
-            `Invalid time format for employee ${empId} on ${dateStr}`
-          );
-          return;
-        }
-
-        newAttendanceRecords.push({
-          company: new mongoose.Types.ObjectId(companyId),
-          user: employeeMap.get(empId),
-          date: new Date(dateStr),
-          inTime,
-          outTime,
-          entryType: row["Entry Type"] || "web",
-        });
       })
       .on("end", async () => {
-        if (invalidRows.length > 0) {
-          return res.status(400).json({
-            message: "Invalid data found in CSV",
-            errors: invalidRows,
-          });
-        }
+        if (responseSent) return;
 
         if (newAttendanceRecords.length === 0) {
           return res
@@ -890,13 +898,24 @@ const bulkInsertAttendance = async (req, res, next) => {
             insertedCount: newAttendanceRecords.length,
           });
         } catch (error) {
-          res
-            .status(500)
-            .json({ message: "Error inserting attendance records", error });
+          res.status(500).json({
+            message: "Error inserting attendance records",
+            error,
+          });
+        }
+      })
+      .on("error", (err) => {
+        if (!responseSent) {
+          responseSent = true;
+          res.status(500).json({ message: "Error reading CSV file", error: err });
         }
       });
   } catch (error) {
-    next(error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Unexpected server error", error });
+    } else {
+      next(error);
+    }
   }
 };
 

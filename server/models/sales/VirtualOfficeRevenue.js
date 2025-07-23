@@ -43,8 +43,6 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
     },
     rentStatus: {
       type: String,
-      enum: ["Paid", "Unpaid", "Partial"],
-      required: true,
     },
     pastDueDate: {
       type: Date,

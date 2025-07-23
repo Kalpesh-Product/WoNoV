@@ -82,5 +82,8 @@ const houseKeepingStaffSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const HouseKeepingStaff = mongoose.model("Housekeepingstaff", houseKeepingStaffSchema);
+const HouseKeepingStaff = mongoose.model(
+  "Housekeepingstaff",
+  houseKeepingStaffSchema
+);
 module.exports = HouseKeepingStaff;
