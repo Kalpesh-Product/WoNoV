@@ -338,9 +338,9 @@ const bulkInsertVendors = async (req, res, next) => {
               partyType: row["Party Type (Domestic / International)"]?.trim(),
               status: row["Vendor Status (Active / Inactive)"]?.trim(),
               bankName: row["Bank Name"]?.trim(),
+              branchName: row["Branch Name"]?.trim(),
               accountNumber: row["Account No"]?.trim(),
               ifscCode: row["IFSC Code"]?.trim(),
-
               departmentId,
               company: company._id,
             };

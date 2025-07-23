@@ -1025,7 +1025,7 @@ const bulkInsertBudgets = async (req, res, next) => {
           unit: row["Unit"] ? unitsMap.get(row["Unit"].trim()) ?? null : null,
           status: row["Status"] || "Pending",
           month,
-          typeOfBudget: row["Type Of Budget"],
+          category: row["Expanse Category"],
         });
       })
       .on("end", async () => {

@@ -9,6 +9,9 @@ const clientSchema = new mongoose.Schema(
     clientName: {
       type: String,
     },
+    clientInvoiceName: {
+      type: String,
+    },
     email: {
       type: String,
       required: true,

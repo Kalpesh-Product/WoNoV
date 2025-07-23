@@ -6,6 +6,9 @@ const coworkingClientRevenue = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "CoworkingClient",
     },
+    clientName: {
+      type: String,
+    },
     channel: {
       type: String,
     },
