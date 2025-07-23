@@ -1,3 +1,5 @@
+const Log = require("../models/Log");
+
 const getLogs = async (req, res, next) => {
   try {
     const fetchedLogs = await Log.find().populate([
