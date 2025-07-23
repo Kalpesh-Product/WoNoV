@@ -305,36 +305,6 @@ const addAsset = async (req, res, next) => {
 
     const insertedAssets = await Asset.insertMany(assetsToInsert);
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: `${insertedAssets.length} Assets added successfully`,
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: insertedAssets[0]._id,
-      changes: {
-        count: insertedAssets.length,
-        departmentId,
-        categoryId,
-        subCategoryId,
-        vendorId,
-        name,
-        purchaseDate,
-        quantity,
-        price,
-        brand,
-        assetType,
-        warranty,
-        ownershipType,
-        rentedMonths,
-        tangable,
-        location: locationId,
-      },
-    });
-
     return res.status(201).json({
       message: `${insertedAssets.length} Assets added successfully`,
       assets: insertedAssets,
@@ -364,7 +334,7 @@ const editAsset = async (req, res, next) => {
       subCategoryId,
       vendorId,
       name,
-      isDammaged,
+      isDamaged,
       purchaseDate,
       price,
       brand,
@@ -512,7 +482,7 @@ const editAsset = async (req, res, next) => {
       name: name?.trim(),
       purchaseDate,
       price,
-      isDammaged: isDammaged ? isDammaged : foundAsset.isDammaged,
+      isDamaged: isDamaged ? isDamaged : foundAsset.isDamaged,
       warranty,
       warrantyDocument: warrantyDocInfo,
       brand: brand?.trim(),
@@ -541,19 +511,6 @@ const editAsset = async (req, res, next) => {
         logAction,
         logSourceKey
       );
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Asset updated successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: updatedAsset._id,
-      changes: updatePayload,
-    });
 
     return res.status(200).json({
       message: "Asset updated successfully",
