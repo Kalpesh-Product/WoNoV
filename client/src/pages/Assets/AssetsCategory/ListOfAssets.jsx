@@ -234,7 +234,7 @@ const ListOfAssets = () => {
         isUnderMaintenance: typeof selectedForEdit?.isUnderMaintenance === "boolean"
             ? String(selectedForEdit.isUnderMaintenance)
             : "",
-        status: selectedForEdit?.status === "Active" ? "Active" :  "Inactive" || "",
+        status: selectedForEdit?.status === "Active" ? "Active" :  "Inactive",
         isDamaged: typeof selectedForEdit?.isDamaged === "boolean"
             ? String(selectedForEdit.isDamaged)
             : "",
@@ -1122,7 +1122,7 @@ const ListOfAssets = () => {
                       title={"Damaged"}
                       detail={selectedAsset?.isDamaged ? "Yes" : "No"}
                     />
-                    <DetalisFormatted title={"Assigned"} detail={selectedAsset?.isAssigned ? "Yes" : "No" || "N/A"}/>
+                    <DetalisFormatted title={"Assigned"} detail={selectedAsset?.isAssigned ? "Yes" : "No"}/>
 
                     <DetalisFormatted title={"Asset Image"} detail={selectedAsset?.assetImage?.url ? (
                   <a

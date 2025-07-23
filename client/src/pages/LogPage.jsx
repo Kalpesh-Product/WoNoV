@@ -8,7 +8,7 @@ const LogPage = () => {
     queryKey: ["log"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/logs");
+        const response = await axios.get("/api/logs/get-logs");
         return response.data;
       } catch (error) {
         console.error(error.response.data.message);

@@ -7,7 +7,6 @@ const statusColorMap = {
   Active: { backgroundColor: "#90EE90", color: "#006400" },
   Inactive: { backgroundColor: "#FF9F93", color: "#B71C1C" },
   Open: { backgroundColor: "#FF9F93", color: "#B71C1C" },
-  Rejected: { backgroundColor: "#FF9F93", color: "#B71C1C" },
   completed: { backgroundColor: "#D3D3D3", color: "#696969" },
   Approved: { backgroundColor: "#90EE90", color: "#006400" },
   Paid: { backgroundColor: "#90EE90", color: "#006400" },
