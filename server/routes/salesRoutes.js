@@ -58,6 +58,7 @@ const {
   getMembersByUnit,
   getMemberByClient,
   createMember,
+  bulkInsertCoworkingMembers,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
 const {
   getVirtualOfficeRevenue,
@@ -74,6 +75,11 @@ const {
 router.get("/consolidated-clients", getConsolidatedClients);
 router.post("/onboard-co-working-client", createCoworkingClient);
 router.post("/onboard-co-working-member", createMember);
+router.post(
+  "/bulk-insert-co-working-client-members",
+  upload.single("members"),
+  bulkInsertCoworkingMembers
+);
 router.get("/co-working-clients", getCoworkingClients);
 router.patch("/update-co-working-clients", updateCoworkingClient);
 router.get("/co-working-members", getMembersByUnit);
