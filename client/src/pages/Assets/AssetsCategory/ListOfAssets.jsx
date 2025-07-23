@@ -96,9 +96,9 @@ const ListOfAssets = () => {
       locationId: "",
       location: "",
       floor: "",
-      isDamaged: false,
-      isUnderMaintenance: false,
-      status: false,
+      isDamaged: "",
+      isUnderMaintenance: "",
+      status: "",
       assetImage: null,
       warrantyDocument: null,
     },
@@ -786,7 +786,10 @@ const ListOfAssets = () => {
         )}
         {modalMode === "edit" && (
           <form
-            onSubmit={handleEditSubmit((data) => editAsset(data))}
+            onSubmit={handleEditSubmit((data) => editAsset({...data,
+            isDamaged :data.isDamaged === "true" ? true : false,
+            isUnderMaintenance: data.isUnderMaintenance === "true" ? true : false,
+            }))}
             className="grid grid-cols-2 gap-4"
           >
             <Controller
@@ -1022,7 +1025,7 @@ const ListOfAssets = () => {
             <Controller
               name="assetImage"
               control={editControl}
-              rules={{ required: "Asset Image is required" }}
+              // rules={{ required: "Asset Image is required" }}
               render={({ field }) => (
                 <UploadFileInput
                 id="asset-image"
