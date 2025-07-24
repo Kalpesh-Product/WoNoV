@@ -1,7 +1,7 @@
 import React from "react";
 import useAuth from "../../hooks/useAuth";
 
-const Permission = ({ permissions, mode = "any", fallback = null, children }) => {
+const Permissions = ({ permissions, mode = "any", fallback = null, children }) => {
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions || [];
 
@@ -15,4 +15,4 @@ const Permission = ({ permissions, mode = "any", fallback = null, children }) =>
   return hasAccess ? <>{children}</> : <>{fallback}</>;
 };
 
-export default Permission;
+export default Permissions;

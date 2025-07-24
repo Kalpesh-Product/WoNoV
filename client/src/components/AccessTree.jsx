@@ -199,7 +199,7 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel, click = true }) => 
         <span className="text-subtitle font-semibold">{user.name}</span>
       </div>
       <span className="text-content mt-2">
-        {user.designation.length > 20
+        {user?.designation?.length > 20
           ? user.designation.slice(0, 20) + "..."
           : user.designation}
       </span>

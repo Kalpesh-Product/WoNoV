@@ -29,12 +29,52 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
-import Permission from "../../components/Permissions/Permissions";
+import Permissions from "../../components/Permissions/Permissions";
 import { PERMISSIONS } from "../../constants/permissions";
 
 const AssetsDashboard = () => {
   const { auth } = useAuth();
   const departments = auth.user.departments;
+
+  //-----------------------PAGE ACCESS-------------------------//
+  const userPermissions = auth?.user?.permissions || [];
+  const cardsConfig = [
+    {
+      title: "View Assets",
+      route: "/app/assets/view-assets",
+      icon: <RiPagesLine />,
+      permission: PERMISSIONS.ASSETS_VIEW_ASSETS,
+    },
+    {
+      title: "Manage Assets",
+      route: "/app/assets/manage-assets",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.ASSETS_MANAGE_ASSETS,
+    },
+    {
+      title: "Mix Bag",
+      route: "#",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.ASSETS_VIEW_GRAPHS,
+    },
+    {
+      title: "Reports",
+      route: "/app/assets/reports",
+      icon: <CgProfile />,
+      permission: null, // no restriction
+    },
+    {
+      title: "Settings",
+      route: "/app/assets/settings",
+      icon: <MdMiscellaneousServices />,
+      permission: null, // no restriction
+    },
+  ];
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+
+  //-----------------------PAGE ACCESS-------------------------//
 
   const axios = useAxiosPrivate();
   //-----------------------MAIN API CALL------------------------------------//
@@ -240,37 +280,15 @@ const AssetsDashboard = () => {
       ],
     },
     {
-      layout: 5,
-      widgets: [
-        // <Permission permissions={[PERMISSIONS.VIEW_ASSETS, PERMISSIONS.MANAGE_ASSETS]}>
-        //   <Card
-        //     route={"/app/assets/view-assets"}
-        //     title={"View Assets"}
-        //     icon={<RiPagesLine />}
-        //   />
-        // </Permission>,
-            <Card
-            route={"/app/assets/view-assets"}
-            title={"View Assets"}
-            icon={<RiPagesLine />}
-          />,
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
         <Card
-          route={"/app/assets/manage-assets"}
-          title={"Manage Assets"}
-          icon={<MdFormatListBulleted />}
-        />,
-        <Card route={"#"} title={"Mix Bag"} icon={<MdFormatListBulleted />} />,
-        <Card
-          route={"/app/assets/reports"}
-          title={"Reports"}
-          icon={<CgProfile />}
-        />,
-        <Card
-          route={"/app/assets/settings"}
-          title={"Settings"}
-          icon={<MdMiscellaneousServices />}
-        />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
     {
       layout: 3,
