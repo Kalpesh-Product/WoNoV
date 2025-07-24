@@ -31,6 +31,7 @@ import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
 import humanDate from "../../utils/humanDateForamt";
 import { PERMISSIONS } from "../../constants/permissions";
+import humanDate from "../../utils/humanDateForamt";
 
 const AssetsDashboard = () => {
   const { auth } = useAuth();

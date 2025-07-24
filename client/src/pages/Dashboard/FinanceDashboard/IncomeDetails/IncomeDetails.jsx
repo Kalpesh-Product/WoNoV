@@ -103,7 +103,7 @@ const IncomeDetails = () => {
       return totalThisMonth ? Math.round((val / totalThisMonth) * 100) : 0;
     }),
   }));
-  console.log("graph data : ", normalizedData)
+
   const options = {
     chart: {
       toolbar: false,

@@ -272,7 +272,7 @@ const TotalRevenue = () => {
 
     simpleRevenue.coworkingRevenues?.forEach((item) => {
       flatten.push({
-        vertical: "Coworking",
+        vertical: "Co-Working",
         revenue: item.revenue,
         date: item.rentDate,
       });
@@ -280,8 +280,6 @@ const TotalRevenue = () => {
 
     return flatten;
   }, [simpleRevenue]);
-
-  console.log("unified : ", unifiedRevenueData);
 
   const revenueByVertical = useMemo(() => {
     const grouped = {};

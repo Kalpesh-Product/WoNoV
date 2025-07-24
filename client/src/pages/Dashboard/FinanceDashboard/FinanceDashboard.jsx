@@ -22,6 +22,7 @@ import {
   setTotalExpense,
   setTotalIncome,
 } from "../../../redux/slices/financeSlice";
+import humanDate from "../../../utils/humanDateForamt";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -885,10 +886,12 @@ const FinanceDashboard = () => {
         <MuiTable
           Title="Payouts Mar-25"
           columns={marchPaymentColumns}
-          rows={march2025Payments.map((item, index) => ({
+          rows={march2025Payments.map((item, index) => {
+            return {
             srNo: index + 1,
             ...item,
-          }))}
+            dueDate: item.dueDate
+          }})}
           rowKey="_id"
           scroll={true}
           rowsToDisplay={march2025Payments.length}

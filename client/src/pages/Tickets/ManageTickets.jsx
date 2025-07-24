@@ -69,7 +69,7 @@ const ManageTickets = () => {
           key="department"
           border
           layout={3}
-          title={"Department recieved Tickets :"}
+          title={"Department received Tickets :"}
           titleDataColor={"red"}
           TitleAmount={String(ticketsFilteredData.recievedTickets).padStart(
             2,
@@ -138,7 +138,7 @@ const ManageTickets = () => {
   // Build dynamic tab list
   const tabItems = [
     {
-      label: "Recieved Tickets",
+      label: "Received Tickets",
       subLabel: "Department",
       component: (
         <RecievedTickets
