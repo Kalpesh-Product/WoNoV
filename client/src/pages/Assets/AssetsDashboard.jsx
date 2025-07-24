@@ -365,6 +365,7 @@ const assetUtilizationSeries = [
   }
 ];
 
+
 // ApexCharts configuration
 const assetUtilizationOptions = {
   chart: {

@@ -165,29 +165,21 @@ const StatutoryPayments = () => {
   //--------------------------------------------------------TableData----------------------------------------------------//
   const kraColumn = [
     { field: "srNo", headerName: "Sr No", width: 100 },
-    { field: "expanseName", headerName: "Client", flex: 1 },
+    { field: "expanseName", headerName: "Client", flex: 1,
+      cellRenderer: (params) => (
+        <span
+          className="text-primary underline cursor-pointer"
+          onClick={() => handleViewModal(params.data)}
+        >
+          {params.value}
+        </span>
+      ),
+     },
     { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => {
-        return (
-          <>
-            <div className="p-2 mb-2 flex gap-2">
-              <span
-                className="text-subtitle cursor-pointer"
-                onClick={() => handleViewModal(params.data)}
-              >
-                <MdOutlineRemoveRedEye />
-              </span>
-            </div>
-          </>
-        );
-      },
-    },
+   
   ];
 
   const formattedRows = statutoryRaw.map((row, index) => ({
@@ -270,7 +262,7 @@ const StatutoryPayments = () => {
               detail={viewDetails.department?.name || "-"}
             />
             <DetalisFormatted
-              title="Extra Budget?"
+              title="Extra Budget"
               detail={viewDetails.isExtraBudget ? "Yes" : "No"}
             />
             <DetalisFormatted
@@ -295,10 +287,10 @@ const StatutoryPayments = () => {
                 viewDetails.dueDate ? humanDate(viewDetails.dueDate) : "-"
               }
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Payment Date"
-              detail={viewDetails.date || "-"}
-            />
+              detail={viewDetails.date ? humanDate(viewDetails.date) : "-"}
+            /> */}
           </div>
         </MuiModal>
       )}
