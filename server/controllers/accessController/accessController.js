@@ -3,6 +3,7 @@ const masterPermissions = require("../../config/masterPermissions");
 const Company = require("../../models/hr/Company");
 const CustomError = require("../../utils/customErrorlogs");
 const UserData = require("../../models/hr/UserData");
+const Department = require("../../models/Departments");
 const { createLog } = require("../../utils/moduleLogs");
 
 const getPermissions = async (req, res, next) => {
@@ -61,5 +62,35 @@ const updatePermissions = async (req, res, next) => {
   }
 };
 
+const getDepartmentWiseUsers = async (req, res, next) => {
+  try {
+    const departments = await Department.find()
+      .select("departmentId name")
+      .lean()
+      .exec();
+    const users = await UserData.find({ isActive: true })
+      .select("firstName lastName empId departments role")
+      .populate([{ path: "role" }])
+      .lean()
+      .exec();
 
-module.exports = { getPermissions, updatePermissions };
+    const departmentWiseEmployees = departments.map((dept) => {
+      const employees = users.filter((user) =>
+        user.departments?.some(
+          (dep) => dep._id?.toString() === dept._id.toString()
+        )
+      );
+
+      return {
+        ...dept,
+        employees,
+      };
+    });
+
+    res.status(200).json({ data: departmentWiseEmployees });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getPermissions, updatePermissions, getDepartmentWiseUsers };

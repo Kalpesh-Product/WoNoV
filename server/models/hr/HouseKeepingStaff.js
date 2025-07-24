@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 
 const houseKeepingStaffSchema = new mongoose.Schema(
   {
+    houseKeepingId: {
+      type: String,
+    },
     // Basic Information
     firstName: { type: String, required: true },
     middleName: { type: String },
@@ -22,8 +25,7 @@ const houseKeepingStaffSchema = new mongoose.Schema(
     qualification: { type: String },
     shiftPolicy: { type: String },
     workSchdulePolicy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "WorkSchedulePolicy",
+      type: String,
     },
     leavePolicy: { type: String },
     holidayPolicy: {
@@ -64,7 +66,6 @@ const houseKeepingStaffSchema = new mongoose.Schema(
     motherName: { type: String },
     martialStatus: {
       type: String,
-      enum: ["single", "married", "divorced", "widowed"],
     },
     primaryEmergencyContactName: { type: String },
     primaryEmergencyContactNumber: { type: String },

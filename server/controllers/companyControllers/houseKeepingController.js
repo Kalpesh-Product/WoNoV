@@ -2,6 +2,10 @@ const HouseKeepingStaff = require("../../models/hr/HouseKeepingStaff");
 const Users = require("../../models/hr/UserData");
 const HouseKeepingSchedule = require("../../models/HousekeepingSchedule");
 const Unit = require("../../models/locations/Unit");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
+const Department = require("../../models/Departments");
+const Role = require("../../models/roles/Roles");
 
 const addNewHouseKeepingMember = async (req, res, next) => {
   try {
@@ -291,6 +295,190 @@ const getHouseKeepingAssignments = async (req, res, next) => {
     next(error);
   }
 };
+
+const bulkInsertHousekeepingMembers = async (req, res, next) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid CSV file." });
+    }
+
+    const departments = await Department.find({ isActive: true }).lean().exec();
+
+    const departmentMap = new Map(
+      departments.map((d) => [d.name?.trim(), d._id])
+    );
+
+    const existingStaff = await HouseKeepingStaff.find().lean().exec();
+    const manager = await Role.findOne({
+      roleID: "ROLE_ADMINISTRATION_ADMIN",
+    })
+      .lean()
+      .exec();
+
+    let selfCount = existingStaff.filter(
+      (m) => m.houseKeepingType === "Self"
+    ).length;
+    let thirdPartyCount = existingStaff.filter(
+      (m) => m.houseKeepingType === "Third Party"
+    ).length;
+
+    const padNumber = (num) => String(num).padStart(3, "0");
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+    const members = [];
+    const errors = [];
+    let rowNumber = 1;
+
+    stream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        rowNumber++;
+
+        try {
+          const departmentId = departmentMap.get(
+            row["Departments"]?.trim().toLowerCase()
+          );
+
+          const parseBool = (val) =>
+            ["yes", "true", "1"].includes(val?.trim().toLowerCase());
+          const parseDate = (val) => (val ? new Date(val) : null);
+
+          const hkType = row["Housekeeping Type"]?.trim();
+
+          let hkPrefix = "";
+          let hkNumber = "";
+
+          if (hkType === "Self") {
+            selfCount++;
+            hkPrefix = "SF";
+            hkNumber = padNumber(selfCount);
+          } else if (hkType === "Third Party") {
+            thirdPartyCount++;
+            hkPrefix = "TP";
+            hkNumber = padNumber(thirdPartyCount);
+          } else {
+            errors.push(
+              `Row ${rowNumber}: Invalid housekeeping type "${hkType}"`
+            );
+            return;
+          }
+
+          const hkId = `HK-${hkPrefix}-${hkNumber}`;
+
+          const member = {
+            firstName: row["First Name"]?.trim(),
+            middleName: row["Middle Name"]?.trim(),
+            lastName: row["Last Name"]?.trim(),
+            gender: row["Gender"]?.trim(),
+            role: row["role"]?.trim(),
+            houseKeepingType: row["Housekeeping Type"]?.trim(),
+            companyEmail: row["Company Email"]?.trim(),
+            password: row["password"]?.trim(),
+            phoneNumber: row["Phone Number"]?.trim(),
+            dateOfBirth: parseDate(row["Date Of Birth"]),
+            employementType: row["Employement Type"]?.trim(),
+            employeeLeaveAndCount: row["Employee Leave Type And Count"]?.trim(),
+            department: departmentId || undefined,
+            dateOfJoining: parseDate(row["Date Of Joining"]),
+            workBuilding: row["Work Building"]?.trim(),
+            manager: manager._id || undefined,
+            designation: row["Designation"]?.trim(),
+            qualification: row["Qualification"]?.trim(),
+            shiftPolicy: row["Shift Policy"]?.trim(),
+            workSchdulePolicy: row["Work Schedule Policy"]?.trim(),
+            leavePolicy: row["Leave Policy"]?.trim(),
+            holidayPolicy: row["Holiday Policy"]?.trim(),
+
+            address: row["Address"]?.trim(),
+            presentAddress: row["Present Address"]?.trim(),
+            city: row["City"]?.trim(),
+            state: row["State"]?.trim(),
+            pinCode: row["PIN Code"]?.trim(),
+
+            bankISFC: row["Bank IFSC"]?.trim(),
+            bankName: row["Bank Name"]?.trim(),
+            branchName: row["Branch Name"]?.trim(),
+            accountName: row["Account Name"]?.trim(),
+            accountNumber: row["Account Number"]?.trim(),
+
+            aadharNumber: row["Aadhaar Number"]?.trim(),
+            PANCardNumber: row["PAN Card Number"]?.trim(),
+            pfAccountNumber: row["PF Account Number"]?.trim(),
+            pfUAN: row["PF UAN"]?.trim(),
+            ESIAccountNumber: row["ESI Account Number"]?.trim(),
+
+            includeInPayroll: parseBool(row["Include In Payroll (Yes/No)"]),
+            employeeGrid: row["Employee Grid"]?.trim(),
+            professionalTaxExemption: parseBool(
+              row["Profession Tax Exemption"]
+            ),
+            includePf: parseBool(row["Include PF"]),
+            employeePfContribution:
+              Number(row["Employer PF Contribution"]) || 0,
+            employeePf: Number(row["Employee PF"]) || 0,
+
+            fatherName: row["Father's Name"]?.trim(),
+            motherName: row["Mother's Name"]?.trim(),
+            martialStatus: row["Martial Status"]?.trim(),
+            primaryEmergencyContactName:
+              row["Primary Emergency Contact Name"]?.trim(),
+            primaryEmergencyContactNumber:
+              row["Primary Emergency Contact Number"]?.trim(),
+            secondayEmergencyContactName:
+              row["Secondary Emergency Contact Name"]?.trim(),
+            secondaryEmergencyContactNumber:
+              row["Secondary Emergency Conatact Number"]?.trim(),
+
+            isActive: true,
+          };
+
+          if (!member.firstName || !member.phoneNumber || !member.gender) {
+            errors.push(
+              `Row ${rowNumber}: Missing required fields (First Name, Phone, Gender)`
+            );
+            return;
+          }
+
+          members.push(member);
+        } catch (err) {
+          errors.push(`Row ${rowNumber}: ${err.message}`);
+        }
+      })
+      .on("end", async () => {
+        if (!members.length) {
+          return res.status(400).json({
+            message: "No valid housekeeping member records found.",
+            errors,
+          });
+        }
+
+        try {
+          await HouseKeepingStaff.insertMany(members);
+          res.status(200).json({
+            message: "Housekeeping members inserted successfully.",
+            insertedCount: members.length,
+            errors: errors.length ? errors : undefined,
+          });
+        } catch (insertErr) {
+          res.status(500).json({
+            message: "Failed to insert housekeeping members.",
+            error: insertErr.message,
+          });
+        }
+      })
+      .on("error", (parseErr) => {
+        res.status(500).json({
+          message: "CSV parsing error.",
+          error: parseErr.message,
+        });
+      });
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   getHouseKeepingStaff,
   addNewHouseKeepingMember,
@@ -298,4 +486,5 @@ module.exports = {
   softDeleteHouseKeepingMember,
   assignHouseKeepingMember,
   getHouseKeepingAssignments,
+  bulkInsertHousekeepingMembers,
 };

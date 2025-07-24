@@ -1,45 +1,28 @@
 const mongoose = require("mongoose");
 
-const adminEventSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-    },
-    type: {
-      type: String,
-      enum: ["event", "birthday", "anniversary"],
-      default:"event"
-    },
-    description: {
-      type: String,
-      required: true,
-    },
-    start: {
-      type: Date,
-      required: true,
-    },
-    end: {
-      type: Date,
-      required: true,
-    },
-    location: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Unit",
-      required: true,
-    },
-    active: {
-      type: Boolean,
-      default: true,
-    },
-    company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
-      required: true,
-    },
+const clientEvents = new mongoose.Schema({
+  clientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CoworkingClient",
   },
-  { timestamps: true }
-);
+  eventName: {
+    type: String,
+    required: true,
+  },
+  eventType: {
+    type: String,
+    enum: ["Holiday", "Event"],
+  },
+  description: {
+    type: String,
+  },
+  fromDate: {
+    type: Date,
+  },
+  toDate: {
+    type: Date,
+  },
+});
 
-const AdminEvent = mongoose.model("AdminEvent", adminEventSchema);
-module.exports = AdminEvent;
+const ClientEvents = mongoose.model("ClientEvent", clientEvents);
+module.exports = ClientEvents;

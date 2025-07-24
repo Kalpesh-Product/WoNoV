@@ -4,6 +4,8 @@ const { createLog } = require("../../utils/moduleLogs");
 const WeeklySchedule = require("../../models/WeeklySchedule");
 const { default: mongoose } = require("mongoose");
 const Unit = require("../../models/locations/Unit");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
 
 const assignWeeklyUnit = async (req, res, next) => {
   const logPath = "administration/AdministrationLog";
@@ -650,6 +652,108 @@ const fetchPrimaryUnits = async (req, res, next) => {
   }
 };
 
+const bulkInsertWeeklyShiftSchedule = async (req, res, next) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res
+        .status(400)
+        .json({ message: "Please upload a valid CSV file" });
+    }
+
+    const { departmentId } = req.params;
+
+    // Fetch required mappings
+    const [employees, units] = await Promise.all([
+      UserData.find({ isActive: true }).lean(),
+      Unit.find({ isActive: true }).lean(),
+    ]);
+
+    const employeeMap = new Map(employees.map((emp) => [emp.empId, emp._id]));
+    const unitMap = new Map(units.map((unit) => [unit.unitNo, unit._id]));
+
+    const rows = [];
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    stream
+      .pipe(csv())
+      .on("data", (row) => {
+        rows.push(row);
+      })
+      .on("end", async () => {
+        const bulkData = [];
+
+        for (const row of rows) {
+          const startDate = new Date(row["Start Date"]);
+          const endDate = new Date(row["End Date"]);
+          const locationId = unitMap.get(row["Location"]);
+
+          const empId = row["Employee ID"];
+          const employeeId = employeeMap.get(empId);
+
+          if (
+            !locationId ||
+            !employeeId ||
+            isNaN(startDate) ||
+            isNaN(endDate)
+          ) {
+            console.warn(`Skipping invalid row: ${JSON.stringify(row)}`);
+            continue;
+          }
+
+          const isActive = row["Employee Is Active"]?.toLowerCase() === "true";
+          const isReassigned =
+            row["Employee Is Reassigned"]?.toLowerCase() === "true";
+
+          const substitutions = Object.entries(row)
+            .filter(
+              ([key, value], index) =>
+                key.startsWith("Substitutions") &&
+                value &&
+                employeeMap.has(value)
+            )
+            .map(([_, subEmpId]) => ({
+              substitute: employeeMap.get(subEmpId),
+              isActive: true,
+            }));
+
+          bulkData.push({
+            company: req.company,
+            department: departmentId,
+            startDate,
+            endDate,
+            location: locationId,
+            employee: {
+              id: employeeId,
+              isActive,
+              isReassigned,
+            },
+            substitutions,
+          });
+        }
+
+        if (bulkData.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "No valid records to insert" });
+        }
+
+        await WeeklySchedule.insertMany(bulkData);
+        res.status(200).json({
+          message: "Shift schedules inserted",
+          count: bulkData.length,
+        });
+      })
+      .on("error", (error) => {
+        console.error("CSV Parsing Error:", error);
+        next(error);
+      });
+  } catch (error) {
+    console.error("Bulk Insert Error:", error);
+    next(error);
+  }
+};
+
 module.exports = {
   assignWeeklyUnit,
   updateWeeklyUnit,
@@ -657,4 +761,5 @@ module.exports = {
   fetchWeeklyUnits,
   fetchPrimaryUnits,
   fetchTeamMembersSchedule,
+  bulkInsertWeeklyShiftSchedule,
 };
