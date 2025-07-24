@@ -33,7 +33,7 @@ const TicketDashboard = () => {
       title: "Manage Tickets",
       route: "/app/tickets/manage-tickets",
       icon: <RiArchiveDrawerLine />,
-      permission: PERMISSIONS.TICKETS_MANAGE_TICKETS,
+      permission: PERMISSIONS.TICKETS_MANAGE_TICKETS.value,
     },
     {
       title: "Reports",

@@ -185,27 +185,27 @@ const AccessProfile = () => {
       {/* Permissions Table */}
       <div className="mt-6">
         <h2 className="text-title font-pmedium mb-4">User Permissions</h2>
+        <div className="flex gap-4 w-full justify-end items-center">
+          <PrimaryButton
+            title={!editing ? "Edit" : "Cancel"}
+            handleSubmit={() => setEditing((prev) => !prev)}
+          />
+          {editing && (
+            <PrimaryButton
+              title="Update"
+              isLoading={mutation.isPending}
+              disabled={mutation.isPending}
+              handleSubmit={handleSubmit((data) =>
+                mutation.mutate({ permissions: data.permissions })
+              )}
+            />
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-4">
           {Object.entries(groupedPermissions).map(([module, permissions]) => (
             <div key={module}>
               <div className="flex justify-between items-center w-full">
                 <h3 className="text-lg font-semibold mb-2">{module}</h3>
-                <div className="flex gap-4 items-center">
-                  <PrimaryButton
-                    title={!editing ? "Edit" : "Cancel"}
-                    handleSubmit={() => setEditing((prev) => !prev)}
-                  />
-                  {editing && (
-                    <PrimaryButton
-                      title="Update"
-                      isLoading={mutation.isPending}
-                      disabled={mutation.isPending}
-                      handleSubmit={handleSubmit((data) =>
-                        mutation.mutate({ permissions: data.permissions })
-                      )}
-                    />
-                  )}
-                </div>
               </div>
               <TableContainer component={Paper}>
                 <Table>
@@ -219,9 +219,6 @@ const AccessProfile = () => {
                       </TableCell>
                       <TableCell align="center">
                         <strong>Write</strong>
-                      </TableCell>
-                      <TableCell align="center">
-                        <strong>Custom</strong>
                       </TableCell>
                     </TableRow>
                   </TableHead>
@@ -262,7 +259,7 @@ const AccessProfile = () => {
                           </TableCell>
 
                           {/* Custom Column */}
-                          <TableCell align="center">
+                          {/* <TableCell align="center">
                             {type === "custom" && (
                               <Checkbox
                                 checked={checked}
@@ -272,7 +269,7 @@ const AccessProfile = () => {
                                 }
                               />
                             )}
-                          </TableCell>
+                          </TableCell> */}
                         </TableRow>
                       );
                     })}
