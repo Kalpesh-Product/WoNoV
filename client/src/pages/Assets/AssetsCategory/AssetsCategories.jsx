@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { queryClient } from "../../../main";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
-import PageFrame from "../../../components/Pages/PageFrame";
+import PageFrame from "../../../components/Pages/PageFrame";  
 import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useSelector } from "react-redux";
@@ -321,7 +321,7 @@ const AssetsCategories = () => {
             />
             <DetalisFormatted
               title={"Sub Categories"}
-              detail={selectedAsset?.subCategories ? [...selectedAsset?.subCategories].join(","): "N/A"}
+              detail={selectedAsset?.subCategories ? [...selectedAsset.subCategories].join(","): "N/A"}
             />
             <DetalisFormatted
               title={"Department"}
