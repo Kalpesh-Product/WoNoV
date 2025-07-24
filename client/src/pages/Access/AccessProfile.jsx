@@ -82,12 +82,15 @@ const AccessProfile = () => {
 
   const groupPermissionsByModule = (permissionsObj) => {
     const grouped = {};
-    Object.entries(permissionsObj).forEach(([key, value]) => {
+    Object.entries(permissionsObj).forEach(([key, { value, type }]) => {
       const [module] = key.split("_");
+
       if (!grouped[module]) grouped[module] = [];
+
       grouped[module].push({
         key,
         action: value,
+        type,
         label: value
           .split("_")
           .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -217,14 +220,13 @@ const AccessProfile = () => {
                       <TableCell align="center">
                         <strong>Write</strong>
                       </TableCell>
+                      <TableCell align="center">
+                        <strong>Custom</strong>
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {permissions.map(({ key, label, action }) => {
-                      const isRead = action.includes("view");
-                      const isWrite =
-                        action.includes("manage") || action.includes("delete");
-
+                    {permissions.map(({ key, label, action, type }) => {
                       const checked = editing
                         ? formPermissions.has(action)
                         : userPermissionSet.has(action);
@@ -232,8 +234,10 @@ const AccessProfile = () => {
                       return (
                         <TableRow key={key}>
                           <TableCell>{label}</TableCell>
+
+                          {/* Read Column */}
                           <TableCell align="center">
-                            {isRead ? (
+                            {type === "read" && (
                               <Checkbox
                                 checked={checked}
                                 disabled={!editing}
@@ -241,10 +245,12 @@ const AccessProfile = () => {
                                   editing && togglePermission(action)
                                 }
                               />
-                            ) : null}
+                            )}
                           </TableCell>
+
+                          {/* Write Column */}
                           <TableCell align="center">
-                            {isWrite ? (
+                            {type === "write" && (
                               <Checkbox
                                 checked={checked}
                                 disabled={!editing}
@@ -252,7 +258,20 @@ const AccessProfile = () => {
                                   editing && togglePermission(action)
                                 }
                               />
-                            ) : null}
+                            )}
+                          </TableCell>
+
+                          {/* Custom Column */}
+                          <TableCell align="center">
+                            {type === "custom" && (
+                              <Checkbox
+                                checked={checked}
+                                disabled={!editing}
+                                onChange={() =>
+                                  editing && togglePermission(action)
+                                }
+                              />
+                            )}
                           </TableCell>
                         </TableRow>
                       );

@@ -52,7 +52,7 @@ useEffect(() => {
 
   // Step 1: Collect relevant route patterns from PERMISSIONS object
   const permissionRoutes = Object.values(PERMISSIONS).map((perm) =>
-    perm.replace(/_/g, "-")
+    perm.value?.replace(/_/g, "-")
   );
   console.log("🎯 Routes to be permission-guarded:", permissionRoutes);
 

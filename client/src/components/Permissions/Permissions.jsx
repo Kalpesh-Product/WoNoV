@@ -1,19 +1,28 @@
 import React from "react";
 import useAuth from "../../hooks/useAuth";
 
-const Permissions = ({ permissions, mode = "any", fallback = null, children }) => {
+const Permissions = ({
+  permissions,
+  mode = "any",
+  fallback = null,
+  children,
+}) => {
   const { auth } = useAuth();
-  const userPermissions = auth?.user?.permissions || [];
-  console.log("perms : ", userPermissions);
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  console.log("user permissions ss ", userPermissions);
 
   if (!permissions || !Array.isArray(permissions)) return null;
 
+  // Normalize permissions to array of strings
+  const normalizedPermissions = permissions.map((perm) => perm?.value);
+  console.log("normalizeds : ", normalizedPermissions);
+
   const hasAccess =
     mode === "all"
-      ? permissions.every((perm) => userPermissions.includes(perm))
-      : permissions.some((perm) => userPermissions.includes(perm));
+      ? normalizedPermissions.every((perm) => userPermissions.includes(perm))
+      : normalizedPermissions.some((perm) => userPermissions.includes(perm));
 
-  return hasAccess ? <>{children}</> : <>{fallback}</>;
+  return hasAccess ? <>{children}</> : undefined;
 };
 
 export default Permissions;

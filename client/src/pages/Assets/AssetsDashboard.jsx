@@ -35,46 +35,7 @@ import { PERMISSIONS } from "../../constants/permissions";
 const AssetsDashboard = () => {
   const { auth } = useAuth();
   const departments = auth.user.departments;
-
-  //-----------------------PAGE ACCESS-------------------------//
-  const userPermissions = auth?.user?.permissions?.permissions || [];
-  const cardsConfig = [
-    {
-      title: "View Assets",
-      route: "/app/assets/view-assets",
-      icon: <RiPagesLine />,
-      permission: PERMISSIONS.ASSETS_VIEW_ASSETS,
-    },
-    {
-      title: "Manage Assets",
-      route: "/app/assets/manage-assets",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.ASSETS_MANAGE_ASSETS,
-    },
-    {
-      title: "Mix Bag",
-      route: "#",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.ASSETS_VIEW_GRAPHS,
-    },
-    {
-      title: "Reports",
-      route: "/app/assets/reports",
-      icon: <CgProfile />,
-      permission: null, // no restriction
-    },
-    {
-      title: "Settings",
-      route: "/app/assets/settings",
-      icon: <MdMiscellaneousServices />,
-      permission: null, // no restriction
-    },
-  ];
-  const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
-  );
-
-  //-----------------------PAGE ACCESS-------------------------//
+    //-----------------------PAGE ACCESS-------------------------//
 
   const axios = useAxiosPrivate();
   //-----------------------MAIN API CALL------------------------------------//
@@ -105,6 +66,48 @@ const AssetsDashboard = () => {
     });
   //-----------------------MAIN API CALL------------------------------------//
 
+  //-----------------------PAGE ACCESS-------------------------//
+
+  //---------- Nav Cards ---------//
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  const cardsConfig = [
+    {
+      title: "View Assets",
+      route: "/app/assets/view-assets",
+      icon: <RiPagesLine />,
+      permission: PERMISSIONS.ASSETS_VIEW_ASSETS.value,
+    },
+    {
+      title: "Manage Assets",
+      route: "/app/assets/manage-assets",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.ASSETS_MANAGE_ASSETS.value,
+    },
+    {
+      title: "Mix Bag",
+      route: "#",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.ASSETS_VIEW_GRAPHS,
+    },
+    {
+      title: "Reports",
+      route: "/app/assets/reports",
+      icon: <CgProfile />,
+      permission: null, // no restriction
+    },
+    {
+      title: "Settings",
+      route: "/app/assets/settings",
+      icon: <MdMiscellaneousServices />,
+      permission: null, // no restriction
+    },
+  ];
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //---------- Nav Cards ---------//
+  //---------- Pie Charts ---------//
+  
   const totalAssets = isDepartmentLoading
     ? []
     : departmentAssets
@@ -206,6 +209,36 @@ const AssetsDashboard = () => {
     },
     colors: ["#007bff", "#f39c12"], // Blue: Physical, Orange: Digital
   };
+  const pieChartConfigs = [
+    {
+      key: "assignedUnassigned",
+      title: "Assigned v/s Unassigned Assets",
+      layout: 1,
+      border: true,
+      data: assetAvailabilityData,
+      options: assetAvailabilityOptions,
+      permission: PERMISSIONS.ASSETS_ASSIGNED_UNASSIGNED.value,
+    },
+    {
+      key: "physicalDigital",
+      title: "Physical v/s Digital Assets",
+      layout: 1,
+      border: true,
+      data: physicalDigitalPieData,
+      options: physicalDigitalOptions,
+      width: 475,
+    },
+  ];
+
+  const allowedPieCharts = pieChartConfigs.filter(
+    (widget) =>
+      !widget.permission || userPermissions.includes(widget.permission)
+  );
+
+  //---------- Pie Charts ---------//
+
+
+
 
   const assetColumns = [
     { field: "srNo", headerName: "Sr No" },
@@ -313,11 +346,13 @@ const AssetsDashboard = () => {
     {
       layout: 3,
       widgets: [
-        <DataCard
-          title={"Total"}
-          data={totalAssignedAssets}
-          description={"Assets In Use"}
-        />,
+        <Permissions permissions={[PERMISSIONS.ASSETS_ASSIGNED_ASSETS]}>
+          <DataCard
+            title={"Total"}
+            data={totalAssignedAssets}
+            description={"Assets In Use"}
+          />
+        </Permissions>,
         <DataCard
           title={"Total"}
           data={totalUnassignedAssets}
@@ -330,44 +365,23 @@ const AssetsDashboard = () => {
         />,
       ],
     },
+
     {
-      layout: 2,
-      widgets: [
-        <Permissions permissions={PERMISSIONS.ASSETS_ASSIGNED_UNASSIGNED}>
-          <WidgetSection
-            layout={1}
-            title={"Assigned v/s Unassigned Assets"}
-            border
-          >
-            <PieChartMui
-              data={assetAvailabilityData}
-              options={assetAvailabilityOptions}
-            />
-          </WidgetSection>
-        </Permissions>,
-        <WidgetSection layout={1} title={"Physical v/s Digital Assets"} border>
+      layout: allowedPieCharts.length,
+      widgets: allowedPieCharts.map((item) => (
+        <WidgetSection
+          key={item.key}
+          layout={item.layout}
+          title={item.title}
+          border={item.border}
+        >
           <PieChartMui
-            data={physicalDigitalPieData}
-            options={physicalDigitalOptions}
-            width={475}
+            data={item.data}
+            options={item.options}
+            width={item.width}
           />
-        </WidgetSection>,
-      ],
-    },
-    {
-      layout: 2,
-      widgets: [
-        <WidgetSection layout={1} title={"Department Wise Asset Usage"} border>
-          <PieChartMui
-            data={departmentPieData}
-            options={departmentPieOptions}
-            width={550}
-          />
-        </WidgetSection>,
-        <WidgetSection layout={1} title={"Asset Categories"} border>
-          <DonutChart {...assetCategoriesData} width={440} />
-        </WidgetSection>,
-      ],
+        </WidgetSection>
+      )),
     },
     {
       layout: 1,
