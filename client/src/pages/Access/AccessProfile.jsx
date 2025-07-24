@@ -50,12 +50,19 @@ const AccessProfile = () => {
 
   const mutation = useMutation({
     mutationFn: async (data) => {
-      return await axios.post(`/api/access/modify-permissions/${user._id}`, {
-        permissions: data.permissions,
-      });
+      console.log("data ", data);
+      const response = await axios.post(
+        `/api/access/modify-permissions/${user._id}`,
+        {
+          permissions: data.permissions,
+        }
+      );
+      return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({queryKey:["userPermissions", user?._id]});
+      queryClient.invalidateQueries({
+        queryKey: ["userPermissions", user?._id],
+      });
       setEditing(false);
     },
   });
@@ -168,7 +175,7 @@ const AccessProfile = () => {
       {/* Permissions Table */}
       <div className="mt-6">
         <h2 className="text-title font-pmedium mb-4">User Permissions</h2>
-        <div className="flex flex-col gap-8">
+        <div className="grid grid-cols-2 gap-4">
           {Object.entries(groupedPermissions).map(([module, permissions]) => (
             <div key={module}>
               <div className="flex justify-between items-center w-full">
@@ -219,22 +226,26 @@ const AccessProfile = () => {
                         <TableRow key={key}>
                           <TableCell>{label}</TableCell>
                           <TableCell align="center">
-                            <Checkbox
-                              checked={checked}
-                              disabled={!editing || !isRead}
-                              onChange={() =>
-                                editing && togglePermission(action)
-                              }
-                            />
+                            {isRead ? (
+                              <Checkbox
+                                checked={checked}
+                                disabled={!editing}
+                                onChange={() =>
+                                  editing && togglePermission(action)
+                                }
+                              />
+                            ) : null}
                           </TableCell>
                           <TableCell align="center">
-                            <Checkbox
-                              checked={checked}
-                              disabled={!editing || !isWrite}
-                              onChange={() =>
-                                editing && togglePermission(action)
-                              }
-                            />
+                            {isWrite ? (
+                              <Checkbox
+                                checked={checked}
+                                disabled={!editing}
+                                onChange={() =>
+                                  editing && togglePermission(action)
+                                }
+                              />
+                            ) : null}
                           </TableCell>
                         </TableRow>
                       );
