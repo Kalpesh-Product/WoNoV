@@ -93,7 +93,6 @@ const createMember = async (req, res, next) => {
       .json({ message: "Coworking client member onboarded successfully" });
   } catch (error) {
     if (error instanceof CustomError) {
-
       next(error);
     } else {
       next(
@@ -350,7 +349,7 @@ const updateMember = async (req, res, next) => {
 const bulkInsertCoworkingMembers = async (req, res, next) => {
   try {
     const file = req.file;
-    const company = req.company; 
+    const company = req.company;
 
     const coworkingClients = await CoworkingClient.find().lean().exec();
     const coworkingClientsMap = new Map(
@@ -359,10 +358,7 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
 
     const units = await Unit.find().lean().exec();
     const unitMap = new Map(
-      units.map((unit) => [
-        `${unit.building}-${unit.unitNumber}`.trim(),
-        unit._id,
-      ])
+      units.map((unit) => [`${unit.unitNo}`.trim(), unit._id])
     );
 
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
@@ -372,9 +368,9 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
     let errorMessage = "";
 
     stream
-      .pipe(csvParser()) 
+      .pipe(csvParser())
       .on("data", (row) => {
-        if (hasError) return; 
+        if (hasError) return;
 
         try {
           const {
@@ -394,9 +390,7 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
           } = row;
 
           const clientId = coworkingClientsMap.get(companyName?.trim());
-          const unitId = unitMap.get(
-            `${unitNumber?.trim()}`
-          );
+          const unitId = unitMap.get(`${unitNumber?.trim()}`);
 
           if (!clientId) {
             hasError = true;
