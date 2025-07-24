@@ -1,10 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Avatar,
   Chip,
-  Card,
-  CardContent,
-  Typography,
   Table,
   TableBody,
   TableCell,
@@ -16,15 +13,22 @@ import {
 } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
 import { PERMISSIONS } from "../../constants/permissions";
 import Abrar from "../../assets/abrar.jpeg";
+import PrimaryButton from "../../components/PrimaryButton";
 
 const AccessProfile = () => {
   const location = useLocation();
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
   const { user } = location.state || {};
+
+  const { register, setValue, handleSubmit, watch } = useForm({
+    defaultValues: { permissions: [] },
+  });
 
   const fetchUserPermissions = async () => {
     if (!user?._id) return null;
@@ -44,48 +48,53 @@ const AccessProfile = () => {
     enabled: !!user?._id,
   });
 
-  const handlePermissionUpdate = async (permission, isChecked) => {
-    const currentPermissions = new Set(accessProfile?.permissions || []);
-
-    if (isChecked) {
-      currentPermissions.add(permission);
-    } else {
-      currentPermissions.delete(permission);
-    }
-
-    const updatedPermissions = Array.from(currentPermissions);
-
-    try {
-      await axios.put(`/api/access/grant-permissions/${user._id}`, {
-        permissions: updatedPermissions,
+  const mutation = useMutation({
+    mutationFn: async (data) => {
+      return await axios.post(`/api/access/modify-permissions/${user._id}`, {
+        permissions: data.permissions,
       });
-      queryClient.invalidateQueries(["userPermissions", user?._id]); // refetch updated data
-    } catch (error) {
-      console.error("Failed to update permissions", error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey:["userPermissions", user?._id]});
+      setEditing(false);
+    },
+  });
+
+  useEffect(() => {
+    if (accessProfile?.permissions) {
+      setValue("permissions", accessProfile.permissions);
     }
-  };
+  }, [accessProfile, setValue]);
 
   const groupPermissionsByModule = (permissionsObj) => {
     const grouped = {};
-
     Object.entries(permissionsObj).forEach(([key, value]) => {
-      const [module, ...rest] = key.split("_"); // e.g. ASSETS_VIEW_ASSETS
-      const action = value; // e.g. view_assets
-
+      const [module] = key.split("_");
       if (!grouped[module]) grouped[module] = [];
-
       grouped[module].push({
-  key,
-  action,
-  label: value
-    .split("_")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join("_"), // turns 'view_assets' into 'View_Assets'
-});
-
+        key,
+        action: value,
+        label: value
+          .split("_")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join("_"),
+      });
     });
-
     return grouped;
+  };
+
+  const groupedPermissions = groupPermissionsByModule(PERMISSIONS);
+  const userPermissionSet = new Set(accessProfile?.permissions || []);
+  const formPermissions = new Set(watch("permissions") || []);
+
+  const togglePermission = (permission) => {
+    const current = new Set(watch("permissions") || []);
+    if (current.has(permission)) {
+      current.delete(permission);
+    } else {
+      current.add(permission);
+    }
+    setValue("permissions", Array.from(current));
   };
 
   if (isPending) {
@@ -105,9 +114,6 @@ const AccessProfile = () => {
       </div>
     );
   }
-
-  const groupedPermissions = groupPermissionsByModule(PERMISSIONS);
-  const userPermissionSet = new Set(accessProfile?.permissions || []);
 
   return (
     <div className="bg-white p-4">
@@ -129,7 +135,7 @@ const AccessProfile = () => {
           </div>
           <div className="flex flex-col gap-6">
             <span className="text-title flex items-center gap-3">
-              {user.name}{" "}
+              {user.name}
               <Chip
                 label={user.status ? "Active" : "InActive"}
                 sx={{
@@ -165,7 +171,25 @@ const AccessProfile = () => {
         <div className="flex flex-col gap-8">
           {Object.entries(groupedPermissions).map(([module, permissions]) => (
             <div key={module}>
-              <h3 className="text-lg font-semibold mb-2">{module}</h3>
+              <div className="flex justify-between items-center w-full">
+                <h3 className="text-lg font-semibold mb-2">{module}</h3>
+                <div className="flex gap-4 items-center">
+                  <PrimaryButton
+                    title={!editing ? "Edit" : "Cancel"}
+                    handleSubmit={() => setEditing((prev) => !prev)}
+                  />
+                  {editing && (
+                    <PrimaryButton
+                      title="Update"
+                      isLoading={mutation.isPending}
+                      disabled={mutation.isPending}
+                      handleSubmit={handleSubmit((data) =>
+                        mutation.mutate({ permissions: data.permissions })
+                      )}
+                    />
+                  )}
+                </div>
+              </div>
               <TableContainer component={Paper}>
                 <Table>
                   <TableHead>
@@ -187,24 +211,28 @@ const AccessProfile = () => {
                       const isWrite =
                         action.includes("manage") || action.includes("delete");
 
+                      const checked = editing
+                        ? formPermissions.has(action)
+                        : userPermissionSet.has(action);
+
                       return (
                         <TableRow key={key}>
                           <TableCell>{label}</TableCell>
                           <TableCell align="center">
                             <Checkbox
-                              checked={userPermissionSet.has(key)}
-                              disabled={!isRead}
-                              onChange={(e) =>
-                                handlePermissionUpdate(key, e.target.checked)
+                              checked={checked}
+                              disabled={!editing || !isRead}
+                              onChange={() =>
+                                editing && togglePermission(action)
                               }
                             />
                           </TableCell>
                           <TableCell align="center">
                             <Checkbox
-                              checked={userPermissionSet.has(key)}
-                              disabled={!isWrite}
-                              onChange={(e) =>
-                                handlePermissionUpdate(key, e.target.checked)
+                              checked={checked}
+                              disabled={!editing || !isWrite}
+                              onChange={() =>
+                                editing && togglePermission(action)
                               }
                             />
                           </TableCell>

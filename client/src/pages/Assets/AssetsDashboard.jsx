@@ -37,7 +37,7 @@ const AssetsDashboard = () => {
   const departments = auth.user.departments;
 
   //-----------------------PAGE ACCESS-------------------------//
-  const userPermissions = auth?.user?.permissions || [];
+  const userPermissions = auth?.user?.permissions?.permissions || [];
   const cardsConfig = [
     {
       title: "View Assets",
