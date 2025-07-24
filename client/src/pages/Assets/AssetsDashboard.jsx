@@ -29,6 +29,8 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
+import Permission from "../../components/Permissions/Permissions";
+import { PERMISSIONS } from "../../constants/permissions";
 
 const AssetsDashboard = () => {
   const { auth } = useAuth();
@@ -49,17 +51,18 @@ const AssetsDashboard = () => {
     },
   });
 
-  const { data: departmentCategories, isLoading: isCategoriesLoading } = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(`/api/assets/get-category`);
-        return response.data;
-      } catch (error) {
-        console.error(error.message);
-      }
-    },
-  });
+  const { data: departmentCategories, isLoading: isCategoriesLoading } =
+    useQuery({
+      queryKey: ["categories"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(`/api/assets/get-category`);
+          return response.data;
+        } catch (error) {
+          console.error(error.message);
+        }
+      },
+    });
   //-----------------------MAIN API CALL------------------------------------//
 
   const totalAssets = isDepartmentLoading
@@ -202,7 +205,7 @@ const AssetsDashboard = () => {
   const tableData = isDepartmentLoading
     ? []
     : totalAssets.map((item, index) => {
-         const data = {
+        const data = {
           ...item,
           srNo: index + 1,
           assetId: item.assetId,
@@ -215,7 +218,7 @@ const AssetsDashboard = () => {
           price: `INR ${item?.price}`,
         };
 
-        return data
+        return data;
       });
 
   const meetingsWidgets = [
@@ -239,11 +242,18 @@ const AssetsDashboard = () => {
     {
       layout: 5,
       widgets: [
-        <Card
-          route={"/app/assets/view-assets"}
-          title={"View Assets"}
-          icon={<RiPagesLine />}
-        />,
+        // <Permission permissions={[PERMISSIONS.VIEW_ASSETS, PERMISSIONS.MANAGE_ASSETS]}>
+        //   <Card
+        //     route={"/app/assets/view-assets"}
+        //     title={"View Assets"}
+        //     icon={<RiPagesLine />}
+        //   />
+        // </Permission>,
+            <Card
+            route={"/app/assets/view-assets"}
+            title={"View Assets"}
+            icon={<RiPagesLine />}
+          />,
         <Card
           route={"/app/assets/manage-assets"}
           title={"Manage Assets"}
