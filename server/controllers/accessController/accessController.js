@@ -33,28 +33,30 @@ const updatePermissions = async (req, res, next) => {
         .json({ message: "Please provide a valid array of permissions" });
     }
 
-    let userPermissions = await Permissions.findOne({ user: userId })
-      .lean()
-      .exec();
+    let userPermissions = await Permissions.findOne({ user: userId }).exec();
 
     if (!userPermissions) {
       userPermissions = new Permissions({
         user: userId,
-        permissions,
+        permissions: [...new Set(permissions)], 
       });
     } else {
-      userPermissions.permissions = permissions;
+      const mergedPermissions = new Set([
+        ...userPermissions.permissions,
+        ...permissions,
+      ]);
+      userPermissions.permissions = Array.from(mergedPermissions);
     }
 
     const savedPermissions = await userPermissions.save();
-    await UserData.findOneAndUpdate(
-      { _id: userId },
-      { permissions: savedPermissions?._id }
-    ).exec();
+
+    await UserData.findByIdAndUpdate(userId, {
+      permissions: savedPermissions._id,
+    });
 
     return res.status(200).json({
-      message: "Permissions granted successfully",
-      data: userPermissions,
+      message: "Permissions updated successfully",
+      data: savedPermissions,
     });
   } catch (error) {
     next(error);
