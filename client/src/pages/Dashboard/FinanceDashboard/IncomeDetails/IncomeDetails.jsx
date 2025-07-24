@@ -95,7 +95,7 @@ const IncomeDetails = () => {
     data: item.data[selectedYear] || [],
   }));
 
-  const normalizedData = filteredByYear.map((domain) => ({
+  const normalizedData = filteredByYear?.map((domain) => ({
     name: domain.name,
     data: domain.data.map((val, idx) => {
       const totalThisMonth = filteredByYear.reduce(

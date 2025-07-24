@@ -9,7 +9,8 @@ const getFinancialYear = (dateStr) => {
 };
 
 const getMonthsWithYearLabels = (fyLabel) => {
-  const [startYearStr] = fyLabel.replace("FY ", "").split("-");
+  console.log("fy : ", fyLabel);
+  const [startYearStr] = fyLabel.replace("FY", "").split("-");
   const startYear = parseInt(startYearStr);
   const endYear = startYear + 1;
 
