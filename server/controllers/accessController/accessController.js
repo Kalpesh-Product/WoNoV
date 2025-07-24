@@ -46,7 +46,11 @@ const updatePermissions = async (req, res, next) => {
       userPermissions.permissions = permissions;
     }
 
-    await userPermissions.save();
+    const savedPermissions = await userPermissions.save();
+    await UserData.findOneAndUpdate(
+      { _id: userId },
+      { permissions: savedPermissions?._id }
+    ).exec();
 
     return res.status(200).json({
       message: "Permissions granted successfully",

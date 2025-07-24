@@ -4,7 +4,7 @@ const {
   updatePermissions
 } = require("../controllers/accessController/accessController");
 
-router.get("/user-permissions/:id", getPermissions);
-router.post("/modify-permissions", updatePermissions);
+router.get("/user-permissions/:userId", getPermissions);
+router.post("/modify-permissions/:userId", updatePermissions);
 
 module.exports = router;
