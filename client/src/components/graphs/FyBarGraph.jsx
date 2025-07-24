@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import dayjs from "dayjs";
-import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 
 const getFinancialYear = (dateStr) => {
   const date = dayjs(dateStr);
@@ -9,45 +8,32 @@ const getFinancialYear = (dateStr) => {
   return `FY ${year}-${String((year + 1) % 100).padStart(2, "0")}`;
 };
 
-const groupDataByMonth = (data, dateKey, valueKey) => {
-  const monthlyMap = {};
+const getMonthsWithYearLabels = (fyLabel) => {
+  const [startYearStr] = fyLabel.replace("FY ", "").split("-");
+  const startYear = parseInt(startYearStr);
+  const endYear = startYear + 1;
 
-  data.forEach((item) => {
-    const date = dayjs(item[dateKey]);
-    if (!date.isValid()) return;
-
-    const month = date.format("MMM");
-    monthlyMap[month] =
-      (monthlyMap[month] || 0) + (parseFloat(item[valueKey]) || 0);
-  });
-
-  const monthsOrder = [
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-    "Jan",
-    "Feb",
-    "Mar",
+  return [
+    { month: "Apr", label: `Apr-${String(startYear).slice(-2)}` },
+    { month: "May", label: `May-${String(startYear).slice(-2)}` },
+    { month: "Jun", label: `Jun-${String(startYear).slice(-2)}` },
+    { month: "Jul", label: `Jul-${String(startYear).slice(-2)}` },
+    { month: "Aug", label: `Aug-${String(startYear).slice(-2)}` },
+    { month: "Sep", label: `Sep-${String(startYear).slice(-2)}` },
+    { month: "Oct", label: `Oct-${String(startYear).slice(-2)}` },
+    { month: "Nov", label: `Nov-${String(startYear).slice(-2)}` },
+    { month: "Dec", label: `Dec-${String(startYear).slice(-2)}` },
+    { month: "Jan", label: `Jan-${String(endYear).slice(-2)}` },
+    { month: "Feb", label: `Feb-${String(endYear).slice(-2)}` },
+    { month: "Mar", label: `Mar-${String(endYear).slice(-2)}` },
   ];
-
-  return monthsOrder.map((month) => ({
-    x: month,
-    y: monthlyMap[month] || 0,
-  }));
 };
 
 const FyBarGraph = ({
   data = [],
-  columns = [],
   dateKey = "date",
-  valueKey = "value",
-  chartOptions: customChartOptions = {},
+  valueKey = "revenue",
+  chartOptions = {},
 }) => {
   const fyOptions = useMemo(() => {
     const yearsSet = new Set();
@@ -61,21 +47,49 @@ const FyBarGraph = ({
   const [selectedFY, setSelectedFY] = useState(fyOptions[0]);
   const currentIndex = fyOptions.indexOf(selectedFY);
 
+  const monthsWithLabels = useMemo(() => {
+    return getMonthsWithYearLabels(selectedFY);
+  }, [selectedFY]);
+
   const filteredData = useMemo(() => {
     return data.filter(
       (item) => getFinancialYear(item[dateKey]) === selectedFY
     );
   }, [data, selectedFY, dateKey]);
 
-  const monthlyData = useMemo(
-    () => groupDataByMonth(filteredData, dateKey, valueKey),
-    [filteredData]
-  );
+  const stackedSeries = useMemo(() => {
+    const base = {};
+    const months = getMonthsWithYearLabels(selectedFY);
+
+    filteredData.forEach((item) => {
+      const date = dayjs(item[dateKey]);
+      if (!date.isValid()) return;
+
+      const month = date.format("MMM");
+
+      // Match label directly from generated month map
+      const match = months.find((m) => m.month === month);
+      if (!match) return;
+
+      const label = match.label;
+      const vertical = item.vertical || "Unknown";
+
+      if (!base[vertical]) base[vertical] = {};
+      base[vertical][label] =
+        (base[vertical][label] || 0) + (parseFloat(item[valueKey]) || 0);
+    });
+
+    return Object.entries(base).map(([vertical, monthData]) => ({
+      name: vertical,
+      data: months.map(({ label }) => monthData[label] || 0),
+    }));
+  }, [filteredData, selectedFY]);
 
   const mergedChartOptions = useMemo(() => {
     return {
       chart: {
         type: "bar",
+        stacked: true,
         height: 350,
         toolbar: { show: false },
       },
@@ -88,30 +102,26 @@ const FyBarGraph = ({
       },
       dataLabels: { enabled: false },
       xaxis: {
-        categories: monthlyData.map((d) => d.x),
+        categories: monthsWithLabels.map((m) => m.label),
       },
       yaxis: {
         labels: {
           formatter: (val) => val.toLocaleString("en-IN"),
         },
       },
-      colors: ["#1E3D73"],
-      ...customChartOptions, // override default options with parent values
+      legend: {
+        position: "top",
+      },
+      colors: ["#1E3D73", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
+      ...chartOptions,
     };
-  }, [monthlyData, customChartOptions]);
-
-  const series = [
-    {
-      name: valueKey,
-      data: monthlyData.map((d) => d.y),
-    },
-  ];
+  }, [stackedSeries, monthsWithLabels, chartOptions]);
 
   return (
     <div className="flex flex-col gap-4 rounded-md">
       <Chart
         options={mergedChartOptions}
-        series={series}
+        series={stackedSeries}
         type="bar"
         height={350}
       />

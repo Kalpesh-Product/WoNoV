@@ -88,6 +88,8 @@ const IncomeDetails = () => {
     return flatten;
   }, [simpleRevenue]);
 
+  console.log("unified data : ", unifiedRevenueData);
+
   const filteredByYear = totalRevenue?.map((item) => ({
     name: item.name,
     data: item.data[selectedYear] || [],
@@ -103,7 +105,6 @@ const IncomeDetails = () => {
       return totalThisMonth ? Math.round((val / totalThisMonth) * 100) : 0;
     }),
   }));
-  console.log("graph data : ", normalizedData)
   const options = {
     chart: {
       toolbar: false,
@@ -192,6 +193,8 @@ const IncomeDetails = () => {
           <BarGraph height={400} data={normalizedData} options={options} />
         </WidgetSection>
       )}
+
+      <FyBarGraph data={unifiedRevenueData} dateKey="date" valueKey="revenue" />
 
       <WidgetTable
         tableTitle="Annual Monthly Income Breakup"
