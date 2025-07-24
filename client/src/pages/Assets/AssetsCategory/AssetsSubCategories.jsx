@@ -367,7 +367,7 @@ const AssetsSubCategories = () => {
         {modalMode === "view" && (
           <div className="grid grid-cols-1 gap-4">
             <DetalisFormatted
-              title={"Category Name"}
+              title={"Sub Category"}
               detail={selectedAsset?.subCategoryName || "N/A"}
             />
             <DetalisFormatted

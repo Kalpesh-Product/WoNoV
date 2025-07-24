@@ -22,7 +22,7 @@ const DonutChart = ({
 
  const fullLabels = chartData.labels;
 const truncatedLabels = fullLabels.map(label =>
-  label.length > 7 ? label.slice(0, 7) + "..." : label
+  label.length > 7 ? label.slice(0, 15) + "..." : label
 );
 
   const chartOptions = {
