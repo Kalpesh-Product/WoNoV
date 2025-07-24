@@ -33,19 +33,17 @@ const updatePermissions = async (req, res, next) => {
         .json({ message: "Please provide a valid array of permissions" });
     }
 
-    let userPermissions = await Permissions.findOne({ user: userId }).exec();
+    const uniquePermissions = [...new Set(permissions)];
+
+    let userPermissions = await Permissions.findOne({ user: userId });
 
     if (!userPermissions) {
       userPermissions = new Permissions({
         user: userId,
-        permissions: [...new Set(permissions)], 
+        permissions: uniquePermissions,
       });
     } else {
-      const mergedPermissions = new Set([
-        ...userPermissions.permissions,
-        ...permissions,
-      ]);
-      userPermissions.permissions = Array.from(mergedPermissions);
+      userPermissions.permissions = uniquePermissions;
     }
 
     const savedPermissions = await userPermissions.save();
@@ -62,5 +60,6 @@ const updatePermissions = async (req, res, next) => {
     next(error);
   }
 };
+
 
 module.exports = { getPermissions, updatePermissions };
