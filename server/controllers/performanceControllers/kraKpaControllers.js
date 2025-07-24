@@ -4,6 +4,8 @@ const kraKpaTask = require("../../models/performances/kraKpaTask");
 const emitter = require("../../utils/eventEmitter");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
 
 const createDeptBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -637,6 +639,60 @@ const getAllKpaTasks = async (req, res, next) => {
   }
 };
 
+const bulkInsertKraKpaTasks = async (req, res, next) => {
+  try {
+    const { departmentId } = req.params;
+    const file = req.file;
+    const company = req.company;
+
+    if (!file) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid CSV file." });
+    }
+
+    const employees = await UserData.find({ isActive: true }).lean().exec();
+    const employeeMap = new Map(employees.map((emp) => [emp.empId, emp._id]));
+
+    const tasksToInsert = [];
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    stream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        const empId = row["Assigned By (EMP ID)"];
+        const assignedBy = employeeMap.get(empId);
+
+        tasksToInsert.push({
+          task: row["Task"],
+          company,
+          assignedBy,
+          description: row["Description"],
+          taskType: row["Task Type (KPA/KRA)"],
+          kpaDuration: row["KPA Duration"] || undefined,
+          assignedDate: row["Assigned Date"]
+            ? new Date(row["Assigned Date"])
+            : null,
+          dueDate: row["Due Date"] ? new Date(row["Due Date"]) : null,
+          department: departmentId,
+        });
+      })
+      .on("end", async () => {
+        await kraKpaRole.insertMany(tasksToInsert);
+        res.status(201).json({
+          message: "Tasks inserted successfully",
+          count: tasksToInsert.length,
+        });
+      })
+      .on("error", (err) => {
+        next(err);
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createDeptBasedTask,
   getAllKpaTasks,
@@ -645,4 +701,5 @@ module.exports = {
   getAllDeptTasks,
   updateTaskStatus,
   getCompletedKraKpaTasks,
+  bulkInsertKraKpaTasks
 };

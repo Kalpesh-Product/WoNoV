@@ -123,6 +123,7 @@ const ManageMeetings = () => {
     handleSubmit: handleEditMeetingSubmit,
     control: editControl,
     setValue: setEditValue,
+    getValues,
     formState: { errors: editErrors },
   } = useForm({
     defaultValues: {
@@ -936,7 +937,7 @@ const ManageMeetings = () => {
               onSubmit={handleEditMeetingSubmit(onEditSubmit)}
               className="grid grid-cols-2 gap-4"
             >
-              <Controller
+              {/* <Controller
                 name="startTime"
                 control={editControl}
                 rules={{
@@ -953,9 +954,76 @@ const ManageMeetings = () => {
                       },
                     }}
                     label={"Start Time"}
+
+                  />
+                )}
+              /> */}
+              <Controller
+                name="startTime"
+                control={editControl}
+                rules={{
+                  required: "Start time is required",
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    label="Start Time"
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        error: !!editErrors.startTime,
+                        helperText: editErrors.startTime?.message,
+                      },
+                    }}
+                    shouldDisableTime={(time, view) => {
+                      const startTime = selectedMeeting.startTime;
+                      const timeValue = time.$d;
+
+                      if (!startTime) return false;
+
+                      const startDate = new Date(startTime);
+
+                      if (view === "hours") {
+                        return timeValue.getHours() < startDate.getHours();
+                      }
+
+                      if (view === "minutes") {
+                        const selectedHour = field.value
+                          ? new Date(field.value).getHours()
+                          : null;
+
+                        return (
+                          selectedHour === startDate.getHours() &&
+                          timeValue.getMinutes() < startDate.getMinutes()
+                        );
+                      }
+
+                      // Disable AM/PM
+                        //   const currentHour = time.$d.getHours();
+                        //    const selectedHour = field.value
+                        //   ? new Date(field.value).getHours()
+                        //   : null;
+
+                        //   console.log("curr")
+
+                        // if (selectedHour !== null) {
+                  
+                        //   const isPMSelected = selectedHour >= 12;
+                        //   const isAMSelected = selectedHour < 12;
+
+                        //   // Disable AM hours (0–11) if PM is selected
+                        //   if (isPMSelected && currentHour < 12) return true;
+
+                        //   // Disable PM hours (12–23) if AM is selected
+                        //   if (isAMSelected && currentHour >= 12) return true;
+                        // }
+
+                      return false;
+                    }}
                   />
                 )}
               />
+
               <Controller
                 name="endTime"
                 control={editControl}
@@ -973,7 +1041,66 @@ const ManageMeetings = () => {
                       },
                     }}
                     label={"End Time"}
+                    shouldDisableTime={(time, view) => {
+                      const endTime = selectedMeeting.endTime;
+                      const timeValue = time.$d;
+
+                      if (!endTime) return false;
+
+                      const endDate = new Date(endTime);
+
+                      if (view === "hours") {
+                        return timeValue.getHours() < endDate.getHours();
+                      }
+
+                      if (view === "minutes") {
+                        const selectedHour = field.value
+                          ? new Date(field.value).getHours()
+                          : null;
+
+                        return (
+                          selectedHour === endDate.getHours() &&
+                          timeValue.getMinutes() < endDate.getMinutes()
+                        );
+                      }
+
+                      return false;
+                    }}
                   />
+
+                  // <TimePicker
+                  //   {...field}
+                  //   label="Start Time"
+                  //   slotProps={{
+                  //     textField: {
+                  //       size: "small",
+                  //       error: !!editErrors.startTime,
+                  //       helperText: editErrors.startTime?.message,
+                  //     },
+                  //   }}
+                  //   shouldDisableTime={(timeValue, view) => {
+                  //     if (!field.value) return false;
+
+                  //     console.log("field",field.value)
+                  //     const value = new Date(field.value)
+                  //     const selectedHour = value.getHours();
+                  //     const selectedMinute = value.getMinutes();
+
+                  //     if (view === "hours") {
+                  //       return timeValue < selectedHour;
+                  //     }
+
+                  //     if (view === "minutes") {
+                  //       // Only restrict minutes if same hour is selected
+                  //       return (
+                  //         value.getHours() === selectedHour &&
+                  //         timeValue < selectedMinute
+                  //       );
+                  //     }
+
+                  //     return false;
+                  //   }}
+                  // />
                 )}
               />
               {!selectedMeeting?.clientBookedBy ? (

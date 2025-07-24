@@ -950,17 +950,22 @@ const MeetingDashboard = () => {
               />,
               <DataCard
                 title={"Average"}
-                data={parseFloat(
-                  (
-                    meetingsData.reduce(
-                      (sum, item) =>
-                        sum + parseInt(item.duration.replace("m", "")),
-                      0
-                    ) /
-                    60 /
-                    meetingsData.length
-                  ).toFixed(2)
-                )}
+                data={
+                  meetingsData.length > 0
+                    ? parseFloat(
+                        (
+                          meetingsData.reduce((sum, item) => {
+                            const duration = parseInt(
+                              item.duration?.replace("m", "")
+                            );
+                            return isNaN(duration) ? sum : sum + duration;
+                          }, 0) /
+                          60 /
+                          meetingsData.length
+                        ).toFixed(2)
+                      )
+                    : 0
+                }
                 description={"Hours Booked"}
                 route={"reports"}
               />,

@@ -3,318 +3,94 @@ const masterPermissions = require("../../config/masterPermissions");
 const Company = require("../../models/hr/Company");
 const CustomError = require("../../utils/customErrorlogs");
 const UserData = require("../../models/hr/UserData");
+const Department = require("../../models/Departments");
 const { createLog } = require("../../utils/moduleLogs");
 
-const userPermissions = async (req, res, next) => {
+const getPermissions = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const companyId = req.company;
+    const { userId } = req.params;
+    const permissions = await Permissions.findOne({ user: userId })
+      .lean()
+      .exec();
 
-    const company = await Company.findById(companyId).populate(
-      "selectedDepartments"
-    );
-    if (!company) return res.status(404).json({ error: "Company not found" });
-
-    const selectedDepartments = company.selectedDepartments.map((dept) =>
-      dept.department.toString()
-    );
-
-    // Step 2: Fetch user's granted permissions
-    const userPermissions = await Permissions.findOne({
-      user: id,
-      company: companyId,
-    });
-
-    let grantedPermissionsMap = {};
-
-    if (userPermissions) {
-      userPermissions.deptWisePermissions.forEach((deptPerm) => {
-        const deptId = deptPerm.department.toString();
-        grantedPermissionsMap[deptId] = {};
-        deptPerm.modules.forEach((mod) => {
-          grantedPermissionsMap[deptId][mod.moduleName] = {};
-          mod.submodules.forEach((sub) => {
-            grantedPermissionsMap[deptId][mod.moduleName][sub.submoduleName] =
-              sub.actions;
-          });
-        });
-      });
+    if (!permissions) {
+      return res.status(200).json([]);
     }
 
-    // Step 3: Prepare the response JSON
-    let permissionResponse = [];
-
-    masterPermissions.forEach((dept) => {
-      // Only process if the department is selected by the company
-      if (selectedDepartments.includes(dept.departmentId)) {
-        let deptData = {
-          departmentId: dept.departmentId,
-          departmentName: dept.departmentName,
-          modules: [],
-        };
-
-        dept.modules.forEach((mod) => {
-          let moduleData = {
-            name: mod.name,
-            submodules: [],
-          };
-
-          mod.submodules.forEach((sub) => {
-            const grantedActions =
-              grantedPermissionsMap[dept.departmentId]?.[mod.name]?.[
-                sub.submoduleName
-              ] || [];
-            const availableActions =
-              grantedActions.length > 0
-                ? sub.actions.filter(
-                    (action) => !grantedActions.includes(action)
-                  )
-                : sub.actions; // If no granted actions, all actions are available
-
-            moduleData.submodules.push({
-              submoduleName: sub.submoduleName,
-              grantedActions,
-              availableActions,
-            });
-          });
-
-          deptData.modules.push(moduleData);
-        });
-
-        permissionResponse.push(deptData);
-      }
-    });
-
-    if (!userPermissions) {
-      permissionResponse = masterPermissions
-        .filter((dept) => selectedDepartments.includes(dept.departmentId))
-        .map((dept) => ({
-          departmentId: dept.departmentId,
-          departmentName: dept.departmentName,
-          modules: dept.modules.map((mod) => ({
-            name: mod.name,
-            submodules: mod.submodules.map((sub) => ({
-              submoduleName: sub.submoduleName,
-              grantedActions: [],
-              availableActions: sub.actions,
-            })),
-          })),
-        }));
-    }
-
-    return res.status(200).json(permissionResponse);
+    return res.status(200).json(permissions);
   } catch (error) {
     next(error);
   }
 };
 
-const modifyUserPermissions = async (req, res, next) => {
-  const logPath = "AccessLog";
-  const logAction = "Modify User Permissions";
-  const logSourceKey = "permissions";
-
+const updatePermissions = async (req, res, next) => {
   try {
-    const { userId, permissions } = req.body;
-    const companyId = req.company;
+    const { userId } = req.params;
+    const { permissions } = req.body;
 
-    // Validate input data
-    if (!userId || !companyId || !Array.isArray(permissions)) {
-      throw new CustomError(
-        "Invalid request data",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+    if (!Array.isArray(permissions)) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid array of permissions" });
     }
 
-    const foundUser = await UserData.findOne({ _id: userId })
-      .select("permissions")
-      .lean()
-      .exec();
-    if (!foundUser) {
-      throw new CustomError("User not found", logPath, logAction, logSourceKey);
-    }
+    const uniquePermissions = [...new Set(permissions)];
 
-    // Fetch Company & Validate Departments
-    const company = await Company.findById(companyId).populate(
-      "selectedDepartments"
-    );
-    if (!company) {
-      throw new CustomError(
-        "Company not found",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
+    let userPermissions = await Permissions.findOne({ user: userId });
 
-    const selectedDepartments = new Set(
-      company.selectedDepartments.map((dept) => dept.department.toString())
-    );
-
-    // Fetch Existing Permissions or Create a New Entry
-    let userPermission = await Permissions.findOne({
-      user: userId,
-      company: companyId,
-    });
-    if (!userPermission) {
-      userPermission = new Permissions({
-        company: companyId,
+    if (!userPermissions) {
+      userPermissions = new Permissions({
         user: userId,
-        deptWisePermissions: [],
+        permissions: uniquePermissions,
       });
+    } else {
+      userPermissions.permissions = uniquePermissions;
     }
 
-    // Create a map for quick lookup of existing permissions by department
-    const existingPermissions = new Map();
-    for (const dept of userPermission.deptWisePermissions) {
-      existingPermissions.set(dept.department.toString(), dept);
-    }
+    const savedPermissions = await userPermissions.save();
 
-    const updatedDeptWisePermissions = [];
-
-    // Process each permission provided in the request
-    for (const { departmentId, modules } of permissions) {
-      if (!selectedDepartments.has(departmentId) || !Array.isArray(modules)) {
-        throw new CustomError(
-          "Invalid permission data",
-          logPath,
-          logAction,
-          logSourceKey
-        );
-      }
-
-      // Retrieve or initialize department permissions
-      let deptPermissions = existingPermissions.get(departmentId) || {
-        department: departmentId,
-        modules: [],
-      };
-
-      const updatedModules = [];
-
-      for (const { moduleName, submodules } of modules) {
-        if (!moduleName || !Array.isArray(submodules)) {
-          throw new CustomError(
-            "Invalid module data",
-            logPath,
-            logAction,
-            logSourceKey
-          );
-        }
-
-        // Validate module against master permissions (assuming masterPermissions is in scope)
-        const departmentPermissions = masterPermissions.find(
-          (dept) => dept.departmentId === departmentId
-        );
-        if (!departmentPermissions) {
-          throw new CustomError(
-            "Invalid department permissions",
-            logPath,
-            logAction,
-            logSourceKey
-          );
-        }
-
-        const modulePermissions = departmentPermissions.modules.find(
-          (mod) => mod.name?.trim() === moduleName?.trim()
-        );
-        if (!modulePermissions) {
-          throw new CustomError(
-            "Invalid module",
-            logPath,
-            logAction,
-            logSourceKey
-          );
-        }
-
-        const updatedSubmodules = [];
-
-        for (const { submoduleName, actions } of submodules) {
-          if (!submoduleName || !Array.isArray(actions)) {
-            throw new CustomError(
-              "Invalid submodule data",
-              logPath,
-              logAction,
-              logSourceKey
-            );
-          }
-
-          // Validate submodule and actions
-          const submodulePermissions = modulePermissions.submodules.find(
-            (sub) => sub.submoduleName?.trim() === submoduleName?.trim()
-          );
-          if (!submodulePermissions) {
-            throw new CustomError(
-              "Invalid submodule",
-              logPath,
-              logAction,
-              logSourceKey
-            );
-          }
-
-          const validActions = submodulePermissions.actions;
-          const filteredActions = actions.filter((action) =>
-            validActions.includes(action)
-          );
-
-          // Only add submodules if at least one valid action remains
-          if (filteredActions.length > 0) {
-            updatedSubmodules.push({ submoduleName, actions: filteredActions });
-          }
-        }
-
-        // Only add modules with at least one valid submodule
-        if (updatedSubmodules.length > 0) {
-          updatedModules.push({ moduleName, submodules: updatedSubmodules });
-        }
-      }
-
-      // Only add departments with at least one valid module
-      if (updatedModules.length > 0) {
-        deptPermissions.modules = updatedModules;
-        updatedDeptWisePermissions.push(deptPermissions);
-      }
-    }
-
-    // Update user permissions document
-    userPermission.deptWisePermissions = updatedDeptWisePermissions;
-    const updatedUserPermission = await userPermission.save();
-
-    // If user has no existing permission reference in their profile, update it
-    if (!foundUser.permissions) {
-      await UserData.findOneAndUpdate(
-        { _id: userId },
-        { permissions: updatedUserPermission._id }
-      );
-    }
-
-    // Log the successful update of user permissions
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Permissions updated successfully",
-      status: "Success",
-      user: req.user,
-      ip: req.ip,
-      company: companyId,
-      sourceKey: logSourceKey,
-      sourceId: updatedUserPermission._id,
-      changes: { deptWisePermissions: updatedDeptWisePermissions },
+    await UserData.findByIdAndUpdate(userId, {
+      permissions: savedPermissions._id,
     });
 
     return res.status(200).json({
       message: "Permissions updated successfully",
-      userPermission: updatedUserPermission,
+      data: savedPermissions,
     });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    next(error);
   }
 };
 
-module.exports = { userPermissions, modifyUserPermissions };
+const getDepartmentWiseUsers = async (req, res, next) => {
+  try {
+    const departments = await Department.find()
+      .select("departmentId name")
+      .lean()
+      .exec();
+    const users = await UserData.find({ isActive: true })
+      .select("firstName lastName empId departments role")
+      .populate([{ path: "role" }])
+      .lean()
+      .exec();
+
+    const departmentWiseEmployees = departments.map((dept) => {
+      const employees = users.filter((user) =>
+        user.departments?.some(
+          (dep) => dep._id?.toString() === dept._id.toString()
+        )
+      );
+
+      return {
+        ...dept,
+        employees,
+      };
+    });
+
+    res.status(200).json({ data: departmentWiseEmployees });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getPermissions, updatePermissions, getDepartmentWiseUsers };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Drawer, IconButton } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useMediaQuery } from "@mui/material";
@@ -14,14 +14,15 @@ import ScrollToTop from "../components/ScrollToTop"; // Adjust path if needed
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
+import { PERMISSIONS } from "../constants/permissions";
 
 const MainLayout = () => {
   const { auth } = useAuth();
   const [showFooter, setShowFooter] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dummyRef = useRef(null);
-  const notificationAudioRef = useRef(new Audio("/audio/notification.mp3"));
-  const prevUnreadCountRef = useRef(0);
+  const location = useLocation()
+  const navigate = useNavigate()
   const axios = useAxiosPrivate();
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   const {
@@ -42,6 +43,48 @@ const MainLayout = () => {
     refetchInterval: 15000,
   });
 
+useEffect(() => {
+  const pathname = location.pathname;
+  console.log("🔍 Current pathname:", pathname);
+
+  const rawPermissions = auth?.user?.permissions?.permissions || [];
+  console.log("🔑 Raw permissions from auth:", rawPermissions);
+
+  // Step 1: Collect relevant route patterns from PERMISSIONS object
+  const permissionRoutes = Object.values(PERMISSIONS).map((perm) =>
+    perm.value?.replace(/_/g, "-")
+  );
+  console.log("🎯 Routes to be permission-guarded:", permissionRoutes);
+
+  // Step 2: Check if the current pathname contains any of the permission routes
+  const pathRequiresPermission = permissionRoutes.some((route) =>
+    pathname.includes(route)
+  );
+  console.log("🚦 Does this path require permission?", pathRequiresPermission);
+
+  // Step 3: If permission is required, verify if the user has it
+  if (pathRequiresPermission) {
+    const formattedUserPermissions = rawPermissions.map((perm) =>
+      perm.replace(/_/g, "-")
+    );
+    console.log("🛡️ User's formatted permissions:", formattedUserPermissions);
+
+    const isAllowed = formattedUserPermissions.some((perm) =>
+      pathname.includes(perm)
+    );
+    console.log("✅ Is user allowed?", isAllowed);
+
+    if (!isAllowed) {
+      console.warn("⛔ Unauthorized access detected, redirecting...");
+      navigate("/unauthorized");
+    }
+  } else {
+    console.log("✅ This route is public or not permission-controlled.");
+  }
+}, [location.pathname, auth, navigate]);
+
+
+
   const unreadCount = notifications.reduce((total, notification) => {
     const count = notification.users.filter(
       (user) =>
@@ -50,19 +93,6 @@ const MainLayout = () => {
     ).length;
     return total + count;
   }, 0);
-
-  // 🔊 Play sound when new unread notification is detected
-  // useEffect(() => {
-  //   const previous = prevUnreadCountRef.current;
-  //   if (unreadCount > previous) {
-  //     notificationAudioRef.current
-  //       .play()
-  //       .catch((e) => console.warn("Audio blocked or failed:", e));
-  //   }
-  //   prevUnreadCountRef.current = unreadCount;
-  // }, [unreadCount]);
-
-  // Detect mobile view
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {

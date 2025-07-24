@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { queryClient } from "../../../main";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
-import PageFrame from "../../../components/Pages/PageFrame";
+import PageFrame from "../../../components/Pages/PageFrame";  
 import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useSelector } from "react-redux";
@@ -116,7 +116,6 @@ const AssetsCategories = () => {
   };
 
   useEffect(() => {
-    console.log("selected Asset : ", selectedAsset);
     setValue("categoryName", selectedAsset?.categoryName);
     setValue("status", selectedAsset?.isActive);
   }, [selectedAsset]);
@@ -181,11 +180,14 @@ const AssetsCategories = () => {
     ? []
     : assetCategories.map((item, index) => {
         const status = item.isActive ? "Active" : "Inactive";
+        const subCategories = item.subCategories.map((sub)=> sub.subCategoryName)
+
         return {
           ...item,
           _id: item._id,
           srNo: index + 1,
           status: status,
+          subCategories
         };
       });
   //--------------------Table Data------------------------------//
@@ -314,8 +316,12 @@ const AssetsCategories = () => {
         {modalMode === "view" && (
           <div className="grid grid-cols-1 gap-4">
             <DetalisFormatted
-              title={"Category Name"}
+              title={"Category"}
               detail={selectedAsset?.categoryName || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Sub Categories"}
+              detail={selectedAsset?.subCategories ? [...selectedAsset.subCategories].join(","): "N/A"}
             />
             <DetalisFormatted
               title={"Department"}

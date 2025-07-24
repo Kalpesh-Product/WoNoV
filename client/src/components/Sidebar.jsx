@@ -32,7 +32,7 @@ import useAuth from "../hooks/useAuth";
 
 const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
-  const [mobileOpen,setMobileOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedModule, setExpandedModule] = useState(0);
@@ -43,7 +43,6 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
     "67b2cf85b9b6ed5cedeb9a2e",
     "6798ba9de469e809084e2494",
   ];
-
 
   useEffect(() => {
     setMobileOpen(drawerOpen);
@@ -72,13 +71,18 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       icon: <FaTasks />,
       route: "tasks",
     },
+    {
+      name: "Assets",
+      icon: <FaBoxesStacked />,
+      route: "assets",
+    },
 
     {
       name: "Performance",
       icon: <FaTasks />,
       route: "performance",
     },
-   
+
     ...(canAccessVisitors
       ? [
           {
@@ -92,7 +96,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const generalItems = [
     { name: "Calendar", icon: <FaRegCalendarAlt />, route: "calendar" },
     { name: "Access", icon: <SiAuthelia />, route: "access" },
-        {
+    {
       name: "Notifications",
       icon: <IoMdNotifications />,
       route: "notifications",
@@ -109,14 +113,8 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       icon: <TbReportSearch />,
       route: "#",
     },
-            {
-      name: "Assets",
-      icon: <FaBoxesStacked />,
-      route: "#",
-    },
- 
-    { name: "Chat", icon: <HiOutlineChatAlt2 />, route: "#" },
 
+    { name: "Chat", icon: <HiOutlineChatAlt2 />, route: "#" },
   ];
 
   const defaultModules = [
@@ -212,7 +210,6 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   // If none match, return the original defaultModules
   const finalModules = hasAnySubmenus ? filteredModules : defaultModules;
 
-
   const handleMenuOpen = (item) => {
     navigate(item.route);
     if (onCloseDrawer) onCloseDrawer(); // 🔁 Close drawer on menu click
@@ -304,7 +301,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                                 ? "text-[#1E3D73]"
                                 : "text-gray-500"
                             }  py-3`}
-                            onClick={() => handleMenuOpen(submenu)} 
+                            onClick={() => handleMenuOpen(submenu)}
                           >
                             <div
                               className={`flex items-center ${

@@ -129,31 +129,33 @@ const YearlyGraph = ({
         TitleAmountGreen={TitleAmountGreen}
         TitleAmountRed={TitleAmountRed}
       >
-        <BarGraph
-          key={selectedYear}
-          data={filteredData}
-          options={updatedOptions}
-          chartId={chartId || ""}
-          responsiveResize={responsiveResize}
-          secondParam={secondParam}
-          height={chartHeight}
-        />
+        <div className="flex flex-col gap-4">
+          <BarGraph
+            key={selectedYear}
+            data={filteredData}
+            options={updatedOptions}
+            chartId={chartId || ""}
+            responsiveResize={responsiveResize}
+            secondParam={secondParam}
+            height={chartHeight}
+          />
 
-        <div className="flex justify-center items-center">
-          <div className="flex items-center pb-4">
-            <SecondaryButton
-              title={<MdNavigateBefore />}
-              handleSubmit={goToPrevYear}
-              disabled={selectedYearIndex === 0}
-            />
-            <div className="text-sm min-w-[120px] text-center">
-              {selectedYear}
+          <div className="flex justify-center items-center">
+            <div className="flex items-center pb-4">
+              <SecondaryButton
+                title={<MdNavigateBefore />}
+                handleSubmit={goToPrevYear}
+                disabled={selectedYearIndex === 0}
+              />
+              <div className="text-sm min-w-[120px] text-center">
+                {selectedYear}
+              </div>
+              <SecondaryButton
+                title={<MdNavigateNext />}
+                handleSubmit={goToNextYear}
+                disabled={selectedYearIndex === fiscalYears.length - 1}
+              />
             </div>
-            <SecondaryButton
-              title={<MdNavigateNext />}
-              handleSubmit={goToNextYear}
-              disabled={selectedYearIndex === fiscalYears.length - 1}
-            />
           </div>
         </div>
       </WidgetSection>

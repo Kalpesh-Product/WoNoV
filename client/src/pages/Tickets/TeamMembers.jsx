@@ -65,6 +65,12 @@ const TeamMembers = () => {
       // cellRenderer: AvatarCellRenderer,
       flex: 1.5,
     },
+    {
+      field: "email",
+      headerName: "Email",
+      // cellRenderer: AvatarCellRenderer,
+      flex: 1.5,
+    },
     { field: "role", headerName: "Role", flex: 1 },
     { field: "department", headerName: "Department", flex: 1 },
     // { field: "assignedToday", headerName: "Assigned Today", flex: 1 },
