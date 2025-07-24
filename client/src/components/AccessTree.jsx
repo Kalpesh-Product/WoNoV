@@ -205,7 +205,7 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel, click = true }) => 
       </span>
       <span className="text-small text-primary">{user.email}</span>
 
-      {/* {user.subordinates && user.subordinates.length > 0 && (
+      {user.subordinates && user.subordinates.length > 0 && (
         <p
           onClick={() => handleSelectUser(user)}
           className="mt-2 text-xs text-primary hover:underline cursor-pointer"
@@ -213,7 +213,7 @@ const HierarchyCard = ({ user, handleSelectUser, isTopLevel, click = true }) => 
           {user.subordinates.length} Subordinate
           {user.subordinates.length > 1 ? "s" : ""}
         </p>
-      )} */}
+      )}
     </div>
   );
 };

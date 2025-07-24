@@ -333,16 +333,18 @@ const AssetsDashboard = () => {
     {
       layout: 2,
       widgets: [
-        <WidgetSection
-          layout={1}
-          title={"Assigned v/s Unassigned Assets"}
-          border
-        >
-          <PieChartMui
-            data={assetAvailabilityData}
-            options={assetAvailabilityOptions}
-          />
-        </WidgetSection>,
+        <Permissions permissions={PERMISSIONS.ASSETS_ASSIGNED_UNASSIGNED}>
+          <WidgetSection
+            layout={1}
+            title={"Assigned v/s Unassigned Assets"}
+            border
+          >
+            <PieChartMui
+              data={assetAvailabilityData}
+              options={assetAvailabilityOptions}
+            />
+          </WidgetSection>
+        </Permissions>,
         <WidgetSection layout={1} title={"Physical v/s Digital Assets"} border>
           <PieChartMui
             data={physicalDigitalPieData}

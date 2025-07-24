@@ -4,6 +4,7 @@ import useAuth from "../../hooks/useAuth";
 const Permissions = ({ permissions, mode = "any", fallback = null, children }) => {
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions || [];
+  console.log("perms : ", userPermissions);
 
   if (!permissions || !Array.isArray(permissions)) return null;
 

@@ -14,17 +14,17 @@ const Unauthorized = () => {
         </p>
         <div className="mt-6 flex flex-col gap-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/app/dashboard')}
             className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-lg transition"
           >
             Go Back
           </button>
-          <button
-            onClick={() => navigate("/app/dashboard/HR-dashboard")}
+          {/* <button
+            onClick={() => navigate("/app/dashboard")}
             className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition"
           >
             Go to Login
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

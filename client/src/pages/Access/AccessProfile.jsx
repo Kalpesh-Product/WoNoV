@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form";
 import { PERMISSIONS } from "../../constants/permissions";
 import Abrar from "../../assets/abrar.jpeg";
 import PrimaryButton from "../../components/PrimaryButton";
+import { toast } from "sonner";
 
 const AccessProfile = () => {
   const location = useLocation();
@@ -59,11 +60,17 @@ const AccessProfile = () => {
       );
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: ["userPermissions", user?._id],
       });
+      toast.success(data.message || "UPDATED");
       setEditing(false);
+      window.location.reload(); // ✅ refresh the page
+    },
+
+    onError: (error) => {
+      toast.error(error.response.data.message);
     },
   });
 
