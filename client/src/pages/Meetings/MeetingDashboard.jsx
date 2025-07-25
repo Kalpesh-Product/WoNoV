@@ -418,11 +418,11 @@ const MeetingDashboard = () => {
 
   const CustomLegend = (
     <div>
-      <ul>
+      <div className="h-64 px-4 overflow-y-scroll">
         {availabilityRooms
           .sort((a, b) => (a.status === "Available" ? 1 : -1))
           .map((room, index) => (
-            <li key={index} className="flex items-center mb-1">
+            <div key={index} className="flex items-center mb-1">
               <span
                 className="w-2 h-2 rounded-full mr-2"
                 style={{
@@ -433,9 +433,9 @@ const MeetingDashboard = () => {
               <span className="text-content text-gray-400">
                 {room.roomName}
               </span>
-            </li>
+            </div>
           ))}
-      </ul>
+      </div>
     </div>
   );
   const BookingMonths = [
@@ -1106,17 +1106,14 @@ const MeetingDashboard = () => {
                   data={RoomPieData}
                   options={RoomOptions}
                   customLegend={CustomLegend}
-                  width={300}
-                  height={300}
                 />
               </WidgetSection>,
               <WidgetSection
                 layout={1}
-                padding
+                
                 border
                 titleLabel={"Today"}
                 title={"Cleaning & Hygiene Status"}
-                height={350}
               >
                 <DonutChart
                   series={housekeepingStatusSeries}
@@ -1125,7 +1122,7 @@ const MeetingDashboard = () => {
                   centerLabel={"Meeting Rooms"}
                   tooltipValue={housekeepingStatusSeries}
                   width={457}
-                  height={400}
+          
                 />
               </WidgetSection>,
             ],

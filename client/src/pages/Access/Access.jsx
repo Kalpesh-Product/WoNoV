@@ -74,10 +74,10 @@ const Access = () => {
   ];
   return (
     <div className="flex flex-col gap-4">
-      <div>
+      {/* <div>
         <AccessTree clickState={true} autoExpandFirst />
-      </div>
-      {/* <PageFrame>
+      </div> */}
+      <PageFrame>
         <div className="h-[35rem]  overflow-hidden">
           <img
             src={hierarchy}
@@ -86,7 +86,7 @@ const Access = () => {
           />
         </div>
       </PageFrame>
-      <PageFrame>
+      {/* <PageFrame>
         <div className="w-full">
           <AgTable
             search={true}

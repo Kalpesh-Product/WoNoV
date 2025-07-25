@@ -52,24 +52,31 @@ const VendorTable = () => {
       field: "vendorName",
       headerName: "Vendor Name",
       flex: 2,
-      cellRenderer: (params) => (
-        <span
-          style={{
-            color: "#1E3D73",
-            textDecoration: "underline",
-            cursor: "pointer",
-          }}
-          onClick={() =>
-            navigate(
-              `/app/dashboard/${departmentName}-dashboard/data/vendor/${params.data.vendorName}`,
-              { state: params.data }
-            )
-          }
-        >
-          {params.value}
-        </span>
-      ),
+      cellRenderer: (params) => {
+        const isEmpty = params.value === "N/A";
+
+        return !isEmpty ? (
+          <span
+            style={{
+              color: "#1E3D73",
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+            onClick={() =>
+              navigate(
+                `/app/dashboard/${departmentName}-dashboard/data/vendor/${params.data.vendorName}`,
+                { state: params.data }
+              )
+            }
+          >
+            {params.value}
+          </span>
+        ) : (
+          <span>{params.value}</span>
+        );
+      },
     },
+
     {
       field: "status",
       headerName: "Status",
@@ -90,9 +97,12 @@ const VendorTable = () => {
         id: index + 1,
         vendorMongoId: vendor._id,
         vendorID: vendor._id.slice(-4).toUpperCase(),
-        vendorName: vendor.name?.includes("/")
-          ? vendor.name.split("/").join("-")
-          : vendor.name,
+        vendorName: vendor.name
+          ? vendor.name.includes("/")
+            ? vendor.name.split("/").join("-")
+            : vendor.name
+          : "N/A",
+
         address: vendor.address,
         state: vendor.state,
         country: vendor.country,
@@ -125,7 +135,7 @@ const VendorTable = () => {
           data={rows}
           columns={vendorColumns}
           buttonTitle={"Add Vendor"}
-          handleClick={()=>navigate("vendor-onboard")}
+          handleClick={() => navigate("vendor-onboard")}
         />
       </PageFrame>
       <MuiModal

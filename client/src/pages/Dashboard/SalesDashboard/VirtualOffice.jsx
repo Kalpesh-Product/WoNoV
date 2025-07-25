@@ -10,6 +10,7 @@ import WidgetTable from "../../../components/Tables/WidgetTable";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import StatusChip from "../../../components/StatusChip";
 import humanDate from "../../../utils/humanDateForamt";
+import FyBarGraph from "../../../components/graphs/FyBarGraph";
 
 const VirtualOffice = () => {
   const axios = useAxiosPrivate();
@@ -30,96 +31,7 @@ const VirtualOffice = () => {
     },
   });
 
-  const monthShortNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  const transformRevenues = (revenues) => {
-    const monthlyMap = new Map();
-
-    revenues.forEach((item, index) => {
-      const rentDate = new Date(item.rentDate);
-      const year = rentDate.getFullYear();
-      const month = rentDate.getMonth(); // 0-indexed
-
-      const monthKey = `${monthShortNames[month]}-${year.toString().slice(-2)}`;
-      const keyDate = new Date(year, month, 1); // Used for sorting
-
-      const actual = item.taxableAmount;
-
-      if (!monthlyMap.has(monthKey)) {
-        monthlyMap.set(monthKey, {
-          id: index + 1,
-          month: monthKey,
-          keyDate, // store for sorting
-          taxable: 0,
-          revenue: [],
-        });
-      }
-
-      const monthData = monthlyMap.get(monthKey);
-      monthData.taxable += actual;
-
-      monthData.revenue.push({
-        id: index + 1,
-        clientName: item.client?.clientName || "N/A",
-        revenue: inrFormat(actual),
-        channel: item.Channel || item.channel,
-        status: item.status === true ? "Paid" : "Unpaid",
-      });
-    });
-
-    return Array.from(monthlyMap.values())
-      .sort((a, b) => a.keyDate - b.keyDate)
-      .map(({ keyDate, ...monthData }) => ({
-        ...monthData,
-        actual: inrFormat(monthData.taxable),
-      }));
-  };
-
-  // Memoize or recompute transformed data only when API data is loaded
-  const transformRevenuesData = useMemo(() => {
-    if (isLoadingVirtualOfficeRevenue || !virtualOfficeRevenue) return [];
-    return transformRevenues(virtualOfficeRevenue);
-  }, [virtualOfficeRevenue, isLoadingVirtualOfficeRevenue]);
-
-  const graphNumbers = transformRevenuesData?.map((item) => {
-    // Remove commas and convert the value to a number
-    return parseFloat(item?.actual.replace(/,/g, ""));
-  });
-
-  console.log("graph numbers : ", graphNumbers);
-
-  const series = [
-    {
-      name: "Revenue",
-      group: "FY 2024-25",
-      data: graphNumbers,
-      dateKey: virtualOfficeRevenue?.[0]?.rentDate, // 👈 add this
-    },
-  ];
-
   const options = {
-    chart: {
-      stacked: false,
-      toolbar: false,
-      fontFamily: "Poppins-Regular",
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
     dataLabels: {
       enabled: true,
       formatter: function (val) {
@@ -132,9 +44,6 @@ const VirtualOffice = () => {
         colors: ["#000"],
       },
       offsetY: -22,
-    },
-    xaxis: {
-      categories: transformRevenuesData.map((item) => item.month),
     },
     yaxis: {
       title: { text: "Amount In Lakhs (INR)" },
@@ -160,16 +69,6 @@ const VirtualOffice = () => {
     colors: ["#11daf5"],
   };
 
-  const totalActual = transformRevenuesData?.reduce(
-    (sum, month) =>
-      sum +
-      month.revenue.reduce(
-        (monthSum, client) => monthSum + parseRevenue(client.revenue),
-        0
-      ),
-    0
-  );
-
   const tableData = isLoadingVirtualOfficeRevenue
     ? []
     : virtualOfficeRevenue.map((item) => ({
@@ -177,17 +76,15 @@ const VirtualOffice = () => {
         clientName: item.client?.clientName,
       }));
 
-  console.log("tableData : ", humanDate("2025-04-10T00:00:00.000Z"));
-
   return (
     <div className="flex flex-col gap-4">
       {!isLoadingVirtualOfficeRevenue ? (
-        <YearlyGraph
-          title={"ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"}
-          titleAmount={`INR ${inrFormat(totalActual)}`}
-          data={series}
-          options={options}
-          dateKey={"dateKey"}
+        <FyBarGraph
+          graphTitle="ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"
+          data={isLoadingVirtualOfficeRevenue ? [] : virtualOfficeRevenue}
+          dateKey="rentDate"
+          valueKey="revenue"
+          chartOptions={options}
         />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
@@ -212,7 +109,9 @@ const VirtualOffice = () => {
               headerName: "Status",
               field: "status",
               flex: 1,
-              cellRenderer: (params) => <StatusChip status={params.value ? "Paid" : "Unpaid"} />,
+              cellRenderer: (params) => (
+                <StatusChip status={params.value ? "Paid" : "Unpaid"} />
+              ),
             },
           ]}
         />

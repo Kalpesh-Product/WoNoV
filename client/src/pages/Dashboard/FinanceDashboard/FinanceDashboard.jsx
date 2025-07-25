@@ -751,7 +751,7 @@ const FinanceDashboard = () => {
       id: "dueDate",
       label: "Due Date",
       width: 130,
-      renderCell: (row) => dayjs(row.dueDate).format("DD MMM YYYY"),
+      renderCell: (row) => humanDate(row.dueDate),
     },
     {
       id: "department",
@@ -908,51 +908,6 @@ const FinanceDashboard = () => {
         </WidgetSection>
       ))}
 
-      {/* <div
-        onClick={() => {
-          navigate(`monthly-P&L`);
-        }}>
-        Monthly P&L
-      </div>
-      <div
-        onClick={() => {
-          navigate(`annual-average-P&L`);
-        }}>
-        Annual Average P&L
-      </div>
-      <div
-        onClick={() => {
-          navigate(`overall-P&L`);
-        }}>
-        Overall P&L
-      </div>
-      <div
-        onClick={() => {
-          navigate(`monthly-per-sq-ft-P&L`);
-        }}>
-        Monthly Per Sq. Ft. P&L
-      </div>
-      <hr />
-      <div
-        onClick={() => {
-          navigate(`cashflow`);
-        }}>
-        Cashflow
-      </div>
-      <hr />
-      <div
-        onClick={() => {
-          navigate(`/app/dashboard/finance-dashboard/data`);
-        }}>
-        Data
-      </div>
-      <hr />
-      <div
-        onClick={() => {
-          navigate(`/app/dashboard/finance-dashboard/settings`);
-        }}>
-        Settings
-      </div> */}
     </div>
   );
 };

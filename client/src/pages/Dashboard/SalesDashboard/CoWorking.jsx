@@ -1,24 +1,12 @@
-import BarGraph from "../../../components/graphs/BarGraph";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   CircularProgress,
 } from "@mui/material";
-import { IoIosArrowDown } from "react-icons/io";
-import AgTable from "../../../components/AgTable";
-import WidgetSection from "../../../components/WidgetSection";
-import dayjs from "dayjs";
-import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
-import YearlyGraph from "../../../components/graphs/YearlyGraph";
-import YearWiseTable from "../../../components/Tables/YearWiseTable";
-import PageFrame from "../../../components/Pages/PageFrame";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
+import FyBarGraph from "../../../components/graphs/FyBarGraph";
 
 const CoWorking = () => {
   const axios = useAxiosPrivate();
@@ -33,43 +21,11 @@ const CoWorking = () => {
       }
     },
   });
-  const fiscalOrder = [
-    "Apr-24",
-    "May-24",
-    "Jun-24",
-    "Jul-24",
-    "Aug-24",
-    "Sep-24",
-    "Oct-24",
-    "Nov-24",
-    "Dec-24",
-    "Jan-25",
-    "Feb-25",
-    "Mar-25",
-  ];
-  const sortedCoWorkingData = [...coWorkingData].sort(
-    (a, b) => fiscalOrder.indexOf(a.month) - fiscalOrder.indexOf(b.month)
-  );
-  const series = [
-    {
-      name: "Actual Revenue",
-      group: "FY 2024-25",
-      data: sortedCoWorkingData.map((item) =>
-        item.clients?.reduce((sum, c) => sum + c.revenue, 0)
-      ),
-    },
-  ];
+  const graphData = isCoWorkingLoading
+    ? []
+    : coWorkingData.flatMap((item) => item.clients);
 
   const options = {
-    chart: {
-      stacked: false,
-      toolbar: false,
-      fontFamily: "Poppins-Regular",
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
     dataLabels: {
       enabled: true,
       formatter: function (val) {
@@ -81,9 +37,6 @@ const CoWorking = () => {
         colors: ["#000"],
       },
       offsetY: -22,
-    },
-    xaxis: {
-      categories: sortedCoWorkingData.map((item) => item.month),
     },
     yaxis: {
       title: { text: "Amount In Lakhs (INR)" },
@@ -108,7 +61,6 @@ const CoWorking = () => {
     },
     colors: ["#1E3D73"],
   };
-  const totalActual = coWorkingData.reduce((sum, c) => sum + c.totalRevenue, 0);
 
   const tableData = isCoWorkingLoading
     ? []
@@ -134,11 +86,18 @@ const CoWorking = () => {
   return (
     <div className="flex flex-col gap-4">
       {!isCoWorkingLoading ? (
-        <YearlyGraph
-          title={"ANNUAL MONTHLY CO WORKING REVENUES"}
-          titleAmount={`INR ${inrFormat(totalActual)}`}
-          data={series}
-          options={options}
+        // <YearlyGraph
+        //   title={"ANNUAL MONTHLY CO WORKING REVENUES"}
+        //   titleAmount={`INR ${inrFormat(totalActual)}`}
+        //   data={series}
+        //   options={options}
+        // />
+        <FyBarGraph
+          data={graphData}
+          chartOptions={options}
+          dateKey="rentDate"
+          valueKey="revenue"
+          graphTitle="ANNUAL MONTHLY CO WORKING REVENUES"
         />
       ) : (
         <div className="h-72 flex justify-center items-center">
