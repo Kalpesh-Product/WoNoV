@@ -9,6 +9,7 @@ import MonthWiseAgTable from "../../../../components/Tables/MonthWiseAgTable";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import FyBarGraph from "../../../../components/graphs/FyBarGraph";
+import FyBarGraphPercentage from "../../../../components/graphs/FyBarGraphPercentage";
 
 const IncomeDetails = () => {
   const axios = useAxiosPrivate();
@@ -88,12 +89,14 @@ const IncomeDetails = () => {
     return flatten;
   }, [simpleRevenue]);
 
+  console.log("unified data : ", unifiedRevenueData);
+
   const filteredByYear = totalRevenue?.map((item) => ({
     name: item.name,
     data: item.data[selectedYear] || [],
   }));
 
-  const normalizedData = filteredByYear.map((domain) => ({
+  const normalizedData = filteredByYear?.map((domain) => ({
     name: domain.name,
     data: domain.data.map((val, idx) => {
       const totalThisMonth = filteredByYear.reduce(
@@ -103,55 +106,7 @@ const IncomeDetails = () => {
       return totalThisMonth ? Math.round((val / totalThisMonth) * 100) : 0;
     }),
   }));
-
   const options = {
-    chart: {
-      toolbar: false,
-      stacked: true,
-      fontFamily: "Poppins-Regular",
-    },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-      title: { text: "" },
-    },
-    yaxis: {
-      max: 100,
-      labels: {
-        formatter: (val) => `${val}%`,
-      },
-    },
-    tooltip: {
-      y: {
-        formatter: function (val, { seriesIndex, dataPointIndex }) {
-          const actualVal = filteredByYear[seriesIndex]?.data?.[dataPointIndex];
-          return actualVal ? `INR ${actualVal.toLocaleString()}` : "No data";
-        },
-      },
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "40%",
-        borderRadius: 5,
-      },
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
     colors: [
       "#1E3D73", // Dark Blue (Co-Working)
       "#2196F3", // Bright Blue (Meetings)
@@ -159,22 +114,8 @@ const IncomeDetails = () => {
       "#00BCD4", // Cyan Blue (Workation)
       "#1976D2", // Medium Blue (Alt Revenues)
     ],
-    dataLabels: {
-      enabled: true,
-      formatter: function (val) {
-        return `${val}%`;
-      },
-      style: {
-        fontSize: "10px",
-        fontWeight: "bold",
-        colors: ["#fff"],
-      },
-    },
   };
-
-  const totalAnnualRevenue = filteredByYear.reduce((sum, domain) => {
-    return sum + domain.data.reduce((acc, monthVal) => acc + monthVal, 0);
-  }, 0);
+  console.log("unified rev data : ", unifiedRevenueData);
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -183,14 +124,13 @@ const IncomeDetails = () => {
           <CircularProgress />
         </div>
       ) : (
-        <WidgetSection
-          layout={1}
-          title={"Annual Monthly Mix Income FY 2024-25"}
-          border
-          TitleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
-        >
-          <BarGraph height={400} data={normalizedData} options={options} />
-        </WidgetSection>
+        <FyBarGraphPercentage
+          data={isTotalLoading ? [] : unifiedRevenueData}
+          dateKey="date"
+          valueKey="revenue"
+          graphTitle="ANNUAL MONTHLY MIX INCOME"
+          chartOptions={options}
+        />
       )}
 
       <WidgetTable

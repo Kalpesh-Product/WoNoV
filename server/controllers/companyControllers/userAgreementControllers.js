@@ -6,9 +6,9 @@ const UserData = require("../../models/hr/UserData");
 
 const getAgreements = async (req, res, next) => {
   try {
-    const { user } = req.params;
-    if (user) {
-      const agreements = await Agreements.find({ user }).lean().exec();
+    const { userId } = req.params;
+    if (userId) {
+      const agreements = await Agreements.find({ user: userId }).lean().exec();
       return res.status(200).json(agreements);
     }
     const agreements = await Agreements.find().lean().exec();

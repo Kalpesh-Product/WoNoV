@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import dayjs from "dayjs";
+import { inrFormat } from "../../utils/currencyFormat";
 import SecondaryButton from "../SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import WidgetSection from "../WidgetSection";
-import { inrFormat } from "../../utils/currencyFormat";
 
 const getFinancialYear = (dateStr) => {
   const date = dayjs(dateStr);
@@ -36,10 +36,11 @@ const getMonthsWithYearLabels = (fyLabel) => {
   ];
 };
 
-const FyBarGraph = ({
+const FyBarGraphPercentage = ({
   data = [],
   dateKey = "date",
   valueKey = "revenue",
+  totalValue,
   chartOptions = {},
   graphTitle = "",
 }) => {
@@ -71,10 +72,13 @@ const FyBarGraph = ({
     );
   }, [data, selectedFY, dateKey]);
 
-  const stackedSeries = useMemo(() => {
-    if (!selectedFY) return [];
-    const base = {};
+  const { stackedSeries, rawDataMap, monthlyTotals } = useMemo(() => {
+    if (!selectedFY)
+      return { stackedSeries: [], rawDataMap: {}, monthlyTotals: {} };
+
     const months = getMonthsWithYearLabels(selectedFY);
+    const monthlyTotals = {};
+    const base = {};
 
     filteredData.forEach((item) => {
       const date = dayjs(item?.[dateKey]);
@@ -86,17 +90,34 @@ const FyBarGraph = ({
 
       const label = match.label;
       const vertical = item?.vertical || "Unknown";
+      const value = parseFloat(item?.[valueKey]) || 0;
 
       if (!base[vertical]) base[vertical] = {};
-      base[vertical][label] =
-        (base[vertical][label] || 0) + (parseFloat(item?.[valueKey]) || 0);
+      base[vertical][label] = (base[vertical][label] || 0) + value;
+      monthlyTotals[label] = (monthlyTotals[label] || 0) + value;
     });
 
-    return Object.entries(base).map(([vertical, monthData]) => ({
-      name: vertical,
-      data: months.map(({ label }) => monthData[label] || 0),
-    }));
-  }, [filteredData, selectedFY, valueKey, dateKey]);
+    const rawDataMap = {};
+    const stackedSeries = Object.entries(base).map(([vertical, monthData]) => {
+      const raw = months.map(({ label }) => monthData[label] || 0);
+      rawDataMap[vertical] = raw;
+
+      const data = raw.map((val, i) => {
+        const label = months[i].label;
+        let total =
+          typeof totalValue === "function"
+            ? totalValue(label)
+            : typeof totalValue === "number"
+            ? totalValue
+            : monthlyTotals[label] || 1;
+        return parseFloat(((val / total) * 100).toFixed(2));
+      });
+
+      return { name: vertical, data };
+    });
+
+    return { stackedSeries, rawDataMap, monthlyTotals };
+  }, [filteredData, selectedFY, valueKey, dateKey, totalValue]);
 
   const mergedChartOptions = useMemo(() => {
     return {
@@ -114,31 +135,63 @@ const FyBarGraph = ({
           columnWidth: "40%",
         },
       },
-      dataLabels: { enabled: false },
+      dataLabels: {
+        enabled: true,
+        formatter: function (val) {
+          return `${(val).toFixed(0)}%`;
+        },
+        style: {
+          fontSize: "12px",
+          fontWeight: "bold",
+          colors: ["#fff"],
+        },
+      },
       xaxis: {
         categories: monthsWithLabels.map((m) => m.label),
       },
       yaxis: {
+        max: 100,
         labels: {
-          formatter: (val) =>
-            typeof val === "number" ? val.toLocaleString("en-IN") : "0",
+          formatter: (val) => `${val.toFixed(0)}%`,
         },
       },
       legend: {
         position: "top",
       },
+      tooltip: {
+        shared: false,
+        custom: ({ series, dataPointIndex, w }) => {
+          const monthLabel = w.globals.categoryLabels[dataPointIndex];
+          let tooltipHtml = `<div class="apex-tooltip-title">${monthLabel}</div>`;
+          let total = 0;
+
+          w.globals.seriesNames.forEach((seriesName, i) => {
+            const percentVal = series[i][dataPointIndex];
+            const rawVal = rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
+            total += rawVal;
+
+            tooltipHtml += `
+              <div style="display: flex; justify-content: space-between; gap: 40px;">
+                <span style="color: ${
+                  w.globals.colors[i]
+                }; font-weight: 500;">${seriesName}</span>
+                <span>${inrFormat(rawVal)}</span>
+              </div>`;
+          });
+
+          tooltipHtml += `<hr style="margin-top: 6px;"/>
+            <div style="text-align: right; font-weight: 600;">Total: INR ${inrFormat(
+              total
+            )}</div>`;
+
+          return `<div class="apex-tooltip-custom" style="padding : 10px">${tooltipHtml}</div>`;
+        },
+      },
+
       colors: ["#1E3D73", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
       ...chartOptions,
     };
-  }, [monthsWithLabels, chartOptions]);
-  const fyTotal = useMemo(() => {
-    return stackedSeries.reduce((total, vertical) => {
-      return (
-        total +
-        vertical.data.reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
-      );
-    }, 0);
-  }, [stackedSeries]);
+  }, [monthsWithLabels, chartOptions, rawDataMap]);
 
   if (fyOptions.length === 0) {
     return (
@@ -152,7 +205,9 @@ const FyBarGraph = ({
     <WidgetSection
       border
       title={`${graphTitle} ${selectedFY}`}
-      TitleAmount={`INR ${inrFormat(fyTotal)}`}
+      TitleAmount={`INR ${inrFormat(
+        Object.values(monthlyTotals).reduce((sum, val) => sum + val, 0)
+      )}`}
     >
       <div className="flex flex-col gap-4 rounded-md">
         <Chart
@@ -184,4 +239,4 @@ const FyBarGraph = ({
   );
 };
 
-export default FyBarGraph;
+export default FyBarGraphPercentage;

@@ -23,6 +23,8 @@ import {
   setTotalIncome,
 } from "../../../redux/slices/financeSlice";
 import humanDate from "../../../utils/humanDateForamt";
+import { PERMISSIONS } from "../../../constants/permissions";
+import useAuth from "../../../hooks/useAuth";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -32,8 +34,56 @@ const FinanceDashboard = () => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
 
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
   const navigate = useNavigate();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+
+  //------------------------PAGE ACCESS START-------------------//
+  const cardsConfig = [
+    {
+      route: "cashflow",
+      title: "Cashflow",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.FINANCE_CASHFLOW.value,
+    },
+    {
+      route: "finance",
+      title: "Finance",
+      icon: <SiCashapp />,
+      permission: PERMISSIONS.FINANCE_FINANCE.value,
+    },
+    {
+      route: "billing",
+      title: "Billing",
+      icon: <SiCashapp />,
+      permission: PERMISSIONS.FINANCE_BILLING.value,
+    },
+    {
+      route: "mix-bag",
+      title: "Mix-Bag",
+      icon: <SiGoogleadsense />,
+      permission: PERMISSIONS.FINANCE_MIX_BAG.value,
+    },
+    {
+      route: "/app/dashboard/finance-dashboard/data",
+      title: "Data",
+      icon: <SiGoogleadsense />,
+      permission: PERMISSIONS.FINANCE_DATA.value,
+    },
+    {
+      route: "/app/dashboard/finance-dashboard/settings",
+      title: "Settings",
+      icon: <MdOutlineMiscellaneousServices />,
+      permission: PERMISSIONS.FINANCE_SETTINGS.value,
+    },
+  ];
+
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS END-------------------//
 
   const axios = useAxiosPrivate();
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
@@ -751,7 +801,7 @@ const FinanceDashboard = () => {
       id: "dueDate",
       label: "Due Date",
       width: 130,
-      renderCell: (row) => dayjs(row.dueDate).format("DD MMM YYYY"),
+      renderCell: (row) => humanDate(row.dueDate),
     },
     {
       id: "department",
@@ -801,28 +851,39 @@ const FinanceDashboard = () => {
         />,
       ],
     },
+    // {
+    //   layout: 6,
+    //   widgets: [
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Cashflow"
+    //       route={"cashflow"}
+    //     />,
+    //     <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
+    //     <Card icon={<SiCashapp />} title="Billing" route={"billing"} />,
+    //     <Card icon={<SiGoogleadsense />} title="Mix-Bag" route={"mix-bag"} />,
+    //     <Card
+    //       icon={<SiGoogleadsense />}
+    //       title="Data"
+    //       route={"/app/dashboard/finance-dashboard/data"}
+    //     />,
+    //     <Card
+    //       icon={<MdOutlineMiscellaneousServices />}
+    //       title="Settings"
+    //       route={"/app/dashboard/finance-dashboard/settings"}
+    //     />,
+    //   ],
+    // },
     {
-      layout: 6,
-      widgets: [
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
         <Card
-          icon={<MdFormatListBulleted />}
-          title="Cashflow"
-          route={"cashflow"}
-        />,
-        <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
-        <Card icon={<SiCashapp />} title="Billing" route={"billing"} />,
-        <Card icon={<SiGoogleadsense />} title="Mix-Bag" route={"mix-bag"} />,
-        <Card
-          icon={<SiGoogleadsense />}
-          title="Data"
-          route={"/app/dashboard/finance-dashboard/data"}
-        />,
-        <Card
-          icon={<MdOutlineMiscellaneousServices />}
-          title="Settings"
-          route={"/app/dashboard/finance-dashboard/settings"}
-        />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
 
     {
@@ -888,10 +949,11 @@ const FinanceDashboard = () => {
           columns={marchPaymentColumns}
           rows={march2025Payments.map((item, index) => {
             return {
-            srNo: index + 1,
-            ...item,
-            dueDate: item.dueDate
-          }})}
+              srNo: index + 1,
+              ...item,
+              dueDate: item.dueDate,
+            };
+          })}
           rowKey="_id"
           scroll={true}
           rowsToDisplay={march2025Payments.length}
@@ -908,51 +970,6 @@ const FinanceDashboard = () => {
         </WidgetSection>
       ))}
 
-      {/* <div
-        onClick={() => {
-          navigate(`monthly-P&L`);
-        }}>
-        Monthly P&L
-      </div>
-      <div
-        onClick={() => {
-          navigate(`annual-average-P&L`);
-        }}>
-        Annual Average P&L
-      </div>
-      <div
-        onClick={() => {
-          navigate(`overall-P&L`);
-        }}>
-        Overall P&L
-      </div>
-      <div
-        onClick={() => {
-          navigate(`monthly-per-sq-ft-P&L`);
-        }}>
-        Monthly Per Sq. Ft. P&L
-      </div>
-      <hr />
-      <div
-        onClick={() => {
-          navigate(`cashflow`);
-        }}>
-        Cashflow
-      </div>
-      <hr />
-      <div
-        onClick={() => {
-          navigate(`/app/dashboard/finance-dashboard/data`);
-        }}>
-        Data
-      </div>
-      <hr />
-      <div
-        onClick={() => {
-          navigate(`/app/dashboard/finance-dashboard/settings`);
-        }}>
-        Settings
-      </div> */}
     </div>
   );
 };

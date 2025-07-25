@@ -24,12 +24,63 @@ import dayjs from "dayjs";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
+import useAuth from "../../../hooks/useAuth";
+import { PERMISSIONS } from "./../../../constants/permissions";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const department = usePageDepartment();
   const axios = useAxiosPrivate();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
+  //------------------------PAGE ACCESS START-------------------//
+  const cardsConfig = [
+    {
+      route: "/app/dashboard/maintenance-dashboard/annual-expenses",
+      title: "Annual Expenses",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.MAINTENANCE_ANNUAL_EXPENSES.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/inventory",
+      title: "Inventory",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.MAINTENANCE_INVENTORY.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/finance",
+      title: "Finance",
+      icon: <SiCashapp />,
+      permission: PERMISSIONS.MAINTENANCE_FINANCE.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/mix-bag",
+      title: "Mix Bag",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.MAINTENANCE_MIX_BAG.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/data",
+      title: "Data",
+      icon: <SiGoogleadsense />,
+      permission: PERMISSIONS.MAINTENANCE_DATA.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/settings",
+      title: "Settings",
+      icon: <MdOutlineMiscellaneousServices />,
+      permission: PERMISSIONS.MAINTENANCE_SETTINGS.value,
+    },
+  ];
+
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS END-------------------//
+
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["maintainance-budget"],
     queryFn: async () => {
@@ -45,59 +96,58 @@ const MaintainanceDashboard = () => {
     },
   });
 
-
   //------------------------Graph round functions-------------------//
-    const expenseSeries = useMemo(() => {
-      // Initialize monthly buckets
-      const months = Array.from({ length: 12 }, (_, index) =>
-        dayjs(`2024-04-01`).add(index, "month").format("MMM")
-      );
-  
-      const fyData = {
-        "FY 2024-25": Array(12).fill(0),
-        "FY 2025-26": Array(12).fill(0),
-      };
-  
-      hrFinance.forEach((item) => {
-        const date = dayjs(item.dueDate);
-        const year = date.year();
-        const monthIndex = date.month(); // 0 = Jan, 11 = Dec
-  
-        if (year === 2024 && monthIndex >= 3) {
-          // Apr 2024 to Dec 2024 (month 3 to 11)
-          fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-        } else if (year === 2025) {
-          if (monthIndex <= 2) {
-            // Jan to Mar 2025 (months 0–2)
-            fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-          } else if (monthIndex >= 3) {
-            // Apr 2025 to Dec 2025 (months 3–11)
-            fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-          }
-        } else if (year === 2026 && monthIndex <= 2) {
-          // Jan to Mar 2026
-          fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-        }
-      });
-  
-      return [
-        {
-          name: "total",
-          group: "FY 2024-25",
-          data: fyData["FY 2024-25"],
-        },
-        {
-          name: "total",
-          group: "FY 2025-26",
-          data: fyData["FY 2025-26"],
-        },
-      ];
-    }, [hrFinance]);
-  
-    const maxExpenseValue = Math.max(
-      ...expenseSeries.flatMap((series) => series.data)
+  const expenseSeries = useMemo(() => {
+    // Initialize monthly buckets
+    const months = Array.from({ length: 12 }, (_, index) =>
+      dayjs(`2024-04-01`).add(index, "month").format("MMM")
     );
-    const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+
+    const fyData = {
+      "FY 2024-25": Array(12).fill(0),
+      "FY 2025-26": Array(12).fill(0),
+    };
+
+    hrFinance.forEach((item) => {
+      const date = dayjs(item.dueDate);
+      const year = date.year();
+      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+
+      if (year === 2024 && monthIndex >= 3) {
+        // Apr 2024 to Dec 2024 (month 3 to 11)
+        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+      } else if (year === 2025) {
+        if (monthIndex <= 2) {
+          // Jan to Mar 2025 (months 0–2)
+          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+        } else if (monthIndex >= 3) {
+          // Apr 2025 to Dec 2025 (months 3–11)
+          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+        }
+      } else if (year === 2026 && monthIndex <= 2) {
+        // Jan to Mar 2026
+        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+      }
+    });
+
+    return [
+      {
+        name: "total",
+        group: "FY 2024-25",
+        data: fyData["FY 2024-25"],
+      },
+      {
+        name: "total",
+        group: "FY 2025-26",
+        data: fyData["FY 2025-26"],
+      },
+    ];
+  }, [hrFinance]);
+
+  const maxExpenseValue = Math.max(
+    ...expenseSeries.flatMap((series) => series.data)
+  );
+  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
   //------------------------Graph round functions-------------------//
   //----------------------Monthly average-----------------------//
   //----------------------KPA Data-----------------------//
@@ -281,8 +331,8 @@ const MaintainanceDashboard = () => {
     },
 
     yaxis: {
-      min : 0,
-      tickAmount : 4,
+      min: 0,
+      tickAmount: 4,
       max: roundedMax,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
@@ -779,8 +829,7 @@ const MaintainanceDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
@@ -797,40 +846,51 @@ const MaintainanceDashboard = () => {
         </Suspense>,
       ],
     },
+    // {
+    //   layout: 6,
+    //   widgets: [
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Annual Expenses"
+    //       route={"/app/dashboard/maintenance-dashboard/annual-expenses"}
+    //     />,
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Inventory"
+    //       route={"/app/dashboard/maintenance-dashboard/inventory"}
+    //     />,
+    //     <Card
+    //       icon={<SiCashapp />}
+    //       title="Finance"
+    //       route={"/app/dashboard/maintenance-dashboard/finance"}
+    //     />,
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Mix-Bag"
+    //       route={"/app/dashboard/maintenance-dashboard/mix-bag"}
+    //     />,
+    //     <Card
+    //       icon={<SiGoogleadsense />}
+    //       title="Data"
+    //       route={"/app/dashboard/maintenance-dashboard/data"}
+    //     />,
+    //     <Card
+    //       icon={<MdOutlineMiscellaneousServices />}
+    //       title="Settings"
+    //       route={"/app/dashboard/maintenance-dashboard/settings"}
+    //     />,
+    //   ],
+    // },
     {
-      layout: 6,
-      widgets: [
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
         <Card
-          icon={<MdFormatListBulleted />}
-          title="Annual Expenses"
-          route={"/app/dashboard/maintenance-dashboard/annual-expenses"}
-        />,
-        <Card
-          icon={<MdFormatListBulleted />}
-          title="Inventory"
-          route={"/app/dashboard/maintenance-dashboard/inventory"}
-        />,
-        <Card
-          icon={<SiCashapp />}
-          title="Finance"
-          route={"/app/dashboard/maintenance-dashboard/finance"}
-        />,
-        <Card
-          icon={<MdFormatListBulleted />}
-          title="Mix-Bag"
-          route={"/app/dashboard/maintenance-dashboard/mix-bag"}
-        />,
-        <Card
-          icon={<SiGoogleadsense />}
-          title="Data"
-          route={"/app/dashboard/maintenance-dashboard/data"}
-        />,
-        <Card
-          icon={<MdOutlineMiscellaneousServices />}
-          title="Settings"
-          route={"/app/dashboard/maintenance-dashboard/settings"}
-        />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
     {
       layout: 3,

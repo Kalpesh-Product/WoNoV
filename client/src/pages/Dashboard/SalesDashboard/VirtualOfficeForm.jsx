@@ -14,7 +14,7 @@ import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import PageFrame from "../../../components/Pages/PageFrame";
 
-const ClientOnboarding = () => {
+const VirtualOfficeForm = () => {
   const {
     control,
     handleSubmit,
@@ -49,9 +49,6 @@ const ClientOnboarding = () => {
       hOPocName: "",
       hOPocEmail: "",
       hOPocPhone: "",
-      invoiceCompanyName: "",
-      tenure: "",
-      securityDeposit: 0,
     },
   });
   const clientsData = useSelector((state) => state.sales.clientsData);
@@ -164,12 +161,12 @@ const ClientOnboarding = () => {
         <div className="flex flex-col gap-4 overflow-y-auto">
           <div>
             <span className="text-title uppercase text-primary font-pmedium">
-              client onboarding
+              virtual-office client onboarding
             </span>
           </div>
           <form onSubmit={handleSubmit(onSubmit)} className="">
             <div className="flex gap-4"></div>
-            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 {/* Section: Basic Information */}
                 <div className="py-4 border-b-default border-borderGray">
@@ -326,7 +323,7 @@ const ClientOnboarding = () => {
                   </div>
                 </div>
               </div>
-              <div className="col-span-2">
+              <div>
                 {/* Section: Job Information */}
                 <div className="py-4 border-b-default border-borderGray">
                   <span className="text-subtitle font-pmedium">
@@ -732,65 +729,10 @@ const ClientOnboarding = () => {
                   </div>
                 </div>
               </div>
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Other Details
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  <Controller
-                    name="invoiceCompanyName"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Invoice Company Name"
-                        error={!!errors.invoiceCompanyName}
-                        helperText={errors.invoiceCompanyName?.message}
-                        fullWidth
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="tenure"
-                    control={control}
-                    rules={{ required: "Tenure is required" }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        type="number"
-                        label="Tenure"
-                        error={!!errors.tenure}
-                        helperText={errors.tenure?.message}
-                        fullWidth
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="securityDeposit"
-                    control={control}
-                    rules={{ required: "Security Deposit is required" }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        type="number"
-                        label="Security Deposit"
-                        error={!!errors.securityDeposit}
-                        helperText={errors.securityDeposit?.message}
-                        fullWidth
-                      />
-                    )}
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Submit Button */}
-            <div className="flex items-center justify-center gap-4 mt-4">
+            {/* <div className="flex items-center justify-center gap-4 mt-4">
               <PrimaryButton
                 type="submit"
                 title={"Submit"}
@@ -798,7 +740,7 @@ const ClientOnboarding = () => {
                 disabled={isMutateClientPending}
               />
               <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
-            </div>
+            </div> */}
           </form>
         </div>
       </PageFrame>
@@ -806,4 +748,4 @@ const ClientOnboarding = () => {
   );
 };
 
-export default ClientOnboarding;
+export default VirtualOfficeForm;

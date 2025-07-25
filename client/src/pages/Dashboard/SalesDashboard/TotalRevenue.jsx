@@ -8,6 +8,7 @@ import { CircularProgress } from "@mui/material";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentage";
 
 const TotalRevenue = () => {
   const axios = useAxiosPrivate();
@@ -37,6 +38,7 @@ const TotalRevenue = () => {
       }
     },
   });
+
 
   const months = [
     "Apr-24",
@@ -101,37 +103,7 @@ const TotalRevenue = () => {
       stacked: true,
       fontFamily: "Poppins-Regular",
     },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-      title: { text: "" },
-    },
-    yaxis: {
-      max: 100,
-      labels: {
-        formatter: (val) => `${val}%`,
-      },
-    },
-    // tooltip: {
-    //   y: {
-    //     formatter: function (val, { seriesIndex, dataPointIndex }) {
-    //       const actualVal = filteredByYear[seriesIndex]?.data?.[dataPointIndex];
-    //       return actualVal ? `INR ${actualVal.toLocaleString()}` : "No data";
-    //     },
-    //   },
-    // },
+
     tooltip: {
       shared: true,
       intersect: false,
@@ -221,17 +193,6 @@ const TotalRevenue = () => {
       "#00BCD4", // Cyan Blue (Workation)
       "#1976D2", // Medium Blue (Alt Revenues)
     ],
-    dataLabels: {
-      enabled: true,
-      formatter: function (val) {
-        return `${val}%`;
-      },
-      style: {
-        fontSize: "10px",
-        fontWeight: "bold",
-        colors: ["#fff"],
-      },
-    },
   };
   const unifiedRevenueData = useMemo(() => {
     if (!simpleRevenue) return [];
@@ -299,8 +260,6 @@ const TotalRevenue = () => {
     }));
   }, [unifiedRevenueData]);
 
-  console.log("revenueByVertical : ", revenueByVertical);
-
   const totalAnnualRevenue = useMemo(() => {
     return revenueByVertical.reduce(
       (sum, item) => sum + parseFloat(item.revenue.replace(/,/g, "")),
@@ -315,12 +274,12 @@ const TotalRevenue = () => {
           <CircularProgress />
         </div>
       ) : (
-        <YearlyGraph
-          title={"ANNUAL MONTHLY MIX REVENUES"}
-          titleAmount={`INR ${inrFormat(totalAnnualRevenue)}`}
-          data={normalizedData}
-          options={options}
-          dateKey={"dateKey"}
+        <FyBarGraphPercentage
+          data={isTotalLoading ? [] : unifiedRevenueData}
+          dateKey="date"
+          valueKey="revenue"
+          graphTitle="ANNUAL MONTHLY MIX INCOME"
+          chartOptions={options}
         />
       )}
 
