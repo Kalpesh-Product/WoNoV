@@ -5,6 +5,10 @@ const subCategorySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+    },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "AssetCategory",
