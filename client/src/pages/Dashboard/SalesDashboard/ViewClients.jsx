@@ -81,7 +81,7 @@ console.log("data ", unifiedClients);
       id: 3,
       name: "Meetings",
       value: clientCounts.meetingClients,
-      route: "/app/dashboard/sales-dashboard/mix-bag/clients/workation",
+      route: " ",
     },
   ];
 

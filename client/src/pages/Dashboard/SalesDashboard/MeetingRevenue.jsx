@@ -8,6 +8,8 @@ import { CircularProgress } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentage";
+import FyBarGraph from "../../../components/graphs/FyBarGraph";
 
 const MeetingRevenue = () => {
   const axios = useAxiosPrivate();
@@ -25,30 +27,13 @@ const MeetingRevenue = () => {
     },
   });
 
+  const graphData = isMeetingsLoading
+    ? []
+    : meetingsData.flatMap((item) => item.revenue);
+
   const hasData = Array.isArray(meetingsData) && meetingsData.length > 0;
 
-  const series = hasData
-    ? [
-        {
-          name: "Actual Revenue",
-          group: "FY 2024-25",
-          data: meetingsData.map((item) =>
-            item?.revenue?.reduce((sum, c) => sum + (c.taxable || 0), 0)
-          ),
-        },
-      ]
-    : [];
-
   const options = {
-    chart: {
-      stacked: false,
-      toolbar: false,
-      fontFamily: "Poppins-Regular",
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
     dataLabels: {
       enabled: true,
       formatter: (val) => `${inrFormat(val)}`,
@@ -84,11 +69,6 @@ const MeetingRevenue = () => {
     colors: ["#2196F3"],
   };
 
-  const totalActual = meetingsData.reduce(
-    (sum, month) =>
-      sum + month?.revenue?.reduce((s, c) => s + (c.taxable || 0), 0),
-    0
-  );
 
   const tableData = meetingsData.map((monthData, index) => ({
     revenue: monthData?.revenue?.map((client, i) => ({
@@ -99,7 +79,7 @@ const MeetingRevenue = () => {
       gst: client.gst ?? 0,
       totalAmount: client.totalAmount ?? 0,
       date: client.date,
-      paymentDate: (client.paymentDate),
+      paymentDate: client.paymentDate,
       remarks: client.remarks || "-",
     })),
   }));
@@ -122,11 +102,12 @@ const MeetingRevenue = () => {
         </div>
       ) : (
         <>
-          <YearlyGraph
-            title={"ANNUAL MONTHLY MEETINGS REVENUES"}
-            titleAmount={`INR ${inrFormat(totalActual)}`}
-            data={series}
-            options={options}
+          <FyBarGraph
+          data={graphData}
+          dateKey="date"
+          valueKey="taxable"
+          graphTitle="ANNUAL MONTHLY MEETINGS REVENUES"
+          chartOptions={options}
           />
 
           <WidgetTable

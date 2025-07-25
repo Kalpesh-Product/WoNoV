@@ -108,11 +108,11 @@ const IncomeDetails = () => {
   }));
   const options = {
     colors: [
-      "#4FC3F7", // Light Sky Blue (Virtual Office)
-      "#29B6F6", // Clear Cyan Blue (Workation)
-      "#039BE5", // Bright Blue (Meetings)
-      "#0288D1", // Strong Medium Blue (Alt Revenues)
-      "#01579B", // Deep Navy Blue (Co-Working)
+      "#1E3D73", // Dark Blue (Co-Working)
+      "#2196F3", // Bright Blue (Meetings)
+      "#11daf5", // Light Mint Green (Virtual Office)
+      "#00BCD4", // Cyan Blue (Workation)
+      "#1976D2", // Medium Blue (Alt Revenues)
     ],
   };
   console.log("unified rev data : ", unifiedRevenueData);

@@ -394,6 +394,7 @@ import CoWorkingClients from "../pages/Dashboard/SalesDashboard/ViewClients/CoWo
 import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/WorkationClients";
 import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
 import LogPage from "../pages/LogPage";
+import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
 
 export const routes = createBrowserRouter([
   {
@@ -1490,39 +1491,21 @@ export const routes = createBrowserRouter([
                           },
                         ],
                       },
-                      // {
-                      //   path: "clients/:clientName",
-                      //   element: <ViewClientLayout />,
-                      //   children: [
-                      //     {
-                      //       path: "client-details",
-                      //       element: <ClientDetails />,
-                      //     },
-                      //     {
-                      //       path: "desks",
-                      //       element: <Desks />,
-                      //     },
-                      //     {
-                      //       path: "revenue",
-                      //       element: <ClientRevenue />,
-                      //     },
-                      //     {
-                      //       path: "members",
-                      //       element: <ClientMembers />,
-                      //     },
-                      //     {
-                      //       path: "members/view-member/:id",
-                      //       element: <MemberDetails />,
-                      //     },
-                      //   ],
-                      // },
                       {
-                        path: "mix-bag/clients/client-onboarding",
+                        path: "mix-bag/clients/co-working/client-onboarding",
                         element: <ClientOnboarding />,
                       },
                       {
-                        path: "clients/client-onboarding",
+                        path: "clients/co-working/client-onboarding",
                         element: <ClientOnboarding />,
+                      },
+                      {
+                        path: "mix-bag/clients/virtual-office/client-onboarding",
+                        element: <VirtualOfficeForm />,
+                      },
+                      {
+                        path: "clients/virtual-office/client-onboarding",
+                        element: <VirtualOfficeForm />,
                       },
                       {
                         path: "mix-bag/manage-units",

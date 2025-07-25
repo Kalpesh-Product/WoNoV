@@ -238,12 +238,12 @@ const MeetingSettings = () => {
                     <span className="text-subtitle">{room.name}</span>
                     <span
                       className={`px-4 py-1 text-content font-pregular rounded-full ${
-                        room.status === "Available"
+                        room.isActive 
                           ? "bg-green-100 text-green-600"
                           : "bg-red-100 text-red-600"
                       }`}
                     >
-                      {room.status}
+                      {room.isActive ? "Active" : "Inactive"}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 mb-4 text-gray-500">

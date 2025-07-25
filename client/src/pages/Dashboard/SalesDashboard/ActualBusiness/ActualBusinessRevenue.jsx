@@ -76,6 +76,7 @@ const ActualBusinessRevenue = () => {
   const formattedData = transformRevenueData(totalRevenue);
   const groupedRevenue = groupByMonth(formattedData);
   const selectedMonthData = groupedRevenue[selectedMonth] || [];
+  console.log("Selected month : ",selectedMonthData )
 
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);

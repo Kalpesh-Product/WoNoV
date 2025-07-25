@@ -134,7 +134,7 @@ const CoWorkingClients = () => {
             search={true}
             tableTitle={"CO-WORKING CLIENT DETAILS"}
             buttonTitle={"Add Client"}
-            handleClick={() => navigate("client-onboarding")}
+            handleClick={() => navigate("/app/dashboard/sales-dashboard/mix-bag/clients/co-working/client-onboarding")}
             data={tableData}
             columns={viewEmployeeColumns}
           />

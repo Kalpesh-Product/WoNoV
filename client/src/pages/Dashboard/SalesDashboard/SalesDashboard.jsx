@@ -35,6 +35,8 @@ import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import humanDate from "../../../utils/humanDateForamt";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 import SectorLegend from "../../../components/graphs/SectorLegend";
+import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import FyBarGraphCount from "../../../components/graphs/FyBarGraphCount";
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -202,6 +204,14 @@ const SalesDashboard = () => {
       console.error("Error fetching leads:", error);
     },
   });
+
+  const graphData = isLeadsPending
+    ? []
+    : leadsData.map((item) => ({
+        ...item,
+        category: item.serviceCategory?.serviceName,
+      }));
+
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
     queryFn: async () => {
@@ -384,11 +394,6 @@ const SalesDashboard = () => {
     ];
   };
 
-  const monthlyLeadsData = transformedLeadsData.map((domain) => ({
-    name: domain.domain,
-    data: reorderToFinancialYear(domain.leads),
-  }));
-
   const monthlyLeadsOptions = {
     chart: {
       type: "bar",
@@ -415,10 +420,6 @@ const SalesDashboard = () => {
           position: "center",
         },
       },
-    },
-    xaxis: {
-      categories: financialYearMonths,
-      title: { text: "" },
     },
     yaxis: {
       title: { text: "Lead Count" },
@@ -851,50 +852,43 @@ const SalesDashboard = () => {
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          layout={1}
-          title={"Monthly Unique Leads"}
-          titleLabel={"FY 2024-25"}
-          border
-        >
+        <>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </div>
           ) : (
-            <BarGraph
-              height={400}
-              data={monthlyLeadsData}
-              options={monthlyLeadsOptions}
-              chartId="bargraph-sales-leads"
+            <FyBarGraphCount
+              graphTitle="MONTHLY UNIQUE LEADS"
+              data={graphData}
+              chartOptions={monthlyLeadsOptions}
+              dateKey="dateOfContact"
+              groupKey="category"
             />
           )}
-        </WidgetSection>,
+        </>,
       ],
     },
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          layout={1}
-          title={"Sourcing Channels"}
-          titleLabel={"FY 2024-25"}
-          border
-        >
+        <>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </div>
           ) : (
-            <BarGraph
-              height={400}
-              data={monthlySourceData}
-              options={sourcingChannelsOptions}
+            <FyBarGraphCount
+              graphTitle="SOURCING CHANNELS"
+              data={graphData}
+              chartOptions={monthlyLeadsOptions}
+              dateKey="dateOfContact"
+              groupKey="leadSource"
             />
           )}
-        </WidgetSection>,
+        </>,
       ],
     },
     {
