@@ -4,16 +4,18 @@ import dayjs from "dayjs";
 
 const getFinancialYear = (dateStr) => {
   const date = dayjs(dateStr);
+  if (!date.isValid()) return null;
   const year = date.month() < 3 ? date.year() - 1 : date.year();
   return `FY ${year}-${String((year + 1) % 100).padStart(2, "0")}`;
 };
 
 const getMonthsWithYearLabels = (fyLabel) => {
-  console.log("fy : ", fyLabel);
+  if (!fyLabel?.startsWith("FY")) return [];
   const [startYearStr] = fyLabel.replace("FY", "").split("-");
   const startYear = parseInt(startYearStr);
-  const endYear = startYear + 1;
+  if (isNaN(startYear)) return [];
 
+  const endYear = startYear + 1;
   return [
     { month: "Apr", label: `Apr-${String(startYear).slice(-2)}` },
     { month: "May", label: `May-${String(startYear).slice(-2)}` },
@@ -39,13 +41,14 @@ const FyBarGraph = ({
   const fyOptions = useMemo(() => {
     const yearsSet = new Set();
     data.forEach((item) => {
-      const fy = getFinancialYear(item[dateKey]);
-      yearsSet.add(fy);
+      const fy = getFinancialYear(item?.[dateKey]);
+      if (fy) yearsSet.add(fy);
     });
     return Array.from(yearsSet).sort();
   }, [data, dateKey]);
 
-  const [selectedFY, setSelectedFY] = useState(fyOptions[0]);
+  const [selectedFY, setSelectedFY] = useState(fyOptions[0] || "");
+
   const currentIndex = fyOptions.indexOf(selectedFY);
 
   const monthsWithLabels = useMemo(() => {
@@ -54,37 +57,36 @@ const FyBarGraph = ({
 
   const filteredData = useMemo(() => {
     return data.filter(
-      (item) => getFinancialYear(item[dateKey]) === selectedFY
+      (item) => getFinancialYear(item?.[dateKey]) === selectedFY
     );
   }, [data, selectedFY, dateKey]);
 
   const stackedSeries = useMemo(() => {
+    if (!selectedFY) return [];
     const base = {};
     const months = getMonthsWithYearLabels(selectedFY);
 
     filteredData.forEach((item) => {
-      const date = dayjs(item[dateKey]);
+      const date = dayjs(item?.[dateKey]);
       if (!date.isValid()) return;
 
       const month = date.format("MMM");
-
-      // Match label directly from generated month map
       const match = months.find((m) => m.month === month);
       if (!match) return;
 
       const label = match.label;
-      const vertical = item.vertical || "Unknown";
+      const vertical = item?.vertical || "Unknown";
 
       if (!base[vertical]) base[vertical] = {};
       base[vertical][label] =
-        (base[vertical][label] || 0) + (parseFloat(item[valueKey]) || 0);
+        (base[vertical][label] || 0) + (parseFloat(item?.[valueKey]) || 0);
     });
 
     return Object.entries(base).map(([vertical, monthData]) => ({
       name: vertical,
       data: months.map(({ label }) => monthData[label] || 0),
     }));
-  }, [filteredData, selectedFY]);
+  }, [filteredData, selectedFY, valueKey, dateKey]);
 
   const mergedChartOptions = useMemo(() => {
     return {
@@ -107,7 +109,8 @@ const FyBarGraph = ({
       },
       yaxis: {
         labels: {
-          formatter: (val) => val.toLocaleString("en-IN"),
+          formatter: (val) =>
+            typeof val === "number" ? val.toLocaleString("en-IN") : "0",
         },
       },
       legend: {
@@ -116,7 +119,15 @@ const FyBarGraph = ({
       colors: ["#1E3D73", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
       ...chartOptions,
     };
-  }, [stackedSeries, monthsWithLabels, chartOptions]);
+  }, [monthsWithLabels, chartOptions]);
+
+  if (fyOptions.length === 0) {
+    return (
+      <div className="text-center text-gray-500 py-10">
+        No valid financial year data available.
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 rounded-md">
@@ -140,7 +151,9 @@ const FyBarGraph = ({
           Prev
         </button>
 
-        <span className="text-primary font-semibold">{selectedFY}</span>
+        <span className="text-primary font-semibold">
+          {selectedFY || "N/A"}
+        </span>
 
         <button
           className={`px-4 py-1 rounded-md border ${

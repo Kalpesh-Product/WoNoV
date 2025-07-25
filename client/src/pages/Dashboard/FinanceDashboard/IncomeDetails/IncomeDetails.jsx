@@ -172,6 +172,7 @@ const IncomeDetails = () => {
       },
     },
   };
+  console.log("unified rev data : ", unifiedRevenueData);
 
   const totalAnnualRevenue = filteredByYear.reduce((sum, domain) => {
     return sum + domain.data.reduce((acc, monthVal) => acc + monthVal, 0);
@@ -194,7 +195,11 @@ const IncomeDetails = () => {
         </WidgetSection>
       )}
 
-      <FyBarGraph data={unifiedRevenueData} dateKey="date" valueKey="revenue" />
+      <FyBarGraph
+        data={isTotalLoading ? [] : unifiedRevenueData}
+        dateKey="date"
+        valueKey="revenue"
+      />
 
       <WidgetTable
         tableTitle="Annual Monthly Income Breakup"
