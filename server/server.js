@@ -25,6 +25,7 @@ const taskRoutes = require("./routes/tasksRoutes");
 const performanceRoutes = require("./routes/performanceRoutes");
 const accessRoutes = require("./routes/accessRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
+const amcRoutes = require("./routes/amcRoutes");
 const vendorRoutes = require("./routes/vendorRoutes");
 const techRoutes = require("./routes/techRoutes");
 const budgetRoutes = require("./routes/budgetRoutes");
@@ -39,7 +40,7 @@ const financeRoutes = require("./routes/financeRoutes");
 const weeklyUnitRoutes = require("./routes/weeklyUnitRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const agreementRoutes = require("./routes/agreementRoutes");
-const getLogs = require("./controllers/logController");
+const logRoutes = require("./routes/logRoutes");
 const auditLogger = require("./middlewares/auditLogger");
 require("./listeners/logEventListener");
 const app = express();
@@ -76,6 +77,7 @@ app.use("/api/tech", verifyJwt, auditLogger, techRoutes);
 app.use("/api/assets", verifyJwt, auditLogger, assetsRoutes);
 app.use("/api/meetings", verifyJwt, auditLogger, meetingsRoutes);
 app.use("/api/tickets", verifyJwt, auditLogger, ticketsRoutes);
+app.use("/api/amc", verifyJwt, auditLogger, amcRoutes);
 app.use("/api/leaves", verifyJwt, auditLogger, leaveRoutes);
 app.use(
   "/api/employee-agreements",
@@ -101,7 +103,7 @@ app.use("/api/inventory", verifyJwt, auditLogger, inventoryRoutes);
 app.use("/api/administration", verifyJwt, auditLogger, administrationRoutes);
 app.use("/api/finance", verifyJwt, auditLogger, financeRoutes);
 app.use("/api/weekly-unit", verifyJwt, auditLogger, weeklyUnitRoutes);
-app.use("/api/logs", verifyJwt, auditLogger, getLogs);
+app.use("/api/logs", verifyJwt, logRoutes);
 
 app.all("*", (req, res) => {
   if (req.accepts("html")) {

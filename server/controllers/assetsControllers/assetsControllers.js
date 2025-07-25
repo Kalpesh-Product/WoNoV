@@ -13,6 +13,8 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const Department = require("../../models/Departments");
 const AssetSubCategory = require("../../models/assets/AssetSubCategories");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
 
 const getAssetsWithDepartments = async (req, res, next) => {
   try {
@@ -65,7 +67,13 @@ const getAssetsWithDepartments = async (req, res, next) => {
 const getAssets = async (req, res, next) => {
   try {
     const userId = req.user;
+    const userDepartments = req.departments;
     const user = await User.findById(userId).lean().exec();
+
+    const isTopManagement = userDepartments.some(
+      (dept) => dept.name === "Top Management"
+    );
+    const userDepartmentIds = userDepartments.map((dept) => dept._id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -75,8 +83,15 @@ const getAssets = async (req, res, next) => {
     let { assigned, departmentId, vendorId, sortBy, order } = req.query;
 
     const departments = await Department.find({ isActive: true }).lean().exec();
-    const assetFilter = { company: companyId };
+
+    const assetFilter = {
+      company: companyId,
+    };
+
+    if (!isTopManagement) assetFilter.department = { $in: userDepartmentIds };
+
     if (departmentId) assetFilter.department = departmentId;
+
     if (vendorId) assetFilter.vendor = vendorId;
     if (assigned === "true") assetFilter.assignedTo = { $ne: null };
     else if (assigned === "false") assetFilter.assignedTo = null;
@@ -305,36 +320,6 @@ const addAsset = async (req, res, next) => {
 
     const insertedAssets = await Asset.insertMany(assetsToInsert);
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: `${insertedAssets.length} Assets added successfully`,
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: insertedAssets[0]._id,
-      changes: {
-        count: insertedAssets.length,
-        departmentId,
-        categoryId,
-        subCategoryId,
-        vendorId,
-        name,
-        purchaseDate,
-        quantity,
-        price,
-        brand,
-        assetType,
-        warranty,
-        ownershipType,
-        rentedMonths,
-        tangable,
-        location: locationId,
-      },
-    });
-
     return res.status(201).json({
       message: `${insertedAssets.length} Assets added successfully`,
       assets: insertedAssets,
@@ -364,7 +349,8 @@ const editAsset = async (req, res, next) => {
       subCategoryId,
       vendorId,
       name,
-      isDammaged,
+      isDamaged,
+      isUnderMaintenance,
       purchaseDate,
       price,
       brand,
@@ -503,6 +489,13 @@ const editAsset = async (req, res, next) => {
       };
     }
 
+    const assetStatus =
+      isDamaged || isUnderMaintenance
+        ? "Inactive"
+        : status
+        ? status
+        : foundAsset.status;
+
     const updatePayload = {
       assetType,
       tangable,
@@ -512,7 +505,10 @@ const editAsset = async (req, res, next) => {
       name: name?.trim(),
       purchaseDate,
       price,
-      isDammaged: isDammaged ? isDammaged : foundAsset.isDammaged,
+      isDamaged: isDamaged ? isDamaged : foundAsset.isDamaged,
+      isUnderMaintenance: isUnderMaintenance
+        ? isUnderMaintenance
+        : foundAsset.isUnderMaintenance,
       warranty,
       warrantyDocument: warrantyDocInfo,
       brand: brand?.trim(),
@@ -520,7 +516,7 @@ const editAsset = async (req, res, next) => {
       location: locationId || null,
       subCategory: subCategoryId,
       assetImage,
-      status: status || "Active",
+      status: assetStatus,
     };
 
     // Handle rental logic
@@ -542,19 +538,6 @@ const editAsset = async (req, res, next) => {
         logSourceKey
       );
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Asset updated successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: updatedAsset._id,
-      changes: updatePayload,
-    });
-
     return res.status(200).json({
       message: "Asset updated successfully",
       asset: updatedAsset,
@@ -568,4 +551,140 @@ const editAsset = async (req, res, next) => {
   }
 };
 
-module.exports = { addAsset, editAsset, getAssets, getAssetsWithDepartments };
+const bulkInsertAssets = async (req, res, next) => {
+  try {
+    const { department } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid csv file" });
+    }
+
+    // Fetch reference data
+    const subCategories = await AssetSubCategory.find().lean();
+    const vendors = await Vendor.find({ departmentId: department }).lean();
+    const departmentDoc = await Department.findById(department).lean();
+
+    const subCategoryMap = new Map(
+      subCategories.map((cat) => [cat.subCategoryName, cat])
+    );
+    const vendorsMap = new Map(vendors.map((v) => [v.name, v._id]));
+
+    const deptPrefix = departmentDoc.name.slice(0, 2).toUpperCase();
+    const company = req.user?.companyId;
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    const rows = [];
+
+    stream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        rows.push(row); // Just store rows synchronously
+      })
+      .on("end", async () => {
+        const assets = [];
+        const assetCounters = {};
+
+        for (const row of rows) {
+          // Your async-compatible processing here
+          const assetName = row["Asset Name"]?.trim();
+          const assetType = row["Asset Type (Digital / Physical)"]?.trim();
+          const tangible =
+            row["Tangible / Intangible  Asset"]?.toLowerCase() === "tangible";
+          const ownershipType = tangible ? "Owned" : "Rental";
+          const vendorName = row["Vendor Name"]?.trim();
+          const subCategoryName = row["Sub Category"]?.trim();
+          const purchaseDate = new Date(row["Purchase Date"]);
+          const quantity = parseInt(row["Quantity"]);
+          const pricePerUnit = parseFloat(row["Price Per Unit"]);
+          const warranty = parseInt(row["Warranty In Months"]);
+          const brand = row["Brand Name"]?.trim();
+          const status = row["Status (Active / Inactive)"]?.trim();
+
+          const vendorId = vendorsMap.get(vendorName);
+          const subCategoryObj = subCategoryMap.get(subCategoryName);
+          const subCategoryId = subCategoryObj?._id;
+          const subCatPrefix = subCategoryObj?.subCategoryName
+            .slice(0, 2)
+            .toUpperCase();
+          const ownershipPrefix = ownershipType.slice(0, 2).toUpperCase();
+
+          if (
+            !assetName ||
+            !assetType ||
+            !vendorId ||
+            !subCategoryId ||
+            !purchaseDate ||
+            !quantity ||
+            !pricePerUnit ||
+            !warranty ||
+            !brand
+          ) {
+            return res
+              .status(400)
+              .json({ message: `Row is invalid: ${JSON.stringify(row)}` });
+          }
+
+          const key = `${ownershipPrefix}-${deptPrefix}-${subCatPrefix}`;
+          if (!assetCounters[key]) {
+            const count = await Asset.countDocuments({
+              ownershipType,
+              department,
+              subCategory: subCategoryId,
+            });
+            assetCounters[key] = count;
+          }
+
+          for (let i = 0; i < quantity; i++) {
+            const assetNumber = assetCounters[key] + 1;
+            const uniqueAssetId = `${key}-${assetNumber}`;
+            assetCounters[key]++;
+
+            assets.push({
+              assetType: assetType === "Digital" ? "Digital" : "Physical",
+              assetId: uniqueAssetId,
+              tangable: tangible,
+              ownershipType,
+              vendor: vendorId,
+              company,
+              name: assetName,
+              purchaseDate,
+              price: pricePerUnit,
+              warranty,
+              brand,
+              isDamaged: false,
+              department,
+              status: status === "Inactive" ? "Inactive" : "Active",
+              subCategory: subCategoryId,
+            });
+          }
+        }
+
+        if (!assets.length) {
+          return res.status(400).json({ message: "No valid assets to insert" });
+        }
+
+        await Asset.insertMany(assets);
+        res
+          .status(201)
+          .json({ message: `${assets.length} assets inserted successfully` });
+      })
+      .on("error", (err) => {
+        console.error("CSV parsing error:", err);
+        next(err);
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  addAsset,
+  editAsset,
+  getAssets,
+  getAssetsWithDepartments,
+  bulkInsertAssets,
+};
