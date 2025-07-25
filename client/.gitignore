@@ -16,7 +16,8 @@ dist-ssr
 
 # misc
 .env
-
+/src/pages/Access/Access.jsx
+/src/components/Sidebar.jsx
 
 # Editor directories and files
 .vscode/*
