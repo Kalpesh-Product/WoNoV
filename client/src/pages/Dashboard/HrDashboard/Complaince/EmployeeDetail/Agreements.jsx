@@ -132,6 +132,21 @@ const Agreements = () => {
       console.error("Upload error:", error);
     },
   });
+  const { mutate : updateStatus, isPending : isUpdatePending} = useMutation({
+    mutationKey: ["updateStatus"],
+    mutationFn: async (data) => {
+      const response = await axios.post('/api/agreement/update-agreement-status',data)
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "UPDATED");
+      queryClient.invalidateQueries({queryKey : "agreements"})
+      setModalOpen(false)
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update status");
+    }
+  })
 
   const agreementColumn = [
     {
@@ -246,7 +261,7 @@ const Agreements = () => {
           </form>
         )}
         {modalMode === "update" && (
-          <form className="grid grid-cols-1 gap-4">
+          <form onSubmit={handleEditSubmit((data)=>updateStatus(data))} className="grid grid-cols-1 gap-4">
             <Controller
               name="status"
               control={editControl}
