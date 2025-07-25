@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import dayjs from "dayjs";
 
@@ -47,7 +47,14 @@ const FyBarGraph = ({
     return Array.from(yearsSet).sort();
   }, [data, dateKey]);
 
-  const [selectedFY, setSelectedFY] = useState(fyOptions[0] || "");
+const [selectedFY, setSelectedFY] = useState("");
+useEffect(() => {
+  if (fyOptions.length > 0 && !selectedFY) {
+    setSelectedFY(fyOptions[0]);
+  }
+}, [fyOptions, selectedFY]);
+
+
 
   const currentIndex = fyOptions.indexOf(selectedFY);
 
@@ -95,12 +102,13 @@ const FyBarGraph = ({
         stacked: true,
         height: 350,
         toolbar: { show: false },
+        fontFamily: "Poppins-Regular",
       },
       plotOptions: {
         bar: {
           borderRadius: 4,
           horizontal: false,
-          columnWidth: "45%",
+          columnWidth: "40%",
         },
       },
       dataLabels: { enabled: false },
