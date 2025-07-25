@@ -54,8 +54,7 @@ const Access = () => {
             );
             dispatch(setSelectedEmployee(params.data.employmentID));
             dispatch(setSelectedEmployeeMongoId(params.data.id));
-          }}
-        >
+          }}>
           {params.value}
         </span>
       ),
