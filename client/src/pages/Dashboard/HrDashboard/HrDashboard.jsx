@@ -31,6 +31,8 @@ import {
 import dateToHyphen from "../../../utils/dateToHyphen";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 
+import { PERMISSIONS } from "./../../../constants/permissions";
+
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const dispatch = useDispatch();
@@ -47,8 +49,56 @@ const HrDashboard = () => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
 
-  const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
+  //------------------------PAGE ACCESS START-------------------//
+  const cardsConfig = [
+    {
+      route: "employee",
+      title: "Employee",
+      icon: <CgWebsite />,
+      permission: PERMISSIONS.HR_EMPLOYEE.value,
+    },
+    {
+      route: "company",
+      title: "Company",
+      icon: <LuHardDriveUpload />,
+      permission: PERMISSIONS.HR_COMPANY.value,
+    },
+    {
+      route: "finance",
+      title: "Finance",
+      icon: <SiCashapp />,
+      permission: PERMISSIONS.HR_FINANCE.value,
+    },
+    {
+      route: "mix-bag",
+      title: "Mix Bag",
+      icon: <CgWebsite />,
+      permission: PERMISSIONS.HR_MIX_BAG.value,
+    },
+    {
+      route: "data",
+      title: "Data",
+      icon: <SiGoogleadsense />,
+      permission: PERMISSIONS.HR_DATA.value,
+    },
+    {
+      route: "settings/bulk-upload",
+      title: "Settings",
+      icon: <MdMiscellaneousServices />,
+      permission: PERMISSIONS.HR_SETTINGS.value,
+    },
+  ];
+
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS END-------------------//
+
+  const axios = useAxiosPrivate();
+
   const navigate = useNavigate();
   // const accessibleModules = new Set();
 
@@ -1123,8 +1173,7 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <WidgetSection normalCase layout={1} padding>
             <YearlyGraph
               data={expenseRawSeries}
@@ -1146,29 +1195,40 @@ const HrDashboard = () => {
         <FinanceCard titleCenter {...HrAverageExpense} />,
       ],
     },
+    // {
+    //   layout: 6,
+    //   widgets: [
+    //     { icon: <CgWebsite />, title: "Employee", route: "employee" },
+    //     { icon: <LuHardDriveUpload />, title: "Company", route: "company" },
+    //     { icon: <SiCashapp />, title: "Finance", route: "finance" },
+    //     { icon: <CgWebsite />, title: "Mix Bag", route: "mix-bag" },
+    //     { icon: <SiGoogleadsense />, title: "Data", route: "data" },
+    //     {
+    //       icon: <MdMiscellaneousServices />,
+    //       title: "Settings",
+    //       route: "settings/bulk-upload",
+    //     },
+    //   ]
+    //     // .filter((widget) => accessibleModules.has(widget.title)) // ✅ Filter widgets
+    //     .map((widget, index) => (
+    //       <Card
+    //         key={index}
+    //         icon={widget.icon}
+    //         title={widget.title}
+    //         route={widget.route}
+    //       />
+    //     )), // ✅ Convert objects into JSX elements
+    // },
     {
-      layout: 6,
-      widgets: [
-        { icon: <CgWebsite />, title: "Employee", route: "employee" },
-        { icon: <LuHardDriveUpload />, title: "Company", route: "company" },
-        { icon: <SiCashapp />, title: "Finance", route: "finance" },
-        { icon: <CgWebsite />, title: "Mix Bag", route: "mix-bag" },
-        { icon: <SiGoogleadsense />, title: "Data", route: "data" },
-        {
-          icon: <MdMiscellaneousServices />,
-          title: "Settings",
-          route: "settings/bulk-upload",
-        },
-      ]
-        // .filter((widget) => accessibleModules.has(widget.title)) // ✅ Filter widgets
-        .map((widget, index) => (
-          <Card
-            key={index}
-            icon={widget.icon}
-            title={widget.title}
-            route={widget.route}
-          />
-        )), // ✅ Convert objects into JSX elements
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
+        <Card
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
     {
       layout: 2,
@@ -1180,8 +1240,7 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <YearlyGraph
             data={tasksData}
             options={tasksOptions}
@@ -1199,8 +1258,7 @@ const HrDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }
-        >
+          }>
           <YearlyGraph
             data={tasksGraphData}
             options={tasksOverallOptions}

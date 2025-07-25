@@ -14,9 +14,53 @@ import humanTime from "../../utils/humanTime";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
+import { PERMISSIONS } from "../../constants/permissions";
+import useAuth from "../../hooks/useAuth";
+
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
   const [selectedFY, setSelectedFY] = useState(null);
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
+  //------------------------PAGE ACCESS START-------------------//
+  const cardsConfig = [
+    {
+      route: "/app/tasks/my-tasks",
+      title: "My Tasks",
+      icon: <RiPagesLine />,
+      permission: PERMISSIONS.TASKS_MY_TASKS.value,
+    },
+    {
+      route: "/app/tasks/department-tasks",
+      title: "Department Tasks",
+      icon: <RiPagesLine />,
+      permission: PERMISSIONS.TASKS_DEPARTMENT_TASKS.value,
+    },
+    {
+      route: "team-members",
+      title: "Team Members",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.TASKS_TEAM_MEMBERS.value,
+    },
+    {
+      route: "/app/tasks/reports",
+      title: "Reports",
+      icon: <CgProfile />,
+      permission: PERMISSIONS.TASKS_REPORTS.value,
+    },
+    {
+      route: "",
+      title: "Settings",
+      icon: <MdMiscellaneousServices />,
+      permission: PERMISSIONS.TASKS_SETTINGS.value,
+    },
+  ];
+
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS END-------------------//
 
   //-------------------Tasks graph ---------------------//
   const normalizeDataByMonth = (tasks) => {
@@ -572,36 +616,47 @@ const TasksDashboard = () => {
         />,
       ],
     },
+    // {
+    //   layout: 5,
+    //   widgets: [
+    //     <Card
+    //       route={"/app/tasks/my-tasks"}
+    //       title={"My Tasks"}
+    //       icon={<RiPagesLine />}
+    //     />,
+    //     <Card
+    //       route={"/app/tasks/department-tasks"}
+    //       title={"Department Tasks"}
+    //       icon={<RiPagesLine />}
+    //     />,
+    //     <Card
+    //       route={"team-members"}
+    //       title={"Team Members"}
+    //       icon={<MdFormatListBulleted />}
+    //     />,
+    //     // <Card route={""} title={"Mix Bag"} icon={<MdFormatListBulleted />} />,
+    //     <Card
+    //       route={"/app/tasks/reports"}
+    //       title={"Reports"}
+    //       icon={<CgProfile />}
+    //     />,
+    //     <Card
+    //       route={""}
+    //       title={"Settings"}
+    //       icon={<MdMiscellaneousServices />}
+    //     />,
+    //   ],
+    // },
     {
-      layout: 5,
-      widgets: [
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
         <Card
-          route={"/app/tasks/my-tasks"}
-          title={"My Tasks"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"/app/tasks/department-tasks"}
-          title={"Department Tasks"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"team-members"}
-          title={"Team Members"}
-          icon={<MdFormatListBulleted />}
-        />,
-        // <Card route={""} title={"Mix Bag"} icon={<MdFormatListBulleted />} />,
-        <Card
-          route={"/app/tasks/reports"}
-          title={"Reports"}
-          icon={<CgProfile />}
-        />,
-        <Card
-          route={""}
-          title={"Settings"}
-          icon={<MdMiscellaneousServices />}
-        />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
     {
       layout: 3,

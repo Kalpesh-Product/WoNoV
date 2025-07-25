@@ -28,6 +28,7 @@ const TicketDashboard = () => {
       title: "Raise A Ticket",
       route: "/app/tickets/raise-ticket",
       icon: <RiPagesLine />,
+      permission: PERMISSIONS.TICKETS_RAISE_TICKET.value,
     },
     {
       title: "Manage Tickets",
@@ -39,16 +40,19 @@ const TicketDashboard = () => {
       title: "Reports",
       route: "/app/tickets/Reports",
       icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.TICKETS_REPORTS.value,
     },
     {
       title: "Team Members",
       route: "/app/tickets/team-members",
       icon: <CgProfile />,
+      permission: PERMISSIONS.TICKETS_TEAM_MEMBERS.value,
     },
     {
       title: "Ticket Settings",
       route: "/app/tickets/ticket-settings",
       icon: <RiPagesLine />,
+      permission: PERMISSIONS.TICKETS_TICKET_SETTINGS.value,
     },
   ];
   const allowedCards = cardsConfig.filter(
@@ -262,8 +266,7 @@ const TicketDashboard = () => {
           border
           padding
           title={`Overall Department Raised Tickets - ${dateLabel}`}
-          TitleAmount={`TOTAL TICKETS : ${filteredTotal}`}
-        >
+          TitleAmount={`TOTAL TICKETS : ${filteredTotal}`}>
           {!isLoading ? (
             <AreaGraph
               responseData={ticketsData}
@@ -301,8 +304,7 @@ const TicketDashboard = () => {
           titleLabel={`${new Date().toLocaleString("default", {
             month: "short",
           })}-${new Date().getFullYear().toString().slice(-2)}`}
-          title={"Total Tickets"}
-        >
+          title={"Total Tickets"}>
           <DonutChart
             series={series}
             labels={["High", "Medium", "Low"]}
@@ -318,8 +320,7 @@ const TicketDashboard = () => {
           titleLabel={`${new Date().toLocaleString("default", {
             month: "short",
           })}-${new Date().getFullYear().toString().slice(-2)}`}
-          title={"Department Tickets"}
-        >
+          title={"Department Tickets"}>
           <DonutChart
             series={donutSeries}
             labels={masterDepartments}
