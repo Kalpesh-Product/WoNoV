@@ -5,101 +5,6 @@ const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const NewTicketIssue = require("../../models/tickets/NewTicketIssue");
 
-// const addTicketIssue = async (req, res, next) => {
-//   const logPath = "hr/HrLog";
-//   const logAction = "Add Ticket Issue";
-//   const logSourceKey = "companyData";
-//   const { user, company, ip } = req;
-
-//   try {
-//     const { title, department, priority = "Low", resolveTime } = req.body;
-
-//     if (!title) {
-//       throw new CustomError(
-//         "Title is required",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-//     // if (!resolveTime) {
-//     //   throw new CustomError(
-//     //     "Resolve time is required",
-//     //     logPath,
-//     //     logAction,
-//     //     logSourceKey
-//     //   );
-//     // }
-
-//     // Retrieve the user to get company info
-//     const foundUser = await User.findOne({ _id: user })
-//       .select("company")
-//       .lean()
-//       .exec();
-
-//     if (!mongoose.Types.ObjectId.isValid(department)) {
-//       throw new CustomError(
-//         "Invalid department ID provided",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     // Update the department's ticketIssues array atomically
-//     const updatedCompany = await Company.findOneAndUpdate(
-//       {
-//         $and: [
-//           { _id: foundUser.company },
-//           { "selectedDepartments.department": department },
-//         ],
-//       },
-//       {
-//         $push: {
-//           "selectedDepartments.$.ticketIssues": {
-//             title,
-//             priority,
-//             // resolveTime,
-//           },
-//         },
-//       },
-//       { new: true }
-//     );
-
-//     if (!updatedCompany) {
-//       throw new CustomError(
-//         "Department not found in any company",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     await createLog({
-//       path: logPath,
-//       action: logAction,
-//       remarks: "New issue added successfully",
-//       status: "Success",
-//       user: user,
-//       ip: ip,
-//       company: company,
-//       sourceKey: logSourceKey,
-//       sourceId: null,
-//       changes: { title, priority, department },
-//     });
-
-//     return res.status(201).json({ message: "New issue added successfully" });
-//   } catch (error) {
-//     if (error instanceof CustomError) {
-//       next(error);
-//     } else {
-//       next(
-//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-//       );
-//     }
-//   }
-// };
-
 const addTicketIssue = async (req, res, next) => {
   const logPath = "hr/HrLog";
   const logAction = "Add Ticket Issue";
@@ -173,11 +78,9 @@ const addTicketIssue = async (req, res, next) => {
         .status(201)
         .json({ message: "‘Other’ ticket issue added to all departments" });
     } else {
-      return res
-        .status(200)
-        .json({
-          message: "‘Other’ ticket issue already present in all departments",
-        });
+      return res.status(200).json({
+        message: "‘Other’ ticket issue already present in all departments",
+      });
     }
   } catch (error) {
     if (error instanceof CustomError) {

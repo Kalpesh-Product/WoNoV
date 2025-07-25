@@ -84,7 +84,7 @@ app.use(
   employeeAgreementRoutes
 );
 app.use("/api/notifications", verifyJwt, notificationRoutes);
-app.use("/api/editor", websiteRoutes);
+app.use("/api/editor", verifyJwt, auditLogger, websiteRoutes);
 app.use("/api/users", verifyJwt, auditLogger, userRoutes);
 app.use("/api/agreement", verifyJwt, auditLogger, agreementRoutes);
 app.use("/api/roles", verifyJwt, auditLogger, roleRoutes);
