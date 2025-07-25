@@ -154,9 +154,6 @@ const FyBarGraphPercentage = ({
         labels: {
           formatter: (val) => `${val.toFixed(0)}%`,
         },
-        title: {
-          text: "Contribution %",
-        },
       },
       legend: {
         position: "top",
