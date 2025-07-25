@@ -4,7 +4,6 @@ import dayjs from "dayjs";
 import SecondaryButton from "../SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import WidgetSection from "../WidgetSection";
-import { inrFormat } from "../../utils/currencyFormat";
 
 const getFinancialYear = (dateStr) => {
   const date = dayjs(dateStr);
@@ -17,8 +16,6 @@ const getMonthsWithYearLabels = (fyLabel) => {
   if (!fyLabel?.startsWith("FY")) return [];
   const [startYearStr] = fyLabel.replace("FY", "").split("-");
   const startYear = parseInt(startYearStr);
-  if (isNaN(startYear)) return [];
-
   const endYear = startYear + 1;
   return [
     { month: "Apr", label: `Apr-${String(startYear).slice(-2)}` },
@@ -36,10 +33,15 @@ const getMonthsWithYearLabels = (fyLabel) => {
   ];
 };
 
-const FyBarGraph = ({
+// helper to get nested property
+const getValueByPath = (obj, path) => {
+  return path.split(".").reduce((acc, part) => acc?.[part], obj);
+};
+
+const FyBarGraphCount = ({
   data = [],
-  dateKey = "date",
-  valueKey = "revenue",
+  dateKey = "dateOfContact",
+  groupKey = "serviceCategory.serviceName",
   chartOptions = {},
   graphTitle = "",
 }) => {
@@ -72,7 +74,7 @@ const FyBarGraph = ({
   }, [data, selectedFY, dateKey]);
 
   const stackedSeries = useMemo(() => {
-    if (!selectedFY) return [];
+    if (!selectedFY || !groupKey) return [];
     const base = {};
     const months = getMonthsWithYearLabels(selectedFY);
 
@@ -85,18 +87,26 @@ const FyBarGraph = ({
       if (!match) return;
 
       const label = match.label;
-      const vertical = item?.vertical || "Unknown";
+      const group = getValueByPath(item, groupKey) || "Unknown";
 
-      if (!base[vertical]) base[vertical] = {};
-      base[vertical][label] =
-        (base[vertical][label] || 0) + (parseFloat(item?.[valueKey]) || 0);
+      if (!base[group]) base[group] = {};
+      base[group][label] = (base[group][label] || 0) + 1;
     });
 
-    return Object.entries(base).map(([vertical, monthData]) => ({
-      name: vertical,
+    return Object.entries(base).map(([group, monthData]) => ({
+      name: group,
       data: months.map(({ label }) => monthData[label] || 0),
     }));
-  }, [filteredData, selectedFY, valueKey, dateKey]);
+  }, [filteredData, selectedFY, dateKey, groupKey]);
+
+  const fyTotalCount = useMemo(() => {
+    return stackedSeries.reduce((total, group) => {
+      return (
+        total +
+        group.data.reduce((sum, val) => sum + (parseInt(val) || 0), 0)
+      );
+    }, 0);
+  }, [stackedSeries]);
 
   const mergedChartOptions = useMemo(() => {
     return {
@@ -119,6 +129,7 @@ const FyBarGraph = ({
         categories: monthsWithLabels.map((m) => m.label),
       },
       yaxis: {
+        title: { text: "Count" },
         labels: {
           formatter: (val) =>
             typeof val === "number" ? val.toLocaleString("en-IN") : "0",
@@ -127,18 +138,13 @@ const FyBarGraph = ({
       legend: {
         position: "top",
       },
-      colors: ["#1E3D73", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
+      tooltip: {
+        shared: true,
+      },
+      colors: ["#2196F3", "#00BCD4", "#1E88E5", "#0D47A1", "#5C6BC0"],
       ...chartOptions,
     };
   }, [monthsWithLabels, chartOptions]);
-  const fyTotal = useMemo(() => {
-    return stackedSeries.reduce((total, vertical) => {
-      return (
-        total +
-        vertical.data.reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
-      );
-    }, 0);
-  }, [stackedSeries]);
 
   if (fyOptions.length === 0) {
     return (
@@ -152,7 +158,7 @@ const FyBarGraph = ({
     <WidgetSection
       border
       title={`${graphTitle} ${selectedFY}`}
-      TitleAmount={`INR ${inrFormat(fyTotal)}`}
+      TitleAmount={`Total Count: ${fyTotalCount}`}
     >
       <div className="flex flex-col gap-4 rounded-md">
         <Chart
@@ -161,18 +167,15 @@ const FyBarGraph = ({
           type="bar"
           height={350}
         />
-
         <div className="flex justify-center items-center gap-4 mt-4">
           <SecondaryButton
             title={<MdNavigateBefore />}
             disabled={currentIndex === 0}
             handleSubmit={() => setSelectedFY(fyOptions[currentIndex - 1])}
           />
-
           <span className="text-primary text-content font-semibold">
             {selectedFY || "N/A"}
           </span>
-
           <SecondaryButton
             disabled={currentIndex === fyOptions.length - 1}
             handleSubmit={() => setSelectedFY(fyOptions[currentIndex + 1])}
@@ -184,4 +187,4 @@ const FyBarGraph = ({
   );
 };
 
-export default FyBarGraph;
+export default FyBarGraphCount;

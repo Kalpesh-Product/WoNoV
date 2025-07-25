@@ -106,7 +106,7 @@ const truncatedLabels = fullLabels.map(label =>
         options={chartOptions}
         series={chartData.series}
         type="donut"
-        height={350}
+        height={320}
         width={width || "100%"}
       />
     </div>

@@ -88,7 +88,7 @@ const PaymentScheduleCommon = () => {
       unitName: payment.unit?.unitName,
       unitNo: payment.unit?.unitNo,
       buildingName: payment.unit?.building?.buildingName,
-      department: payment.name,
+      department: payment.department,
       unit: payment.unit,
     },
   }));
@@ -101,6 +101,7 @@ const PaymentScheduleCommon = () => {
     setSelectedEvent(clickInfo.event);
     setIsDrawerOpen(true);
   };
+  console.log("selected event : ", selectedEvent);
 
   return (
     <div className="flex flex-col  bg-white">
@@ -271,10 +272,10 @@ const PaymentScheduleCommon = () => {
             <br />
             <div className="font-bold">Location & Department</div>
             <DetalisFormatted
-              title="Unit"
+              title="Unit No"
               detail={
-                selectedEvent.extendedProps.unit?.unitName ||
-                selectedEvent.extendedProps.unitName ||
+                selectedEvent.extendedProps.unit?.unitNo ||
+                selectedEvent.extendedProps.unitNo ||
                 "Not Available"
               }
             />

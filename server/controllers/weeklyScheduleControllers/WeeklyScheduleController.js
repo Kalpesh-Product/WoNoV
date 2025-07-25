@@ -676,7 +676,7 @@ const bulkInsertWeeklyShiftSchedule = async (req, res, next) => {
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
 
     stream
-      .pipe(csv())
+      .pipe(csvParser())
       .on("data", (row) => {
         rows.push(row);
       })

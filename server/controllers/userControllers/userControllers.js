@@ -599,7 +599,7 @@ const bulkInsertUsers = async (req, res, next) => {
     // );
 
     const departmentMap = new Map(
-      departments.map((dept) => [dept.departmentId, dept._id])
+      departments.map((dept) => [dept.name, dept._id])
     );
 
     // Fetch roles and build a role map (assuming each role document has roleID)
@@ -623,17 +623,16 @@ const bulkInsertUsers = async (req, res, next) => {
                 // const departmentIds = row["Department (ID)"]
                 //   ? row["Department (ID)"].split("/").map((d) => d.trim())
                 //   : [];
-                console.log("row dept", row["Department (ID)"]);
-                const departmentIds = row["Department (ID)"]
-                  ? row["Department (ID)"].includes("/")
-                    ? row["Department (ID)"]
+                console.log("row dept", row["Department"]);
+                const departmentIds = row["Department"]
+                  ? row["Department"].includes("/")
+                    ? row["Department"]
                         .split("/")
                         .map((d) => d.trim())
                         .filter(Boolean)
-                    : [row["Department (ID)"].trim()]
+                    : [row["Department"].trim()]
                   : [];
 
-                console.log("departIds", departmentIds);
                 const departmentObjectIds = departmentIds.map((id) => {
                   const deptId = new mongoose.Types.ObjectId(id);
                   console.log("deptId", deptId);

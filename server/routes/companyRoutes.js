@@ -21,6 +21,7 @@ const {
   assignHouseKeepingMember,
   getHouseKeepingAssignments,
   bulkInsertHousekeepingMembers,
+  bulkInsertHouseKeepingSchedule,
 } = require("../controllers/companyControllers/houseKeepingController");
 
 const {
@@ -145,6 +146,11 @@ router.post(
   "/bulk-insert-housekeeping-members",
   upload.single("housekeeping-members"),
   bulkInsertHousekeepingMembers
+);
+router.post(
+  "/bulk-insert-housekeeping-schedule",
+  upload.single("housekeeping-schedule"),
+  bulkInsertHouseKeepingSchedule
 );
 router.patch("/update-housekeeping-member/:id", updateHouseKeepingMember);
 router.delete(

@@ -35,6 +35,10 @@ import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import humanDate from "../../../utils/humanDateForamt";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 import SectorLegend from "../../../components/graphs/SectorLegend";
+import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import FyBarGraphCount from "../../../components/graphs/FyBarGraphCount";
+import useAuth from "../../../hooks/useAuth";
+import { PERMISSIONS } from "./../../../constants/permissions";
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -47,6 +51,48 @@ const SalesDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
+
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
+  //------------------------PAGE ACCESS START-------------------//
+  const cardsConfig = [
+    {
+      route: "turnover",
+      title: "Turnover",
+      icon: <RiPagesLine />,
+      permission: PERMISSIONS.SALES_TURNOVER.value,
+    },
+    {
+      route: "/app/dashboard/sales-dashboard/finance",
+      title: "Finance",
+      icon: <SiCashapp />,
+      permission: PERMISSIONS.SALES_FINANCE.value,
+    },
+    {
+      route: "mix-bag",
+      title: "Mix Bag",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.SALES_MIX_BAG.value,
+    },
+    {
+      route: "/app/dashboard/sales-dashboard/data",
+      title: "Data",
+      icon: <SiGoogleadsense />,
+      permission: PERMISSIONS.SALES_DATA.value,
+    },
+    {
+      route: "/app/dashboard/sales-dashboard/settings",
+      title: "Settings",
+      icon: <MdMiscellaneousServices />,
+      permission: PERMISSIONS.SALES_SETTINGS.value,
+    },
+  ];
+
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS END-------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
   function aggregateMonthlyRevenue(data, year = "2024-25") {
@@ -202,6 +248,14 @@ const SalesDashboard = () => {
       console.error("Error fetching leads:", error);
     },
   });
+
+  const graphData = isLeadsPending
+    ? []
+    : leadsData.map((item) => ({
+        ...item,
+        category: item.serviceCategory?.serviceName,
+      }));
+
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
     queryFn: async () => {
@@ -384,11 +438,6 @@ const SalesDashboard = () => {
     ];
   };
 
-  const monthlyLeadsData = transformedLeadsData.map((domain) => ({
-    name: domain.domain,
-    data: reorderToFinancialYear(domain.leads),
-  }));
-
   const monthlyLeadsOptions = {
     chart: {
       type: "bar",
@@ -415,10 +464,6 @@ const SalesDashboard = () => {
           position: "center",
         },
       },
-    },
-    xaxis: {
-      categories: financialYearMonths,
-      title: { text: "" },
     },
     yaxis: {
       title: { text: "Lead Count" },
@@ -821,80 +866,85 @@ const SalesDashboard = () => {
         <FinanceCard titleCenter {...salesAverageData} />,
       ],
     },
+    // {
+    //   layout: 5,
+    //   widgets: [
+    //     <Card route={"turnover"} title={"Turnover"} icon={<RiPagesLine />} />,
+    //     <Card
+    //       route={"/app/dashboard/sales-dashboard/finance"}
+    //       title={"Finance"}
+    //       icon={<SiCashapp />}
+    //     />,
+    //     <Card
+    //       route={"mix-bag"}
+    //       title={"Mix Bag"}
+    //       icon={<MdFormatListBulleted />}
+    //     />,
+    //     // <Card route={""} title={"Reports"} icon={<CgProfile />} />,
+    //     <Card
+    //       route={"/app/dashboard/sales-dashboard/data"}
+    //       title={"Data"}
+    //       icon={<SiGoogleadsense />}
+    //     />,
+    //     <Card
+    //       route={"/app/dashboard/sales-dashboard/settings"}
+    //       title={"Settings"}
+    //       icon={<MdMiscellaneousServices />}
+    //     />,
+    //   ],
+    // },
+
     {
-      layout: 5,
-      widgets: [
-        <Card route={"turnover"} title={"Turnover"} icon={<RiPagesLine />} />,
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
         <Card
-          route={"/app/dashboard/sales-dashboard/finance"}
-          title={"Finance"}
-          icon={<SiCashapp />}
-        />,
-        <Card
-          route={"mix-bag"}
-          title={"Mix Bag"}
-          icon={<MdFormatListBulleted />}
-        />,
-        // <Card route={""} title={"Reports"} icon={<CgProfile />} />,
-        <Card
-          route={"/app/dashboard/sales-dashboard/data"}
-          title={"Data"}
-          icon={<SiGoogleadsense />}
-        />,
-        <Card
-          route={"/app/dashboard/sales-dashboard/settings"}
-          title={"Settings"}
-          icon={<MdMiscellaneousServices />}
-        />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          layout={1}
-          title={"Monthly Unique Leads"}
-          titleLabel={"FY 2024-25"}
-          border
-        >
+        <>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </div>
           ) : (
-            <BarGraph
-              height={400}
-              data={monthlyLeadsData}
-              options={monthlyLeadsOptions}
-              chartId="bargraph-sales-leads"
+            <FyBarGraphCount
+              graphTitle="MONTHLY UNIQUE LEADS"
+              data={graphData}
+              chartOptions={monthlyLeadsOptions}
+              dateKey="dateOfContact"
+              groupKey="category"
             />
           )}
-        </WidgetSection>,
+        </>,
       ],
     },
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          layout={1}
-          title={"Sourcing Channels"}
-          titleLabel={"FY 2024-25"}
-          border
-        >
+        <>
           {isLeadsPending ? (
             <div className="space-y-4">
               <Skeleton variant="rectangular" width="100%" height={40} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </div>
           ) : (
-            <BarGraph
-              height={400}
-              data={monthlySourceData}
-              options={sourcingChannelsOptions}
+            <FyBarGraphCount
+              graphTitle="SOURCING CHANNELS"
+              data={graphData}
+              chartOptions={monthlyLeadsOptions}
+              dateKey="dateOfContact"
+              groupKey="leadSource"
             />
           )}
-        </WidgetSection>,
+        </>,
       ],
     },
     {

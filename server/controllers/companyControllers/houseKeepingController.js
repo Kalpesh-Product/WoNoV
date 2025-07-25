@@ -6,6 +6,7 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const Department = require("../../models/Departments");
 const Role = require("../../models/roles/Roles");
+const { default: mongoose } = require("mongoose");
 
 const addNewHouseKeepingMember = async (req, res, next) => {
   try {
@@ -479,6 +480,66 @@ const bulkInsertHousekeepingMembers = async (req, res, next) => {
     next(error);
   }
 };
+
+const bulkInsertHouseKeepingSchedule = async (req, res, next) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "Please provide a csv file" });
+    }
+
+    const units = await Unit.find().lean().exec();
+    const unitsMap = new Map(units.map((unit) => [unit.unitNo, unit._id]));
+
+    const houseKeepingMembers = await HouseKeepingStaff.find().lean().exec();
+    const houseKeepingMembersMap = new Map(
+      houseKeepingMembers.map((h) => [h.houseKeepingId, h._id])
+    );
+
+    const results = [];
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    stream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        const location = row["Location"];
+        const hkMemberId = row["HK Member ID"];
+        const isActive = row["Employee Is Active"]?.toLowerCase() === "yes";
+
+        if (!isActive) return; 
+
+        const unitId = unitsMap.get(location);
+        const houseKeepingMember = houseKeepingMembersMap.get(hkMemberId);
+
+        if (unitId && houseKeepingMember) {
+          results.push({
+            unit: unitId,
+            housekeepingMember: new mongoose.Types.ObjectId(houseKeepingMember), 
+            startDate: new Date(row["Start Date"]),
+            endDate: new Date(row["End Date"]),
+          });
+        }
+      })
+      .on("end", async () => {
+        if (results.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "No valid data found in CSV" });
+        }
+        await HouseKeepingSchedule.insertMany(results);
+        res.status(200).json({
+          message: "Housekeeping schedules inserted successfully",
+          count: results.length,
+        });
+      })
+      .on("error", (err) => {
+        next(err);
+      });
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   getHouseKeepingStaff,
   addNewHouseKeepingMember,
@@ -487,4 +548,5 @@ module.exports = {
   assignHouseKeepingMember,
   getHouseKeepingAssignments,
   bulkInsertHousekeepingMembers,
+  bulkInsertHouseKeepingSchedule,
 };
