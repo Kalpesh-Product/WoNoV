@@ -395,6 +395,7 @@ import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/Work
 import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
 import LogPage from "../pages/LogPage";
 import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
+import AccessPages from "../pages/Access/AccessPages";
 
 export const routes = createBrowserRouter([
   {
@@ -1868,6 +1869,10 @@ export const routes = createBrowserRouter([
               {
                 path: "access/permissions",
                 element: <AccessProfile />,
+              },
+              {
+                path: "access/permissions/pages",
+                element: <AccessPages />,
               },
               {
                 path: "notifications",

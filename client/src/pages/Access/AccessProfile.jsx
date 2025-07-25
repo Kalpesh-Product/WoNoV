@@ -145,8 +145,7 @@ const AccessProfile = () => {
                 height: "100%",
                 fontSize: "5rem",
               }}
-              src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}
-            >
+              src={user.email === "abrar@biznest.co.in" ? Abrar : undefined}>
               {user.email !== "abrar@biznest.co.in" && user.name.charAt(0)}
             </Avatar>
           </div>
