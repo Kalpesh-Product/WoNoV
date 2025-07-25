@@ -1,31 +1,42 @@
-import React, { useState } from "react";
-import { Avatar, Chip, Card, CardContent, Typography } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import {
+  Avatar,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Checkbox,
+  Paper,
+} from "@mui/material";
 import { useLocation } from "react-router-dom";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
-import PermissionsTable from "../../components/PermissionsTable"; // Import the table
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { PERMISSIONS } from "../../constants/permissions";
 import Abrar from "../../assets/abrar.jpeg";
+import PrimaryButton from "../../components/PrimaryButton";
+import { toast } from "sonner";
 
 const AccessProfile = () => {
   const location = useLocation();
   const axios = useAxiosPrivate();
-  const { user } = location.state || {}; // Retrieve user object from state
-  const [selectedDepartment, setSelectedDepartment] = useState(null); // Track selected department
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const { user } = location.state || {};
 
-  const handlePermissionUpdate = (updatedPermissions) => {
-    // You can send this to an API to update permissions in the backend
-  };
+  const { register, setValue, handleSubmit, watch } = useForm({
+    defaultValues: { permissions: [] },
+  });
 
   const fetchUserPermissions = async () => {
     if (!user?._id) return null;
-    try {
-      const response = await axios.get(
-        `/api/access/user-permissions/${user._id}`
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error(error);
-    }
+    const response = await axios.get(
+      `/api/access/user-permissions/${user._id}`
+    );
+    return response.data;
   };
 
   const {
@@ -33,10 +44,75 @@ const AccessProfile = () => {
     isPending,
     isError,
   } = useQuery({
-    queryKey: ["userPermissions", user?._id], // Unique query key for caching
+    queryKey: ["userPermissions", user?._id],
     queryFn: fetchUserPermissions,
-    enabled: !!user?._id, // Only run query when user._id is available
+    enabled: !!user?._id,
   });
+
+  const mutation = useMutation({
+    mutationFn: async (data) => {
+      console.log("data ", data);
+      const response = await axios.post(
+        `/api/access/modify-permissions/${user._id}`,
+        {
+          permissions: data.permissions,
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["userPermissions", user?._id],
+      });
+      toast.success(data.message || "UPDATED");
+      setEditing(false);
+      window.location.reload(); // ✅ refresh the page
+    },
+
+    onError: (error) => {
+      toast.error(error.response.data.message);
+    },
+  });
+
+  useEffect(() => {
+    if (accessProfile?.permissions) {
+      setValue("permissions", accessProfile.permissions);
+    }
+  }, [accessProfile, setValue]);
+
+  const groupPermissionsByModule = (permissionsObj) => {
+    const grouped = {};
+    Object.entries(permissionsObj).forEach(([key, { value, type }]) => {
+      const [module] = key.split("_");
+
+      if (!grouped[module]) grouped[module] = [];
+
+      grouped[module].push({
+        key,
+        action: value,
+        type,
+        label: value
+          .split("_")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join("_"),
+      });
+    });
+    return grouped;
+  };
+
+  const groupedPermissions = groupPermissionsByModule(PERMISSIONS);
+  const userPermissionSet = new Set(accessProfile?.permissions || []);
+  const formPermissions = new Set(watch("permissions") || []);
+
+  const togglePermission = (permission) => {
+    const current = new Set(watch("permissions") || []);
+    if (current.has(permission)) {
+      current.delete(permission);
+    } else {
+      current.add(permission);
+    }
+    setValue("permissions", Array.from(current));
+  };
 
   if (isPending) {
     return (
@@ -76,7 +152,7 @@ const AccessProfile = () => {
           </div>
           <div className="flex flex-col gap-6">
             <span className="text-title flex items-center gap-3">
-              {user.name}{" "}
+              {user.name}
               <Chip
                 label={user.status ? "Active" : "InActive"}
                 sx={{
@@ -106,46 +182,103 @@ const AccessProfile = () => {
         </div>
       </div>
 
-      {/* Permissions UI */}
+      {/* Permissions Table */}
       <div className="mt-6">
-        <h2 className="text-title font-pmedium">User Permissions</h2>
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          {accessProfile.map((department) => (
-            <div
-              key={department.departmentId}
-              className={`cursor-not-allowed rounded-md shadow-md ${
-                selectedDepartment?.departmentId === department.departmentId
-                  ? "border-default border-primary"
-                  : ""
-              }`}
-              onClick={() =>
-                setSelectedDepartment((prev) =>
-                  prev?.departmentId === department.departmentId ? prev : department
-                )
-              }
-            >
-              <div className="p-4">
-                <span className="text-subtitle">
-                  {department.departmentName}
-                </span>
+        <h2 className="text-title font-pmedium mb-4">User Permissions</h2>
+        <div className="flex gap-4 w-full justify-end items-center">
+          <PrimaryButton
+            title={!editing ? "Edit" : "Cancel"}
+            handleSubmit={() => setEditing((prev) => !prev)}
+          />
+          {editing && (
+            <PrimaryButton
+              title="Update"
+              isLoading={mutation.isPending}
+              disabled={mutation.isPending}
+              handleSubmit={handleSubmit((data) =>
+                mutation.mutate({ permissions: data.permissions })
+              )}
+            />
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {Object.entries(groupedPermissions).map(([module, permissions]) => (
+            <div key={module}>
+              <div className="flex justify-between items-center w-full">
+                <h3 className="text-lg font-semibold mb-2">{module}</h3>
               </div>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Module Action</strong>
+                      </TableCell>
+                      <TableCell align="center">
+                        <strong>Read</strong>
+                      </TableCell>
+                      <TableCell align="center">
+                        <strong>Write</strong>
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {permissions.map(({ key, label, action, type }) => {
+                      const checked = editing
+                        ? formPermissions.has(action)
+                        : userPermissionSet.has(action);
+
+                      return (
+                        <TableRow key={key}>
+                          <TableCell>{label}</TableCell>
+
+                          {/* Read Column */}
+                          <TableCell align="center">
+                            {type === "read" && (
+                              <Checkbox
+                                checked={checked}
+                                disabled={!editing}
+                                onChange={() =>
+                                  editing && togglePermission(action)
+                                }
+                              />
+                            )}
+                          </TableCell>
+
+                          {/* Write Column */}
+                          <TableCell align="center">
+                            {type === "write" && (
+                              <Checkbox
+                                checked={checked}
+                                disabled={!editing}
+                                onChange={() =>
+                                  editing && togglePermission(action)
+                                }
+                              />
+                            )}
+                          </TableCell>
+
+                          {/* Custom Column */}
+                          {/* <TableCell align="center">
+                            {type === "custom" && (
+                              <Checkbox
+                                checked={checked}
+                                disabled={!editing}
+                                onChange={() =>
+                                  editing && togglePermission(action)
+                                }
+                              />
+                            )}
+                          </TableCell> */}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </div>
           ))}
         </div>
-
-        {/* Permissions Table */}
-        {selectedDepartment && (
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold">
-              {selectedDepartment.departmentName} Permissions
-            </h3>
-            <PermissionsTable
-              key={selectedDepartment.departmentId} // ✅ Forces re-render when department changes
-              modules={selectedDepartment.modules}
-              onPermissionChange={handlePermissionUpdate}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

@@ -17,9 +17,9 @@ const PieChartMui = ({ data, options, width = 320, height = 320 }) => {
     legend: {
       ...options.legend,
       position: "bottom",
+      show:true
     },
   };
-
   return (
  <div className="w-full flex flex-col justify-between" style={{ height }}>
       <div ref={containerRef} style={{ flex: 1 }}>

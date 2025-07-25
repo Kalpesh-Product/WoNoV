@@ -22,6 +22,7 @@ import {
   setTotalExpense,
   setTotalIncome,
 } from "../../../redux/slices/financeSlice";
+import humanDate from "../../../utils/humanDateForamt";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -249,6 +250,11 @@ const FinanceDashboard = () => {
       id: "income-vs-expense-bar",
       animations: {
         enabled: false, // ✅ disables all animations
+      },
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/dashboard/finance-dashboard/monthly-profit-loss");
+        },
       },
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
@@ -729,53 +735,6 @@ const FinanceDashboard = () => {
 
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
   //-----------------------------------------------------Table Priority Tasks------------------------------------------------------//
-  const executiveTimings = [
-    {
-      paymentName: "ChatGPT Pro",
-      department: "Tech",
-      amount: "5,000",
-    },
-    {
-      paymentName: "AWS Subscription",
-      department: "Tech",
-      amount: "12,000",
-    },
-    {
-      paymentName: "Zoom Enterprise",
-      department: "Finance",
-      amount: "3,500",
-    },
-    {
-      paymentName: "Notion Team Plan",
-      department: "Admin",
-      amount: "2,400",
-    },
-    {
-      paymentName: "Figma Professional",
-      department: "Tech",
-      amount: "4,200",
-    },
-    {
-      paymentName: "Slack Premium",
-      department: "Tech",
-      amount: "3,000",
-    },
-    {
-      paymentName: "Google Workspace",
-      department: "IT",
-      amount: "6,800",
-    },
-    {
-      paymentName: "Sumo Payroll",
-      department: "HR",
-      amount: "7,500",
-    },
-    {
-      paymentName: "Pet Pooja",
-      department: "Cafe",
-      amount: "5,300",
-    },
-  ];
 
   const marchPaymentColumns = [
     { id: "srNo", label: "Sr No", width: 100 },
@@ -927,10 +886,12 @@ const FinanceDashboard = () => {
         <MuiTable
           Title="Payouts Mar-25"
           columns={marchPaymentColumns}
-          rows={march2025Payments.map((item, index) => ({
+          rows={march2025Payments.map((item, index) => {
+            return {
             srNo: index + 1,
             ...item,
-          }))}
+            dueDate: item.dueDate
+          }})}
           rowKey="_id"
           scroll={true}
           rowsToDisplay={march2025Payments.length}

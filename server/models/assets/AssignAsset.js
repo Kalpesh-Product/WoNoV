@@ -6,7 +6,11 @@ const assignAssetSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Asset",
     },
-    department: {
+    fromDepartment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+    },
+    toDepartment: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
     },
@@ -32,7 +36,7 @@ const assignAssetSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Approved", "Rejected", "Pending"],
+      enum: ["Approved", "Rejected", "Pending", "Revoked"],
     },
     isRevoked: {
       type: Boolean,

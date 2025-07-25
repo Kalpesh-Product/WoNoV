@@ -365,7 +365,7 @@ const updateSubCategory = async (req, res, next) => {
 };
 
 const getCategory = async (req, res, next) => {
-  const company = req.company;
+  const { company, departments, roles } = req;
   const { departmentId } = req.query;
 
   try {
@@ -377,6 +377,12 @@ const getCategory = async (req, res, next) => {
       }
 
       query.department = departmentId;
+    } else if (
+      !roles.includes("Master Admin") &&
+      !roles.includes("Super Admin")
+    ) {
+      const deptIds = departments.map((dept) => dept._id);
+      query = { ...query, department: { $in: deptIds } };
     }
 
     const assetCategories = await AssetCategory.find(query).populate(

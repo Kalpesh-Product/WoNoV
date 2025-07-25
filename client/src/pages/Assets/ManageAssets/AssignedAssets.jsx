@@ -15,415 +15,176 @@ import MuiModal from "../../../components/MuiModal";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import PageFrame from "../../../components/Pages/PageFrame";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useSelector } from "react-redux";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import StatusChip from "../../../components/StatusChip";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import humanDate from "../../../utils/humanDateForamt";
+import { toast } from "sonner";
+import { queryClient } from "../../../main";
 
 const AssignedAssets = () => {
-  const locations = ["ST", "DTC"];
-  const locationTypes = ["Front Desk", "Cabin", "Meeting Room"];
-
-  const floors = ["ST-701A", "ST-701B", "ST-601A", "ST501A", "G-1"];
-  const meetingRooms = [
-    "Baga",
-    "Arambol",
-    "Madrid",
-    "Vagator",
-    "San Francisco",
-  ];
-
-  const [assetRows, setAssetRows] = useState([
-    {
-      id: 1,
-      department: "HR",
-      assetNumber: "L0001",
-      assigneeName: "John Doe",
-      category: "Laptop",
-      brand: "Lenovo",
-      location: "ST-701",
-      status: "Active",
-      isRevoked: false,
-      assignmentDate: "21/11/2024",
+  const axios = useAxiosPrivate();
+  const [selectedAsset, setSelectedAsset] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("");
+  const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  //-----------------------API----------------------//
+  const { data: assignedAssets = [], isLoading: isAssignedPending } = useQuery({
+    queryKey: ["assignedAssets"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/assets/get-asset-requests?department=${departmentId}&status=Approved`
+        );
+        return response.data;
+      } catch (error) {
+        console.error(error.response.data.message);
+      }
     },
-    {
-      id: 2,
-      department: "IT",
-      assetNumber: "P0002",
-      assigneeName: "Jane Smith",
-      category: "Printer",
-      brand: "HP",
-      location: "ST-601",
-      status: "Revoked",
-      isRevoked: true,
-      assignmentDate: "21/11/2024",
-    },
-    {
-      id: 3,
-      department: "Finance",
-      assetNumber: "C0003",
-      assigneeName: "Michael Johnson",
-      category: "Chair",
-      brand: "Godrej",
-      location: "ST-701",
-      status: "Active",
-      isRevoked: false,
-      assignmentDate: "21/11/2024",
-    },
-    {
-      id: 4,
-      department: "Marketing",
-      assetNumber: "B0004",
-      assigneeName: "Emily Brown",
-      category: "Bottle",
-      brand: "Milton",
-      location: "ST-702",
-      status: "Active",
-      isRevoked: false,
-      assignmentDate: "21/11/2024",
-    },
-    {
-      id: 5,
-      department: "HR",
-      assetNumber: "M0005",
-      assigneeName: "David Wilson",
-      category: "Marker",
-      brand: "Camlin",
-      location: "ST-602",
-      status: "Revoked",
-      isRevoked: true,
-      assignmentDate: "21/11/2024",
-    },
-    {
-      id: 6,
-      department: "Admin",
-      assetNumber: "D0006",
-      assigneeName: "Sophia Martinez",
-      category: "Desk",
-      brand: "IKEA",
-      location: "ST-701",
-      status: "Active",
-      isRevoked: false,
-      assignmentDate: "21/11/2024",
-    },
-    {
-      id: 7,
-      department: "Operations",
-      assetNumber: "S0007",
-      assigneeName: "Chris Evans",
-      category: "Scanner",
-      brand: "Canon",
-      location: "ST-701",
-      status: "Revoked",
-      isRevoked: true,
-      assignmentDate: "21/11/2024",
-    },
-  ]);
+  });
+  //-----------------------API----------------------//
 
-  // Modal state
-  const [isDetailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [isConfirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState(null);
-  const [assetToRevoke, setAssetToRevoke] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-
-  // React Hook Form
-  const { control, handleSubmit, reset } = useForm();
-
-  // 🔥 Reset the form when `selectedAsset` changes
-  useEffect(() => {
-    if (selectedAsset) {
-      reset({
-        assignType: "", // Default value
-        department: selectedAsset.department,
-        assigneeName: selectedAsset.assigneeName,
-        location: selectedAsset.location,
-      });
-    }
-  }, [selectedAsset, reset]);
-
-
-  // Function to handle "Revoke" action
-  const handleRevoke = () => {
-    if (assetToRevoke) {
-      setAssetRows((prevRows) =>
-        prevRows.map((row) =>
-          row.id === assetToRevoke.id
-            ? { ...row, status: "Revoked", isRevoked: true }
-            : row
-        )
+  const { mutate: revokeAsset, isPending: isRevoking } = useMutation({
+    mutationFn: async (data) => {
+      console.log("data", data);
+      const response = await axios.patch(
+        `/api/assets/revoke-asset/${data._id}`
       );
-    }
-    setConfirmModalOpen(false);
-  };
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Revoked");
+      queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to revoke asset");
+    },
+  });
 
-  // Function to show the confirmation modal
-  const confirmRevoke = (asset) => {
-    setAssetToRevoke(asset);
-    setConfirmModalOpen(true);
+  //-----------------------Event handlers----------------------//
+  const handleView = (data) => {
+    setModalMode("view");
+    setSelectedAsset(data);
+    setModalOpen(true);
   };
+  //-----------------------Event handlers----------------------//
 
-  // Function to show details modal
-  const showDetails = (asset) => {
-    setSelectedAsset(asset);
-    setIsEditMode(false); // Default to view mode
-    setDetailsModalOpen(true);
-  };
-
-  // Function to handle edit save
-  const handleSave = (data) => {
-    setAssetRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id === selectedAsset.id ? { ...row, ...data } : row
-      )
-    );
-    setDetailsModalOpen(false);
-  };
-
+  //-----------------------Table Data----------------------//
   const assetsColumns = [
-    { field: "id", headerName: "ID", width: 100 },
-    { field: "department", headerName: "Department", width: 150 },
-    { field: "assigneeName", headerName: "Assignee Name", width: 150 },
-    { field: "assetNumber", headerName: "Asset Number", width: 150 },
-    { field: "category", headerName: "Category", width: 150 },
-    { field: "brand", headerName: "Brand", width: 150 },
-    { field: "location", headerName: "Location", flex: 1 },
-    { field: "status", headerName: "Status", flex: 1 },
-    { field: "assignmentDate", headerName: "Assignment Date", flex: 1 },
+    { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "assignee", headerName: "Assignee Name" },
+    { field: "assetNumber", headerName: "Asset Id" },
+    { field: "department", headerName: "Department" },
+    { field: "category", headerName: "Category" },
+    { field: "brand", headerName: "Brand" },
+    {
+      field: "status",
+      headerName: "Status",
+      pinned: "right",
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: (params) => {
-        // const { id, isRevoked } = params.data;
-        const asset = params.data;
-        // if (isRevoked) return null;
-        return (
-          <div className="p-2 mb-2 flex gap-2 items-center">
-            <button
-              className="p-2 py-2 bg-primary rounded-md text-white text-content leading-5"
-              onClick={() => showDetails(asset)}>
-              Details
-            </button>
-            {!asset.isRevoked && (
-              <button
-                className="p-2 py-2 bg-red-200 rounded-md text-red-600 text-content leading-5"
-                onClick={() => confirmRevoke(asset)}>
-                Revoke
-              </button>
-            )}
-          </div>
-        );
-      },
+      pinned: "right",
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.assetId}
+          menuItems={[
+            { label: "View", onClick: () => handleView(params.data) },
+            params.data.status !== "Revoked" && {
+              label: "Revoke",
+              onClick: () => revokeAsset(params.data),
+            },
+          ]}
+        />
+      ),
     },
   ];
+
+  const tableData = isAssignedPending
+    ? []
+    : assignedAssets.map((item, index) => {
+        const assets = item.asset;
+        const category = assets?.subCategory?.category?.categoryName;
+        return {
+          ...assets,
+          ...item,
+          srNo: index + 1,
+          assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
+          assetId: item._id,
+          assetNumber: item?.asset?.assetId,
+          department: item?.fromDepartment?.name,
+          category: category,
+          brand: assets?.brand,
+        };
+      });
+
+  //-----------------------Table Data----------------------//
 
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
         <AgTable
+          key={assignedAssets.length}
           search={true}
-          searchColumn={"assetNumber"}
           tableTitle={"Assigned Assets"}
-          // data={updatedRows} // ✅ Pass updatedRows instead of assetRows
-          data={assetRows}
+          data={tableData}
           columns={assetsColumns}
-          rowStyle={(params) => ({
-            backgroundColor: params.data.isRevoked ? "#f2f2f2" : "white",
-            color: params.data.isRevoked ? "#a0a0a0" : "black",
-          })}
         />
       </PageFrame>
-
-      {/* Confirmation Modal for Revoking */}
       <MuiModal
-        open={isConfirmModalOpen}
-        onClose={() => setConfirmModalOpen(false)}
-        title="Confirm Revocation">
-        <Typography variant="body1">
-          Are you sure you want to revoke this asset assignment?
-        </Typography>
-        <Box display="flex" justifyContent="flex-end" mt={3} gap={2}>
-          <SecondaryButton
-            title={"No"}
-            // variant="contained"
-            // color="secondary"
-            handleSubmit={() => setConfirmModalOpen(false)}
-          />
-          <Button variant="contained" color="error" onClick={handleRevoke}>
-            Yes, Revoke
-          </Button>
-        </Box>
-      </MuiModal>
-
-      {/* Details/Edit Modal */}
-      <MuiModal
-        open={isDetailsModalOpen}
-        onClose={() => {
-          setDetailsModalOpen(false);
-          reset();
-        }}
-        title="Assignee Details">
-        {selectedAsset && (
-          <>
-            {!isEditMode ? (
-              // 🔹 View Mode
-              <div className="grid grid-cols-2 gap-6 px-6 pb-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-content font-medium">Assign Type</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.assignType}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content font-medium">Department</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.department}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content font-medium">
-                    Assignee Name
-                  </span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.assigneeName}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content font-medium">Location</span>
-                  <span className="text-content text-gray-500">
-                    {selectedAsset.location}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-content font-medium">Status</span>
-                  <span
-                    className={`text-content font-semibold ${
-                      selectedAsset.status === "Revoked"
-                        ? "text-red-500"
-                        : "text-green-500"
-                    }`}>
-                    {selectedAsset.status}
-                  </span>
-                </div>
-                <div className="flex col-span-2 justify-center">
-                  <PrimaryButton
-                    title={"Edit"}
-                    handleSubmit={() => setIsEditMode(true)}
-                  />
-                </div>
-              </div>
-            ) : (
-              // 🔹 Edit Mode (Form)
-              <form
-                onSubmit={handleSubmit(handleSave)}
-                className="grid grid-cols-2 gap-6 px-6 pb-0">
-                <Controller
-                  name="assignType"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <Select {...field} size="small" displayEmpty>
-                      <MenuItem value="" disabled>
-                        Select Assign Type
-                      </MenuItem>
-                      <MenuItem value="Rental">Rental</MenuItem>
-                      <MenuItem value="Permanent">Permanent</MenuItem>
-                    </Select>
-                  )}
-                />
-
-                <FormControl fullWidth>
-                  <InputLabel>Department</InputLabel>
-                  <Controller
-                    name="department"
-                    control={control}
-                    defaultValue={selectedAsset.department}
-                    render={({ field }) => (
-                      <Select {...field} label="Department" size="small">
-                        <MenuItem value="HR">HR</MenuItem>
-                        <MenuItem value="IT">IT</MenuItem>
-                        <MenuItem value="Finance">Finance</MenuItem>
-                        <MenuItem value="Marketing">Marketing</MenuItem>
-                        <MenuItem value="Admin">Admin</MenuItem>
-                        <MenuItem value="Operations">Operations</MenuItem>
-                      </Select>
-                    )}
-                  />
-                </FormControl>
-
-                <Controller
-                  name="assigneeName"
-                  control={control}
-                  defaultValue={selectedAsset.assigneeName}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Assignee Name"
-                      fullWidth
-                      size="small"
-                    />
-                  )}
-                />
-
-                {/* <FormControl fullWidth>
-                  <InputLabel>Location</InputLabel>
-                  <Controller
-                    name="location"
-                    control={control}
-                    defaultValue={selectedAsset.location}
-                    render={({ field }) => (
-                      <Select {...field} label="Location" size="small">
-                        <MenuItem value="ST-601">ST</MenuItem>
-                        <MenuItem value="ST-602">DTC</MenuItem>
-                  
-                      </Select>
-                    )}
-                  />
-                </FormControl> */}
-
-                <TextField select label="Location" size="small" fullWidth>
-                  {locations.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
-
-                <TextField select label="Floor" size="small" fullWidth>
-                  {floors.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField select label="Location Type" size="small" fullWidth>
-                  {locationTypes.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField select label="Meeting Room" size="small" fullWidth>
-                  {meetingRooms.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
-                    </MenuItem>
-                  ))}
-                </TextField>
-
-                <div className="flex gap-2 col-span-2">
-                  <div className="w-1/2 justify-items-end">
-                    <PrimaryButton title={"Save"} type="submit" />
-                  </div>
-                  <div className="w-1/2">
-                    <SecondaryButton
-                      title={"Cancel"}
-                      handleSubmit={() => {
-                        setIsEditMode(false);
-                        reset();
-                      }}
-                    />
-                  </div>
-                </div>
-              </form>
-            )}
-          </>
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={modalMode === "view" ? "View Asset" : "Revoke Asset"}
+      >
+        {modalMode === "view" && (
+          <div className="grid grid-cols-1 gap-4">
+            <DetalisFormatted
+              title={"Assignee"}
+              detail={selectedAsset?.assignee}
+            />
+            <DetalisFormatted
+              title={"Asset Name"}
+              detail={selectedAsset?.name}
+            />
+            <DetalisFormatted
+              title={"Asset ID"}
+              detail={selectedAsset?.assetNumber}
+            />
+            <DetalisFormatted
+              title={"Asset Type"}
+              detail={selectedAsset?.assetType}
+            />
+            <DetalisFormatted title={"Brand"} detail={selectedAsset?.brand} />
+            <DetalisFormatted
+              title={"Category"}
+              detail={selectedAsset?.category}
+            />
+            <DetalisFormatted
+              title={"Sub Category"}
+              detail={selectedAsset?.subCategory?.subCategoryName}
+            />
+            <DetalisFormatted
+              title={"Assigned Date"}
+              detail={humanDate(selectedAsset?.createdAt)}
+            />
+            <DetalisFormatted
+              title={"Damaged"}
+              detail={selectedAsset?.isDamaged ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Revoked"}
+              detail={selectedAsset?.isRevoked ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Under Maintenance"}
+              detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
+            />
+          </div>
         )}
       </MuiModal>
     </div>

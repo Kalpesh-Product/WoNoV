@@ -354,10 +354,10 @@ const UniqueLeads = () => {
       >
         <div>
           <AgTable
-            data={filteredLeads.map((item,index) => ({
+            data={filteredLeads.map((item, index) => ({
               _id: item._id,
-              srNo : index + 1,
-              dateOfContact: (item.dateOfContact),
+              srNo: index + 1,
+              dateOfContact: item.dateOfContact,
               companyName: item.companyName,
               pocName: item.pocName,
               contactNumber: item.contactNumber,
@@ -371,19 +371,25 @@ const UniqueLeads = () => {
             }))}
             columns={[
               { headerName: "Sr. No", field: "srNo", width: 100 },
-              { headerName: "Date of Contact", field: "dateOfContact", cellRenderer : (params)=>(humanDate(params.value)) },
+              {
+                headerName: "Date of Contact",
+                field: "dateOfContact",
+                cellRenderer: (params) => humanDate(params.value),
+              },
               {
                 headerName: "Company Name",
                 field: "companyName",
                 flex: 1,
                 cellRenderer: (params) => {
+                  const clientData = params.data
                   return (
                     <span
                       className="text-primary cursor-pointer underline"
                       role="button"
                       onClick={() => {
-                        setSelectedLead(params.data);
-                        setModalOpen(true);
+                        navigate(params.value, { state: {
+                          selectedLead: params.data,
+                        } });
                       }}
                     >
                       {params.value}

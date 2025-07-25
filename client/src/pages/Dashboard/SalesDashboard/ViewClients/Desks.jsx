@@ -46,15 +46,16 @@ const Desks = () => {
   // 🧠 Derive seat data from selectedClient
   const rows = useMemo(() => {
     if (!selectedClient) return [];
-
+    const occupiedSeats = selectedClient.members?.length
     const totalSeats =
       (selectedClient.openDesks ?? 0) + (selectedClient.cabinDesks ?? 0);
 
     return [
       {
         totalSeats,
-        bookedSeats: totalSeats,
-        occupancy: "100%",
+        bookedSeats: occupiedSeats,
+        remaining : totalSeats - occupiedSeats,
+        occupancy: ((occupiedSeats / totalSeats)*100).toFixed(0) || 0,
         availableSeats: 0,
       },
     ];
@@ -147,14 +148,10 @@ const Desks = () => {
                   searchColumn="Email"
                   data={rows}
                   columns={[
-                    { field: "totalSeats", headerName: "Total Seats" },
-                    { field: "bookedSeats", headerName: "Booked Seats" },
+                    { field: "totalSeats", headerName: "Total Seats", flex : 1 },
+                    { field: "bookedSeats", headerName: "Occupied Seats", flex : 1 },
+                    { field: "remaining", headerName: "Remaininfg Seats", flex : 1 },
                     { field: "occupancy", headerName: "Occupancy %" },
-                    {
-                      field: "availableSeats",
-                      headerName: "Available Seats",
-                      flex: 1,
-                    },
                   ]}
                   tableHeight={150}
                 />

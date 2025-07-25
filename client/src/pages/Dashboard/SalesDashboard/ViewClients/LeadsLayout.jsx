@@ -8,15 +8,15 @@ import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
 const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
+  console.log("data recieved ; ", data);
   const navigate = useNavigate();
-  console.log("onga bonga", data);
   // ✅ Dynamically Count Clients Per Domain
   const transformedData = data.map((monthData) => {
     const domainCounts = {
-      "Co-Working": 0,
+      "Coworking": 0,
       "Co-Living": 0,
       Workations: 0,
-      "Virtual Office": 0,
+      "Virtualoffice": 0,
     };
 
     monthData.clients.forEach((client) => {
@@ -30,12 +30,13 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       ...domainCounts, // ✅ Now contains correct domain-wise unique client counts
     };
   });
+  console.log("traasdasda : ", transformedData);
 
   // ✅ Transform Data for ApexCharts
   const uniqueClientsData = [
     {
       name: "Co-Working",
-      data: transformedData.map((item) => item["Co-Working"]),
+      data: transformedData.map((item) => item["Coworking"]),
     },
     {
       name: "Co-Living",
@@ -47,9 +48,10 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
     },
     {
       name: "Virtual Office",
-      data: transformedData.map((item) => item["Virtual Office"]),
+      data: transformedData.map((item) => item["Virtualoffice"]),
     },
   ];
+  console.log("unique clients inside", uniqueClientsData);
 
   console.log(transformedData.map((item) => item["Co-Working"]));
 

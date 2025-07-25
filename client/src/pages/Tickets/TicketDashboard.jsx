@@ -14,11 +14,47 @@ import FinanceCard from "../../components/FinanceCard";
 import { CircularProgress } from "@mui/material";
 import { useState } from "react";
 import dayjs from "dayjs";
+import Permissions from "../../components/Permissions/Permissions";
+import { PERMISSIONS } from "../../constants/permissions";
 
 const TicketDashboard = () => {
   const navigate = useNavigate();
-  const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  const axios = useAxiosPrivate();
+  //------------------------PAGE ACCESS-------------------//
+  const cardsConfig = [
+    {
+      title: "Raise A Ticket",
+      route: "/app/tickets/raise-ticket",
+      icon: <RiPagesLine />,
+    },
+    {
+      title: "Manage Tickets",
+      route: "/app/tickets/manage-tickets",
+      icon: <RiArchiveDrawerLine />,
+      permission: PERMISSIONS.TICKETS_MANAGE_TICKETS.value,
+    },
+    {
+      title: "Reports",
+      route: "/app/tickets/Reports",
+      icon: <MdFormatListBulleted />,
+    },
+    {
+      title: "Team Members",
+      route: "/app/tickets/team-members",
+      icon: <CgProfile />,
+    },
+    {
+      title: "Ticket Settings",
+      route: "/app/tickets/ticket-settings",
+      icon: <RiPagesLine />,
+    },
+  ];
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS-------------------//
 
   const roles = auth.user.role.map((role) => role.roleTitle);
   const depts = auth.user.departments.map((dept) => dept.name);
@@ -89,14 +125,17 @@ const TicketDashboard = () => {
     ).length,
 
     escalatedTickets: ticketsData.filter((item) => {
+      const depts = auth.user.departments.map((dept) => dept._id.toString());
 
-      const depts = auth.user.departments.map((dept)=>dept._id.toString())
-      
-      const matchedDept = depts.some((dept)=> dept === item.raisedToDepartment?._id.toString())
+      const matchedDept = depts.some(
+        (dept) => dept === item.raisedToDepartment?._id.toString()
+      );
 
-       return  matchedDept &&
+      return (
+        matchedDept &&
         item.status === "Escalated" &&
-        dayjs(item?.escalatededAt).isSame(todayDate, "day");
+        dayjs(item?.escalatededAt).isSame(todayDate, "day")
+      );
     }).length,
 
     averagePerformance: (
@@ -242,34 +281,15 @@ const TicketDashboard = () => {
       ],
     },
     {
-      layout: 5,
-      widgets: [
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
         <Card
-          route={"/app/tickets/raise-ticket"}
-          title={"Raise A Ticket"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"/app/tickets/manage-tickets"}
-          title={"Manage Tickets"}
-          icon={<RiArchiveDrawerLine />}
-        />,
-        <Card
-          route={"/app/tickets/Reports"}
-          title={"Reports"}
-          icon={<MdFormatListBulleted />}
-        />,
-        <Card
-          route={"/app/tickets/team-members"}
-          title={"Team Members"}
-          icon={<CgProfile />}
-        />,
-        <Card
-          route={"/app/tickets/ticket-settings"}
-          title={"Ticket Settings"}
-          icon={<RiPagesLine />}
-        />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
     {
       layout: 2,

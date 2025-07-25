@@ -12,6 +12,7 @@ import { queryClient } from "../../../main";
 import { HiPencilSquare } from "react-icons/hi2";
 import { MenuItem } from "@mui/material";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 export default function ManageUnit() {
   const [openEdit, setOpenEdit] = useState(false);
@@ -138,10 +139,15 @@ export default function ManageUnit() {
 
   const columns = [
     { headerName: "SR NO", field: "srNo", width: 100 },
-    { headerName: "Unit No", field: "unitNo", flex: 1 },
-    { headerName: "Unit Name", field: "unitName", flex: 1 },
     { headerName: "Building", field: "buildingName", flex: 1 },
-    { headerName: "Sqft", field: "sqft", flex: 1 },
+    { headerName: "Unit Name", field: "unitName", flex: 1 },
+    { headerName: "Unit No", field: "unitNo", flex: 1 },
+    {
+      headerName: "Sqft",
+      field: "sqft",
+      flex: 1,
+      cellRenderer: (params) => inrFormat(params.value),
+    },
     { headerName: "Open Desks", field: "openDesks", flex: 1 },
     { headerName: "Cabin Desks", field: "cabinDesks", flex: 1 },
     {
