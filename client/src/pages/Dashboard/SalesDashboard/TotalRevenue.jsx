@@ -299,8 +299,6 @@ const TotalRevenue = () => {
     }));
   }, [unifiedRevenueData]);
 
-  console.log("revenueByVertical : ", revenueByVertical);
-
   const totalAnnualRevenue = useMemo(() => {
     return revenueByVertical.reduce(
       (sum, item) => sum + parseFloat(item.revenue.replace(/,/g, "")),
