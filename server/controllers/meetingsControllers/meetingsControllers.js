@@ -477,7 +477,13 @@ const getMeetings = async (req, res, next) => {
 
       return {
         _id: meeting._id,
-        name: meeting.bookedBy?.name,
+        // name: meeting.bookedBy?.name,
+        name: meeting.bookedBy
+          ? [meeting.bookedBy.firstName, meeting.bookedBy.lastName]
+              .filter(Boolean)
+              .join(" ")
+          : "",
+
         receptionist: isReceptionist ? receptionist : "N/A",
         // bookedBy: { ...meeting.bookedBy },
         clientBookedBy: meeting.clientBookedBy,
