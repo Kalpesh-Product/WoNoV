@@ -41,6 +41,11 @@ export const PERMISSIONS = {
   HR_MIX_BAG: { value: "hr_mix_bag", type: "read" },
   HR_DATA: { value: "hr_data", type: "read" },
   HR_SETTINGS: { value: "hr_settings", type: "read" },
+  HR_EMPLOYEE_EDIT: {
+    value: "hr_employee_edit",
+    type: "write",
+    access: "button",
+  },
 
   ADMIN_ANNUAL_EXPENSES: { value: "admin_annual_expenses", type: "read" },
   ADMIN_INVENTORY: { value: "admin_inventory", type: "read" },
