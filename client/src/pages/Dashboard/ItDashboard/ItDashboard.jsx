@@ -23,63 +23,12 @@ import dayjs from "dayjs";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
-import useAuth from "../../../hooks/useAuth";
-import { PERMISSIONS } from "./../../../constants/permissions";
 
 const ItDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const department = usePageDepartment();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const axios = useAxiosPrivate();
-
-  const { auth } = useAuth();
-  const userPermissions = auth?.user?.permissions?.permissions || [];
-
-  //------------------------PAGE ACCESS START-------------------//
-  const cardsConfig = [
-    {
-      route: "/app/dashboard/IT-dashboard/annual-expenses",
-      title: "Annual Expenses",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.IT_ANNUAL_EXPENSES.value,
-    },
-    {
-      route: "/app/dashboard/IT-dashboard/inventory",
-      title: "Inventory",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.IT_INVENTORY.value,
-    },
-    {
-      route: "/app/dashboard/IT-dashboard/finance",
-      title: "Finance",
-      icon: <SiCashapp />,
-      permission: PERMISSIONS.IT_FINANCE.value,
-    },
-    {
-      route: "/app/dashboard/it-dashboard/mix-bag",
-      title: "Mix Bag",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.IT_MIX_BAG.value,
-    },
-    {
-      route: "/app/dashboard/IT-dashboard/data",
-      title: "Data",
-      icon: <SiGoogleadsense />,
-      permission: PERMISSIONS.IT_DATA.value,
-    },
-    {
-      route: "/app/dashboard/IT-dashboard/settings",
-      title: "Settings",
-      icon: <MdOutlineMiscellaneousServices />,
-      permission: PERMISSIONS.IT_SETTINGS.value,
-    },
-  ];
-
-  const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
-  );
-  //------------------------PAGE ACCESS END-------------------//
-
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["it-budget"],
     queryFn: async () => {
@@ -770,51 +719,40 @@ const ItDashboard = () => {
         </Suspense>,
       ],
     },
-    // {
-    //   layout: 6,
-    //   widgets: [
-    //     <Card
-    //       icon={<MdFormatListBulleted />}
-    //       title="Annual Expense"
-    //       route={"/app/dashboard/IT-dashboard/annual-expenses"}
-    //     />,
-    //     <Card
-    //       icon={<MdFormatListBulleted />}
-    //       title="Inventory"
-    //       route={"/app/dashboard/IT-dashboard/inventory"}
-    //     />,
-    //     <Card
-    //       icon={<SiCashapp />}
-    //       title="Finance"
-    //       route={"/app/dashboard/IT-dashboard/finance"}
-    //     />,
-    //     <Card
-    //       icon={<MdFormatListBulleted />}
-    //       title="Mix-Bag"
-    //       route={"/app/dashboard/it-dashboard/mix-bag"}
-    //     />,
-    //     <Card
-    //       icon={<SiGoogleadsense />}
-    //       title="Data"
-    //       route={"/app/dashboard/IT-dashboard/data"}
-    //     />,
-    //     <Card
-    //       icon={<MdOutlineMiscellaneousServices />}
-    //       title="Settings"
-    //       route={"/app/dashboard/IT-dashboard/settings"}
-    //     />,
-    //   ],
-    // },
     {
-      layout: allowedCards.length, // ✅ dynamic layout
-      widgets: allowedCards.map((card) => (
+      layout: 6,
+      widgets: [
         <Card
-          key={card.title}
-          route={card.route}
-          title={card.title}
-          icon={card.icon}
-        />
-      )),
+          icon={<MdFormatListBulleted />}
+          title="Annual Expense"
+          route={"/app/dashboard/IT-dashboard/annual-expenses"}
+        />,
+        <Card
+          icon={<MdFormatListBulleted />}
+          title="Inventory"
+          route={"/app/dashboard/IT-dashboard/inventory"}
+        />,
+        <Card
+          icon={<SiCashapp />}
+          title="Finance"
+          route={"/app/dashboard/IT-dashboard/finance"}
+        />,
+        <Card
+          icon={<MdFormatListBulleted />}
+          title="Mix-Bag"
+          route={"/app/dashboard/it-dashboard/mix-bag"}
+        />,
+        <Card
+          icon={<SiGoogleadsense />}
+          title="Data"
+          route={"/app/dashboard/IT-dashboard/data"}
+        />,
+        <Card
+          icon={<MdOutlineMiscellaneousServices />}
+          title="Settings"
+          route={"/app/dashboard/IT-dashboard/settings"}
+        />,
+      ],
     },
     {
       layout: 3,
