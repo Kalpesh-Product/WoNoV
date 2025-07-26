@@ -14,7 +14,7 @@ export const PERMISSIONS = {
   TASKS_DEPARTMENT_TASKS: { value: "department_tasks", type: "read" },
   TASKS_TEAM_MEMBERS: { value: "task_team_members", type: "read" },
   TASKS_REPORTS: { value: "task_reports", type: "read" },
-  TASKS_SETTINGS: { value: "settings", type: "read" },
+  TASKS_SETTINGS: { value: "task_settings", type: "read" },
 
   VISITORS_ADD_VISITOR: { value: "add_visitor", type: "read" },
   VISITORS_ADD_CLIENT: { value: "add_client", type: "read" },
