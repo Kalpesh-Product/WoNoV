@@ -16,7 +16,21 @@ dist-ssr
 
 # misc
 .env
+/src/pages/Dashboard/ItDashboard/ItDashboard.jsx
+/src/pages/Dashboard/AdminDashboard/AdminDashboard.jsx
+/src/pages/Dashboard/FinanceDashboard/FinanceDashboard.jsx
+/src/pages/Dashboard/MaintenanceDashboard/MaintenanceDashboard.jsx
+/src/pages/Dashboard/HrDashboard/HrDashboard.jsx
+/src/pages/Dashboard/SalesDashboard/SalesDashboard.jsx
 
+
+/src/pages/Tasks/TasksDashboard.jsx
+/src/pages/Assets/AssetsDashboard.jsx
+/src/pages/Tickets/TicketDashboard.jsx
+/src/pages/Visitors/VisitorDashboard.jsx
+
+/src/pages/Access/Access.jsx
+/src/pages/Access/AccessProfile.jsx
 
 
 # Editor directories and files
