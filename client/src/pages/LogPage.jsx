@@ -18,7 +18,7 @@ const LogPage = () => {
     },
   });
   const columns = [
-    {
+    {  
       headerName: "Sr No",
       field: "srNo",
       width: 80,
@@ -45,10 +45,17 @@ const LogPage = () => {
       cellRenderer : (params)=>(humanDate(params.value))
     },
   ];
+
+  // const transformPayload = (payload) => {
+
+    
+  // }
+
   const tableData = isLoading ? [] : data.map((item)=>({
     ...item,
     user : `${item.performedBy?.firstName} ${item.performedBy?.lastName}`,
     createdAt : (item.createdAt),
+    
   }))
 
   return (

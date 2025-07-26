@@ -32,7 +32,7 @@ const modelKeyGroups = {
   Asset: ["assetId"],
   AssignAsset: ["assigneddAssetId"],
   AssetCategory: ["categoryId"],
-  AssetSubCategory: ["subCategoryId"],
+  SubCategory: ["subCategoryId"],
 
   //Meeting IDs
   Meeting: ["meetingId"],
