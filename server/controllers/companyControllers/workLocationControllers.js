@@ -511,7 +511,18 @@ const fetchSimpleUnits = async (req, res, next) => {
       .lean()
       .exec();
 
-    return res.status(200).json(units);
+    const coworkingClients = await CoworkingClient.find().lean().exec();
+    const newResponse = units.map((unit) => {
+      return {
+        ...unit,
+        coworkingClientsCount:
+          coworkingClients.filter(
+            (client) => client.unit._id.toString() === unit._id.toString()
+          ).length || 0,
+      };
+    });
+
+    return res.status(200).json(newResponse);
   } catch (error) {
     next(error);
   }
