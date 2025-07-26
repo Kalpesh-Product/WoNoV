@@ -458,8 +458,12 @@ const getMeetings = async (req, res, next) => {
 
       const isClient = meeting.client ? true : false;
 
-      const isReceptionist = meeting.receptionist.departments.some(
-        (dept) => dept.name === "Administration"
+      // const isReceptionist = meeting.receptionist.departments.some(
+      //   (dept) => dept.name === "Administration"
+      // );
+
+      const isReceptionist = meeting.receptionist?.departments?.some(
+        (dept) => dept?.name === "Administration"
       );
 
       let receptionist;
