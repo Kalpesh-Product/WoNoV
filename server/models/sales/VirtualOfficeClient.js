@@ -14,6 +14,9 @@ const virtualOfficeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
     },
+    terStartDate: {
+      type: Date,
+    },
     totalTerm: {
       type: Number,
       required: true,
