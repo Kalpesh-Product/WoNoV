@@ -458,12 +458,8 @@ const getMeetings = async (req, res, next) => {
 
       const isClient = meeting.client ? true : false;
 
-      // const isReceptionist = meeting.receptionist.departments.some(
-      //   (dept) => dept.name === "Administration"
-      // );
-
-      const isReceptionist = meeting.receptionist?.departments?.some(
-        (dept) => dept?.name === "Administration"
+      const isReceptionist = meeting.receptionist.departments.some(
+        (dept) => dept.name === "Administration"
       );
 
       let receptionist;
@@ -481,13 +477,7 @@ const getMeetings = async (req, res, next) => {
 
       return {
         _id: meeting._id,
-        // name: meeting.bookedBy?.name,
-        name: meeting.bookedBy
-          ? [meeting.bookedBy.firstName, meeting.bookedBy.lastName]
-              .filter(Boolean)
-              .join(" ")
-          : "",
-
+        name: meeting.bookedBy?.name,
         receptionist: isReceptionist ? receptionist : "N/A",
         // bookedBy: { ...meeting.bookedBy },
         clientBookedBy: meeting.clientBookedBy,
