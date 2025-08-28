@@ -17,10 +17,11 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Drawer, List, ListItem, ListItemText } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { IoCloseSharp } from "react-icons/io5";
+import logo from "../../assets/WONO_LOGO_Black_TP.png";
 
 const LoginPage = () => {
   const { auth, setAuth } = useAuth();
-  const user = auth.user
+  const user = auth.user;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -94,20 +95,23 @@ const LoginPage = () => {
     const filteredSubmenus = module.submenus?.filter((submenu) =>
       userDepartments?.includes(submenu.codeName)
     );
-  
+
     return {
       ...module,
       submenus: filteredSubmenus,
     };
   });
-  
-  const hasAnySubmenus = filteredModules.some((module) => module.submenus.length > 0);
-  
+
+  const hasAnySubmenus = filteredModules.some(
+    (module) => module.submenus.length > 0
+  );
+
   // If there are matches, use first matched route. Else fallback to Finance Dashboard
   const firstAvailableRoute = hasAnySubmenus
-    ? filteredModules.find((module) => module.submenus.length > 0).submenus[0].route
+    ? filteredModules.find((module) => module.submenus.length > 0).submenus[0]
+        .route
     : "/app/dashboard";
-  
+
   useEffect(() => {
     if (auth.accessToken) {
       navigate(firstAvailableRoute);
@@ -153,23 +157,25 @@ const LoginPage = () => {
   return (
     <>
       {/* Header */}
-      <div className="bg-black flex justify-between items-center py-6 px-6 md:px-28">
-        {/* Logo */}
-        <a href="https://wono.co">
-          <img src={WonoLogo} alt="wono" className="w-28" />
-        </a>
+      <div className="shadow-md bg-white/80 backdrop-blur-md">
+        <div className="min-w-[75%] max-w-[80rem] lg:max-w-[80rem] mx-0 md:mx-auto px-6 sm:px-6 lg:px-0 ">
+          <div className=" flex justify-between items-center py-3 ">
+            {/* Logo */}
+            <a href="https://wono.co">
+              <img src={logo} alt="wono" className="w-36 h-10" />
+            </a>
 
-        {/* Desktop Nav */}
-        <ul className="hidden md:flex gap-6 text-white uppercase font-thin items-center">
+            {/* Desktop Nav */}
+            {/* <ul className="hidden md:flex gap-6 text-black uppercase font-thin items-center">
           {navItems.map((item, idx) => (
             <li key={idx} className="cursor-pointer hover:underline">
               <a href={item.link}>{item.label}</a>
             </li>
           ))}
-        </ul>
+        </ul> */}
 
-        {/* Desktop Buttons */}
-        <div className="hidden md:flex gap-4">
+            {/* Desktop Buttons */}
+            {/* <div className="hidden md:flex gap-4">
           <a href="https://wonofe.vercel.app">
             <button className="bg-white text-black py-2 px-4 rounded-full uppercase">
               Sign In
@@ -180,12 +186,26 @@ const LoginPage = () => {
               Sign Up
             </button>
           </a>
-        </div>
+        </div> */}
 
-        {/* Mobile Menu Button */}
-        <div className="md:hidden">
+            {/* Mobile Menu Button */}
+            <div className="">
+              <div className="p-4 px-0 whitespace-nowrap">
+                <button
+                  onClick={() =>
+                    (window.location.href = "https://nomad.wono.co")
+                  }
+                  className="relative pb-1 transition-all cursor-pointer duration-300 group font-bold bg-transparent uppercase border-none">
+                  Become a nomad
+                  <span className="absolute left-0 w-0 bottom-0 block h-[2px] bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
+                </button>
+              </div>
+            </div>
+            {/* <div className="md:hidden">
           <div onClick={() => setDrawerOpen(true)} className="text-white">
             <MenuIcon />
+          </div>
+        </div> */}
           </div>
         </div>
       </div>
@@ -193,8 +213,7 @@ const LoginPage = () => {
       <Drawer
         anchor="left"
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      >
+        onClose={() => setDrawerOpen(false)}>
         {/* Drawer Header */}
         <div className="w-full bg-black text-white flex justify-end items-center border-b border-gray-700 p-4 text-2xl">
           <button onClick={() => setDrawerOpen(false)}>
@@ -206,8 +225,7 @@ const LoginPage = () => {
         <div className="w-96 h-screen p-6 flex flex-col gap-8 items-center uppercase bg-black text-white text-center">
           <div
             className="cursor-pointer hover:text-gray-400"
-            onClick={() => setDrawerOpen(false)}
-          >
+            onClick={() => setDrawerOpen(false)}>
             <a href="https://wono.co/" className="block w-full uppercase">
               Home
             </a>
@@ -215,7 +233,7 @@ const LoginPage = () => {
           <hr className="w-[80%] text-gray-300" />
 
           {/* Dynamic nav items */}
-          {navItems.map((item, index) => (
+          {/* {navItems.map((item, index) => (
             <React.Fragment key={index}>
               <div
                 className="cursor-pointer hover:text-gray-400"
@@ -227,15 +245,14 @@ const LoginPage = () => {
               </div>
               <hr className="w-[80%] text-gray-300" />
             </React.Fragment>
-          ))}
+          ))} */}
 
           {/* Sign In button */}
           <div className="flex flex-col w-full items-center gap-6">
             <div>
               <a
                 href="https://wonofe.vercel.app"
-                className="block px-10 py-2 uppercase bg-white text-black mx-auto w-max rounded-full"
-              >
+                className="block px-10 py-2 uppercase bg-white text-black mx-auto w-max rounded-full">
                 Sign In
               </a>
             </div>
@@ -243,8 +260,7 @@ const LoginPage = () => {
             <div>
               <a
                 href="https://wono.co/register"
-                className="block px-10 py-2 uppercase bg-[#0aa9ef] text-white mx-auto w-max rounded-full"
-              >
+                className="block px-10 py-2 uppercase bg-[#0aa9ef] text-white mx-auto w-max rounded-full">
                 Sign Up
               </a>
             </div>
@@ -259,15 +275,13 @@ const LoginPage = () => {
             <Container
               maxWidth="lg"
               style={{ padding: "3rem 0 0" }}
-              direction={{ xs: "column", md: "row" }}
-            >
+              direction={{ xs: "column", md: "row" }}>
               <Box
                 component="form"
                 sx={{ flexGrow: 1 }}
                 onSubmit={handleLogin}
                 noValidate
-                autoComplete="off"
-              >
+                autoComplete="off">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Grid item xs={12}>
                     <TextField
@@ -295,8 +309,7 @@ const LoginPage = () => {
                             <IconButton
                               onClick={() => setShowPassword(!showPassword)}
                               edge="end"
-                              size="small"
-                            >
+                              size="small">
                               {showPassword ? (
                                 <VisibilityOff />
                               ) : (
@@ -313,8 +326,7 @@ const LoginPage = () => {
                 <div className="mt-2 col-span-2 text-end">
                   <Link
                     to="https://wono.co/forgot-password"
-                    className="hover:underline text-black"
-                  >
+                    className="hover:underline text-black">
                     Forgot Password?
                   </Link>
                 </div>
@@ -325,8 +337,7 @@ const LoginPage = () => {
                         <button
                           disabled={loading}
                           type="submit"
-                          className="loginButtonStyling text-decoration-none text-subtitle w-40"
-                        >
+                          className="loginButtonStyling text-decoration-none text-subtitle w-40">
                           {loading ? (
                             <CircularProgress size={20} color="white" />
                           ) : (
@@ -339,10 +350,10 @@ const LoginPage = () => {
                       Don't have an account?{" "}
                       <span
                         onClick={() =>
-                          (window.location.href = "https://wono.co/register")
+                          (window.location.href =
+                            "https://hosts.wono.co/signup")
                         }
-                        className="underline hover:text-primary cursor-pointer"
-                      >
+                        className="underline hover:text-primary cursor-pointer">
                         Sign Up
                       </span>
                     </p>
