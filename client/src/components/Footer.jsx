@@ -1,78 +1,119 @@
-import React from "react";
-import wonoLogo from "../assets/WONO_images/img/WONO.png";
-import { getFiscalYearString } from "../utils/dateFormat";
-import useAuth from "../hooks/useAuth";
+import { Link, useNavigate } from "react-router-dom";
+import logo from "../assets/WONO_LOGO_Black_TP.png";
 
-const Footer = ({ changeActiveTab }) => {
-  const { auth } = useAuth();
-  const footerLinks = [
-    { id: 1, title: "Sign In", route: "https://wonofe.vercel.app" },
-    { id: 2, title: "Modules", route: "https://www.wono.co/modules" },
-    { id: 3, title: "Capital", route: "https://www.wono.co/capital" },
-    { id: 4, title: "FAQs", route: "https://www.wono.co/faqs" },
-    { id: 5, title: "Sign Up", route: "https://www.wono.co/register" },
-    { id: 6, title: "Themes", route: "https://www.wono.co/themes" },
-    { id: 7, title: "Career", route: "https://www.wono.co/career" },
-    { id: 8, title: "Privacy", route: "https://www.wono.co/privacy" },
-    { id: 9, title: "Contact", route: "https://www.wono.co/contact" },
-    { id: 10, title: "Leads", route: "https://www.wono.co/leads" },
-    { id: 11, title: "About", route: "https://www.wono.co/contact" },
-    { id: 12, title: "T&C", route: "https://www.wono.co/termsandconditions" },
+import { FaGlobe, FaRupeeSign, FaFacebookF, FaInstagram } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
+
+const HostFooter = () => {
+  const navigate = useNavigate();
+  const footerSections = [
+    {
+      links: [
+        { name: "About", link: "/" },
+        { name: "Career", link: "https://hosts.wono.co/career" },
+        { name: "FAQs", link: "https://hosts.wono.co/faq" },
+      ],
+    },
+    {
+      links: [
+        { name: "Privacy", link: "https://hosts.wono.co/privacy" },
+        { name: "T&C", link: "https://hosts.wono.co/terms-and-conditions" },
+        { name: "Contact", link: "https://hosts.wono.co/contact" },
+      ],
+    },
   ];
-  
 
   return (
-    <div className="bg-black text-white p-6">
-      <div className="py-2 px-4 lg:py-10 lg:px-[5.7rem] pb-[2rem] flex flex-wrap lg:flex-nowrap items-center gap-8 lg:gap-40">
-        <div className=" w-full flex flex-col gap-1 justify-center items-center md:justify-center md:items-center lg:justify-start lg:items-start">
-          <div className="h-15 w-40">
+    <footer className="w-full bg-gray-100 text-black backdrop-blur-md  flex flex-col justify-center items-center gap-0  pb-0 md:pb-0   shadow-lg ">
+      {/* <div className="w-full flex flex-wrap md:flex-wrap lg:flex-nowrap justify-between items-center pt-12 pb-12 px-4 md:px-[7.5rem]"> */}
+      <div className="w-full flex flex-wrap md:flex-wrap lg:flex-nowrap justify-between items-center pt-12 pb-8 px-4 md:px-[7.5rem]">
+        <div className="flex flex-col w-full lg:w-fit justify-center items-center md:flex-1 md:justify-center md:items-center lg:justify-start lg:items-start mb-8 lg:mb-0">
+          <div className="w-full md:w-80 h-full flex flex-col lg:justify-start lg:items-start justify-center items-center">
             <img
-              className="w-[88%] h-full object-contain mb-9"
-              src={wonoLogo}
-              alt="wono-logo"
+              src={logo}
+              onClick={() => {
+                navigate("/home");
+                window.scrollTo({ top: 0, behavior: "instant" });
+              }}
+              className="w-36 cursor-pointer mb-4"
+              alt="logo"
             />
-          </div>
-          <div className="flex flex-col gap-1 justify-start">
-            <span className="text-content">
-              WONOCO PRIVATE LIMITED 10 ANSON ROAD #33-10
-            </span>
-            <span className="text-content">
-              INTERNATIONAL PLAZA SINGAPORE - 079903
-            </span>
-          </div>
-          <div className="flex gap-2 justify-start">
-            <span className="text-content text-blue-700 hover:underline cursor-pointer pr-10">
-              response@wono.co
-            </span>
+            <p className="text-sm leading-6">
+              WONOCO PRIVATE LIMITED <br />
+              10 ANSON ROAD #33–10 <br />
+              INTERNATIONAL PLAZA SINGAPORE – 079903 <br />
+              <Link
+                to="mailto:response@wono.co"
+                className="text-[#0BA9EF] lowercase hover:underline">
+                response@wono.co
+              </Link>
+            </p>
+            {/* <div className="flex gap-3 mt-4">
+                  <FaTwitter className="bg-gray-700 p-1 rounded text-white text-xl cursor-pointer hover:text-blue-400" />
+                  <FaFacebookF className="bg-gray-700 p-1 rounded text-white text-xl cursor-pointer hover:text-blue-500" />
+                  <FaInstagram className="bg-gray-700 p-1 rounded text-white text-xl cursor-pointer hover:text-pink-400" />
+                  <FaLinkedinIn className="bg-gray-700 p-1 rounded text-white text-xl cursor-pointer hover:text-blue-600" />
+                </div> */}
           </div>
         </div>
-        <div className="w-full text-center grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 gap-x-2 uppercase lg:text-start">
-          {footerLinks.map((link) => (
-            <div key={link.id} className="text-center lg:text-start">
-              {auth?.user === null ? (
-                <a
-                  href={link.route}
-                  className="text-content text-white hover:underline"
-                >
-                  {link.title}
-                </a>
-              ) : (
-                <span className="text-content text-white opacity-50 cursor-not-allowed">
-                  {link.title}
-                </span>
-              )}
-            </div>
-          ))}
+        <div className="lg:w-fit w-full">
+          <div className="w-full md:w-full lg:w-fit grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-10 lg:gap-x-8 lg:gap-y-0  lg:mr-5">
+            {footerSections.map((section, idx) => (
+              <div
+                key={idx}
+                className="flex flex-col  justify-center items-center text-start lg:justify-start lg:items-center">
+                {/* <h3 className="font-semibold text-lg mb-2">
+                {section.heading.toUpperCase()}
+              </h3> */}
+                {section.links.map((linkObj, i) => (
+                  <Link
+                    key={i}
+                    to={linkObj.link}
+                    className="text-sm  text-black opacity-80 hover:opacity-100 hover:text-gray-500 transition-all duration-200 cursor-pointer uppercase p-4">
+                    {linkObj.name}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-      <div className="flex flex-col justify-center items-center border-t border-gray-600 pt-4">
-        <p className="text-[16px] text-white text-center">
-          © Copyright {getFiscalYearString()} by WONOCO PRIVATE LIMITED -
-          SINGAPORE. All Rights Reserved.
-        </p>
+      {/* <div className="w-full h-[0.3px] bg-secondary border-t border-white" /> */}
+      {/* <div className="w-full text-center flex flex-col lg:mb-0 py-6 border-t-2 border-gray-700"> */}
+
+      <div className="w-full text-center flex flex-col lg:mb-0 py-6 border-t-2 border-white">
+        <div className="flex justify-center items-center flex-col md:flex-row lg:flex-row gap-2 text-content md:text-base">
+          <span>
+            &copy; Copyright {new Date().getFullYear()} -{" "}
+            {(new Date().getFullYear() + 1).toString().slice(-2)} <span></span>
+          </span>{" "}
+          <span className="text-small lg:text-base">
+            {" "}
+            WONOCO PRIVATE LIMITED - SINGAPORE. All Rights Reserved.
+          </span>
+        </div>
       </div>
-    </div>
+
+      {/* Footer Bottom Section */}
+      <div className="w-full flex flex-col md:flex-row justify-center items-center text-[10px] md:text-xs px-4 py-4 text-gray-800 bg-gray-50 font-semibold">
+        {/* Right Icons and Settings */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1">
+            <FaGlobe className="text-[12px]" />
+            <span className="tracking-wide">English (IN)</span>
+          </div>
+          <div className="px-2 py-[2px] border-2 border-gray-700 rounded-md text-[12px] flex items-center gap-1">
+            <FaRupeeSign className="text-[12px]" />
+            <span className="tracking-wide">INR</span>
+          </div>
+          <FaFacebookF className="text-[12px]" />
+
+          <FaXTwitter className="text-[12px]" />
+          <FaInstagram className="text-[12px]" />
+        </div>
+      </div>
+    </footer>
   );
 };
 
-export default Footer;
+export default HostFooter;
