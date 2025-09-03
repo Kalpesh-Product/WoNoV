@@ -24,63 +24,12 @@ import dayjs from "dayjs";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
-import useAuth from "../../../hooks/useAuth";
-import { PERMISSIONS } from "./../../../constants/permissions";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const department = usePageDepartment();
   const axios = useAxiosPrivate();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
-
-  const { auth } = useAuth();
-  const userPermissions = auth?.user?.permissions?.permissions || [];
-
-  //------------------------PAGE ACCESS START-------------------//
-  const cardsConfig = [
-    {
-      route: "/app/dashboard/maintenance-dashboard/annual-expenses",
-      title: "Annual Expenses",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.MAINTENANCE_ANNUAL_EXPENSES.value,
-    },
-    {
-      route: "/app/dashboard/maintenance-dashboard/inventory",
-      title: "Inventory",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.MAINTENANCE_INVENTORY.value,
-    },
-    {
-      route: "/app/dashboard/maintenance-dashboard/finance",
-      title: "Finance",
-      icon: <SiCashapp />,
-      permission: PERMISSIONS.MAINTENANCE_FINANCE.value,
-    },
-    {
-      route: "/app/dashboard/maintenance-dashboard/mix-bag",
-      title: "Mix Bag",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.MAINTENANCE_MIX_BAG.value,
-    },
-    {
-      route: "/app/dashboard/maintenance-dashboard/data",
-      title: "Data",
-      icon: <SiGoogleadsense />,
-      permission: PERMISSIONS.MAINTENANCE_DATA.value,
-    },
-    {
-      route: "/app/dashboard/maintenance-dashboard/settings",
-      title: "Settings",
-      icon: <MdOutlineMiscellaneousServices />,
-      permission: PERMISSIONS.MAINTENANCE_SETTINGS.value,
-    },
-  ];
-
-  const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
-  );
-  //------------------------PAGE ACCESS END-------------------//
-
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["maintainance-budget"],
     queryFn: async () => {
@@ -846,51 +795,40 @@ const MaintainanceDashboard = () => {
         </Suspense>,
       ],
     },
-    // {
-    //   layout: 6,
-    //   widgets: [
-    //     <Card
-    //       icon={<MdFormatListBulleted />}
-    //       title="Annual Expenses"
-    //       route={"/app/dashboard/maintenance-dashboard/annual-expenses"}
-    //     />,
-    //     <Card
-    //       icon={<MdFormatListBulleted />}
-    //       title="Inventory"
-    //       route={"/app/dashboard/maintenance-dashboard/inventory"}
-    //     />,
-    //     <Card
-    //       icon={<SiCashapp />}
-    //       title="Finance"
-    //       route={"/app/dashboard/maintenance-dashboard/finance"}
-    //     />,
-    //     <Card
-    //       icon={<MdFormatListBulleted />}
-    //       title="Mix-Bag"
-    //       route={"/app/dashboard/maintenance-dashboard/mix-bag"}
-    //     />,
-    //     <Card
-    //       icon={<SiGoogleadsense />}
-    //       title="Data"
-    //       route={"/app/dashboard/maintenance-dashboard/data"}
-    //     />,
-    //     <Card
-    //       icon={<MdOutlineMiscellaneousServices />}
-    //       title="Settings"
-    //       route={"/app/dashboard/maintenance-dashboard/settings"}
-    //     />,
-    //   ],
-    // },
     {
-      layout: allowedCards.length, // ✅ dynamic layout
-      widgets: allowedCards.map((card) => (
+      layout: 6,
+      widgets: [
         <Card
-          key={card.title}
-          route={card.route}
-          title={card.title}
-          icon={card.icon}
-        />
-      )),
+          icon={<MdFormatListBulleted />}
+          title="Annual Expenses"
+          route={"/app/dashboard/maintenance-dashboard/annual-expenses"}
+        />,
+        <Card
+          icon={<MdFormatListBulleted />}
+          title="Inventory"
+          route={"/app/dashboard/maintenance-dashboard/inventory"}
+        />,
+        <Card
+          icon={<SiCashapp />}
+          title="Finance"
+          route={"/app/dashboard/maintenance-dashboard/finance"}
+        />,
+        <Card
+          icon={<MdFormatListBulleted />}
+          title="Mix-Bag"
+          route={"/app/dashboard/maintenance-dashboard/mix-bag"}
+        />,
+        <Card
+          icon={<SiGoogleadsense />}
+          title="Data"
+          route={"/app/dashboard/maintenance-dashboard/data"}
+        />,
+        <Card
+          icon={<MdOutlineMiscellaneousServices />}
+          title="Settings"
+          route={"/app/dashboard/maintenance-dashboard/settings"}
+        />,
+      ],
     },
     {
       layout: 3,

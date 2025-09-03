@@ -14,51 +14,11 @@ import FinanceCard from "../../components/FinanceCard";
 import { CircularProgress } from "@mui/material";
 import { useState } from "react";
 import dayjs from "dayjs";
-import Permissions from "../../components/Permissions/Permissions";
-import { PERMISSIONS } from "../../constants/permissions";
 
 const TicketDashboard = () => {
   const navigate = useNavigate();
-  const { auth } = useAuth();
-  const userPermissions = auth?.user?.permissions?.permissions || [];
   const axios = useAxiosPrivate();
-  //------------------------PAGE ACCESS-------------------//
-  const cardsConfig = [
-    {
-      title: "Raise A Ticket",
-      route: "/app/tickets/raise-ticket",
-      icon: <RiPagesLine />,
-      permission: PERMISSIONS.TICKETS_RAISE_TICKET.value,
-    },
-    {
-      title: "Manage Tickets",
-      route: "/app/tickets/manage-tickets",
-      icon: <RiArchiveDrawerLine />,
-      permission: PERMISSIONS.TICKETS_MANAGE_TICKETS.value,
-    },
-    {
-      title: "Reports",
-      route: "/app/tickets/Reports",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.TICKETS_REPORTS.value,
-    },
-    {
-      title: "Team Members",
-      route: "/app/tickets/team-members",
-      icon: <CgProfile />,
-      permission: PERMISSIONS.TICKETS_TEAM_MEMBERS.value,
-    },
-    {
-      title: "Ticket Settings",
-      route: "/app/tickets/ticket-settings",
-      icon: <RiPagesLine />,
-      permission: PERMISSIONS.TICKETS_TICKET_SETTINGS.value,
-    },
-  ];
-  const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
-  );
-  //------------------------PAGE ACCESS-------------------//
+  const { auth } = useAuth();
 
   const roles = auth.user.role.map((role) => role.roleTitle);
   const depts = auth.user.departments.map((dept) => dept.name);
@@ -284,15 +244,34 @@ const TicketDashboard = () => {
       ],
     },
     {
-      layout: allowedCards.length, // ✅ dynamic layout
-      widgets: allowedCards.map((card) => (
+      layout: 5,
+      widgets: [
         <Card
-          key={card.title}
-          route={card.route}
-          title={card.title}
-          icon={card.icon}
-        />
-      )),
+          route={"/app/tickets/raise-ticket"}
+          title={"Raise A Ticket"}
+          icon={<RiPagesLine />}
+        />,
+        <Card
+          route={"/app/tickets/manage-tickets"}
+          title={"Manage Tickets"}
+          icon={<RiArchiveDrawerLine />}
+        />,
+        <Card
+          route={"/app/tickets/Reports"}
+          title={"Reports"}
+          icon={<MdFormatListBulleted />}
+        />,
+        <Card
+          route={"/app/tickets/team-members"}
+          title={"Team Members"}
+          icon={<CgProfile />}
+        />,
+        <Card
+          route={"/app/tickets/ticket-settings"}
+          title={"Ticket Settings"}
+          icon={<RiPagesLine />}
+        />,
+      ],
     },
     {
       layout: 2,

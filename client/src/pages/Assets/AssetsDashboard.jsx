@@ -29,8 +29,6 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
-import humanDate from "../../utils/humanDateForamt";
-import { PERMISSIONS } from "../../constants/permissions";
 
 const AssetsDashboard = () => {
   const { auth } = useAuth();
@@ -63,68 +61,11 @@ const AssetsDashboard = () => {
         }
       },
     });
-
   //-----------------------MAIN API CALL------------------------------------//
-  //---------- Nav Cards ---------//
-  const userPermissions = auth?.user?.permissions?.permissions || [];
-  const cardsConfig = [
-    {
-      title: "View Assets",
-      route: "/app/assets/view-assets",
-      icon: <RiPagesLine />,
-      permission: PERMISSIONS.ASSETS_VIEW_ASSETS.value,
-    },
-    {
-      title: "Manage Assets",
-      route: "/app/assets/manage-assets",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.ASSETS_MANAGE_ASSETS.value,
-    },
-    {
-      title: "Mix Bag",
-      route: "#",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.ASSETS_VIEW_GRAPHS,
-    },
-    {
-      title: "Reports",
-      route: "/app/assets/reports",
-      icon: <CgProfile />,
-      permission: null, // no restriction
-    },
-    {
-      title: "Settings",
-      route: "/app/assets/settings",
-      icon: <MdMiscellaneousServices />,
-      permission: null, // no restriction
-    },
-  ];
-  const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
-  );
-  //---------- Nav Cards ---------//
 
-  const isTopManagement = departments.some(
-    (dept) => dept.name === "Top Management"
-  );
-  const deptNames = departments.map((dept) => dept.name);
-
-  let assetsDept = !isDepartmentLoading ? departmentAssets : [];
-
-  if (!isTopManagement) {
-    assetsDept = !isDepartmentLoading
-      ? departmentAssets.filter((dept) =>
-          deptNames.includes(dept.departmentName)
-        )
-      : [];
-  }
-
-  const totalCategories = !isCategoriesLoading
-    ? departmentCategories.length
-    : 0;
   const totalAssets = isDepartmentLoading
     ? []
-    : assetsDept
+    : departmentAssets
         ?.filter((dept) => dept.assets.length > 0)
         .flatMap((dept) => dept.assets);
 
@@ -224,291 +165,59 @@ const AssetsDashboard = () => {
     colors: ["#007bff", "#f39c12"], // Blue: Physical, Orange: Digital
   };
 
-  const pieChartConfigs = [
-    {
-      key: "assignedUnassigned",
-      title: "Assigned v/s Unassigned Assets",
-      layout: 1,
-      border: true,
-      data: assetAvailabilityData,
-      options: assetAvailabilityOptions,
-      permission: PERMISSIONS.ASSETS_ASSIGNED_UNASSIGNED.value,
-    },
-    {
-      key: "physicalDigital",
-      title: "Physical v/s Digital Assets",
-      layout: 1,
-      border: true,
-      data: physicalDigitalPieData,
-      options: physicalDigitalOptions,
-      width: 475,
-    },
-  ];
-
-  const allowedPieCharts = pieChartConfigs.filter(
-    (widget) =>
-      !widget.permission || userPermissions.includes(widget.permission)
-  );
-
-  //---------- Pie Charts ---------//
-
-  //Asset Categories Donut Chart
-  const getRandomColor = () =>
-    "#" +
-    Math.floor(Math.random() * 16777215)
-      .toString(16)
-      .padStart(6, "0");
-
-  const assetCategoriesData = {
-    labels: !isCategoriesLoading
-      ? departmentCategories.map((cat) => {
-          return cat.categoryName;
-        })
-      : [],
-    series: !isCategoriesLoading
-      ? departmentCategories.map((cat) => cat.subCategories.length)
-      : [], // Example metric
-    tooltipValue: !isCategoriesLoading
-      ? departmentCategories.map((cat) => cat.subCategories.length)
-      : [], // Can customize
-    colors: !isCategoriesLoading
-      ? departmentCategories.map(() => getRandomColor())
-      : [],
-    centerLabel: "Assets",
-    title: "Asset Categories Distribution",
-  };
-
-  // -----------------------Department Pie Data --------------------
-
-  const departmentWiseAssets = assetsDept.map((dept) => ({
-    label: `${dept.departmentName}`,
-    value: dept.assets.length,
-  }));
-
-  const totalDepartmentAssets = departmentWiseAssets.reduce(
-    (sum, dept) => sum + dept.value,
-    0
-  );
-
-  const departmentPieData = departmentWiseAssets.map((dept) => ({
-    label: `${dept.label} Department`,
-    value: ((dept.value / totalDepartmentAssets) * 100).toFixed(1),
-    count: dept.value,
-  }));
-
-  const departmentPieOptions = {
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    labels: departmentPieData.map((item) => item.label),
-    legend: { show: true },
-    dataLabels: {
-      enabled: true,
-      formatter: (val) => `${val.toFixed(0)}%`,
-    },
-    tooltip: {
-      y: {
-        formatter: (val, { seriesIndex }) => {
-          const count = departmentPieData[seriesIndex].count;
-          return `${count} assets (${val}%)`;
-        },
-      },
-    },
-    colors: ["#003f5c", "#2f4b7c", "#665191", "#a05195", "#d45087"], // Different colors for departments
-  };
-
   const assetColumns = [
-    { id: "srNo", label: "Sr No" },
-    { id: "assetId", label: "Asset Id" },
-    { id: "department", label: "Department" },
-    { id: "category", label: "Category" },
-    { id: "subCategory", label: "Sub-Category" },
-    { id: "brand", label: "Brand" },
+    { field: "srNo", headerName: "Sr No" },
+    { field: "assetId", headerName: "Asset Id" },
+    { field: "department", headerName: "Department" },
+    { field: "subCategory", headerName: "Sub-Category" },
+    { field: "brand", headerName: "Brand" },
     {
-      id: "price",
-      label: "Price (INR)",
+      field: "price",
+      headerName: "Price (INR)",
+      cellRenderer: (params) => inrFormat(params.value),
     },
-    { id: "purchaseDate", label: "Purchase Date" },
-    { id: "warranty", label: "Warranty (Months)" },
+    { field: "purchaseDate", headerName: "Purchase Date" },
+    { field: "warranty", headerName: "Warranty (Months)" },
+    // {
+    //   field: "actions",
+    //   headerName: "Actions",
+    //   pinned: "right",
+    //   cellRenderer: (params) => (
+    //     <ThreeDotMenu
+    //       rowId={params.data._id}
+    //       menuItems={[
+    //         {
+    //           label: "View",
+    //           onClick: () => handleView(params.data),
+    //         },
+    //         {
+    //           label: "Edit",
+    //           onClick: () => handleEdit(params.data),
+    //         },
+    //       ]}
+    //     />
+    //   ),
+    // },
   ];
 
-  const recentAssets = isDepartmentLoading
+  const tableData = isDepartmentLoading
     ? []
-    : totalAssets
-        .filter((asset) => {
-          const currDate = new Date();
-          const assetDate = new Date(asset.createdAt);
+    : totalAssets.map((item, index) => {
+        const data = {
+          ...item,
+          srNo: index + 1,
+          assetId: item.assetId,
+          department: item?.department?.name,
+          subCategory: item?.subCategory?.subCategoryName,
+          category: item?.subCategory?.category.categoryName,
+          brand: item?.brand,
+          warranty: item?.warranty,
+          purchaseDate: item?.purchased,
+          price: `INR ${item?.price}`,
+        };
 
-          return (
-            assetDate.getMonth() === currDate.getMonth() &&
-            assetDate.getFullYear() === currDate.getFullYear()
-          );
-        })
-        .map((item, index) => {
-          const data = {
-            ...item,
-            srNo: index + 1,
-            assetId: item.assetId,
-            department: item?.department?.name,
-            subCategory: item?.subCategory?.subCategoryName,
-            category: item?.subCategory?.category.categoryName,
-            brand: item?.brand,
-            warranty: item?.warranty,
-            purchaseDate: humanDate(item?.purchaseDate),
-            price: `INR ${item?.price}`,
-          };
-
-          return data;
-        });
-
-  //Assets Value Graph
-
-  // Define current financial year months
-  const financialYearMonths = [
-    "Apr-24",
-    "May-24",
-    "Jun-24",
-    "Jul-24",
-    "Aug-24",
-    "Sep-24",
-    "Oct-24",
-    "Nov-24",
-    "Dec-24",
-    "Jan-25",
-    "Feb-25",
-    "Mar-25",
-    "Jul-25",
-  ];
-
-  // Initialize tracking objects
-  let totalAssetValues = {};
-  let usedAssetValues = {};
-  let assetsUnderMaintenance = {};
-  let assetsDamaged = {};
-
-  // Initialize months with 0
-  financialYearMonths.forEach((month) => {
-    totalAssetValues[month] = 0;
-    usedAssetValues[month] = 0;
-    assetsUnderMaintenance[month] = 0;
-    assetsDamaged[month] = 0;
-  });
-
-  // Helper to convert purchase date to FY month
-  const getMonthKey = (purchaseDate) => {
-    const date = new Date(purchaseDate);
-    const month = date.toLocaleString("en-US", { month: "short" });
-    const year = date.getFullYear().toString().slice(-2);
-    return `${month}-${year}`;
-  };
-
-  // Aggregate data from all departments
-  assetsDept.forEach((dept) => {
-    dept.assets.forEach((asset) => {
-      const monthKey = getMonthKey(asset.purchaseDate);
-
-      if (financialYearMonths.includes(monthKey)) {
-        const price = asset.price || 0;
-
-        totalAssetValues[monthKey] += price;
-
-        if (asset.isAssigned) {
-          usedAssetValues[monthKey] += price;
-        }
-
-        if (asset.isUnderMaintenance) {
-          assetsUnderMaintenance[monthKey] += 1;
-        }
-
-        if (asset.isDamaged) {
-          assetsDamaged[monthKey] += 1;
-        }
-      }
-    });
-  });
-
-  // Calculate utilization
-  const assetUtilizationData = financialYearMonths.map((month) => {
-    const total = totalAssetValues[month];
-    const used = usedAssetValues[month];
-
-    return total ? ((used / total) * 100).toFixed(2) : 0;
-  });
-
-  const assetUtilizationSeries = [
-    {
-      name: "Asset Utilization",
-      data: assetUtilizationData,
-    },
-  ];
-
-  // ApexCharts configuration
-  const assetUtilizationOptions = {
-    chart: {
-      type: "bar",
-      fontFamily: "Poppins-Regular",
-      toolbar: false,
-    },
-    xaxis: {
-      categories: financialYearMonths,
-    },
-    yaxis: {
-      max: 100,
-      title: {
-        text: "Utilization (%)",
-      },
-      labels: {
-        formatter: (value) => `${Math.round(value)}%`,
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: (val) => `${Math.round(val)}%`,
-      style: {
-        fontSize: "11px",
-        colors: ["#ffff"],
-      },
-    },
-    tooltip: {
-      enabled: true,
-      shared: false,
-      custom: ({ seriesIndex, dataPointIndex, w }) => {
-        const month = financialYearMonths[dataPointIndex];
-        const total = totalAssetValues[month].toFixed(2);
-        const used = usedAssetValues[month].toFixed(2);
-        const underMaintenance = assetsUnderMaintenance[month];
-        const damaged = assetsDamaged[month];
-
-        return `
-        <div style="padding: 10px; background: white; border-radius: 5px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);">
-          <div style="padding-bottom: 5px; border-bottom: 1px solid gray; margin-bottom:10px">
-            <strong>${month}</strong><br>
-          </div> 
-          Total Assets Value: INR ${inrFormat(total)}<br>
-          Asset Value Used: INR ${inrFormat(used)}<br>
-          Under Maintenance: ${underMaintenance} <br>
-          Assets Damaged: ${damaged} 
-        </div>
-      `;
-      },
-      fixed: {
-        enabled: true,
-        position: "bottomRight",
-        offsetX: 0,
-        offsetY: -10,
-      },
-    },
-    plotOptions: {
-      bar: {
-        dataLabels: {
-          position: "top",
-        },
-        borderRadius: 5,
-        columnWidth: "40%",
-      },
-    },
-    colors: ["#3B82F6"], // fixed color instead of random
-  };
+        return data;
+      });
 
   const meetingsWidgets = [
     {
@@ -518,26 +227,40 @@ const AssetsDashboard = () => {
           layout={1}
           border
           title={"Assets Value"}
-          titleLabel={"FY 2024-25"}
-        >
+          titleLabel={"FY 2024-25"}>
           <NormalBarGraph
             height={400}
-            data={assetUtilizationSeries}
+            data={[]}
             options={assetUtilizationOptions}
           />
         </WidgetSection>,
       ],
     },
     {
-      layout: allowedCards.length, // ✅ dynamic layout
-      widgets: allowedCards.map((card) => (
+      layout: 5,
+      widgets: [
         <Card
-          key={card.title}
-          route={card.route}
-          title={card.title}
-          icon={card.icon}
-        />
-      )),
+          route={"/app/assets/view-assets"}
+          title={"View Assets"}
+          icon={<RiPagesLine />}
+        />,
+        <Card
+          route={"/app/assets/manage-assets"}
+          title={"Manage Assets"}
+          icon={<MdFormatListBulleted />}
+        />,
+        <Card route={"#"} title={"Mix Bag"} icon={<MdFormatListBulleted />} />,
+        <Card
+          route={"/app/assets/reports"}
+          title={"Reports"}
+          icon={<CgProfile />}
+        />,
+        <Card
+          route={"/app/assets/settings"}
+          title={"Settings"}
+          icon={<MdMiscellaneousServices />}
+        />,
+      ],
     },
     {
       layout: 3,
@@ -549,7 +272,7 @@ const AssetsDashboard = () => {
         />,
         <DataCard
           title={"Total"}
-          data={totalCategories}
+          data={"75"}
           description={"Assets Categories"}
         />,
         <DataCard
@@ -580,21 +303,25 @@ const AssetsDashboard = () => {
       ],
     },
     {
-      layout: allowedPieCharts.length,
-      widgets: allowedPieCharts.map((item) => (
+      layout: 2,
+      widgets: [
         <WidgetSection
-          key={item.key}
-          layout={item.layout}
-          title={item.title}
-          border={item.border}
-        >
+          layout={1}
+          title={"Assigned v/s Unassigned Assets"}
+          border>
           <PieChartMui
-            data={item.data}
-            options={item.options}
-            width={item.width}
+            data={assetAvailabilityData}
+            options={assetAvailabilityOptions}
           />
-        </WidgetSection>
-      )),
+        </WidgetSection>,
+        <WidgetSection layout={1} title={"Physical v/s Digital Assets"} border>
+          <PieChartMui
+            data={physicalDigitalPieData}
+            options={physicalDigitalOptions}
+            width={475}
+          />
+        </WidgetSection>,
+      ],
     },
     {
       layout: 2,
@@ -618,7 +345,7 @@ const AssetsDashboard = () => {
           <MuiTable
             Title="Recently Added Assets"
             columns={assetColumns}
-            rows={recentAssets}
+            rows={tableData}
             rowKey="id"
             rowsToDisplay={8}
             className="h-full"

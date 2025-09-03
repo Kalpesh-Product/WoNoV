@@ -17,53 +17,10 @@ import LazyDashboardWidget from "../../components/Optimization/LazyDashboardWidg
 import dayjs from "dayjs";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import DateBasedGraph from "../../components/graphs/DateBasedGraph";
-import { PERMISSIONS } from "../../constants/permissions";
-import useAuth from "../../hooks/useAuth";
 
 const VisitorDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
-  const { auth } = useAuth();
-  const userPermissions = auth?.user?.permissions?.permissions || [];
-
-  //------------------------PAGE ACCESS START-------------------//
-  const cardsConfig = [
-    {
-      route: "/app/visitors/add-visitor",
-      title: "Add Visitor",
-      icon: <RiPagesLine />,
-      permission: PERMISSIONS.VISITORS_ADD_VISITOR.value,
-    },
-    {
-      route: "/app/visitors/add-client",
-      title: "Add Client",
-      icon: <RiPagesLine />,
-      permission: PERMISSIONS.VISITORS_ADD_CLIENT.value,
-    },
-    {
-      route: "/app/visitors/manage-visitors",
-      title: "Manage Visitors",
-      icon: <RiArchiveDrawerLine />,
-      permission: PERMISSIONS.VISITORS_MANAGE_VISITORS.value,
-    },
-    {
-      route: "/app/visitors/team-members",
-      title: "Team Members",
-      icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.VISITORS_TEAM_MEMBERS.value,
-    },
-    {
-      route: "/app/visitors/reports",
-      title: "Reports",
-      icon: <CgProfile />,
-      permission: PERMISSIONS.VISITORS_REPORTS.value,
-    },
-  ];
-
-  const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
-  );
-  //------------------------PAGE ACCESS END-------------------//
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["visitors"],
@@ -535,51 +492,40 @@ const VisitorDashboard = () => {
         />,
       ],
     },
-    // {
-    //   layout: 5,
-    //   widgets: [
-    //     <Card
-    //       route={"/app/visitors/add-visitor"}
-    //       title={"Add Visitor"}
-    //       icon={<RiPagesLine />}
-    //     />,
-    //     <Card
-    //       route={"/app/visitors/add-client"}
-    //       title={"Add Client"}
-    //       icon={<RiPagesLine />}
-    //     />,
-    //     <Card
-    //       route={"/app/visitors/manage-visitors"}
-    //       title={"Manage Visitors"}
-    //       icon={<RiArchiveDrawerLine />}
-    //     />,
-    //     <Card
-    //       route={"/app/visitors/team-members"}
-    //       title={"Team Members"}
-    //       icon={<MdFormatListBulleted />}
-    //     />,
-    //     <Card
-    //       route={"/app/visitors/reports"}
-    //       title={"Reports"}
-    //       icon={<CgProfile />}
-    //     />,
-    //     // <Card
-    //     //   route={"/app/visitors/reviews"}
-    //     //   title={"Reviews"}
-    //     //   icon={<RiPagesLine />}
-    //     // />,
-    //   ],
-    // },
     {
-      layout: allowedCards.length, // ✅ dynamic layout
-      widgets: allowedCards.map((card) => (
+      layout: 5,
+      widgets: [
         <Card
-          key={card.title}
-          route={card.route}
-          title={card.title}
-          icon={card.icon}
-        />
-      )),
+          route={"/app/visitors/add-visitor"}
+          title={"Add Visitor"}
+          icon={<RiPagesLine />}
+        />,
+        <Card
+          route={"/app/visitors/add-client"}
+          title={"Add Client"}
+          icon={<RiPagesLine />}
+        />,
+        <Card
+          route={"/app/visitors/manage-visitors"}
+          title={"Manage Visitors"}
+          icon={<RiArchiveDrawerLine />}
+        />,
+        <Card
+          route={"/app/visitors/team-members"}
+          title={"Team Members"}
+          icon={<MdFormatListBulleted />}
+        />,
+        <Card
+          route={"/app/visitors/reports"}
+          title={"Reports"}
+          icon={<CgProfile />}
+        />,
+        // <Card
+        //   route={"/app/visitors/reviews"}
+        //   title={"Reviews"}
+        //   icon={<RiPagesLine />}
+        // />,
+      ],
     },
     {
       layout: 3,
