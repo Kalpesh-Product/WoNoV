@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const upload = require("../config/multerConfig");
 
 const {
   createCoworkingClient,
@@ -8,6 +9,9 @@ const {
   updateCoworkingClient,
   getCoworkingClientRevenues,
 } = require("../controllers/salesControllers/coworkingClientControllers");
+const {
+  bulkInsertWorkationClients,
+} = require("../controllers/salesControllers/workationControllers");
 const {
   createClientService,
   getClientServices,
@@ -23,7 +27,7 @@ const {
   getLeads,
   bulkInsertLeads,
 } = require("../controllers/salesControllers/leadsControllers");
-const upload = require("../config/multerConfig");
+
 const {
   getConsolidatedClients,
 } = require("../controllers/salesControllers/consolidatedClients");
@@ -53,6 +57,7 @@ const {
 const {
   createWorkationRevenue,
   getWorkationRevenues,
+  bulkInsertWorkationRevenue,
 } = require("../controllers/salesControllers/workationRevenueController");
 const {
   getMembersByUnit,
@@ -130,6 +135,16 @@ router.post(
 );
 router.post("/create-virtual-office-revenue", createVirtualOfficeRevenue);
 router.get("/get-workation-revenue", getWorkationRevenues);
+router.post(
+  "/bulk-insert-workation-revenue",
+  upload.single("workation-revenue"),
+  bulkInsertWorkationRevenue
+);
+router.post(
+  "/bulk-insert-workation-revenue",
+  upload.single("workation-clients"),
+  bulkInsertWorkationClients
+);
 router.post("/create-workation-revenue", createWorkationRevenue);
 router.get("/consolidated-revenue", getConsolidatedRevenue);
 router.get("/simple-consolidated-revenue", getSimpleConsolidatedRevenue);
