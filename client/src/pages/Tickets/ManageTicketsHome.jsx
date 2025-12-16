@@ -18,7 +18,10 @@ const ManageTicketsHome = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
-    additionalTopUserIds: ["67b83885daad0f7bab2f188b","67b83885daad0f7bab2f1852","681a10b13fc9dc666ede401c"], //Mac//Kashif//Nigel
+    additionalTopUserIds: [
+      "67b83885daad0f7bab2f1852",
+      "681a10b13fc9dc666ede401c",
+    ], //Mac//Kashif//Nigel
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/tickets/manage-tickets/${currentDepartment}`);
@@ -51,7 +54,8 @@ const ManageTicketsHome = () => {
               dispatch(setSelectedDepartment(params.data.mongoId));
               navigate(`${params.value}`);
             }}
-            className="text-primary font-pregular hover:underline cursor-pointer">
+            className="text-primary font-pregular hover:underline cursor-pointer"
+          >
             {params.value}
           </span>
         );
