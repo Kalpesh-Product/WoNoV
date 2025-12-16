@@ -40,7 +40,7 @@ const adminCategories = [
 
 const Inventory = () => {
   const department = usePageDepartment();
-  console.log("department : ", department)
+  console.log("department : ", department);
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -104,14 +104,22 @@ const Inventory = () => {
   const { data: inventoryData, isPending: isInventoryLoading } = useQuery({
     queryKey: ["maintainance-inventory"],
     queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/inventory/get-inventories?department=${department._id}`
-        );
-        return response.data;
-      } catch (error) {
-        throw new Error(error);
-      }
+      const response = await axios.get(
+        `/api/inventory/get-inventories?department=${department._id}`
+      );
+
+      return response.data.map((item) => {
+        const safeDate =
+          item.date ||
+          item.createdAt ||
+          item.updatedAt ||
+          new Date().toISOString(); // last-resort fallback
+
+        return {
+          ...item,
+          date: safeDate,
+        };
+      });
     },
   });
 
@@ -251,14 +259,24 @@ const Inventory = () => {
       headerName: "Closing Units",
       cellRenderer: (params) => inrFormat(params.value),
     },
+    // {
+    //   field: "Category",
+    //   headerName: "Category",
+    //   cellRenderer: (params) => params.data?.category || params.data?.Category,
+    // },
     {
-      field: "Category",
+      field: "category",
       headerName: "Category",
+      cellRenderer: (params) => params.value,
     },
+
     {
       field: "date",
       headerName: "Date",
-      valueGetter: (params) => humanDate(params.data?.date),
+      valueFormatter: (params) => {
+        if (!params.value) return "N/A";
+        return humanDate(params.value);
+      },
     },
     {
       field: "actions",
@@ -272,7 +290,7 @@ const Inventory = () => {
               onClick: () => {
                 setSelectedAsset(params.data);
                 setModalMode("edit");
-                setIsModalOpen(true)
+                setIsModalOpen(true);
               },
             },
           ]}

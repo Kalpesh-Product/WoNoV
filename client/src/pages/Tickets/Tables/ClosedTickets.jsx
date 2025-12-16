@@ -164,6 +164,10 @@ const ClosedTickets = ({ title, departmentId }) => {
             title="Closed at"
             detail={viewTicketDetails?.closedAt}
           />
+          <DetalisFormatted
+            title="Closing Remark"
+            detail={viewTicketDetails?.closingRemark}
+          />
         </div>
       </MuiModal>
     </div>

@@ -14,11 +14,53 @@ import FinanceCard from "../../components/FinanceCard";
 import { CircularProgress } from "@mui/material";
 import { useState } from "react";
 import dayjs from "dayjs";
+import Permissions from "../../components/Permissions/Permissions";
+import { PERMISSIONS } from "../../constants/permissions";
+import React from "react";
 
 const TicketDashboard = () => {
   const navigate = useNavigate();
-  const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  const axios = useAxiosPrivate();
+
+  //------------------------PAGE ACCESS CARDS START-------------------//
+  const cardsConfig = [
+    {
+      title: "Raise A Ticket",
+      route: "/app/tickets/raise-ticket",
+      icon: <RiPagesLine />,
+      permission: PERMISSIONS.TICKETS_RAISE_TICKET.value,
+    },
+    {
+      title: "Manage Tickets",
+      route: "/app/tickets/manage-tickets",
+      icon: <RiArchiveDrawerLine />,
+      permission: PERMISSIONS.TICKETS_MANAGE_TICKETS.value,
+    },
+    {
+      title: "Reports",
+      route: "/app/tickets/Reports",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.TICKETS_REPORTS.value,
+    },
+    {
+      title: "Team Members",
+      route: "/app/tickets/team-members",
+      icon: <CgProfile />,
+      permission: PERMISSIONS.TICKETS_TEAM_MEMBERS.value,
+    },
+    {
+      title: "Ticket Settings",
+      route: "/app/tickets/ticket-settings",
+      icon: <RiPagesLine />,
+      permission: PERMISSIONS.TICKETS_TICKET_SETTINGS.value,
+    },
+  ];
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS CARDS END-------------------//
 
   const roles = auth.user.role.map((role) => role.roleTitle);
   const depts = auth.user.departments.map((dept) => dept.name);
@@ -217,10 +259,179 @@ const TicketDashboard = () => {
     return tickets;
   };
 
-  const ticketWidgets = [
+  //------------------------PAGE ACCESS DONUT START-------------------//
+  const donutChartConfigs = [
     {
       layout: 1,
-      widgets: [
+      padding: true,
+      border: true,
+      key: "totalTickets",
+      title: "Total Tickets ",
+      titleLabel: `${new Date().toLocaleString("default", {
+        month: "short",
+      })}-${new Date().getFullYear().toString().slice(-2)}`,
+
+      centerLabel: "Tickets",
+      labels: ["High", "Medium", "Low"],
+      colors: ["#ff4d4d", "#ffc107", "#28a745"],
+      series: series,
+      tooltipValue: series,
+      // isMonetary: true,
+      permission: PERMISSIONS.TICKETS_TOTAL_TICKETS_DONUT.value,
+    },
+    {
+      layout: 1,
+      padding: true,
+      border: true,
+      key: "deptTickets",
+      title: "Department Tickets ",
+      titleLabel: `${new Date().toLocaleString("default", {
+        month: "short",
+      })}-${new Date().getFullYear().toString().slice(-2)}`,
+      centerLabel: "Tickets",
+      labels: masterDepartments,
+
+      colors: [
+        "#211C84",
+        "#4D55CC",
+        "#7A73D1",
+        "#9EC6F3",
+        "#8F87F1",
+        "#BDDDE4",
+        "#C7D9DD",
+      ],
+      series: donutSeries,
+      tooltipValue: donutSeries,
+      onSliceClick: (index) => {
+        const clickedDepartment = masterDepartments[index];
+        console.log("dep : ", clickedDepartment);
+
+        const departmentTickets = filterDepartmentTickts(clickedDepartment);
+
+        navigate(`manage-tickets/${clickedDepartment}`, {
+          state: { departmentTickets },
+        });
+      },
+      // isMonetary: true,
+      permission: PERMISSIONS.TICKETS_DEPARTMENT_TICKETS_DONUT.value,
+    },
+  ];
+
+  const allowedDonutCharts = donutChartConfigs.filter(
+    (widget) =>
+      !widget.permission || userPermissions.includes(widget.permission)
+  );
+  //------------------------PAGE ACCESS DONUT END-------------------//
+
+  //------------------------PAGE ACCESS DONUT START-------------------//
+  const dataCardConfigs = [
+    {
+      layout: 1,
+
+      key: "priorityWiseTickets",
+      cardTitle: "Priority Wise Tickets",
+      timePeriod: "Today",
+      highlightNegativePositive: true,
+      disableColorChange: true,
+      descriptionData: [
+        // {
+        //   title: "MT. AV. Performance",
+        //   value: `${ticketsFilteredData.averagePerformance}%`,
+        //   route: "/app/tickets/manage-tickets",
+        // },
+        {
+          title: "High",
+          value: todayTicketseries[0],
+          route: "/app/tickets/manage-tickets",
+        },
+        {
+          title: "Medium",
+          value: todayTicketseries[1],
+          route: "/app/tickets/manage-tickets",
+        },
+        {
+          title: "Low",
+          value: todayTicketseries[2],
+          route: "/app/tickets/manage-tickets",
+        },
+      ],
+      permission: PERMISSIONS.TICKETS_PRIORITY_WISE_TICKETS_DATA_CARD.value,
+    },
+    {
+      layout: 1,
+
+      key: "departmentTickets",
+      cardTitle: "Department Tickets",
+      timePeriod: "Today",
+      highlightNegativePositive: true,
+      disableColorChange: true,
+      descriptionData: [
+        {
+          title: "Open Tickets",
+          value: ticketsFilteredData.openTickets,
+          route: "/app/tickets/manage-tickets",
+        },
+        {
+          title: "Closed Tickets",
+          value: ticketsFilteredData.closedTickets,
+          route: "/app/tickets/manage-tickets",
+        },
+        {
+          title: "Pending Tickets",
+          value: ticketsFilteredData.pendingTickets,
+          route: "/app/tickets/manage-tickets",
+        },
+      ],
+      permission: PERMISSIONS.TICKETS_DEPARTMENT_TICKETS_DATA_CARD.value,
+    },
+    {
+      layout: 1,
+
+      key: "personalTickets",
+      cardTitle: "Personal Tickets",
+      timePeriod: "Today",
+      highlightNegativePositive: true,
+      disableColorChange: true,
+      descriptionData: [
+        {
+          title: "Accepted Tickets",
+          value: ticketsFilteredData.acceptedTickets,
+          route: "/app/tickets/manage-tickets",
+        },
+        {
+          title: "Assigned Tickets",
+          value: ticketsFilteredData.assignedTickets
+            ? ticketsFilteredData.assignedTickets
+            : 0,
+          route: "/app/tickets/manage-tickets",
+        },
+        {
+          title: "Escalated Tickets",
+          value: ticketsFilteredData.escalatedTickets
+            ? ticketsFilteredData.escalatedTickets
+            : 0,
+          route: "/app/tickets/manage-tickets",
+        },
+      ],
+      permission: PERMISSIONS.TICKETS_PERSONAL_TICKETS_DATA_CARD.value,
+    },
+  ];
+
+  const allowedDataCards = dataCardConfigs.filter(
+    (widget) =>
+      !widget.permission || userPermissions.includes(widget.permission)
+  );
+  //------------------------PAGE ACCESS DONUT END-------------------//
+
+  //------------------------PAGE ACCESS TICKETS GRAPH START-------------------//
+  const ticketsGraphConfigs = [
+    {
+      layout: 1,
+      key: "overallDepartmentTickets",
+      title: `Overall Department Raised Tickets - ${dateLabel}`,
+      TitleAmount: `TOTAL TICKETS : ${filteredTotal}`,
+      permission: PERMISSIONS.TICKETS_OVERALL_DEPARTMENT_WISE_TICKETS.value,
+      render: () => (
         <WidgetSection
           layout={1}
           border
@@ -240,180 +451,98 @@ const TicketDashboard = () => {
               <CircularProgress />
             </div>
           )}
-        </WidgetSection>,
-      ],
+        </WidgetSection>
+      ),
     },
+  ];
+
+  const allowedTicketsGraphs = ticketsGraphConfigs.filter(
+    (widget) =>
+      !widget.permission || userPermissions.includes(widget.permission)
+  );
+  //------------------------PAGE ACCESS TICKETS GRAPH END-------------------//
+
+  const ticketWidgets = [
+    // {
+    //   layout: 1,
+    //   widgets: [
+    //     <WidgetSection
+    //       layout={1}
+    //       border
+    //       padding
+    //       title={`Overall Department Raised Tickets - ${dateLabel}`}
+    //       TitleAmount={`TOTAL TICKETS : ${filteredTotal}`}>
+    //       {!isLoading ? (
+    //         <AreaGraph
+    //           responseData={ticketsData}
+    //           onTotalChange={setFilteredTotal}
+    //           timeFilter={timeFilter}
+    //           setTimeFilter={setTimeFilter}
+    //           onDateLabelChange={setDateLabel}
+    //         />
+    //       ) : (
+    //         <div className="h-72 flex items-center justify-center">
+    //           <CircularProgress />
+    //         </div>
+    //       )}
+    //     </WidgetSection>,
+    //   ],
+    // },
     {
-      layout: 5,
-      widgets: [
-        <Card
-          route={"/app/tickets/raise-ticket"}
-          title={"Raise A Ticket"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"/app/tickets/manage-tickets"}
-          title={"Manage Tickets"}
-          icon={<RiArchiveDrawerLine />}
-        />,
-        <Card
-          route={"/app/tickets/Reports"}
-          title={"Reports"}
-          icon={<MdFormatListBulleted />}
-        />,
-        <Card
-          route={"/app/tickets/team-members"}
-          title={"Team Members"}
-          icon={<CgProfile />}
-        />,
-        <Card
-          route={"/app/tickets/ticket-settings"}
-          title={"Ticket Settings"}
-          icon={<RiPagesLine />}
-        />,
-      ],
+      layout: 1,
+      widgets: allowedTicketsGraphs.map((item) => (
+        <React.Fragment key={item.key}>{item.render()}</React.Fragment>
+      )),
     },
+
     {
-      layout: 2,
-      widgets: [
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
+        <Card
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
+    },
+
+    {
+      layout: allowedDonutCharts.length,
+      widgets: allowedDonutCharts.map((item) => (
         <WidgetSection
-          layout={1}
-          padding
-          border
-          titleLabel={`${new Date().toLocaleString("default", {
-            month: "short",
-          })}-${new Date().getFullYear().toString().slice(-2)}`}
-          title={"Total Tickets"}>
+          key={item.key}
+          layout={item.layout}
+          title={item.title}
+          border={item.border}
+          padding={item.padding}
+          titleLabel={item.titleLabel}>
           <DonutChart
-            series={series}
-            labels={["High", "Medium", "Low"]}
-            colors={["#ff4d4d", "#ffc107", "#28a745"]}
-            centerLabel={"Tickets"}
-            tooltipValue={series}
+            centerLabel={item.centerLabel}
+            labels={item.labels}
+            colors={item.colors}
+            series={item.series}
+            tooltipValue={item.tooltipValue}
+            onSliceClick={item.onSliceClick}
+            // isMonetary={item.isMonetary}
           />
-        </WidgetSection>,
-        <WidgetSection
-          layout={1}
-          padding
-          border
-          titleLabel={`${new Date().toLocaleString("default", {
-            month: "short",
-          })}-${new Date().getFullYear().toString().slice(-2)}`}
-          title={"Department Tickets"}>
-          <DonutChart
-            series={donutSeries}
-            labels={masterDepartments}
-            colors={[
-              "#211C84",
-              "#4D55CC",
-              "#7A73D1",
-              "#9EC6F3",
-              "#8F87F1",
-              "#BDDDE4",
-              "#C7D9DD",
-            ]}
-            centerLabel={"Tickets"}
-            tooltipValue={donutSeries}
-            onSliceClick={(index) => {
-              const clickedDepartment = masterDepartments[index];
-              console.log("dep : ", clickedDepartment);
-
-              const departmentTickets =
-                filterDepartmentTickts(clickedDepartment);
-
-              navigate(`manage-tickets/${clickedDepartment}`, {
-                state: { departmentTickets },
-              });
-            }}
-          />
-        </WidgetSection>,
-      ],
+        </WidgetSection>
+      )),
     },
-    {
-      layout: 3,
-      widgets: [
-        <div className="rounded-md">
-          <FinanceCard
-            cardTitle="Priority Wise Tickets"
-            timePeriod="Today"
-            highlightNegativePositive={true}
-            disableColorChange
-            descriptionData={[
-              // {
-              //   title: "MT. AV. Performance",
-              //   value: `${ticketsFilteredData.averagePerformance}%`,
-              //   route: "/app/tickets/manage-tickets",
-              // },
-              {
-                title: "High",
-                value: todayTicketseries[0],
-                route: "/app/tickets/manage-tickets",
-              },
-              {
-                title: "Medium",
-                value: todayTicketseries[1],
-                route: "/app/tickets/manage-tickets",
-              },
-              {
-                title: "Low",
-                value: todayTicketseries[2],
-                route: "/app/tickets/manage-tickets",
-              },
-            ]}
-          />
-        </div>,
 
+    {
+      layout: allowedDataCards.length,
+      widgets: allowedDataCards.map((item) => (
         <FinanceCard
-          cardTitle="Department Tickets"
-          timePeriod="Today"
-          highlightNegativePositive={true}
-          disableColorChange
-          descriptionData={[
-            {
-              title: "Open Tickets",
-              value: ticketsFilteredData.openTickets,
-              route: "/app/tickets/manage-tickets",
-            },
-            {
-              title: "Closed Tickets",
-              value: ticketsFilteredData.closedTickets,
-              route: "/app/tickets/manage-tickets",
-            },
-            {
-              title: "Pending Tickets",
-              value: ticketsFilteredData.pendingTickets,
-              route: "/app/tickets/manage-tickets",
-            },
-          ]}
-        />,
-        <FinanceCard
-          cardTitle="Personal Tickets"
-          timePeriod="Today"
-          highlightNegativePositive={true}
-          disableColorChange
-          descriptionData={[
-            {
-              title: "Accepted Tickets",
-              value: ticketsFilteredData.acceptedTickets,
-              route: "/app/tickets/manage-tickets",
-            },
-            {
-              title: "Assigned Tickets",
-              value: ticketsFilteredData.assignedTickets
-                ? ticketsFilteredData.assignedTickets
-                : 0,
-              route: "/app/tickets/manage-tickets",
-            },
-            {
-              title: "Escalated Tickets",
-              value: ticketsFilteredData.escalatedTickets
-                ? ticketsFilteredData.escalatedTickets
-                : 0,
-              route: "/app/tickets/manage-tickets",
-            },
-          ]}
-        />,
-      ],
+          layout={item.layout}
+          key={item.key}
+          cardTitle={item.cardTitle}
+          timePeriod={item.timePeriod}
+          highlightNegativePositive={item.highlightNegativePositive}
+          disableColorChange={item.disableColorChange}
+          descriptionData={item.descriptionData}
+        />
+      )),
     },
   ];
 

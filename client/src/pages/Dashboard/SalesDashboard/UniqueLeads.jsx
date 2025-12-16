@@ -282,7 +282,18 @@ const UniqueLeads = () => {
   return (
     <div className="p-4 flex flex-col gap-4">
       {/* View Type Selection */}
-      <div className="flex gap-4 w-full justify-end">
+
+      <WidgetSection
+        layout={1}
+        border
+        padding
+        title={"Unique Leads"}
+        TitleAmount={`Total Leads : ${totalLeads}`}
+      >
+        <NormalBarGraph data={graphData} options={graphOptions} height={400} />
+      </WidgetSection>
+
+      <div className="flex gap-4 w-full justify-center">
         <FormControl size="small">
           <InputLabel>Select Financial Year</InputLabel>
           <Select
@@ -338,16 +349,6 @@ const UniqueLeads = () => {
       </div>
 
       <WidgetSection
-        layout={1}
-        border
-        padding
-        title={"Unique Leads"}
-        TitleAmount={`Total Leads : ${totalLeads}`}
-      >
-        <NormalBarGraph data={graphData} options={graphOptions} height={400} />
-      </WidgetSection>
-
-      <WidgetSection
         border
         title={"Unique Leads details"}
         TitleAmount={`Total Leads : ${totalLeads}`}
@@ -381,15 +382,17 @@ const UniqueLeads = () => {
                 field: "companyName",
                 flex: 1,
                 cellRenderer: (params) => {
-                  const clientData = params.data
+                  const clientData = params.data;
                   return (
                     <span
                       className="text-primary cursor-pointer underline"
                       role="button"
                       onClick={() => {
-                        navigate(params.value, { state: {
-                          selectedLead: params.data,
-                        } });
+                        navigate(params.value, {
+                          state: {
+                            selectedLead: params.data,
+                          },
+                        });
                       }}
                     >
                       {params.value}

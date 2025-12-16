@@ -701,5 +701,5 @@ module.exports = {
   getAllDeptTasks,
   updateTaskStatus,
   getCompletedKraKpaTasks,
-  bulkInsertKraKpaTasks
+  bulkInsertKraKpaTasks,
 };

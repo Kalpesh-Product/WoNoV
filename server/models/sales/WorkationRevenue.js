@@ -5,13 +5,13 @@ const workationRevenueSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
   },
-  workationClient: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "WorkationClient",
-  },
   nameOfClient: {
     type: String,
     required: true,
+  },
+  client:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref:"WorkationClient"
   },
   particulars: {
     type: String,

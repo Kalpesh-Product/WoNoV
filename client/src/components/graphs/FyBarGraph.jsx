@@ -5,6 +5,7 @@ import SecondaryButton from "../SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import WidgetSection from "../WidgetSection";
 import { inrFormat } from "../../utils/currencyFormat";
+import BarGraph from "./BarGraph";
 
 const getFinancialYear = (dateStr) => {
   const date = dayjs(dateStr);
@@ -42,6 +43,8 @@ const FyBarGraph = ({
   valueKey = "revenue",
   chartOptions = {},
   graphTitle = "",
+  responsiveResize=true,
+  chartId="bargraph"
 }) => {
   const fyOptions = useMemo(() => {
     const yearsSet = new Set();
@@ -155,10 +158,11 @@ const FyBarGraph = ({
       TitleAmount={`INR ${inrFormat(fyTotal)}`}
     >
       <div className="flex flex-col gap-4 rounded-md">
-        <Chart
+        <BarGraph
           options={mergedChartOptions}
-          series={stackedSeries}
-          type="bar"
+          data={stackedSeries}
+          responsiveResize={responsiveResize}
+          chartId={chartId}
           height={350}
         />
 

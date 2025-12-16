@@ -278,7 +278,8 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
     })
       .populate({
         path: "ticket",
-        select: "status acceptedBy assignees image raisedBy raisedToDepartment",
+        select:
+          "ticket description status acceptedBy assignees image raisedBy raisedToDepartment",
         populate: [
           {
             path: "raisedBy",

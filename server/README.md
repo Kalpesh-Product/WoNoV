@@ -76,7 +76,7 @@ npm install
 
 Create a `.env` file in the root directory and add:
 ```env
-PORT=5000
+PORT=5008
 DB_URL=mongodb://localhost:27017/wono
 JWT_SECRET=your_jwt_secret
 REFRESH_SECRET=your_refresh_token_secret

@@ -286,7 +286,11 @@ const getHouseKeepingAssignments = async (req, res, next) => {
 
     const schedules = await HouseKeepingSchedule.find({ unit: unitId })
       .populate("housekeepingMember", "firstName lastName gender") // customize fields
-      .populate("unit", "unitName floorNumber"); // customize fields
+      .populate("unit", "unitName floorNumber")
+      .populate({
+        path: "substitutions.substitute",
+        select: "firstName lastName",
+      }); // customize fields
 
     return res.status(200).json({
       message: "Housekeeping assignments fetched successfully",
@@ -507,7 +511,7 @@ const bulkInsertHouseKeepingSchedule = async (req, res, next) => {
         const hkMemberId = row["HK Member ID"];
         const isActive = row["Employee Is Active"]?.toLowerCase() === "yes";
 
-        if (!isActive) return; 
+        if (!isActive) return;
 
         const unitId = unitsMap.get(location);
         const houseKeepingMember = houseKeepingMembersMap.get(hkMemberId);
@@ -515,7 +519,7 @@ const bulkInsertHouseKeepingSchedule = async (req, res, next) => {
         if (unitId && houseKeepingMember) {
           results.push({
             unit: unitId,
-            housekeepingMember: new mongoose.Types.ObjectId(houseKeepingMember), 
+            housekeepingMember: new mongoose.Types.ObjectId(houseKeepingMember),
             startDate: new Date(row["Start Date"]),
             endDate: new Date(row["End Date"]),
           });

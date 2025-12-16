@@ -69,8 +69,6 @@ const CompanyHandbook = () => {
         (dep) => userDepartmentIds.includes(dep.id) // assuming dep.id is the department's ID in `departmentList`
       );
 
-  console.log("Filtered Departments:", filteredAccordionData);
-
   const accordionDataGeneral = [
     {
       id: 1,

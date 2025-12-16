@@ -16,6 +16,7 @@ import { transformBudgetData } from "../../utils/transformBudgetData";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import useAuth from "../../hooks/useAuth";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import FyBarGraph from "../graphs/FyBarGraph";
 
 const BudgetPage = () => {
   const axios = useAxiosPrivate();
@@ -346,12 +347,13 @@ const BudgetPage = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <YearlyGraph
-        data={expenseRawSeries}
-        options={expenseOptions}
-        title={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
-        titleAmount={`INR ${inrFormat(totalUtilised)}`}
-        onYearChange={setSelectedFiscalYear}
+
+      <FyBarGraph
+      data={hrFinance}
+      dateKey="dueDate"
+      valueKey="actualAmount"
+      chartOptions={expenseOptions}
+      graphTitle={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
       />
 
       {!isTop && (

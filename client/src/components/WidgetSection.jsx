@@ -13,7 +13,7 @@ const WidgetSection = ({
   titleDataColor,
   padding,
   border,
-  button,
+  button=false,
   buttonTitle,
   handleClick,
   titleFont,

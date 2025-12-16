@@ -832,9 +832,7 @@ const getAllDeptTasks = async (req, res, next) => {
     let query = { company, taskType: "Department" };
 
     const isSuperAdmin =
-      roles.includes("Master Admin") ||
-      roles.includes("Super Admin") ||
-      roles.includes("HR Admin");
+      roles.includes("Master Admin") || roles.includes("Super Admin");
 
     if (!isSuperAdmin) {
       query.department = { $in: departments };

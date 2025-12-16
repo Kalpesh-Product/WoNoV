@@ -1,29 +1,51 @@
 import { Tabs } from "@mui/material";
 import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { PERMISSIONS } from "../../../../constants/permissions";
+import TabLayout from "../../../../components/Tabs/TabLayout";
 
 const FrontendData = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   // Map routes to tabs
-  const tabs = [
-    { label: "New Leads", path: "leads" },
-    { label: "Website Issue Reports", path: "website-issue-reports" },
-    { label: "Asset List", path: "asset-list" },
-    { label: "Monthly Invoice Reports", path: "monthly-invoice-reports" },
-    { label: "Vendor", path: "vendor" },
+const tabs = [
+  {
+    label: "New Leads",
+    path: "leads",
+    permission: PERMISSIONS.FRONTEND_LEADS.value,
+  },
+  {
+    label: "Website Issue Reports",
+    path: "website-issue-reports",
+    permission: PERMISSIONS.FRONTEND_WEBSITE_ISSUE_REPORTS.value,
+  },
+  {
+    label: "Asset List",
+    path: "asset-list",
+    permission: PERMISSIONS.FRONTEND_ASSET_LIST.value,
+  },
+  {
+    label: "Monthly Invoice Reports",
+    path: "monthly-invoice-reports",
+    permission: PERMISSIONS.FRONTEND_MONTHLY_INVOICE_REPORTS.value,
+  },
+  {
+    label: "Vendor",
+    path: "vendor",
+    permission: PERMISSIONS.FRONTEND_VENDOR.value,
+  },
+];
 
-  ];
 
   // Redirect to "leads" if the current path is "/frontend-dashboard/data"
-  useEffect(() => {
-    if (location.pathname === "/app/dashboard/frontend-dashboard/data") {
-      navigate("/app/dashboard/frontend-dashboard/data/leads", {
-        replace: true,
-      });
-    }
-  }, [location, navigate]);
+  // useEffect(() => {
+  //   if (location.pathname === "/app/dashboard/frontend-dashboard/data") {
+  //     navigate("/app/dashboard/frontend-dashboard/data/leads", {
+  //       replace: true,
+  //     });
+  //   }
+  // }, [location, navigate]);
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
@@ -31,51 +53,12 @@ const FrontendData = () => {
   );
 
   return (
-    <div className="p-4">
-      <Tabs
-        value={activeTab}
-        variant="fullWidth"
-        TabIndicatorProps={{ style: { display: "none" } }}
-        sx={{
-          backgroundColor: "white",
-          borderRadius: 2,
-          border: "1px solid #d1d5db",
-          "& .MuiTab-root": {
-            textTransform: "none",
-            fontWeight: "medium",
-            padding: "12px 16px",
-            borderRight: "0.1px solid #d1d5db",
-          },
-          "& .Mui-selected": {
-            backgroundColor: "#1E3D73",
-            color: "white",
-          },
-        }}
-      >
-        {tabs.map((tab, index) => (
-          <NavLink
-            key={index}
-            className={"border-r-[1px] border-borderGray"}
-            to={tab.path}
-            style={({ isActive }) => ({
-              textDecoration: "none",
-              color: isActive ? "white" : "#1E3D73",
-              flex: 1,
-              textAlign: "center",
-              padding: "12px 16px",
-              display: "block",
-              backgroundColor: isActive ? "#1E3D73" : "white",
-            })}
-          >
-            {tab.label}
-          </NavLink>
-        ))}
-      </Tabs>
-
-      <div className="py-4">
-        <Outlet />
-      </div>
-    </div>
+      <TabLayout
+      basePath="/app/dashboard/frontend-dashboard/data"
+      defaultTabPath="leads"
+      tabs={tabs}
+      hideTabsCondition={(pathname) => pathname.includes("leads/")}
+    />
   );
 };
 

@@ -55,6 +55,19 @@ const meetingSchema = new mongoose.Schema(
       type: String,
       enum: ["Cash", "Cheque", "NEFT", "RTGS", "IMPS", "Credit Card", "ETC"],
     },
+    paymentProof: {
+      link: {
+        type: String,
+      },
+      id: {
+        type: String,
+      },
+    },
+    paymentVerification: {
+      type: String,
+      enum: ["Under Review", "Verified"],
+      default: "Under Review",
+    },
     internalParticipants: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -125,6 +138,10 @@ const meetingSchema = new mongoose.Schema(
     houeskeepingStatus: {
       type: String,
       default: "Pending",
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

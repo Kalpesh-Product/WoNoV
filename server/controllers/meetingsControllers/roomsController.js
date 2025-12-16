@@ -143,6 +143,23 @@ const getRooms = async (req, res, next) => {
   }
 };
 
+const getSingleRoom = async (req, res, next) => {
+  const { roomName } = req.params;
+
+  try {
+    const room = await Room.findOne({ name: roomName }).populate({
+      path: "location",
+      select: "_id unitName unitNo",
+      populate: { path: "building", select: "_id buildingName fullAddress" },
+    });
+
+    // Send the response with the fetched room
+    res.status(200).json(room);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateRoom = async (req, res, next) => {
   const { user, ip, company } = req;
   const logPath = "meetings/MeetingLog";
@@ -266,4 +283,4 @@ const updateRoom = async (req, res, next) => {
   }
 };
 
-module.exports = { addRoom, getRooms, updateRoom };
+module.exports = { addRoom, getRooms, getSingleRoom, updateRoom };

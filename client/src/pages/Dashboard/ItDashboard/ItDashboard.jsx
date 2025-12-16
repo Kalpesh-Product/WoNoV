@@ -23,12 +23,64 @@ import dayjs from "dayjs";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
+import useAuth from "../../../hooks/useAuth";
+import { PERMISSIONS } from "./../../../constants/permissions";
+import { filterPermissions } from "../../../utils/accessConfig";
 
 const ItDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const department = usePageDepartment();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
   const axios = useAxiosPrivate();
+
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
+  //------------------------PAGE ACCESS START-------------------//
+  const cardsConfig = [
+    {
+      route: "/app/dashboard/IT-dashboard/annual-expenses",
+      title: "Annual Expenses",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.IT_ANNUAL_EXPENSES.value,
+    },
+    {
+      route: "/app/dashboard/IT-dashboard/inventory",
+      title: "Inventory",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.IT_INVENTORY.value,
+    },
+    {
+      route: "/app/dashboard/IT-dashboard/finance",
+      title: "Finance",
+      icon: <SiCashapp />,
+      permission: PERMISSIONS.IT_FINANCE.value,
+    },
+    {
+      route: "/app/dashboard/it-dashboard/mix-bag",
+      title: "Mix Bag",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.IT_MIX_BAG.value,
+    },
+    {
+      route: "/app/dashboard/IT-dashboard/data",
+      title: "Data",
+      icon: <SiGoogleadsense />,
+      permission: PERMISSIONS.IT_DATA.value,
+    },
+    {
+      route: "/app/dashboard/IT-dashboard/settings",
+      title: "Settings",
+      icon: <MdOutlineMiscellaneousServices />,
+      permission: PERMISSIONS.IT_SETTINGS.value,
+    },
+  ];
+
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS END-------------------//
+
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["it-budget"],
     queryFn: async () => {
@@ -688,178 +740,486 @@ const ItDashboard = () => {
     };
   });
 
+  //--------------------ACCESS CONFIG-------------------------//
+  const yearlyGraphConfig = [
+    {
+      key: PERMISSIONS.IT_DEPARTMENT_EXPENSES.value,
+      layout: 1,
+      type: "BarGraph",
+      title: "BIZ Nest IT DEPARTMENT EXPENSE",
+      responsiveResize: true,
+      chartId: "bargraph-hr-expense",
+      options: expenseOptions,
+      data: expenseRawSeries,
+      titleAmount: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
+      onYearChange: setSelectedFiscalYear,
+    },
+  ];
+
+  const allowedYearlyGraph = filterPermissions(
+    yearlyGraphConfig,
+    userPermissions
+  );
+
+  //data cards
+  const dataCardConfigs = [
+    {
+      key: PERMISSIONS.IT_OFFICES_UNDER_MANAGEMENT.value,
+      title: "Offices",
+      data: Array.isArray(unitsData) ? unitsData.length : 0,
+      description: "Under Management",
+      route: "IT-offices",
+    },
+    {
+      key: PERMISSIONS.IT_DUE_TASKS_THIS_MONTH.value,
+      title: "Total",
+      data: tasks.length || 0,
+      description: "Due Tasks This Month",
+      route: "/app/tasks/department-tasks",
+    },
+    {
+      key: PERMISSIONS.IT_INTERNET_EXPENSE_PER_SQFT.value,
+      title: "Total",
+      data: `INR ${inrFormat(internetExpense / totalSqFt)}`,
+      description: "Internet Expense per sq.ft",
+      route: "per-sq-ft-internet-expense",
+    },
+    {
+      key: PERMISSIONS.IT_EXPENSE_PER_SQFT.value,
+      title: "Total",
+      data: `INR ${inrFormat((totalOverallExpense || 0) / totalSqFt)}`,
+      description: "Expense per sq.ft",
+      route: "per-sq-ft-expense",
+    },
+    {
+      key: PERMISSIONS.IT_MONTHLY_EXPENSE.value,
+      title: "Average",
+      data: `INR ${inrFormat(averageMonthlyExpense)}`,
+      description: "Monthly Expense",
+      route: "IT-expenses",
+    },
+    {
+      key: PERMISSIONS.IT_MONTHLY_KPA.value,
+      title: "Total",
+      data: departmentKra.length || 0,
+      description: "Monthly KPA",
+      route: "/app/performance/IT/monthly-KPA",
+    },
+  ];
+
+  const allowedITDataCards = filterPermissions(
+    dataCardConfigs,
+    userPermissions
+  );
+
+  //MUI Tables
+  const tableWidgetConfigs = [
+    {
+      key: PERMISSIONS.IT_TOP_10_HIGH_PRIORITY_DUE_TASKS.value,
+      scroll: true,
+      rowsToDisplay: 4,
+      title: "Top 10 High Priority Due Tasks",
+      rows: transformedTasks,
+      columns: priorityTasksColumns,
+    },
+    {
+      key: PERMISSIONS.IT_WEEKLY_EXECUTIVE_SHIFT_TIMING.value,
+      scroll: true,
+      rowsToDisplay: 4,
+      title: "Weekly Executive Shift Timing",
+      rows: transformedWeeklyShifts,
+      columns: executiveTimingsColumns,
+    },
+  ];
+
+  const allowedTables = filterPermissions(tableWidgetConfigs, userPermissions);
+
+  const pieChartConfig = [
+    {
+      key: PERMISSIONS.IT_UNIT_WISE_IT_EXPENSES.value,
+      type: "PieChartMui",
+      title: "Unit Wise IT Expenses",
+      border: true,
+      data: [],
+      options: [],
+    },
+    {
+      key: PERMISSIONS.IT_BIOMETRICS_GENDER_DATA.value,
+      type: "PieChartMui",
+      title: "Biometrics Activation Data",
+      border: true,
+      data: [],
+      options: [],
+    },
+  ];
+  const allowedPieCharts = filterPermissions(pieChartConfig, userPermissions);
+
+  const dueTasksConfigs = [
+    {
+      key: PERMISSIONS.IT_UNIT_WISE_DUE_TASKS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Unit Wise Due Tasks",
+      data: [],
+      options: [],
+    },
+    {
+      key: PERMISSIONS.IT_EXECUTIVE_WISE_DUE_TASKS.value,
+      type: "DonutChart",
+      border: true,
+      title: "Executive Wise Due Tasks",
+      centerLabel: "Tasks",
+      labels: [],
+      colors: colors,
+      series: [],
+      tooltipValue: executiveTasksCount,
+      width: 500,
+    },
+  ];
+  const allowedDueTasks = filterPermissions(dueTasksConfigs, userPermissions);
+
+  const pieDonutConfig = [
+    {
+      key: PERMISSIONS.IT_CLIENT_WISE_COMPLAINTS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Client-Wise Complaints",
+      data: [],
+      options: [],
+    },
+    {
+      key: PERMISSIONS.IT_TYPE_OF_IT_COMPLAINTS.value,
+      type: "DonutChart",
+      border: true,
+      title: "Type Of IT Complaints",
+      centerLabel: "",
+      labels: complaintTypeLabels,
+      series: donutComplaintTypeData,
+      tooltipValue: complaintCounts,
+    },
+  ];
+  const allowedPieDonut = filterPermissions(pieDonutConfig, userPermissions);
+
   //
   // ----------------------------------------------------------------------------------------------------------//
+
+  // const techWidgets = [
+  //   {
+  //     layout: 1,
+  //     widgets: [
+  //       <Suspense
+  //         fallback={
+  //           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+  //             {/* Simulating chart skeleton */}
+  //             <Skeleton variant="text" width={200} height={30} />
+  //             <Skeleton variant="rectangular" width="100%" height={300} />
+  //           </Box>
+  //         }
+  //       >
+  //         <WidgetSection normalCase layout={1} padding>
+  //           <YearlyGraph
+  //             data={expenseRawSeries}
+  //             responsiveResize
+  //             chartId={"bargraph-hr-expense"}
+  //             options={expenseOptions}
+  //             onYearChange={setSelectedFiscalYear}
+  //             title={"BIZ Nest IT DEPARTMENT EXPENSE"}
+  //             titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
+  //               "en-IN"
+  //             )}`}
+  //           />
+  //         </WidgetSection>
+  //       </Suspense>,
+  //     ],
+  //   },
+  //   // {
+  //   //   layout: 6,
+  //   //   widgets: [
+  //   //     <Card
+  //   //       icon={<MdFormatListBulleted />}
+  //   //       title="Annual Expense"
+  //   //       route={"/app/dashboard/IT-dashboard/annual-expenses"}
+  //   //     />,
+  //   //     <Card
+  //   //       icon={<MdFormatListBulleted />}
+  //   //       title="Inventory"
+  //   //       route={"/app/dashboard/IT-dashboard/inventory"}
+  //   //     />,
+  //   //     <Card
+  //   //       icon={<SiCashapp />}
+  //   //       title="Finance"
+  //   //       route={"/app/dashboard/IT-dashboard/finance"}
+  //   //     />,
+  //   //     <Card
+  //   //       icon={<MdFormatListBulleted />}
+  //   //       title="Mix-Bag"
+  //   //       route={"/app/dashboard/it-dashboard/mix-bag"}
+  //   //     />,
+  //   //     <Card
+  //   //       icon={<SiGoogleadsense />}
+  //   //       title="Data"
+  //   //       route={"/app/dashboard/IT-dashboard/data"}
+  //   //     />,
+  //   //     <Card
+  //   //       icon={<MdOutlineMiscellaneousServices />}
+  //   //       title="Settings"
+  //   //       route={"/app/dashboard/IT-dashboard/settings"}
+  //   //     />,
+  //   //   ],
+  //   // },
+  //   {
+  //     layout: allowedCards.length, // ✅ dynamic layout
+  //     widgets: allowedCards.map((card) => (
+  //       <Card
+  //         key={card.title}
+  //         route={card.route}
+  //         title={card.title}
+  //         icon={card.icon}
+  //       />
+  //     )),
+  //   },
+  //   {
+  //     layout: 3,
+  //     widgets: [
+  //       <DataCard
+  //         data={Array.isArray(unitsData) ? unitsData.length : 0}
+  //         title={"Offices"}
+  //         description={"Under Management"}
+  //         route={"IT-offices"}
+  //       />,
+  //       <DataCard
+  //         route={"/app/tasks"}
+  //         data={tasks.length || 0}
+  //         title={"Total"}
+  //         description={"Due Tasks This Month"}
+  //       />,
+  //       <DataCard
+  //         data={`INR ${inrFormat(internetExpense / totalSqFt)}`}
+  //         title={"Total"}
+  //         description={"Internet Expense per sq.ft"}
+  //         route={"per-sq-ft-internet-expense"}
+  //       />,
+  //       <DataCard
+  //         data={`INR ${inrFormat((totalOverallExpense || 0) / totalSqFt)}`}
+  //         title={"Total"}
+  //         description={"Expense per sq.ft"}
+  //         route={"per-sq-ft-expense"}
+  //       />,
+  //       <DataCard
+  //         route={"IT-expenses"}
+  //         title={"Average"}
+  //         data={`INR ${inrFormat(averageMonthlyExpense)}`}
+  //         description={"Monthly Expense"}
+  //       />,
+  //       <DataCard
+  //         data={departmentKra.length || 0}
+  //         title={"Total"}
+  //         description={"Monthly KPA"}
+  //       />,
+  //     ],
+  //   },
+  //   {
+  //     layout: 2,
+  //     widgets: [
+  //       <MuiTable
+  //         key={priorityTasks.length}
+  //         scroll
+  //         rowsToDisplay={4}
+  //         Title={"Top 10 High Priority Due Tasks"}
+  //         rows={transformedTasks}
+  //         columns={priorityTasksColumns}
+  //       />,
+  //       <MuiTable
+  //         key={executiveTimings.length}
+  //         Title={"Weekly Executive Shift Timing"}
+  //         rows={transformedWeeklyShifts}
+  //         columns={executiveTimingsColumns}
+  //         scroll
+  //         rowsToDisplay={4}
+  //       />,
+  //     ],
+  //   },
+  //   {
+  //     layout: 2,
+  //     widgets: [
+  //       <WidgetSection border title={"Unit Wise Due Tasks"}>
+  //         <PieChartMui data={[]} options={[]} />
+  //       </WidgetSection>,
+  //       <WidgetSection border title={"Executive Wise Due Tasks"}>
+  //         <DonutChart
+  //           centerLabel="Tasks"
+  //           labels={[]}
+  //           colors={colors}
+  //           series={[]}
+  //           tooltipValue={executiveTasksCount}
+  //           width={500}
+  //         />
+  //       </WidgetSection>,
+  //     ],
+  //   },
+  //   {
+  //     layout: 2,
+  //     widgets: [
+  //       <WidgetSection border title={"Unit Wise IT Expenses"}>
+  //         <PieChartMui data={[]} options={[]} />
+  //       </WidgetSection>,
+  //       <WidgetSection border title={"Biometrics Gender Data"}>
+  //         <PieChartMui data={[]} options={[]} />
+  //       </WidgetSection>,
+  //     ],
+  //   },
+  //   //Last section
+  //   {
+  //     layout: 2,
+  //     widgets: [
+  //       <WidgetSection border title={"Client-Wise Complaints"}>
+  //         <PieChartMui data={[]} options={[]} />
+  //       </WidgetSection>,
+  //       <WidgetSection border title={"Type Of IT Complaints"}>
+  //         <DonutChart
+  //           centerLabel={``}
+  //           labels={complaintTypeLabels}
+  //           series={donutComplaintTypeData}
+  //           tooltipValue={complaintCounts}
+  //         />
+  //       </WidgetSection>,
+  //     ],
+  //   },
+  // ];
 
   const techWidgets = [
     {
       layout: 1,
-      widgets: [
-        <Suspense
-          fallback={
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {/* Simulating chart skeleton */}
-              <Skeleton variant="text" width={200} height={30} />
-              <Skeleton variant="rectangular" width="100%" height={300} />
-            </Box>
-          }>
-          <WidgetSection normalCase layout={1} padding>
-            <YearlyGraph
-              data={expenseRawSeries}
-              responsiveResize
-              chartId={"bargraph-hr-expense"}
-              options={expenseOptions}
-              onYearChange={setSelectedFiscalYear}
-              title={"BIZ Nest IT DEPARTMENT EXPENSE"}
-              titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
-                "en-IN"
-              )}`}
-            />
-          </WidgetSection>
-        </Suspense>,
-      ],
+      widgets: allowedYearlyGraph.map((config) => (
+        <WidgetSection
+          normalCase
+          layout={config.layout}
+          padding
+          key={config.key}
+        >
+          <YearlyGraph
+            chartId={config.chartId}
+            data={config.data}
+            options={config.options}
+            title={config.title}
+            titleAmount={config.titleAmount}
+            onYearChange={config.onYearChange}
+            responsiveResize
+          />
+        </WidgetSection>
+      )),
     },
     {
-      layout: 6,
-      widgets: [
+      layout: allowedCards.length,
+      widgets: allowedCards.map((card) => (
         <Card
-          icon={<MdFormatListBulleted />}
-          title="Annual Expense"
-          route={"/app/dashboard/IT-dashboard/annual-expenses"}
-        />,
-        <Card
-          icon={<MdFormatListBulleted />}
-          title="Inventory"
-          route={"/app/dashboard/IT-dashboard/inventory"}
-        />,
-        <Card
-          icon={<SiCashapp />}
-          title="Finance"
-          route={"/app/dashboard/IT-dashboard/finance"}
-        />,
-        <Card
-          icon={<MdFormatListBulleted />}
-          title="Mix-Bag"
-          route={"/app/dashboard/it-dashboard/mix-bag"}
-        />,
-        <Card
-          icon={<SiGoogleadsense />}
-          title="Data"
-          route={"/app/dashboard/IT-dashboard/data"}
-        />,
-        <Card
-          icon={<MdOutlineMiscellaneousServices />}
-          title="Settings"
-          route={"/app/dashboard/IT-dashboard/settings"}
-        />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
     {
       layout: 3,
-      widgets: [
+      widgets: allowedITDataCards.map((config) => (
         <DataCard
-          data={Array.isArray(unitsData) ? unitsData.length : 0}
-          title={"Offices"}
-          description={"Under Management"}
-          route={"IT-offices"}
-        />,
-        <DataCard
-          route={"/app/tasks"}
-          data={tasks.length || 0}
-          title={"Total"}
-          description={"Due Tasks This Month"}
-        />,
-        <DataCard
-          data={`INR ${inrFormat(internetExpense / totalSqFt)}`}
-          title={"Total"}
-          description={"Internet Expense per sq.ft"}
-          route={"per-sq-ft-internet-expense"}
-        />,
-        <DataCard
-          data={`INR ${inrFormat((totalOverallExpense || 0) / totalSqFt)}`}
-          title={"Total"}
-          description={"Expense per sq.ft"}
-          route={"per-sq-ft-expense"}
-        />,
-        <DataCard
-          route={"IT-expenses"}
-          title={"Average"}
-          data={`INR ${inrFormat(averageMonthlyExpense)}`}
-          description={"Monthly Expense"}
-        />,
-        <DataCard
-          data={departmentKra.length || 0}
-          title={"Total"}
-          description={"Monthly KPA"}
-        />,
-      ],
+          key={config.key}
+          data={config.data}
+          title={config.title}
+          description={config.description}
+          route={config.route}
+        />
+      )),
     },
     {
-      layout: 2,
-      widgets: [
+      layout: allowedTables.length,
+      widgets: allowedTables.map((config) => (
         <MuiTable
-          key={priorityTasks.length}
-          scroll
-          rowsToDisplay={4}
-          Title={"Top 10 High Priority Due Tasks"}
-          rows={transformedTasks}
-          columns={priorityTasksColumns}
-        />,
-        <MuiTable
-          key={executiveTimings.length}
-          Title={"Weekly Executive Shift Timing"}
-          rows={transformedWeeklyShifts}
-          columns={executiveTimingsColumns}
-          scroll
-          rowsToDisplay={4}
-        />,
-      ],
+          key={config.key}
+          scroll={config.scroll}
+          rowsToDisplay={config.rowsToDisplay}
+          Title={config.title}
+          rows={config.rows}
+          columns={config.columns}
+        />
+      )),
     },
     {
-      layout: 2,
-      widgets: [
-        <WidgetSection border title={"Unit Wise Due Tasks"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-        <WidgetSection border title={"Executive Wise Due Tasks"}>
-          <DonutChart
-            centerLabel="Tasks"
-            labels={[]}
-            colors={colors}
-            series={[]}
-            tooltipValue={executiveTasksCount}
-            width={500}
-          />
-        </WidgetSection>,
-      ],
+      layout: allowedDueTasks.length,
+      widgets: allowedDueTasks.map((config) => {
+        if (config.type === "PieChartMui") {
+          return (
+            <WidgetSection
+              key={config.key}
+              border={config.border}
+              title={config.title}
+            >
+              <PieChartMui data={config.data} options={config.options} />
+            </WidgetSection>
+          );
+        } else if (config.type === "DonutChart") {
+          return (
+            <WidgetSection
+              key={config.key}
+              border={config.border}
+              title={config.title}
+            >
+              <DonutChart
+                centerLabel={config.centerLabel}
+                labels={config.labels}
+                colors={config.colors}
+                series={config.series}
+                tooltipValue={config.tooltipValue}
+                width={config.width}
+              />
+            </WidgetSection>
+          );
+        }
+      }),
     },
     {
-      layout: 2,
-      widgets: [
-        <WidgetSection border title={"Unit Wise IT Expenses"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-        <WidgetSection border title={"Biometrics Gender Data"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-      ],
+      layout: allowedPieCharts.length,
+      widgets: allowedPieCharts.map((config) => (
+        <WidgetSection
+          key={config.key}
+          border={config.border}
+          title={config.title}
+        >
+          <PieChartMui data={config.data} options={config.options} />
+        </WidgetSection>
+      )),
     },
-    //Last section
     {
-      layout: 2,
-      widgets: [
-        <WidgetSection border title={"Client-Wise Complaints"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-        <WidgetSection border title={"Type Of IT Complaints"}>
-          <DonutChart
-            centerLabel={``}
-            labels={complaintTypeLabels}
-            series={donutComplaintTypeData}
-            tooltipValue={complaintCounts}
-          />
-        </WidgetSection>,
-      ],
+      layout: allowedPieDonut.length,
+      widgets: allowedPieDonut.map((config) => {
+        if (config.type === "PieChartMui") {
+          return (
+            <WidgetSection
+              key={config.key}
+              border={config.border}
+              title={config.title}
+            >
+              <PieChartMui data={config.data} options={config.options} />
+            </WidgetSection>
+          );
+        } else if (config.type === "DonutChart") {
+          return (
+            <WidgetSection
+              key={config.key}
+              border={config.border}
+              title={config.title}
+            >
+              <DonutChart
+                centerLabel={config.centerLabel}
+                labels={config.labels}
+                series={config.series}
+                tooltipValue={config.tooltipValue}
+              />
+            </WidgetSection>
+          );
+        }
+      }),
     },
   ];
 

@@ -17,10 +17,54 @@ import LazyDashboardWidget from "../../components/Optimization/LazyDashboardWidg
 import dayjs from "dayjs";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import DateBasedGraph from "../../components/graphs/DateBasedGraph";
+import { PERMISSIONS } from "../../constants/permissions";
+import useAuth from "../../hooks/useAuth";
+import FyBarGraphCount from "../../components/graphs/FyBarGraphCount";
 
 const VisitorDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
+  //------------------------PAGE ACCESS START-------------------//
+  const cardsConfig = [
+    {
+      route: "/app/visitors/add-visitor",
+      title: "Add Visitor",
+      icon: <RiPagesLine />,
+      permission: PERMISSIONS.VISITORS_ADD_VISITOR.value,
+    },
+    {
+      route: "/app/visitors/add-client",
+      title: "Add Client",
+      icon: <RiPagesLine />,
+      permission: PERMISSIONS.VISITORS_ADD_CLIENT.value,
+    },
+    {
+      route: "/app/visitors/manage-visitors",
+      title: "Manage Visitors",
+      icon: <RiArchiveDrawerLine />,
+      permission: PERMISSIONS.VISITORS_MANAGE_VISITORS.value,
+    },
+    {
+      route: "/app/visitors/team-members",
+      title: "Team Members",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.VISITORS_TEAM_MEMBERS.value,
+    },
+    {
+      route: "/app/visitors/reports",
+      title: "Reports",
+      icon: <CgProfile />,
+      permission: PERMISSIONS.VISITORS_REPORTS.value,
+    },
+  ];
+
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS END-------------------//
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["visitors"],
@@ -93,9 +137,6 @@ const VisitorDashboard = () => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    xaxis: {
-      categories: months,
-    },
     yaxis: {
       max: 50, // ✅ Add this line
       title: {
@@ -122,6 +163,9 @@ const VisitorDashboard = () => {
         fontSize: "12px",
         colors: ["#000"],
       },
+    },
+    tooltip: {
+      shared: false,
     },
   };
 
@@ -389,14 +433,14 @@ const VisitorDashboard = () => {
 
   // -----------------------Department Pie Data End--------------------
   //--------------------------------------------//
+  const now = new Date();
+  const checkedInCount = visitorsData.filter((v) => {
+    return v.checkIn && (!v.checkOut || new Date(v.checkOut) > now);
+  }).length;
 
-  const checkedInCount = visitorsData.filter(
-    (v) => v.checkIn && !v.checkOut
-  ).length;
-
-  const checkedOutCount = visitorsData.filter(
-    (v) => v.checkIn && v.checkOut
-  ).length;
+  const checkedOutCount = visitorsData.filter((v) => {
+    return v.checkIn && v.checkOut && new Date(v.checkOut) <= now;
+  }).length;
 
   const checkInPieData = [
     {
@@ -427,7 +471,7 @@ const VisitorDashboard = () => {
         formatter: (val, { seriesIndex }) => {
           const label = checkInPieData[seriesIndex].label;
           const value = checkInPieData[seriesIndex].value;
-          return `${label}: ${value} visitors`;
+          return `${value} visitors`;
         },
       },
     },
@@ -475,197 +519,405 @@ const VisitorDashboard = () => {
     colors: ["#FFB946", "#54C4A7", "#6A5ACD", "#FF4D4F", "#00C49F"], // Extend as needed
   };
 
+  //------------PAGE ACCESS DATA CARD----------//
+
+  const dataCardConfigs = [
+    {
+      key: "checkedInVisitorsToday",
+      title: "Total",
+      data: visitorsData.length,
+      description: "Checked In Visitors Today",
+      permission: PERMISSIONS.VISITORS_CHECKED_IN_VISITORS_TODAY.value,
+    },
+    {
+      key: "checkedOutToday",
+      title: "Total",
+      data: visitorsData.filter((item) => item.checkOut).length,
+      description: "Checked Out Today",
+      permission: PERMISSIONS.VISITORS_CHECKED_OUT_TODAY.value,
+    },
+    {
+      key: "yetToCheckOut",
+      title: "Total",
+      data: visitorsData.filter((item) => item.checkOut === null).length,
+      description: "Yet To Check Out",
+      permission: PERMISSIONS.VISITORS_YET_TO_CHECK_OUT.value,
+    },
+    {
+      key: "walkInVisitsToday",
+      title: "Total",
+      data: visitorsData.filter((item) => item.visitorType === "Walk In")
+        .length,
+      description: "Walk In Visits Today",
+      permission: PERMISSIONS.VISITORS_WALK_IN_VISITS_TODAY.value,
+    },
+    {
+      key: "scheduledVisitsToday",
+      title: "Total",
+      data: visitorsData.filter((item) => item.visitorType === "Scheduled")
+        .length,
+      description: "Scheduled Visits Today",
+      permission: PERMISSIONS.VISITORS_SCHEDULED_VISITS_TODAY.value,
+    },
+    {
+      key: "meetingBookingsToday",
+      title: "Total",
+      data: visitorsData.filter((item) => item.visitorType === "Meeting")
+        .length,
+      description: "Meeting Bookings Today",
+      permission: PERMISSIONS.VISITORS_MEETING_BOOKINGS_TODAY.value,
+    },
+  ];
+
   //First pie-chart config data end
+
+  //------------------------PAGE ACCESS DONUT START-------------------//
+  const donutChartConfigs = [
+    {
+      layout: 2,
+      key: "visitorCategories",
+      title: "Visitor Categories ",
+      titleLabel: "This Month",
+      border: true,
+      centerLabel: "Visitors",
+      labels: labels,
+      colors: ["#54C4A7", "#FFB946", "#FF4D4F", "#6A5ACD"],
+      series: series,
+      tooltipValue: tooltipValue,
+      // isMonetary: true,
+      permission: PERMISSIONS.VISITORS_VISITOR_CATEGORIES.value,
+    },
+  ];
+
+  const allowedDonutCharts = donutChartConfigs.filter(
+    (widget) =>
+      !widget.permission || userPermissions.includes(widget.permission)
+  );
+  //------------------------PAGE ACCESS DONUT END-------------------//
+  //------------------------PAGE ACCESS PIE Top START-------------------//
+  const pieChartTopConfigs = [
+    {
+      layout: 2,
+      key: "checkedInVsYetToCheckOut",
+      title: "Checked Out v/s Yet To Check Out ",
+      titleLabel: "Today",
+      border: true,
+      data: checkInPieData,
+      options: checkInPieOptions,
+      width: "100%",
+      permission: PERMISSIONS.VISITORS_CHECKED_IN_VS_YET_TO_CHECK_OUT.value,
+    },
+  ];
+
+  const allowedPieChartsTop = pieChartTopConfigs.filter(
+    (widget) =>
+      !widget.permission || userPermissions.includes(widget.permission)
+  );
+  //------------------------PAGE ACCESS PIE Top END-------------------//
+  //------------------------PAGE ACCESS PIE Bottom START-------------------//
+  const pieChartConfigs = [
+    {
+      key: "visitorGenderData",
+      title: "Visitor Gender Data ",
+      titleLabel: "This Month",
+      layout: 1,
+      border: true,
+      percent: true,
+
+      data: genderData,
+      options: genderPieChart,
+      width: 438,
+      permission: PERMISSIONS.VISITORS_GENDER_DATA_PIE.value,
+    },
+    {
+      key: "departmentWiseVisits",
+      title: "Department Wise Visits ",
+      titleLabel: "This Month",
+      layout: 1,
+      border: true,
+      data: pieChartData,
+      options: pieChartOptions,
+      height: 320,
+      permission: PERMISSIONS.VISITORS_DEPARTMENT_WISE_VISITS_PIE.value,
+    },
+  ];
+
+  const allowedPieCharts = pieChartConfigs.filter(
+    (widget) =>
+      !widget.permission || userPermissions.includes(widget.permission)
+  );
+  //------------------------PAGE ACCESS PIE Bottom END-------------------//
+
+  //--------------PAGE ACCESS GRAPH-------------//
+  const visitorGraphConfigs = [
+    {
+      key: "monthlyTotalVisitors",
+      layout: 1,
+      data: visitorsData,
+      chartOptions: visitorsChartOptions,
+      dateKey: "dateOfVisit",
+      graphTitle: "MONTHLY TOTAL VISITORS",
+      permission: PERMISSIONS.VISITORS_MONTHLY_TOTAL_VISITORS.value,
+    },
+  ];
+  const allowedVisitorGraphs = visitorGraphConfigs.filter(
+    (widget) =>
+      !widget.permission || userPermissions.includes(widget.permission)
+  );
+
+  //----------------PAGE ACCESS VISITOR TABLE----------//
+
+  const visitorsTodayTableConfigs = [
+    {
+      key: "visitorsTodayTable",
+      layout: 1,
+      title: "Visitors Today",
+      columns: visitorsColumns,
+      rows: todaysVisitors.map((item, index) => ({
+        id: index + 1,
+        firstName: item.firstName,
+        lastName: item.lastName,
+        address: item.address,
+        phoneNumber: item.phoneNumber,
+        email: item.email,
+        purposeOfVisit: item.purposeOfVisit,
+        toMeet: item.toMeet
+          ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
+          : item.clientToMeet
+          ? item?.clientToMeet?.employeeName
+          : "",
+        checkIn: humanTime(item.checkIn),
+        checkOut: humanTime(item.checkOut),
+      })),
+      rowKey: "id",
+      rowsToDisplay: 10,
+      scroll: true,
+      className: "h-full",
+      permission: PERMISSIONS.VISITORS_VISITORS_TODAY.value,
+    },
+  ];
+
+  const allowedVisitorsTodayTables = visitorsTodayTableConfigs.filter(
+    (widget) =>
+      !widget.permission || userPermissions.includes(widget.permission)
+  );
+
   const meetingsWidgets = [
     {
       layout: 1,
       widgets: [
-        // <WidgetSection layout={1} border title={"Monthly Visitor Statistics"}>
-
-        <DateBasedGraph
-          rawData={visitorsData}
-          dateKey="dateOfVisit"
-          chartTitle="MONTHLY TOTAL VISITORS"
-          instanceTitle="TOTAL VISIOTRS"
-          yAxisTitle="No. of Visitors"
-          yAxisMax={50}
-        />,
+        ...allowedVisitorGraphs.map((item) => (
+          <FyBarGraphCount
+            key={item.key}
+            data={item.data}
+            chartOptions={item.chartOptions}
+            dateKey={item.dateKey}
+            graphTitle={item.graphTitle}
+            groupKey="visitorType"
+          />
+        )),
       ],
     },
     {
-      layout: 5,
-      widgets: [
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
         <Card
-          route={"/app/visitors/add-visitor"}
-          title={"Add Visitor"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"/app/visitors/add-client"}
-          title={"Add Client"}
-          icon={<RiPagesLine />}
-        />,
-        <Card
-          route={"/app/visitors/manage-visitors"}
-          title={"Manage Visitors"}
-          icon={<RiArchiveDrawerLine />}
-        />,
-        <Card
-          route={"/app/visitors/team-members"}
-          title={"Team Members"}
-          icon={<MdFormatListBulleted />}
-        />,
-        <Card
-          route={"/app/visitors/reports"}
-          title={"Reports"}
-          icon={<CgProfile />}
-        />,
-        // <Card
-        //   route={"/app/visitors/reviews"}
-        //   title={"Reviews"}
-        //   icon={<RiPagesLine />}
-        // />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
     {
       layout: 3,
-      widgets: [
-        <DataCard
-          title={"Total"}
-          data={visitorsData.length}
-          description={"Checked In Visitors Today"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={visitorsData.filter((item) => item.checkOut).length}
-          description={"Checked Out Today"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={visitorsData.filter((item) => item.checkOut === null).length}
-          description={"Yet To Check Out"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={
-            visitorsData.filter((item) => item.visitorType === "Walk In").length
-          }
-          description={"Walk In Visits Today"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={
-            visitorsData.filter((item) => item.visitorType === "Scheduled")
-              .length
-          }
-          description={"Scheduled Visits Today"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={
-            visitorsData.filter((item) => item.visitorType === "Meeting").length
-          }
-          description={"Meeting Bookings Today"}
-        />,
-      ],
+      widgets: dataCardConfigs
+        .filter((card) => userPermissions.includes(card.permission))
+        .map((card) => (
+          <DataCard
+            key={card.key}
+            title={card.title}
+            data={card.data}
+            description={card.description}
+          />
+        )),
     },
+    // {
+    //   layout: 2,
+    //   widgets: [
+    //     <WidgetSection
+    //       layout={1}
+    //       title={"Visitor Categories"}
+    //       titleLabel={"This Month"}
+    //       border>
+    //       <DonutChart
+    //         centerLabel="Visitors"
+    //         labels={labels}
+    //         colors={["#54C4A7", "#FFB946", "#FF4D4F", "#6A5ACD"]} // Add more if needed
+    //         series={series}
+    //         tooltipValue={tooltipValue}
+    //       />
+    //     </WidgetSection>,
+    //     <WidgetSection
+    //       layout={1}
+    //       title={"Checked Out v/s Yet To Check Out"}
+    //       titleLabel={"Today"}
+    //       border>
+    //       <PieChartMui
+    //         data={checkInPieData}
+    //         options={checkInPieOptions}
+    //         width={"100%"}
+    //       />
+    //     </WidgetSection>,
+    //   ],
+    // },
+    // {
+    //   layout: 2,
+    //   widgets: allowedDonutCharts.map((item) => (
+    //     <WidgetSection
+    //       key={item.key}
+    //       layout={item.layout}
+    //       title={item.title}
+    //       titleLabel={item.titleLabel}
+    //       border={item.border}>
+    //       <DonutChart
+    //         centerLabel={item.centerLabel}
+    //         labels={item.labels}
+    //         colors={item.colors}
+    //         series={item.series}
+    //         tooltipValue={item.tooltipValue}
+    //       />
+    //     </WidgetSection>
+    //   )),
+    // },
+    // {
+    //   layout: 2,
+    //   widgets: allowedPieChartsTop.map((item) => (
+    //     <WidgetSection
+    //       key={item.key}
+    //       layout={item.layout}
+    //       title={item.title}
+    //       titleLabel={item.titleLabel}
+    //       border={item.border}>
+    //       <PieChartMui
+    //         data={item.data}
+    //         options={item.options}
+    //         width={item.width}
+    //       />
+    //     </WidgetSection>
+    //   )),
+    // },
     {
       layout: 2,
       widgets: [
-        <WidgetSection
-          layout={1}
-          title={"Visitor Categories"}
-          titleLabel={"This Month"}
-          border>
-          <DonutChart
-            centerLabel="Visitors"
-            labels={labels}
-            colors={["#54C4A7", "#FFB946", "#FF4D4F", "#6A5ACD"]} // Add more if needed
-            series={series}
-            tooltipValue={tooltipValue}
-          />
-        </WidgetSection>,
-        <WidgetSection
-          layout={1}
-          title={"Checked Out v/s Yet To Check Out"}
-          titleLabel={"Today"}
-          border>
-          <PieChartMui
-            data={checkInPieData}
-            options={checkInPieOptions}
-            width={"100%"}
-          />
-        </WidgetSection>,
+        ...allowedDonutCharts.map((item) => (
+          <WidgetSection
+            key={item.key}
+            title={item.title}
+            titleLabel={item.titleLabel}
+            border={item.border}
+          >
+            <DonutChart
+              centerLabel={item.centerLabel}
+              labels={item.labels}
+              colors={item.colors}
+              series={item.series}
+              tooltipValue={item.tooltipValue}
+            />
+          </WidgetSection>
+        )),
+        ...allowedPieChartsTop.map((item) => (
+          <WidgetSection
+            key={item.key}
+            title={item.title}
+            titleLabel={item.titleLabel}
+            border={item.border}
+          >
+            <PieChartMui
+              data={item.data}
+              options={item.options}
+              width={item.width}
+            />
+          </WidgetSection>
+        )),
       ],
     },
 
+    // {
+    //   layout: 2,
+    //   widgets: [
+    //     <WidgetSection
+    //       title={"Visitor Gender Data"}
+    //       titleLabel={"This Month"}
+    //       border>
+    //       {!isVisitorsData ? (
+    //         <PieChartMui
+    //           percent={true}
+    //           title={"Visitor Gender Data"}
+    //           data={genderData}
+    //           options={genderPieChart}
+    //           width={438}
+    //         />
+    //       ) : (
+    //         <div className="h-72 flex justify-center items-center">
+    //           <CircularProgress />
+    //         </div>
+    //       )}
+    //     </WidgetSection>,
+    //     <WidgetSection
+    //       layout={1}
+    //       title={"Department Wise Visits"}
+    //       titleLabel={"This Month"}
+    //       border>
+    //       <PieChartMui
+    //         data={pieChartData}
+    //         options={pieChartOptions}
+    //         height={320}
+    //       />
+    //     </WidgetSection>,
+    //   ],
+    // },
     {
-      layout: 2,
-      widgets: [
+      layout: allowedPieCharts.length, // ✅ dynamic layout
+      widgets: allowedPieCharts.map((item) => (
         <WidgetSection
-          title={"Visitor Gender Data"}
-          titleLabel={"This Month"}
-          border>
-          {!isVisitorsData ? (
-            <PieChartMui
-              percent={true}
-              title={"Visitor Gender Data"}
-              data={genderData}
-              options={genderPieChart}
-              width={438}
-            />
-          ) : (
-            <div className="h-72 flex justify-center items-center">
-              <CircularProgress />
-            </div>
-          )}
-        </WidgetSection>,
-        <WidgetSection
-          layout={1}
-          title={"Department Wise Visits"}
-          titleLabel={"This Month"}
-          border>
+          key={item.key}
+          layout={item.layout}
+          title={item.title}
+          titleLabel={item.titleLabel}
+          border={item.border}
+        >
           <PieChartMui
-            data={pieChartData}
-            options={pieChartOptions}
-            height={320}
+            percent={item.percent}
+            title={item.title}
+            data={item.data}
+            options={item.options}
+            width={item.width}
+            height={item.height}
           />
-        </WidgetSection>,
-      ],
+        </WidgetSection>
+      )),
     },
     {
       layout: 1,
       widgets: [
-        <WidgetSection layout={1} padding>
-          {!isVisitorsData ? (
-            <MuiTable
-              Title="Visitors Today"
-              columns={visitorsColumns}
-              rows={[
-                ...todaysVisitors.map((item, index) => ({
-                  id: index + 1,
-                  firstName: item.firstName,
-                  lastName: item.lastName,
-                  address: item.address,
-                  phoneNumber: item.phoneNumber,
-                  email: item.email,
-                  purposeOfVisit: item.purposeOfVisit,
-                  toMeet: item.toMeet?.firstName
-                    ? item.toMeet?.firstName
-                    : "Kalpesh Naik",
-                  checkIn: humanTime(item.checkIn),
-                  checkOut: humanTime(item.checkOut),
-                })),
-              ]}
-              rowKey="id"
-              rowsToDisplay={10}
-              scroll={true}
-              className="h-full"
-            />
-          ) : (
-            <CircularProgress />
-          )}
-        </WidgetSection>,
+        ...allowedVisitorsTodayTables.map((item) => (
+          <WidgetSection key={item.key} layout={item.layout} padding>
+            {!isVisitorsData ? (
+              <MuiTable
+                Title={item.title}
+                columns={item.columns}
+                rows={item.rows}
+                rowKey={item.rowKey}
+                rowsToDisplay={item.rowsToDisplay}
+                scroll={item.scroll}
+                className={item.className}
+              />
+            ) : (
+              <CircularProgress />
+            )}
+          </WidgetSection>
+        )),
       ],
     },
   ];

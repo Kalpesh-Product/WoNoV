@@ -14,12 +14,19 @@ import { Controller, useForm } from "react-hook-form";
 import UploadFileInput from "../UploadFileInput";
 import { toast } from "sonner";
 import humanDate from "../../utils/humanDateForamt";
+import bulkInsertRoutes from "../../constants/bulkInsertRoutes";
 
 export default function BulkUpload() {
   const axios = useAxiosPrivate();
   const deptDetails = usePageDepartment();
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("");
+
+  const departmentFilter = bulkInsertRoutes?.find(
+    (item) => item.department === deptDetails?._id
+  );
+  const departmentDrop = departmentFilter?.bulkInsertRoutes;
+  console.log("drops : ", departmentDrop);
 
   const { data: departmentDocuments = [], isPending: isTemplatesPending } =
     useQuery({
@@ -35,6 +42,7 @@ export default function BulkUpload() {
     handleSubmit,
     reset,
     control,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -42,33 +50,31 @@ export default function BulkUpload() {
       documentName: "",
     },
   });
+  const selectedDoc = watch("documentName");
+  const selectedTemplate = departmentDrop?.find(
+    (item) => item.route === selectedDoc
+  );
+
 
   const { mutate: uploadDocument, isPending: isUploading } = useMutation({
     mutationFn: async ({ file, documentName }) => {
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("documentName", documentName);
-      formData.append("departmentId", deptDetails._id); // optional if needed
+      formData.append(`${selectedTemplate?.fileKey}`, file);
 
-      // Just log it
-      console.log("Uploading:", {
-        file,
-        documentName,
-        departmentId: deptDetails._id,
+      const response = await axios.post(`${selectedDoc}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
-
-      // Simulate a delay
-      return new Promise((resolve) =>
-        setTimeout(() => resolve({ message: "Logged successfully" }), 1000)
-      );
+      return response.data;
     },
-    onSuccess: () => {
-      toast.success("Document logged successfully");
+    onSuccess: (data) => {
+      toast.success(data.message || "DATA UPLOADED");
       setOpenModal(false);
       reset();
     },
     onError: (error) => {
-      toast.error("Failed to log document");
+      toast.error(error?.response?.data?.message);
       console.error(error);
     },
   });
@@ -190,8 +196,8 @@ export default function BulkUpload() {
                     </MenuItem>
                     {isTemplatesPending
                       ? []
-                      : departmentDocuments.templates?.map((item) => (
-                          <MenuItem key={item._id} value={item.name}>
+                      : departmentDrop?.map((item) => (
+                          <MenuItem key={item.name} value={item.route}>
                             {item.name}
                           </MenuItem>
                         ))}
@@ -207,7 +213,7 @@ export default function BulkUpload() {
                     onChange={field.onChange}
                     value={field.value}
                     allowedExtensions={["csv"]}
-                    previewType="auto" 
+                    previewType="auto"
                   />
                 )}
               />

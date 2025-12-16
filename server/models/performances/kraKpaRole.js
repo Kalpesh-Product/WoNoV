@@ -4,6 +4,7 @@ const kraKpaRolesSchema = new mongoose.Schema(
   {
     task: {
       type: String,
+      required: true,
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,
@@ -24,21 +25,26 @@ const kraKpaRolesSchema = new mongoose.Schema(
     taskType: {
       type: String,
       enum: ["KPA", "KRA"],
+      required: true,
     },
-    completedDate: [{ type: Date, required: true }],
+    completedDate: [{ type: Date }],
     kpaDuration: {
       type: String,
       enum: ["Monthly", "Annually"],
+      required: true,
     },
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
+      required: true,
     },
     assignedDate: {
       type: Date,
+      required: true,
     },
     dueDate: {
       type: Date,
+      required: true,
     },
     dueTime: {
       type: String,

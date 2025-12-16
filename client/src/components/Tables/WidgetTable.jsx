@@ -36,6 +36,9 @@ const WidgetTable = ({
   totalKey = "actualAmount",
   totalText = "INR",
   groupByKey,
+  sortByString = "",
+  sortByNo = "",
+  sortOrder = "asc", // default sort order
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -203,12 +206,56 @@ const WidgetTable = ({
       grouped[group] += amount;
     });
 
-    return Object.entries(grouped).map(([group, total], idx) => ({
-      srNo: idx + 1,
-      [groupByKey]: group,
-      [totalKey]: inrFormat(total),
+    const sorted = Object.entries(grouped)
+      .map(([group, total]) => ({
+        [groupByKey]: group,
+        [totalKey]: inrFormat(total),
+      }))
+      .sort((a, b) => {
+        const valA = a[sortByString] ?? "";
+        const valB = b[sortByString] ?? "";
+        if (sortByString) {
+          return sortOrder === "asc"
+            ? valA.localeCompare(valB)
+            : valB.localeCompare(valA);
+        }
+        const numA = parseFloat(a[sortByNo]) || 0;
+        const numB = parseFloat(b[sortByNo]) || 0;
+        return sortOrder === "asc" ? numA - numB : numB - numA;
+      });
+
+    // ✅ Reassign srNo
+    return sorted.map((item, index) => ({
+      ...item,
+      srNo: index + 1,
     }));
-  }, [filteredData, groupByKey, totalKey]);
+  }, [filteredData, groupByKey, totalKey, sortByString, sortByNo, sortOrder]);
+
+  const sortedTableData = useMemo(() => {
+    let sorted = [...finalTableData];
+
+    if (sortByString) {
+      sorted.sort((a, b) => {
+        const valA = a[sortByString] ?? "";
+        const valB = b[sortByString] ?? "";
+        return sortOrder === "asc"
+          ? valA.localeCompare(valB)
+          : valB.localeCompare(valA);
+      });
+    } else if (sortByNo) {
+      sorted.sort((a, b) => {
+        const valA = parseFloat(a[sortByNo]) || 0;
+        const valB = parseFloat(b[sortByNo]) || 0;
+        return sortOrder === "asc" ? valA - valB : valB - valA;
+      });
+    }
+
+    // ✅ Reassign srNo
+    return sorted.map((item, index) => ({
+      ...item,
+      srNo: index + 1,
+    }));
+  }, [finalTableData, sortByString, sortByNo, sortOrder]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -321,7 +368,7 @@ const WidgetTable = ({
               tableTitle={tableTitle}
               tableHeight={tableHeight || 300}
               columns={formattedColumns}
-              data={groupedData}
+              data={groupByKey ? groupedData : sortedTableData}
               hideFilter={filteredData.length <= 9}
               search={search}
               dateColumn={dateColumn}

@@ -64,17 +64,28 @@ const updatePermissions = async (req, res, next) => {
 
 const getDepartmentWiseUsers = async (req, res, next) => {
   try {
-    const departments = await Department.find()
-      .select("departmentId name")
+    const { departments, roles, company } = req;
+
+    const deptIds = departments.map((dept) => dept._id);
+    let query = {};
+
+    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+      query = { _id: { $in: deptIds } };
+    }
+
+    const fetchedDepartments = await Department.find(query)
+      .select("departmentId name isActive")
       .lean()
       .exec();
     const users = await UserData.find({ isActive: true })
-      .select("firstName lastName empId departments role")
+      .select(
+        "firstName lastName empId departments role email workLocation gender phone profilePicture employeeType reportsTo shift homeAddress isActive credits"
+      )
       .populate([{ path: "role" }])
       .lean()
       .exec();
 
-    const departmentWiseEmployees = departments.map((dept) => {
+    const departmentWiseEmployees = fetchedDepartments.map((dept) => {
       const employees = users.filter((user) =>
         user.departments?.some(
           (dep) => dep._id?.toString() === dept._id.toString()

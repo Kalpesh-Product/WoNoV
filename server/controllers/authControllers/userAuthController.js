@@ -19,13 +19,13 @@ const login = async (req, res, next) => {
 
     const userExists = await User.findOne({ email })
       .select(
-        "firstName lastName clockInDetails role email empId password designation company departments permissions credits profilePicture phone"
+        "firstName lastName clockInDetails role email empId password designation company departments permissions profilePicture phone"
       )
       .populate([
         {
           path: "company",
           select:
-            "companyName workLocations employeeTypes shifts policies agreements sops",
+            "companyName workLocations employeeTypes shifts policies agreements sops totalMeetingCredits meetingCreditBalance",
           populate: {
             path: "workLocations",
             select: "buildingName",
@@ -64,6 +64,8 @@ const login = async (req, res, next) => {
           roles: userExists.role.map((role) => role.roleTitle),
           email: userExists.email,
           company: userExists.company._id,
+          totalMeetingCredits: userExists.company.totalMeetingCredits,
+          meetingCreditBalance: userExists.company.meetingCreditBalance,
           departments: userExists.departments,
         },
       },

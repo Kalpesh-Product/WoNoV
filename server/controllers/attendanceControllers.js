@@ -638,6 +638,23 @@ const correctAttendance = async (req, res, next) => {
         .json({ message: "Failed to update attendance status" });
     }
 
+    //Clock out correction request for prev day
+    if (foundDate.inTime && !foundDate.outTime && clockOut) {
+      await UserData.findOneAndUpdate(
+        { _id: foundUser._id },
+        {
+          $set: {
+            "clockInDetails.hasClockedIn": false,
+            "clockInDetails.clockInTime": null,
+            "clockInDetails.clockOutTime": null,
+            breaks: [],
+          },
+        }
+      )
+        .lean()
+        .exec();
+    }
+
     return res.status(200).json({
       message: "Correction request submitted successfully",
     });
@@ -879,7 +896,9 @@ const bulkInsertAttendance = async (req, res, next) => {
         } catch (parseError) {
           responseSent = true;
           parser.destroy();
-          return res.status(500).json({ message: "Parsing error", error: parseError });
+          return res
+            .status(500)
+            .json({ message: "Parsing error", error: parseError });
         }
       })
       .on("end", async () => {
@@ -907,7 +926,9 @@ const bulkInsertAttendance = async (req, res, next) => {
       .on("error", (err) => {
         if (!responseSent) {
           responseSent = true;
-          res.status(500).json({ message: "Error reading CSV file", error: err });
+          res
+            .status(500)
+            .json({ message: "Error reading CSV file", error: err });
         }
       });
   } catch (error) {

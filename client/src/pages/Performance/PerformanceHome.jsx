@@ -4,7 +4,10 @@ import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setSelectedDepartment } from "../../redux/slices/performanceSlice";
+import {
+  setSelectedDepartment,
+  setSelectedDepartmentName,
+} from "../../redux/slices/performanceSlice";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -18,13 +21,10 @@ const PerformanceHome = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
-    additionalTopUserIds: [
-      // "67b83885daad0f7bab2f1888",
-      "681a10b13fc9dc666ede401c",
-      "67b83885daad0f7bab2f188b",
-    ], //utkarsha //nigel //mac
+    additionalTopUserIds: ["67b83885daad0f7bab2f1888"], //utkarsha
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
+      dispatch(setSelectedDepartmentName(currentDepartment));
       navigate(`/app/performance/${currentDepartment}`);
     },
   });
@@ -55,9 +55,11 @@ const PerformanceHome = () => {
             role="button"
             onClick={() => {
               dispatch(setSelectedDepartment(params.data.mongoId));
+              dispatch(setSelectedDepartmentName(params.data.department));
               navigate(`${params.value}`);
             }}
-            className="text-primary font-pregular hover:underline cursor-pointer">
+            className="text-primary font-pregular hover:underline cursor-pointer"
+          >
             {params.value}
           </span>
         );

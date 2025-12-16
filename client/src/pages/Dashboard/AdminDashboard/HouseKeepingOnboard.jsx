@@ -117,13 +117,15 @@ const HouseKeepingOnboard = () => {
                   <Controller
                     name="middleName"
                     control={control}
-                    rules={{
-                      required: "Middle Name is Required",
-                      validate: {
-                        isAlphanumeric,
-                        noOnlyWhitespace,
-                      },
-                    }}
+                    rules={
+                      {
+                        // required: "Middle Name is Required",
+                        // validate: {
+                        //   isAlphanumeric,
+                        //   noOnlyWhitespace,
+                        // },
+                      }
+                    }
                     render={({ field }) => (
                       <TextField
                         {...field}

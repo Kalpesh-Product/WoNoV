@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -29,9 +29,10 @@ const MonthlyInvoiceCommon = () => {
         const res = await axios.get(
           `/api/budget/company-budget?departmentId=${departmentId}`
         );
-        return Array.isArray(res.data?.allBudgets)
-          ? res.data.allBudgets.filter((data) => data.isPaid === "Paid")
-          : [];
+        // return Array.isArray(res.data?.allBudgets)
+        //   ? res.data.allBudgets.filter((data) => data.isPaid === "Paid")
+        //   : [];
+        return Array.isArray(res.data?.allBudgets) ? res.data.allBudgets : [];
       } catch (err) {
         console.error("Error fetching department budgets:", err);
         return [];
@@ -47,6 +48,30 @@ const MonthlyInvoiceCommon = () => {
     { headerName: "GSTIN", field: "gstIn", flex: 1 },
     { headerName: "Invoice Date", field: "invoiceDate", flex: 1 },
     { headerName: "Due Date", field: "dueDate", flex: 1 },
+    {
+      headerName: "Status",
+      field: "isPaid",
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          Paid: { backgroundColor: "#28a745", color: "#fff" },
+          Unpaid: { backgroundColor: "#dc3545", color: "#fff" },
+        };
+
+        const label = params.data?.isPaid === "Paid" ? "Paid" : "Unpaid";
+        const { backgroundColor, color } =
+          statusColorMap[label] || statusColorMap.Unpaid;
+
+        return (
+          <Chip
+            label={label}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
+        );
+      },
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -121,6 +146,10 @@ const MonthlyInvoiceCommon = () => {
       };
     });
   }, [hrFinance]);
+
+  useEffect(() => {
+    console.log("mappedRows", mappedRows);
+  }, [mappedRows]);
 
   return (
     <div className="flex flex-col gap-4">

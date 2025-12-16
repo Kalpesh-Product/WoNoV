@@ -61,6 +61,12 @@ const roomSchema = new mongoose.Schema({
   monthlyHours: {
     type: Number,
   },
+  perSeatPrice: {
+    type: Number,
+  },
+  perHourGstPrice: {
+    type: Number,
+  },
 });
 
 const Room = mongoose.model("Room", roomSchema);

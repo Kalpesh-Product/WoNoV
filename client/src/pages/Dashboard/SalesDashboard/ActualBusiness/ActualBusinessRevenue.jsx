@@ -24,19 +24,23 @@ const months = [
   "February",
   "March",
 ];
+const fyOptions = [
+  { label: "FY 2024–25", value: "2024-25" },
+  { label: "FY 2025–26", value: "2025-26" },
+];
 
-const transformRevenueData = (rawData) => {
+const transformRevenueData = (rawData, yearKey) => {
   const transformed = [];
 
   rawData.forEach((item) => {
     const source = item.name;
-    const monthlyData = item.data["2024-25"];
+    const monthlyData = item.data[yearKey];
 
     if (Array.isArray(monthlyData)) {
       monthlyData.forEach((value, index) => {
         transformed.push({
           month: months[index],
-          source: source,
+          source,
           totalRevenue: value,
         });
       });
@@ -64,6 +68,7 @@ const groupByMonth = (data) => {
 const ActualBusinessRevenue = () => {
   const axios = useAxiosPrivate();
   const [selectedMonth, setSelectedMonth] = useState(months[0]);
+  const [selectedFY, setSelectedFY] = useState(fyOptions[0].value);
 
   const { data: totalRevenue = [], isLoading: isTotalRevenue } = useQuery({
     queryKey: ["totalRevenue"],
@@ -73,10 +78,11 @@ const ActualBusinessRevenue = () => {
     },
   });
 
-  const formattedData = transformRevenueData(totalRevenue);
+  const formattedData = transformRevenueData(totalRevenue, selectedFY);
+
   const groupedRevenue = groupByMonth(formattedData);
   const selectedMonthData = groupedRevenue[selectedMonth] || [];
-  console.log("Selected month : ",selectedMonthData )
+  console.log("Selected month : ", selectedMonthData);
 
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
@@ -172,9 +178,26 @@ const ActualBusinessRevenue = () => {
             <NormalBarGraph data={graphData} options={options} height={400} />
           </WidgetSection>
 
-          <div className="flex justify-end">
+          <div className="flex justify-center">
             <div className="flex items-center gap-4">
-              {/* <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" /> */}
+              <TextField
+                select
+                size="small"
+                label="Financial Year"
+                value={selectedFY}
+                onChange={(e) => setSelectedFY(e.target.value)}
+                className="w-[160px]"
+                SelectProps={{
+                  IconComponent: KeyboardArrowDownIcon,
+                }}
+              >
+                {fyOptions.map((fy) => (
+                  <MenuItem key={fy.value} value={fy.value}>
+                    {fy.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+
               <TextField
                 select
                 size="small"
@@ -192,7 +215,6 @@ const ActualBusinessRevenue = () => {
                   </MenuItem>
                 ))}
               </TextField>
-              {/* <PrimaryButton handleSubmit={handleNextMonth} title="Next" /> */}
             </div>
           </div>
 

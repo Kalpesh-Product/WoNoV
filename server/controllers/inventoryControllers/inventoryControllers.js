@@ -25,7 +25,6 @@ const createInventory = async (req, res, next) => {
       closingInventoryUnits,
       category,
     } = req.body;
-    console.log(req.body);
 
     if (!mongoose.Types.ObjectId.isValid) {
       throw new CustomError(
@@ -134,7 +133,7 @@ const updateInventory = async (req, res) => {
 const bulkInsertInventory = async (req, res, next) => {
   try {
     const { departmentId } = req.params;
-    const companyId = req.company; 
+    const companyId = req.company;
     const file = req.file;
 
     if (!file) {

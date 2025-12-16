@@ -13,13 +13,13 @@ const handleRefreshToken = async (req, res, next) => {
 
     const userExists = await User.findOne({ refreshToken })
       .select(
-        "firstName lastName clockInDetails role email empId password designation company departments permissions credits profilePicture phone"
+        "firstName lastName clockInDetails role email empId password designation company departments permissions profilePicture phone"
       )
       .populate([
         {
           path: "company",
           select:
-            "companyName workLocations employeeTypes shifts policies agreements sops",
+            "companyName workLocations employeeTypes shifts policies agreements sops totalMeetingCredits meetingCreditBalance",
           populate: {
             path: "workLocations",
             select: "buildingName",
@@ -68,6 +68,8 @@ const handleRefreshToken = async (req, res, next) => {
               userId: userExists._id,
               company: userExists.company._id,
               departments: userExists.departments,
+              totalMeetingCredits: userExists.company.totalMeetingCredits,
+              meetingCreditBalance: userExists.company.meetingCreditBalance,
             },
           },
           process.env.ACCESS_TOKEN_SECRET,

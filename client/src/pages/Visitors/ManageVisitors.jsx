@@ -24,7 +24,7 @@ const ManageVisitors = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const { setValue, handleSubmit, reset, control } = useForm();
-  
+
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["visitors"],
     queryFn: async () => {
@@ -135,9 +135,11 @@ const ManageVisitors = () => {
               email: item.email,
               phoneNumber: item.phoneNumber,
               purposeOfVisit: item.purposeOfVisit,
-              toMeet: `${item?.toMeet?.firstName || ""} ${
-                item?.toMeet?.lastName || ""
-              }`,
+              toMeet: item.toMeet
+                ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
+                : item.clientToMeet
+                ? item?.clientToMeet?.employeeName
+                : "",
               checkIn: item.checkIn,
               checkOut: item.checkOut ? humanTime(item.checkOut) : "",
               checkOutRaw: item.checkOut,
@@ -251,6 +253,51 @@ const ManageVisitors = () => {
                       onChange={field.onChange}
                       slotProps={{
                         textField: { size: "small", fullWidth: true },
+                      }}
+                      shouldDisableTime={(time, view) => {
+                        const startTime = selectedVisitor.checkIn;
+                        const timeValue = time.$d;
+
+                        if (!startTime) return false;
+
+                        const startDate = new Date(startTime);
+
+                        if (view === "hours") {
+                          return timeValue.getHours() < startDate.getHours();
+                        }
+
+                        if (view === "minutes") {
+                          const selectedHour = field.value
+                            ? new Date(field.value).getHours()
+                            : null;
+
+                          return (
+                            selectedHour === startDate.getHours() &&
+                            timeValue.getMinutes() < startDate.getMinutes()
+                          );
+                        }
+
+                        // Disable AM/PM
+                        //   const currentHour = time.$d.getHours();
+                        //    const selectedHour = field.value
+                        //   ? new Date(field.value).getHours()
+                        //   : null;
+
+                        //   console.log("curr")
+
+                        // if (selectedHour !== null) {
+
+                        //   const isPMSelected = selectedHour >= 12;
+                        //   const isAMSelected = selectedHour < 12;
+
+                        //   // Disable AM hours (0–11) if PM is selected
+                        //   if (isPMSelected && currentHour < 12) return true;
+
+                        //   // Disable PM hours (12–23) if AM is selected
+                        //   if (isAMSelected && currentHour >= 12) return true;
+                        // }
+
+                        return false;
                       }}
                     />
                   )}

@@ -54,6 +54,20 @@ const AssignedTickets = ({ title, departmentId }) => {
     setopenModal(true);
   };
 
+  const [closeModal, setCloseModal] = useState(false);
+  const [closingTicketId, setClosingTicketId] = useState(null);
+
+  const {
+    handleSubmit: handleCloseSubmit,
+    reset: resetCloseForm,
+    control: closeControl,
+    formState: { errors: closeErrors },
+  } = useForm({
+    defaultValues: {
+      closingRemark: "",
+    },
+  });
+
   const handleViewTicket = (ticket) => {
     setSelectedTicket({
       ...ticket,
@@ -86,14 +100,19 @@ const AssignedTickets = ({ title, departmentId }) => {
                 : ["N/A"],
             priority: ticket.priority,
             ticketTitle: ticket.ticket || "No Title",
-            assignees: ticket.assignees.length > 0 ? `${ticket.assignees.map((item) => `${item.firstName} ${item.lastName}`)}` : "N/A" ,
+            assignees:
+              ticket.assignees.length > 0
+                ? `${ticket.assignees.map(
+                    (item) => `${item.firstName} ${item.lastName}`
+                  )}`
+                : "N/A",
             tickets:
               ticket.assignees.length > 0
                 ? "Assigned Ticket"
                 : ticket.ticket?.acceptedBy
                 ? "Accepted Ticket"
                 : "N/A",
-              assignedAt: ticket.assignedAt || "N/A",
+            assignedAt: ticket.assignedAt || "N/A",
             status: ticket.status || "Pending",
           };
 
@@ -225,7 +244,7 @@ const AssignedTickets = ({ title, departmentId }) => {
               },
               {
                 label: "Close",
-                onClick: () => closeTicket(params.data.id),
+                onClick: () => handleCloseTicket(params.data.id),
               },
             ]
           : [];
@@ -244,20 +263,22 @@ const AssignedTickets = ({ title, departmentId }) => {
 
   const { mutate: closeTicket, isPending: isClosingTicket } = useMutation({
     mutationKey: ["close-ticket"],
-    mutationFn: async (ticketId) => {
+    mutationFn: async ({ ticketId, closingRemark }) => {
       const response = await axios.patch("/api/tickets/close-ticket", {
         ticketId,
+        closingRemark,
       });
       return response.data;
     },
-
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["assigned-tickets"] }); // Refetch tickets
+      queryClient.invalidateQueries({ queryKey: ["assigned-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      resetCloseForm();
+      setCloseModal(false);
     },
     onError: (err) => {
-      toast.error(err.response.data.message || "Failed to close ticket");
+      toast.error(err.response?.data?.message || "Failed to close ticket");
     },
   });
 
@@ -382,6 +403,11 @@ const AssignedTickets = ({ title, departmentId }) => {
   const handleEscalateTicket = (ticketDetails) => {
     setEscalateModal(true);
     setEscalatedTicket(ticketDetails);
+  };
+
+  const handleCloseTicket = (ticketId) => {
+    setClosingTicketId(ticketId);
+    setCloseModal(true);
   };
 
   return (
@@ -565,10 +591,51 @@ const AssignedTickets = ({ title, departmentId }) => {
             />
             <DetalisFormatted
               title="Assigned at"
-              detail={humanDate((selectedTicket?.assignedAt)) || "N/A"}
+              detail={humanDate(selectedTicket?.assignedAt) || "N/A"}
             />
           </div>
         )}
+      </MuiModal>
+
+      <MuiModal
+        open={closeModal}
+        onClose={() => setCloseModal(false)}
+        title="Close Ticket"
+      >
+        <form
+          onSubmit={handleCloseSubmit((data) =>
+            closeTicket({
+              ticketId: closingTicketId,
+              closingRemark: data.closingRemark,
+            })
+          )}
+          className="grid grid-cols-1 gap-4"
+        >
+          <Controller
+            name="closingRemark"
+            control={closeControl}
+            rules={{ required: "Closing remark is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Closing Remark"
+                fullWidth
+                size="small"
+                multiline
+                rows={4}
+                error={!!closeErrors.closingRemark}
+                helperText={closeErrors.closingRemark?.message}
+              />
+            )}
+          />
+
+          <PrimaryButton
+            title="Close Ticket"
+            isLoading={isClosingTicket}
+            disabled={isClosingTicket}
+            type="submit"
+          />
+        </form>
       </MuiModal>
     </div>
   );

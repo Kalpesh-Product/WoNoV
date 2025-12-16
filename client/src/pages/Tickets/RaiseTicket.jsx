@@ -145,13 +145,18 @@ const RaiseTicket = () => {
   };
 
   const recievedTicketsColumns = [
-    { field: "srNo", headerName: "Sr No", width: 80, },
+    { field: "srNo", headerName: "Sr No", width: 80 },
     { field: "raisedBy", headerName: "Raised By", width: 150 },
     { field: "raisedTo", headerName: "To Department", width: 150 },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     { field: "description", headerName: "Description", width: 300 },
     { field: "acceptedBy", headerName: "Accepted By", width: 300 },
-    { field: "acceptedAt", headerName: "Accepted Time", width: 300, cellRenderer : (params)=>(humanDate(params.value)) },
+    {
+      field: "acceptedAt",
+      headerName: "Accepted Time",
+      width: 300,
+      cellRenderer: (params) => humanDate(params.value),
+    },
 
     {
       field: "priority",
@@ -220,8 +225,7 @@ const RaiseTicket = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewTicketDetails(params.data)}
-          >
+            onClick={() => handleViewTicketDetails(params.data)}>
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -258,8 +262,7 @@ const RaiseTicket = () => {
                           onChange={(e) => {
                             field.onChange(e.target.value);
                             handleDepartmentSelect(e.target.value);
-                          }}
-                        >
+                          }}>
                           <MenuItem value="" disabled>
                             Select Department
                           </MenuItem>
@@ -275,13 +278,15 @@ const RaiseTicket = () => {
                               ?.filter(
                                 (dept) =>
                                   dept.department.name !== "Cafe" &&
-                                  dept.department.name !== "Marketing"
+                                  dept.department.name !== "Marketing" &&
+                                  dept.department.name !== "Expansion" &&
+                                  dept.department.name !== "Compliance" &&
+                                  dept.department.name !== "Legal"
                               )
                               .map((dept) => (
                                 <MenuItem
                                   key={dept.department._id}
-                                  value={dept.department._id}
-                                >
+                                  value={dept.department._id}>
                                   {dept.department.name}
                                 </MenuItem>
                               ))
@@ -291,6 +296,15 @@ const RaiseTicket = () => {
                           </MenuItem>
                           <MenuItem value="Marketing" disabled>
                             Marketing
+                          </MenuItem>
+                          <MenuItem value="Expansion" disabled>
+                            Expansion
+                          </MenuItem>
+                          <MenuItem value="Compliance" disabled>
+                            Compliance
+                          </MenuItem>
+                          <MenuItem value="Legal" disabled>
+                            Legal
                           </MenuItem>
                         </TextField>
                       </>
@@ -313,8 +327,7 @@ const RaiseTicket = () => {
                           label="Issue"
                           helperText={errors.ticketTitle?.message}
                           error={!!errors.ticketTitle}
-                          disabled={!watchFields.department}
-                        >
+                          disabled={!watchFields.department}>
                           <MenuItem value="">Select Ticket Title</MenuItem>
                           {ticketIssues.length > 0 ? (
                             ticketIssues.map((issue) => (
@@ -394,8 +407,7 @@ const RaiseTicket = () => {
                               <IconButton
                                 color="primary"
                                 component="label"
-                                htmlFor="image-upload"
-                              >
+                                htmlFor="image-upload">
                                 <LuImageUp />
                               </IconButton>
                             ),
@@ -407,15 +419,13 @@ const RaiseTicket = () => {
                           <>
                             <span
                               className="underline text-primary text-content cursor-pointer"
-                              onClick={() => setOpenModal(true)}
-                            >
+                              onClick={() => setOpenModal(true)}>
                               Preview
                             </span>
                             <MuiModal
                               open={openModal}
                               onClose={() => setOpenModal(false)}
-                              title={"Preview File"}
-                            >
+                              title={"Preview File"}>
                               <div>
                                 <div className="flex flex-col">
                                   <IconButton
@@ -423,8 +433,7 @@ const RaiseTicket = () => {
                                     onClick={() => {
                                       onChange(null);
                                       setPreview(null);
-                                    }}
-                                  >
+                                    }}>
                                     <MdDelete />
                                   </IconButton>
                                   <div className="p-2 border-default border-borderGray rounded-md">
@@ -501,7 +510,6 @@ const RaiseTicket = () => {
               search
               dropdownColumns={["status", "priority"]}
               data={tickets?.map((ticket, index) => ({
-                
                 raisedBy: ticket.raisedBy.firstName,
                 raisedTo: ticket.raisedToDepartment.name,
                 description: ticket.description,
@@ -528,8 +536,7 @@ const RaiseTicket = () => {
       <MuiModal
         open={viewDetails && viewTicketDetails}
         onClose={() => setViewDetails(false)}
-        title={"Ticket Details"}
-      >
+        title={"Ticket Details"}>
         <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
           <DetalisFormatted
             title="Ticket Title"

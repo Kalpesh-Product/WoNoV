@@ -12,6 +12,8 @@ const verifyJwt = (req, res, next) => {
     req.roles = decoded.userInfo.roles;
     req.company = decoded.userInfo.company;
     req.departments = decoded.userInfo.departments;
+    req.totalCredits = decoded.userInfo.totalMeetingCredits;
+    req.creditsBalance = decoded.userInfo.meetingCreditBalance;
 
     req.userData = decoded.userInfo;
 

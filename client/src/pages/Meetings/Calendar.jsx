@@ -293,10 +293,10 @@ const Calender = () => {
                 title="Type"
                 detail={selectedEvent.extendedProps.meetingType}
               />
-              <DetalisFormatted
+              {/* <DetalisFormatted
                 title="Company"
                 detail={selectedEvent.extendedProps.client}
-              />
+              /> */}
               <br />
               <div className="font-bold">People Involved</div>
               {selectedEvent.extendedProps.participants?.length > 0 && (

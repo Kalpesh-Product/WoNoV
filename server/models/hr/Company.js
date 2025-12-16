@@ -384,7 +384,14 @@ const companySchema = new mongoose.Schema({
       },
     },
   ],
-
+  totalMeetingCredits: {
+    type: Number,
+    default: 0,
+  },
+  meetingCreditBalance: {
+    type: Number,
+    default: 0,
+  },
   complianceDocuments: [
     {
       name: String,

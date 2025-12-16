@@ -28,6 +28,7 @@ import { GrCafeteria } from "react-icons/gr";
 import { TiTicket } from "react-icons/ti";
 import SeperatorUnderline from "./SeperatorUnderline";
 import { VscPersonAdd } from "react-icons/vsc";
+import { GrDocumentPerformance } from "react-icons/gr";
 import useAuth from "../hooks/useAuth";
 
 const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
@@ -74,7 +75,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
 
     {
       name: "Performance",
-      icon: <FaTasks />,
+      icon: <GrDocumentPerformance />,
       route: "performance",
     },
 
@@ -227,13 +228,15 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       <div
         className={`${
           isSidebarOpen ? "w-60" : "w-16"
-        } bg-white  text-black flex flex-shrink-0 h-[90vh] hideScrollBar overflow-y-auto transition-all duration-100 z-[1]`}>
+        } bg-white  text-black flex flex-shrink-0 h-[90vh] hideScrollBar overflow-y-auto transition-all duration-100 z-[1]`}
+      >
         <div className="flex relative w-full">
           <div className="p-0 flex flex-col gap-2 w-full">
             <div
               className={`rounded-md  ${
                 expandedModule === 0 ? "bg-gray-200" : "bg-white"
-              }`}>
+              }`}
+            >
               {finalModules.map((module, index) => (
                 <div key={index} className="">
                   <div
@@ -253,14 +256,16 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                     }`}
                     onClick={() => {
                       navigate(module.route);
-                    }}>
+                    }}
+                  >
                     <div className="flex justify-start items-center">
                       <div
                         className={`flex items-center justify-center text-sm h-9 w-9 ${
                           expandedModule === 0
                             ? "bg-primary text-white rounded-md"
                             : ""
-                        }`}>
+                        }`}
+                      >
                         {module.icon}
                       </div>
                       {isSidebarOpen && (
@@ -272,7 +277,8 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                         onClick={() => module.submenus && toggleModule(index)}
                         className={`transition-transform duration-300 ease-in-out ${
                           expandedModule === index ? "rotate-180" : "rotate-0"
-                        }`}>
+                        }`}
+                      >
                         {expandedModule === index ? (
                           <FaChevronUp />
                         ) : (
@@ -284,7 +290,8 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                   <div
                     className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${
                       expandedModule === index ? "max-h-[500px]" : "max-h-0"
-                    }`}>
+                    }`}
+                  >
                     {module.submenus && (
                       <div>
                         {module.submenus.map((submenu, idx) => (
@@ -295,17 +302,20 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                                 ? "text-[#1E3D73]"
                                 : "text-gray-500"
                             }  py-3`}
-                            onClick={() => handleMenuOpen(submenu)}>
+                            onClick={() => handleMenuOpen(submenu)}
+                          >
                             <div
                               className={`flex items-center ${
                                 isSidebarOpen
                                   ? "justify-start"
                                   : "justify-center"
-                              }`}>
+                              }`}
+                            >
                               <div
                                 className={`flex justify-center  items-center w-8 ${
                                   isSidebarOpen ? "text-sm" : "text-sm"
-                                }`}>
+                                }`}
+                              >
                                 {submenu.icon}
                               </div>
                               {isSidebarOpen && (
@@ -335,13 +345,15 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                       : "text-gray-500"
                   } flex ${
                     isSidebarOpen ? "" : "justify-center"
-                  } items-center py-0 `}>
+                  } items-center py-0 `}
+                >
                   <div
                     className={`flex justify-center items-center w-9 h-9 ${
                       isAppsActive(item.route)
                         ? "bg-primary text-white rounded-md"
                         : ""
-                    } text-sm`}>
+                    } text-sm`}
+                  >
                     {item.icon}
                   </div>
                   {isSidebarOpen && (
@@ -363,13 +375,15 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                       : "text-gray-500"
                   } flex ${
                     isSidebarOpen ? "" : "justify-center"
-                  } items-center py-0 `}>
+                  } items-center py-0 `}
+                >
                   <div
                     className={`flex justify-center items-center w-9 h-9 ${
                       isAppsActive(item.route)
                         ? "bg-primary text-white rounded-md"
                         : ""
-                    } text-sm`}>
+                    } text-sm`}
+                  >
                     {item.icon}
                   </div>
                   {isSidebarOpen && (
@@ -391,13 +405,15 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                       : "text-gray-500"
                   } flex ${
                     isSidebarOpen ? "" : "justify-center"
-                  } items-center py-0 `}>
+                  } items-center py-0 `}
+                >
                   <div
                     className={`flex justify-center items-center w-9 h-9 ${
                       isAppsActive(item.route)
                         ? "bg-primary text-white rounded-md"
                         : ""
-                    } text-sm`}>
+                    } text-sm`}
+                  >
                     {item.icon}
                   </div>
                   {isSidebarOpen && (

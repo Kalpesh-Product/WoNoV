@@ -53,6 +53,8 @@ const ExternalClients = () => {
       paymentStatus: "",
       paymentAmount: 0,
       paymentMode: "",
+      brandName: "",
+      registeredClientCompany: "",
     },
   });
   const handleEditToggle = () => {
@@ -184,6 +186,11 @@ const ExternalClients = () => {
         selectedVisitor.checkOutRaw ? dayjs(selectedVisitor.checkOutRaw) : null
       );
       setValue("paymentStatus", selectedVisitor.paymentStatus || "");
+      setValue("brandName", selectedVisitor.brandName || "");
+      setValue(
+        "registeredClientCompany",
+        selectedVisitor.registeredClientCompany || ""
+      );
     }
   }, [selectedVisitor, setValue]);
 
@@ -213,6 +220,8 @@ const ExternalClients = () => {
         paymentStatus: data.paymentStatus,
         paymentAmount: data.paymentAmount,
         paymentMode: data.paymentMode,
+        brandName: data.brandName,
+        registeredClientCompany: data.registeredClientCompany,
       };
 
       mutate(updatePayload);
@@ -229,7 +238,7 @@ const ExternalClients = () => {
       <PageFrame>
         <YearWiseTable
           search={true}
-          tableTitle={"Visitors Today"}
+          tableTitle={"External Clients"}
           dateColumn={"checkIn"}
           data={[
             ...visitorsData
@@ -249,7 +258,7 @@ const ExternalClients = () => {
                 checkInRaw: item.checkIn,
                 checkOutRaw: item.checkOut,
                 checkIn: item.checkIn,
-                checkOut: item.checkOut ? humanTime(item.checkOut) : "N/A",
+                checkOut: item.checkOut ? humanTime(item.checkOut) : "",
                 paymentStatus:
                   item?.meeting?.paymentStatus === true ? "Paid" : "Unpaid",
                 paymentAmount: item?.meeting?.paymentAmount
@@ -257,6 +266,9 @@ const ExternalClients = () => {
                   : 0,
                 paymentMode: item?.meeting?.paymentMode || "N/A",
                 paymentDate: item?.meeting?.paymentDate || null,
+                registeredClientCompany: item?.registeredClientCompany || "N/A",
+                brandName: item?.brandName || "N/A",
+                visitorCompany: item.visitorCompany || "N/A",
               })),
           ]}
           columns={visitorsColumns}
@@ -378,6 +390,46 @@ const ExternalClients = () => {
                     detail={selectedVisitor.purposeOfVisit}
                   />
                 )}
+                {/* Brand name */}
+                {isEditing ? (
+                  <Controller
+                    name="brandName"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Brand Name"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Brand Name"
+                    detail={selectedVisitor.brandName}
+                  />
+                )}
+                {/* Registered client company */}
+                {isEditing ? (
+                  <Controller
+                    name="registeredClientCompany"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Registered Company"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Registered Company"
+                    detail={selectedVisitor.registeredClientCompany}
+                  />
+                )}
                 {/* Checkout time */}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   {isEditing ? (
@@ -393,6 +445,53 @@ const ExternalClients = () => {
                           renderInput={(params) => (
                             <TextField {...params} size="small" fullWidth />
                           )}
+                          shouldDisableTime={(time, view) => {
+                            const startTime = selectedVisitor.checkIn;
+                            const timeValue = time.$d;
+
+                            if (!startTime) return false;
+
+                            const startDate = new Date(startTime);
+
+                            if (view === "hours") {
+                              return (
+                                timeValue.getHours() < startDate.getHours()
+                              );
+                            }
+
+                            if (view === "minutes") {
+                              const selectedHour = field.value
+                                ? new Date(field.value).getHours()
+                                : null;
+
+                              return (
+                                selectedHour === startDate.getHours() &&
+                                timeValue.getMinutes() < startDate.getMinutes()
+                              );
+                            }
+
+                            // Disable AM/PM
+                            //   const currentHour = time.$d.getHours();
+                            //    const selectedHour = field.value
+                            //   ? new Date(field.value).getHours()
+                            //   : null;
+
+                            //   console.log("curr")
+
+                            // if (selectedHour !== null) {
+
+                            //   const isPMSelected = selectedHour >= 12;
+                            //   const isAMSelected = selectedHour < 12;
+
+                            //   // Disable AM hours (0–11) if PM is selected
+                            //   if (isPMSelected && currentHour < 12) return true;
+
+                            //   // Disable PM hours (12–23) if AM is selected
+                            //   if (isAMSelected && currentHour >= 12) return true;
+                            // }
+
+                            return false;
+                          }}
                         />
                       )}
                     />

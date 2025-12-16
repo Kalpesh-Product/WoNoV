@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
@@ -19,6 +19,19 @@ import {
   setLastUserId,
   resetAttendanceState,
 } from "../redux/slices/userSlice";
+import { Controller, useForm } from "react-hook-form";
+import MuiModal from "./MuiModal";
+import {
+  DatePicker,
+  LocalizationProvider,
+  TimePicker,
+} from "@mui/x-date-pickers";
+import { TextField } from "@mui/material";
+import SecondaryButton from "./SecondaryButton";
+import PrimaryButton from "./PrimaryButton";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { isAlphanumeric, noOnlyWhitespace } from "../utils/validators";
+import dayjs from "dayjs";
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
@@ -36,6 +49,22 @@ const ClockInOutAttendance = () => {
     lastUserId,
   } = useSelector((state) => {
     return state.user;
+  });
+
+  const [openModal, setOpenModal] = useState(false);
+
+  const {
+    control,
+    reset,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      targetedDay: null,
+      outTime: null,
+      reason: "",
+    },
   });
 
   const [startTime, setStartTime] = useState(clockInTime);
@@ -78,12 +107,15 @@ const ClockInOutAttendance = () => {
     const clockOut = auth?.user?.clockInDetails?.clockOutTime; // if clock out for prev day then clock out time may be stored and used to calculate today's work hours
     const serverNow = auth?.user?.time;
     const breaksFromServer = auth?.user?.clockInDetails?.breaks;
-    const todayClockIn = clockIn && new Date(clockIn)
-      const todayClockOut = clockOut && new Date(clockOut)
-      const startBreakTime = Array.isArray(breaksFromServer) && breaksFromServer.length > 0 && new Date(breaksFromServer[0].start)
-      const isTodayBreak = isSameDay(startBreakTime)
+    const todayClockIn = clockIn && new Date(clockIn);
+    const todayClockOut = clockOut && new Date(clockOut);
+    const startBreakTime =
+      Array.isArray(breaksFromServer) &&
+      breaksFromServer.length > 0 &&
+      new Date(breaksFromServer[0].start);
+    const isTodayBreak = isSameDay(startBreakTime);
 
-    dispatch(setLastUserId(userId)); 
+    dispatch(setLastUserId(userId));
 
     if (hasClockedIn && clockIn && serverNow) {
       dispatch(setIsToday(isSameDay(clockIn)));
@@ -103,13 +135,13 @@ const ClockInOutAttendance = () => {
       }));
     }
 
-   
     if (
       hasClockedIn &&
       Array.isArray(breaksFromServer) &&
-      breaksFromServer.length > 0 && isTodayBreak
+      breaksFromServer.length > 0 &&
+      isTodayBreak
     ) {
-       console.log("isTodayBreak",isTodayBreak)
+      console.log("isTodayBreak", isTodayBreak);
       setBreaks(breaksFromServer);
 
       const breakDuration = breaksFromServer.reduce((total, brk) => {
@@ -118,17 +150,16 @@ const ClockInOutAttendance = () => {
         }
         return total;
       }, 0);
-        
-        calculateTotalHoursServer(breaksFromServer, clockIn, clockOut);
-      
+
+      calculateTotalHoursServer(breaksFromServer, clockIn, clockOut);
     }
 
     const isTodayClockout = isSameDay(clockOut);
 
-    if (clockOut && isTodayClockout ) {
+    if (clockOut && isTodayClockout) {
       dispatch(setClockOutTime(clockOut));
       dispatch(setHasClockedIn(false));
- 
+
       //Set redux state to display today's timings even after session storage is deleted
       dispatch(setClockInTime(clockIn));
 
@@ -166,7 +197,7 @@ const ClockInOutAttendance = () => {
       setStartTime(inTime);
       setClockTime((prev) => ({ ...prev, startTime: inTime }));
       dispatch(setIsToday(isSameDay(inTime)));
-    
+
       setOffset(0); // start fresh
       setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
       setClockedInStatus(true);
@@ -190,23 +221,23 @@ const ClockInOutAttendance = () => {
       if (clockInTime) {
         // avoid showing clock-out time if clocking out for prev day
         setClockTime((prev) => ({ ...prev, endTime: outTime }));
-        
-        if(breaks.length > 0){
-        //     setTotalHours((prev) => ({
-        //   ...prev,
-        //   workHours: calculateTotalHours(
-        //     breaks,
-        //     startTime,
-        //     outTime,
-        //     "workhours"
-        //   ),
-        // }));
 
-         dispatch(
-          setWorkHours(
-            calculateTotalHours(breaks, startTime, outTime, "workhours")
-          )
-        );
+        if (breaks.length > 0) {
+          //     setTotalHours((prev) => ({
+          //   ...prev,
+          //   workHours: calculateTotalHours(
+          //     breaks,
+          //     startTime,
+          //     outTime,
+          //     "workhours"
+          //   ),
+          // }));
+
+          dispatch(
+            setWorkHours(
+              calculateTotalHours(breaks, startTime, outTime, "workhours")
+            )
+          );
         }
 
         dispatch(setClockOutTime(outTime));
@@ -304,6 +335,38 @@ const ClockInOutAttendance = () => {
     onError: (error) => toast.error(error.response.data.message),
   });
 
+  const { mutate: correctionPost, isPending: correctionPending } = useMutation({
+    mutationFn: async (data) => {
+      const payload = {
+        ...data,
+        targetedDay: data.targetedDay ? new Date(data.targetedDay) : null,
+        empId: auth?.user?.empId || "",
+      };
+      const response = await axios.post(
+        "/api/attendance/correct-attendance",
+        payload
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setOpenModal(false);
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      reset();
+      dispatch(resetAttendanceState());
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Error submitting correction"
+      );
+    },
+  });
+
+  const onSubmit = (data) => {
+    if (!auth?.user?.empId) return toast.error("User not found");
+
+    correctionPost(data);
+  };
   const handleStart = () => {
     const now = new Date().toISOString();
     clockIn(now); // Only call the API, don't start timer yet
@@ -427,14 +490,14 @@ const ClockInOutAttendance = () => {
     dispatch(setBreakHours(formatTime(completedBreakDuration)));
     dispatch(setWorkHours(formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0)));
 
-    calculatedWorkHours = formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0)
-    
-    calculatedBreakHours = formatTime(completedBreakDuration)
-    
-      // setTotalHours((prev) => ({
-      //   workHours: calculatedWorkHours,
-      //   breakHours: calculatedBreakHours,
-      // }));
+    calculatedWorkHours = formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0);
+
+    calculatedBreakHours = formatTime(completedBreakDuration);
+
+    // setTotalHours((prev) => ({
+    //   workHours: calculatedWorkHours,
+    //   breakHours: calculatedBreakHours,
+    // }));
   };
 
   if (isBooting) {
@@ -446,6 +509,14 @@ const ClockInOutAttendance = () => {
       </div>
     );
   }
+
+  const getPrevDay = () => {
+    const yesterday = dayjs().subtract(1, "day");
+    // If yesterday is Sunday (0 in dayjs), pick Saturday
+    return yesterday.day() === 0
+      ? dayjs().subtract(2, "day") // Saturday
+      : yesterday;
+  };
 
   const timeStats = [
     {
@@ -479,13 +550,25 @@ const ClockInOutAttendance = () => {
 
           <div className="flex gap-12">
             <button
-              onClick={hasClockedIn ? handleStop : handleStart}
+              onClick={() => {
+                if (hasClockedIn && !isToday) {
+                  setValue("targetedDay", getPrevDay().format("YYYY-MM-DD"));
+                  setOpenModal(true);
+                } else {
+                  hasClockedIn
+                    ? isToday && handleStop()
+                    : isToday && handleStart();
+                }
+                // hasClockedIn ? handleStop() : handleStart()
+              }}
               className={`h-40 w-40 rounded-full ${
-                hasClockedIn ? "bg-[#EB5C45]" : "bg-wonoGreen  transition-all"
+                hasClockedIn && !correctionPending
+                  ? "bg-[#EB5C45]"
+                  : "bg-wonoGreen  transition-all"
               }  text-white flex justify-center items-center hover:scale-105`}
               disabled={isClockingIn || isClockingOut}
             >
-              {hasClockedIn
+              {hasClockedIn && !correctionPending
                 ? "Clock Out"
                 : isClockingIn
                 ? "Starting..."
@@ -536,6 +619,123 @@ const ClockInOutAttendance = () => {
           </div>
         </div>
       </div>
+      <MuiModal
+        title={"Correction Request"}
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          {/* <Controller
+            name="targetedDay"
+            control={control}
+            defaultValue={getPrevDay().format("YYYY-MM-DD")}
+            render={({ field }) => (
+              // <LocalizationProvider dateAdapter={AdapterDayjs}>
+              //   <DatePicker
+              //     {...field}
+              //     label={"Select Date"}
+              //     format="DD-MM-YYYY"
+              //     slotProps={{ textField: { size: "small" } }}
+              //     value={field.value ? dayjs(field.value) : null}
+              //     onChange={(date) => {
+              //       field.onChange(date ? date.toISOString() : null);
+              //     }}
+              //   />
+              // </LocalizationProvider>
+              <>
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Select Date"
+                  value={field.value ? dayjs(field.value) : null}
+                  fullWidth
+                  multiline
+                  error={!!errors?.targetedDay}
+                  helperText={errors?.targetedDay?.message}
+                />
+              </>
+            )}
+          /> */}
+
+          <Controller
+            name="targetedDay"
+            control={control}
+            defaultValue={getPrevDay().format("YYYY-MM-DD")}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                label="Selected Date"
+                value={
+                  field.value ? dayjs(field.value).format("DD-MM-YYYY") : ""
+                }
+                fullWidth
+                InputProps={{ readOnly: true }}
+                error={!!errors?.targetedDay}
+                helperText={errors?.targetedDay?.message}
+              />
+            )}
+          />
+
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Controller
+              name="outTime"
+              control={control}
+              render={({ field }) => (
+                <TimePicker
+                  {...field}
+                  label={"Select Out-Time"}
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(time) => {
+                    field.onChange(time ? time.toISOString() : null);
+                  }}
+                />
+              )}
+            />
+          </LocalizationProvider>
+          <Controller
+            name="reason"
+            control={control}
+            rules={{
+              required: "Please specify your reason",
+              validate: { noOnlyWhitespace, isAlphanumeric },
+            }}
+            render={({ field }) => (
+              <>
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Reason"
+                  fullWidth
+                  multiline
+                  rows={3} // ← Change this number to increase/decrease height
+                  error={!!errors?.reason}
+                  helperText={errors?.reason?.message}
+                />
+              </>
+            )}
+          />
+
+          <div className="flex items-center justify-center gap-4">
+            <SecondaryButton
+              title={"Cancel"}
+              handleSubmit={() => setOpenModal(false)}
+            />
+            <PrimaryButton
+              title={"Submit"}
+              type={"submit"}
+              isLoading={correctionPending}
+              disabled={correctionPending}
+            />
+          </div>
+          {/* {Object.keys(errors).length > 0 && (
+                  <pre className="text-red-500">
+                    {JSON.stringify(errors, null, 2)}
+                  </pre>
+                )} */}
+        </form>
+      </MuiModal>
     </div>
   );
 };

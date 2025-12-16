@@ -102,8 +102,7 @@ const FyBarGraphCount = ({
   const fyTotalCount = useMemo(() => {
     return stackedSeries.reduce((total, group) => {
       return (
-        total +
-        group.data.reduce((sum, val) => sum + (parseInt(val) || 0), 0)
+        total + group.data.reduce((sum, val) => sum + (parseInt(val) || 0), 0)
       );
     }, 0);
   }, [stackedSeries]);

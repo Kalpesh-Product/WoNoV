@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react"; // 🆕 added useMemo
 import { Tabs } from "@mui/material";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import useIsMobile from "../../hooks/useIsMobile"; // adjust the path
 import { AnimatePresence, motion } from "motion/react";
+import useAuth from "../../hooks/useAuth"; // 🆕 added
 
 const TabLayout = ({
   basePath,
@@ -13,21 +14,33 @@ const TabLayout = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const isMobile = useIsMobile(768); // use 768px as mobile breakpoint
+  const isMobile = useIsMobile(768);
+  const { auth } = useAuth(); // 🆕 get user
+  const userPermissions = auth?.user?.permissions?.permissions || []; // 🆕
+
+  // 🧠 Filter tabs based on permissions
+  const filteredTabs = useMemo(() => {
+    return tabs.filter(
+      (tab) => !tab.permission || userPermissions.includes(tab.permission)
+    );
+  }, [tabs, userPermissions]);
 
   // Redirect to default tab if on basePath
   useEffect(() => {
-    if (location.pathname === basePath && defaultTabPath) {
-      navigate(`${basePath}/${defaultTabPath}`, { replace: true });
+    if (
+      location.pathname === basePath &&
+      defaultTabPath &&
+      filteredTabs.length > 0
+    ) {
+      navigate(`${basePath}/${filteredTabs[0].path}`, { replace: true }); // 🆕 use filteredTabs
     }
-  }, [location, navigate, basePath, defaultTabPath]);
+  }, [location, navigate, basePath, defaultTabPath, filteredTabs]); // 🆕
 
-  const activeTab = tabs.findIndex((tab) =>
+  const activeTab = filteredTabs.findIndex((tab) =>
     location.pathname.includes(tab.path)
-  );
-  const tabPercent = 100 / tabs.length;
+  ); // 🆕 use filteredTabs
+  const tabPercent = 100 / filteredTabs.length; // 🆕
 
-  // FINAL DECISION: whether to show tabs
   const showTabs =
     !hideTabsCondition(location.pathname) &&
     !hideTabsOnPaths.some((path) => location.pathname.includes(path));
@@ -58,24 +71,29 @@ const TabLayout = ({
             },
           }}
         >
-          {tabs.map((tab, index) => (
-            <NavLink
-              key={index}
-              className="border-r-[1px] border-borderGray"
-              to={`${basePath}/${tab.path}`}
-              style={({ isActive }) => ({
-                textDecoration: "none",
-                color: isActive ? "white" : "#1E3D73",
-                textAlign: "center",
-                padding: "12px 16px",
-                display: "block",
-                backgroundColor: isActive ? "#1E3D73" : "white",
-                minWidth: isMobile ? "70%" : `${tabPercent}%`,
-              })}
-            >
-              {tab.label}
-            </NavLink>
-          ))}
+          {filteredTabs.map(
+            (
+              tab,
+              index // 🆕 use filteredTabs
+            ) => (
+              <NavLink
+                key={index}
+                className="border-r-[1px] border-borderGray"
+                to={`${basePath}/${tab.path}`}
+                style={({ isActive }) => ({
+                  textDecoration: "none",
+                  color: isActive ? "white" : "#1E3D73",
+                  textAlign: "center",
+                  padding: "12px 16px",
+                  display: "block",
+                  backgroundColor: isActive ? "#1E3D73" : "white",
+                  minWidth: isMobile ? "70%" : `${tabPercent}%`,
+                })}
+              >
+                {tab.label}
+              </NavLink>
+            )
+          )}
         </Tabs>
       )}
 
