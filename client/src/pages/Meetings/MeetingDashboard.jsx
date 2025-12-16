@@ -921,7 +921,6 @@ const MeetingDashboard = () => {
       key: "roomStatus",
       title: "Room Availability Status",
       height: 400,
-      width: 457,
       border: true,
       data: RoomPieData,
       options: RoomOptions,
@@ -1263,21 +1262,22 @@ const MeetingDashboard = () => {
             title={item.title}
             border={item.border}
           >
-            {/* <PieChartMui
-          title={item.title}
-          data={item.data}
-          options={item.options}
-        /> */}
-            <div className="flex flex-row">
-              <PieChartMui
-                title={item.title}
-                data={item.data}
-                options={item.options}
-              />
+            <div className="flex">
+              {/* CHART – fixed size, cannot shrink */}
+              <div className="shrink-0 w-[320px] h-[320px]">
+                <PieChartMui
+                  data={item.data}
+                  options={item.options}
+                  width={320}
+                  height={320}
+                />
+              </div>
 
-              {/* Render custom legend if available */}
+              {/* LEGEND – scrolls instead of stretching */}
               {item.customLegend && (
-                <div className="mt-4">{item.customLegend}</div>
+                <div className="ml-4 max-h-[320px] overflow-y-auto">
+                  {item.customLegend}
+                </div>
               )}
             </div>
           </WidgetSection>
