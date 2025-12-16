@@ -225,10 +225,10 @@ const TicketDashboard = () => {
   const priorityCountMap = {};
 
   lastMonthTickets.forEach((item) => {
-    const priority = item.priority.toLowerCase();
-    if (priority) {
-      priorityCountMap[priority] = (priorityCountMap[priority] || 0) + 1;
-    }
+    const priority = item?.priority?.toLowerCase();
+    if (!priority) return;
+
+    priorityCountMap[priority] = (priorityCountMap[priority] || 0) + 1;
   });
 
   const priorityOrder = ["high", "medium", "low"]; // order you want in the chart
@@ -240,11 +240,11 @@ const TicketDashboard = () => {
   const todayPriorityCountMap = {};
 
   todayTickets.forEach((item) => {
-    const priority = item.priority.toLowerCase();
-    if (priority) {
-      todayPriorityCountMap[priority] =
-        (todayPriorityCountMap[priority] || 0) + 1;
-    }
+    const priority = item?.priority?.toLowerCase();
+    if (!priority) return;
+
+    todayPriorityCountMap[priority] =
+      (todayPriorityCountMap[priority] || 0) + 1;
   });
 
   const todayPriorityOrder = ["high", "medium", "low"]; // order you want in the chart
@@ -437,7 +437,8 @@ const TicketDashboard = () => {
           border
           padding
           title={`Overall Department Raised Tickets - ${dateLabel}`}
-          TitleAmount={`TOTAL TICKETS : ${filteredTotal}`}>
+          TitleAmount={`TOTAL TICKETS : ${filteredTotal}`}
+        >
           {!isLoading ? (
             <AreaGraph
               responseData={ticketsData}
@@ -516,7 +517,8 @@ const TicketDashboard = () => {
           title={item.title}
           border={item.border}
           padding={item.padding}
-          titleLabel={item.titleLabel}>
+          titleLabel={item.titleLabel}
+        >
           <DonutChart
             centerLabel={item.centerLabel}
             labels={item.labels}
