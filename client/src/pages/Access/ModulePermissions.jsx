@@ -85,6 +85,11 @@ const ModulePermissions = () => {
                   <TableCell
                     sx={{ fontWeight: "bold", textTransform: "uppercase" }}
                   >
+                    Title
+                  </TableCell>{" "}
+                  <TableCell
+                    sx={{ fontWeight: "bold", textTransform: "uppercase" }}
+                  >
                     Permission
                   </TableCell>
                   <TableCell
@@ -109,20 +114,23 @@ const ModulePermissions = () => {
               </TableHead>
 
               <TableBody>
-                {permissions.map(({ key, label, type, action, access }) => (
-                  <TableRow key={key}>
-                    <TableCell>{label}</TableCell>
-                    <TableCell align="center">{access || "N/A"}</TableCell>
-                    <TableCell align="center">{type}</TableCell>
-                    <TableCell align="center">
-                      <Checkbox
-                        checked={formPermissions.has(action)}
-                        disabled={!isEditing}
-                        onChange={() => isEditing && handleToggle(action)}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {permissions.map(
+                  ({ title, key, label, type, action, access }) => (
+                    <TableRow key={key}>
+                      <TableCell>{title}</TableCell>
+                      <TableCell>{label}</TableCell>
+                      <TableCell align="center">{access || "N/A"}</TableCell>
+                      <TableCell align="center">{type}</TableCell>
+                      <TableCell align="center">
+                        <Checkbox
+                          checked={formPermissions.has(action)}
+                          disabled={!isEditing}
+                          onChange={() => isEditing && handleToggle(action)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )
+                )}
               </TableBody>
             </Table>
           </TableContainer>
