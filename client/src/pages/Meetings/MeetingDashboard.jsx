@@ -921,6 +921,7 @@ const MeetingDashboard = () => {
       key: "roomStatus",
       title: "Room Availability Status",
       height: 400,
+      width: 457,
       border: true,
       data: RoomPieData,
       options: RoomOptions,
