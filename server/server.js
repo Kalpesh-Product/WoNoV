@@ -45,7 +45,7 @@ const logRoutes = require("./routes/logRoutes");
 const auditLogger = require("./middlewares/auditLogger");
 require("./listeners/logEventListener");
 const app = express();
-const PORT = process.env.PORT || 5008;
+const PORT = process.env.PORT || 5009;
 app.set("trust proxy", true);
 
 connectDb(process.env.DB_URL);
