@@ -11,6 +11,7 @@ const PieChartMui = ({
   customLegend,
 }) => {
   const chartData = data.map((item) => parseFloat(item.value));
+  const hasData = chartData.some((value) => value > 0);
   const { containerRef, chartKey } = useResponsiveChart();
 
   const updatedOptions = {
@@ -19,6 +20,9 @@ const PieChartMui = ({
       ...options.chart,
       zoom: { enabled: false },
       animations: { enabled: false },
+    },
+    noData: {
+      text: "No data available",
     },
     legend: {
       ...options.legend,
@@ -35,11 +39,11 @@ const PieChartMui = ({
         <ReactApexChart
           key={chartKey}
           options={updatedOptions}
-          series={chartData}
+          series={hasData ? chartData : []}
           type="pie"
           height={height - 20} // Reserve space for built-in legend
         />
-        {customLegend && (
+        {customLegend && hasData && (
           <div>
             <div className="w-full flex justify-between">{customLegend}</div>
           </div>
