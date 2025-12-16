@@ -55,7 +55,6 @@ export default function BulkUpload() {
     (item) => item.route === selectedDoc
   );
 
-
   const { mutate: uploadDocument, isPending: isUploading } = useMutation({
     mutationFn: async ({ file, documentName }) => {
       const formData = new FormData();
@@ -156,12 +155,13 @@ export default function BulkUpload() {
           data={formattedTemplates}
           columns={templateColumns}
           formatDate={true}
-          tableTitle={"Bulk Upload Data templates"}
+          tableTitle={"Bulk Upload Data templatesx"}
           buttonTitle={"Upload Document"}
           handleClick={() => {
             setModalMode("add");
             setOpenModal(true);
           }}
+          disabled
         />
       </PageFrame>
       <MuiModal
