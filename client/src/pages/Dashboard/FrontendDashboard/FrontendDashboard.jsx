@@ -190,25 +190,6 @@ const FrontendDashboard = () => {
   };
   //--------------------Frontend budget-graph-----------------------//
 
-  const utilisedData = [
-    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
-    50000, 120000,
-  ];
-
-  const maxBudget = [
-    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
-    60000, 110000,
-  ];
-
-  const siteVisitorsData = [
-    {
-      name: "Site Visitors",
-      data: [
-        1200, 1000, 900, 1100, 1300, 800, 950, 1050, 1150, 1250, 1350, 1400,
-      ], // Monthly counts
-    },
-  ];
-
   // Chart options
   const siteVisitorOptions = {
     chart: {
@@ -263,59 +244,6 @@ const FrontendDashboard = () => {
     },
     tooltip: {
       theme: "light",
-    },
-  };
-
-  const nationWiseData = [
-    { id: 0, value: 30, actualCount: 300, label: "Mumbai", color: "#00274D" }, // Deep Navy Blue
-    { id: 1, value: 20, actualCount: 200, label: "Delhi", color: "#003F7F" }, // Dark Blue
-    {
-      id: 2,
-      value: 15,
-      actualCount: 150,
-      label: "Bangalore",
-      color: "#0056B3",
-    }, // Royal Blue
-    {
-      id: 3,
-      value: 10,
-      actualCount: 100,
-      label: "Hyderabad",
-      color: "#0073E6",
-    }, // Bright Blue
-    { id: 4, value: 8, actualCount: 80, label: "Chennai", color: "#338FFF" }, // Sky Blue
-    { id: 5, value: 7, actualCount: 70, label: "Kolkata", color: "#6699FF" }, // Light Blue
-    { id: 6, value: 5, actualCount: 50, label: "Pune", color: "#99B3FF" }, // Soft Blue
-    { id: 7, value: 5, actualCount: 50, label: "Ahmedabad", color: "#CCD9FF" }, // Very Light Blue
-  ];
-
-  // Updated Pie Chart Configuration
-  const nationWisePieChart = {
-    chart: {
-      type: "pie",
-      fontFamily: "Poppins-Regular",
-    },
-    labels: nationWiseData.map((item) => item.label),
-    colors: nationWiseData.map((item) => item.color), // Apply new shades of blue
-    dataLabels: {
-      enabled: true,
-      formatter: function (val) {
-        return `${val.toFixed(0)}%`; // Display percentage
-      },
-    },
-    tooltip: {
-      enabled: true,
-      custom: function ({ series, seriesIndex }) {
-        const item = nationWiseData[seriesIndex];
-        return `
-          <div style="padding: 5px; font-size: 12px;">
-            ${item.label}: ${item.actualCount} visitors
-          </div>`;
-      },
-    },
-    legend: {
-      position: "right",
-      horizontalAlign: "center",
     },
   };
 
@@ -388,51 +316,7 @@ const FrontendDashboard = () => {
     },
   };
 
-  const websiteIssuesData = [
-    {
-      name: "Resolved Percentage",
-      data: resolvedPercentage,
-      color: "#0056B3",
-    },
-  ];
 
-  const goaDistrictData = [
-    { id: 0, value: 40, actualCount: 400, label: "Panaji", color: "#00274D" }, // Deep Navy Blue
-    { id: 1, value: 25, actualCount: 250, label: "Margao", color: "#003F7F" }, // Dark Blue
-    { id: 2, value: 15, actualCount: 150, label: "Mapusa", color: "#0056B3" }, // Royal Blue
-    { id: 3, value: 10, actualCount: 100, label: "Pernem", color: "#0073E6" }, // Bright Blue
-    { id: 4, value: 10, actualCount: 100, label: "Vasco", color: "#338FFF" }, // Sky Blue
-  ];
-
-  // Updated Pie Chart Configuration for Goa Districts
-  const goaDistrictPieChart = {
-    chart: {
-      type: "pie",
-      fontFamily: "Poppins-Regular",
-    },
-    labels: goaDistrictData.map((item) => item.label),
-    colors: goaDistrictData.map((item) => item.color),
-    dataLabels: {
-      enabled: true,
-      formatter: function (val) {
-        return `${val.toFixed(0)}%`; // Display percentage
-      },
-    },
-    tooltip: {
-      enabled: true,
-      custom: function ({ series, seriesIndex }) {
-        const item = goaDistrictData[seriesIndex];
-        return `
-          <div style="padding: 5px; font-size: 12px;">
-            ${item.label}: ${item.actualCount} visitors
-          </div>`;
-      },
-    },
-    legend: {
-      position: "right",
-      horizontalAlign: "center",
-    },
-  };
 
  const totalUtilised =
     budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
@@ -462,6 +346,7 @@ const FrontendDashboard = () => {
           title="Edit website"
           route={`/app/dashboard/frontend-dashboard/edit-theme/BIZNest/Home`}
         />,
+        <Card icon={<CgWebsite />} title="Site form" route={"create-site"} />,
         <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
         <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
         <Card icon={<SiGoogleadsense />} title="Data" route={"data"} />,

@@ -396,6 +396,7 @@ import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/
 import LogPage from "../pages/LogPage";
 import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
 import AccessPages from "../pages/Access/AccessPages";
+import TemplateForm from "../pages/Dashboard/FrontendDashboard/SiteForm/TemplateForm";
 
 export const routes = createBrowserRouter([
   {
@@ -429,6 +430,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "",
                         element: <FrontendDashboard />,
+                      },
+                      {
+                        path: "create-site",
+                        element: <TemplateForm />,
                       },
                       {
                         path: "select-theme",
