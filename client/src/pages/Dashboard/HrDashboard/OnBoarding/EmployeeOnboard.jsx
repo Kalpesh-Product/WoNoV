@@ -47,7 +47,9 @@ const EmployeeOnboard = () => {
     <PageFrame>
       <div className="h-[65vh] overflow-y-auto">
         <div>
-          <span className="text-primary font-pmedium text-title uppercase">employee onboarding</span>
+          <span className="text-primary font-pmedium text-title uppercase">
+            employee onboarding
+          </span>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="">
           <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
@@ -79,7 +81,7 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="middleName"
                     control={control}
-                    rules={{ required: "Middle Name is Required" }}
+                    // rules={{ required: "Middle Name is Required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -120,7 +122,8 @@ const EmployeeOnboard = () => {
                         select
                         fullWidth
                         helperText={errors?.gender?.message}
-                        error={!!errors.gender}>
+                        error={!!errors.gender}
+                      >
                         <MenuItem value="" disabled>
                           Select a Gender
                         </MenuItem>

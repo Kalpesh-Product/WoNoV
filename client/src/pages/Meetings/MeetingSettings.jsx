@@ -20,6 +20,8 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import useAuth from "../../hooks/useAuth";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
+import UploadFileInput from "../../components/UploadFileInput";
+import WidgetSection from "../../components/WidgetSection";
 
 const MeetingSettings = () => {
   const axios = useAxiosPrivate();
@@ -60,6 +62,7 @@ const MeetingSettings = () => {
       description: "",
       location: selectedRoom?.location?.building?._id,
       isActive: true,
+      roomImage: null,
     },
   });
   const [editFile, setEditFile] = useState(null);
@@ -100,13 +103,18 @@ const MeetingSettings = () => {
 
   const editRoomMutation = useMutation({
     mutationFn: async ({ id, formData }) => {
-      return axios.patch(`/api/meetings/update-room/${id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await axios.patch(
+        `/api/meetings/update-room/${id}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      return response.data;
     },
     onSuccess: () => {
       toast.success("Room updated successfully!");
-      queryClient.invalidateQueries(["meetingRooms"]);
+      queryClient.invalidateQueries({ queryKey: ["meetingRooms"] });
       handleCloseEditModal();
     },
     onError: (error) => {
@@ -121,10 +129,7 @@ const MeetingSettings = () => {
     formData.append("description", data.description);
     formData.append("location", data.unit);
     formData.append("isActive", data.isActive === "false" ? false : true);
-
-    if (editFile) {
-      formData.append("room", editFile);
-    }
+    formData.append("room", data.roomImage);
 
     editRoomMutation.mutate({ id: selectedRoom._id, formData });
   };
@@ -205,21 +210,15 @@ const MeetingSettings = () => {
   };
 
   return (
-    <div className="m-4 rounded-md border-default border-borderGray">
-      <div className="p-4 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-title text-primary">Meeting Rooms</span>
-          </div>
-          <div>
-            <PrimaryButton
-              handleSubmit={handleOpenModal}
-              title={"Add New Room"}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
+    <div className="p-4 flex flex-col gap-4">
+      <WidgetSection
+        border
+        title={"Meeting Rooms"}
+        button
+        buttonTitle={"Add New Room"}
+        handleClick={handleOpenModal}
+      >
+        <div className="grid grid-cols-4 gap-4">
           {!isMeetingRoomsLoading ? (
             meetingRooms.map((room) => (
               <Card
@@ -228,17 +227,17 @@ const MeetingSettings = () => {
               >
                 <CardMedia
                   component="img"
-                  sx={{ height: "350px" }}
+                  sx={{ height: "270px" }}
                   image={room.image?.url || "https://via.placeholder.com/350"} // Fallback Image
                   alt={room.name}
                   className="object-cover"
                 />
                 <CardContent>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-subtitle">{room.name}</span>
+                    <span className="text-content">{room.name}</span>
                     <span
-                      className={`px-4 py-1 text-content font-pregular rounded-full ${
-                        room.isActive 
+                      className={`px-4 py-1 text-small font-pregular rounded-full ${
+                        room.isActive
                           ? "bg-green-100 text-green-600"
                           : "bg-red-100 text-red-600"
                       }`}
@@ -270,7 +269,7 @@ const MeetingSettings = () => {
             <CircularProgress color="#1E3D73" />
           )}
         </div>
-      </div>
+      </WidgetSection>
 
       {/* Modal for Adding New Room */}
       <MuiModal
@@ -493,7 +492,6 @@ const MeetingSettings = () => {
                 rules={{
                   validate: {
                     noOnlyWhitespace,
-                    isAlphanumeric,
                   },
                 }}
                 render={({ field }) => (
@@ -565,38 +563,12 @@ const MeetingSettings = () => {
                 control={editControl}
                 defaultValue={null}
                 render={({ field }) => (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-content">Update Room Image</span>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        id="edit-upload-file"
-                        onChange={(event) => {
-                          const file = event.target.files[0];
-                          setEditFile(file);
-                          field.onChange(file);
-                        }}
-                      />
-                      <label htmlFor="edit-upload-file">
-                        <Button
-                          sx={{
-                            backgroundColor: "#ebf5ff",
-                            color: "#4b5d87",
-                            fontFamily: "Poppins-Bold",
-                          }}
-                          variant="contained"
-                          component="span"
-                        >
-                          Choose File
-                        </Button>
-                      </label>
-                      <span className="text-content">
-                        {editFile ? editFile.name : "No file chosen"}
-                      </span>
-                    </div>
-                  </div>
+                  <UploadFileInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    allowedExtensions={["jpeg"]}
+                    previewType="jpeg"
+                  />
                 )}
               />
               <Controller
@@ -622,7 +594,12 @@ const MeetingSettings = () => {
               />
 
               <div className="flex justify-center">
-                <PrimaryButton title={"Save Changes"} type={"submit"} />
+                <PrimaryButton
+                  title={"Save Changes"}
+                  type={"submit"}
+                  disabled={editRoomMutation.isPending}
+                  isLoading={editRoomMutation.isPending}
+                />
               </div>
             </div>
           </form>

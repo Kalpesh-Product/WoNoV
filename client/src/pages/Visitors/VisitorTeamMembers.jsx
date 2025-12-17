@@ -18,7 +18,11 @@ const VisitorTeamMembers = () => {
         );
         return response.data
           .filter((m) => m._id !== auth.user._id)
-          .filter((m) => m.department.includes("Administration") || m.department.includes("Top Management"));
+          .filter(
+            (m) =>
+              m.department.includes("Administration") ||
+              m.department.includes("Top Management")
+          );
       } catch (error) {
         console.error(error);
       }

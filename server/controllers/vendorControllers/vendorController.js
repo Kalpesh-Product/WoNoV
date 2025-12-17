@@ -342,7 +342,7 @@ const bulkInsertVendors = async (req, res, next) => {
               accountNumber: row["Account No"]?.trim(),
               ifscCode: row["IFSC Code"]?.trim(),
               departmentId,
-              company: company._id,
+              company,
             };
 
             vendors.push(vendor);
@@ -364,9 +364,8 @@ const bulkInsertVendors = async (req, res, next) => {
         .json({ message: "No valid vendor records found in the file." });
     }
 
-    const insertedVendors = await Vendor.insertMany(validVendors, {
-      ordered: false,
-    });
+    const insertedVendors = await Vendor.insertMany(validVendors);
+
 
     res.status(201).json({
       message: `${insertedVendors.length} vendors inserted successfully.`,

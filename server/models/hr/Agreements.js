@@ -15,6 +15,9 @@ const agreementsSchema = new mongoose.Schema(
     id: {
       type: String,
     },
+    type: {
+      type: String,
+    },
     isActive: {
       type: Boolean,
       default: true,

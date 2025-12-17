@@ -226,7 +226,8 @@ const AdminInventory = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Add inventory">
+        title="Add inventory"
+      >
         {modalMode === "add" && (
           <form onSubmit={handleSubmit(handleFormSubmit)}>
             <div className="grid grid-cols-1 gap-4">
@@ -243,7 +244,8 @@ const AdminInventory = () => {
                     select
                     error={!!errors.category}
                     helperText={errors.category?.message}
-                    fullWidth>
+                    fullWidth
+                  >
                     {assetsCategories?.map((cat) => (
                       <MenuItem key={cat} value={cat}>
                         {cat}
@@ -378,7 +380,8 @@ const AdminInventory = () => {
                     select
                     error={!!errors.vendor}
                     helperText={errors.vendor?.message}
-                    fullWidth>
+                    fullWidth
+                  >
                     {vendorDetials?.map((vendor) => (
                       <MenuItem key={vendor._id} value={vendor.name}>
                         {vendor.name}

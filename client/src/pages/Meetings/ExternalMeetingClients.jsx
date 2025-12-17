@@ -33,6 +33,7 @@ import UploadFileInput from "../../components/UploadFileInput";
 import { inrFormat } from "../../utils/currencyFormat";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import usePageDepartment from "../../hooks/usePageDepartment";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
@@ -44,6 +45,8 @@ const ExternalMeetingCLients = () => {
   const [selectedMeeting, setSelectedMeeting] = useState([]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
+  const department = usePageDepartment();
+  const isFinance = department?.name === "Finance";
 
   const paymentModes = [
     "Cash",
@@ -91,13 +94,23 @@ const ExternalMeetingCLients = () => {
     control: paymentControl,
     reset: resetPaymentForm,
     formState: { errors: paymentErrors },
+    setValue: setPaymentValue,
+    watch: paymentWatch,
   } = useForm({
     defaultValues: {
       amount: "",
-      method: "",
+      paymentType: "",
+      paymentStatus: "",
       transactionId: "",
+      paymentProof: "",
+      discountAmount: "",
+      discountPercentage: "",
+      gstAmount: "",
+      finalAmount: "",
     },
   });
+
+  const watchedDiscountAmount = paymentWatch("discountAmount");
 
   const {
     handleSubmit: cancelMeetingSubmit,
@@ -150,20 +163,38 @@ const ExternalMeetingCLients = () => {
 
   const transformedMeetings = filteredMeetings
     .filter((m) => m.meetingType === "External")
-    .map((meeting, index) => ({
-      ...meeting,
-      date: meeting.date,
-      bookedBy: meeting.bookedBy
-        ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
-        : meeting.clientBookedBy?.employeeName || "Unknown",
-      startTime: meeting.startTime,
-      endTime: meeting.endTime,
-      extendTime: meeting.extendTime,
-      srNo: index + 1,
-      paymentAmount: inrFormat(meeting.paymentAmount) ?? "N/A",
-      paymentMode: meeting.paymentMode ?? "",
-      paymentStatus: meeting.paymentStatus ?? false,
-    }));
+    .map((meeting, index) => {
+      return {
+        ...meeting,
+        date: meeting.date,
+        bookedBy: meeting.bookedBy
+          ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
+          : meeting.clientBookedBy?.employeeName || "Unknown",
+        startTime: meeting.startTime,
+        endTime: meeting.endTime,
+        extendTime: meeting.extendTime,
+        srNo: index + 1,
+        paymentAmount: meeting.paymentAmount ?? 0,
+        paymnetDiscountAmount: meeting.discountAmount ?? 0,
+        paymentMode: meeting.paymentMode ?? "",
+        paymentProofUrl: meeting?.paymentProof ?? "",
+        paymentStatus: meeting.paymentStatus ?? false,
+        paymentVerification: meeting.paymentVerification || "Under Review",
+        client: meeting.client || "",
+      };
+    });
+
+  //Fetch Single Room
+  const { data: room = {}, isLoading: isRoomLoading } = useQuery({
+    queryKey: ["room"],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/meetings/get-room/${paymentMeeting.roomName}`
+      );
+      return response.data;
+    },
+    enabled: !!paymentMeeting?.roomName,
+  });
 
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
@@ -260,15 +291,42 @@ const ExternalMeetingCLients = () => {
     mutationKey: ["meeting-payment"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/meetings/update-meeting/${data.meetingId}`,
-        data
+        `/api/meetings/update-meeting/${data.get("meetingId")}`,
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
       return response.data;
     },
     onSuccess: () => {
-      toast.success("payment details updated successfully");
+      toast.success("Payment details updated successfully");
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       setOpenPaymentModal(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const { mutate: verifyPayment, isPending: isVerifyPayment } = useMutation({
+    mutationFn: async (data) => {
+      const respone = await axios.patch(
+        `/api/meetings/update-meeting-payment-status`,
+        {
+          status: data,
+          meetingId: selectedMeeting._id,
+        }
+      );
+
+      return respone.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      toast.success(data.message || "UPDATED");
+      setDetailsModal(false);
     },
     onError: (error) => {
       toast.error(error.message);
@@ -296,8 +354,6 @@ const ExternalMeetingCLients = () => {
       setEditValue("endTime", dayjs(new Date(selectedMeeting?.endTime)));
     }
   }, [selectedMeeting]);
-
-  console.log("selected meeting : ");
 
   //---------------------------------Event handlers----------------------------------------//
 
@@ -340,6 +396,11 @@ const ExternalMeetingCLients = () => {
     setDetailsModal(true);
   };
 
+  const handleVerifyPayment = (data, status) => {
+    setSelectedMeeting(data);
+    verifyPayment(status);
+  };
+
   const handleAddChecklistItem = () => {
     if (!newItem.trim() || !selectedMeetingId) return;
     setChecklists((prev) => {
@@ -360,12 +421,7 @@ const ExternalMeetingCLients = () => {
 
   const handleOpenPaymentModal = (meeting) => {
     setPaymentMeeting(meeting);
-    resetPaymentForm({
-      amount: meeting.paymentDetails?.amount || "",
-      method: meeting.paymentDetails?.method || "",
-      transactionId: meeting.paymentDetails?.transactionId || "",
-    });
-    setOpenPaymentModal(true);
+    setOpenPaymentModal(true); // open the modal
   };
 
   const handleClosePaymentModal = () => {
@@ -442,6 +498,55 @@ const ExternalMeetingCLients = () => {
 
     housekeepingMutation.mutate(payload);
   };
+  useEffect(() => {
+    if (!isRoomLoading && room?.perHourPrice) {
+      // Calculate actual duration
+
+      const start = new Date(paymentMeeting.startTime);
+      const end = new Date(paymentMeeting.endTime);
+      console.log("meeting info", start.getTime());
+      console.log("meeting info", end.getTime());
+
+      const durationInHours =
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+      console.log("duration", durationInHours);
+
+      // Multiply rates by duration
+      const baseAmount = room.perHourPrice * durationInHours;
+      const gstAmount = room.perHourGstPrice * durationInHours;
+      const finalAmount = gstAmount;
+      setPaymentValue("amount", baseAmount);
+      setPaymentValue("gstAmount", gstAmount);
+      setPaymentValue("finalAmount", finalAmount);
+    }
+  }, [room, isRoomLoading, setPaymentValue]);
+
+  useEffect(() => {
+    if (!isRoomLoading && paymentMeeting && room?.perHourGstPrice) {
+      const start = new Date(paymentMeeting.startTime);
+      const end = new Date(paymentMeeting.endTime);
+      const durationInHours =
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+      // Multiply rates by duration
+      const baseAmount = room.perHourPrice * durationInHours;
+      const gstAmount = room.perHourGstPrice * durationInHours;
+      const calculatedAmount = gstAmount;
+      const discountPercentage = (
+        (watchedDiscountAmount / calculatedAmount) *
+        100
+      ).toFixed(2);
+      const finalAmount = calculatedAmount - watchedDiscountAmount;
+
+      setPaymentValue("discountPercentage", discountPercentage);
+      setPaymentValue("finalAmount", finalAmount);
+    }
+  }, [watchedDiscountAmount, room, isRoomLoading]);
+
+  useEffect(() => {
+    console.log("payment", paymentMeeting);
+  }, [paymentMeeting]);
 
   //---------------------------------Event handlers----------------------------------------//
 
@@ -531,59 +636,76 @@ const ExternalMeetingCLients = () => {
         const status = params.data.meetingStatus;
         const housekeepingStatus = params.data.housekeepingStatus;
         const isPaid = params.data.paymentStatus === true;
-        console.log("isPaid : ", isPaid);
         const isUpcoming = status === "Upcoming";
         const isCancelled = status === "Cancelled";
         const isOngoing = status === "Ongoing";
         const isCompleted = status === "Completed";
         const isHousekeepingPending = housekeepingStatus === "Pending";
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
+        const isVerified = params.data.paymentVerification === "Verified";
 
         const menuItems = [
-          !isPaid && {
-            label: "Update Payment Details",
-            onClick: () => handleOpenPaymentModal(params.data),
+          {
+            label: "View",
+            onClick: () => handleSelectedMeeting("viewDetails", params.data),
           },
+          isPaid &&
+            isFinance &&
+            !isVerified && {
+              label: "Verify Payment",
+              onClick: () => handleVerifyPayment(params.data, "Verified"),
+            },
+          isPaid &&
+            isFinance &&
+            isVerified && {
+              label: "Review Payment",
+              onClick: () => handleVerifyPayment(params.data, "Under Review"),
+            },
 
-          !isOngoing &&
-            !isHousekeepingCompleted && {
-              label: "Update Checklist",
-              onClick: () =>
-                handleOpenChecklistModal("update", params.data._id),
-            },
-          isUpcoming && {
-            label: "Edit",
-            onClick: () => handleEditMeeting("edit", params.data),
-          },
-          !isOngoing &&
-            !isHousekeepingPending && {
-              label: "Mark As Ongoing",
-              onClick: () => handleOngoing("ongoing", params.data._id),
-            },
-          !isUpcoming && {
-            label: "Mark As Completed",
-            onClick: () => handleCompleted("complete", params.data._id),
-          },
-          // !isUpcoming && {
-          //   label: "Extend Meeting",
-          //   onClick: () => handleExtendMeetingModal("extend", params.data),
-          // },
-          !isCancelled && {
-            label: "Cancel",
-            onClick: () => handleSelectedMeeting("cancel", params.data),
-          },
+          // Show the following only when NOT finance
+          ...(!isFinance
+            ? [
+                !isPaid && {
+                  label: "Update Payment Details",
+                  onClick: () => handleOpenPaymentModal(params.data),
+                },
+                !isOngoing &&
+                  !isHousekeepingCompleted && {
+                    label: "Update Checklist",
+                    onClick: () =>
+                      handleOpenChecklistModal("update", params.data._id),
+                  },
+                isUpcoming && {
+                  label: "Edit",
+                  onClick: () => handleEditMeeting("edit", params.data),
+                },
+                !isOngoing &&
+                  !isHousekeepingPending && {
+                    label: "Mark As Ongoing",
+                    onClick: () => handleOngoing("ongoing", params.data._id),
+                  },
+                !isUpcoming && {
+                  label: "Mark As Completed",
+                  onClick: () => handleCompleted("complete", params.data._id),
+                },
+                !isCancelled && {
+                  label: "Cancel",
+                  onClick: () => handleSelectedMeeting("cancel", params.data),
+                },
+              ]
+            : []),
         ].filter(Boolean);
 
         return (
           <div className="flex gap-2 items-center">
-            <div
+            {/* <div
               onClick={() => handleSelectedMeeting("viewDetails", params.data)}
               className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
             >
               <span className="text-subtitle">
                 <MdOutlineRemoveRedEye />
               </span>
-            </div>
+            </div> */}
 
             {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
           </div>
@@ -851,6 +973,10 @@ const ExternalMeetingCLients = () => {
                 "Top Management"
               }
             />
+            <DetalisFormatted
+              title="Client"
+              detail={selectedMeeting.client || "Unknown"}
+            />
 
             <br />
             <div className="font-bold">Venue Details</div>
@@ -884,15 +1010,27 @@ const ExternalMeetingCLients = () => {
             <div className="font-bold">Payment Details</div>
             <DetalisFormatted
               title="Amount"
-              detail={selectedMeeting?.paymentAmount}
+              detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
+            />
+            <DetalisFormatted
+              title="Discount"
+              detail={`INR ${inrFormat(
+                selectedMeeting?.paymnetDiscountAmount
+              )}`}
             />
             <DetalisFormatted
               title="Mode"
               detail={selectedMeeting?.paymentMode || "N/A"}
             />
+
             <DetalisFormatted
               title="Status"
               detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
+            />
+
+            <DetalisFormatted
+              title="Verification"
+              detail={selectedMeeting?.paymentVerification}
             />
             {selectedMeeting?.paymentProofUrl && (
               <DetalisFormatted
@@ -1091,71 +1229,160 @@ const ExternalMeetingCLients = () => {
         <form
           className="flex flex-col gap-4"
           onSubmit={handlePaymentSubmit((data) => {
-            updatePayment({
-              paymentAmount: data?.amount,
-              paymentMode: data?.paymentType,
-              paymentStatus: data?.paymentStatus,
-              meetingId: paymentMeeting?._id,
-            });
+            console.log("Submitting form with data:", data);
+            const formData = new FormData();
+
+            formData.append("paymentAmount", data?.finalAmount);
+            formData.append("paymentMode", data?.paymentType);
+            formData.append("paymentStatus", data?.paymentStatus);
+            formData.append("meetingId", paymentMeeting?._id);
+            formData.append("discountAmount", data?.discountAmount);
+
+            // If it's a file input (like a PDF or image):
+            if (data?.paymentProof) {
+              formData.append("paymentProof", data.paymentProof);
+            }
+            updatePayment(formData);
+            // updatePayment({
+            //   paymentAmount: data?.amount,
+            //   paymentMode: data?.paymentType,
+            //   paymentStatus: data?.paymentStatus,
+            //   meetingId: paymentMeeting?._id,
+            //   discountAmount: data.discountAmount,
+            //   paymentProof: data.paymentProof
+            // });
           })}
         >
+          <div className="flex gap-4 items-center">
+            <Controller
+              name="amount"
+              control={paymentControl}
+              rules={{ required: "Amount is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  disabled
+                  label="Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.amount}
+                  helperText={paymentErrors.amount?.message}
+                />
+              )}
+            />
+            <Controller
+              name="gstAmount"
+              control={paymentControl}
+              rules={{ required: "GST Amount is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  disabled
+                  label="GST Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.gstAmount}
+                  helperText={paymentErrors.gstAmount?.message}
+                />
+              )}
+            />
+          </div>
+
+          <div className="flex gap-4 items-center">
+            <Controller
+              name="discountAmount"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Discount Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.discountAmount}
+                  helperText={paymentErrors.discountAmount?.message}
+                />
+              )}
+            />
+            <Controller
+              name="discountPercentage"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  disabled
+                  label="Discount %"
+                  type="string"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.discountPercentage}
+                  helperText={paymentErrors.discountPercentage?.message}
+                />
+              )}
+            />
+          </div>
           <Controller
-            name="amount"
+            name="finalAmount"
             control={paymentControl}
-            rules={{ required: "Amount is required" }}
+            rules={{ required: "Final Amount is required" }}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Amount"
+                disabled
+                label="Final Amount"
                 type="number"
                 size="small"
                 fullWidth
-                error={!!paymentErrors.amount}
-                helperText={paymentErrors.amount?.message}
+                error={!!paymentErrors.finalAmount}
+                helperText={paymentErrors.finalAmount?.message}
               />
             )}
           />
+          <div className="flex gap-4 items-center">
+            <Controller
+              name="paymentType"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Payment Type"
+                  select
+                  fullWidth
+                >
+                  <MenuItem value="" disabled>
+                    Select Payment Type
+                  </MenuItem>
+                  {paymentModes.map((p) => {
+                    return <MenuItem value={p}>{p}</MenuItem>;
+                  })}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="paymentStatus"
+              control={paymentControl}
+              rules={{ required: "Payment status is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Payment Status"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.paymentStatus}
+                  helperText={paymentErrors.paymentStatus?.message}
+                >
+                  <MenuItem value="Paid">Paid</MenuItem>
+                  <MenuItem value="Unpaid">Unpaid</MenuItem>
+                </TextField>
+              )}
+            />
+          </div>
           <Controller
-            name="paymentType"
-            control={paymentControl}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                size="small"
-                label="Payment Type"
-                select
-                fullWidth
-              >
-                <MenuItem value="" disabled>
-                  Select Payment Type
-                </MenuItem>
-                {paymentModes.map((p) => {
-                  return <MenuItem value={p}>{p}</MenuItem>;
-                })}
-              </TextField>
-            )}
-          />
-          <Controller
-            name="paymentStatus"
-            control={paymentControl}
-            rules={{ required: "Payment status is required" }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                select
-                label="Payment Status"
-                size="small"
-                fullWidth
-                error={!!paymentErrors.paymentStatus}
-                helperText={paymentErrors.paymentStatus?.message}
-              >
-                <MenuItem value="Paid">Paid</MenuItem>
-                <MenuItem value="Unpaid">Unpaid</MenuItem>
-              </TextField>
-            )}
-          />
-          <Controller
-            name="invoiceFile"
+            name="paymentProof"
             control={paymentControl}
             render={({ field }) => (
               <UploadFileInput

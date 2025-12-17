@@ -1,4 +1,6 @@
 const Event = require("../../models/events/Events");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
 
 const createEvent = async (req, res, next) => {
   const { company } = req;
@@ -29,7 +31,7 @@ const createEvent = async (req, res, next) => {
 
     return res.status(201).json({ message: "Event created successfully" });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -175,7 +177,7 @@ const extendEvent = async (req, res, next) => {
 
     return res.status(200).json({ message: "Meeting time extended" });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -202,7 +204,72 @@ const deleteEvent = async (req, res, next) => {
       data: inActiveEvent,
     });
   } catch (error) {
-    next(error)
+    next(error);
+  }
+};
+
+const bulkInsertEvents = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const companyId = req.company; 
+
+    if (!file) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid CSV file" });
+    }
+
+    const events = [];
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    stream
+      .pipe(csvParser({ skipEmptyLines: true }))
+      .on("data", (row) => {
+        const event = {
+          title: row["Title"]?.trim(),
+          type: row["Type"]?.trim(),
+          description: row["Description"]?.trim(),
+          start: new Date(row["Start"]),
+          end: new Date(row["End"]),
+          allDay: row["All Day"]?.toLowerCase() === "yes" ? true : false,
+          active: row["Active"]?.toLowerCase() === "yes" ? true : false,
+          company: companyId,
+        };
+
+        // Optional: basic validation
+        if (
+          event.title &&
+          event.type &&
+          event.description &&
+          event.start &&
+          event.end
+        ) {
+          events.push(event);
+        }
+      })
+      .on("end", async () => {
+        try {
+          if (events.length === 0) {
+            return res
+              .status(400)
+              .json({ message: "No valid event rows found in the CSV." });
+          }
+
+          await Event.insertMany(events);
+          res.status(201).json({
+            message: "Events inserted successfully",
+            count: events.length,
+          });
+        } catch (error) {
+          next(error);
+        }
+      })
+      .on("error", (err) => {
+        next(err);
+      });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -214,4 +281,5 @@ module.exports = {
   getBirthdays,
   extendEvent,
   deleteEvent,
+  bulkInsertEvents,
 };

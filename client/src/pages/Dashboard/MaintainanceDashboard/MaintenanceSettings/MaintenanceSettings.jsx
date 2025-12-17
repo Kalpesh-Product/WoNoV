@@ -1,6 +1,8 @@
 import { Tab, Tabs } from "@mui/material";
 import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { PERMISSIONS } from "../../../../constants/permissions";
+import TabLayout from "../../../../components/Tabs/TabLayout";
 
 const MaintenanceSettings = () => {
   const location = useLocation();
@@ -8,19 +10,31 @@ const MaintenanceSettings = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Bulk Upload", path: "bulk-upload" },
-    { label: "SOPs", path: "sops" },
-    { label: "Policies", path: "policies" },
+    {
+    label: "Bulk Upload",
+    path: "bulk-upload",
+    permission: PERMISSIONS.MAINTENANCE_BULK_UPLOAD.value,
+  },
+  {
+    label: "SOPs",
+    path: "sops",
+    permission: PERMISSIONS.MAINTENANCE_SOPS.value,
+  },
+  {
+    label: "Policies",
+    path: "policies",
+    permission: PERMISSIONS.MAINTENANCE_POLICIES.value,
+  },
   ];
 
   // Redirect to "bulk-upload" if the current path is "/maintenance-dashboard/settings"
-  useEffect(() => {
-    if (location.pathname === "/app/dashboard/maintenance-dashboard/settings") {
-      navigate("/app/dashboard/maintenance-dashboard/settings/bulk-upload", {
-        replace: true,
-      });
-    }
-  }, [location, navigate]);
+  // useEffect(() => {
+  //   if (location.pathname === "/app/dashboard/maintenance-dashboard/settings") {
+  //     navigate("/app/dashboard/maintenance-dashboard/settings/bulk-upload", {
+  //       replace: true,
+  //     });
+  //   }
+  // }, [location, navigate]);
 
   // Determine whether to show the tabs
   const showTabs = !location.pathname.includes("bulk-upload/");
@@ -31,52 +45,12 @@ const MaintenanceSettings = () => {
   );
 
   return (
-    <div className="p-4">
-      {/* Render tabs only if the current route is not EmployeeDetails */}
-      {showTabs && (
-        <Tabs
-          value={activeTab}
-          variant="fullWidth"
-          TabIndicatorProps={{ style: { display: "none" } }}
-          sx={{
-            backgroundColor: "white",
-            borderRadius: 2,
-            border: "1px solid #d1d5db",
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: "medium",
-              padding: "12px 16px",
-              borderRight: "0.1px solid #d1d5db",
-            },
-            "& .Mui-selected": {
-              backgroundColor: "#1E3D73",
-              color: "white",
-            },
-          }}>
-          {tabs.map((tab, index) => (
-            <NavLink
-              key={index}
-              className={"border-r-[1px] border-borderGray"}
-              to={tab.path}
-              style={({ isActive }) => ({
-                textDecoration: "none",
-                color: isActive ? "white" : "#1E3D73",
-                flex: 1,
-                textAlign: "center",
-                padding: "12px 16px",
-                display: "block",
-                backgroundColor: isActive ? "#1E3D73" : "white",
-              })}>
-              {tab.label}
-            </NavLink>
-          ))}
-        </Tabs>
-      )}
-
-      <div className="py-4">
-        <Outlet />
-      </div>
-    </div>
+      <TabLayout
+      basePath="/app/dashboard/maintenance-dashboard/settings"
+      defaultTabPath="bulk-upload"
+      tabs={tabs}
+      hideTabsCondition={(pathname) => pathname.includes("bulk-upload/")}
+    />
   );
 };
 

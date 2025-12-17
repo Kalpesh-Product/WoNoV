@@ -37,6 +37,7 @@ import { queryClient } from "../main";
 import relativeTime from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
 
+
 const Header = ({
   notifications = [],
   unseenCount = 0,
@@ -110,7 +111,7 @@ const Header = ({
 
   return (
     <>
-      <div className="flex w-full justify-between gap-x-10 items-center py-2">
+      <div className="flex w-full justify-between gap-x-10 items-center py-2 ">
         <div>
           <div>
             <div className={`w-48 flex items-center gap-16 h-full pl-4`}>

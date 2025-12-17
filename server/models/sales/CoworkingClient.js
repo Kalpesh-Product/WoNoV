@@ -72,6 +72,11 @@ const clientSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    meetingCreditBalance: {
+      type: Number,
+      default: 0,
+    },
+
     startDate: {
       type: Date,
     },

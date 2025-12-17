@@ -89,6 +89,10 @@ const loadPage = async (req, res) => {
 // 🔹 Get all templates
 const getTemplates = async (req, res) => {
   try {
+    const host = req.hostname;
+    const subdomain = host.split(".")[0];
+    console.log("subdomain", subdomain);
+
     const templates = await TemplateModel.find();
     res.json(templates);
   } catch (error) {

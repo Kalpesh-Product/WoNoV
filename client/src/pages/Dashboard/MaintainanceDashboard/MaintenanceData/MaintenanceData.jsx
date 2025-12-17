@@ -1,6 +1,8 @@
 import { Tab, Tabs } from "@mui/material";
 import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import TabLayout from "../../../../components/Tabs/TabLayout";
+import { PERMISSIONS } from "../../../../constants/permissions";
 
 const MaintenanceData = () => {
   const location = useLocation();
@@ -8,26 +10,36 @@ const MaintenanceData = () => {
 
   // Map routes to tabs
   const tabs = [
-    {
-      label: "AMC Records",
-      path: "amc-records",
-    },
-    { label: "Asset List", path: "asset-list" },
-    {
-      label: "Monthly Invoice Reports",
-      path: "monthly-invoice-reports",
-    },
-    { label: "Vendor", path: "vendor" },
+   {
+    label: "AMC Records",
+    path: "amc-records",
+    permission: PERMISSIONS.MAINTENANCE_AMC_RECORDS.value,
+  },
+  {
+    label: "Asset List",
+    path: "asset-list",
+    permission: PERMISSIONS.MAINTENANCE_ASSET_LIST.value,
+  },
+  {
+    label: "Monthly Invoice Reports",
+    path: "monthly-invoice-reports",
+    permission: PERMISSIONS.MAINTENANCE_MONTHLY_INVOICE_REPORTS.value,
+  },
+  {
+    label: "Vendor",
+    path: "vendor",
+    permission: PERMISSIONS.MAINTENANCE_VENDOR.value,
+  },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
-  useEffect(() => {
-    if (location.pathname === "/app/dashboard/maintenance-dashboard/data") {
-      navigate("/app/dashboard/maintenance-dashboard/data/amc-records", {
-        replace: true,
-      });
-    }
-  }, [location, navigate]);
+  // useEffect(() => {
+  //   if (location.pathname === "/app/dashboard/maintenance-dashboard/data") {
+  //     navigate("/app/dashboard/maintenance-dashboard/data/amc-records", {
+  //       replace: true,
+  //     });
+  //   }
+  // }, [location, navigate]);
 
   // Determine whether to show the tabs
   const showTabs = !location.pathname.includes("asset-list/");
@@ -38,54 +50,12 @@ const MaintenanceData = () => {
   );
 
   return (
-    <div className="p-4">
-      {/* Render tabs only if the current route is not EmployeeDetails */}
-      {showTabs && (
-        <Tabs
-          value={activeTab}
-          variant="fullWidth"
-          TabIndicatorProps={{ style: { display: "none" } }}
-          sx={{
-            backgroundColor: "white",
-            borderRadius: 2,
-            border: "1px solid #d1d5db",
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: "medium",
-              padding: "12px 16px",
-              borderRight: "0.1px solid #d1d5db",
-            },
-            "& .Mui-selected": {
-              backgroundColor: "#1E3D73",
-              color: "white",
-            },
-          }}
-        >
-          {tabs.map((tab, index) => (
-            <NavLink
-              key={index}
-              className={"border-r-[1px] border-borderGray"}
-              to={tab.path}
-              style={({ isActive }) => ({
-                textDecoration: "none",
-                color: isActive ? "white" : "#1E3D73",
-                flex: 1,
-                textAlign: "center",
-                padding: "12px 16px",
-                display: "block",
-                backgroundColor: isActive ? "#1E3D73" : "white",
-              })}
-            >
-              {tab.label}
-            </NavLink>
-          ))}
-        </Tabs>
-      )}
-
-      <div className="py-4">
-        <Outlet />
-      </div>
-    </div>
+      <TabLayout
+      basePath="/app/dashboard/maintenance-dashboard/data"
+      defaultTabPath="amc-records"
+      tabs={tabs}
+      hideTabsCondition={(pathname) => pathname.includes("amc-records/")}
+    />
   );
 };
 

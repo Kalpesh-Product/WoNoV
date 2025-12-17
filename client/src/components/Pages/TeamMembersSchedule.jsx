@@ -132,10 +132,15 @@ const TeamMembersSchedule = () => {
           cabinDesks: unit.cabinDesks,
           lead:
             department?.name === "Administration"
-              ? `${unit?.adminLead?.firstName} ${unit?.adminLead?.lastName}`
-              : department.name === "Maintenance"
-              ? `${unit?.maintenanceLead?.firstName} ${unit?.maintenanceLead?.lastName}`
-              : `${unit?.itLead?.firstName} ${unit?.itLead?.lastName}`,
+              ? unit?.adminLead &&
+                `${unit.adminLead.firstName} ${unit.adminLead.lastName}`
+              : department?.name === "Maintenance"
+              ? unit?.maintenanceLead &&
+                `${unit.maintenanceLead.firstName} ${unit.maintenanceLead.lastName}`
+              : department?.name === "IT"
+              ? unit?.itLead &&
+                `${unit.itLead.firstName} ${unit.itLead.lastName}`
+              : "",
         }));
 
         const sortedUnits = formattedUnits.sort((a, b) =>
@@ -145,6 +150,7 @@ const TeamMembersSchedule = () => {
           })
         );
 
+        console.log("sortedUnits", sortedUnits);
         // Re-assign Sr No after sorting
         return sortedUnits.map((unit, idx) => ({ ...unit, srNo: idx + 1 }));
       } catch (error) {
@@ -397,33 +403,34 @@ const TeamMembersSchedule = () => {
   useEffect(() => {
     console.log("selected User : ", selectedUser);
   }, [selectedUser]);
-const handleViewUser = async (user) => {
-  try {
-    const response = await axios.get(
-      `/api/weekly-unit/get-unit-schedule?unitId=${user._id}&department=${department?._id}`
-    );
-    const matchingSchedule = response.data?.[0]; // adjust as needed
+  const handleViewUser = async (user) => {
+    console.log("user", user);
+    try {
+      const response = await axios.get(
+        `/api/weekly-unit/get-unit-schedule?unitId=${user._id}&department=${department?._id}`
+      );
+      const matchingSchedule = response.data?.[0]; // adjust as needed
 
-    if (matchingSchedule) {
-      setSelectedUser({
-        ...user,
-        startDate: matchingSchedule.startDate,
-        endDate: matchingSchedule.endDate,
-        substitutions: matchingSchedule.substitutions || [],
-        isEmployeeActive: matchingSchedule.employee?.isActive ?? true,
-      });
-    } else {
-      toast.warning("No schedule found for this unit.");
-      setSelectedUser(user);
+      if (matchingSchedule) {
+        setSelectedUser({
+          ...user,
+          startDate: matchingSchedule.startDate,
+          endDate: matchingSchedule.endDate,
+          substitutions: matchingSchedule.substitutions || [],
+          isEmployeeActive: matchingSchedule.employee?.isActive ?? true,
+        });
+      } else {
+        toast.warning("No schedule found for this unit.");
+        setSelectedUser(user);
+      }
+
+      setModalMode("view");
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching schedule details:", error);
+      toast.error("Failed to load schedule details.");
     }
-
-    setModalMode("view");
-    setIsModalOpen(true);
-  } catch (error) {
-    console.error("Error fetching schedule details:", error);
-    toast.error("Failed to load schedule details.");
-  }
-};
+  };
 
   const handleAddUser = () => {
     setModalMode("add");
@@ -652,10 +659,7 @@ const handleViewUser = async (user) => {
               gap={"w-full"}
               detail={selectedUser.isEmployeeActive ? "Active" : "InActive"}
             />
-            <DetalisFormatted
-              title="Unit Name"
-              detail={selectedUser?.unitNo}
-            />
+            <DetalisFormatted title="Unit Name" detail={selectedUser?.unitNo} />
             <DetalisFormatted
               title="Building Name"
               gap={"w-full"}
@@ -671,8 +675,12 @@ const handleViewUser = async (user) => {
                 <DateRange
                   ranges={[
                     {
-                      startDate: new Date(selectedUser.startDate),
-                      endDate: new Date(selectedUser.endDate),
+                      startDate: selectedUser.startDate
+                        ? new Date(selectedUser.startDate)
+                        : new Date(),
+                      endDate: selectedUser.endDate
+                        ? new Date(selectedUser.endDate)
+                        : new Date(),
                       key: "selection",
                     },
                   ]}

@@ -52,6 +52,7 @@ const {
 const {
   createAlternateRevenue,
   getAlternateRevenues,
+  bulkInsertAlternateRevenue,
 } = require("../controllers/salesControllers/alternateRevenuesControllers");
 
 const {
@@ -127,6 +128,11 @@ router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);
 router.get("/get-alternate-revenue", getAlternateRevenues);
 router.post("/create-alternate-revenue", createAlternateRevenue);
+router.post(
+  "/bulk-insert-alternate-revenue",
+  upload.single("alternate-revenue"),
+  bulkInsertAlternateRevenue
+);
 router.get("/get-virtual-office-revenue", getVirtualOfficeRevenue);
 router.post(
   "/bulk-insert-virtual-office-revenue",
@@ -141,7 +147,7 @@ router.post(
   bulkInsertWorkationRevenue
 );
 router.post(
-  "/bulk-insert-workation-revenue",
+  "/bulk-insert-workation-clients",
   upload.single("workation-clients"),
   bulkInsertWorkationClients
 );

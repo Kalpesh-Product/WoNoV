@@ -250,7 +250,7 @@ const BookMeetings = () => {
   }));
 
   const myMeetingsColumn = [
-    { field: "id", headerName: "Sr No", sort: "desc" },
+    { field: "id", headerName: "Sr No" },
     { field: "agenda", headerName: "Agenda", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "roomName", headerName: "Room Name" },
@@ -440,10 +440,26 @@ const BookMeetings = () => {
             <YearWiseTable
               tableTitle={"My Meetings"}
               dateColumn={"date"}
-              data={[
-                ...myMeetings.map((meeting, index) => ({
+              // data={[
+              //   ...myMeetings.map((meeting, index) => ({
+              //     ...meeting,
+              //     id: index + 1,
+              //     meetingId: meeting._id,
+              //     bookedBy: meeting.bookedBy,
+              //     agenda: meeting.agenda,
+              //     date: meeting.date,
+              //     roomName: meeting.roomName,
+              //     reviews: meeting.reviews,
+              //     location: meeting.location
+              //       ? `${meeting.location?.unitName} - ${meeting.location.unitNo}`
+              //       : "N/A",
+              //   })),
+              // ]}
+              data={[...myMeetings]
+                .sort((a, b) => new Date(b.date) - new Date(a.date)) // newest first
+                .map((meeting, index) => ({
                   ...meeting,
-                  id: index + 1,
+                  id: index + 1, // 1 = latest
                   meetingId: meeting._id,
                   bookedBy: meeting.bookedBy,
                   agenda: meeting.agenda,
@@ -453,8 +469,7 @@ const BookMeetings = () => {
                   location: meeting.location
                     ? `${meeting.location?.unitName} - ${meeting.location.unitNo}`
                     : "N/A",
-                })),
-              ]}
+                }))}
               columns={myMeetingsColumn}
               search
             />
@@ -564,7 +579,7 @@ const BookMeetings = () => {
                   getOptionLabel={(user) =>
                     isBizNest
                       ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
-                      : `${user.employeeName ?? ""} (${user.clientName ?? ""}`
+                      : `${user.employeeName ?? ""} (${user.clientName ?? ""})`
                   }
                   onFocus={() => setShouldFetchParticipants(true)}
                   onChange={(_, newValue) =>
@@ -687,6 +702,23 @@ const BookMeetings = () => {
               <DetalisFormatted
                 title="Location"
                 detail={selectedMeeting?.location || "N/A"}
+              />
+              <DetalisFormatted
+                title="Start Time"
+                detail={
+                  selectedMeeting?.startTime
+                    ? dayjs(selectedMeeting.startTime).format("hh:mm A")
+                    : "N/A"
+                }
+              />
+
+              <DetalisFormatted
+                title="End Time"
+                detail={
+                  selectedMeeting?.endTime
+                    ? dayjs(selectedMeeting.endTime).format("hh:mm A")
+                    : "N/A"
+                }
               />
             </div>
           ) : (

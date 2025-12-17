@@ -24,6 +24,9 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   const [openModal, setOpenModal] = useState(false);
   const [detailsModal, setDetailsModal] = useState(false);
   const { auth } = useAuth();
+  const totalCredits = auth.user.company.totalMeetingCredits;
+  const creditsBalance = auth.user.company.meetingCreditBalance;
+
   const axios = useAxiosPrivate();
   const { data: myMeetings = [], isPending: isMyMeetingsPending } = useQuery({
     queryKey: ["myMeetings"],
@@ -72,7 +75,6 @@ const MeetingRoomCredits = ({ pageTitle }) => {
     });
     setOpenModal(false);
   };
-  const totalCredits = 50;
 
   const navigationCards = [
     {
@@ -83,7 +85,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
     },
     {
       cardTitle: "Remaining Credits",
-      quantity: auth.user?.credits,
+      quantity: creditsBalance,
       bgcolor: "#66FFCC",
       quantityColor: "#006600",
     },
@@ -152,6 +154,11 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   return (
     <div>
       <div className="flex flex-col gap-4">
+         <div>
+        <span className="text-title font-pmedium text-primary uppercase">
+          Company Credit Details
+        </span>
+      </div>
         <div>
           <WidgetSection padding layout={navigationCards.length}>
             {navigationCards.map((card, index) => (

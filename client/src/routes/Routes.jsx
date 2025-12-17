@@ -396,6 +396,15 @@ import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/
 import LogPage from "../pages/LogPage";
 import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
 import AccessPages from "../pages/Access/AccessPages";
+import ModulePermissions from "../pages/Access/ModulePermissions";
+import ManageMeetingsFinanceLayout from "../pages/Dashboard/FinanceDashboard/MixBag/ManageMeetingsFinanceLayout";
+import CreateWebsite from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/CreateWebsite";
+import EditWebsite from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/EditWebsite";
+import Websites from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/Websites";
+import WebsitesLayout from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/WebsitesLayout";
+import InActiveWebsites from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/InActiveWebsites";
+import EditWebsiteTemp from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/EditWebsiteTemp";
+import ProtectedDepartmentRoute from "../components/ProtectedDepartmentRoute";
 
 export const routes = createBrowserRouter([
   {
@@ -442,14 +451,32 @@ export const routes = createBrowserRouter([
                         path: "live-demo",
                         element: <PageDemo />,
                       },
+                      // {
+                      //   path: "*",
+                      //   element: <ThemeGrid />,
+                      // },
                       {
-                        path: "*",
-                        element: <ThemeGrid />,
+                        path: "create-website",
+                        element: <CreateWebsite />,
                       },
                       {
-                        path: "select-theme/edit-theme/:templateName/:pageName",
-                        element: <EditTemplate />,
+                        path: "websites",
+                        element: <WebsitesLayout />,
+                        children: [
+                          { path: "active", element: <Websites /> },
+                          { path: "inactive", element: <InActiveWebsites /> },
+                          { path: ":website", element: <EditWebsite /> },
+                          {
+                            path: "inactive/:website",
+                            element: <EditWebsiteTemp />,
+                          },
+                        ],
                       },
+
+                      // {
+                      //   path: "select-theme/edit-theme/:templateName/:pageName",
+                      //   element: <EditTemplate />,
+                      // },
                       {
                         path: "edit-theme/:templateName/:pageName",
                         element: <EditTemplate />,
@@ -554,6 +581,20 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag",
                         element: <MixBag />,
+                      },
+                      {
+                        path: "mix-bag/manage-meetings",
+                        element: <ManageMeetingsFinanceLayout />,
+                        children: [
+                          {
+                            path: "internal-meetings",
+                            element: <ManageMeetings />,
+                          },
+                          {
+                            path: "external-clients",
+                            element: <ExternalMeetingClients />,
+                          },
+                        ],
                       },
                       {
                         path: "mix-bag/directors-company-KYC",
@@ -855,7 +896,7 @@ export const routes = createBrowserRouter([
                       },
 
                       {
-                        path: "holidays-events",
+                        path: "mix-bag/holidays-events",
                         element: <AdminHolidaysEvents />,
                       },
                       {
@@ -1867,8 +1908,12 @@ export const routes = createBrowserRouter([
                 element: <Access />,
               },
               {
-                path: "access/permissions",
+                path: "access/permissions/",
                 element: <AccessProfile />,
+              },
+              {
+                path: "access/permissions/:module",
+                element: <ModulePermissions />,
               },
               {
                 path: "access/permissions/pages",
@@ -2136,7 +2181,11 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: ":department",
-                    element: <DepartmentPerformanceLayout />,
+                    element: (
+                      <ProtectedDepartmentRoute
+                        element={<DepartmentPerformanceLayout />}
+                      />
+                    ),
                     children: [
                       {
                         path: "daily-KRA",
@@ -2178,7 +2227,11 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "",
-                            element: <TasksViewDepartment />,
+                            element: (
+                              <ProtectedDepartmentRoute
+                                element={<TasksViewDepartment />}
+                              />
+                            ),
                             index: true,
                           },
                           {

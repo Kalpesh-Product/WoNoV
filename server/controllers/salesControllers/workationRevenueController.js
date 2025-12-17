@@ -5,8 +5,14 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const createWorkationRevenue = async (req, res, next) => {
   try {
-    const { nameOfClient, particulars, taxableAmount, gst, totalAmount } =
-      req.body;
+    const {
+      nameOfClient,
+      particulars,
+      taxableAmount,
+      gst,
+      totalAmount,
+      clientId,
+    } = req.body;
 
     const company = req.company;
 
@@ -17,6 +23,7 @@ const createWorkationRevenue = async (req, res, next) => {
       taxableAmount,
       gst,
       totalAmount,
+      client: clientId,
     });
 
     await newRevenue.save();
@@ -33,7 +40,10 @@ const getWorkationRevenues = async (req, res, next) => {
   try {
     const company = req.company;
 
-    const revenues = await WorkationRevenue.find({ company }).lean().exec();
+    const revenues = await WorkationRevenue.find({ company })
+      .populate("client")
+      .lean()
+      .exec();
 
     res.status(200).json(revenues);
   } catch (error) {

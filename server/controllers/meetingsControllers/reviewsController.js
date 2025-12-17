@@ -13,18 +13,9 @@ const addReview = async (req, res, next) => {
     const { meetingId, review, rate, reviewerEmail, reviewerName } = req.body;
 
     // Validate inputs
-    if (!meetingId || !review || !rate || !reviewerEmail || !reviewerName) {
+    if (!meetingId || !review || !reviewerEmail || !reviewerName) {
       throw new CustomError(
         "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    if (rate < 1 || rate > 5) {
-      throw new CustomError(
-        "Rate must be between 1 and 5",
         logPath,
         logAction,
         logSourceKey

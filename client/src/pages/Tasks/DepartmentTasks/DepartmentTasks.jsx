@@ -8,6 +8,7 @@ import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
+import { CircularProgress } from "@mui/material";
 
 const DepartmentTasks = () => {
   const axios = useAxiosPrivate();
@@ -18,7 +19,7 @@ const DepartmentTasks = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
-    additionalTopUserIds: ["67b83885daad0f7bab2f188b", "681a10b13fc9dc666ede401c"], //mac //Nigel
+    additionalTopUserIds: ["67b83885daad0f7bab2f1888"], //utkarsha
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/tasks/department-tasks/${currentDepartment}`);
@@ -52,7 +53,8 @@ const DepartmentTasks = () => {
               dispatch(setSelectedDepartment(params.data.mongoId));
               navigate(`${params.value}`);
             }}
-            className="text-primary font-pregular hover:underline cursor-pointer">
+            className="text-primary font-pregular hover:underline cursor-pointer"
+          >
             {params.value}
           </span>
         );
@@ -66,21 +68,25 @@ const DepartmentTasks = () => {
     <div className="flex flex-col gap-4">
       <PageFrame>
         <WidgetSection layout={1} padding>
-          <AgTable
-            data={[
-              ...fetchedDepartments.map((item, index) => ({
+          {departmentLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <CircularProgress />
+            </div>
+          ) : (
+            <AgTable
+              data={fetchedDepartments.map((item, index) => ({
                 srNo: index + 1,
                 mongoId: item.department?._id,
                 department: item.department?.name,
                 totalTasks: item.totalTasks,
                 pendingTasks: item.pendingTasks,
                 completedTasks: item.completedTasks,
-              })),
-            ]}
-            columns={departmentColumns}
-            tableTitle={"ACTIVE DEPARTMENT WISE TASKS"}
-            hideFilter
-          />
+              }))}
+              columns={departmentColumns}
+              tableTitle="ACTIVE DEPARTMENT WISE TASKS"
+              hideFilter
+            />
+          )}
         </WidgetSection>
       </PageFrame>
     </div>

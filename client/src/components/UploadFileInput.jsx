@@ -7,11 +7,11 @@ import MuiModal from "./MuiModal";
 const UploadFileInput = ({
   value,
   onChange,
-  disabled=false,
+  disabled = false,
   label = "Upload File",
-  allowedExtensions = ["jpg", "jpeg", "png", "pdf"],
+  allowedExtensions = ["jpg", "jpeg", "png", "pdf", "webp"],
   previewType = "auto", // "image", "pdf", "none", or "auto"
-  id
+  id,
 }) => {
   const fileInputRef = useRef(null);
   const [previewUrl, setPreviewUrl] = useState(
@@ -92,7 +92,7 @@ const UploadFileInput = ({
         accept={acceptAttr}
         disabled={disabled}
         hidden
-        id= {id ?? "file-upload"}
+        id={id ?? "file-upload"}
         onChange={handleFileChange}
       />
 
@@ -108,7 +108,11 @@ const UploadFileInput = ({
         InputProps={{
           readOnly: true,
           endAdornment: (
-            <IconButton component="label" htmlFor={id ?? "file-upload"} color="primary">
+            <IconButton
+              component="label"
+              htmlFor={id ?? "file-upload"}
+              color="primary"
+            >
               <LuImageUp />
             </IconButton>
           ),
@@ -131,9 +135,11 @@ const UploadFileInput = ({
             title="File Preview"
           >
             <div className="flex flex-col gap-2">
-              <IconButton color="error" onClick={handleClear}>
-                <MdDelete />
-              </IconButton>
+              <div className="flex justify-center">
+                <IconButton color="error" onClick={handleClear}>
+                  <MdDelete />
+                </IconButton>
+              </div>
               <div className="p-2 border border-gray-300 rounded-md">
                 {renderPreview()}
               </div>

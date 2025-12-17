@@ -370,9 +370,10 @@ const HousekeepingTeamMembersSchedule = () => {
   const handleViewUser = async (user) => {
     try {
       const response = await axios.get(
-        `/api/company/get-housekeeping-schedule?unitId=${user?._id}&`
+        `/api/weekly-unit/get-unit-schedule?unitId=${user?._id}&department=${department?._id}`
       );
-      const matchingSchedule = response.data.data?.[0]; // adjust as needed
+
+      const matchingSchedule = response.data?.[0];
       console.log("matching schedule : ", matchingSchedule);
 
       if (matchingSchedule) {
@@ -572,7 +573,7 @@ const HousekeepingTeamMembersSchedule = () => {
                                   {/* <div className="text-sm text-gray-700">
                                     <strong>Manager:</strong> {range.manager}
                                   </div> */}
-                                  {/* <div className="text-sm text-gray-700">
+                                  <div className="text-sm text-gray-700">
                                     <strong>Status:</strong>{" "}
                                     <span
                                       className={`font-semibold ${
@@ -583,7 +584,7 @@ const HousekeepingTeamMembersSchedule = () => {
                                     >
                                       {range.isActive}
                                     </span>
-                                  </div> */}
+                                  </div>
                                 </div>
                               ))}
                           </div>

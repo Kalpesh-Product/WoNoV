@@ -38,6 +38,33 @@ const visitorSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    panNumber: {
+      type: String,
+    },
+    panFile: {
+      link: {
+        type: String,
+      },
+      id: {
+        type: String,
+      },
+    },
+    otherFile: {
+      link: {
+        type: String,
+      },
+      id: {
+        type: String,
+      },
+    },
+    gstFile: {
+      link: {
+        type: String,
+      },
+      id: {
+        type: String,
+      },
+    },
     idProof: {
       idType: {
         type: String,
@@ -45,6 +72,10 @@ const visitorSchema = new mongoose.Schema(
       idNumber: {
         type: String,
       },
+    },
+    gstNumber: {
+      type: String,
+      match: [/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/],
     },
     meeting: {
       type: mongoose.Schema.Types.ObjectId,
@@ -82,8 +113,14 @@ const visitorSchema = new mongoose.Schema(
       type: String,
       enum: ["Visitor", "Client"],
     },
-    clientCompany: {
-      type: String, //Add Client form
+    // clientCompany: {
+    //   type: String, //Add Client form
+    // },
+    registeredClientCompany: {
+      type: String,
+    },
+    brandName: {
+      type: String,
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,

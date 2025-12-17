@@ -26,10 +26,10 @@ const meetingClientRevenueSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    meetingRoomName: {
-      type: String,
-      required: true,
-    },
+    // meetingRoomName: {
+    //   type: String,
+    //   required: true,
+    // },
     costPerHour: {
       type: Number,
       required: true,

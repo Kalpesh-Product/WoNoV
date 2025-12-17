@@ -20,7 +20,7 @@ const AdminMixBag = () => {
     },
     {
       title: "Holidays & Events",
-      route: "#",
+      route: "/app/dashboard/admin-dashboard/mix-bag/holidays-events",
     },
     {
       title: "Client Members",

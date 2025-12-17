@@ -18,6 +18,7 @@ import {
   noOnlyWhitespace,
 } from "../../../utils/validators";
 import dayjs from "dayjs";
+import UploadFileInput from "../../../components/UploadFileInput";
 
 const AddClient = () => {
   const {
@@ -45,13 +46,20 @@ const AddClient = () => {
       department: "",
       clientToMeet: "",
       clientCompany: "",
-      sector:"",
-      hoState : "",
-      hoCity : "",
+      registeredClientCompany: "",
+      brandName: "",
+      sector: "",
+      hoState: "",
+      hoCity: "",
       visitorType: "",
       visitorCompany: "",
       paymentAmount: "",
       paymentStatus: "",
+      gstNumber: "",
+      panNumber: "",
+      gstFile: "",
+      panFile: "",
+      otherFile: "",
     },
   });
 
@@ -103,11 +111,19 @@ const AddClient = () => {
   const { mutate: addVisitor, isPending: isMutateVisitor } = useMutation({
     mutationKey: ["addVisitor"],
     mutationFn: async (data) => {
-      const response = await axios.post("/api/visitors/add-visitor", {
-        ...data,
-        department: selectedDepartment === "na" ? null : selectedDepartment,
-        toMeet: selectedDepartment === "na" ? null : data.toMeet,
-      });
+      const response = await axios.post(
+        "/api/visitors/add-visitor",
+        {
+          ...data,
+          department: selectedDepartment === "na" ? null : selectedDepartment,
+          toMeet: selectedDepartment === "na" ? null : data.toMeet,
+        },
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
       return response.data;
     },
     onSuccess: (data) => {
@@ -130,6 +146,7 @@ const AddClient = () => {
     const payload = {
       ...data,
       visitorFlag: "Client", // Identify this as a client visitor
+      visitorType: "Meeting",
       sector: data.sector,
       hoState: data.hoState,
       hoCity: data.hoCity,
@@ -147,6 +164,16 @@ const AddClient = () => {
       checkOut: data.checkOut?.toISOString() || null,
       dateOfVisit: data.dateOfVisit?.toISOString() || null,
     };
+
+    const formData = new FormData();
+    formData.append("panFile", data.panFile);
+    formData.append("gstFile", data.gstFile);
+    formData.append("otherFile", data.otherFile);
+    for (const key in payload) {
+      if (payload[key] !== undefined && payload[key] !== null) {
+        formData.append(key, payload[key]);
+      }
+    }
 
     addVisitor(payload);
   };
@@ -325,66 +352,6 @@ const AddClient = () => {
                   )}
                 />
               </div>
-
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">Timings</span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Controller
-                      name="checkIn"
-                      control={control}
-                      rules={{ required: "Check-In time is required" }}
-                      render={({ field }) => (
-                        <TimePicker
-                          {...field}
-                          label={"Check-In Time"}
-                          slotProps={{
-                            textField: {
-                              size: "small",
-                              fullWidth: true,
-                              error: !!errors.checkIn,
-                              helperText: errors.checkIn?.message,
-                            },
-                          }}
-                          render={(params) => (
-                            <TextField
-                              {...params}
-                              fullWidth
-                              error={!!errors.checkIn}
-                              helperText={errors.checkIn?.message}
-                            />
-                          )}
-                        />
-                      )}
-                    />
-                  </LocalizationProvider>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Controller
-                      name="checkOut"
-                      control={control}
-                      render={({ field }) => (
-                        <TimePicker
-                          {...field}
-                          label={"Check-Out Time"}
-                          slotProps={{
-                            textField: { size: "small", fullWidth: true },
-                          }}
-                          render={(params) => (
-                            <TextField
-                              {...params}
-                              fullWidth
-                              error={!!errors.checkOut}
-                              helperText={errors.checkOut?.message}
-                            />
-                          )}
-                        />
-                      )}
-                    />
-                  </LocalizationProvider>
-                </div>
-              </div>
             </div>
 
             <div>
@@ -394,7 +361,7 @@ const AddClient = () => {
                 </span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4 ">
-                <Controller
+                {/* <Controller
                   name="clientCompany"
                   control={control}
                   rules={{
@@ -414,8 +381,101 @@ const AddClient = () => {
                       helperText={errors.clientCompany?.message}
                     />
                   )}
-                />
+                /> */}
+                <div className="flex gap-4 items-center">
+                  <Controller
+                    name="brandName"
+                    control={control}
+                    rules={{
+                      required: "Brand Name is required",
+                      validate: {
+                        noOnlyWhitespace,
+                        isAlphanumeric,
+                      },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Brand Name"
+                        fullWidth
+                        error={!!errors.brandName}
+                        helperText={errors.brandName?.message}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="registeredClientCompany"
+                    control={control}
+                    rules={{
+                      required: "Registered Client Company is required",
+                      validate: {
+                        noOnlyWhitespace,
+                        isAlphanumeric,
+                      },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Registered Client Company"
+                        fullWidth
+                        error={!!errors.registeredClientCompany}
+                        helperText={errors.registeredClientCompany?.message}
+                      />
+                    )}
+                  />
+                </div>
 
+                <div className="flex gap-4 items-center">
+                  <Controller
+                    name="hoState"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        select
+                        label="State"
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleStateSelect(e.target.value);
+                        }}
+                        fullWidth
+                      >
+                        <MenuItem value="">Select a State</MenuItem>
+                        {states.map((item) => (
+                          <MenuItem value={item.isoCode} key={item.isoCode}>
+                            {item.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                  <Controller
+                    name="hoCity"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        select
+                        label="City"
+                        fullWidth
+                      >
+                        <MenuItem value="">Select a City</MenuItem>
+                        {cities.map((item) => (
+                          <MenuItem
+                            value={item.name}
+                            key={`${item.name}-${item.stateCode}-${item.latitude}`}
+                          >
+                            {item.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                </div>
                 <Controller
                   name="sector"
                   control={control}
@@ -437,57 +497,158 @@ const AddClient = () => {
                     />
                   )}
                 />
+              </div>
+            </div>
+          </div>
 
+          <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4">
+            {/*GST*/}
+            <div>
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">GST</span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
                 <Controller
-                  name="hoState"
+                  name="gstNumber"
                   control={control}
+                  rules={{
+                    required: "GST Number is required",
+                    validate: (value) => {
+                      const regex =
+                        /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                      if (!regex.test(value))
+                        return "Provided GST number is invalid";
+                      else return true;
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
-                      select
-                      label="State"
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleStateSelect(e.target.value);
-                      }}
+                      label="GST Number"
                       fullWidth
-                    >
-                      <MenuItem value="">Select a State</MenuItem>
-                      {states.map((item) => (
-                        <MenuItem value={item.isoCode} key={item.isoCode}>
-                          {item.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                      error={!!errors.gstNumber}
+                      helperText={errors.gstNumber?.message}
+                      onChange={(e) => {
+                        let value = e.target.value;
+
+                        field.onChange(value);
+                      }}
+                      value={field.value}
+                    />
                   )}
                 />
                 <Controller
-                  name="hoCity"
+                  name="gstFile"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      select
-                      label="City"
-                      fullWidth
-                    >
-                      <MenuItem value="">Select a City</MenuItem>
-                      {cities.map((item) => (
-                        <MenuItem
-                          value={item.name}
-                          key={`${item.name}-${item.stateCode}-${item.latitude}`}
-                        >
-                          {item.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                  rules={{
+                    validate: (value) =>
+                      watch("gstFile") && !value
+                        ? "Please upload GST file"
+                        : true,
+                  }}
+                  render={({ field, fieldState }) => (
+                    <UploadFileInput
+                      allowedExtensions={["pdf"]}
+                      value={field.value}
+                      onChange={field.onChange}
+                      previewType="pdf"
+                      // disabled={!watch("gstFile")}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                      id="gst"
+                    />
                   )}
                 />
               </div>
+            </div>
+
+            {/*Verification*/}
+            <div>
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">Verification</span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
+                {/* <Controller
+                  name="idProof.idType"
+                  control={control}
+                  rules={{ required: "Id Type is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="ID Type"
+                      select
+                      error={!!errors.idProof?.idType}
+                      helperText={errors.idProof?.idType?.message}
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select Id Type
+                      </MenuItem>
+                      {/* <MenuItem value="aadhar">Aadhar</MenuItem> */}
+                {/* <MenuItem value="pan">PAN</MenuItem> */}
+                {/* <MenuItem value="drivingLicense">
+                        Driving License
+                      </MenuItem> 
+                    </TextField>
+                  )}
+                /> */}
+                <Controller
+                  name="panNumber"
+                  control={control}
+                  rules={{
+                    required: "PAN Number is required",
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="PAN Number"
+                      fullWidth
+                      error={!!errors.panNumber}
+                      helperText={errors.panNumber?.message}
+                      onChange={(e) => {
+                        let value = e.target.value;
+
+                        field.onChange(value);
+                      }}
+                      value={field.value}
+                    />
+                  )}
+                />
+                <Controller
+                  name="panFile"
+                  control={control}
+                  rules={{
+                    validate: (value) =>
+                      watch("panFile") && !value
+                        ? "Please upload PAN file"
+                        : true,
+                  }}
+                  render={({ field, fieldState }) => (
+                    <UploadFileInput
+                      allowedExtensions={["pdf"]}
+                      value={field.value}
+                      onChange={field.onChange}
+                      previewType="pdf"
+                      // disabled={!watch("panFile")}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                      id="pan"
+                    />
+                  )}
+                />
+              </div>
+            </div>
+
+            <div></div>
+          </div>
+          <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4">
+            {/*Others*/}
+            <div>
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">Others</span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
                 <Controller
@@ -508,7 +669,6 @@ const AddClient = () => {
                         Select Id Type
                       </MenuItem>
                       <MenuItem value="aadhar">Aadhar</MenuItem>
-                      <MenuItem value="pan">PAN</MenuItem>
                       <MenuItem value="drivingLicense">
                         Driving License
                       </MenuItem>
@@ -565,10 +725,117 @@ const AddClient = () => {
                     />
                   )}
                 />
+                <Controller
+                  name="otherFile"
+                  control={control}
+                  rules={{
+                    validate: (value) =>
+                      watch("otherFile") && !value
+                        ? "Please upload file"
+                        : true,
+                  }}
+                  render={({ field, fieldState }) => (
+                    <UploadFileInput
+                      allowedExtensions={["pdf"]}
+                      value={field.value}
+                      onChange={field.onChange}
+                      previewType="pdf"
+                      // disabled={!watch("otherFile")}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                      id="others"
+                    />
+                  )}
+                />
+              </div>
+            </div>
+
+            {/*TIMINGS*/}
+            <div>
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">Timings</span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4 ">
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="checkIn"
+                    control={control}
+                    rules={{ required: "Check-In time is required" }}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        label={"Check-In Time"}
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!errors.checkIn,
+                            helperText: errors.checkIn?.message,
+                          },
+                        }}
+                        render={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={!!errors.checkIn}
+                            helperText={errors.checkIn?.message}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="checkOut"
+                    control={control}
+                    render={({ field }) => (
+                      <TimePicker
+                        {...field}
+                        label={"Check-Out Time"}
+                        slotProps={{
+                          textField: { size: "small", fullWidth: true },
+                        }}
+                        render={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={!!errors.checkOut}
+                            helperText={errors.checkOut?.message}
+                          />
+                        )}
+                        shouldDisableTime={(time, view) => {
+                          const startTime = watch("checkIn");
+
+                          if (!startTime) return false;
+
+                          const startDate = dayjs(startTime).toDate(); // <-- the fix
+                          const current = time.$d;
+
+                          if (view === "hours") {
+                            return current.getHours() < startDate.getHours();
+                          }
+
+                          if (view === "minutes") {
+                            const selectedHour = dayjs(field.value).isValid()
+                              ? dayjs(field.value).hour()
+                              : null;
+
+                            return (
+                              selectedHour === startDate.getHours() &&
+                              current.getMinutes() < startDate.getMinutes()
+                            );
+                          }
+
+                          return false;
+                        }}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
               </div>
             </div>
           </div>
-
           {/* Submit Button */}
           <div className="flex items-center justify-center gap-4">
             <PrimaryButton

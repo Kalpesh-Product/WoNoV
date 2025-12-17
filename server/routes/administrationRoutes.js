@@ -19,7 +19,7 @@ router.post("/assign-weekly-unit", assignWeeklyUnit);
 router.patch("/update-weekly-unit", updateWeeklyUnit);
 router.patch("/add-substitute", addSubstitute);
 router.post(
-  "/bulk-insert-weekly-shift-schedule",
+  "/bulk-insert-weekly-shift-schedule/:departmentId",
   upload.single("schedule"),
   bulkInsertWeeklyShiftSchedule
 );

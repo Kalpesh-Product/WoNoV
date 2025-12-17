@@ -29,7 +29,7 @@ const ViewVendor = () => {
   const [isEditing, setIsEditing] = useState(false);
   const location = useLocation();
   const { state } = location;
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const { mutate: updateVendor, isPending } = useMutation({
     mutationFn: async (data) => {
@@ -44,7 +44,7 @@ const ViewVendor = () => {
     },
     onSuccess: function (data) {
       toast.success(data.message);
-      navigate(-1)
+      navigate(-1);
     },
     onError: function (data) {
       toast.error(data.response.data.message);
@@ -202,20 +202,39 @@ const ViewVendor = () => {
                     {mailingFields.map((fieldKey) => (
                       <div key={fieldKey}>
                         {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                                fullWidth
-                              />
-                            )}
-                          />
+                          fieldKey === "status" ? (
+                            <Controller
+                              name={fieldKey}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  select
+                                  size="small"
+                                  label="Status"
+                                  fullWidth
+                                >
+                                  <MenuItem value="Active">Active</MenuItem>
+                                  <MenuItem value="Inactive">Inactive</MenuItem>
+                                </TextField>
+                              )}
+                            />
+                          ) : (
+                            <Controller
+                              name={fieldKey}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  size="small"
+                                  label={fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  fullWidth
+                                />
+                              )}
+                            />
+                          )
                         ) : (
                           <div className="py-2 flex justify-between items-start gap-2">
                             <div className="w-[100%] justify-start flex">
@@ -246,10 +265,11 @@ const ViewVendor = () => {
                           control={control}
                           defaultValue=""
                           render={({ field, fieldState: { error } }) => (
-                            <Select
+                            <TextField
                               {...field}
+                              select
                               fullWidth
-                              displayEmpty
+                              label={"Country"}
                               onChange={(e) => {
                                 field.onChange(e);
                                 handleCountryChange(e.target.value);
@@ -266,7 +286,7 @@ const ViewVendor = () => {
                                   {country.name}
                                 </MenuItem>
                               ))}
-                            </Select>
+                            </TextField>
                           )}
                         />
                         <Controller
@@ -274,10 +294,11 @@ const ViewVendor = () => {
                           control={control}
                           defaultValue=""
                           render={({ field, fieldState: { error } }) => (
-                            <Select
+                            <TextField
                               {...field}
                               fullWidth
-                              displayEmpty
+                              select
+                              label="State"
                               onChange={(e) => {
                                 field.onChange(e);
                                 handleStateChange(e.target.value);
@@ -295,7 +316,7 @@ const ViewVendor = () => {
                                   {state.name}
                                 </MenuItem>
                               ))}
-                            </Select>
+                            </TextField>
                           )}
                         />
                         <Controller
@@ -303,10 +324,11 @@ const ViewVendor = () => {
                           control={control}
                           defaultValue=""
                           render={({ field, fieldState: { error } }) => (
-                            <Select
+                            <TextField
                               {...field}
                               fullWidth
-                              displayEmpty
+                              select
+                              label="City"
                               onChange={(e) => {
                                 field.onChange(e);
 
@@ -322,7 +344,7 @@ const ViewVendor = () => {
                                   {city.name}
                                 </MenuItem>
                               ))}
-                            </Select>
+                            </TextField>
                           )}
                         />
                       </>
@@ -404,10 +426,11 @@ const ViewVendor = () => {
                         defaultValue=""
                         rules={{ required: "Party Type is required" }}
                         render={({ field, fieldState: { error } }) => (
-                          <Select
+                          <TextField
                             {...field}
                             size="small"
-                            displayEmpty
+                            select
+                            label={"Party Type"}
                             error={!!error}
                           >
                             <MenuItem value="" disabled>
@@ -417,7 +440,7 @@ const ViewVendor = () => {
                             <MenuItem value="International">
                               International
                             </MenuItem>
-                          </Select>
+                          </TextField>
                         )}
                       />
                     ) : (
@@ -438,53 +461,53 @@ const ViewVendor = () => {
                       </div>
                     )}
                   </div>
-                </div>
 
-                <div>
-                  <div className="pb-4 border-b-default border-borderGray">
-                    <span className="text-subtitle font-pmedium">
-                      Bank Information
-                    </span>
-                  </div>
-                  <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                    {bankFields.map((fieldKey) => (
-                      <div key={fieldKey}>
-                        {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                                fullWidth
-                              />
-                            )}
-                          />
-                        ) : (
-                          <div className="py-2 flex justify-between items-start gap-2">
-                            <div className="w-[35%] justify-start flex">
-                              <span className="font-pmedium text-gray-600 text-content">
-                                {fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                              </span>
+                  <div>
+                    <div className="pb-4 border-b-default border-borderGray">
+                      <span className="text-subtitle font-pmedium">
+                        Bank Information
+                      </span>
+                    </div>
+                    <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                      {bankFields.map((fieldKey) => (
+                        <div key={fieldKey}>
+                          {isEditing ? (
+                            <Controller
+                              name={fieldKey}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  size="small"
+                                  label={fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  fullWidth
+                                />
+                              )}
+                            />
+                          ) : (
+                            <div className="py-2 flex justify-between items-start gap-2">
+                              <div className="w-[35%] justify-start flex">
+                                <span className="font-pmedium text-gray-600 text-content">
+                                  {fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                </span>
+                              </div>
+                              <div>
+                                <span>:</span>
+                              </div>
+                              <div className="w-full">
+                                <span className="text-gray-500">
+                                  {getValues(fieldKey)}
+                                </span>
+                              </div>
                             </div>
-                            <div>
-                              <span>:</span>
-                            </div>
-                            <div className="w-full">
-                              <span className="text-gray-500">
-                                {getValues(fieldKey)}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

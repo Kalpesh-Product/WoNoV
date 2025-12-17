@@ -311,54 +311,63 @@ const HrAttendance = () => {
   return (
     <PageFrame>
       <div>
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-4 justify-end">
-          <div className="flex gap-2 items-center">
-            <TextField
-              select
-              size="small"
-              value={selectedFY.label}
-              onChange={(e) => {
-                const fy = fyOptions.find((fy) => fy.label === e.target.value);
-                setSelectedFY(fy);
-                setCurrentMonth(fy.start);
-              }}
-              className="min-w-[140px]"
-            >
-              {fyOptions.map((fy) => (
-                <MenuItem key={fy.label} value={fy.label}>
-                  {fy.label}
-                </MenuItem>
-              ))}
-            </TextField>
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-4 justify-between">
+          <div>
+            <span className="text-title text-primary font-pmedium uppercase">
+              ATTENDANCE - {formattedMonth}
+            </span>
           </div>
-
-          <div className="flex items-center gap-4">
-            {/* <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" /> */}
-
-            <TextField
-              select
-              size="small"
-              value={dayjs(currentMonth).format("YYYY-MM")}
-              onChange={(e) => {
-                const [year, month] = e.target.value.split("-");
-                const newDate = dayjs(`${year}-${month}-01`).toDate();
-                setCurrentMonth(newDate);
-              }}
-              className="min-w-[160px]"
-              SelectProps={{
-                IconComponent: KeyboardArrowDownIcon,
-              }}
-            >
-              {generateMonthOptions(selectedFY.start, selectedFY.end).map(
-                (option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
+          <div className="flex items-center gap-2">
+            <div className="flex gap-2 items-center ">
+              <TextField
+                select
+                size="small"
+                value={selectedFY.label}
+                onChange={(e) => {
+                  const fy = fyOptions.find(
+                    (fy) => fy.label === e.target.value
+                  );
+                  setSelectedFY(fy);
+                  setCurrentMonth(fy.start);
+                }}
+                className="min-w-[140px]"
+              >
+                {fyOptions.map((fy) => (
+                  <MenuItem key={fy.label} value={fy.label}>
+                    {fy.label}
                   </MenuItem>
-                )
-              )}
-            </TextField>
+                ))}
+              </TextField>
+            </div>
 
-            {/* <PrimaryButton handleSubmit={handleNextMonth} title="Next" /> */}
+            <div className="flex items-center gap-4">
+              {/* <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" /> */}
+
+              <TextField
+                select
+                size="small"
+                value={dayjs(currentMonth).format("YYYY-MM")}
+                onChange={(e) => {
+                  const [year, month] = e.target.value.split("-");
+                  const newDate = dayjs(`${year}-${month}-01`).toDate();
+                  setCurrentMonth(newDate);
+                }}
+                className="min-w-[160px]"
+                SelectProps={{
+                  IconComponent: KeyboardArrowDownIcon,
+                }}
+              >
+                {generateMonthOptions(selectedFY.start, selectedFY.end).map(
+                  (option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  )
+                )}
+              </TextField>
+
+              {/* <PrimaryButton handleSubmit={handleNextMonth} title="Next" /> */}
+            </div>
           </div>
         </div>
 

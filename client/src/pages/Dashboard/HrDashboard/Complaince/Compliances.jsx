@@ -1,34 +1,80 @@
 import { Tab, Tabs } from "@mui/material";
 import React, { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { PERMISSIONS } from "../../../../constants/permissions";
 
 const Compliances = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   // Map routes to tabs
-  const tabs = [
-    { label: "Company Logo", path: "company-logo" },
-    { label: "Company Handbook", path: "company-handbook" },
-    { label: "Departments", path: "departments" },
-    { label: "Work Locations", path: "work-locations" },
-    { label: "Holidays", path: "holidays" },
-    { label: "Events", path: "events" },
-    { label: "Company Policies", path: "policies" },
-    { label: "Company SOP's", path: "sops" },
-    { label: "Employee Types", path: "employee-type" },
-    { label: "Shifts", path: "shifts" },
-    { label: "Templates", path: "templates" },
-  ];
+ const tabs = [
+  { 
+    label: "Company Logo", 
+    path: "company-logo", 
+    permission: PERMISSIONS.HR_COMPANY_LOGO.value 
+  },
+  { 
+    label: "Company Handbook", 
+    path: "company-handbook", 
+    permission: PERMISSIONS.HR_COMPANY_HANDBOOK.value 
+  },
+  { 
+    label: "Departments", 
+    path: "departments", 
+    permission: PERMISSIONS.HR_DEPARTMENTS.value 
+  },
+  { 
+    label: "Work Locations", 
+    path: "work-locations", 
+    permission: PERMISSIONS.HR_WORK_LOCATIONS.value 
+  },
+  { 
+    label: "Holidays", 
+    path: "holidays", 
+    permission: PERMISSIONS.HR_HOLIDAYS.value 
+  },
+  { 
+    label: "Events", 
+    path: "events", 
+    permission: PERMISSIONS.HR_EVENTS.value 
+  },
+  { 
+    label: "Company Policies", 
+    path: "policies", 
+    permission: PERMISSIONS.HR_COMPANY_POLICIES.value 
+  },
+  { 
+    label: "Company SOP's", 
+    path: "sops", 
+    permission: PERMISSIONS.HR_COMPANY_SOPS.value 
+  },
+  { 
+    label: "Employee Types", 
+    path: "employee-type", 
+    permission: PERMISSIONS.HR_EMPLOYEE_TYPES.value 
+  },
+  { 
+    label: "Shifts", 
+    path: "shifts", 
+    permission: PERMISSIONS.HR_SHIFTS.value 
+  },
+  { 
+    label: "Templates", 
+    path: "templates",
+   permission: PERMISSIONS.HR_TEMPLATES.value
+  },
+];
+
 
   // Redirect to "company-logo" if the current path is "/app/dashboard/HR-dashboard/company"
-  useEffect(() => {
-    if (location.pathname === "/app/dashboard/HR-dashboard/company") {
-      navigate("/app/dashboard/HR-dashboard/company/company-logo", {
-        replace: true,
-      });
-    }
-  }, [location, navigate]);
+  // useEffect(() => {
+  //   if (location.pathname === "/app/dashboard/HR-dashboard/company") {
+  //     navigate("/app/dashboard/HR-dashboard/company/company-logo", {
+  //       replace: true,
+  //     });
+  //   }
+  // }, [location, navigate]);
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
@@ -86,6 +132,7 @@ const Compliances = () => {
         <Outlet />
       </div>
     </div>
+
   );
 };
 

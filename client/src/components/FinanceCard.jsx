@@ -7,11 +7,10 @@ const FinanceCard = ({
   highlightNegativePositive,
   disableColorChange,
   titleCenter,
-  stateData
+  stateData,
 }) => {
   const navigate = useNavigate();
 
-  
   return (
     <div className="flex flex-col gap-4 h-full p-4 shadow-md rounded-xl">
       {titleCenter ? (
@@ -36,7 +35,6 @@ const FinanceCard = ({
             typeof item.value === "number"
               ? item.value
               : parseInt(item?.value.replace(/[^0-9-]/g, ""));
-             
 
           const dynamicColor =
             highlightNegativePositive && !isNaN(numericValue)
@@ -49,9 +47,14 @@ const FinanceCard = ({
             <>
               <div key={index} className="flex justify-between items-center ">
                 <span
-                  onClick={() => navigate(item.route || "", { state: item.stateData || {} })}
-
-                  className={`text-content   ${item.route !== "#" ? "hover:underline cursor-pointer text-primary" : "text-black"} `}>
+                  onClick={() =>
+                    navigate(item.route || "", { state: item.stateData || {} })
+                  }
+                  className={`text-content   ${
+                    item.route !== "#"
+                      ? "hover:underline cursor-pointer text-primary"
+                      : "text-black"
+                  } `}>
                   {item.title}
                 </span>
                 <span

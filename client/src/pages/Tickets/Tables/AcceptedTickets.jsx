@@ -21,7 +21,8 @@ import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "./../../../utils/humanDateForamt";
-import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+// import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import { noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import StatusChip from "../../../components/StatusChip";
 
@@ -53,8 +54,22 @@ const AcceptedTickets = ({ title, departmentId }) => {
     formState: { errors: escalateTicketErrors },
   } = useForm({
     defaultValues: {
-      departmentIds: [],
+      departmentIds: "", // string, not array
       description: "",
+    },
+  });
+
+  const [closeModal, setCloseModal] = useState(false);
+  const [closingTicketId, setClosingTicketId] = useState(null);
+
+  const {
+    handleSubmit: handleCloseSubmit,
+    reset: resetCloseForm,
+    control: closeControl,
+    formState: { errors: closeErrors },
+  } = useForm({
+    defaultValues: {
+      closingRemark: "",
     },
   });
 
@@ -68,15 +83,23 @@ const AcceptedTickets = ({ title, departmentId }) => {
     setOpenView(true);
   };
 
+  // const { data: departments = [], isPending: isDepartmentsPending } = useQuery({
+  //   queryKey: ["departments"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("api/departments/get-departments");
+  //       return response.data?.selectedDepartments;
+  //     } catch (error) {
+  //       console.error("Error fetching data:", error);
+  //     }
+  //   },
+  // });
+
   const { data: departments = [], isPending: isDepartmentsPending } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
-      try {
-        const response = await axios.get("api/departments/get-departments");
-        return response.data?.selectedDepartments;
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+      const response = await axios.get("api/departments/get-departments");
+      return response.data; // because it's already an array
     },
   });
 
@@ -100,19 +123,21 @@ const AcceptedTickets = ({ title, departmentId }) => {
     },
   });
 
-  const { mutate } = useMutation({
+  const { mutate: closeTicket, isPending: isClosing } = useMutation({
     mutationKey: ["close-ticket"],
-    mutationFn: async (ticketId) => {
+    mutationFn: async ({ ticketId, closingRemark }) => {
       const response = await axios.patch("/api/tickets/close-ticket", {
         ticketId,
+        closingRemark,
       });
       return response.data;
     },
-
     onSuccess: (data) => {
       toast.success(data.message || "Ticket closed successfully");
-      queryClient.invalidateQueries({ queryKey: ["accepted-tickets"] }); // Refetch tickets
+      queryClient.invalidateQueries({ queryKey: ["accepted-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      resetCloseForm();
+      setCloseModal(false);
     },
     onError: (err) => {
       toast.error(err.response.data.message || "Failed to close ticket");
@@ -164,6 +189,11 @@ const AcceptedTickets = ({ title, departmentId }) => {
     setSelectedTicketId(ticketId);
     setOpenModal(true);
   };
+  const handleCloseTicket = (ticketId) => {
+    setClosingTicketId(ticketId);
+    setCloseModal(true);
+  };
+
   const handleEscalateTicket = (ticketDetails) => {
     setEscalateModal(true);
     setEscalatedTicket(ticketDetails);
@@ -213,7 +243,11 @@ const AcceptedTickets = ({ title, departmentId }) => {
 
         const additionalItems = showOtherActions
           ? [
-              { label: "Close", onClick: () => mutate(params.data.id) },
+              {
+                label: "Close",
+                onClick: () => handleCloseTicket(params.data.id),
+              },
+
               {
                 label: "Support",
                 onClick: () => handleSupportTicket(params.data.id),
@@ -337,7 +371,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
             control={supportTicketControl}
             rules={{
               required: "Reason is required",
-              validate: { noOnlyWhitespace, isAlphanumeric },
+              // validate: { noOnlyWhitespace, isAlphanumeric },
+              validate: { noOnlyWhitespace },
             }}
             render={({ field }) => (
               <TextField
@@ -380,10 +415,12 @@ const AcceptedTickets = ({ title, departmentId }) => {
                   fullWidth
                   size="small"
                   label="Select Department"
+                  value={field.value || ""} // safeguard
                 >
                   <MenuItem value="" disabled>
                     Select a Department
                   </MenuItem>
+
                   {departments.map((item) => (
                     <MenuItem key={item._id} value={item._id}>
                       {item.name}
@@ -471,6 +508,47 @@ const AcceptedTickets = ({ title, departmentId }) => {
             {/* <DetalisFormatted title="Assigned to" detail={selectedTicket?.assignees} /> */}
           </div>
         )}
+      </MuiModal>
+
+      <MuiModal
+        open={closeModal}
+        onClose={() => setCloseModal(false)}
+        title={"Close Ticket"}
+      >
+        <form
+          onSubmit={handleCloseSubmit((data) =>
+            closeTicket({
+              ticketId: closingTicketId,
+              closingRemark: data.closingRemark,
+            })
+          )}
+          className="grid grid-cols-1 gap-4"
+        >
+          <Controller
+            name="closingRemark"
+            control={closeControl}
+            rules={{ required: "Closing remark is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label={"Closing Remark"}
+                fullWidth
+                multiline
+                rows={4}
+                size="small"
+                error={!!closeErrors.closingRemark}
+                helperText={closeErrors.closingRemark?.message}
+              />
+            )}
+          />
+
+          <PrimaryButton
+            title={"Close Ticket"}
+            isLoading={isClosing}
+            disabled={isClosing}
+            type="submit"
+          />
+        </form>
       </MuiModal>
     </div>
   );

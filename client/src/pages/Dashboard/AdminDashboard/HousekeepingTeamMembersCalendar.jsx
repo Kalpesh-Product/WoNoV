@@ -66,13 +66,25 @@ const HousekeepingTeamMembersCalendar = () => {
     refetchOnWindowFocus: false,
   });
 
+  // const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
+  //   queryKey: ["employees"],
+  //   queryFn: async () => {
+  //     const res = await axios.get("/api/users/fetch-users", {
+  //       params: { deptId: department._id },
+  //     });
+  //     return res.data;
+  //   },
+  // });
+
   const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
-    queryKey: ["employees"],
+    queryKey: ["housekeeping-staff"],
     queryFn: async () => {
-      const res = await axios.get("/api/users/fetch-users", {
-        params: { deptId: department._id },
-      });
-      return res.data;
+      try {
+        const response = await axios.get("/api/company/housekeeping-members");
+        return response.data;
+      } catch (error) {
+        toast.error(error.message);
+      }
     },
   });
 
@@ -91,7 +103,7 @@ const HousekeepingTeamMembersCalendar = () => {
         : "Unknown";
 
       const unitName = schedule?.unit?.unitName || "N/A";
-      const manager = schedule?.manager || "N/A";
+      const manager = schedule?.managerUser || "N/A";
       const start = dayjs(schedule?.startDate);
       const end = dayjs(schedule?.endDate);
 
@@ -184,7 +196,10 @@ const HousekeepingTeamMembersCalendar = () => {
 
   const { mutate: assignSubstitute, isPending } = useMutation({
     mutationFn: async (data) => {
-      const res = await axios.patch("/api/weekly-unit/add-substitute", data);
+      const res = await axios.patch("/api/weekly-unit/add-substitute", {
+        ...data,
+        flag: "HK",
+      });
       return res.data;
     },
     onSuccess: (res) => {
@@ -207,6 +222,7 @@ const HousekeepingTeamMembersCalendar = () => {
   };
 
   useEffect(() => {
+    console.log("selectedEvent", selectedEvent);
     if (modalType === "edit" && selectedEvent) {
       setValue("weeklyScheduleId", selectedEvent.extendedProps.scheduleId);
       setValue("fromDate", dayjs(selectedEvent.extendedProps.fromDate));
@@ -267,10 +283,10 @@ const HousekeepingTeamMembersCalendar = () => {
               title="Unit"
               detail={selectedEvent.extendedProps.unit || "N/A"}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Manager"
               detail={selectedEvent.extendedProps.manager || "N/A"}
-            />
+            /> */}
             <PrimaryButton
               title="Assign Substitute"
               handleSubmit={() => {

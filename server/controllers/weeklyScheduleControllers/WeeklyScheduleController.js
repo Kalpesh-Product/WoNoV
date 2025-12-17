@@ -6,6 +6,7 @@ const { default: mongoose } = require("mongoose");
 const Unit = require("../../models/locations/Unit");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const HouseKeepingSchedule = require("../../models/HousekeepingSchedule");
 
 const assignWeeklyUnit = async (req, res, next) => {
   const logPath = "administration/AdministrationLog";
@@ -250,17 +251,22 @@ const addSubstitute = async (req, res, next) => {
   const logSourceKey = "weeklySchedule";
 
   try {
-    const { weeklyScheduleId, substitute, fromDate, toDate } = req.body;
+    const { weeklyScheduleId, substitute, fromDate, toDate, flag } = req.body;
     const { company, user, ip } = req;
+
+    const isHousekeeping = flag === "HK";
+
+    const Model = isHousekeeping ? HouseKeepingSchedule : WeeklySchedule;
+    const query = isHousekeeping
+      ? { _id: weeklyScheduleId }
+      : { _id: weeklyScheduleId, company };
 
     if (!substitute || !fromDate || !toDate) {
       return res.status(400).json({ message: "Missing substitution fields" });
     }
 
-    const schedule = await WeeklySchedule.findOne({
-      _id: weeklyScheduleId,
-      company,
-    });
+    const schedule = await Model.findOne(query);
+
     if (!schedule) {
       throw new CustomError(
         "Weekly unit not found",
@@ -270,7 +276,13 @@ const addSubstitute = async (req, res, next) => {
       );
     }
 
-    schedule.employee.isActive = false;
+    if (!isHousekeeping && schedule.employee) {
+      schedule.employee.isActive = false;
+    }
+
+    if (!Array.isArray(schedule.substitutions)) {
+      schedule.substitutions = [];
+    }
 
     const lastActiveIndex = schedule.substitutions.findLastIndex(
       (sub) => sub.isActive
@@ -381,6 +393,7 @@ const fetchWeeklyUnits = async (req, res, next) => {
 
     const foundUsers = await UserData.find({
       departments: { $in: [department] },
+      isActive: true,
     })
       .populate([
         {
@@ -417,8 +430,11 @@ const fetchWeeklyUnits = async (req, res, next) => {
       manager = `${foundManager.firstName} ${foundManager.lastName}`;
     }
 
-    const weeklySchedules = await WeeklySchedule.find({ company, department })
-      .populate("employee.id", "firstName lastName")
+    const weeklySchedules = await WeeklySchedule.find({
+      company,
+      department,
+    })
+      .populate("employee.id", "firstName lastName isActive")
       .populate("substitutions.substitute", "firstName lastName")
       .populate({
         path: "location",
@@ -443,10 +459,12 @@ const fetchWeeklyUnits = async (req, res, next) => {
         ],
       });
 
-    const transformedData = weeklySchedules.map((schedule) => ({
-      ...schedule._doc,
-      manager,
-    }));
+    const transformedData = weeklySchedules
+      .filter((schedule) => schedule.employee.isActive)
+      .map((schedule) => ({
+        ...schedule._doc,
+        manager,
+      }));
 
     res.status(200).json(transformedData);
   } catch (error) {

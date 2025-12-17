@@ -13,6 +13,7 @@ const PrimaryButton = ({
   className,
   isLoading, // New prop for showing the spinner
 }) => {
+
   return (
     <motion.button
       whileHover={{ scale: 1.05 }}

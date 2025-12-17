@@ -11,8 +11,6 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useSelector } from "react-redux";
-import Permissions from "../../../../../components/Permissions/Permissions";
-import { PERMISSIONS } from "../../../../../constants/permissions";
 
 dayjs.extend(customParseFormat);
 
@@ -94,10 +92,10 @@ const EditDetails = () => {
     : {
         ...employeeData,
         dob: dayjs(employeeData.dob).format("DD-MM-YYYY"),
-        startDate: dayjs(employeeData.startDate).format("DD-MM-YYYY"),
+        startDate: dayjs(employeeData.startDate).format(
+          "DD-MM-YYYY"
+        ),
       };
-
-  console.log(transformEmployeeData);
 
   return (
     <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">
@@ -109,12 +107,11 @@ const EditDetails = () => {
         </div>
         {!isEditing ? (
           <div>
-            <Permissions permissions={[PERMISSIONS.HR_EMPLOYEE_EDIT]}>
-              <PrimaryButton
-                handleSubmit={handleEditToggle}
-                title={"Edit"}
-              />
-            </Permissions>
+            <PrimaryButton
+              disabled={true}
+              handleSubmit={handleEditToggle}
+              title={"Edit"}
+            />
           </div>
         ) : (
           <div>
@@ -210,7 +207,6 @@ const EditDetails = () => {
                         "department",
                         "reportsTo",
                         "jobTitle",
-                        "jobDescription",
                       ].map((fieldKey) => (
                         <div key={fieldKey}>
                           {isEditing ? (

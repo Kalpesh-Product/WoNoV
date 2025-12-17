@@ -25,6 +25,10 @@ const MixBag = () => {
       title: "Client Agreements",
       route: "/app/dashboard/finance-dashboard/mix-bag/client-agreements",
     },
+    {
+      title: "Manage Meetings",
+      route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings",
+    },
   ];
 
   const handleSearch = (event) => {

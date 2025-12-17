@@ -7,12 +7,15 @@ const testAgreementsSchema = new mongoose.Schema(
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "UserData",
+      ref: "TestUserData",
     },
     url: {
       type: String,
     },
     id: {
+      type: String,
+    },
+    type: {
       type: String,
     },
     isActive: {

@@ -102,11 +102,11 @@ export default function PastEmployees() {
                         employee.firstName ? employee.firstName : ""
                       } ${employee.lastName ? employee.lastName : ""}`,
                       employmentID: employee.empId,
-                      email: employee.email,
+                      email: employee.email || "N/A",
                       department: employee.departments?.map(
-                        (item) => item.name
-                      ),
-                      role: employee.role?.map((r) => r.roleTitle),
+                        (item) => item.name 
+                      ) || "N/A",
+                      role: employee.role?.map((r) => r.roleTitle) || "N/A",
                       status: employee.isActive,
                     })),
                   ]

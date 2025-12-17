@@ -21,10 +21,11 @@ const MainLayout = () => {
   const [showFooter, setShowFooter] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dummyRef = useRef(null);
-  const location = useLocation()
-  const navigate = useNavigate()
+  const location = useLocation();
+  const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
+  const [permissionChecked, setPermissionChecked] = useState(false);
   const {
     data: notifications = [],
     isLoading: isNotificationsLoading,
@@ -43,47 +44,44 @@ const MainLayout = () => {
     refetchInterval: 15000,
   });
 
-useEffect(() => {
-  const pathname = location.pathname;
-  console.log("🔍 Current pathname:", pathname);
+  useEffect(() => {
+    const pathname = location.pathname;
+    console.log("🔍 Current pathname:", pathname);
 
-  const rawPermissions = auth?.user?.permissions?.permissions || [];
-  console.log("🔑 Raw permissions from auth:", rawPermissions);
+    const rawPermissions = auth?.user?.permissions?.permissions || [];
 
-  // Step 1: Collect relevant route patterns from PERMISSIONS object
-  const permissionRoutes = Object.values(PERMISSIONS).map((perm) =>
-    perm.value?.replace(/_/g, "-")
-  );
-  console.log("🎯 Routes to be permission-guarded:", permissionRoutes);
-
-  // Step 2: Check if the current pathname contains any of the permission routes
-  const pathRequiresPermission = permissionRoutes.some((route) =>
-    pathname.includes(route)
-  );
-  console.log("🚦 Does this path require permission?", pathRequiresPermission);
-
-  // Step 3: If permission is required, verify if the user has it
-  if (pathRequiresPermission) {
-    const formattedUserPermissions = rawPermissions.map((perm) =>
-      perm.replace(/_/g, "-")
+    const guardedRoutes = Object.values(PERMISSIONS).filter(
+      (perm) => perm.route
     );
-    console.log("🛡️ User's formatted permissions:", formattedUserPermissions);
 
-    const isAllowed = formattedUserPermissions.some((perm) =>
-      pathname.includes(perm)
+    const currentRoutePermission = guardedRoutes.find((perm) =>
+      pathname.includes(perm.route)
     );
-    console.log("✅ Is user allowed?", isAllowed);
 
-    if (!isAllowed) {
-      console.warn("⛔ Unauthorized access detected, redirecting...");
-      navigate("/unauthorized");
+    if (currentRoutePermission) {
+      const userHasPermission = rawPermissions.includes(
+        currentRoutePermission.value
+      );
+      // console.log("🛡️ User permission check:", {
+      //   requiredPermission: currentRoutePermission.value,
+      //   userPermissions: rawPermissions,
+      //   isAllowed: userHasPermission,
+      // });
+
+      if (!userHasPermission) {
+        console.warn("⛔ Unauthorized access detected, redirecting...");
+        navigate("/unauthorized");
+        return; // Stop here, don't set permissionChecked
+      } else {
+        // console.log("✅ User has permission for this route.");
+      }
+    } else {
+      // console.log("✅ This route is public or not permission-controlled.");
     }
-  } else {
-    console.log("✅ This route is public or not permission-controlled.");
-  }
-}, [location.pathname, auth, navigate]);
 
-
+    // ✅ Finally mark permission check as completed
+    setPermissionChecked(true);
+  }, [location.pathname, auth, navigate]);
 
   const unreadCount = notifications.reduce((total, notification) => {
     const count = notification.users.filter(
@@ -163,7 +161,8 @@ useEffect(() => {
               className="bg-white h-[80vh] overflow-y-auto flex flex-col justify-between"
             >
               <ScrollToTop />
-              <Outlet />
+              {permissionChecked ? <Outlet /> : null}
+
               <div
                 ref={dummyRef}
                 className="h-1 w-1 bg-red-500 text-red-500"

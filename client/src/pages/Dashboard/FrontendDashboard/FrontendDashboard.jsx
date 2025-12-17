@@ -22,11 +22,16 @@ import { useQuery } from "@tanstack/react-query";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import { Box, Skeleton } from "@mui/material";
 import dayjs from "dayjs";
+import { filterPermissions } from "../../../utils/accessConfig";
+import useAuth from "../../../hooks/useAuth";
+import { PERMISSIONS } from "../../../constants/permissions";
 
 const FrontendDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const [isReady, setIsReady] = useState(false);
-    const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
 
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
@@ -434,67 +439,171 @@ const FrontendDashboard = () => {
     },
   };
 
- const totalUtilised =
+  const totalUtilised =
     budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
       (acc, val) => acc + val,
       0
     ) || 0;
 
+  //---------------ACCESS-------------//
+
+  const techSalesGraphConfig = [
+    {
+      key: PERMISSIONS.FRONTEND_SITE_VISITORS.value,
+      layout: 1,
+      border: true,
+      title: "Site Visitors",
+      titleLabel: "FY 2024-25",
+      data: [],
+      options: siteVisitorOptions,
+    },
+  ];
+
+  const allowedSalesGraph = filterPermissions(
+    techSalesGraphConfig,
+    userPermissions
+  );
+
+  const cardsConfigFrontend = [
+    {
+    key: PERMISSIONS.FRONTEND_CREATE_WEBSITE.value,
+    route: "create-website",
+    title: "Create Website",
+    icon: <LuHardDriveUpload />,
+  },
+  {
+    key: PERMISSIONS.FRONTEND_EDIT_WEBSITE.value,
+    route: "websites",
+    title: "Edit website",
+    icon: <LuHardDriveUpload />,
+  },
+  {
+    key: PERMISSIONS.FRONTEND_NEW_THEMES.value,
+    route: "select-theme",
+    title: "New Themes",
+    icon: <CgWebsite />,
+  },
+  {
+    key: PERMISSIONS.FRONTEND_FINANCE.value,
+    route: "finance",
+    title: "Finance",
+    icon: <SiCashapp />,
+  },
+  {
+    key: PERMISSIONS.FRONTEND_DATA.value,
+    route: "data",
+    title: "Data",
+    icon: <SiGoogleadsense />,
+  },
+  {
+    key: PERMISSIONS.FRONTEND_SETTINGS.value,
+    route: "settings",
+    title: "Settings",
+    icon: <MdMiscellaneousServices />,
+  },
+];
+
+  const allowedCards = filterPermissions(
+    cardsConfigFrontend,
+    userPermissions
+  );
+
+  const techExpenseGraphConfig = [
+    {
+      key: PERMISSIONS.FRONTEND_DEPARTMENT_EXPENSE.value,
+      title: "BIZ Nest TECH DEPARTMENT EXPENSE",
+      data: expenseRawSeries,
+      options: expenseOptions,
+      onYearChange: setSelectedFiscalYear,
+      titleAmount: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
+    },
+  ];
+
+  const allowedExpenseGraph = filterPermissions(
+    techExpenseGraphConfig,
+    userPermissions
+  );
+  const techIssuesGraphConfig = [
+    {
+      key: PERMISSIONS.FRONTEND_WEBSITE_ISSUES_RAISED.value,
+      layout: 1,
+      border: true,
+      title: "Website Issues Raised",
+      data: [],
+      options: websiteIssuesOptions,
+    },
+  ];
+
+  const allowedIssuesGraph = filterPermissions(
+    techIssuesGraphConfig,
+    userPermissions
+  );
+
+  const pieChartConfig = [
+  {
+    key: PERMISSIONS.FRONTEND_NATION_WISE_SITE_VISITORS.value,
+    layout: 1,
+    border: true,
+    title: "Nation-wise site Visitors",
+    percent: true,
+    data: [],
+    options: [],
+    width: 500,
+  },
+  {
+    key: PERMISSIONS.FRONTEND_STATE_WISE_SITE_VISITORS.value,
+    layout: 1,
+    border: true,
+    title: "State-wise site Visitors",
+    percent: true,
+    data: [],
+    options: [],
+    width: 500,
+  },
+];
+
+
+  const allowedPieCharts = filterPermissions(
+    pieChartConfig,
+    userPermissions
+  );
+
   const techWidgets = [
     {
-      layout: 1,
-      widgets: [
+      layout: allowedSalesGraph.length,
+      widgets: allowedSalesGraph.map((config) => (
         <WidgetSection
           layout={1}
           border
-          title={"Site Visitors"}
-          titleLabel={"FY 2024-25"}
+          title={config.title}
+          titleLabel={config.titleLabel}
         >
-          <BarGraph data={[]} options={siteVisitorOptions} />
-        </WidgetSection>,
-      ],
+          <BarGraph data={config.data} options={config.options} />
+        </WidgetSection>
+      )),
     },
     {
-      layout: 5,
-      widgets: [
-        <Card
-          icon={<LuHardDriveUpload />}
-          title="Edit website"
-          route={`/app/dashboard/frontend-dashboard/edit-theme/BIZNest/Home`}
-        />,
-        <Card icon={<CgWebsite />} title="New Themes" route={"select-theme"} />,
-        <Card icon={<SiCashapp />} title="Finance" route={"finance"} />,
-        <Card icon={<SiGoogleadsense />} title="Data" route={"data"} />,
-        <Card
-          icon={<MdMiscellaneousServices />}
-          title="Settings"
-          route={"settings"}
-        />,
-      ],
+      layout: allowedCards.length,
+      widgets: allowedCards.map((config)=>  <Card
+          icon={config.icon}
+          title={config.title}
+          route={config.route}
+        />)
     },
     {
-      layout: 2,
-      widgets: [
-        <WidgetSection layout={1} border title={"Nation-wise site Visitors"}>
+      layout: allowedPieCharts.length,
+      widgets: allowedPieCharts.map((config)=>
+       <WidgetSection layout={1} border title={config.title}>
           <PieChartMui
-            percent={true} // Enable percentage display
-            data={[]} // Pass processed data
-            options={[]}
-            width={500}
+            percent={config.percent} // Enable percentage display
+            data={config.data} // Pass processed data
+            options={config.options}
+            width={config.width}
           />
-        </WidgetSection>,
-        <WidgetSection layout={1} border title={"State-wise site Visitors"}>
-          <PieChartMui
-            percent={true} // Enable percentage display
-            data={[]} // Pass processed data
-            options={[]}
-            width={500}
-          />
-        </WidgetSection>,
-      ],
+        </WidgetSection>)
     },
     {
-      layout: 1,
+      layout: allowedExpenseGraph.length,
       widgets: [
         <Suspense
           fallback={
@@ -505,26 +614,27 @@ const FrontendDashboard = () => {
             </Box>
           }
         >
-          <YearlyGraph
-            data={expenseRawSeries}
-            options={expenseOptions}
-            title={"BIZ Nest TECH DEPARTMENT EXPENSE"}
-             onYearChange={setSelectedFiscalYear}
-            titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
-              "en-IN"
-            )}`}
-          />
+          {
+            allowedExpenseGraph.map((config)=>
+            <YearlyGraph
+            data={config.data}
+            options={config.options}
+            title={config.title}
+            onYearChange={config.onYearChange}
+            titleAmount={config.titleAmount}
+          />)
+          }
         </Suspense>,
       ],
     },
 
     {
-      layout: 1,
-      widgets: [
-        <WidgetSection layout={1} title={"Website Issues Raised"} border>
-          <LineGraph options={websiteIssuesOptions} data={[]} />
+      layout: allowedIssuesGraph.length,
+      widgets: allowedIssuesGraph.map((config)=>
+       <WidgetSection layout={config.layout} title={config.title} border>
+          <LineGraph options={config.options} data={config.data} />
         </WidgetSection>,
-      ],
+        ),
     },
   ];
 

@@ -16,7 +16,7 @@ const HostFooter = () => {
     },
     {
       links: [
-        { name: "Privacy", link: "https://hosts.wono.co/privacy" },
+       { name: "Privacy", link: "https://hosts.wono.co/privacy" },
         { name: "T&C", link: "https://hosts.wono.co/terms-and-conditions" },
         { name: "Contact", link: "https://hosts.wono.co/contact" },
       ],
@@ -44,7 +44,8 @@ const HostFooter = () => {
               INTERNATIONAL PLAZA SINGAPORE – 079903 <br />
               <Link
                 to="mailto:response@wono.co"
-                className="text-[#0BA9EF] lowercase hover:underline">
+                className="text-[#0BA9EF] lowercase hover:underline"
+              >
                 response@wono.co
               </Link>
             </p>
@@ -61,7 +62,8 @@ const HostFooter = () => {
             {footerSections.map((section, idx) => (
               <div
                 key={idx}
-                className="flex flex-col  justify-center items-center text-start lg:justify-start lg:items-center">
+                className="flex flex-col  justify-center items-center text-start lg:justify-start lg:items-center"
+              >
                 {/* <h3 className="font-semibold text-lg mb-2">
                 {section.heading.toUpperCase()}
               </h3> */}
@@ -69,7 +71,8 @@ const HostFooter = () => {
                   <Link
                     key={i}
                     to={linkObj.link}
-                    className="text-sm  text-black opacity-80 hover:opacity-100 hover:text-gray-500 transition-all duration-200 cursor-pointer uppercase p-4">
+                    className="text-sm  text-black opacity-80 hover:opacity-100 hover:text-gray-500 transition-all duration-200 cursor-pointer uppercase p-4"
+                  >
                     {linkObj.name}
                   </Link>
                 ))}

@@ -6,7 +6,7 @@ const reviewSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    reviewerEmail:{
+    reviewerEmail: {
       type: String,
       required: true,
     },
@@ -20,18 +20,19 @@ const reviewSchema = new mongoose.Schema(
     },
     rate: {
       type: Number,
+      default: 0,
       required: true,
     },
     reply: {
       replierName: {
         type: String,
       },
-      replierEmail:{
+      replierEmail: {
         type: String,
-      }, 
+      },
       text: {
-        type:String
-      }
+        type: String,
+      },
     },
   },
   { timestamps: true }

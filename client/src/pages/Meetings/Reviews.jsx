@@ -225,10 +225,10 @@ const Reviews = () => {
                   control={control}
                   rules={{
                     required: "Please add a review",
-                    validate: {
-                      noOnlyWhitespace,
-                      isAlphanumeric,
-                    },
+                    // validate: {
+                    //   noOnlyWhitespace,
+                    //   isAlphanumeric,
+                    // },
                   }}
                   render={({ field }) => (
                     <TextField

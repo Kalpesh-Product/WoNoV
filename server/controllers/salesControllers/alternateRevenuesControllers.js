@@ -1,5 +1,7 @@
 const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const transformRevenues = require("../../utils/revenueFormatter");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
 
 const createAlternateRevenue = async (req, res, next) => {
   try {
@@ -112,4 +114,57 @@ const getAlternateRevenues = async (req, res, next) => {
   }
 };
 
-module.exports = { createAlternateRevenue, getAlternateRevenues };
+const bulkInsertAlternateRevenue = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const company = req.company;
+
+    if (!file) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a valid CSV file" });
+    }
+
+    const records = [];
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    stream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        // Push transformed and validated row into records array
+        const record = {
+          particulars: row["PARTICULARS"],
+          name: row["Name"],
+          taxableAmount: parseFloat(row["Taxable Amount"]) || 0,
+          gst: parseFloat(row["GST"]) || 0,
+          invoiceAmount: parseFloat(row["Invoice Amount"]) || 0,
+          invoiceCreationDate: new Date(row["Invoice Creation Date"]),
+          invoicePaidDate: new Date(row["Paid Date"]),
+          company: company._id,
+        };
+        records.push(record);
+      })
+      .on("end", async () => {
+        try {
+          const inserted = await AlternateRevenue.insertMany(records);
+          res.status(201).json({
+            message: "Bulk insert successful",
+            insertedCount: inserted.length,
+          });
+        } catch (insertError) {
+          next(insertError);
+        }
+      })
+      .on("error", (parseError) => {
+        next(parseError);
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createAlternateRevenue,
+  getAlternateRevenues,
+  bulkInsertAlternateRevenue,
+};

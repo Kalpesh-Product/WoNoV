@@ -7,10 +7,17 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import WidgetSection from "../../../components/WidgetSection";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
+import usePageDepartment from "../../../hooks/usePageDepartment";
+import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentage";
+import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import FyBarGraphCount from "../../../components/graphs/FyBarGraphCount";
+import FyMonthBarGraph from "../../../components/graphs/FyMonthBarGraph";
+import WidgetTable from "../../../components/Tables/WidgetTable";
 
 const AdminPerSqFtElectricityExpense = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const department = usePageDepartment();
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -25,39 +32,55 @@ const AdminPerSqFtElectricityExpense = () => {
     },
   });
 
-  // Group by Unit Number
-  const groupedByUnits = clientsData.reduce((acc, item) => {
-    const unitNo = item.unit?.unitNo || "-";
+  const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
+    queryKey: ["departmentBudget", department?._id],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/budget/company-budget?departmentId=${department?._id}`
+      );
+      const budgets = response.data.allBudgets;
+      return Array.isArray(budgets)
+        ? budgets.filter((item) => item.expanseType === "ELECTRICITY")
+        : [];
+    },
+    enabled: !!department?._id, // <- ✅ prevents firing until department is ready
+  });
 
-    if (!acc[unitNo]) {
-      acc[unitNo] = {
-        unitNo,
-        unitName: item.unit?.unitName || "-",
-        unitId: item.unit?._id,
-        clients: [],
-        buildingName: item.unit?.building?.buildingName,
-      };
-    }
+  const { data: unitsData, isLoading: isUnitsData } = useQuery({
+    queryKey: ["unitsData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-simple-units");
+      return response.data;
+    },
+  });
 
-    acc[unitNo].clients.push(item);
+  const totalSqFt = isUnitsData
+    ? []
+    : unitsData.reduce((sum, item) => sum + (item.sqft || 0), 0);
 
-    return acc;
-  }, {});
+  console.log("totalSqft ", totalSqFt);
 
-  const tableData = Object.values(groupedByUnits)
-    .sort((a, b) =>
-      a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true })
-    )
-    .map((group, index) => ({
-      srNo: index + 1,
-      unitId: group.unitId,
-      unitNo: group.unitNo,
-      unitName: group.unitName,
-      buildingName: group.buildingName,
-      clientsCount: group.clients.length,
-      rawClients: group.clients,
-    }));
+  const graphData = isHrLoading
+    ? []
+    : hrFinance.map((item) => ({
+        ...item,
+        unitNo: item.unit?.unitNo,
+        actualAmount: item.actualAmount,
+        sqftdata: item.unit?.sqft ? item.actualAmount / item.unit.sqft : 0,
+      }));
 
+  console.log("Electricty", graphData);
+
+  const tableData = isHrLoading
+    ? []
+    : hrFinance.map((item) => ({
+        ...item,
+        unitNo: item.unit?.unitNo,
+        expense: item.unit?.sqft
+          ? (item.actualAmount / item.unit.sqft).toFixed(2)
+          : "0.00",
+      }));
+  console.log("table data ", tableData);
   const columns = [
     { headerName: "SR NO", field: "srNo", width: 100 },
     {
@@ -79,86 +102,46 @@ const AdminPerSqFtElectricityExpense = () => {
         </span>
       ),
     },
-    { headerName: "Building", field: "buildingName", flex: 1 },
-    { headerName: "Expense", field: "expense" },
+    { headerName: "Expense (INR)", field: "expense", flex: 1 },
   ];
 
-  // Step 1: Prepare chartData
-  const chartData = tableData.map((unit) => ({
-    unitNo: unit.unitNo,
-    occupied: unit.clientsCount,
-  }));
-
-  const maxY = Math.max(...chartData.map((item) => item.occupied), 5);
-  const roundedMax = Math.ceil(maxY / 5) * 5;
-
-  const inrFormat = (val) => val.toLocaleString("en-IN");
-
-  const barGraphSeries = [
-    {
-      name: "Clients",
-      data: chartData.map((item) => item.occupied),
-    },
-  ];
-  const totalOffices = chartData.reduce((sum, item) => item.occupied + sum, 0);
-
-  const expenseOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-      stacked: false,
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-    },
-    colors: ["#54C4A7"],
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "30%",
-        borderRadius: 5,
-        dataLabels: { position: "top" },
-      },
-    },
+  const chartOptions = {
     dataLabels: {
       enabled: true,
-      formatter: (val) => inrFormat(val),
-      style: { fontSize: "12px", colors: ["#000"] },
+      formatter: (val) => {
+        return val.toFixed(2);
+      },
+
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
       offsetY: -22,
     },
-    yaxis: {
-      max: roundedMax,
-      title: { text: "Amount in Lakhs" },
-    },
-    xaxis: {
-      categories: chartData.map((item) => item.unitNo),
-    },
-    fill: {
-      opacity: 1,
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
+    
   };
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      <WidgetSection
-        layout={1}
-        border
-        padding
-        title={"admin expense per sq. ft"}
-        TitleAmount={`INR 0`}
-      >
-        <NormalBarGraph data={[]} options={expenseOptions} />
-      </WidgetSection>
-      <PageFrame>
-        <YearWiseTable
-          data={tableData}
-          columns={columns}
-          search
-          tableTitle="admin expense per sq. ft"
-        />
-      </PageFrame>
+      <FyMonthBarGraph
+        data={graphData}
+        dateKey="dueDate"
+        valueKey="sqftdata"
+        chartOptions={chartOptions}
+        labelKey="unitNo"
+        graphTitle="Electricity Expenses Per Sq.ft"
+      />
+
+      <WidgetTable
+        data={tableData}
+        columns={columns}
+        totalKey="expense"
+        dateColumn={"dueDate"}
+        search
+        sortByString="unitNo"
+        sortOrder="asc"
+        tableTitle="admin expense per sq. ft"
+      />
     </div>
   );
 };

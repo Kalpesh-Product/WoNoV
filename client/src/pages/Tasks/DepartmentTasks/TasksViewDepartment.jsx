@@ -24,7 +24,9 @@ import {
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import PageFrame from "../../../components/Pages/PageFrame";
-import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+// import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import { noOnlyWhitespace } from "../../../utils/validators";
+
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const TasksViewDepartment = () => {
@@ -67,6 +69,7 @@ const TasksViewDepartment = () => {
     handleSubmit: submitDailyKra,
     control,
     formState: { errors },
+    reset,
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -95,7 +98,7 @@ const TasksViewDepartment = () => {
         dueTime: data.dueTime,
         description: data.description,
         department: deptId,
-        taskType:"Department"
+        taskType: "Department",
       });
       return response.data;
     },
@@ -103,6 +106,7 @@ const TasksViewDepartment = () => {
       queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
       toast.success(data.message || "KRA Added");
       setOpenModal(false);
+      reset(); // clear out old junk after closing
     },
     onError: (error) => {
       toast.error(error.message || "Error Adding KRA");
@@ -384,7 +388,7 @@ const TasksViewDepartment = () => {
               required: "Task Name is required",
               validate: {
                 noOnlyWhitespace,
-                isAlphanumeric,
+                // isAlphanumeric,
               },
             }}
             render={({ field }) => (
@@ -405,7 +409,7 @@ const TasksViewDepartment = () => {
               required: "Description is required",
               validate: {
                 noOnlyWhitespace,
-                isAlphanumeric,
+                // isAlphanumeric,
               },
             }}
             render={({ field }) => (
@@ -596,7 +600,7 @@ const TasksViewDepartment = () => {
               detail={selectedTask?.completedTime}
             />
             <DetalisFormatted
-              title={"Comleted By"}
+              title={"Completed By"}
               detail={selectedTask?.completedBy}
             />
             <DetalisFormatted

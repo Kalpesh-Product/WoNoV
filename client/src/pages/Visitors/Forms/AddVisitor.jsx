@@ -33,7 +33,7 @@ const AddVisitor = () => {
     mode: "onChange",
     defaultValues: {
       firstName: "",
-      lastName:"",
+      lastName: "",
       email: "",
       gender: "",
       address: "",
@@ -118,11 +118,16 @@ const AddVisitor = () => {
   const { mutate: addVisitor, isPending: isMutateVisitor } = useMutation({
     mutationKey: ["addVisitor"],
     mutationFn: async (data) => {
+      const isBiznest = data.toMeetCompany === "6799f0cd6a01edbe1bc3fcea";
+      console.log("viz data", data.toMeet);
+      console.log("isBiznest", isBiznest);
       const response = await axios.post("/api/visitors/add-visitor", {
         ...data,
         department: selectedDepartment === "na" ? null : selectedDepartment,
-        toMeet: selectedDepartment === "na" ? null : data.toMeet,
+        toMeet: isBiznest ? data.toMeet : null, // only for BIZNest
+        clientToMeet: !isBiznest ? data.toMeet : null, // only for other companies
       });
+
       return response.data;
     },
     onSuccess: (data) => {
@@ -550,6 +555,31 @@ const AddVisitor = () => {
                           render={(params) => (
                             <TextField {...params} fullWidth />
                           )}
+                          shouldDisableTime={(time, view) => {
+                            const startTime = watch("checkIn");
+
+                            if (!startTime) return false;
+
+                            const startDate = dayjs(startTime).toDate(); // <-- the fix
+                            const current = time.$d;
+
+                            if (view === "hours") {
+                              return current.getHours() < startDate.getHours();
+                            }
+
+                            if (view === "minutes") {
+                              const selectedHour = dayjs(field.value).isValid()
+                                ? dayjs(field.value).hour()
+                                : null;
+
+                              return (
+                                selectedHour === startDate.getHours() &&
+                                current.getMinutes() < startDate.getMinutes()
+                              );
+                            }
+
+                            return false;
+                          }}
                         />
                       )}
                     />

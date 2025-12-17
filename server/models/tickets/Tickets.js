@@ -50,6 +50,10 @@ const ticketsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
+    closingRemark: {
+      type: String,
+      maxlength: 250,
+    },
     acceptedAt: Date,
     acceptedBy: {
       type: mongoose.Schema.Types.ObjectId,

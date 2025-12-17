@@ -24,12 +24,64 @@ import dayjs from "dayjs";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
+import useAuth from "../../../hooks/useAuth";
+import { PERMISSIONS } from "./../../../constants/permissions";
+import { filterPermissions } from "../../../utils/accessConfig";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const department = usePageDepartment();
   const axios = useAxiosPrivate();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
+  //------------------------PAGE ACCESS START-------------------//
+  const cardsConfig = [
+    {
+      route: "/app/dashboard/maintenance-dashboard/annual-expenses",
+      title: "Annual Expenses",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.MAINTENANCE_ANNUAL_EXPENSES.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/inventory",
+      title: "Inventory",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.MAINTENANCE_INVENTORY.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/finance",
+      title: "Finance",
+      icon: <SiCashapp />,
+      permission: PERMISSIONS.MAINTENANCE_FINANCE.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/mix-bag",
+      title: "Mix Bag",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.MAINTENANCE_MIX_BAG.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/data",
+      title: "Data",
+      icon: <SiGoogleadsense />,
+      permission: PERMISSIONS.MAINTENANCE_DATA.value,
+    },
+    {
+      route: "/app/dashboard/maintenance-dashboard/settings",
+      title: "Settings",
+      icon: <MdOutlineMiscellaneousServices />,
+      permission: PERMISSIONS.MAINTENANCE_SETTINGS.value,
+    },
+  ];
+
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS END-------------------//
+
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["maintainance-budget"],
     queryFn: async () => {
@@ -767,6 +819,168 @@ const MaintainanceDashboard = () => {
     }));
   }, [weeklySchedule, isWeeklyScheduleLoading]);
 
+  //--------------------ACCESS CONFIG------------------//
+
+  // 1️⃣ Yearly Graph Config
+  const maintenanceYearlyGraphConfigs = [
+    {
+      key: PERMISSIONS.MAINTENANCE_DEPARTMENT_EXPENSES.value,
+      chartId: "bargraph-hr-expense",
+      layout: 1,
+      title: "BIZ Nest MAINTENANCE DEPARTMENT EXPENSE",
+      data: expenseRawSeries,
+      options: expenseOptions,
+      titleAmount: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
+      onYearChange: setSelectedFiscalYear,
+    },
+  ];
+
+  const allowedMaintenanceYearlyGraphs = filterPermissions(
+    maintenanceYearlyGraphConfigs,
+    userPermissions
+  );
+
+  // 3️⃣ PieChart Widgets
+  const maintenancePieDonutChart = [
+    {
+      key: PERMISSIONS.MAINTENANCE_CATEGORY_WISE_MAINTENANCE.value,
+      title: "Category Wise Maintenance",
+      border: true,
+      data: [],
+      options: [],
+      type: "PieChartMui",
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_DUE_MAINTENANCE.value,
+      title: "Due Maintenance",
+      border: true,
+      series: [],
+      labels: [],
+      colors: colorsMaintenance,
+      centerLabel: "Due Tasks",
+      tooltipValue: dueMaintenanceCount,
+      type: "Donut",
+    },
+  ];
+  const allowedPieDonut = filterPermissions(
+    maintenancePieDonutChart,
+    userPermissions
+  );
+
+  // Pie chart and Donuts
+  const pieChartConfig = [
+    {
+      key: PERMISSIONS.MAINTENANCE_CATEGORY_WISE_MAINTENANCE.value,
+      title: "Unit Wise Maintenance",
+      border: true,
+      data: [],
+      options: [],
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_EXECUTION_CHANNEL.value,
+      title: "Maintenance Execution Channel",
+      border: true,
+      data: [],
+      options: [],
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_AVERAGE_MONTHLY_DUE.value,
+      title: "Average Monthly Due Maintenance",
+      border: true,
+      data: [],
+      options: [],
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_AVERAGE_YEARLY_DUE.value,
+      title: "Average Yearly Due Maintenance",
+      border: true,
+      data: [],
+      options: [],
+    },
+  ];
+  const allowedPieChartConfig = filterPermissions(
+    pieChartConfig,
+    userPermissions
+  );
+
+  // Data Cards
+  const maintenanceDataCardsConfig = [
+    {
+      key: PERMISSIONS.MAINTENANCE_OFFICES_UNDER_MANAGEMENT.value, // maintenance_offices_under_management
+      title: "Total",
+      data: Array.isArray(unitsData) ? unitsData.length : 0,
+      description: "Offices Under Management",
+      route: "maintenance-offices",
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_MONTHLY_DUE_TASKS.value, // maintenance_monthly_due_tasks
+      title: "Total",
+      data: tasks.length || 0,
+      description: "Monthly Due Tasks",
+      route: "/app/tasks",
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_MONTHLY_EXPENSE.value, // maintenance_monthly_expense
+      title: "Average",
+      data: `INR ${inrFormat(averageMonthlyExpense)}`,
+      description: "Monthly Expense",
+      route: "maintenance-expenses",
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_EXPENSE_PER_SQFT.value,
+      title: "Avg",
+      data: `INR ${inrFormat(totalUtilised / totalSqFt)}`,
+      description: "Expense per Sqft",
+      route: "per-sq-ft-expense",
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_ASSETS_UNDER_MANAGEMENT.value,
+      title: "Total",
+      data: 0,
+      description: "Assets Under Management",
+      // route: "maintenance-assets",
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_MONTHLY_KPA.value,
+      title: "Score",
+      data: departmentKra.length || 0,
+      description: "Monthly KPA",
+      route: "/app/performance",
+    },
+  ];
+
+  const allowedMaintenanceDataCards = filterPermissions(
+    maintenanceDataCardsConfig,
+    userPermissions
+  );
+
+  // 5️⃣ MuiTables (same component config group)
+  const maintenanceTablesConfig = [
+    {
+      key: PERMISSIONS.MAINTENANCE_TOP_HIGH_PRIORITY_TASKS.value,
+      Title: "Top 10 High Priority Due Tasks",
+      tableType: "mui",
+      rows: transformedTasks,
+      columns: priorityTasksColumns,
+      scroll: true,
+      rowsToDisplay: 4,
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_WEEKLY_EXECUTIVE_SHIFT_TIMING.value,
+      Title: "Weekly Executive Shift Timing",
+      tableType: "mui",
+      rows: transformedWeeklyShifts,
+      columns: executiveTimingsColumns,
+      scroll: true,
+      rowsToDisplay: 4,
+    },
+  ];
+
+  const allowedMaintenanceTables = filterPermissions(
+    maintenanceTablesConfig,
+    userPermissions
+  );
+
   const techWidgets = [
     {
       layout: 1,
@@ -778,165 +992,126 @@ const MaintainanceDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection normalCase layout={1} padding>
-            <YearlyGraph
-              data={expenseRawSeries}
-              responsiveResize
-              chartId={"bargraph-hr-expense"}
-              options={expenseOptions}
-              onYearChange={setSelectedFiscalYear}
-              title={"BIZ Nest MAINTENANCE DEPARTMENT EXPENSE"}
-              titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
-                "en-IN"
-              )}`}
-            />
+            {allowedMaintenanceYearlyGraphs.map((config) => (
+              <YearlyGraph
+                data={config.data}
+                responsiveResize
+                chartId={config.chartId}
+                options={config.options}
+                onYearChange={config.onYearChange}
+                title={config.title}
+                titleAmount={config.titleAmount}
+              />
+            ))}
           </WidgetSection>
         </Suspense>,
       ],
     },
+    // {
+    //   layout: 6,
+    //   widgets: [
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Annual Expenses"
+    //       route={"/app/dashboard/maintenance-dashboard/annual-expenses"}
+    //     />,
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Inventory"
+    //       route={"/app/dashboard/maintenance-dashboard/inventory"}
+    //     />,
+    //     <Card
+    //       icon={<SiCashapp />}
+    //       title="Finance"
+    //       route={"/app/dashboard/maintenance-dashboard/finance"}
+    //     />,
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Mix-Bag"
+    //       route={"/app/dashboard/maintenance-dashboard/mix-bag"}
+    //     />,
+    //     <Card
+    //       icon={<SiGoogleadsense />}
+    //       title="Data"
+    //       route={"/app/dashboard/maintenance-dashboard/data"}
+    //     />,
+    //     <Card
+    //       icon={<MdOutlineMiscellaneousServices />}
+    //       title="Settings"
+    //       route={"/app/dashboard/maintenance-dashboard/settings"}
+    //     />,
+    //   ],
+    // },
     {
-      layout: 6,
-      widgets: [
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
         <Card
-          icon={<MdFormatListBulleted />}
-          title="Annual Expenses"
-          route={"/app/dashboard/maintenance-dashboard/annual-expenses"}
-        />,
-        <Card
-          icon={<MdFormatListBulleted />}
-          title="Inventory"
-          route={"/app/dashboard/maintenance-dashboard/inventory"}
-        />,
-        <Card
-          icon={<SiCashapp />}
-          title="Finance"
-          route={"/app/dashboard/maintenance-dashboard/finance"}
-        />,
-        <Card
-          icon={<MdFormatListBulleted />}
-          title="Mix-Bag"
-          route={"/app/dashboard/maintenance-dashboard/mix-bag"}
-        />,
-        <Card
-          icon={<SiGoogleadsense />}
-          title="Data"
-          route={"/app/dashboard/maintenance-dashboard/data"}
-        />,
-        <Card
-          icon={<MdOutlineMiscellaneousServices />}
-          title="Settings"
-          route={"/app/dashboard/maintenance-dashboard/settings"}
-        />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
+
     {
       layout: 3,
-      widgets: [
+      widgets: allowedMaintenanceDataCards.map((config) => (
         <DataCard
-          route={"maintenance-offices"}
-          title={"Total"}
-          data={Array.isArray(unitsData) ? unitsData.length : 0}
-          description={"Offices Under Management"}
-        />,
-        <DataCard
-          route={"/app/tasks"}
-          title={"Total"}
-          data={tasks.length || 0}
-          description={"Monthly Due Tasks"}
-        />,
-        <DataCard
-          route={"maintenance-expenses"}
-          title={"Average"}
-          data={`INR ${inrFormat(averageMonthlyExpense)}`}
-          description={"Monthly Expense"}
-        />,
-      ],
-    },
-    {
-      layout: 3,
-      widgets: [
-        <DataCard
-          route={"per-sq-ft-expense"}
-          title={"Total"}
-          data={`INR ${inrFormat(totalUtilised / totalSqFt)}`}
-          description={"Expense Per Sq. Ft."}
-        />,
-        <DataCard
-          // route={"maintenance-assets"}
-          title={"Total"}
-          data={0}
-          description={"Assets Under Management"}
-        />,
-        <DataCard
-          route={`/app/performance`}
-          title={"Total"}
-          data={departmentKra.length || 0}
-          description={"Monthly KPA"}
-        />,
-      ],
-    },
-    {
-      layout: 2,
-      widgets: [
-        <MuiTable
-          key={priorityTasks.length}
-          scroll
-          rowsToDisplay={4}
-          Title={"Top 10 High Priority Due Tasks"}
-          rows={transformedTasks}
-          columns={priorityTasksColumns}
-        />,
-        <MuiTable
-          key={executiveTimings.length}
-          Title={"Weekly Executive Shift Timing"}
-          rows={transformedWeeklyShifts}
-          columns={executiveTimingsColumns}
-          scroll
-          rowsToDisplay={4}
-        />,
-      ],
+          route={config.route}
+          title={config.title}
+          data={config.data}
+          description={config.description}
+        />
+      )),
     },
 
     {
       layout: 2,
-      widgets: [
-        <WidgetSection border title={"Category Wise Maintenance"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-        <WidgetSection border title={"Due Maintenance"}>
-          <DonutChart
-            centerLabel="Due Tasks"
-            labels={[]}
-            colors={colorsMaintenance}
-            series={[]}
-            tooltipValue={dueMaintenanceCount}
-          />
-        </WidgetSection>,
-      ],
+      widgets: allowedMaintenanceTables.map((config)=>(
+
+        <MuiTable
+          {...config}
+        />
+      ))
+        
+      
     },
 
     {
       layout: 2,
-      widgets: [
-        <WidgetSection border title={"Unit Wise Maintenance"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-        <WidgetSection border title={"Maintenance Execution Channel"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-      ],
+      widgets:allowedPieDonut.map((config) => {
+      if (config.type === "PieChartMui") {
+        return (
+          <WidgetSection key={config.key} border={config.border} title={config.title}>
+            <PieChartMui data={config.data} options={config.options} />
+          </WidgetSection>
+        );
+      } else if (config.type === "Donut") {
+        return (
+          <WidgetSection key={config.key} border={config.border} title={config.title}>
+            <DonutChart
+              centerLabel={config.centerLabel}
+              labels={config.labels}
+              series={config.series}
+              tooltipValue={config.tooltipValue}
+            />
+          </WidgetSection>
+        );
+      }
+    }),
     },
     {
       layout: 2,
-      widgets: [
-        <WidgetSection border title={"Average Monthly Due Maintenance"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-        <WidgetSection border title={"Average Yearly Due Maintenance"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-      ],
+      widgets: allowedPieChartConfig.map((config)=>(
+         <WidgetSection border={config.border} title={config.title}>
+          <PieChartMui data={config.data} options={config.options} />
+        </WidgetSection>
+      ))
+    
     },
   ];
 

@@ -33,6 +33,20 @@ const SupportTickets = ({ title, departmentId }) => {
   const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
   const { isTop } = useTopDepartment();
 
+  const [closeModal, setCloseModal] = useState(false);
+  const [closingTicketId, setClosingTicketId] = useState(null);
+
+  const {
+    handleSubmit: handleCloseSubmit,
+    reset: resetCloseForm,
+    control: closeControl,
+    formState: { errors: closeErrors },
+  } = useForm({
+    defaultValues: {
+      closingRemark: "",
+    },
+  });
+
   // Fetch Supported Tickets
   const { data: supportedTickets = [], isLoading } = useQuery({
     queryKey: ["supported-tickets"],
@@ -59,6 +73,11 @@ const SupportTickets = ({ title, departmentId }) => {
     setOpenView(true);
   };
 
+  const handleCloseTicket = (ticketId) => {
+    setClosingTicketId(ticketId);
+    setCloseModal(true);
+  };
+
   // Transform Tickets Data
   const transformTicketsData = (tickets) => {
     return !tickets.length
@@ -73,8 +92,8 @@ const SupportTickets = ({ title, departmentId }) => {
               ticket.ticket?.raisedBy?.lastName
                 ? `${ticket.ticket?.raisedBy?.firstName} ${ticket.ticket?.raisedBy?.lastName}`
                 : "Unknown",
-            
-            priority:ticket.priority,
+
+            priority: ticket.priority,
             selectedDepartment:
               Array.isArray(ticket.ticket.raisedBy?.departments) &&
               ticket.ticket.raisedBy.departments.length > 0
@@ -94,38 +113,42 @@ const SupportTickets = ({ title, departmentId }) => {
                 : "N/A",
             raisedDate: ticket.createdAt || "N/A",
             status: ticket.ticket.status || "Pending",
-            raisedToDepartment : ticket.ticket?.raisedToDepartment?.name || "N/A",
+            raisedToDepartment:
+              ticket.ticket?.raisedToDepartment?.name || "N/A",
           };
 
           return supportTicket;
         });
   };
 
-
   const rows = isLoading ? [] : transformTicketsData(supportedTickets);
 
   const { mutate: closeTicket, isPending: isClosingTicket } = useMutation({
     mutationKey: ["close-ticket"],
-    mutationFn: async (ticketId) => {
+    mutationFn: async ({ ticketId, closingRemark }) => {
       const response = await axios.patch("/api/tickets/close-ticket", {
         ticketId,
+        closingRemark,
       });
       return response.data;
     },
-
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["supported-tickets"] }); // Refetch tickets
+      resetCloseForm();
+      setCloseModal(false);
+      queryClient.invalidateQueries({ queryKey: ["supported-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
     },
     onError: (err) => {
-      toast.error(err.response.data.message || "Failed to close ticket");
+      toast.error(err.response?.data?.message || "Failed to close ticket");
     },
   });
 
   const fetchSubOrdinates = async () => {
     try {
-      const response = await axios.get(`/api/users/assignees?deptId=${departmentId}`);
+      const response = await axios.get(
+        `/api/users/assignees?deptId=${departmentId}`
+      );
 
       return response.data;
     } catch (error) {
@@ -186,9 +209,7 @@ const SupportTickets = ({ title, departmentId }) => {
     queryKey: ["departments"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          "api/departments/get-departments"
-        );
+        const response = await axios.get("api/departments/get-departments");
         return response.data;
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -252,7 +273,7 @@ const SupportTickets = ({ title, departmentId }) => {
       headerName: "From Department",
       width: 100,
     },
-    { field: "ticketTitle", headerName: "Ticket Title", width : 250},
+    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     {
       field: "tickets",
       headerName: "Ticket Type",
@@ -314,7 +335,7 @@ const SupportTickets = ({ title, departmentId }) => {
     {
       field: "actions",
       headerName: "Actions",
-            pinned : 'right',
+      pinned: "right",
       cellRenderer: (params) => {
         const commonItems = [
           {
@@ -330,8 +351,9 @@ const SupportTickets = ({ title, departmentId }) => {
           ? [
               {
                 label: "Close",
-                onClick: () => closeTicket(params.data.id),
+                onClick: () => handleCloseTicket(params.data.id),
               },
+
               {
                 label: "Re-Assign",
                 onClick: () => handleOpenAssignModal(params.data.id),
@@ -346,7 +368,7 @@ const SupportTickets = ({ title, departmentId }) => {
         return (
           <ThreeDotMenu
             rowId={params.data.id}
-            menuItems={[...commonItems,...conditionalItems]}
+            menuItems={[...commonItems, ...conditionalItems]}
           />
         );
       },
@@ -428,9 +450,7 @@ const SupportTickets = ({ title, departmentId }) => {
                       options={departments}
                       getOptionLabel={(dept) => `${dept.name}`}
                       onChange={(_, newValue) =>
-                        field.onChange(
-                          newValue.map((dept) => dept._id)
-                        )
+                        field.onChange(newValue.map((dept) => dept._id))
                       }
                       renderTags={(selected, getTagProps) =>
                         selected.map((dept, index) => (
@@ -497,11 +517,11 @@ const SupportTickets = ({ title, departmentId }) => {
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
               title="Ticket"
-              detail={selectedTicket.ticketTitle || "N/A"}
+              detail={selectedTicket?.ticket?.ticket || "N/A"}
             />
             <DetalisFormatted
               title="Description"
-              detail={selectedTicket.reason || "N/A"}
+              detail={selectedTicket?.ticket?.description || "N/A"}
             />
             <DetalisFormatted
               title="Raised By"
@@ -536,8 +556,53 @@ const SupportTickets = ({ title, departmentId }) => {
               title="Accepted at"
               detail={selectedTicket?.acceptedAt || "N/A"}
             />
+            <DetalisFormatted
+              title="Reason For Support"
+              detail={selectedTicket?.reason || "N/A"}
+            />
           </div>
         )}
+      </MuiModal>
+
+      <MuiModal
+        open={closeModal}
+        onClose={() => setCloseModal(false)}
+        title="Close Ticket"
+      >
+        <form
+          onSubmit={handleCloseSubmit((data) =>
+            closeTicket({
+              ticketId: closingTicketId,
+              closingRemark: data.closingRemark,
+            })
+          )}
+          className="grid grid-cols-1 gap-4"
+        >
+          <Controller
+            name="closingRemark"
+            control={closeControl}
+            rules={{ required: "Closing remark is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Closing Remark"
+                fullWidth
+                size="small"
+                multiline
+                rows={4}
+                error={!!closeErrors.closingRemark}
+                helperText={closeErrors.closingRemark?.message}
+              />
+            )}
+          />
+
+          <PrimaryButton
+            title="Close Ticket"
+            isLoading={isClosingTicket}
+            disabled={isClosingTicket}
+            type="submit"
+          />
+        </form>
       </MuiModal>
     </div>
   );

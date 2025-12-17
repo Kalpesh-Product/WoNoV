@@ -33,6 +33,18 @@ const HrSettingsPolicies = () => {
       file: null,
     },
   });
+  const {
+    handleSubmit: handleAddSubmit,
+    control: addControl,
+    reset: addReset,
+    formState: { errors: addErrors },
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      policyName: "",
+      file: null,
+    },
+  });
 
   const { data: policies = [] } = useQuery({
     queryKey: ["policies"],
@@ -57,8 +69,8 @@ const HrSettingsPolicies = () => {
     },
     onSuccess: () => {
       toast.success("Policy added successfully");
-      queryClient.invalidateQueries(["policies"]);
-      reset();
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
+      addReset();
       setOpenModal(false);
     },
     onError: (error) => {
@@ -241,6 +253,74 @@ const HrSettingsPolicies = () => {
             : "Add New Policy"
         }
       >
+        {modalType === "add" && (
+          <form
+            className="grid grid-cols-1 gap-4"
+            onSubmit={handleAddSubmit(handleAddPolicy)}
+          >
+            <Controller
+              name="policyName"
+              control={addControl}
+              rules={{
+                required: "Policy Name is required",
+                validate: { noOnlyWhitespace, isAlphanumeric },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Policy Name"
+                  size="small"
+                  variant="outlined"
+                  fullWidth
+                  error={!!addErrors?.policyName}
+                  helperText={addErrors?.policyName?.message}
+                />
+              )}
+            />
+            <Controller
+              name="file"
+              control={addControl}
+              defaultValue={null}
+              render={({ field: { onChange, value } }) => (
+                <>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.pdf"
+                    hidden
+                    onChange={(e) => onChange(e.target.files[0])}
+                  />
+                  <TextField
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    label="Upload Policy"
+                    value={value ? value.name : ""}
+                    placeholder="Choose a file..."
+                    InputProps={{
+                      readOnly: true,
+                      endAdornment: (
+                        <IconButton
+                          color="primary"
+                          component="label"
+                          htmlFor="image-upload"
+                        >
+                          <LuImageUp />
+                        </IconButton>
+                      ),
+                    }}
+                  />
+                </>
+              )}
+            />
+            <PrimaryButton
+              title={"Submit"}
+              type={"submit"}
+              disabled={addPolicyMutation.isPending}
+              isLoading={addPolicyMutation.isPending}
+            />
+          </form>
+        )}
         {modalType === "edit" && (
           <form
             onSubmit={handleSubmit(
@@ -267,45 +347,6 @@ const HrSettingsPolicies = () => {
                 />
               )}
             />
-
-            {modalType === "add" && (
-              <Controller
-                name="file"
-                control={control}
-                defaultValue={null}
-                render={({ field: { onChange, value } }) => (
-                  <>
-                    <input
-                      id="image-upload"
-                      type="file"
-                      accept=".png,.jpg,.jpeg,.pdf"
-                      hidden
-                      onChange={(e) => onChange(e.target.files[0])}
-                    />
-                    <TextField
-                      size="small"
-                      variant="outlined"
-                      fullWidth
-                      label="Upload Policy"
-                      value={value ? value.name : ""}
-                      placeholder="Choose a file..."
-                      InputProps={{
-                        readOnly: true,
-                        endAdornment: (
-                          <IconButton
-                            color="primary"
-                            component="label"
-                            htmlFor="image-upload"
-                          >
-                            <LuImageUp />
-                          </IconButton>
-                        ),
-                      }}
-                    />
-                  </>
-                )}
-              />
-            )}
 
             <PrimaryButton
               title={modalType === "edit" ? "Update Policy" : "Add Policy"}

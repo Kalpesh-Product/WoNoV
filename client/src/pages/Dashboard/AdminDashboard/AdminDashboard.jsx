@@ -30,12 +30,64 @@ import { inrFormat } from "../../../utils/currencyFormat";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
+import { PERMISSIONS } from "./../../../constants/permissions";
+import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import { filterPermissions } from "../../../utils/accessConfig";
+
 dayjs.extend(customParseFormat);
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
+  //------------------------PAGE ACCESS START-------------------//
+  const cardsConfig = [
+    {
+      route: "/app/dashboard/admin-dashboard/annual-expenses",
+      title: "Annual Expenses",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.ADMIN_ANNUAL_EXPENSES.value,
+    },
+    {
+      route: "/app/dashboard/admin-dashboard/inventory",
+      title: "Inventory",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.ADMIN_INVENTORY.value,
+    },
+    {
+      route: "/app/dashboard/admin-dashboard/finance",
+      title: "Finance",
+      icon: <SiCashapp />,
+      permission: PERMISSIONS.ADMIN_FINANCE.value,
+    },
+    {
+      route: "mix-bag",
+      title: "Mix Bag",
+      icon: <MdFormatListBulleted />,
+      permission: PERMISSIONS.ADMIN_MIX_BAG.value,
+    },
+    {
+      route: "/app/dashboard/admin-dashboard/data",
+      title: "Data",
+      icon: <SiGoogleadsense />,
+      permission: PERMISSIONS.ADMIN_DATA.value,
+    },
+    {
+      route: "/app/dashboard/admin-dashboard/settings",
+      title: "Settings",
+      icon: <MdOutlineMiscellaneousServices />,
+      permission: PERMISSIONS.ADMIN_SETTINGS.value,
+    },
+  ];
+
+  const allowedCards = cardsConfig.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  //------------------------PAGE ACCESS END-------------------//
 
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["admin-budget"],
@@ -188,8 +240,6 @@ const AdminDashboard = () => {
     },
   });
 
-  console.log("tasks", tasks.length);
-
   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
     useQuery({
       queryKey: ["weeklySchedule"],
@@ -198,6 +248,8 @@ const AdminDashboard = () => {
           const response = await axios.get(
             `/api/weekly-unit/fetch-weekly-unit/${department._id}`
           );
+
+          console.log("weekly schedule", weeklySchedule.length);
           return response.data;
         } catch (error) {
           throw new Error("Error fetching data");
@@ -348,66 +400,6 @@ const AdminDashboard = () => {
 
   const { setIsSidebarOpen } = useSidebar();
 
-  // useEffect(() => {
-  //   setIsSidebarOpen(true);
-  // }, []);
-
-  const options = {
-    chart: {
-      type: "bar",
-      stacked: true,
-      toolbar: false,
-      fontFamily: "Poppins-Regular",
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "35%",
-        borderRadius: 3,
-        borderRadiusWhenStacked: "all",
-        borderRadiusApplication: "end",
-      },
-    },
-    colors: ["#36BA98", "#275D3E", "#E83F25"], // Colors for the series
-    dataLabels: {
-      enabled: true,
-      formatter: (value, { seriesIndex }) => {
-        if (seriesIndex === 1) return "";
-        return `${value}%`;
-      },
-    },
-    xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
-    },
-    yaxis: {
-      max: 150,
-      labels: {
-        formatter: (value) => `${value}%`,
-      },
-    },
-    tooltip: {
-      y: {
-        formatter: (value) => `${value}%`,
-      },
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
-  };
   //-----------------------------------------------------------------------------------------------------------------//
   const taskData = [
     { unit: "ST-701A", tasks: 25 },
@@ -663,16 +655,6 @@ const AdminDashboard = () => {
     { id: "endDate", label: "End Date", align: "left" },
   ];
 
-  const utilisedData = [
-    125000, 150000, 99000, 85000, 70000, 50000, 80000, 95000, 100000, 65000,
-    50000, 120000,
-  ];
-
-  const maxBudget = [
-    100000, 120000, 100000, 100000, 80000, 60000, 85000, 95000, 100000, 70000,
-    60000, 110000,
-  ];
-
   const transformedWeeklyShifts = useMemo(() => {
     if (isWeeklyScheduleLoading || !weeklySchedule.length) return [];
 
@@ -767,6 +749,201 @@ const AdminDashboard = () => {
     },
   };
 
+  //--------------------ACCESS CONFIG-------------------------//
+
+  const departmentExpenseGraphConfig = [
+    {
+      key: PERMISSIONS.ADMIN_DEPARTMENT_EXPENSE.value,
+      data: hrFinance,
+      dateKey: "dueDate",
+      valueKey: "actualAmount",
+      responsiveResize: true,
+      chartOptions: expenseOptions,
+      graphTitle: `BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`,
+    },
+  ];
+
+  const allowedDeptExpenseGrpah = filterPermissions(
+    departmentExpenseGraphConfig,
+    userPermissions
+  );
+
+  //data cards
+
+  const dataCardConfigs = [
+    {
+      key: PERMISSIONS.ADMIN_TOTAL_ADMIN_OFFICES.value,
+      title: "Total",
+      data: Array.isArray(unitsData) ? unitsData.length : 0,
+      description: "Admin Offices",
+      route: "admin-offices",
+    },
+    {
+      key: PERMISSIONS.ADMIN_MONTHLY_DUE_TASKS.value,
+      title: "Total",
+      data: tasks.length || 0,
+      description: "Monthly Due Tasks",
+      route: "/app/tasks/department-tasks",
+    },
+    {
+      key: PERMISSIONS.ADMIN_MONTHLY_EXPENSE.value,
+      title: "Average",
+      data: `INR ${inrFormat(averageMonthlyExpense)}`,
+      description: "Monthly Expense",
+      route: "admin-expenses",
+    },
+    {
+      key: PERMISSIONS.ADMIN_EXPENSE_PER_SQFT.value,
+      title: "Total",
+      data: `INR ${inrFormat(totalOverallExpense / totalSqFt)}`,
+      description: "Expense Per Sq. Ft.",
+      route: "per-sq-ft-expense",
+    },
+    {
+      key: PERMISSIONS.ADMIN_ELECTRICITY_EXPENSE_PER_SQFT.value,
+      title: "Total",
+      data: `INR ${inrFormat(electrictyExpense / totalSqFt)}`,
+      description: "Electricity Expense Per Sq. Ft.",
+      route: "per-sq-ft-electricity-expense",
+    },
+    {
+      key: PERMISSIONS.ADMIN_TOP_EXECUTIVE.value,
+      title: "Top Executive",
+      data: "",
+      description: "Mr. Machindranath Parkar",
+      route: "admin-executive-expense",
+    },
+  ];
+
+  const allowedAdminDataCards = filterPermissions(
+    dataCardConfigs,
+    userPermissions
+  );
+
+  //MUI Tables
+
+  const muiTableConfigs = [
+    {
+      key: PERMISSIONS.ADMIN_WEEKLY_EXECUTIVE_SHIFT_TIMING.value,
+      scroll: true,
+      Title: "Weekly Executive Shift Timing",
+      rowsToDisplay: 3,
+      rows: transformedWeeklyShifts,
+      columns: executiveTimingsColumns,
+    },
+    {
+      key: PERMISSIONS.ADMIN_UPCOMING_EVENTS_LIST.value,
+      scroll: true,
+      Title: "Upcoming Events List",
+      rowsToDisplay: 3,
+      rows: [],
+      columns: upcomingEventsColumns,
+    },
+    {
+      key: PERMISSIONS.ADMIN_UPCOMING_CLIENT_MEMBER_BIRTHDAYS.value,
+      scroll: true,
+      Title: "Upcoming Client Member Birthdays",
+      rowsToDisplay: 3,
+      rows: upcomingBirthdays.map((item, index) => ({
+        ...item,
+        srNo: index + 1,
+      })),
+      columns: clientMemberBirthdaysColumns,
+    },
+    {
+      key: PERMISSIONS.ADMIN_UPCOMING_CLIENT_ANNIVERSARIES.value,
+      scroll: true,
+      Title: "Upcoming Client Anniversaries",
+      rowsToDisplay: 3,
+      rows: upComingClientAnniversary.map((item, index) => ({
+        ...item,
+        srNo: index + 1,
+      })),
+      columns: upComingClientAnniversaryColumns,
+    },
+  ];
+
+  const allowedTables = filterPermissions(muiTableConfigs, userPermissions);
+
+  const muiTableConfigs2 = [
+    {
+      key: PERMISSIONS.ADMIN_NEWLY_JOINED_HOUSE_KEEPING_MEMBERS.value,
+      scroll: true,
+      Title: "Newly Joined House Keeping Members",
+      rowsToDisplay: 4,
+      rows: [],
+      columns: houseKeepingMemberColumns,
+    },
+  ];
+  const allowedTables2 = filterPermissions(muiTableConfigs2, userPermissions);
+
+  //Unit wise
+  const unitWiseDueTasksWidget = [
+    {
+      key: PERMISSIONS.ADMIN_UNIT_WISE_DUE_TASKS.value,
+      layout: 2,
+      title: "Unit Wise Due Tasks",
+      chartType: "PieChartMui",
+      border: true,
+      data: [],
+      options: [],
+    },
+  ];
+
+  const allowedUnitWise = filterPermissions(
+    unitWiseDueTasksWidget,
+    userPermissions
+  );
+
+  //Executivve wise
+  const executiveWiseDueTasksWidget = [
+    {
+      key: PERMISSIONS.ADMIN_EXECUTIVE_WISE_DUE_TASKS.value,
+      layout: 2,
+      title: "Executive Wise Due Tasks",
+      chartType: "DonutChart",
+      border: true,
+      centerLabel: "Tasks",
+      labels: [],
+      colors,
+      series: [],
+      tooltipValue: executiveTasksCount,
+    },
+  ];
+
+  const allowedExecutiveWise = filterPermissions(
+    executiveWiseDueTasksWidget,
+    userPermissions
+  );
+
+  const piechartConfig2 = [
+    {
+      key: PERMISSIONS.ADMIN_TOTAL_DESKS_COMPANY_WISE.value,
+      layout: 2,
+      title: "Total Desks Company Wise",
+      chartType: "PieChartMui",
+      border: true,
+      data: totalDeskPercent,
+      options: clientsDesksPieOptions,
+      width: "100%",
+      isLoading: isClientsDataPending,
+      loadingFallback: <CircularProgress color="#1E3D73" />,
+    },
+    {
+      key: PERMISSIONS.ADMIN_BIOMETRICS_GENDER_DATA.value,
+      layout: 2,
+      title: "Biometrics Gender Data",
+      chartType: "PieChartMui",
+      border: true,
+      data: [],
+      options: [],
+    },
+  ];
+
+  const allowedPiechartConfig2 = filterPermissions(
+    piechartConfig2,
+    userPermissions
+  );
   //-----------------------------------------------------------------------------------------------------------------//
   const techWidgets = [
     {
@@ -779,179 +956,109 @@ const AdminDashboard = () => {
               <Skeleton variant="text" width={200} height={30} />
               <Skeleton variant="rectangular" width="100%" height={300} />
             </Box>
-          }>
+          }
+        >
           <WidgetSection normalCase layout={1} padding>
-            <YearlyGraph
-              data={expenseRawSeries}
-              responsiveResize
-              chartId={"bargraph-hr-expense"}
-              options={expenseOptions}
-              onYearChange={setSelectedFiscalYear}
-              title={"BIZ Nest ADMIN DEPARTMENT EXPENSE"}
-              titleAmount={`INR ${Math.round(totalUtilised).toLocaleString(
-                "en-IN"
-              )}`}
-            />
+            {allowedDeptExpenseGrpah.map((config, index) => (
+              <FyBarGraph key={index} {...config} />
+            ))}
           </WidgetSection>
         </Suspense>,
       ],
     },
 
+    // {
+    //   layout: 6,
+    //   widgets: [
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Annual Expenses"
+    //       route={"/app/dashboard/admin-dashboard/annual-expenses"}
+    //     />,
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Inventory"
+    //       route={"/app/dashboard/admin-dashboard/inventory"}
+    //     />,
+    //     <Card
+    //       icon={<SiCashapp />}
+    //       title="Finance"
+    //       route={"/app/dashboard/admin-dashboard/finance"}
+    //     />,
+    //     <Card
+    //       icon={<MdFormatListBulleted />}
+    //       title="Mix-Bag"
+    //       route={"mix-bag"}
+    //     />,
+    //     <Card
+    //       icon={<SiGoogleadsense />}
+    //       title="Data"
+    //       route={"/app/dashboard/admin-dashboard/data"}
+    //     />,
+    //     <Card
+    //       icon={<MdOutlineMiscellaneousServices />}
+    //       title="Settings"
+    //       route={"/app/dashboard/admin-dashboard/settings"}
+    //     />,
+    //   ],
+    // },
+
     {
-      layout: 6,
-      widgets: [
+      layout: allowedCards.length, // ✅ dynamic layout
+      widgets: allowedCards.map((card) => (
         <Card
-          icon={<MdFormatListBulleted />}
-          title="Annual Expenses"
-          route={"/app/dashboard/admin-dashboard/annual-expenses"}
-        />,
-        <Card
-          icon={<MdFormatListBulleted />}
-          title="Inventory"
-          route={"/app/dashboard/admin-dashboard/inventory"}
-        />,
-        <Card
-          icon={<SiCashapp />}
-          title="Finance"
-          route={"/app/dashboard/admin-dashboard/finance"}
-        />,
-        <Card
-          icon={<MdFormatListBulleted />}
-          title="Mix-Bag"
-          route={"mix-bag"}
-        />,
-        <Card
-          icon={<SiGoogleadsense />}
-          title="Data"
-          route={"/app/dashboard/admin-dashboard/data"}
-        />,
-        <Card
-          icon={<MdOutlineMiscellaneousServices />}
-          title="Settings"
-          route={"/app/dashboard/admin-dashboard/settings"}
-        />,
-      ],
+          key={card.title}
+          route={card.route}
+          title={card.title}
+          icon={card.icon}
+        />
+      )),
     },
     {
       layout: 3,
-      widgets: [
-        <DataCard
-          route={"admin-offices"}
-          title={"Total"}
-          data={Array.isArray(unitsData) ? unitsData.length : 0}
-          description={"Admin Offices"}
-        />,
-        <DataCard
-          route={"/app/tasks"}
-          title={"Total"}
-          data={tasks.length || 0}
-          description={"Monthly Due Tasks"}
-        />,
-        <DataCard
-          route={"admin-expenses"}
-          title={"Average"}
-          data={`INR ${inrFormat(averageMonthlyExpense)}`}
-          description={"Monthly Expense"}
-        />,
-      ],
+      widgets: allowedAdminDataCards.map((config) => <DataCard {...config} />),
     },
+
     {
-      layout: 3,
-      widgets: [
-        <DataCard
-          route={"per-sq-ft-expense"}
-          title={"Total"}
-          data={`INR ${inrFormat(totalOverallExpense / totalSqFt)}`}
-          description={"Expense Per Sq. Ft."}
-        />,
-        <DataCard
-          route={"per-sq-ft-electricity-expense"}
-          title={"Total"}
-          data={`INR ${inrFormat(electrictyExpense / totalSqFt)}`}
-          description={"Electricity Expense Per Sq. Ft."}
-        />,
-        <DataCard
-          route={"admin-executive-expense"}
-          title={"Top Executive"}
-          data={""}
-          description={"Mr. Machindranath Parkar"}
-        />,
-      ],
+      layout: 2,
+      widgets: allowedTables.map((config) => <MuiTable {...config} />),
     },
     {
       layout: 2,
       widgets: [
-        <MuiTable
-          scroll
-          Title={"Weekly Executive Shift Timing"}
-          rowsToDisplay={3}
-          rows={transformedWeeklyShifts}
-          columns={executiveTimingsColumns}
-        />,
-        <MuiTable
-          scroll
-          Title={"Upcoming Events List"}
-          rowsToDisplay={3}
-          rows={[]}
-          columns={upcomingEventsColumns}
-        />,
-        <MuiTable
-          columns={clientMemberBirthdaysColumns}
-          scroll
-          rowsToDisplay={3}
-          Title={"Upcoming Client Member Birthdays"}
-          rows={upcomingBirthdays.map((item, index) => ({
-            ...item,
-            srNo: index + 1,
-          }))}
-        />,
-        <MuiTable
-          columns={upComingClientAnniversaryColumns}
-          scroll
-          rowsToDisplay={3}
-          Title={"Upcoming Client Anniversaries"}
-          rows={upComingClientAnniversary.map((item, index) => ({
-            ...item,
-            srNo: index + 1,
-          }))}
-        />,
+        allowedUnitWise.map((config) => (
+          <WidgetSection border={config.border} title={config.title}>
+            <PieChartMui data={config.data} options={config.options} />
+          </WidgetSection>
+        )),
+        allowedExecutiveWise.map((config) => (
+          <WidgetSection border={config.border} title={config.title}>
+            <DonutChart
+              centerLabel={config.centerLabel}
+              labels={config.labels}
+              colors={config.colors}
+              series={config.series}
+              tooltipValue={config.tooltipValue}
+            />
+          </WidgetSection>
+        )),
       ],
     },
     {
       layout: 2,
-      widgets: [
-        <WidgetSection border title={"Unit Wise Due Tasks"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-        <WidgetSection border title={"Executive Wise Due Tasks"}>
-          <DonutChart
-            centerLabel="Tasks"
-            labels={[]}
-            colors={colors}
-            series={[]}
-            tooltipValue={executiveTasksCount}
-          />
-        </WidgetSection>,
-      ],
-    },
-    {
-      layout: 2,
-      widgets: [
-        <WidgetSection border title={"Total Desks Company Wise"}>
+      widgets: allowedPiechartConfig2.map((config) => (
+        <WidgetSection border={config.border} title={config.title}>
           {!isClientsDataPending ? (
             <PieChartMui
-              data={totalDeskPercent}
-              options={clientsDesksPieOptions}
-              width={"100%"}
+              data={config.data}
+              options={config.options}
+              width={config.width}
             />
           ) : (
             <CircularProgress color="#1E3D73" />
           )}
-        </WidgetSection>,
-        <WidgetSection border title={"Biometrics Gender Data"}>
-          <PieChartMui data={[]} options={[]} />
-        </WidgetSection>,
-      ],
+        </WidgetSection>
+      )),
     },
     // {
     //   layout: 2,
@@ -978,15 +1085,7 @@ const AdminDashboard = () => {
     // },
     {
       layout: 1,
-      widgets: [
-        <MuiTable
-          Title={"Newly Joined House Keeping Members"}
-          rowsToDisplay={4}
-          scroll
-          rows={[]}
-          columns={houseKeepingMemberColumns}
-        />,
-      ],
+      widgets: allowedTables2.map((config) => <MuiTable {...config} />),
     },
   ];
 

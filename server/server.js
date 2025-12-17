@@ -34,6 +34,7 @@ const payrollRoutes = require("./routes/payrollRoutes");
 const salesRoutes = require("./routes/salesRoutes");
 const visitorRoutes = require("./routes/visitorRoutes");
 const websiteRoutes = require("./routes/websiteTemplatesRoutes");
+const websiteTemplateRoutes = require("./routes/websiteTemplateRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const administrationRoutes = require("./routes/administrationRoutes");
 const financeRoutes = require("./routes/financeRoutes");
@@ -44,7 +45,7 @@ const logRoutes = require("./routes/logRoutes");
 const auditLogger = require("./middlewares/auditLogger");
 require("./listeners/logEventListener");
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5009;
 app.set("trust proxy", true);
 
 connectDb(process.env.DB_URL);
@@ -86,7 +87,8 @@ app.use(
   employeeAgreementRoutes
 );
 app.use("/api/notifications", verifyJwt, notificationRoutes);
-app.use("/api/editor", websiteRoutes);
+// app.use("/api/editor", websiteRoutes);
+app.use("/api/editor", websiteTemplateRoutes);
 app.use("/api/users", verifyJwt, auditLogger, userRoutes);
 app.use("/api/agreement", verifyJwt, auditLogger, agreementRoutes);
 app.use("/api/roles", verifyJwt, auditLogger, roleRoutes);
@@ -118,5 +120,7 @@ app.all("*", (req, res) => {
 app.use(errorHandler);
 
 mongoose.connection.once("open", () => {
+  console.log("Connected to MongoDB");
   app.listen(PORT);
+  console.log(`Server running on port ${PORT}`);
 });
