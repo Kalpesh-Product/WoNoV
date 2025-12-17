@@ -1307,13 +1307,15 @@ const MeetingDashboard = () => {
   return (
     <div>
       <div>
-        {meetingsWidgets.map((widget, index) => (
-          <div>
-            <WidgetSection key={index} layout={widget.layout}>
-              {widget?.widgets}
-            </WidgetSection>
-          </div>
-        ))}
+        {meetingsWidgets
+          .filter((widget) => widget.widgets && widget.widgets.length > 0)
+          .map((widget, index) => (
+            <div key={index}>
+              <WidgetSection layout={widget.layout}>
+                {widget.widgets}
+              </WidgetSection>
+            </div>
+          ))}
       </div>
     </div>
   );
