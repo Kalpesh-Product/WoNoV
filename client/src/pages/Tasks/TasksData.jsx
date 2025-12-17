@@ -202,10 +202,7 @@ const genderData = [
   { gender: "Completed", count: "35" },
   { gender: "Remaining", count: "40" },
 ];
-const totalGenderCount = genderData.reduce(
-  (sum, item) => sum + item.count,
-  0
-);
+const totalGenderCount = genderData.reduce((sum, item) => sum + item.count, 0);
 const pieGenderData = genderData.map((item) => ({
   label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(
     1
@@ -474,13 +471,22 @@ const myTodayMeetingsData = [
 const recentlyAddedTasksCol = [
   { id: "id", label: "Sr.no" },
   { id: "taskName", label: "Task" },
+  { id: "taskType", label: "Task Type", align: "center" },
   {
     id: "status",
     label: "Status",
     align: "center",
     renderCell: (row) => (
       <Chip
-        sx={{ backgroundColor: "#d1d5db", color: "#1E3D73" }}
+        sx={{
+          backgroundColor:
+            row.status === "Completed"
+              ? "#22c55e"
+              : row.status === "Pending"
+              ? "#ef4444"
+              : "#d1d5db",
+          color: "#ffffff",
+        }}
         label={row.status}
       />
     ),

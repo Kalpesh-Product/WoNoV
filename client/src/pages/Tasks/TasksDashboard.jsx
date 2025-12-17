@@ -312,17 +312,24 @@ const TasksDashboard = () => {
     : taskList
 
         .filter((task) => dayjs(task.assignedDate).isSame(today, "day"))
-        .map((task, index) => ({
-          id: index + 1,
-          taskName: task.taskName,
-          department: task.department || "N/A",
-          status: task.status,
-          assignedBy: `${task.assignedBy?.firstName || ""} ${
-            task.assignedBy?.lastName || ""
-          }`,
-          assignedDate: humanDate(task.assignedDate),
-          dueDate: humanDate(task.dueDate),
-        }));
+        .map((task, index) => {
+          const taskType = task.taskType ?? task.assignmentType ?? "Self";
+
+          return {
+            id: index + 1,
+            taskName: task.taskName,
+            taskType,
+            department: task.department || "N/A",
+            status: task.status,
+            assignedBy: `${task.assignedBy?.firstName || ""} ${
+              task.assignedBy?.lastName || ""
+            }`,
+            assignedDate: humanDate(task.assignedDate),
+            dueDate: task.dueDate
+              ? dayjs(task.dueDate).format("DD-MM-YYYY hh:mm A")
+              : "N/A",
+          };
+        });
 
   const priorityTasks = allTasksQuery.isLoading
     ? []
