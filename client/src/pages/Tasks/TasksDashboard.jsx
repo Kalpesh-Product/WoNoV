@@ -140,14 +140,36 @@ const TasksDashboard = () => {
   const allTasksQuery = useQuery({
     queryKey: ["allTasks"],
     queryFn: async () => {
-      try {
-        const response = await axios.get(`/api/tasks/get-all-tasks`);
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+      const response = await axios.get("/api/tasks/get-all-tasks", {
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+      return response.data;
     },
+    staleTime: 0, // data becomes stale immediately
+    cacheTime: 0, // throw it away when unused
+    refetchOnMount: true, // refetch on component mount
+    refetchOnWindowFocus: true, // refetch when tab gains focus
   });
+
+  useEffect(() => {
+    if (!allTasksQuery.isLoading) {
+      console.log("[TASKS] All tasks from API:", allTasksQuery.data);
+    }
+  }, [allTasksQuery.isLoading, allTasksQuery.data]);
+
+  const allTasks = allTasksQuery.isLoading ? [] : allTasksQuery.data;
+
+  const departmentTasks = allTasks.filter(
+    (task) => task.taskType === "Department"
+  );
+
+  useEffect(() => {
+    console.log("[TASKS] Department-only tasks:", departmentTasks);
+    console.log("[TASKS] Department task count:", departmentTasks.length);
+  }, [departmentTasks]);
 
   const { series, rawCounts } = normalizeDataByMonth(allTasksQuery.data || []);
 
@@ -241,6 +263,21 @@ const TasksDashboard = () => {
       }
     },
   });
+
+  useEffect(() => {
+    const total = departmentTasks.length;
+    const pending = departmentTasks.filter(
+      (t) => t.status === "Pending"
+    ).length;
+    const completed = departmentTasks.filter(
+      (t) => t.status === "Completed"
+    ).length;
+
+    console.log("[TASKS CARD COUNTS]");
+    console.log("Dept. Total Tasks:", total);
+    console.log("Dept. Pending Tasks:", pending);
+    console.log("Dept. Completed Tasks:", completed);
+  }, [departmentTasks]);
 
   //----------------------------------------------------------------------------------------------------------//
 
@@ -469,9 +506,9 @@ const TasksDashboard = () => {
   };
 
   //Overall task completeion graph data
-  const allTasks = [
-    /* your full task data array here */
-  ];
+  // const allTasks = [
+  //   /* your full task data array here */
+  // ];
 
   const financialMonths = [
     "Apr-24",
@@ -763,17 +800,15 @@ const TasksDashboard = () => {
         let dataCount = 0;
 
         if (config.dataType === "all") {
-          dataCount = allTasksQuery.isLoading ? 0 : allTasksQuery.data.length;
+          dataCount = departmentTasks.length;
         } else if (config.dataType === "pending") {
-          dataCount = allTasksQuery.isLoading
-            ? 0
-            : allTasksQuery.data.filter((task) => task.status === "Pending")
-                .length;
+          dataCount = departmentTasks.filter(
+            (task) => task.status === "Pending"
+          ).length;
         } else if (config.dataType === "completed") {
-          dataCount = allTasksQuery.isLoading
-            ? 0
-            : allTasksQuery.data.filter((task) => task.status === "Completed")
-                .length;
+          dataCount = departmentTasks.filter(
+            (task) => task.status === "Completed"
+          ).length;
         }
 
         return (

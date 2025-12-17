@@ -313,7 +313,11 @@ const TasksViewDepartment = () => {
                   handleSubmit={() => setOpenModal(true)}
                   tableTitle={`${department} DEPARTMENT TASKS`}
                   data={(departmentKra || [])
-                    .filter((item) => item.status !== "Completed")
+                    .filter(
+                      (item) =>
+                        item.taskType === "Department" &&
+                        item.status !== "Completed"
+                    )
                     .map((item, index) => ({
                       srno: index + 1,
                       id: item._id,
@@ -347,17 +351,19 @@ const TasksViewDepartment = () => {
                   data={
                     completedTasksFetchPending
                       ? []
-                      : completedTasks.map((item, index) => ({
-                          id: item._id,
-                          taskName: item.taskName,
-                          completedBy: item.completedBy,
-                          assignedDate: humanDate(item.assignedDate),
-                          dueDate: humanDate(item.dueDate),
-                          dueTime: humanTime(item.dueTime),
-                          completedDate: item.completedDate,
-                          completedTime: humanTime(item.completedDate),
-                          status: item.status,
-                        }))
+                      : completedTasks
+                          .filter((item) => item.taskType === "Department")
+                          .map((item, index) => ({
+                            id: item._id,
+                            taskName: item.taskName,
+                            completedBy: item.completedBy,
+                            assignedDate: humanDate(item.assignedDate),
+                            dueDate: humanDate(item.dueDate),
+                            dueTime: humanTime(item.dueTime),
+                            completedDate: item.completedDate,
+                            completedTime: humanTime(item.completedDate),
+                            status: item.status,
+                          }))
                   }
                   dateColumn={"completedDate"}
                   columns={completedColumns}
