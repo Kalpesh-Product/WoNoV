@@ -40,6 +40,7 @@ const PerformanceMonthly = () => {
     "Finance Employee",
     "Marketing Employee",
   ];
+
   const isAddKpaDisabled = auth?.user?.role?.some((role) =>
     restrictedRoles.includes(role.roleTitle)
   );
