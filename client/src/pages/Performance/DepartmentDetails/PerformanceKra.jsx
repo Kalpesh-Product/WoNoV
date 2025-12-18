@@ -30,6 +30,21 @@ const PerformanceKra = () => {
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const [selectedKra, setSelectedKra] = useState(null);
 
+  const restrictedRoles = [
+    "IT Employee",
+    "Admin Employee",
+    "Tech Employee",
+    "Administration Employee",
+    "HR Employee",
+    "Maintenance Employee",
+    "Cafe Employee",
+    "Finance Employee",
+    "Marketing Employee",
+  ];
+  const isAddKraDisabled = auth?.user?.role?.some((role) =>
+    restrictedRoles.includes(role.roleTitle)
+  );
+
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
     "6798bab9e469e809084e249e",
@@ -40,7 +55,7 @@ const PerformanceKra = () => {
   });
 
   const allowedDept = auth.user.departments.some((item) => {
-    return item._id.toString() === deptId.toString() ;
+    return item._id.toString() === deptId.toString();
   });
 
   const showCheckBox = allowedDept;
@@ -237,6 +252,7 @@ const PerformanceKra = () => {
                 formatTime
                 checkbox={showCheckBox}
                 buttonTitle={"Add Daily KRA"}
+                buttonDisabled={isAddKraDisabled}
                 handleSubmit={() => setOpenModal(true)}
                 tableTitle={`${department} DEPARTMENT - DAILY KRA`}
                 data={(departmentKra || [])

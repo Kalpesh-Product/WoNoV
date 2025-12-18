@@ -29,6 +29,21 @@ const PerformanceMonthly = () => {
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
 
+  const restrictedRoles = [
+    "IT Employee",
+    "Admin Employee",
+    "Tech Employee",
+    "Administration Employee",
+    "HR Employee",
+    "Maintenance Employee",
+    "Cafe Employee",
+    "Finance Employee",
+    "Marketing Employee",
+  ];
+  const isAddKpaDisabled = auth?.user?.role?.some((role) =>
+    restrictedRoles.includes(role.roleTitle)
+  );
+
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
     "6798bab9e469e809084e249e",
@@ -38,13 +53,13 @@ const PerformanceMonthly = () => {
     return departmentAccess.includes(item._id.toString());
   });
 
-   const allowedDept = auth.user.departments.some((item) => {
-    return item._id.toString() === deptId.toString() ;
+  const allowedDept = auth.user.departments.some((item) => {
+    return item._id.toString() === deptId.toString();
   });
 
   const isHr = department === "HR";
-  // const showCheckBox = !isTop || isHr  
-  const showCheckBox = allowedDept
+  // const showCheckBox = !isTop || isHr
+  const showCheckBox = allowedDept;
 
   const {
     handleSubmit: submitDailyKra,
@@ -61,7 +76,7 @@ const PerformanceMonthly = () => {
       description: "",
     },
   });
-  const startDate = watch("startDate")
+  const startDate = watch("startDate");
 
   //--------------POST REQUEST FOR MONTHLY KPA-----------------//
   const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
@@ -248,6 +263,7 @@ const PerformanceMonthly = () => {
                 checkbox={showCheckBox}
                 tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
                 buttonTitle={"Add Monthly KPA"}
+                buttonDisabled={isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
                 key={departmentKra.length}
                 data={[

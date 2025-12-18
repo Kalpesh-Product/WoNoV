@@ -19,6 +19,7 @@ const YearWiseTable = ({
   tableHeight,
   tableTitle,
   buttonTitle,
+  buttonDisabled,
   handleSubmit,
   checkbox,
   checkAll,
@@ -248,7 +249,11 @@ const YearWiseTable = ({
           </Popover>
 
           {buttonTitle && (
-            <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
+            <PrimaryButton
+              title={buttonTitle}
+              handleSubmit={handleSubmit}
+              disabled={buttonDisabled}
+            />
           )}
           {exportData && (
             <PrimaryButton title="Export" handleSubmit={handleExportPass} />
@@ -290,7 +295,7 @@ const YearWiseTable = ({
           </div>
         </div>
       )}
-{/* 
+      {/* 
       <div className="px-6 py-1 rounded-md border-green-600 border-[1px] bg-green-50 text-green-800 font-semibold">
         Total: INR {rangeTotal.toLocaleString("en-IN")}
       </div> */}
