@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
@@ -13,16 +14,26 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
+  const deptId = useSelector((state) => state.performance.selectedDepartment);
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState([]);
 
   const { data: taskList = [], isLoading } = useQuery({
-    queryKey: ["assigned-tasks"],
+    queryKey: ["department-tasks", deptId],
     queryFn: async () => {
-      const response = await axios.get("/api/tasks/get-my-assigned-tasks");
-      return response.data;
+      if (!deptId) return [];
+
+      const [pendingTasks, completedTasks] = await Promise.all([
+        axios.get(`/api/tasks/get-tasks?dept=${deptId}`),
+        axios.get(`/api/tasks/get-completed-tasks/${deptId}`),
+      ]);
+
+      return [...pendingTasks.data, ...completedTasks.data].filter(
+        (task) => task.taskType === "Department"
+      );
     },
+    enabled: Boolean(deptId),
   });
 
   const handleViewDetails = (params) => {
@@ -80,7 +91,7 @@ const AssignedTaskReports = () => {
           exportData
           search={true}
           dateColumn={"assignedDate"}
-          tableTitle={"Assigned Tasks Reports"}
+          tableTitle={"Department Tasks Reports"}
           data={
             isLoading
               ? []
@@ -92,8 +103,16 @@ const AssignedTaskReports = () => {
                   dueDate: task.dueDate,
                   completedDate: task.completedDate,
                   completedTime: task.completedDate,
-                  assignedBy: `${task.assignedBy.firstName} ${task.assignedBy.lastName}`,
-                  department: task.department?.name,
+                  assignedBy: task.assignedBy
+                    ? [
+                        task.assignedBy.firstName,
+                        task.assignedBy.middleName,
+                        task.assignedBy.lastName,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")
+                    : "",
+                  department: task.department?.name || task.department,
                   description: task.description,
                 }))
           }
@@ -141,7 +160,7 @@ const AssignedTaskReports = () => {
               title="Department"
               detail={selectedTask.department}
             />
-            <DetalisFormatted title="Priority" detail={selectedTask.priority} />
+            {/* <DetalisFormatted title="Priority" detail={selectedTask.priority} /> */}
             <DetalisFormatted
               title="Status"
               detail={selectedTask.status || "—"}

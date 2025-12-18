@@ -10,8 +10,16 @@ const TaskReportLayout = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "My Task Reports", path: "my-task-reports",permission:PERMISSIONS.TASKS_MY_TASK_REPORTS.value },
-    { label: "Assigned Task Reports", path: "assigned-task-reports",permission:PERMISSIONS.TASKS_ASSIGNED_TASKS_REPORTS.value },
+    {
+      label: "My Task Reports",
+      path: "my-task-reports",
+      permission: PERMISSIONS.TASKS_MY_TASK_REPORTS.value,
+    },
+    {
+      label: "Department Task Reports",
+      path: "assigned-task-reports",
+      permission: PERMISSIONS.TASKS_ASSIGNED_TASKS_REPORTS.value,
+    },
     // { label: "Department Task Reports", path: "department-task-reports" },
   ];
 
@@ -30,7 +38,7 @@ const TaskReportLayout = () => {
   // );
 
   return (
-     <TabLayout
+    <TabLayout
       basePath="/app/tasks/reports"
       defaultTabPath="my-task-reports"
       tabs={tabs}
