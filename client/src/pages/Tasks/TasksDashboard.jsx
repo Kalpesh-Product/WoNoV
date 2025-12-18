@@ -845,13 +845,22 @@ const TasksDashboard = () => {
       layout: allowedTables.length,
       widgets: allowedTables.map((config) => (
         <WidgetSection key={config.key} layout={2} padding>
-          <MuiTable
+          {/* <MuiTable
             key={config.length}
             scroll
             rowsToDisplay={4}
             Title={config.priority.title}
             rows={priorityTasks}
             columns={priorityTasksColumns}
+          /> */}
+          <MuiTable
+            Title="Recently Added Tasks"
+            columns={recentlyAddedTasksCol}
+            rows={recentlyAddedTasksData}
+            rowKey="id"
+            rowsToDisplay={10}
+            scroll={true}
+            className="h-full"
           />
 
           <MuiTable
@@ -866,22 +875,22 @@ const TasksDashboard = () => {
         </WidgetSection>
       )),
     },
-    {
-      layout: allowedRecentlyAdded.length,
-      widgets: allowedRecentlyAdded.map((config) => (
-        <WidgetSection key={config.key} layout={1} padding>
-          <MuiTable
-            Title={config.title}
-            columns={recentlyAddedTasksCol}
-            rows={recentlyAddedTasksData}
-            rowKey="id"
-            rowsToDisplay={10}
-            scroll={true}
-            className="h-full"
-          />
-        </WidgetSection>
-      )),
-    },
+    // {
+    //   layout: allowedRecentlyAdded.length,
+    //   widgets: allowedRecentlyAdded.map((config) => (
+    //     <WidgetSection key={config.key} layout={1} padding>
+    //       <MuiTable
+    //         Title={config.title}
+    //         columns={recentlyAddedTasksCol}
+    //         rows={recentlyAddedTasksData}
+    //         rowKey="id"
+    //         rowsToDisplay={10}
+    //         scroll={true}
+    //         className="h-full"
+    //       />
+    //     </WidgetSection>
+    //   )),
+    // },
   ];
 
   return (
