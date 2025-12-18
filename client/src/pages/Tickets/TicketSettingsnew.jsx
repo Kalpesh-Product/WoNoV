@@ -160,7 +160,7 @@ const Row = ({ row, onApprove, onReject }) => {
                             ticketIssues
                               .filter((issue) => issue.title !== "Other")
                               .map((issue) => (
-                                <MenuItem key={issue._id} value={issue._id}>
+                                <MenuItem key={issue._id} value={issue.title}>
                                   {issue.title}
                                 </MenuItem>
                               ))
