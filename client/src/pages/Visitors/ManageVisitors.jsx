@@ -47,7 +47,7 @@ const ManageVisitors = () => {
       handleCloseModal();
     },
     onError: (error) => {
-      toast.error(error.message || "Update failed");
+      toast.error(error.response.data.message || "Update failed");
     },
   });
 

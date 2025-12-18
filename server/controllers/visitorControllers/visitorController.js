@@ -301,8 +301,19 @@ const addVisitor = async (req, res, next) => {
     }
 
     // Resolve visitor company
+
     let companyToMeet = null;
-    const isClient = company !== toMeetCompany;
+    const isClient = toMeetCompany && company !== toMeetCompany;
+
+    console.log("isClient", isClient);
+    console.log("company", company);
+    console.log("toMeetCompany", toMeetCompany);
+
+    if (visitorFlag === "Client") {
+      return res.status(400).json({
+        message: "ID proof is required for client visitors",
+      });
+    }
 
     if (toMeetCompany && isClient) {
       companyToMeet = await CoworkingClient.findById(toMeetCompany);
@@ -330,7 +341,7 @@ const addVisitor = async (req, res, next) => {
       !department ||
       (typeof department === "string" && department.trim() === "");
 
-    const visitor = new Visitor({
+    const visitorData = new Visitor({
       firstName,
       middleName,
       lastName,
@@ -338,10 +349,6 @@ const addVisitor = async (req, res, next) => {
       gender,
       phoneNumber,
       purposeOfVisit,
-      idProof: {
-        idType: idProof?.idType || "",
-        idNumber: idProof?.idNumber || "",
-      },
       dateOfVisit: visitDate,
       checkIn: clockIn,
       checkOut: clockOut,
@@ -362,6 +369,15 @@ const addVisitor = async (req, res, next) => {
       gstNumber,
       panNumber,
     });
+
+    if (visitorFlag === "Client") {
+      visitorData.idProof = {
+        idType: idProof.idType,
+        idNumber: idProof.idNumber,
+      };
+    }
+
+    const visitor = new Visitor(visitorData);
 
     const companyData = await Company.findById(company).lean();
 

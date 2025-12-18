@@ -225,7 +225,8 @@ const RaiseTicket = () => {
         <div className="p-2 mb-2 flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleViewTicketDetails(params.data)}>
+            onClick={() => handleViewTicketDetails(params.data)}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -262,7 +263,8 @@ const RaiseTicket = () => {
                           onChange={(e) => {
                             field.onChange(e.target.value);
                             handleDepartmentSelect(e.target.value);
-                          }}>
+                          }}
+                        >
                           <MenuItem value="" disabled>
                             Select Department
                           </MenuItem>
@@ -286,7 +288,8 @@ const RaiseTicket = () => {
                               .map((dept) => (
                                 <MenuItem
                                   key={dept.department._id}
-                                  value={dept.department._id}>
+                                  value={dept.department._id}
+                                >
                                   {dept.department.name}
                                 </MenuItem>
                               ))
@@ -327,7 +330,8 @@ const RaiseTicket = () => {
                           label="Issue"
                           helperText={errors.ticketTitle?.message}
                           error={!!errors.ticketTitle}
-                          disabled={!watchFields.department}>
+                          disabled={!watchFields.department}
+                        >
                           <MenuItem value="">Select Ticket Title</MenuItem>
                           {ticketIssues.length > 0 ? (
                             ticketIssues.map((issue) => (
@@ -407,7 +411,8 @@ const RaiseTicket = () => {
                               <IconButton
                                 color="primary"
                                 component="label"
-                                htmlFor="image-upload">
+                                htmlFor="image-upload"
+                              >
                                 <LuImageUp />
                               </IconButton>
                             ),
@@ -419,13 +424,15 @@ const RaiseTicket = () => {
                           <>
                             <span
                               className="underline text-primary text-content cursor-pointer"
-                              onClick={() => setOpenModal(true)}>
+                              onClick={() => setOpenModal(true)}
+                            >
                               Preview
                             </span>
                             <MuiModal
                               open={openModal}
                               onClose={() => setOpenModal(false)}
-                              title={"Preview File"}>
+                              title={"Preview File"}
+                            >
                               <div>
                                 <div className="flex flex-col">
                                   <IconButton
@@ -433,7 +440,8 @@ const RaiseTicket = () => {
                                     onClick={() => {
                                       onChange(null);
                                       setPreview(null);
-                                    }}>
+                                    }}
+                                  >
                                     <MdDelete />
                                   </IconButton>
                                   <div className="p-2 border-default border-borderGray rounded-md">
@@ -464,7 +472,7 @@ const RaiseTicket = () => {
                   control={control}
                   rules={{
                     required: "Please specify your message",
-                    validate: { noOnlyWhitespace, isAlphanumeric },
+                    validate: { noOnlyWhitespace },
                   }}
                   render={({ field }) => (
                     <>
@@ -509,24 +517,26 @@ const RaiseTicket = () => {
               key={tickets?.length}
               search
               dropdownColumns={["status", "priority"]}
-              data={tickets?.map((ticket, index) => ({
-                raisedBy: ticket.raisedBy.firstName,
-                raisedTo: ticket.raisedToDepartment.name,
-                description: ticket.description,
-                ticketTitle: ticket.ticket,
-                status: ticket.status,
-                acceptedBy: ticket?.acceptedBy
-                  ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
-                  : "None",
-                closedBy: ticket?.closedBy
-                  ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
-                  : "None",
-                acceptedAt: ticket.acceptedAt,
-                closedAt: ticket.closedAt ? ticket.closedAt : "None",
-                priority: ticket.priority,
-                image: ticket.image ? ticket.image.url : null,
-                raisedAt: ticket.createdAt,
-              }))}
+              data={tickets?.map((ticket, index) => {
+                return {
+                  raisedBy: ticket.raisedBy.firstName,
+                  raisedTo: ticket.raisedToDepartment.name,
+                  description: ticket.description,
+                  ticketTitle: ticket.ticket,
+                  status: ticket.status,
+                  acceptedBy: ticket?.acceptedBy
+                    ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                    : "None",
+                  closedBy: ticket?.closedBy
+                    ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
+                    : "None",
+                  acceptedAt: ticket.acceptedAt,
+                  closedAt: ticket.closedAt ? ticket.closedAt : "None",
+                  priority: ticket.priority,
+                  image: ticket.image ? ticket.image.url : null,
+                  raisedAt: ticket.createdAt,
+                };
+              })}
               columns={recievedTicketsColumns}
               paginationPageSize={10}
             />
@@ -536,7 +546,8 @@ const RaiseTicket = () => {
       <MuiModal
         open={viewDetails && viewTicketDetails}
         onClose={() => setViewDetails(false)}
-        title={"Ticket Details"}>
+        title={"Ticket Details"}
+      >
         <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
           <DetalisFormatted
             title="Ticket Title"

@@ -29,9 +29,7 @@ const TicketReports = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/department-tickets/${auth.user?.departments?.map(
-            (dept) => dept._id
-          )}`
+          `/api/tickets/ticket-reports/${auth.user?.departments[0]?._id}`
         );
         // const response = await axios.get(
         //   `/api/tickets/get-all-tickets`
@@ -59,7 +57,7 @@ const TicketReports = () => {
     {
       field: "status",
       headerName: "Status",
-      cellRenderer: (params) => <StatusChip label={params.value} />,
+      cellRenderer: (params) => <StatusChip status={params.value || "N/A"} />,
     },
     {
       field: "actions",

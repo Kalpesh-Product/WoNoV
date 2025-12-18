@@ -2020,7 +2020,11 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: ":department",
-                        element: <ManageTickets />,
+                        element: (
+                          <ProtectedDepartmentRoute
+                            element={<ManageTickets />}
+                          />
+                        ),
                       },
                     ],
                   },

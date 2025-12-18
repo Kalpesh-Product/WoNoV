@@ -16,6 +16,7 @@ const {
   getAllDeptTickets,
   getTeamMemberTickets,
   updateOtherTicket,
+  ticketsReports,
 } = require("../controllers/ticketsControllers/ticketsControllers");
 const upload = require("../config/multerConfig");
 
@@ -50,7 +51,7 @@ router.patch("/escalate-ticket", escalateTicket);
 router.patch("/close-ticket", closeTicket);
 router.post("/support-ticket", supportTicket);
 router.get("/department-tickets/:departmentId", ticketData);
-router.get("/team-members-tickets/", ticketData);
+router.get("/ticket-reports/:departmentId", ticketsReports);
 router.get("/ticket-filter/:flag/:dept", fetchFilteredTickets);
 router.get("/other-tickets/:department", getOtherTickets);
 router.get("/get-team-members/:departmentId", getTeamMemberTickets);

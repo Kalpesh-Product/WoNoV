@@ -43,7 +43,6 @@ const VisitorReports = () => {
         </div>
       ),
     },
-    { field: "address", headerName: "Address" },
     { field: "email", headerName: "Email" },
     { field: "phone", headerName: "Phone No" },
     { field: "purpose", headerName: "Purpose" },
@@ -91,7 +90,11 @@ const VisitorReports = () => {
     email: visitor.email || "-",
     phone: visitor.phoneNumber || "-",
     purpose: visitor.purposeOfVisit || "-",
-     toMeet: visitor.toMeet ? `${visitor.toMeet?.firstName} ${visitor.toMeet?.lastName}` : visitor.clientToMeet ? visitor?.clientToMeet?.employeeName : "",
+    toMeet: visitor.toMeet
+      ? `${visitor.toMeet?.firstName} ${visitor.toMeet?.lastName}`
+      : visitor.clientToMeet
+      ? visitor?.clientToMeet?.employeeName
+      : "",
     checkIn: visitor.checkIn,
     checkOut: visitor.checkOut,
     rawData: visitor, // Pass full object for modal

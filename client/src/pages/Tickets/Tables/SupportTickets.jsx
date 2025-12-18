@@ -21,8 +21,11 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "./../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
+import humanTime from "../../../utils/humanTime";
+import useAuth from "../../../hooks/useAuth";
 
 const SupportTickets = ({ title, departmentId }) => {
+  const { auth } = useAuth();
   const [openModal, setopenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
   const [esCalatedTicket, setEscalatedTicket] = useState(null);
@@ -83,6 +86,13 @@ const SupportTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
+          const assignedTo = ticket.ticket?.assignees[0]
+            ? `${ticket.ticket?.assignees[0].firstName} ${ticket.ticket?.assignees[0].lastName}`
+            : "";
+          const closedBy = ticket.ticket.closedBy
+            ? `${ticket.ticket.closedBy.firstName} ${ticket.ticket.closedBy.lastName}`
+            : "";
+          const supportRequestedBy = `${ticket.user.firstName} ${ticket.user.lastName}`;
           const supportTicket = {
             ...ticket,
             id: ticket.ticket?._id,
@@ -104,14 +114,38 @@ const SupportTickets = ({ title, departmentId }) => {
             acceptedBy: `${ticket.ticket?.acceptedBy?.firstName ?? ""} ${
               ticket.ticket.acceptedBy?.lastName ?? ""
             }`,
-            acceptedAt: ticket.ticket.acceptedAt,
+            acceptedAt: ticket.ticket?.acceptedAt
+              ? `${humanDate(ticket.ticket?.acceptedAt)}, ${humanTime(
+                  ticket.ticket?.acceptedAt
+                )}`
+              : "",
+            assignedAt: ticket.ticket?.assignedAt
+              ? `${humanDate(ticket.ticket?.assignedAt)}, ${humanTime(
+                  ticket.ticket?.assignedAt
+                )}`
+              : "",
+            closedAt: ticket.ticket?.closedAt
+              ? `${humanDate(ticket.ticket?.closedAt)}, ${humanTime(
+                  ticket.ticket?.closedAt
+                )}`
+              : "",
+            closedBy,
+            supportRequestedBy,
+            supportRequestedAt: ticket?.createdAt
+              ? `${humanDate(ticket?.createdAt)}, ${humanTime(
+                  ticket?.createdAt
+                )}`
+              : "",
+            assignedTo: assignedTo,
             tickets:
               ticket.ticket?.assignees.length > 0
                 ? "Assigned Ticket"
                 : ticket.ticket?.acceptedBy
                 ? "Accepted Ticket"
                 : "N/A",
-            raisedDate: ticket.createdAt || "N/A",
+            raisedDate: `${humanDate(ticket?.createdAt)}, ${humanTime(
+              ticket?.createdAt
+            )}`,
             status: ticket.ticket.status || "Pending",
             raisedToDepartment:
               ticket.ticket?.raisedToDepartment?.name || "N/A",
@@ -122,6 +156,28 @@ const SupportTickets = ({ title, departmentId }) => {
   };
 
   const rows = isLoading ? [] : transformTicketsData(supportedTickets);
+
+  const roleTitle = auth?.user?.role?.[0]?.roleTitle || "";
+  const canManageAssignments = roleTitle.endsWith("Admin");
+
+  const { mutate: acceptTicket, isPending: isAccepting } = useMutation({
+    mutationKey: ["accept-ticket"],
+    mutationFn: async (ticketId) => {
+      const response = await axios.patch(
+        `/api/tickets/accept-ticket/${ticketId}`
+      );
+
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Ticket accepted successfully");
+      queryClient.invalidateQueries({ queryKey: ["supported-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to accept ticket");
+    },
+  });
 
   const { mutate: closeTicket, isPending: isClosingTicket } = useMutation({
     mutationKey: ["close-ticket"],
@@ -303,6 +359,7 @@ const SupportTickets = ({ title, departmentId }) => {
         );
       },
     },
+    { field: "assignedTo", headerName: "Assigned To", width: 250 },
     {
       field: "status",
       headerName: "Status",
@@ -349,18 +406,25 @@ const SupportTickets = ({ title, departmentId }) => {
 
         const conditionalItems = showOtherActions
           ? [
+              ...(canManageAssignments
+                ? [
+                    {
+                      label: "Accept",
+                      onClick: () => acceptTicket(params.data.id),
+                    },
+                    {
+                      label: "Re-Assign",
+                      onClick: () => handleOpenAssignModal(params.data.id),
+                    },
+                    {
+                      label: "Escalate",
+                      onClick: () => handleEscalateTicket(params.data),
+                    },
+                  ]
+                : []),
               {
                 label: "Close",
                 onClick: () => handleCloseTicket(params.data.id),
-              },
-
-              {
-                label: "Re-Assign",
-                onClick: () => handleOpenAssignModal(params.data.id),
-              },
-              {
-                label: "Escalate",
-                onClick: () => handleEscalateTicket(params.data),
               },
             ]
           : [];
@@ -517,11 +581,11 @@ const SupportTickets = ({ title, departmentId }) => {
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
               title="Ticket"
-              detail={selectedTicket?.ticket?.ticket || "N/A"}
+              detail={selectedTicket?.ticket?.ticket || ""}
             />
             <DetalisFormatted
               title="Description"
-              detail={selectedTicket?.ticket?.description || "N/A"}
+              detail={selectedTicket?.ticket?.description || ""}
             />
             <DetalisFormatted
               title="Raised By"
@@ -529,14 +593,14 @@ const SupportTickets = ({ title, departmentId }) => {
             />
             <DetalisFormatted
               title="Raised At"
-              detail={humanDate(selectedTicket.raisedDate)}
+              detail={selectedTicket.raisedDate}
             />
             <DetalisFormatted
               title="From Department"
               detail={
                 selectedTicket.selectedDepartment
                   .map((item) => item)
-                  .join(", ") || "N/A"
+                  .join(", ") || ""
               }
             />
             <DetalisFormatted
@@ -546,19 +610,43 @@ const SupportTickets = ({ title, departmentId }) => {
             <DetalisFormatted title="Status" detail={selectedTicket.status} />
             <DetalisFormatted
               title="Priority"
-              detail={selectedTicket?.priority || "N/A"}
+              detail={selectedTicket?.priority || ""}
             />
             <DetalisFormatted
               title="Accepted by"
-              detail={selectedTicket?.acceptedBy || "N/A"}
+              detail={selectedTicket?.acceptedBy || ""}
             />
             <DetalisFormatted
               title="Accepted at"
-              detail={selectedTicket?.acceptedAt || "N/A"}
+              detail={selectedTicket?.acceptedAt || ""}
+            />
+            <DetalisFormatted
+              title="Assigned To"
+              detail={selectedTicket?.assignedTo || ""}
+            />
+            <DetalisFormatted
+              title="Assigned at"
+              detail={selectedTicket?.assignedAt || ""}
+            />
+            <DetalisFormatted
+              title="Closed By"
+              detail={selectedTicket?.closedBy || ""}
+            />
+            <DetalisFormatted
+              title="Closed at"
+              detail={selectedTicket?.closedAt || ""}
+            />
+            <DetalisFormatted
+              title="Support requested By"
+              detail={selectedTicket?.supportRequestedBy || ""}
+            />
+            <DetalisFormatted
+              title="Support requested at"
+              detail={selectedTicket?.supportRequestedAt || ""}
             />
             <DetalisFormatted
               title="Reason For Support"
-              detail={selectedTicket?.reason || "N/A"}
+              detail={selectedTicket?.reason || ""}
             />
           </div>
         )}
