@@ -36,29 +36,29 @@ const TeamMember = () => {
     { field: "name", headerName: "Name", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     { field: "role", headerName: "Role", flex: 1 },
-    { field: "tasks", headerName: "Task", flex: 1 },
+    { field: "tasks", headerName: "Completed Task", flex: 1 },
     // { field: "status", headerName: "Status", flex: 1 },
-    {
-      field: "action",
-      headerName: "Actions",
-      cellRenderer: (params) => {
-        return (
-          <>
-            <div className="flex gap-2 items-center">
-              <div
-                onClick={() => {
-                  handleSelectedMember(params.data);
-                }}
-                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
-                <span className="text-subtitle">
-                  <MdOutlineRemoveRedEye />
-                </span>
-              </div>
-            </div>
-          </>
-        );
-      },
-    },
+    // {
+    //   field: "action",
+    //   headerName: "Actions",
+    //   cellRenderer: (params) => {
+    //     return (
+    //       <>
+    //         <div className="flex gap-2 items-center">
+    //           <div
+    //             onClick={() => {
+    //               handleSelectedMember(params.data);
+    //             }}
+    //             className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+    //             <span className="text-subtitle">
+    //               <MdOutlineRemoveRedEye />
+    //             </span>
+    //           </div>
+    //         </div>
+    //       </>
+    //     );
+    //   },
+    // },
   ];
 
   const teamMembersData = [
@@ -181,7 +181,8 @@ const TeamMember = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Team Member Details"}>
+        title={"Team Member Details"}
+      >
         {!isLoading && selectedMember ? (
           <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title="Name" detail={selectedMember?.name} />

@@ -781,31 +781,59 @@ const getTeamMembersTasks = async (req, res, next) => {
       ])
       .select("firstName middleName lastName email");
 
+    // const tasks = await Task.find({
+    //   company,
+    //   department: { $in: departments },
+    // })
+    //   .populate([
+    //     {
+    //       path: "completedBy",
+    //       select: "email firstName lastName isActive",
+    //       populate: [
+    //         { path: "role", select: "roleTitle" },
+    //         { path: "departments", select: "name" },
+    //       ],
+    //     },
+    //   ])
+    //   .populate("assignedBy", "firstName lastName")
+    //   .select("-company")
+    //   .lean();
+
     const tasks = await Task.find({
       company,
       department: { $in: departments },
+      status: "Completed",
+      taskType: "Department",
+      completedBy: { $ne: null },
     })
-      .populate([
-        {
-          path: "completedBy",
-          select: "email firstName lastName isActive",
-          populate: [
-            { path: "role", select: "roleTitle" },
-            { path: "departments", select: "name" },
-          ],
-        },
-      ])
-      .populate("assignedBy", "firstName lastName")
-      .select("-company")
+      .select("completedBy")
       .lean();
+
+    // const transformedTasks = teamMembers.map((member) => {
+    //   const memberId = member._id.toString();
+
+    //   const totalTasks = tasks.filter((emp) => {
+    //     const completedById = emp?.completedBy?._id;
+    //     return completedById && completedById.toString() === memberId;
+    //   }).length;
+
+    //   return {
+    //     name: `${member.firstName} ${member.middleName || ""} ${
+    //       member.lastName
+    //     }`.trim(),
+    //     email: member.email,
+    //     department: member.departments.map((dept) => dept.name),
+    //     role: member.role.map((r) => r.roleTitle),
+    //     tasks: totalTasks,
+    //   };
+    // });
 
     const transformedTasks = teamMembers.map((member) => {
       const memberId = member._id.toString();
 
-      const totalTasks = tasks.filter((emp) => {
-        const completedById = emp?.completedBy?._id;
-        return completedById && completedById.toString() === memberId;
-      }).length;
+      const completedTaskCount = tasks.filter(
+        (task) => task.completedBy?.toString() === memberId
+      ).length;
 
       return {
         name: `${member.firstName} ${member.middleName || ""} ${
@@ -814,7 +842,7 @@ const getTeamMembersTasks = async (req, res, next) => {
         email: member.email,
         department: member.departments.map((dept) => dept.name),
         role: member.role.map((r) => r.roleTitle),
-        tasks: totalTasks,
+        tasks: completedTaskCount,
       };
     });
 
