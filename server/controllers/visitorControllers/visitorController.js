@@ -309,7 +309,7 @@ const addVisitor = async (req, res, next) => {
     console.log("company", company);
     console.log("toMeetCompany", toMeetCompany);
 
-    if (visitorFlag === "Client") {
+    if (visitorFlag === "Client" && !idProof) {
       return res.status(400).json({
         message: "ID proof is required for client visitors",
       });
