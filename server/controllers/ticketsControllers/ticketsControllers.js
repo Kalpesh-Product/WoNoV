@@ -488,6 +488,11 @@ const getTeamMemberTickets = async (req, res, next) => {
           populate: { path: "role", select: "roleTitle" },
         },
         {
+          path: "acceptedBy",
+          select: "firstName middleName lastName",
+          populate: { path: "role", select: "roleTitle" },
+        },
+        {
           path: "assignees",
           select: "firstName middleName lastName",
           populate: { path: "role", select: "roleTitle" },
@@ -512,18 +517,26 @@ const getTeamMemberTickets = async (req, res, next) => {
           (assignee) => assignee._id.toString() === memberId
         )
       );
+      // const relevantAcceptedTickets = tickets.filter(
+      //   (ticket) =>
+      //     ticket.acceptedBy &&
+      //     ticket.acceptedBy.toString() === memberId &&
+      //     ticket.status === "Closed"
+      // );
+
       const relevantAcceptedTickets = tickets.filter(
         (ticket) =>
-          ticket.acceptedBy &&
-          ticket.acceptedBy.toString() === memberId &&
-          ticket.status === "Closed"
+          ticket.acceptedBy && ticket.acceptedBy._id.toString() === memberId
       );
 
+      const totalaccepted = relevantAcceptedTickets.length;
       const totalassigned = relevantAssignedTickets.length;
 
       const totalresolved =
         relevantAssignedTickets.filter((ticket) => ticket.status === "Closed")
-          .length + relevantAcceptedTickets.length;
+          .length +
+        relevantAcceptedTickets.filter((ticket) => ticket.status === "Closed")
+          .length;
 
       const assignedToday = relevantAssignedTickets.filter((ticket) => {
         const createdAt = new Date(ticket.createdAt);
@@ -540,6 +553,7 @@ const getTeamMemberTickets = async (req, res, next) => {
         email: member.email,
         assignedToday,
         totalassigned,
+        totalaccepted,
         totalresolved,
       };
     });
@@ -922,11 +936,11 @@ const ticketData = async (req, res, next) => {
     const { company, departments, roles } = req;
     const { departmentId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
-      return res
-        .status(400)
-        .json({ message: "Invalid department ID provided" });
-    }
+    // if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "Invalid department ID provided" });
+    // }
 
     // Check if user has Master Admin role
     // const isMasterAdmin = roles?.includes("Master Admin");
@@ -940,6 +954,78 @@ const ticketData = async (req, res, next) => {
       company,
       raisedToDepartment: { $in: [departmentId] },
     })
+      .populate([
+        { path: "raisedBy", select: "firstName lastName" },
+        { path: "raisedToDepartment", select: "name" },
+        { path: "acceptedBy", select: "firstName lastName email" },
+        { path: "closedBy", select: "firstName lastName email" },
+        { path: "assignees", select: "firstName lastName email" },
+        { path: "company", select: "companyName" },
+        { path: "reject.rejectedBy", select: "firstName lastName email" },
+      ])
+      .lean()
+      .exec();
+
+    const foundCompany = await Company.findOne({ _id: company })
+      .select("selectedDepartments")
+      .lean()
+      .exec();
+
+    if (!foundCompany) {
+      return res.status(400).json({ message: "Company not found" }); // fixed typo "josn" -> "json"
+    }
+
+    // Extract the ticket priority from the company's selected departments
+    const updatedTickets = tickets.map((ticket) => {
+      let updatedTicket = { ...ticket };
+
+      foundCompany.selectedDepartments.forEach((dept) => {
+        dept?.ticketIssues?.forEach((issue) => {
+          if (issue.title.toLowerCase() === ticket.ticket.toLowerCase()) {
+            updatedTicket.priority = issue.priority;
+          }
+        });
+      });
+
+      return updatedTicket;
+    });
+
+    res.status(200).json(updatedTickets);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const ticketsReports = async (req, res, next) => {
+  try {
+    const { company, departments, roles } = req;
+    const { departmentId } = req.params;
+
+    // if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+    //   return res
+    //     .status(400)
+    //     .json({ message: "Invalid department ID provided" });
+    // }
+
+    // Check if user has Master Admin role
+    const isMasterAdmin =
+      roles?.includes("Master Admin") || roles?.includes("Super Admin");
+
+    const departmentIds = departments.map(
+      (dept) => new mongoose.Types.ObjectId(dept._id)
+    );
+
+    const selectedDepartments =
+      departmentIds.length > 1 ? departmentIds : departmentId;
+
+    const query = {
+      company,
+      ...(isMasterAdmin
+        ? {}
+        : { raisedToDepartment: { $in: selectedDepartments } }),
+    };
+
+    const tickets = await Ticket.find(query)
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
@@ -1556,4 +1642,5 @@ module.exports = {
   getAllDeptTickets,
   getTeamMemberTickets,
   updateOtherTicket,
+  ticketsReports,
 };

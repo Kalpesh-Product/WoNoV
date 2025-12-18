@@ -279,7 +279,7 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
       .populate({
         path: "ticket",
         select:
-          "ticket description status acceptedBy assignees image raisedBy raisedToDepartment",
+          "ticket description status acceptedBy acceptedAt assignedAt closedAt assignees image raisedBy raisedToDepartment",
         populate: [
           {
             path: "raisedBy",
@@ -295,6 +295,10 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
           },
           {
             path: "acceptedBy",
+            select: "firstName lastName",
+          },
+          {
+            path: "closedBy",
             select: "firstName lastName",
           },
           {
@@ -323,57 +327,60 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
 
     //   return adminTickets;
     // }
-    if (matchedRole.endsWith("Admin") || matchedRole === "Employee") {
-      let employeeTickets = supportTickets.filter((ticket) =>
-        ticket.user._id.equals(new mongoose.Types.ObjectId(user))
-      );
 
-      if (!employeeTickets) return [];
-      const tickets = employeeTickets;
+    const isAdmin = matchedRole.endsWith("Admin");
 
-      const company = await Company.findById(companyId)
-        .select("selectedDepartments")
-        .lean()
-        .exec();
-
-      if (!company) return tickets; // or [] if you want to skip all in case of no company
-
-      const updatedTickets = tickets.map((ticket) => {
-        const department = company.selectedDepartments.find(
-          (dept) =>
-            dept.department.toString() ===
-            ticket.ticket.raisedToDepartment?._id.toString()
+    let employeeTickets = isAdmin
+      ? supportTickets
+      : supportTickets.filter((ticket) =>
+          ticket.user._id.equals(new mongoose.Types.ObjectId(user))
         );
 
-        let priority = "Low"; // Default priority
+    if (!employeeTickets) return [];
+    const tickets = employeeTickets;
 
-        if (department) {
-          const issue = department.ticketIssues.find(
-            (issue) => issue.title === ticket.ticket.ticket
-          );
+    const company = await Company.findById(companyId)
+      .select("selectedDepartments")
+      .lean()
+      .exec();
 
-          priority = issue?.priority || "High";
-        }
+    if (!company) return tickets; // or [] if you want to skip all in case of no company
 
-        // If no match found or still Low, look for "Other"
-        if (!priority || priority === "Low") {
-          const otherIssue = company.selectedDepartments
-            .flatMap((dept) => dept.ticketIssues)
-            .find((issue) => issue.title === "Other");
+    const updatedTickets = tickets.map((ticket) => {
+      const department = company.selectedDepartments.find(
+        (dept) =>
+          dept.department.toString() ===
+          ticket.ticket.raisedToDepartment?._id.toString()
+      );
 
-          priority = otherIssue?.priority || "Low";
-        }
+      let priority = "Low"; // Default priority
 
-        return {
-          ...ticket._doc,
-          priority,
-        };
-      });
+      if (department) {
+        const issue = department.ticketIssues.find(
+          (issue) => issue.title === ticket.ticket.ticket
+        );
 
-      // console.log("updatedTickets", updatedTickets);
-      return updatedTickets;
-      // return employeeTickets;
-    }
+        priority = issue?.priority || "High";
+      }
+
+      // If no match found or still Low, look for "Other"
+      if (!priority || priority === "Low") {
+        const otherIssue = company.selectedDepartments
+          .flatMap((dept) => dept.ticketIssues)
+          .find((issue) => issue.title === "Other");
+
+        priority = otherIssue?.priority || "Low";
+      }
+
+      return {
+        ...ticket._doc,
+        priority,
+      };
+    });
+
+    // console.log("updatedTickets", updatedTickets);
+    return updatedTickets;
+    // return employeeTickets;
   } catch (error) {
     return [];
   }

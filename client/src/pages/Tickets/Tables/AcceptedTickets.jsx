@@ -25,9 +25,11 @@ import humanDate from "./../../../utils/humanDateForamt";
 import { noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import StatusChip from "../../../components/StatusChip";
+import useAuth from "../../../hooks/useAuth";
 
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
   const [esCalatedTicket, setEscalatedTicket] = useState(null);
@@ -241,20 +243,27 @@ const AcceptedTickets = ({ title, departmentId }) => {
         const showOtherActions =
           !isTop || (isTop && departmentId === topManagementDepartment);
 
+        const roleTitle = auth?.user?.role?.[0]?.roleTitle || "";
+        const canManageAssignments = roleTitle.endsWith("Admin");
+
         const additionalItems = showOtherActions
           ? [
-              {
-                label: "Close",
-                onClick: () => handleCloseTicket(params.data.id),
-              },
-
               {
                 label: "Support",
                 onClick: () => handleSupportTicket(params.data.id),
               },
+              ...(canManageAssignments
+                ? [
+                    {
+                      label: "Escalate",
+                      onClick: () => handleEscalateTicket(params.data),
+                    },
+                  ]
+                : []),
+
               {
-                label: "Escalate",
-                onClick: () => handleEscalateTicket(params.data),
+                label: "Close",
+                onClick: () => handleCloseTicket(params.data.id),
               },
             ]
           : [];

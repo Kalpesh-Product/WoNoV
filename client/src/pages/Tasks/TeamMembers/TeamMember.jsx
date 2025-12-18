@@ -49,7 +49,8 @@ const TeamMember = () => {
                 onClick={() => {
                   handleSelectedMember(params.data);
                 }}
-                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all">
+                className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+              >
                 <span className="text-subtitle">
                   <MdOutlineRemoveRedEye />
                 </span>
@@ -181,7 +182,8 @@ const TeamMember = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Team Member Details"}>
+        title={"Team Member Details"}
+      >
         {!isLoading && selectedMember ? (
           <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title="Name" detail={selectedMember?.name} />

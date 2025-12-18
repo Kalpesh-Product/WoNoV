@@ -91,7 +91,7 @@ const ExternalClients = () => {
       handleCloseModal();
     },
     onError: (error) => {
-      toast.error(error?.message);
+      toast.error(error.response.data.message || "Update failed");
     },
   });
 

@@ -21,11 +21,14 @@ import humanDate from "../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import { DateEnv } from "@fullcalendar/core/internal";
+import useAuth from "../../../hooks/useAuth";
 
 const AssignedTickets = ({ title, departmentId }) => {
+  const { auth } = useAuth();
   const [openModal, setopenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
   const [esCalatedTicket, setEscalatedTicket] = useState(null);
+  const [openSupportModal, setOpenSupportModal] = useState(false);
   const axios = useAxiosPrivate();
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [openView, setOpenView] = useState(false);
@@ -54,8 +57,24 @@ const AssignedTickets = ({ title, departmentId }) => {
     setopenModal(true);
   };
 
+  const handleSupportTicket = (ticketId) => {
+    setSelectedTicketId(ticketId);
+    setOpenSupportModal(true);
+  };
+
   const [closeModal, setCloseModal] = useState(false);
   const [closingTicketId, setClosingTicketId] = useState(null);
+
+  const {
+    handleSubmit: handleSupportTicketSubmit,
+    reset: resetSupportTicketForm,
+    control: supportTicketControl,
+    formState: { errors: supportTicketsError },
+  } = useForm({
+    defaultValues: {
+      reason: "",
+    },
+  });
 
   const {
     handleSubmit: handleCloseSubmit,
@@ -232,16 +251,29 @@ const AssignedTickets = ({ title, departmentId }) => {
         const showOtherActions =
           !isTop || (isTop && departmentId === topManagementDepartment);
 
+        const roleTitle = auth?.user?.role?.[0]?.roleTitle || "";
+        const canManageAssignments = roleTitle.endsWith("Admin");
+
         const conditionalItems = showOtherActions
           ? [
+              ...(canManageAssignments
+                ? [
+                    {
+                      label: "Re-Assign",
+                      onClick: () => handleOpenAssignModal(params.data.id),
+                    },
+
+                    {
+                      label: "Escalate",
+                      onClick: () => handleEscalateTicket(params.data),
+                    },
+                  ]
+                : []),
               {
-                label: "Re-Assign",
-                onClick: () => handleOpenAssignModal(params.data.id),
+                label: "Support",
+                onClick: () => handleSupportTicket(params.data.id),
               },
-              {
-                label: "Escalate",
-                onClick: () => handleEscalateTicket(params.data),
-              },
+
               {
                 label: "Close",
                 onClick: () => handleCloseTicket(params.data.id),
@@ -279,6 +311,26 @@ const AssignedTickets = ({ title, departmentId }) => {
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Failed to close ticket");
+    },
+  });
+
+  const { mutate: getSupport, isPending: isGetSupportPending } = useMutation({
+    mutationKey: ["get-support"],
+    mutationFn: async (data) => {
+      const response = await axios.post(`/api/tickets/support-ticket`, data);
+      return response.data;
+    },
+    onSuccess: function (data) {
+      toast.success(data.message || "Support ticket created successfully");
+      queryClient.invalidateQueries({ queryKey: ["assigned-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      resetSupportTicketForm();
+      setOpenSupportModal(false);
+    },
+    onError: function (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to create support ticket"
+      );
     },
   });
 
@@ -343,6 +395,12 @@ const AssignedTickets = ({ title, departmentId }) => {
       assignedEmployees: assignedEmployeeIds,
     }); // ✅ Send array of IDs
   };
+
+  const onSupportSubmit = (data) => {
+    if (!selectedTicketId) return;
+    getSupport({ ticketId: selectedTicketId, reason: data.reason });
+  };
+
   const { data: departments = [], isPending: isDepartmentsPending } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
@@ -461,6 +519,42 @@ const AssignedTickets = ({ title, departmentId }) => {
           <div className="flex items-center justify-center mb-4">
             <PrimaryButton title="Assign" type="submit" />
           </div>
+        </form>
+      </MuiModal>
+
+      <MuiModal
+        open={openSupportModal}
+        onClose={() => setOpenSupportModal(false)}
+        title={"Support Ticket"}
+      >
+        <form
+          onSubmit={handleSupportTicketSubmit(onSupportSubmit)}
+          className="flex flex-col gap-4"
+        >
+          <Controller
+            name="reason"
+            control={supportTicketControl}
+            rules={{
+              required: "Reason is required",
+              validate: { noOnlyWhitespace },
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label={"Reason"}
+                multiline
+                rows={5}
+                error={!!supportTicketsError.reason}
+                helperText={supportTicketsError.reason?.message}
+              />
+            )}
+          />
+          <PrimaryButton
+            title={"Submit"}
+            isLoading={isGetSupportPending}
+            disabled={isGetSupportPending}
+            type={"submit"}
+          />
         </form>
       </MuiModal>
 

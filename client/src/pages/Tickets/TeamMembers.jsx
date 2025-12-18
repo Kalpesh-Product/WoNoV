@@ -6,18 +6,23 @@ import useAuth from "../../hooks/useAuth";
 import { CircularProgress } from "@mui/material";
 import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
+import { useSearchParams } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const TeamMembers = () => {
   const axios = useAxiosPrivate();
+  const selectedDepartment = useSelector(
+    (state) => state.performance.selectedDepartment
+  );
+
   const { auth } = useAuth();
+
   const { data: teamMembersData = [], isLoading: isTeamMembers } = useQuery({
     queryKey: ["teamMembers"],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/get-team-members/${
-            auth.user.departments.map((item) => item._id)[0]
-          }`
+          `/api/tickets/get-team-members/${selectedDepartment}`
         );
         return response.data;
       } catch (error) {
@@ -74,6 +79,7 @@ const TeamMembers = () => {
     { field: "role", headerName: "Role", flex: 1 },
     { field: "department", headerName: "Department", flex: 1 },
     // { field: "assignedToday", headerName: "Assigned Today", flex: 1 },
+    { field: "totalaccepted", headerName: "Total Accepted", flex: 1 },
     { field: "totalassigned", headerName: "Total Assigned", flex: 1 },
     { field: "totalresolved", headerName: "Total Resolved", flex: 1 },
     // { field: "resolutiontime", headerName: "Resolution Time", flex: 1 },
@@ -90,13 +96,14 @@ const TeamMembers = () => {
           {!isTeamMembers ? (
             <div className=" w-full">
               <AgTable
+                search={true}
+                searchColumn={"kra"}
                 data={teamMembersData.map((item, index) => ({
                   srNo: index + 1,
                   ...item,
                 }))}
                 columns={laptopColumns}
                 paginationPageSize={10}
-                hideFilter
               />
             </div>
           ) : (

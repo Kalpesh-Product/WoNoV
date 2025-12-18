@@ -137,7 +137,8 @@ const Row = ({ row, onApprove, onReject }) => {
                 </select> */}
                 <form
                   onSubmit={handleSubmit(onSubmit)}
-                  className="flex items-center gap-4 mt-2 w-3/4">
+                  className="flex items-center gap-4 mt-2 w-3/4"
+                >
                   <Controller
                     name="ticketTitle"
                     control={control}
@@ -150,7 +151,8 @@ const Row = ({ row, onApprove, onReject }) => {
                           label="Issue"
                           fullWidth
                           helperText={errors.ticketTitle?.message}
-                          error={!!errors.ticketTitle}>
+                          error={!!errors.ticketTitle}
+                        >
                           <MenuItem value="" disabled>
                             Select Ticket Title
                           </MenuItem>
