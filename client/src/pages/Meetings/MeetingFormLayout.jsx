@@ -73,6 +73,7 @@ const MeetingFormLayout = () => {
     handleSubmit,
     setValue,
     watch,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -112,6 +113,7 @@ const MeetingFormLayout = () => {
   const company = watch("company");
   const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
   const externalCompany = watch("externalCompany");
+  const bookedBy = watch("bookedBy");
 
   const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
   const shouldCheckAvailability =
@@ -184,6 +186,21 @@ const MeetingFormLayout = () => {
     ? availableEmployees
     : employees;
   //-------------------------------API-------------------------------//
+
+  // Prefill participants when "Booked by" already has a value
+  useEffect(() => {
+    if (meetingType !== "Internal") return;
+
+    const selectedId = bookedBy;
+    if (!selectedId) return;
+
+    const selectedParticipants = getValues("internalParticipants") || [];
+    if (!selectedParticipants.includes(selectedId)) {
+      setValue("internalParticipants", [...selectedParticipants, selectedId], {
+        shouldDirty: false,
+      });
+    }
+  }, [bookedBy, getValues, meetingType, setValue]);
 
   //--------------Handling Date internally----------------//
   const handleDateClick = (arg) => {
@@ -584,9 +601,24 @@ const MeetingFormLayout = () => {
                             ) || null
                           }
                           onFocus={() => setShouldFetchParticipants(true)}
-                          onChange={(_, newValue) =>
-                            field.onChange(newValue?._id || "")
-                          }
+                          onChange={(_, newValue) => {
+                            const selectedId = newValue?._id || "";
+                            const selectedParticipants =
+                              getValues("internalParticipants") || [];
+
+                            if (
+                              selectedId &&
+                              !selectedParticipants.includes(selectedId)
+                            ) {
+                              setValue(
+                                "internalParticipants",
+                                [...selectedParticipants, selectedId],
+                                { shouldDirty: true }
+                              );
+                            }
+
+                            field.onChange(selectedId);
+                          }}
                           renderInput={(params) => (
                             <TextField
                               {...params}
@@ -618,6 +650,9 @@ const MeetingFormLayout = () => {
                                 })`
                           }
                           onFocus={() => setShouldFetchParticipants(true)}
+                          value={participantOptions.filter((user) =>
+                            field.value?.includes(user._id)
+                          )}
                           onChange={(_, newValue) =>
                             field.onChange(newValue.map((user) => user._id))
                           }
