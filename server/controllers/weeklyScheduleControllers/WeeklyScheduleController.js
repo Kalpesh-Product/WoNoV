@@ -8,6 +8,64 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const HouseKeepingSchedule = require("../../models/HousekeepingSchedule");
 
+const applyCurrentStatuses = (schedule, currentDate = new Date()) => {
+  const scheduleObj =
+    typeof schedule.toObject === "function"
+      ? schedule.toObject({ getters: true })
+      : schedule;
+
+  const scheduleStart = scheduleObj.startDate
+    ? new Date(scheduleObj.startDate)
+    : null;
+  const scheduleEnd = scheduleObj.endDate
+    ? new Date(scheduleObj.endDate)
+    : null;
+
+  const isWithinAssignmentWindow =
+    scheduleStart &&
+    scheduleEnd &&
+    currentDate >= scheduleStart &&
+    currentDate <= scheduleEnd;
+
+  const substitutions = (scheduleObj.substitutions || []).map(
+    (substitution) => {
+      const substitutionObj =
+        typeof substitution.toObject === "function"
+          ? substitution.toObject({ getters: true })
+          : substitution;
+
+      const fromDate = substitutionObj.fromDate
+        ? new Date(substitutionObj.fromDate)
+        : null;
+      const toDate = substitutionObj.toDate
+        ? new Date(substitutionObj.toDate)
+        : null;
+
+      const isActiveSubstitute =
+        !!fromDate &&
+        !!toDate &&
+        currentDate >= fromDate &&
+        currentDate <= toDate;
+
+      return {
+        ...substitutionObj,
+        isActive: isActiveSubstitute,
+      };
+    }
+  );
+
+  const hasActiveSubstitute = substitutions.some((sub) => sub.isActive);
+
+  return {
+    ...scheduleObj,
+    employee: {
+      ...(scheduleObj.employee || {}),
+      isActive: isWithinAssignmentWindow && !hasActiveSubstitute,
+    },
+    substitutions,
+  };
+};
+
 const assignWeeklyUnit = async (req, res, next) => {
   const logPath = "administration/AdministrationLog";
   const logAction = "Assign Weekly Unit";
@@ -459,12 +517,22 @@ const fetchWeeklyUnits = async (req, res, next) => {
         ],
       });
 
+    const currentDate = new Date();
+
     const transformedData = weeklySchedules
-      .filter((schedule) => schedule.employee.isActive)
+      .map((schedule) => applyCurrentStatuses(schedule, currentDate))
+      .filter((schedule) => schedule.employee?.isActive)
       .map((schedule) => ({
-        ...schedule._doc,
+        ...schedule,
         manager,
       }));
+
+    // const transformedData = weeklySchedules
+    //   .filter((schedule) => schedule.employee.isActive)
+    //   .map((schedule) => ({
+    //     ...schedule._doc,
+    //     manager,
+    //   }));
 
     res.status(200).json(transformedData);
   } catch (error) {
@@ -554,10 +622,17 @@ const fetchTeamMembersSchedule = async (req, res, next) => {
         ],
       });
 
+    const currentDate = new Date();
+
     const transformedData = weeklySchedules.map((schedule) => ({
-      ...schedule._doc,
+      ...applyCurrentStatuses(schedule, currentDate),
       manager,
     }));
+
+    //  const transformedData = weeklySchedules.map((schedule) => ({
+    //   ...schedule._doc,
+    //   manager,
+    // }));
 
     res.status(200).json(transformedData);
   } catch (error) {
