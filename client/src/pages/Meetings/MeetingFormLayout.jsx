@@ -114,6 +114,8 @@ const MeetingFormLayout = () => {
   const externalCompany = watch("externalCompany");
 
   const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
+  const shouldCheckAvailability =
+    isBizNest && !!startTime && !!endTime && shouldFetchParticipants;
 
   //-------------------------------API-------------------------------//
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
@@ -158,6 +160,29 @@ const MeetingFormLayout = () => {
     },
     enabled: shouldFetchParticipants && !!company,
   });
+
+  const { data: availableEmployees = [], isFetching: isAvailableEmployees } =
+    useQuery({
+      queryKey: [
+        "available-participants",
+        startTime?.toISOString?.(),
+        endTime?.toISOString?.(),
+      ],
+      queryFn: async () => {
+        const response = await axios.get("/api/meetings/get-available-users", {
+          params: {
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+          },
+        });
+        return response.data;
+      },
+      enabled: shouldCheckAvailability,
+    });
+
+  const participantOptions = shouldCheckAvailability
+    ? availableEmployees
+    : employees;
   //-------------------------------API-------------------------------//
 
   //--------------Handling Date internally----------------//
@@ -546,14 +571,17 @@ const MeetingFormLayout = () => {
                       control={control}
                       render={({ field }) => (
                         <Autocomplete
-                          options={employees}
+                          options={participantOptions}
+                          loading={isAvailableEmployees}
                           getOptionLabel={(user) =>
                             isBizNest
                               ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
                               : `${user.employeeName ?? ""}`
                           }
                           value={
-                            employees.find((u) => u._id === field.value) || null
+                            participantOptions.find(
+                              (u) => u._id === field.value
+                            ) || null
                           }
                           onFocus={() => setShouldFetchParticipants(true)}
                           onChange={(_, newValue) =>
@@ -580,13 +608,14 @@ const MeetingFormLayout = () => {
                       render={({ field }) => (
                         <Autocomplete
                           multiple
-                          options={employees}
+                          options={participantOptions}
+                          loading={isAvailableEmployees}
                           getOptionLabel={(user) =>
                             isBizNest
                               ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
                               : `${user.employeeName ?? ""} (${
                                   user.clientName ?? ""
-                                }`
+                                })`
                           }
                           onFocus={() => setShouldFetchParticipants(true)}
                           onChange={(_, newValue) =>
