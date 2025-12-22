@@ -123,21 +123,16 @@ const TeamMemberDetails = () => {
       }
 
       // 🟦 Show substitutes (if enabled in filters)
+      // Track last substitute per day so only the most recent stays active on overlaps
+      const substitutionOwners = new Map();
+
       if (
-        filters.substitute &&
         Array.isArray(schedule.substitutions) &&
         schedule.substitutions.length
       ) {
-        schedule.substitutions.forEach((sub) => {
-          if (!sub?.isActive) return;
-
-          const subName =
-            `${sub?.substitute?.firstName ?? ""} ${
-              sub?.substitute?.lastName ?? ""
-            }`.trim() || "Unknown Substitute";
+        schedule.substitutions.forEach((sub, ownerIndex) => {
           const subStart = dayjs(sub?.fromDate);
           const subEnd = dayjs(sub?.toDate);
-          const isActiveSub = Boolean(sub?.isActive);
 
           if (!subStart.isValid() || !subEnd.isValid()) return;
 
@@ -146,11 +141,36 @@ const TeamMemberDetails = () => {
             current.isSameOrBefore(subEnd, "day");
             current = current.add(1, "day")
           ) {
+            substitutionOwners.set(current.format("YYYY-MM-DD"), ownerIndex);
+          }
+        });
+      }
+
+      // 🟦 Show substitutes (including inactive ones, if enabled in filters)
+      if (
+        filters.substitute &&
+        Array.isArray(schedule.substitutions) &&
+        schedule.substitutions.length
+      ) {
+        schedule.substitutions.forEach((sub, subIndex) => {
+          const subName =
+            `${sub?.substitute?.firstName ?? ""} ${
+              sub?.substitute?.lastName ?? ""
+            }`.trim() || "Unknown Substitute";
+          const subStart = dayjs(sub?.fromDate);
+          const subEnd = dayjs(sub?.toDate);
+
+          if (!subStart.isValid() || !subEnd.isValid()) return;
+
+          for (
+            let current = subStart;
+            current.isSameOrBefore(subEnd, "day");
+            current = current.add(1, "day")
+          ) {
+            const isActiveSub =
+              substitutionOwners.get(current.format("YYYY-MM-DD")) ===
+                subIndex && Boolean(sub?.isActive);
             allEvents.push({
-              // title: subName,
-              // start: current.format("YYYY-MM-DD"),
-              // backgroundColor: "#66b2ff", // lighter blue for substitute
-              // borderColor: "#66b2ff",
               title: `${subName}${isActiveSub ? "" : " (Inactive)"}`,
               start: current.format("YYYY-MM-DD"),
               backgroundColor: isActiveSub ? "#66b2ff" : "#9CA3AF",
@@ -164,13 +184,62 @@ const TeamMemberDetails = () => {
                 substitutes: [],
                 fromDate: sub.fromDate,
                 toDate: sub.toDate,
+                isActive: isActiveSub,
               },
-              isActive: isActiveSub,
             });
           }
         });
       }
     });
+
+    //   if (
+    //     filters.substitute &&
+    //     Array.isArray(schedule.substitutions) &&
+    //     schedule.substitutions.length
+    //   ) {
+    //     schedule.substitutions.forEach((sub) => {
+    //       if (!sub?.isActive) return;
+
+    //       const subName =
+    //         `${sub?.substitute?.firstName ?? ""} ${
+    //           sub?.substitute?.lastName ?? ""
+    //         }`.trim() || "Unknown Substitute";
+    //       const subStart = dayjs(sub?.fromDate);
+    //       const subEnd = dayjs(sub?.toDate);
+    //       const isActiveSub = Boolean(sub?.isActive);
+
+    //       if (!subStart.isValid() || !subEnd.isValid()) return;
+
+    //       for (
+    //         let current = subStart;
+    //         current.isSameOrBefore(subEnd, "day");
+    //         current = current.add(1, "day")
+    //       ) {
+    //         allEvents.push({
+    //           // title: subName,
+    //           // start: current.format("YYYY-MM-DD"),
+    //           // backgroundColor: "#66b2ff", // lighter blue for substitute
+    //           // borderColor: "#66b2ff",
+    //           title: `${subName}${isActiveSub ? "" : " (Inactive)"}`,
+    //           start: current.format("YYYY-MM-DD"),
+    //           backgroundColor: isActiveSub ? "#66b2ff" : "#9CA3AF",
+    //           borderColor: isActiveSub ? "#66b2ff" : "#9CA3AF",
+    //           extendedProps: {
+    //             scheduleId: schedule._id,
+    //             employeeName: subName,
+    //             unit: unitName,
+    //             manager,
+    //             isSubstitute: true,
+    //             substitutes: [],
+    //             fromDate: sub.fromDate,
+    //             toDate: sub.toDate,
+    //           },
+    //           isActive: isActiveSub,
+    //         });
+    //       }
+    //     });
+    //   }
+    // });
 
     setCalendarEvents(allEvents);
   }, [unitSchedule, filters]);
