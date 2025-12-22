@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -116,9 +116,31 @@ const MeetingFormLayout = () => {
   const bookedBy = watch("bookedBy");
 
   const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
-  const shouldCheckAvailability =
-    isBizNest && !!startTime && !!endTime && shouldFetchParticipants;
+  const buildDateTime = (dateValue, timeValue) => {
+    if (!dateValue || !timeValue) return null;
 
+    const date = dayjs(dateValue);
+    const time = dayjs(timeValue);
+
+    return date
+      .hour(time.hour())
+      .minute(time.minute())
+      .second(time.second())
+      .millisecond(time.millisecond());
+  };
+
+  const startDateTime = useMemo(
+    () => buildDateTime(startDate, startTime),
+    [startDate, startTime]
+  );
+
+  const endDateTime = useMemo(
+    () => buildDateTime(endDate, endTime),
+    [endDate, endTime]
+  );
+
+  const shouldCheckAvailability =
+    isBizNest && !!startDateTime && !!endDateTime && shouldFetchParticipants;
   //-------------------------------API-------------------------------//
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -167,14 +189,14 @@ const MeetingFormLayout = () => {
     useQuery({
       queryKey: [
         "available-participants",
-        startTime?.toISOString?.(),
-        endTime?.toISOString?.(),
+        startDateTime?.toISOString?.(),
+        endDateTime?.toISOString?.(),
       ],
       queryFn: async () => {
         const response = await axios.get("/api/meetings/get-available-users", {
           params: {
-            startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
+            startTime: startDateTime.toISOString(),
+            endTime: endDateTime.toISOString(),
           },
         });
         return response.data;
@@ -185,6 +207,33 @@ const MeetingFormLayout = () => {
   const participantOptions = shouldCheckAvailability
     ? availableEmployees
     : employees;
+
+  const { data: currentUserAvailability = [] } = useQuery({
+    queryKey: [
+      "current-user-availability",
+      startDateTime?.toISOString?.(),
+      endDateTime?.toISOString?.(),
+    ],
+    queryFn: async () => {
+      const response = await axios.get("/api/meetings/get-available-users", {
+        params: {
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
+        },
+      });
+      return response.data;
+    },
+    enabled: !!startDateTime && !!endDateTime,
+  });
+
+  const isCurrentUserUnavailable = useMemo(() => {
+    if (!startTime || !endTime) return false;
+    if (!auth?.user?._id) return false;
+
+    return !currentUserAvailability?.some(
+      (user) => user._id === auth.user?._id
+    );
+  }, [auth?.user?._id, currentUserAvailability, endDateTime, startDateTime]);
   //-------------------------------API-------------------------------//
 
   // Prefill participants when "Booked by" already has a value
@@ -267,8 +316,8 @@ const MeetingFormLayout = () => {
         meetingType: data.meetingType,
         startDate: startDate,
         endDate: endDate,
-        startTime: startTime,
-        endTime: endTime,
+        startTime: startDateTime,
+        endTime: endDateTime,
         client: data.company,
         subject: data.subject,
         agenda: data.agenda,
@@ -418,6 +467,14 @@ const MeetingFormLayout = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 gap-y-6">
+            {isCurrentUserUnavailable && (
+              <div className="col-span-2">
+                <p className="text-sm text-red-600 text-center">
+                  You already have another meeting booked during this time
+                  range.
+                </p>
+              </div>
+            )}
             <div className="col-span-2 sm:col-span-1 md:col-span-2">
               <Controller
                 name="meetingType"
@@ -450,7 +507,7 @@ const MeetingFormLayout = () => {
                   validate: (value) => {
                     if (!value) return "Start time is required";
 
-                    const selectedTime = new Date(value);
+                    const selectedTime = buildDateTime(startDate, value);
                     const minAllowedTime = new Date();
                     minAllowedTime.setHours(9, 30, 0, 0); // 09:30 AM today
 
@@ -488,8 +545,8 @@ const MeetingFormLayout = () => {
                   validate: (value) => {
                     if (!value) return "End time is required";
 
-                    const start = new Date(startTime);
-                    const end = new Date(value);
+                    const start = buildDateTime(startDate, startTime);
+                    const end = buildDateTime(endDate, value);
 
                     if (end <= start) {
                       return "End time must be after start time";
@@ -902,7 +959,7 @@ const MeetingFormLayout = () => {
             <PrimaryButton
               title="Submit"
               type="submit"
-              disabled={isCreateMeeting}
+              disabled={isCreateMeeting || isCurrentUserUnavailable}
               isLoading={isCreateMeeting}
             />
           </div>
