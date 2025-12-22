@@ -249,11 +249,11 @@ const TeamMembersSchedule = () => {
           });
         }
 
-        // Add active substitutes
+        // Add substitutes (including inactive ones)
         substitutions
           .filter(
             (sub) =>
-              sub?.isActive &&
+              // sub?.isActive &&
               sub?.substitute?.firstName &&
               sub?.substitute?.lastName &&
               !isNaN(new Date(sub.fromDate)) &&
@@ -266,7 +266,8 @@ const TeamMembersSchedule = () => {
               endDate: new Date(sub.toDate),
               employeeName: `${sub.substitute.firstName} ${sub.substitute.lastName} (Substitute)`,
               manager: manager || "Unknown",
-              isActive: "Active",
+              isActive: sub.isActive ? "Active" : "Inactive",
+              // isActive: "Active",
             });
           });
       });
