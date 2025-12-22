@@ -26,10 +26,11 @@ const AdminClientsData = () => {
     },
   });
   const handleClickRow = (clientData) => {
-   
     dispatch(setSelectedClient(clientData));
     navigate(
-      `/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data/${encodeURIComponent(clientData.clientName)}`
+      `/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data/${encodeURIComponent(
+        clientData.clientName
+      )}`
     );
   };
 
@@ -156,6 +157,7 @@ const AdminClientsData = () => {
                 annualIncrement: item.annualIncrement,
                 perDeskMeetingCredits: item.perDeskMeetingCredits,
                 totalMeetingCredits: item.totalMeetingCredits,
+                meetingCreditBalance: item.meetingCreditBalance,
                 startDate: item.startDate,
                 endDate: item.endDate,
                 lockinPeriod: item.lockinPeriod,

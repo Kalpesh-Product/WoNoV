@@ -27,6 +27,7 @@ const AdminClientDetails = () => {
       annualIncrement: 0,
       perDeskMeetingCredits: 0,
       totalMeetingCredits: 0,
+      meetingCreditBalance: 0,
       startDate: "",
       endDate: "",
       lockinPeriod: 0,
@@ -65,6 +66,7 @@ const AdminClientDetails = () => {
         annualIncrement: selectedClient.annualIncrement,
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
+        meetingCreditBalance: selectedClient.meetingCreditBalance,
         bookingType: selectedClient.bookingType,
         startDate: selectedClient.startDate,
         endDate: selectedClient.endDate,
@@ -166,6 +168,10 @@ const AdminClientDetails = () => {
               {displayField(
                 "Total Meeting Credits",
                 _defaultValues.totalMeetingCredits
+              )}
+              {displayField(
+                "Meeting Credit Balance",
+                _defaultValues.meetingCreditBalance
               )}
               {displayField("Start Date", _defaultValues.startDate, true)}
               {displayField("End Date", _defaultValues.endDate, true)}
