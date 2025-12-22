@@ -10,9 +10,9 @@ const ProfileLayout = () => {
   const tabs = [
     { label: "Profile", path: "my-profile" },
     { label: "Change Password", path: "change-password" },
-    { label: "Permissions", path: "permissions" },
-    { label: "HR", path: "HR" },
-    { label: "Assets", path: "my-assets" },
+    // { label: "Permissions", path: "permissions" },
+    // { label: "HR", path: "HR" },
+    // { label: "Assets", path: "my-assets" },
     { label: "Meetings", path: "my-meetings" },
     { label: "Ticket History", path: "tickets-history" },
   ];

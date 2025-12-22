@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import humanDate from "../../../utils/humanDateForamt";
+import PrimaryButton from "../../../components/PrimaryButton";
 
 const AdminClientDetails = () => {
   const selectedClient = useSelector((state) => state.client.selectedClient);
@@ -27,6 +28,7 @@ const AdminClientDetails = () => {
       annualIncrement: 0,
       perDeskMeetingCredits: 0,
       totalMeetingCredits: 0,
+      meetingCreditBalance: 0,
       startDate: "",
       endDate: "",
       lockinPeriod: 0,
@@ -65,6 +67,7 @@ const AdminClientDetails = () => {
         annualIncrement: selectedClient.annualIncrement,
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
+        meetingCreditBalance: selectedClient.meetingCreditBalance,
         bookingType: selectedClient.bookingType,
         startDate: selectedClient.startDate,
         endDate: selectedClient.endDate,
@@ -108,6 +111,9 @@ const AdminClientDetails = () => {
         <span className="text-subtitle font-pmedium text-primary">
           Client Details
         </span>
+        <div>
+          <PrimaryButton title={"Edit"} disabled={true} />
+        </div>
       </div>
 
       <div className="h-[51vh] overflow-y-auto">
@@ -166,6 +172,10 @@ const AdminClientDetails = () => {
               {displayField(
                 "Total Meeting Credits",
                 _defaultValues.totalMeetingCredits
+              )}
+              {displayField(
+                "Meeting Credit Balance",
+                _defaultValues.meetingCreditBalance
               )}
               {displayField("Start Date", _defaultValues.startDate, true)}
               {displayField("End Date", _defaultValues.endDate, true)}
