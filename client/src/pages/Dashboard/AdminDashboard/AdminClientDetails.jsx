@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import humanDate from "../../../utils/humanDateForamt";
+import PrimaryButton from "../../../components/PrimaryButton";
 
 const AdminClientDetails = () => {
   const selectedClient = useSelector((state) => state.client.selectedClient);
@@ -110,6 +111,9 @@ const AdminClientDetails = () => {
         <span className="text-subtitle font-pmedium text-primary">
           Client Details
         </span>
+        <div>
+          <PrimaryButton title={"Edit"} disabled={true} />
+        </div>
       </div>
 
       <div className="h-[51vh] overflow-y-auto">
