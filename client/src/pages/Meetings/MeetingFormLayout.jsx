@@ -99,11 +99,11 @@ const MeetingFormLayout = () => {
     item.roleTitle.startsWith("Administration")
   );
 
-  useEffect(() => {
-    if (!isReceptionist) {
-      setValue("company", "6799f0cd6a01edbe1bc3fcea");
-    }
-  }, [isReceptionist, setValue]);
+  // useEffect(() => {
+  //   if (!isReceptionist) {
+  //     setValue("company", "6799f0cd6a01edbe1bc3fcea");
+  //   }
+  // }, [isReceptionist, setValue]);
 
   const meetingType = watch("meetingType");
   const startDate = watch("startDate"); // Watch startDate
@@ -114,6 +114,19 @@ const MeetingFormLayout = () => {
   const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
   const externalCompany = watch("externalCompany");
   const bookedBy = watch("bookedBy");
+
+  useEffect(() => {
+    if (!isReceptionist) return;
+
+    setValue("bookedBy", "");
+    setValue("internalParticipants", []);
+  }, [company, isReceptionist, setValue]);
+
+  useEffect(() => {
+    if (!isReceptionist) {
+      setValue("company", "6799f0cd6a01edbe1bc3fcea");
+    }
+  }, [isReceptionist, setValue]);
 
   const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
   const buildDateTime = (dateValue, timeValue) => {
@@ -230,19 +243,10 @@ const MeetingFormLayout = () => {
     if (!startTime || !endTime) return false;
     if (!auth?.user?._id) return false;
 
-    return !currentUserAvailability?.some(
-      (user) => user._id === auth.user?._id
-    );
-  }, [auth?.user?._id, currentUserAvailability, endDateTime, startDateTime]);
-  //-------------------------------API-------------------------------//
+    return !currentUserAvailability?.some((user) => user._id === bookedBy);
+  }, [bookedBy, currentUserAvailability, endDateTime, startDateTime]);
 
-  // useEffect(() => {
-  //   if (isCurrentUserUnavailable) {
-  //     toast.error(
-  //       "You're already booked for another meeting during this time slot. Please pick a different time."
-  //     );
-  //   }
-  // }, [isCurrentUserUnavailable]);
+  //-------------------------------API-------------------------------//
 
   // Prefill participants when "Booked by" already has a value
   useEffect(() => {
@@ -478,8 +482,11 @@ const MeetingFormLayout = () => {
             {isCurrentUserUnavailable && (
               <div className="col-span-2">
                 <p className="text-sm text-red-600 text-center">
-                  You already have another meeting booked during this time
-                  range.
+                  You already have another meeting booked in{" "}
+                  <span className="font-medium">
+                    {meetingRoomName || "this room"}
+                  </span>{" "}
+                  during this time range.
                 </p>
               </div>
             )}

@@ -336,15 +336,25 @@ const getAvaliableUsers = async (req, res, next) => {
       company: req.company,
       $and: [{ startTime: { $lte: end } }, { endTime: { $gte: start } }],
     })
-      .select("bookedBy internalParticipants startTime endTime")
+      .select(
+        "bookedBy clientBookedBy internalParticipants clientParticipants startTime endTime"
+      )
       .lean()
       .exec();
 
     const unavailableUserIds = new Set();
     meetings.forEach((meeting) => {
       if (meeting.bookedBy) unavailableUserIds.add(meeting.bookedBy.toString());
+      if (meeting.clientBookedBy)
+        unavailableUserIds.add(meeting.clientBookedBy.toString());
       if (meeting.internalParticipants) {
         meeting.internalParticipants.forEach((userId) =>
+          unavailableUserIds.add(userId.toString())
+        );
+      }
+
+      if (meeting.clientParticipants) {
+        meeting.clientParticipants.forEach((userId) =>
           unavailableUserIds.add(userId.toString())
         );
       }

@@ -208,15 +208,30 @@ const ExternalClients = () => {
 
   const submit = async (data) => {
     if (isEditing && selectedVisitor) {
+      const checkInDate = selectedVisitor.checkIn
+        ? dayjs(selectedVisitor.checkIn)
+        : null;
+      const checkOutRaw = data.checkOutRaw ? dayjs(data.checkOutRaw) : null;
+
+      const combinedCheckout =
+        checkInDate && checkOutRaw
+          ? checkInDate
+              .hour(checkOutRaw.hour())
+              .minute(checkOutRaw.minute())
+              .second(checkOutRaw.second())
+              .millisecond(checkOutRaw.millisecond())
+          : checkOutRaw;
+
       const updatePayload = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         phoneNumber: data.phoneNumber,
         purposeOfVisit: data.purposeOfVisit,
-        checkOut: data.checkOutRaw
-          ? dayjs(data.checkOutRaw).toISOString()
-          : null,
+        // checkOut: data.checkOutRaw
+        //   ? dayjs(data.checkOutRaw).toISOString()
+        //   : null,
+        checkOut: combinedCheckout ? combinedCheckout.toISOString() : null,
         paymentStatus: data.paymentStatus,
         paymentAmount: data.paymentAmount,
         paymentMode: data.paymentMode,
