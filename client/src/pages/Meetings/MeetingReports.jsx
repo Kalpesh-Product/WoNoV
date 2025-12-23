@@ -16,6 +16,7 @@ import useAuth from "../../hooks/useAuth";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import StatusChip from "../../components/StatusChip";
+import { inrFormat } from "../../utils/currencyFormat";
 
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
@@ -134,6 +135,12 @@ const MeetingReports = () => {
                     agenda: item.agenda,
                     subject: item.subject,
                     housekeepingChecklist: item.housekeepingChecklist,
+                    paymentAmount: item.paymentAmount ?? 0,
+                    paymnetDiscountAmount: item.discountAmount ?? 0,
+                    paymentMode: item.paymentMode,
+                    paymentStatus: item.paymentStatus,
+                    paymentVerification: item.paymentVerification,
+                    paymentProofUrl: item?.paymentProof,
                     participants: item.participants
                       ?.map((p) =>
                         p.firstName
@@ -239,6 +246,53 @@ const MeetingReports = () => {
               title="Building"
               detail={selectedMeeting?.buildingName || "N/A"}
             />
+
+            {/* Section 2: Payment Details */}
+            {selectedMeeting?.meetingType
+              ?.toLowerCase()
+              ?.includes("external") && (
+              <>
+                <br />
+                <div className="font-bold">Payment Details</div>
+                <DetalisFormatted
+                  title="Amount"
+                  detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
+                />
+                <DetalisFormatted
+                  title="Discount"
+                  detail={`INR ${inrFormat(
+                    selectedMeeting?.paymnetDiscountAmount
+                  )}`}
+                />
+                <DetalisFormatted
+                  title="Mode"
+                  detail={selectedMeeting?.paymentMode || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
+                />
+                <DetalisFormatted
+                  title="Verification"
+                  detail={selectedMeeting?.paymentVerification || "N/A"}
+                />
+                {selectedMeeting?.paymentProofUrl && (
+                  <DetalisFormatted
+                    title="Proof"
+                    detail={
+                      <a
+                        href={selectedMeeting.paymentProofUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        View File
+                      </a>
+                    }
+                  />
+                )}
+              </>
+            )}
           </div>
         ) : (
           <CircularProgress />

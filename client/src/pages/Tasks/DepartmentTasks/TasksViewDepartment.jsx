@@ -187,8 +187,8 @@ const TasksViewDepartment = () => {
         </div>
       ),
     },
-    { headerName: "Assigned By", field: "assignedBy", width: 300 },
-    { headerName: "Assigned Date", field: "assignedDate" },
+    { headerName: "Added By", field: "assignedBy", width: 300 },
+    { headerName: "Added Date", field: "assignedDate" },
     // { headerName: "Assigned Time", field: "createdAt" },
     { headerName: "Due Date", field: "dueDate" },
     { headerName: "Due Time", field: "dueTime" },
@@ -360,9 +360,9 @@ const TasksViewDepartment = () => {
                             assignedDate: humanDate(item.assignedDate),
                             dueDate: humanDate(item.dueDate),
                             dueTime: humanTime(item.dueTime),
-                            completedDate: humanDate(item.completedDate),
+                            completedDate: item.completedDate,
+                            completedDateLabel: humanDate(item.completedDate),
                             completedTime: humanTime(item.completedDate),
-                            status: item.status,
                             assignedBy:
                               item.assignedBy?.firstName ||
                               item.assignedBy?.lastName
@@ -370,6 +370,7 @@ const TasksViewDepartment = () => {
                                     item.assignedBy?.lastName || ""
                                   }`.trim()
                                 : item.assignedBy || "-",
+                            status: item.status,
                           }))
                   }
                   dateColumn={"completedDate"}
@@ -578,8 +579,12 @@ const TasksViewDepartment = () => {
               />
             </div>
             <DetalisFormatted
-              title={"Assigned Date"}
+              title={"Added Date"}
               detail={humanDate(selectedTask?.assignedDate)}
+            />
+            <DetalisFormatted
+              title={"Added By"}
+              detail={selectedTask?.assignedBy}
             />
             <DetalisFormatted
               title={"Due Date"}
@@ -589,10 +594,6 @@ const TasksViewDepartment = () => {
               title={"Due Time"}
               detail={selectedTask?.dueTime}
             />
-            <DetalisFormatted
-              title={"Added By"}
-              detail={selectedTask?.assignedBy}
-            />
 
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
           </div>
@@ -600,23 +601,23 @@ const TasksViewDepartment = () => {
         {modalMode === "completed" && selectedTask && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskName} />
-
             <DetalisFormatted
-              title={"Assigned Date"}
+              title={"Added Date"}
               detail={selectedTask?.assignedDate}
-            />
-            <DetalisFormatted
-              title={"Completed Date"}
-              detail={selectedTask?.completedDate}
-            />
-            <DetalisFormatted
-              title={"Completed Time"}
-              detail={selectedTask?.completedTime}
             />
             <DetalisFormatted
               title={"Added By"}
               detail={selectedTask?.assignedBy}
             />
+            <DetalisFormatted
+              title={"Completed Date"}
+              detail={selectedTask?.completedDateLabel}
+            />
+            <DetalisFormatted
+              title={"Completed Time"}
+              detail={selectedTask?.completedTime}
+            />
+
             <DetalisFormatted
               title={"Completed By"}
               detail={selectedTask?.completedBy}

@@ -236,6 +236,14 @@ const MeetingFormLayout = () => {
   }, [auth?.user?._id, currentUserAvailability, endDateTime, startDateTime]);
   //-------------------------------API-------------------------------//
 
+  // useEffect(() => {
+  //   if (isCurrentUserUnavailable) {
+  //     toast.error(
+  //       "You're already booked for another meeting during this time slot. Please pick a different time."
+  //     );
+  //   }
+  // }, [isCurrentUserUnavailable]);
+
   // Prefill participants when "Booked by" already has a value
   useEffect(() => {
     if (meetingType !== "Internal") return;

@@ -75,10 +75,31 @@ const ManageVisitors = () => {
     setSelectedVisitor(null);
   };
 
+  // const submit = (data) => {
+  //   mutate({
+  //     ...data,
+  //     checkOut: data.checkOutRaw ? dayjs(data.checkOutRaw).toISOString() : null,
+  //   });
+  // };
+
   const submit = (data) => {
+    const checkInDate = selectedVisitor?.checkIn
+      ? dayjs(selectedVisitor.checkIn)
+      : null;
+    const checkOutRaw = data.checkOutRaw ? dayjs(data.checkOutRaw) : null;
+
+    const combinedCheckout =
+      checkInDate && checkOutRaw
+        ? checkInDate
+            .hour(checkOutRaw.hour())
+            .minute(checkOutRaw.minute())
+            .second(checkOutRaw.second())
+            .millisecond(checkOutRaw.millisecond())
+        : checkOutRaw;
+
     mutate({
       ...data,
-      checkOut: data.checkOutRaw ? dayjs(data.checkOutRaw).toISOString() : null,
+      checkOut: combinedCheckout ? combinedCheckout.toISOString() : null,
     });
   };
 
