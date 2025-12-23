@@ -95,7 +95,7 @@ const DailyTasks = () => {
         dueTime: data.dueTime,
         description: data.description,
         department: deptId,
-        taskType:"Self"
+        taskType: "Self",
       });
       return response.data;
     },
@@ -528,7 +528,7 @@ const DailyTasks = () => {
               detail={selectedTask?.dueTime}
             />
             <DetalisFormatted
-              title={"Assigned By"}
+              title={"Added  By"}
               detail={selectedTask?.assignedBy}
             />
 
@@ -548,7 +548,7 @@ const DailyTasks = () => {
             />
             <DetalisFormatted
               title={"Completed Time"}
-              detail={selectedTask?.completedDate}
+              detail={selectedTask?.completedTime}
             />
             <DetalisFormatted
               title={"Due Date"}

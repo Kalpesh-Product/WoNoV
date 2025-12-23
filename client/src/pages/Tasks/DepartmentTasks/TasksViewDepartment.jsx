@@ -360,9 +360,16 @@ const TasksViewDepartment = () => {
                             assignedDate: humanDate(item.assignedDate),
                             dueDate: humanDate(item.dueDate),
                             dueTime: humanTime(item.dueTime),
-                            completedDate: item.completedDate,
+                            completedDate: humanDate(item.completedDate),
                             completedTime: humanTime(item.completedDate),
                             status: item.status,
+                            assignedBy:
+                              item.assignedBy?.firstName ||
+                              item.assignedBy?.lastName
+                                ? `${item.assignedBy?.firstName || ""} ${
+                                    item.assignedBy?.lastName || ""
+                                  }`.trim()
+                                : item.assignedBy || "-",
                           }))
                   }
                   dateColumn={"completedDate"}
@@ -583,7 +590,7 @@ const TasksViewDepartment = () => {
               detail={selectedTask?.dueTime}
             />
             <DetalisFormatted
-              title={"Assigned By"}
+              title={"Added By"}
               detail={selectedTask?.assignedBy}
             />
 
@@ -593,6 +600,7 @@ const TasksViewDepartment = () => {
         {modalMode === "completed" && selectedTask && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskName} />
+
             <DetalisFormatted
               title={"Assigned Date"}
               detail={selectedTask?.assignedDate}
@@ -604,6 +612,10 @@ const TasksViewDepartment = () => {
             <DetalisFormatted
               title={"Completed Time"}
               detail={selectedTask?.completedTime}
+            />
+            <DetalisFormatted
+              title={"Added By"}
+              detail={selectedTask?.assignedBy}
             />
             <DetalisFormatted
               title={"Completed By"}
