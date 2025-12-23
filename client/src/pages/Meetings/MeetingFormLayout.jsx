@@ -243,9 +243,20 @@ const MeetingFormLayout = () => {
     if (!startTime || !endTime) return false;
     if (!auth?.user?._id) return false;
 
-    return !currentUserAvailability?.some((user) => user._id === bookedBy);
-  }, [bookedBy, currentUserAvailability, endDateTime, startDateTime]);
+    return !currentUserAvailability?.some(
+      (user) => user._id === auth.user?._id
+    );
+  }, [auth?.user?._id, currentUserAvailability, endDateTime, startDateTime]);
 
+  useEffect(() => {
+    if (isCurrentUserUnavailable) {
+      toast.error(
+        `You're already booked for another meeting in ${
+          meetingRoomName || "this room"
+        } during this time slot. Please pick a different time.`
+      );
+    }
+  }, [isCurrentUserUnavailable, meetingRoomName]);
   //-------------------------------API-------------------------------//
 
   // Prefill participants when "Booked by" already has a value
