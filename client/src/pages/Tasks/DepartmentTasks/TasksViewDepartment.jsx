@@ -43,6 +43,10 @@ const TasksViewDepartment = () => {
     // more exceptional department IDs...
   ];
 
+  const isEmployee = auth?.user?.role?.some((role) =>
+    role?.roleTitle?.toLowerCase().includes("employee")
+  );
+
   // Check if the selected department is in user's list
   const isUserDepartment = auth?.user?.departments?.some(
     (dept) => dept._id === deptId
@@ -310,6 +314,7 @@ const TasksViewDepartment = () => {
                 <YearWiseTable
                   checkbox={showCheckBox}
                   buttonTitle={hasAccess ? "Add Task" : undefined}
+                  buttonDisabled={isEmployee}
                   handleSubmit={() => setOpenModal(true)}
                   tableTitle={`${department} DEPARTMENT TASKS`}
                   data={(departmentKra || [])

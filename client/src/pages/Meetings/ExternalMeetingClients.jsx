@@ -499,7 +499,7 @@ const ExternalMeetingCLients = () => {
     housekeepingMutation.mutate(payload);
   };
   useEffect(() => {
-    if (!isRoomLoading && room?.perHourPrice) {
+    if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
       // Calculate actual duration
 
       const start = new Date(paymentMeeting.startTime);

@@ -1,10 +1,14 @@
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useLocation, useParams } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { useTopDepartment } from "../hooks/useTopDepartment";
 
-export default function ProtectedDepartmentRoute({ element }) {
+export default function ProtectedDepartmentRoute({
+  element,
+  allowHrForPerformance = false,
+}) {
   const { auth } = useAuth();
   const { department } = useParams();
+  const location = useLocation();
   const { isTop } = useTopDepartment({});
   const user = auth.user;
 
@@ -13,7 +17,13 @@ export default function ProtectedDepartmentRoute({ element }) {
   console.log("protection 🛡️");
   const userDepartments = user?.departments || [];
 
-  if (isTop) {
+  const isHrUser = userDepartments.some(
+    (dept) => dept.name?.toLowerCase() === "hr"
+  );
+  const isPerformanceRoute =
+    allowHrForPerformance && location.pathname.includes("/performance");
+
+  if (isTop || (isHrUser && isPerformanceRoute)) {
     return element;
   }
 
