@@ -1247,6 +1247,7 @@ const MeetingDashboard = () => {
               options={graph.options}
               height={graph.height}
               width={graph.width}
+              centerAlign
             />
           </WidgetSection>
         )
