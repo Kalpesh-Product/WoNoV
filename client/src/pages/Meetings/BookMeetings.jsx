@@ -128,7 +128,8 @@ const BookMeetings = () => {
   // Filter meeting rooms based on selected location
   const filteredMeetingRooms = selectedUnitId
     ? allMeetingRooms.filter(
-        (room) => room.location?.building?._id === selectedUnitId
+        (room) =>
+          room.location?.building?._id === selectedUnitId && room.isActive
       )
     : [];
 

@@ -153,7 +153,7 @@ const MeetingFormLayout = () => {
   );
 
   const shouldCheckAvailability =
-    isBizNest && !!startDateTime && !!endDateTime && shouldFetchParticipants;
+    !!startDateTime && !!endDateTime && shouldFetchParticipants;
   //-------------------------------API-------------------------------//
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -217,8 +217,13 @@ const MeetingFormLayout = () => {
       enabled: shouldCheckAvailability,
     });
 
+  const availableEmployeeIds = useMemo(
+    () => new Set(availableEmployees.map((user) => user._id)),
+    [availableEmployees]
+  );
+
   const participantOptions = shouldCheckAvailability
-    ? availableEmployees
+    ? employees.filter((user) => availableEmployeeIds.has(user._id))
     : employees;
 
   const { data: currentUserAvailability = [] } = useQuery({
