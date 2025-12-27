@@ -56,6 +56,13 @@ const MeetingFormLayout = () => {
 
   const roles = auth.user.role.map((role) => role.roleTitle);
 
+  const canBypassMeetingAvailability = useMemo(
+    () =>
+      roles.includes("Administration Admin") ||
+      roles.includes("Administration Employee"),
+    [roles]
+  );
+
   if (
     roles.includes("Master Admin") ||
     roles.includes("Super Admin") ||
@@ -114,6 +121,12 @@ const MeetingFormLayout = () => {
   const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
   const externalCompany = watch("externalCompany");
   const bookedBy = watch("bookedBy");
+
+  const isSameDaySelection = useMemo(
+    () =>
+      startDate && endDate && dayjs(startDate).isSame(dayjs(endDate), "day"),
+    [endDate, startDate]
+  );
 
   useEffect(() => {
     if (!isReceptionist) return;
@@ -245,13 +258,23 @@ const MeetingFormLayout = () => {
   });
 
   const isCurrentUserUnavailable = useMemo(() => {
+    if (!startDate || !endDate) return false;
     if (!startTime || !endTime) return false;
     if (!auth?.user?._id) return false;
+    if (canBypassMeetingAvailability) return false;
+    if (!isSameDaySelection) return false;
 
     return !currentUserAvailability?.some(
       (user) => user._id === auth.user?._id
     );
-  }, [auth?.user?._id, currentUserAvailability, endDateTime, startDateTime]);
+  }, [
+    auth?.user?._id,
+    canBypassMeetingAvailability,
+    currentUserAvailability,
+    endDateTime,
+    isSameDaySelection,
+    startDateTime,
+  ]);
 
   // useEffect(() => {
   //   if (isCurrentUserUnavailable) {
@@ -498,10 +521,10 @@ const MeetingFormLayout = () => {
             {isCurrentUserUnavailable && (
               <div className="col-span-2">
                 <p className="text-sm text-red-600 text-center">
-                  You already have another meeting booked in{" "}
-                  <span className="font-medium">
+                  You already have another meeting booked{" "}
+                  {/* <span className="font-medium">
                     {meetingRoomName || "this room"}
-                  </span>{" "}
+                  </span>{" "} */}
                   during this time range.
                 </p>
               </div>
