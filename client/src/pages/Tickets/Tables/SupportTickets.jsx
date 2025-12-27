@@ -160,6 +160,19 @@ const SupportTickets = ({ title, departmentId }) => {
   const roleTitle = auth?.user?.role?.[0]?.roleTitle || "";
   const canManageAssignments = roleTitle.endsWith("Admin");
 
+  const restrictedCloseRoles = [
+    "IT Employee",
+    "Admin Employee",
+    "Tech Employee",
+    "Administration Employee",
+    "HR Employee",
+    "Maintenance Employee",
+    "Cafe Employee",
+    "Finance Employee",
+    "Marketing Employee",
+  ];
+  const canCloseTicket = !restrictedCloseRoles.includes(roleTitle);
+
   const { mutate: acceptTicket, isPending: isAccepting } = useMutation({
     mutationKey: ["accept-ticket"],
     mutationFn: async (ticketId) => {
@@ -422,10 +435,14 @@ const SupportTickets = ({ title, departmentId }) => {
                     },
                   ]
                 : []),
-              {
-                label: "Close",
-                onClick: () => handleCloseTicket(params.data.id),
-              },
+              ...(canCloseTicket
+                ? [
+                    {
+                      label: "Close",
+                      onClick: () => handleCloseTicket(params.data.id),
+                    },
+                  ]
+                : []),
             ]
           : [];
 
