@@ -319,7 +319,7 @@ const getAvaliableUsers = async (req, res, next) => {
   try {
     const { startTime, endTime } = req.query;
     if (!startTime || !endTime) {
-      return res.status(400).json({ message: "Please provide a valid date" });
+      return res.status(400).json({ message: "Start/End time missing" });
     }
 
     if (
@@ -361,16 +361,44 @@ const getAvaliableUsers = async (req, res, next) => {
     });
 
     // Fetch all users and filter out unavailable ones
-    const availableUsers = await User.find({
+    const activeClientIds = await CoworkingClient.find({
       company: req.company,
-      _id: { $nin: Array.from(unavailableUserIds) },
+      // _id: { $nin: Array.from(unavailableUserIds) },
       isActive: true,
     })
-      .select("_id firstName lastName email")
-      .lean()
-      .exec();
+      .select("_id")
+      .lean();
 
-    res.status(200).json(availableUsers);
+    const [availableUsers, availableClientMembers] = await Promise.all([
+      User.find({
+        company: req.company,
+        _id: { $nin: Array.from(unavailableUserIds) },
+        isActive: true,
+      })
+        .select("_id firstName lastName email")
+        .lean()
+        .exec(),
+      CoworkingMembers.find({
+        client: { $in: activeClientIds.map((client) => client._id) },
+        _id: { $nin: Array.from(unavailableUserIds) },
+      })
+        .select("_id employeeName email client")
+        .populate({ path: "client", select: "clientName" })
+        .lean()
+        .exec(),
+    ]);
+
+    const formattedClientMembers = availableClientMembers.map((member) => ({
+      _id: member._id,
+      employeeName: member.employeeName,
+      email: member.email,
+      client: member.client?._id || member.client,
+      clientName: member.client?.clientName,
+    }));
+
+    const totalAvailableUsers = [...availableUsers, ...formattedClientMembers];
+
+    res.status(200).json(totalAvailableUsers);
   } catch (error) {
     next(error);
   }
