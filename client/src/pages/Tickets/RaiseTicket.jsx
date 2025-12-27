@@ -162,9 +162,9 @@ const RaiseTicket = () => {
     { field: "acceptedBy", headerName: "Accepted By", width: 300 },
     {
       field: "acceptedAt",
-      headerName: "Accepted Time",
+      headerName: "Accepted At",
       width: 300,
-      cellRenderer: (params) => humanDate(params.value),
+      cellRenderer: (params) => formatDateTime(params.value),
     },
 
     {
