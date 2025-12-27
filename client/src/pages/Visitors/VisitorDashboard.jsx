@@ -837,6 +837,7 @@ const VisitorDashboard = () => {
               data={item.data}
               options={item.options}
               width={item.width}
+              centerAlign
             />
           </WidgetSection>
         )),
@@ -894,6 +895,7 @@ const VisitorDashboard = () => {
             options={item.options}
             width={item.width}
             height={item.height}
+            centerAlign
           />
         </WidgetSection>
       )),
