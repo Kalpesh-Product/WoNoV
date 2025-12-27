@@ -1394,7 +1394,12 @@ const ExternalMeetingCLients = () => {
               />
             )}
           />
-
+          <div>
+            <p className="text-xs">
+              Add payment proof as : ( "Add Payment Proof in PDF format & Name
+              as : DD-MM-YYYY_(Customer Name)" )
+            </p>
+          </div>
           <div className="flex justify-center">
             <PrimaryButton
               disabled={isPaymentPending}
