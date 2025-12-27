@@ -557,7 +557,7 @@ const ExternalMeetingCLients = () => {
     {
       field: "date",
       headerName: "Date",
-      cellRenderer: (params) => humanDate(params.value),
+      cellRenderer: (params) => params.value,
     },
     {
       field: "startTime",
