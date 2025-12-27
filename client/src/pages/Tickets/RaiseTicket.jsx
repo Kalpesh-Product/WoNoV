@@ -144,10 +144,19 @@ const RaiseTicket = () => {
     setViewDetails(true);
   };
 
+  const formatDateTime = (value) =>
+    value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
+
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No", width: 80 },
     { field: "raisedBy", headerName: "Raised By", width: 150 },
     { field: "raisedTo", headerName: "To Department", width: 150 },
+    {
+      field: "raisedAt",
+      headerName: "Raised At",
+      width: 200,
+      cellRenderer: (params) => formatDateTime(params.value),
+    },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     { field: "description", headerName: "Description", width: 300 },
     { field: "acceptedBy", headerName: "Accepted By", width: 300 },
@@ -563,7 +572,7 @@ const RaiseTicket = () => {
           />
           <DetalisFormatted
             title="Raised At"
-            detail={humanTime(viewTicketDetails?.raisedAt) || "N/A"}
+            detail={formatDateTime(viewTicketDetails?.raisedAt)}
           />
           <DetalisFormatted
             title="Raised To Department"
