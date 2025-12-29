@@ -128,7 +128,7 @@ mongoose.connection.once("open", () => {
 });
 
 // For Generating hashed password for testing
-(async () => {
-  const hashed = await hashPassword("Samiksha@0625");
-  console.log(hashed);
-})();
+// (async () => {
+//   const hashed = await hashPassword("Samiksha@0625");
+//   console.log(hashed);
+// })();
