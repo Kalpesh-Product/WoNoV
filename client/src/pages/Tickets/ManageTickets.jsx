@@ -77,7 +77,8 @@ const ManageTickets = () => {
           TitleAmount={String(ticketsFilteredData.recievedTickets).padStart(
             2,
             "0"
-          )}>
+          )}
+        >
           <TicketCard
             title={"Open"}
             titleColor={"#1E3D73"}
@@ -109,7 +110,8 @@ const ManageTickets = () => {
           TitleAmount={String(ticketsFilteredData.acceptedTickets).padStart(
             2,
             "0"
-          )}>
+          )}
+        >
           <TicketCard
             title={"Accepted Tickets"}
             data={ticketsFilteredData.acceptedTickets}
@@ -156,7 +158,7 @@ const ManageTickets = () => {
       component: (
         <AcceptedTickets
           departmentId={selectedDepartment}
-          title="Accepted & Assigned Tickets"
+          title="Accepted Tickets"
         />
       ),
     },
@@ -212,7 +214,6 @@ const ManageTickets = () => {
     return userPermissions.includes(tab.permission);
   });
 
-
   return (
     <div>
       {/* Widgets */}
@@ -264,7 +265,7 @@ const ManageTickets = () => {
                   label={
                     <div className="flex flex-col gap-2 text-center">
                       <span className="text-content">{tab.label}</span>
-                      <span className="text-small">{tab.subLabel}</span>
+                      {/* <span className="text-small">{tab.subLabel}</span> */}
                     </div>
                   }
                 />
