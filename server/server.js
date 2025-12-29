@@ -6,6 +6,8 @@ require("dotenv").config();
 const cookieParser = require("cookie-parser");
 const { corsConfig } = require("./config/corsConfig");
 const connectDb = require("./config/db");
+const { hashPassword } = require("./config/passwordGen");
+
 const errorHandler = require("./middlewares/errorHandler");
 const authRoutes = require("./routes/auth/authRoutes");
 const verifyJwt = require("./middlewares/verifyJwt");
@@ -124,3 +126,9 @@ mongoose.connection.once("open", () => {
   app.listen(PORT);
   console.log(`Server running on port ${PORT}`);
 });
+
+// For Generating hashed password for testing
+(async () => {
+  const hashed = await hashPassword("Samiksha@0625");
+  console.log(hashed);
+})();
