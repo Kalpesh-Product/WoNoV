@@ -123,6 +123,12 @@ const MeetingFormLayout = () => {
   const externalCompany = watch("externalCompany");
   const bookedBy = watch("bookedBy");
 
+  useEffect(() => {
+    if (meetingType !== "External") return;
+
+    setValue("externalParticipants", [], { shouldDirty: true });
+  }, [externalCompany, meetingType, setValue]);
+
   const isSameDaySelection = useMemo(
     () =>
       startDate && endDate && dayjs(startDate).isSame(dayjs(endDate), "day"),
@@ -846,6 +852,7 @@ const MeetingFormLayout = () => {
                     render={({ field }) => (
                       <Autocomplete
                         multiple
+                        disabled={!externalCompany}
                         options={externalUsers.filter(
                           (item) =>
                             item.visitorFlag === "Client" &&
@@ -882,6 +889,7 @@ const MeetingFormLayout = () => {
                             {...params}
                             label="Select Participants"
                             size="small"
+                            disabled={!externalCompany}
                             fullWidth
                           />
                         )}
