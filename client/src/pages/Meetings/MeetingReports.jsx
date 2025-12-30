@@ -80,6 +80,7 @@ const MeetingReports = () => {
     {
       field: "action",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => {
         return (
           <>
@@ -119,6 +120,12 @@ const MeetingReports = () => {
                     bookedBy: item.bookedBy
                       ? `${item.bookedBy.firstName} ${item.bookedBy.lastName}`
                       : item.clientBookedBy?.employeeName || "Unknown",
+                    companyName:
+                      item?.company?.companyName ||
+                      item?.client ||
+                      item?.companyName ||
+                      item?.externalClient ||
+                      "N/A",
                     receptionist: item?.receptionist,
                     department: item.department,
                     roomName: item.roomName,
@@ -201,6 +208,16 @@ const MeetingReports = () => {
             <DetalisFormatted
               title="Housekeeping Status"
               detail={selectedMeeting?.housekeepingStatus || "N/A"}
+            />
+            <DetalisFormatted
+              title="Company"
+              detail={
+                selectedMeeting?.companyName ||
+                selectedMeeting?.company?.companyName ||
+                selectedMeeting?.client ||
+                selectedMeeting?.externalClient ||
+                "N/A"
+              }
             />
 
             {/* Section 2: People Involved */}

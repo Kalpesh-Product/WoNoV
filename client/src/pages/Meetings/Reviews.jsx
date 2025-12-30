@@ -71,11 +71,6 @@ const Reviews = () => {
     {
       field: "nameofreview",
       headerName: "User",
-      cellRenderer: (params) => {
-        return (
-          <Chip label={params.value} style={{ backgroundColor: "white" }} />
-        );
-      },
       flex: 1,
     },
     { field: "date", headerName: "Date" },

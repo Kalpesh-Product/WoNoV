@@ -974,7 +974,7 @@ const MeetingFormLayout = () => {
                     {...field}
                     fullWidth
                     multiline
-                    rows={3}
+                    rows={1}
                     size="small"
                     error={!!errors.subject}
                     helperText={errors?.subject?.message}
