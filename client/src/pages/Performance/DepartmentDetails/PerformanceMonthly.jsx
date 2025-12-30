@@ -219,10 +219,19 @@ const PerformanceMonthly = () => {
         ]
       : []),
   ];
+
+  const formatDateTime = (value) =>
+    value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
+
   const completedColumns = [
     { headerName: "Sr no", field: "srNo", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", width: 300 },
-    { headerName: "Completed Time", field: "completionTime", flex: 1 },
+    {
+      headerName: "Completed Time",
+      field: "completionTime",
+      flex: 1,
+      cellRenderer: (params) => formatDateTime(params.value),
+    },
     { headerName: "Completed By", field: "completedBy" },
     {
       field: "status",
@@ -299,8 +308,7 @@ const PerformanceMonthly = () => {
                   ...completedEntries.map((item, index) => ({
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                    completionDate: humanDate(item.completionDate),
-                    completionTime: humanTime(item.completionDate),
+                    completionTime: item.completionDate,
                     completedBy: item.completedBy,
                     status: item.status,
                   })),
