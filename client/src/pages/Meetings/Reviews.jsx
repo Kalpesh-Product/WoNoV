@@ -266,7 +266,6 @@ const Reviews = () => {
         >
           {sidebarMode === "view" ? (
             <div className="space-y-4">
-              <DetalisFormatted title="Sr No" detail={reviewData.srno} />
               <DetalisFormatted title="User" detail={reviewData.nameofreview} />
               <DetalisFormatted title="Date" detail={reviewData.date} />
               <DetalisFormatted
