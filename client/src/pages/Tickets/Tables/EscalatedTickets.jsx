@@ -115,35 +115,35 @@ const EscalatedTickets = ({ title, departmentId }) => {
       headerName: "From Department",
     },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
-    {
-      field: "tickets",
-      headerName: "Tickets",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          "Assigned Ticket": { backgroundColor: "#ffbac2", color: "#ed0520" }, // Light orange bg, dark orange font
-          "Ticket Accepted": { backgroundColor: "#90EE90", color: "#02730a" }, // Light green bg, dark green font
-        };
+    // {
+    //   field: "tickets",
+    //   headerName: "Tickets",
+    //   cellRenderer: (params) => {
+    //     const statusColorMap = {
+    //       "Assigned Ticket": { backgroundColor: "#ffbac2", color: "#ed0520" }, // Light orange bg, dark orange font
+    //       "Ticket Accepted": { backgroundColor: "#90EE90", color: "#02730a" }, // Light green bg, dark green font
+    //     };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <div className="flex flex-col justify-center pt-4">
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-            <span className="text-small text-borderGray text-center h-full">
-              {params.data.acceptedBy}
-            </span>
-          </div>
-        );
-      },
-    },
+    //     const { backgroundColor, color } = statusColorMap[params.value] || {
+    //       backgroundColor: "gray",
+    //       color: "white",
+    //     };
+    //     return (
+    //       <div className="flex flex-col justify-center pt-4">
+    //         <Chip
+    //           label={params.value}
+    //           style={{
+    //             backgroundColor,
+    //             color,
+    //           }}
+    //         />
+    //         <span className="text-small text-borderGray text-center h-full">
+    //           {params.data.acceptedBy}
+    //         </span>
+    //       </div>
+    //     );
+    //   },
+    // },
     {
       field: "status",
       headerName: "Status",

@@ -489,6 +489,12 @@ const getAllDeptTasks = async (req, res, next) => {
     let departmentMap = new Map();
     let query = { company };
 
+    const isHrOrSuperAdmin =
+      roles.includes("Master Admin") ||
+      roles.includes("Super Admin") ||
+      roles.includes("HR Admin") ||
+      roles.includes("HR Employee");
+
     if (duration) {
       query.kpaDuration = duration;
     }
@@ -496,14 +502,27 @@ const getAllDeptTasks = async (req, res, next) => {
       query.taskType = taskType;
     }
 
-    if (
-      !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin") &&
-      !roles.includes("HR Admin") &&
-      !roles.includes("HR Employee")
-    ) {
+    if (!isHrOrSuperAdmin) {
       query.department = { $in: departments };
     }
+
+    const departmentFilter = { isActive: true };
+    if (!isHrOrSuperAdmin) {
+      departmentFilter._id = { $in: departments };
+    }
+
+    const fetchedDepartments = await Department.find(departmentFilter).lean();
+
+    fetchedDepartments.forEach((dept) => {
+      const deptId = dept._id.toString();
+
+      departmentMap.set(deptId, {
+        department: dept,
+        dailyKRA: 0,
+        monthlyKPA: 0,
+        annualKPA: 0,
+      });
+    });
 
     const tasks = await kraKpaRole
       .find({ ...query })
@@ -512,24 +531,23 @@ const getAllDeptTasks = async (req, res, next) => {
       .lean();
 
     tasks.forEach((task) => {
-      const dept = task.department || "Unknown";
-
-      if (!departmentMap.has(dept)) {
-        departmentMap.set(dept, {
-          department: dept,
+      const deptId = task.department?._id?.toString() || "unknown";
+      if (!departmentMap.has(deptId)) {
+        departmentMap.set(deptId, {
+          department: task.department || { name: "Unknown" },
           dailyKRA: 0,
           monthlyKPA: 0,
-          annuallyKPA: 0,
+          annualKPA: 0,
         });
       }
 
-      const department = departmentMap.get(dept);
+      const department = departmentMap.get(deptId);
 
       if (task.taskType === "KRA") department.dailyKRA++;
       if (task.taskType === "KPA" && task.kpaDuration === "Monthly")
         department.monthlyKPA++;
       if (task.taskType === "KPA" && task.kpaDuration === "Annually")
-        department.annuallyKPA++;
+        department.annualKPA++;
     });
 
     const result = Array.from(departmentMap.values());
