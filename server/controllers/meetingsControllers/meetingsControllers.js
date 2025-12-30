@@ -440,6 +440,7 @@ const getMeetings = async (req, res, next) => {
           populate: { path: "departments", select: "name" },
         },
         { path: "client", select: "clientName" },
+        { path: "externalClient", select: "registeredClientCompany" },
         // { path: "externalClient", select: "companyName pocName mobileNumber" },
         { path: "internalParticipants", select: "firstName lastName email" },
         { path: "clientParticipants", select: "employeeName email" },
@@ -538,7 +539,7 @@ const getMeetings = async (req, res, next) => {
           ? null
           : "BIZ Nest",
         externalClient: meeting.externalClient
-          ? meeting.externalClient.companyName
+          ? meeting.externalClient.registeredClientCompany
           : null,
         paymentAmount: meeting.paymentAmount ? meeting.paymentAmount : null,
         paymentMode: meeting.paymentMode ? meeting.paymentMode : null,
