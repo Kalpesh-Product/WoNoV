@@ -64,7 +64,10 @@ const addMeetings = async (req, res, next) => {
       !agenda ||
       (meetingType === "Internal" && !bookedBy) ||
       (meetingType === "Internal" && !client) ||
-      (meetingType === "External" && !externalCompany)
+      (meetingType === "External" && !externalCompany) ||
+      (meetingType === "External" &&
+        (!Array.isArray(externalParticipants) ||
+          externalParticipants.length === 0))
     ) {
       throw new CustomError(
         "Missing required fields",
