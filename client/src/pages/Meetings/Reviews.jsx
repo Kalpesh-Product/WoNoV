@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import WidgetSection from "../../components/WidgetSection";
 import DataCard from "../../components/DataCard";
 import AgTable from "../../components/AgTable";
+import MuiModal from "../../components/MuiModal";
 import { Chip } from "@mui/material";
 import { PiArrowBendUpLeftBold } from "react-icons/pi";
 import { PiArrowBendLeftDownBold } from "react-icons/pi";
@@ -42,7 +43,7 @@ const Reviews = () => {
     setReviewData(data);
     setSidebarMode(mode);
     setOpenSidebar(true);
-    reset({ reply: mode === "reply" ? data?.reply || "" : "" });
+    reset({ reply: mode === "reply" ? data?.replyText || "" : "" });
   };
 
   const handleCloseSidebar = () => {
@@ -95,13 +96,15 @@ const Reviews = () => {
     {
       field: "rate",
       headerName: "Rating",
-      cellRenderer: (params) => {
-        return (
-          <div>
-            ⭐ {params.value.toFixed(2)} <small>Out of 5</small>
-          </div>
-        );
-      },
+      cellRenderer: (params) => (
+        <div>
+          ⭐{" "}
+          {typeof params.value === "number"
+            ? params.value.toFixed(2)
+            : params.value}{" "}
+          <small>Out of 5</small>
+        </div>
+      ),
     },
     {
       field: "Reviews",
@@ -174,7 +177,8 @@ const Reviews = () => {
             {
               label: "Reply Review",
               onClick: () => handleOpenSidebar(params.data, "reply"),
-              disabled: !!params.data.reply,
+              // disabled: !!params.data.reply,
+              disabled: !!params.data.replyText,
             },
           ]}
         />
@@ -214,23 +218,46 @@ const Reviews = () => {
             <AgTable
               search={true}
               searchColumn={"Policies"}
+              // data={[
+              //   ...reviews.map((review, index) => ({
+              //     id: review._id,
+              //     srno: index + 1,
+              //     nameofreview: review.reviewerName,
+              //     date: humanDate(review.createdAt),
+              //     rate: review.rate,
+              //     Reviews: review.review,
+              //     reply: review.reply,
+              //     action: review?.reply ? "Replied" : "Reply Review",
+              //   })),
+              // ]}
               data={[
-                ...reviews.map((review, index) => ({
-                  id: review._id,
-                  srno: index + 1,
-                  nameofreview: review.reviewerName,
-                  date: humanDate(review.createdAt),
-                  rate: review.rate,
-                  Reviews: review.review,
-                  reply: review.reply,
-                  action: review?.reply ? "Replied" : "Reply Review",
-                })),
+                ...reviews.map((review, index) => {
+                  const replyText =
+                    typeof review.reply === "string"
+                      ? review.reply
+                      : review.reply?.text || "";
+                  const hasReply = !!replyText;
+
+                  return {
+                    id: review._id,
+                    srno: index + 1,
+                    nameofreview: review.reviewerName,
+                    date: humanDate(review.createdAt),
+                    rate: review.rate,
+                    Reviews: review.review,
+                    replyText,
+                    replierName: review.reply?.replierName || "",
+                    replierEmail: review.reply?.replierEmail || "",
+                    action: hasReply ? "Replied" : "Reply Review",
+                  };
+                }),
               ]}
               columns={departmentsColumn}
             />
           </PageFrame>
         </div>
-        <MuiAside
+
+        <MuiModal
           open={openSidebar}
           // onClose={() => setOpenSidebar(false)}
           // title={"Reviews"}
@@ -286,75 +313,93 @@ const Reviews = () => {
               </form>
             </div>
           </div> */}
-          <div className="p-2 space-y-4">
-            <div className="space-y-2">
-              <h1 className="font-pmedium text-subtitle">
-                {reviewData.nameofreview || "—"}
-              </h1>
-              <div className="space-y-1">
-                <DetalisFormatted title="Sr No" detail={reviewData.srno} />
-                <DetalisFormatted
-                  title="User"
-                  detail={reviewData.nameofreview}
-                />
-                <DetalisFormatted title="Date" detail={reviewData.date} />
-                <DetalisFormatted
-                  title="Rating"
-                  detail={
-                    typeof reviewData.rate === "number"
-                      ? `${reviewData.rate.toFixed(2)} / 5`
-                      : reviewData.rate || "—"
-                  }
-                />
-                <DetalisFormatted title="Review" detail={reviewData.Reviews} />
-                <DetalisFormatted title="Status" detail={reviewData.action} />
-                <DetalisFormatted
-                  title="Reply"
-                  detail={reviewData.reply || "No reply yet"}
-                />
-              </div>
-            </div>
-            {sidebarMode === "reply" && (
-              <div className="mt-2">
-                <form
-                  onSubmit={handleSubmit(replyReview)}
-                  className="flex flex-col gap-4"
-                >
-                  <Controller
-                    name="reply"
-                    control={control}
-                    rules={{
-                      required: "Please add a review",
-                      validate: {
-                        noOnlyWhitespace,
-                      },
-                    }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        type="text"
-                        id="outlined-multiline-flexible"
-                        label="Reply"
-                        fullWidth
-                        error={!!errors.reply}
-                        helperText={errors.reply?.message}
-                        multiline
-                        rows={5}
-                      />
-                    )}
-                  />
 
-                  <PrimaryButton
-                    title={"Submit"}
-                    type={"submit"}
-                    isLoading={isReplyReviewPending}
-                    disabled={isReplyReviewPending}
-                  />
-                </form>
+          {sidebarMode === "view" ? (
+            <div className="space-y-4">
+              <DetalisFormatted title="Sr No" detail={reviewData.srno} />
+              <DetalisFormatted title="User" detail={reviewData.nameofreview} />
+              <DetalisFormatted title="Date" detail={reviewData.date} />
+              <DetalisFormatted
+                title="Rating"
+                detail={
+                  typeof reviewData.rate === "number"
+                    ? `${reviewData.rate.toFixed(2)} / 5`
+                    : reviewData.rate || "—"
+                }
+              />
+              <DetalisFormatted title="Review" detail={reviewData.Reviews} />
+              <DetalisFormatted
+                title="Status"
+                detail={reviewData.replyText ? "Replied" : "Pending"}
+              />
+              <DetalisFormatted
+                title="Reply"
+                detail={reviewData.replyText || "No reply yet"}
+              />
+              {reviewData.replyText && (
+                <div className="space-y-1 rounded-lg bg-gray-50 p-3">
+                  <p className="text-sm text-content">{reviewData.replyText}</p>
+                  {(reviewData.replierName || reviewData.replierEmail) && (
+                    <p className="text-xs text-gray-500">
+                      {reviewData.replierName}
+                      {reviewData.replierName && reviewData.replierEmail
+                        ? " • "
+                        : ""}
+                      {reviewData.replierEmail}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div className="space-y-1">
+                <p className="font-pmedium text-subtitle">
+                  {reviewData.nameofreview || "—"}
+                </p>
+                <p className="text-sm text-content">
+                  {reviewData.Reviews || "—"}
+                </p>
               </div>
-            )}
-          </div>
-        </MuiAside>
+
+              <form
+                onSubmit={handleSubmit(replyReview)}
+                className="flex flex-col gap-4"
+              >
+                <Controller
+                  name="reply"
+                  control={control}
+                  rules={{
+                    required: "Please add a review",
+                    validate: {
+                      noOnlyWhitespace,
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      type="text"
+                      id="outlined-multiline-flexible"
+                      label="Reply"
+                      fullWidth
+                      error={!!errors.reply}
+                      helperText={errors.reply?.message}
+                      multiline
+                      rows={5}
+                    />
+                  )}
+                />
+
+                <PrimaryButton
+                  title={"Submit"}
+                  type={"submit"}
+                  isLoading={isReplyReviewPending}
+                  disabled={isReplyReviewPending}
+                />
+              </form>
+            </div>
+          )}
+        </MuiModal>
       </div>
     </>
   );
