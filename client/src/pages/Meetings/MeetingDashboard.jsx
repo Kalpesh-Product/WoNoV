@@ -1263,7 +1263,7 @@ const MeetingDashboard = () => {
             title={item.title}
             border={item.border}
           >
-            <div className="flex">
+            <div className="flex justify-end">
               {/* CHART – fixed size, cannot shrink */}
               <div className="shrink-0 w-[320px] h-[320px]">
                 <PieChartMui
