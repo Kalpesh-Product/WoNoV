@@ -175,7 +175,7 @@ const Reviews = () => {
               onClick: () => handleOpenSidebar(params.data, "view"),
             },
             {
-              label: "Reply Review",
+              label: !params.data.replyText ? "Reply to Review" : "Replied",
               onClick: () => handleOpenSidebar(params.data, "reply"),
               // disabled: !!params.data.reply,
               disabled: !!params.data.replyText,
@@ -264,56 +264,6 @@ const Reviews = () => {
           onClose={handleCloseSidebar}
           title={sidebarMode === "reply" ? "Reply to Review" : "Review Details"}
         >
-          {/* <div className="p-2 space-y-6">
-            <h1 className="font-pmedium text-subtitle">
-              {reviewData.nameofreview}
-            </h1>
-            <div>
-              ⭐ {reviewData.rate} <small> out of 5</small>
-            </div>
-            <div>
-              <p>{reviewData.Reviews}</p>
-            </div>
-            <div className="mt-5">
-              <form
-                onSubmit={handleSubmit(replyReview)}
-                className="flex flex-col gap-4"
-              >
-                <Controller
-                  name="reply"
-                  control={control}
-                  rules={{
-                    required: "Please add a review",
-                    // validate: {
-                    //   noOnlyWhitespace,
-                    //   isAlphanumeric,
-                    // },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      type="text"
-                      id="outlined-multiline-flexible"
-                      label="Reply"
-                      fullWidth
-                      error={!!errors.reply}
-                      helperText={errors.reply?.message}
-                      multiline
-                      rows={5}
-                    />
-                  )}
-                />
-
-                <PrimaryButton
-                  title={"Submit"}
-                  type={"submit"}
-                  isLoading={isReplyReviewPending}
-                  disabled={isReplyReviewPending}
-                />
-              </form>
-            </div>
-          </div> */}
-
           {sidebarMode === "view" ? (
             <div className="space-y-4">
               <DetalisFormatted title="Sr No" detail={reviewData.srno} />
@@ -336,26 +286,15 @@ const Reviews = () => {
                 title="Reply"
                 detail={reviewData.replyText || "No reply yet"}
               />
-              {reviewData.replyText && (
-                <div className="space-y-1 rounded-lg bg-gray-50 p-3">
-                  <p className="text-sm text-content">{reviewData.replyText}</p>
-                  {(reviewData.replierName || reviewData.replierEmail) && (
-                    <p className="text-xs text-gray-500">
-                      {reviewData.replierName}
-                      {reviewData.replierName && reviewData.replierEmail
-                        ? " • "
-                        : ""}
-                      {reviewData.replierEmail}
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           ) : (
             <div className="space-y-5">
-              <div className="space-y-1">
+              <div className="p-2 space-y-6">
                 <p className="font-pmedium text-subtitle">
                   {reviewData.nameofreview || "—"}
+                </p>
+                <p>
+                  ⭐ {reviewData.rate} <small> out of 5</small>
                 </p>
                 <p className="text-sm text-content">
                   {reviewData.Reviews || "—"}
