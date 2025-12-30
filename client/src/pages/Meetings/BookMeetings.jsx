@@ -278,7 +278,8 @@ const BookMeetings = () => {
               "Review added"
             ) : (
               <>
-                {userName === params.data.bookedBy ? (
+                {userName === params.data.bookedBy &&
+                params.data.status === "Completed" ? (
                   <span
                     onClick={() => handleAddReview(params.data)}
                     className="cursor-pointer"
@@ -466,10 +467,12 @@ const BookMeetings = () => {
                   agenda: meeting.agenda,
                   date: meeting.date,
                   roomName: meeting.roomName,
-                  reviews: meeting.reviews,
+                  status: meeting.meetingStatus,
+                  review: meeting.reviews?.review,
+                  reply: meeting.reviews?.reply?.text,
                   location: meeting.location
                     ? `${meeting.location?.unitName} - ${meeting.location.unitNo}`
-                    : "N/A",
+                    : "-",
                 }))}
               columns={myMeetingsColumn}
               search
@@ -720,6 +723,16 @@ const BookMeetings = () => {
                     ? dayjs(selectedMeeting.endTime).format("hh:mm A")
                     : "N/A"
                 }
+              />
+              <DetalisFormatted
+                title="Review"
+                detail={
+                  selectedMeeting?.review ? selectedMeeting?.review : "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="Reply"
+                detail={selectedMeeting?.reply ? selectedMeeting?.reply : "N/A"}
               />
             </div>
           ) : (
