@@ -167,8 +167,8 @@ const PerformanceMonthly = () => {
   const departmentColumns = [
     { headerName: "Sr no", field: "srNo", width: 100 },
     { headerName: "KPA List", field: "taskName", flex: 1 },
-    // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "Due Date", field: "dueDate" },
+    { headerName: "Start Date", field: "assignedDate" },
+    { headerName: "End Date", field: "dueDate" },
     {
       field: "status",
       headerName: "Status",
