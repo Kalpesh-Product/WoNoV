@@ -375,6 +375,11 @@ const addVisitor = async (req, res, next) => {
         idType: idProof.idType,
         idNumber: idProof.idNumber,
       };
+    } else if (visitorFlag === "Visitor") {
+      visitorData.idProof = {
+        idType: idProof?.idType ?? null,
+        idNumber: idProof?.idNumber ?? null,
+      };
     }
 
     const visitor = new Visitor(visitorData);
