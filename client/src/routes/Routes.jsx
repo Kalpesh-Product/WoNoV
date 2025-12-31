@@ -1184,7 +1184,7 @@ export const routes = createBrowserRouter([
                     ],
                   },
                   {
-                    path: "it-dashboard",
+                    path: "IT-dashboard",
                     element: <ItLayout />,
                     children: [
                       {
@@ -1295,39 +1295,39 @@ export const routes = createBrowserRouter([
                         element: <ItPerSqInternetExpense />,
                       },
                       {
-                        path: "it-offices",
+                        path: "IT-offices",
                         element: <ItOfficesNew />,
                       },
                       {
-                        path: "it-offices/:client",
+                        path: "IT-offices/:client",
                         element: <ItOfficesLayout />,
                         children: [
                           {
-                            path: "it-offices-occupied",
+                            path: "IT-offices-occupied",
                             index: true,
                             element: <ItOfficesOccupied />,
                           },
                           {
-                            path: "it-offices-clear",
+                            path: "IT-offices-clear",
                             element: <ItOfficesClear />,
                           },
                         ],
                       },
                       {
-                        path: "it-expenses",
+                        path: "IT-expenses",
                         element: <ItExpenses />,
                       },
                       {
-                        path: "it-expenses/it-expenses-layout/:client",
+                        path: "IT-expenses/IT-expenses-layout/:client",
                         element: <ItExpensesLayout />,
                         children: [
                           {
-                            path: "it-expenses-occupied",
+                            path: "IT-expenses-occupied",
                             index: true,
                             element: <ItExpensesOccupied />,
                           },
                           {
-                            path: "it-expenses-clear",
+                            path: "IT-expenses-clear",
                             element: <ItExpensesClear />,
                           },
                         ],

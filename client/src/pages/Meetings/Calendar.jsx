@@ -231,6 +231,7 @@ const Calender = () => {
               </div>
               <div className="w-full h-full overflow-y-auto">
                 <FullCalendar
+                  allDayText="All Day"
                   headerToolbar={{
                     left: "today",
                     center: "prev title next",

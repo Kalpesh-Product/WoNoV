@@ -61,6 +61,7 @@ const AdminTeamMembersCalendar = () => {
       {/* Calendar Section */}
       <div className="w-full h-full overflow-y-auto">
         <FullCalendar
+          allDayText="All Day"
           headerToolbar={{
             left: "prev title next",
             right: "dayGridMonth,timeGridWeek,timeGridDay",

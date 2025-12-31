@@ -23,7 +23,7 @@ import { inrFormat } from "../../utils/currencyFormat";
 const PaymentScheduleCommon = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const department = usePageDepartment()
+  const department = usePageDepartment();
 
   const closeDrawer = () => {
     setIsDrawerOpen(false);
@@ -200,6 +200,7 @@ const PaymentScheduleCommon = () => {
         {/* Calendar Section */}
         <div className="w-full h-full overflow-y-auto">
           <FullCalendar
+            allDayText="All Day"
             headerToolbar={{
               left: "today",
               center: "prev title next",
@@ -251,7 +252,9 @@ const PaymentScheduleCommon = () => {
               title="Projected Amount"
               detail={
                 selectedEvent.extendedProps.projectedAmount
-                  ? `INR ${inrFormat(selectedEvent.extendedProps.projectedAmount)}`
+                  ? `INR ${inrFormat(
+                      selectedEvent.extendedProps.projectedAmount
+                    )}`
                   : "Not Available"
               }
             />
