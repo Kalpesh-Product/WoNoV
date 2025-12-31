@@ -90,7 +90,6 @@ const HrDashboard = () => {
       icon: <MdMiscellaneousServices />,
       permission: PERMISSIONS.HR_SETTINGS.value,
     },
-    
   ];
 
   const allowedCards = cardsConfig.filter(
@@ -1249,75 +1248,75 @@ const HrDashboard = () => {
   );
   // PIE END
 
-
   // Graphs
-const expenseGraphConfig = {
-  permission: PERMISSIONS.HR_DEPARTMENT_EXPENSE.value,
-};
+  const expenseGraphConfig = {
+    permission: PERMISSIONS.HR_DEPARTMENT_EXPENSE.value,
+  };
 
-const kpaGraphConfig = {
-  permission: PERMISSIONS.HR_ANNUAL_KPA_VS_ACHIEVEMENTS.value,
-};
+  const kpaGraphConfig = {
+    permission: PERMISSIONS.HR_ANNUAL_KPA_VS_ACHIEVEMENTS.value,
+  };
 
-const tasksGraphConfig = {
-  permission: PERMISSIONS.HR_ANNUAL_TASKS_VS_ACHIEVEMENTS.value,
-};
+  const tasksGraphConfig = {
+    permission: PERMISSIONS.HR_ANNUAL_TASKS_VS_ACHIEVEMENTS.value,
+  };
 
-// Cards
-const financeCardConfig = {
-  permission: PERMISSIONS.HR_EXPENSES.value,
-};
-const averageCardConfig = {
-  permission: PERMISSIONS.HR_AVERAGES.value,
-};
+  // Cards
+  const financeCardConfig = {
+    permission: PERMISSIONS.HR_EXPENSES.value,
+  };
+  const averageCardConfig = {
+    permission: PERMISSIONS.HR_AVERAGES.value,
+  };
 
-// Tables
-const birthdayTableConfig = {
-  permission: PERMISSIONS.HR_CURRENT_MONTH_BIRTHDAY_LIST.value,
-};
-const holidayTableConfig = {
-  permission: PERMISSIONS.HR_CURRENT_MONTH_HOLIDAY_LIST.value,
-};
+  // Tables
+  const birthdayTableConfig = {
+    permission: PERMISSIONS.HR_CURRENT_MONTH_BIRTHDAY_LIST.value,
+  };
+  const holidayTableConfig = {
+    permission: PERMISSIONS.HR_CURRENT_MONTH_HOLIDAY_LIST.value,
+  };
 
-
-const hrWidgets = [
-  {
-    layout: 1,
-    widgets: [
-      userPermissions.includes(expenseGraphConfig.permission) && (
-        <Suspense fallback={
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Skeleton variant="text" width={200} height={30} />
-            <Skeleton variant="rectangular" width="100%" height={300} />
-          </Box>
-        }>
-          <WidgetSection normalCase layout={1} padding>
-            <YearlyGraph
-              data={expenseRawSeries}
-              responsiveResize
-              chartId={"bargraph-hr-expense"}
-              options={expenseOptions}
-              title={`BIZ Nest HR DEPARTMENT EXPENSE`}
-              titleAmount={`INR ${inrFormat(totalUtilised)}`}
-              onYearChange={setSelectedHrFiscalYear}
-            />
-          </WidgetSection>
-        </Suspense>
-      ),
-    ].filter(Boolean),
-  },
-  {
-    layout: 2,
-    widgets: [
-      userPermissions.includes(financeCardConfig.permission) && (
-        <FinanceCard titleCenter {...HrExpenses} />
-      ),
-      userPermissions.includes(averageCardConfig.permission) && (
-        <FinanceCard titleCenter {...HrAverageExpense} />
-      ),
-    ].filter(Boolean),
-  },
-  {
+  const hrWidgets = [
+    {
+      layout: 1,
+      widgets: [
+        userPermissions.includes(expenseGraphConfig.permission) && (
+          <Suspense
+            fallback={
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Skeleton variant="text" width={200} height={30} />
+                <Skeleton variant="rectangular" width="100%" height={300} />
+              </Box>
+            }
+          >
+            <WidgetSection normalCase layout={1} padding>
+              <YearlyGraph
+                data={expenseRawSeries}
+                responsiveResize
+                chartId={"bargraph-hr-expense"}
+                options={expenseOptions}
+                title={`BIZ Nest HR DEPARTMENT EXPENSE`}
+                titleAmount={`INR ${inrFormat(totalUtilised)}`}
+                onYearChange={setSelectedHrFiscalYear}
+              />
+            </WidgetSection>
+          </Suspense>
+        ),
+      ].filter(Boolean),
+    },
+    {
+      layout: 2,
+      widgets: [
+        userPermissions.includes(financeCardConfig.permission) && (
+          <FinanceCard titleCenter {...HrExpenses} />
+        ),
+        userPermissions.includes(averageCardConfig.permission) && (
+          <FinanceCard titleCenter {...HrAverageExpense} />
+        ),
+      ].filter(Boolean),
+    },
+    {
       layout: allowedCards.length, // ✅ dynamic layout
       widgets: allowedCards.map((card) => (
         <Card
@@ -1328,112 +1327,120 @@ const hrWidgets = [
         />
       )),
     },
-  {
-    layout: 2,
-    widgets: [
-      userPermissions.includes(kpaGraphConfig.permission) && (
-        <Suspense fallback={
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Skeleton variant="text" width={200} height={30} />
-            <Skeleton variant="rectangular" width="100%" height={300} />
-          </Box>
-        }>
-          <YearlyGraph
-            data={tasksData}
-            options={tasksOptions}
-            title={"ANNUAL KPA VS ACHIEVEMENTS"}
-            titleAmount={`TOTAL KPA : ${tasksForSelectedYear.length || 0}`}
-            secondParam
-            currentYear={true}
-            onYearChange={setSelectedFiscalYear}
-          />
-        </Suspense>
-      ),
-      userPermissions.includes(tasksGraphConfig.permission) && (
-        <Suspense fallback={
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Skeleton variant="text" width={200} height={30} />
-            <Skeleton variant="rectangular" width="100%" height={300} />
-          </Box>
-        }>
-          <YearlyGraph
-            data={tasksGraphData}
-            options={tasksOverallOptions}
-            title={"ANNUAL TASKS VS ACHIEVEMENTS"}
-            titleAmount={`TOTAL TASKS : ${overallTasksForYear.length || 0}`}
-            secondParam
-            currentYear={true}
-            onYearChange={setSelectedFiscalYear}
-          />
-        </Suspense>
-      ),
-    ].filter(Boolean),
-  },
-  {
-    layout: allowedPieCharts.length,
-    widgets: allowedPieCharts.map((item) => (
-      <WidgetSection
-        key={item.key}
-        layout={item.layout}
-        title={item.title}
-        border={item.border}>
-        <PieChartMui
-          percent={item.percent}
+    {
+      layout: 2,
+      widgets: [
+        userPermissions.includes(kpaGraphConfig.permission) && (
+          <Suspense
+            fallback={
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Skeleton variant="text" width={200} height={30} />
+                <Skeleton variant="rectangular" width="100%" height={300} />
+              </Box>
+            }
+          >
+            <YearlyGraph
+              data={tasksData}
+              options={tasksOptions}
+              title={"ANNUAL KPA VS ACHIEVEMENTS"}
+              titleAmount={`TOTAL KPA : ${tasksForSelectedYear.length || 0}`}
+              secondParam
+              currentYear={true}
+              onYearChange={setSelectedFiscalYear}
+            />
+          </Suspense>
+        ),
+        userPermissions.includes(tasksGraphConfig.permission) && (
+          <Suspense
+            fallback={
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Skeleton variant="text" width={200} height={30} />
+                <Skeleton variant="rectangular" width="100%" height={300} />
+              </Box>
+            }
+          >
+            <YearlyGraph
+              data={tasksGraphData}
+              options={tasksOverallOptions}
+              title={"ANNUAL TASKS VS ACHIEVEMENTS"}
+              titleAmount={`TOTAL TASKS : ${overallTasksForYear.length || 0}`}
+              secondParam
+              currentYear={true}
+              onYearChange={setSelectedFiscalYear}
+            />
+          </Suspense>
+        ),
+      ].filter(Boolean),
+    },
+    {
+      layout: allowedPieCharts.length,
+      widgets: allowedPieCharts.map((item) => (
+        <WidgetSection
+          key={item.key}
+          layout={item.layout}
           title={item.title}
-          data={item.data}
-          options={item.options}
-        />
-      </WidgetSection>
-    )),
-  },
-  {
-    layout: 2,
-    widgets: [
-      userPermissions.includes(birthdayTableConfig.permission) && (
-        !usersQuery.isLoading ? (
+          border={item.border}
+        >
+          <PieChartMui
+            percent={item.percent}
+            title={item.title}
+            data={item.data}
+            options={item.options}
+            centerAlign
+          />
+        </WidgetSection>
+      )),
+    },
+    {
+      layout: 2,
+      widgets: [
+        userPermissions.includes(birthdayTableConfig.permission) &&
+          (!usersQuery.isLoading ? (
+            <MuiTable
+              key={birthdays.length}
+              Title="Current Month's Birthday List"
+              columns={columns}
+              rows={birthdays
+                .filter((bd) => bd.start)
+                .sort(
+                  (a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf()
+                )
+                .map((bd, index) => ({
+                  id: index + 1,
+                  title: bd.title,
+                  start: dayjs(bd.start).format("DD-MM-YYYY"),
+                  day: dayjs(bd.start).format("dddd"),
+                }))}
+              rowsToDisplay={40}
+              scroll={true}
+              className="h-full"
+            />
+          ) : (
+            <CircularProgress key="loading-spinner" />
+          )),
+        userPermissions.includes(holidayTableConfig.permission) && (
           <MuiTable
-            key={birthdays.length}
-            Title="Current Month's Birthday List"
-            columns={columns}
-            rows={birthdays
-              .filter((bd) => bd.start)
-              .sort((a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf())
-              .map((bd, index) => ({
+            Title="Current Months Holiday List"
+            columns={columns2}
+            rows={holidayEvents
+              .filter((h) => h.start)
+              .sort(
+                (a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf()
+              )
+              .map((holiday, index) => ({
                 id: index + 1,
-                title: bd.title,
-                start: dayjs(bd.start).format("DD-MM-YYYY"),
-                day: dayjs(bd.start).format("dddd"),
+                title: holiday.title,
+                start: dayjs(holiday.start).format("DD-MM-YYYY"),
+                day: dayjs(holiday.start).format("dddd"),
               }))}
             rowsToDisplay={40}
             scroll={true}
             className="h-full"
           />
-        ) : (
-          <CircularProgress key="loading-spinner" />
-        )
-      ),
-      userPermissions.includes(holidayTableConfig.permission) && (
-        <MuiTable
-          Title="Current Months Holiday List"
-          columns={columns2}
-          rows={holidayEvents
-            .filter((h) => h.start)
-            .sort((a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf())
-            .map((holiday, index) => ({
-              id: index + 1,
-              title: holiday.title,
-              start: dayjs(holiday.start).format("DD-MM-YYYY"),
-              day: dayjs(holiday.start).format("dddd"),
-            }))}
-          rowsToDisplay={40}
-          scroll={true}
-          className="h-full"
-        />
-      ),
-    ].filter(Boolean),
-  },
-];
-
+        ),
+      ].filter(Boolean),
+    },
+  ];
 
   // const hrWidgets = [
   //   {
