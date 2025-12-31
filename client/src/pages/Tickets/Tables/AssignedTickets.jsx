@@ -33,7 +33,7 @@ const AssignedTickets = ({ title, departmentId }) => {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [openView, setOpenView] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
+  // const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
   const { isTop } = useTopDepartment();
 
   // Fetch Supported Tickets
@@ -248,38 +248,33 @@ const AssignedTickets = ({ title, departmentId }) => {
           },
         ];
 
-        const showOtherActions =
-          !isTop || (isTop && departmentId === topManagementDepartment);
-
         const roleTitle = auth?.user?.role?.[0]?.roleTitle || "";
-        const canManageAssignments = roleTitle.endsWith("Admin");
+        const canManageAssignments = roleTitle.endsWith("Admin") || isTop;
 
-        const conditionalItems = showOtherActions
-          ? [
-              ...(canManageAssignments
-                ? [
-                    {
-                      label: "Re-Assign",
-                      onClick: () => handleOpenAssignModal(params.data.id),
-                    },
+        const conditionalItems = [
+          ...(canManageAssignments
+            ? [
+                {
+                  label: "Re-Assign",
+                  onClick: () => handleOpenAssignModal(params.data.id),
+                },
 
-                    {
-                      label: "Escalate",
-                      onClick: () => handleEscalateTicket(params.data),
-                    },
-                  ]
-                : []),
-              {
-                label: "Support",
-                onClick: () => handleSupportTicket(params.data.id),
-              },
+                {
+                  label: "Escalate",
+                  onClick: () => handleEscalateTicket(params.data),
+                },
+              ]
+            : []),
+          {
+            label: "Support",
+            onClick: () => handleSupportTicket(params.data.id),
+          },
 
-              {
-                label: "Close",
-                onClick: () => handleCloseTicket(params.data.id),
-              },
-            ]
-          : [];
+          {
+            label: "Close",
+            onClick: () => handleCloseTicket(params.data.id),
+          },
+        ];
 
         return (
           <ThreeDotMenu
