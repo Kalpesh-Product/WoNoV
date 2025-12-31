@@ -249,16 +249,20 @@ const AssignedTickets = ({ title, departmentId }) => {
         ];
 
         const roleTitle = auth?.user?.role?.[0]?.roleTitle || "";
-        const canManageAssignments = roleTitle.endsWith("Admin") || isTop;
+        const canReassignTicket = isTop;
+        const canEscalateTicket = roleTitle.endsWith("Admin") || isTop;
 
         const conditionalItems = [
-          ...(canManageAssignments
+          ...(canReassignTicket
             ? [
                 {
                   label: "Re-Assign",
                   onClick: () => handleOpenAssignModal(params.data.id),
                 },
-
+              ]
+            : []),
+          ...(canEscalateTicket
+            ? [
                 {
                   label: "Escalate",
                   onClick: () => handleEscalateTicket(params.data),
