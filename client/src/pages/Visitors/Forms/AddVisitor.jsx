@@ -22,6 +22,9 @@ import {
 } from "../../../utils/validators";
 
 const AddVisitor = () => {
+  const uniqueId = () =>
+    `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+
   const {
     control,
     handleSubmit,
@@ -39,7 +42,11 @@ const AddVisitor = () => {
       address: "",
       phoneNumber: "",
       purposeOfVisit: "",
-      idProof: { idType: "", idNumber: "" },
+      idProof: {
+        idType: uniqueId(),
+        idNumber: uniqueId(),
+      },
+
       dateOfVisit: null,
       checkIn: null,
       checkOut: null,
