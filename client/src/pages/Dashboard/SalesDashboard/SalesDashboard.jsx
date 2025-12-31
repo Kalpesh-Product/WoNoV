@@ -875,7 +875,7 @@ const SalesDashboard = () => {
   //Unique Leads Graph
   const graphCountConfig = [
     {
-      key:PERMISSIONS.SALES_MONTHLY_UNIQUE_LEADS.value,
+      key: PERMISSIONS.SALES_MONTHLY_UNIQUE_LEADS.value,
       graphTitle: "MONTHLY UNIQUE LEADS",
       data: graphData,
       chartOptions: monthlyLeadsOptions,
@@ -896,7 +896,6 @@ const SalesDashboard = () => {
     graphCountConfig,
     userPermissions
   );
- 
 
   const pieChartConfigs = [
     {
@@ -954,8 +953,8 @@ const SalesDashboard = () => {
       rowsToDisplay: 40,
       scroll: true,
       className: "h-full",
-      layout:1,
-      key:PERMISSIONS.SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY.value
+      layout: 1,
+      key: PERMISSIONS.SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY.value,
     },
     {
       Title: "Client Member Birthday",
@@ -965,9 +964,9 @@ const SalesDashboard = () => {
       rowsToDisplay: 40,
       scroll: true,
       className: "h-full",
-      layout:1,
-      padding:true,
-      key:PERMISSIONS.SALES_CLIENT_MEMBER_BIRTHDAY.value
+      layout: 1,
+      padding: true,
+      key: PERMISSIONS.SALES_CLIENT_MEMBER_BIRTHDAY.value,
     },
   ];
   const allowedMuiTableConfigs = salesFilterPermissions(
@@ -1045,9 +1044,8 @@ const SalesDashboard = () => {
         />
       )),
     },
-     
-    ...allowedGraphs.map((config)=>(
-       {
+
+    ...allowedGraphs.map((config) => ({
       layout: 1,
       widgets: [
         <>
@@ -1057,20 +1055,17 @@ const SalesDashboard = () => {
               <Skeleton variant="rectangular" width="100%" height={300} />
             </div>
           ) : (
-          
-              <FyBarGraphCount
-                graphTitle={config.graphTitle}
-                data={config.data}
-                chartOptions={config.chartOptions}
-                dateKey={config.dateKey}
-                groupKey={config.groupKey}
-              />
-            
+            <FyBarGraphCount
+              graphTitle={config.graphTitle}
+              data={config.data}
+              chartOptions={config.chartOptions}
+              dateKey={config.dateKey}
+              groupKey={config.groupKey}
+            />
           )}
         </>,
       ],
-    }
-    )),
+    })),
     {
       layout: 2,
       widgets: allowedPieCharts.map((config) => (
@@ -1084,6 +1079,7 @@ const SalesDashboard = () => {
               data={config.data}
               options={config.options}
               width={config?.width}
+              centerAlign
             />
           ) : (
             <CircularProgress color="#1E3D73" />
@@ -1100,7 +1096,11 @@ const SalesDashboard = () => {
           border={config.border}
         >
           <div className="h-[300px]">
-            <PieChartMui data={config.data} options={config.options} />
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              centerAlign
+            />
           </div>
         </WidgetSection>
       )),

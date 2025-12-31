@@ -1127,11 +1127,13 @@ const FinanceDashboard = () => {
           key={item.key}
           layout={item.layout}
           title={item.title}
-          border={item.border}>
+          border={item.border}
+        >
           <PieChartMui
             data={item.data}
             options={item.options}
             // width={item.width}
+            centerAlign
           />
         </WidgetSection>
       )),
@@ -1168,7 +1170,8 @@ const FinanceDashboard = () => {
           key={item.key}
           layout={item.layout}
           title={item.title}
-          border={item.border}>
+          border={item.border}
+        >
           <DonutChart
             centerLabel={item.centerLabel}
             labels={item.labels}
