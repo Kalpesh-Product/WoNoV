@@ -111,7 +111,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/ticket-filter/accept-assign/${departmentId}`
+          `/api/tickets/ticket-filter/accept/${departmentId}`
         );
         const filtered = response.data;
         const hasAssigned = filtered.some(

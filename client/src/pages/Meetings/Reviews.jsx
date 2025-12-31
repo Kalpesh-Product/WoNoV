@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import WidgetSection from "../../components/WidgetSection";
 import DataCard from "../../components/DataCard";
 import AgTable from "../../components/AgTable";
+import MuiModal from "../../components/MuiModal";
 import { Chip } from "@mui/material";
 import { PiArrowBendUpLeftBold } from "react-icons/pi";
 import { PiArrowBendLeftDownBold } from "react-icons/pi";
@@ -16,15 +17,19 @@ import { toast } from "sonner";
 import { queryClient } from "../../main";
 import humanDate from "../../utils/humanDateForamt";
 import PageFrame from "../../components/Pages/PageFrame";
-import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
+import { noOnlyWhitespace } from "../../utils/validators";
+import ThreeDotMenu from "../../components/ThreeDotMenu";
+import DetalisFormatted from "../../components/DetalisFormatted";
 
 const Reviews = () => {
   const axios = useAxiosPrivate();
   const [openSidebar, setOpenSidebar] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState("view");
   const [reviewData, setReviewData] = useState({});
   const {
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm({
     mode: "onChange",
@@ -33,6 +38,19 @@ const Reviews = () => {
     },
   });
   const { auth } = useAuth();
+
+  const handleOpenSidebar = (data, mode = "view") => {
+    setReviewData(data);
+    setSidebarMode(mode);
+    setOpenSidebar(true);
+    reset({ reply: mode === "reply" ? data?.replyText || "" : "" });
+  };
+
+  const handleCloseSidebar = () => {
+    setOpenSidebar(false);
+    setSidebarMode("view");
+    reset({ reply: "" });
+  };
 
   const { data: reviews = [] } = useQuery({
     queryKey: ["reviews"],
@@ -58,6 +76,7 @@ const Reviews = () => {
     },
     onSuccess: function (data) {
       toast.success(data.message);
+      handleCloseSidebar();
       setOpenSidebar(false);
       queryClient.invalidateQueries(["reviews"]);
     },
@@ -77,13 +96,15 @@ const Reviews = () => {
     {
       field: "rate",
       headerName: "Rating",
-      cellRenderer: (params) => {
-        return (
-          <div>
-            ⭐ {params.value.toFixed(2)} <small>Out of 5</small>
-          </div>
-        );
-      },
+      cellRenderer: (params) => (
+        <div>
+          ⭐{" "}
+          {typeof params.value === "number"
+            ? params.value.toFixed(2)
+            : params.value}{" "}
+          <small>Out of 5</small>
+        </div>
+      ),
     },
     {
       field: "Reviews",
@@ -99,52 +120,69 @@ const Reviews = () => {
     {
       field: "action",
       headerName: "Actions",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          "Reply Review": { backgroundColor: "#E8FEF1", color: "#527160" }, // Light orange bg, dark orange font
-          Replied: { backgroundColor: "#EAEAEA", color: "#868686" }, // Light green bg, dark green font
-        };
+      // cellRenderer: (params) => {
+      //   const statusColorMap = {
+      //     "Reply Review": { backgroundColor: "#E8FEF1", color: "#527160" }, // Light orange bg, dark orange font
+      //     Replied: { backgroundColor: "#EAEAEA", color: "#868686" }, // Light green bg, dark green font
+      //   };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
+      //   const { backgroundColor, color } = statusColorMap[params.value] || {
+      //     backgroundColor: "gray",
+      //     color: "white",
+      //   };
 
-        const handleClick = () => {
-          if (params.value === "Reply Review") {
-            // Trigger modal open when "Reply Review" is clicked
-            setOpenSidebar(true);
-            setReviewData(params.data); // Optional: You can pass the row data to the modal
-          }
-        };
+      //   const handleClick = () => {
+      //     if (params.value === "Reply Review") {
+      //       // Trigger modal open when "Reply Review" is clicked
+      //       setOpenSidebar(true);
+      //       setReviewData(params.data); // Optional: You can pass the row data to the modal
+      //     }
+      //   };
 
-        return (
-          <>
-            <Chip
-              label={
-                params.value === "Reply Review" ? (
-                  <div
-                    className="flex flex-row items-center justify-center gap-2"
-                    onClick={handleClick}
-                  >
-                    <PiArrowBendLeftDownBold />
-                    {params.value}
-                  </div>
-                ) : (
-                  <div className="flex flex-row items-center justify-center gap-2">
-                    <PiArrowBendUpLeftBold />
-                    {params.value}
-                  </div>
-                )
-              }
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
-        );
-      },
+      //   return (
+      //     <>
+      //       <Chip
+      //         label={
+      //           params.value === "Reply Review" ? (
+      //             <div
+      //               className="flex flex-row items-center justify-center gap-2"
+      //               onClick={handleClick}
+      //             >
+      //               <PiArrowBendLeftDownBold />
+      //               {params.value}
+      //             </div>
+      //           ) : (
+      //             <div className="flex flex-row items-center justify-center gap-2">
+      //               <PiArrowBendUpLeftBold />
+      //               {params.value}
+      //             </div>
+      //           )
+      //         }
+      //         style={{
+      //           backgroundColor,
+      //           color,
+      //         }}
+      //       />
+      //     </>
+      //   );
+      // },
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.id}
+          menuItems={[
+            {
+              label: "View",
+              onClick: () => handleOpenSidebar(params.data, "view"),
+            },
+            {
+              label: !params.data.replyText ? "Reply to Review" : "Replied",
+              onClick: () => handleOpenSidebar(params.data, "reply"),
+              // disabled: !!params.data.reply,
+              disabled: !!params.data.replyText,
+            },
+          ]}
+        />
+      ),
       flex: 1,
     },
   ];
@@ -180,37 +218,88 @@ const Reviews = () => {
             <AgTable
               search={true}
               searchColumn={"Policies"}
+              // data={[
+              //   ...reviews.map((review, index) => ({
+              //     id: review._id,
+              //     srno: index + 1,
+              //     nameofreview: review.reviewerName,
+              //     date: humanDate(review.createdAt),
+              //     rate: review.rate,
+              //     Reviews: review.review,
+              //     reply: review.reply,
+              //     action: review?.reply ? "Replied" : "Reply Review",
+              //   })),
+              // ]}
               data={[
-                ...reviews.map((review, index) => ({
-                  id: review._id,
-                  srno: index + 1,
-                  nameofreview: review.reviewerName,
-                  date: humanDate(review.createdAt),
-                  rate: review.rate,
-                  Reviews: review.review,
-                  action: review?.reply ? "Replied" : "Reply Review",
-                })),
+                ...reviews.map((review, index) => {
+                  const replyText =
+                    typeof review.reply === "string"
+                      ? review.reply
+                      : review.reply?.text || "";
+                  const hasReply = !!replyText;
+
+                  return {
+                    id: review._id,
+                    srno: index + 1,
+                    nameofreview: review.reviewerName,
+                    date: humanDate(review.createdAt),
+                    rate: review.rate,
+                    Reviews: review.review,
+                    replyText,
+                    replierName: review.reply?.replierName || "",
+                    replierEmail: review.reply?.replierEmail || "",
+                    action: hasReply ? "Replied" : "Reply Review",
+                  };
+                }),
               ]}
               columns={departmentsColumn}
             />
           </PageFrame>
         </div>
-        <MuiAside
+
+        <MuiModal
           open={openSidebar}
-          onClose={() => setOpenSidebar(false)}
-          title={"Reviews"}
+          // onClose={() => setOpenSidebar(false)}
+          // title={"Reviews"}
+          onClose={handleCloseSidebar}
+          title={sidebarMode === "reply" ? "Reply to Review" : "Review Details"}
         >
-          <div className="p-2 space-y-6">
-            <h1 className="font-pmedium text-subtitle">
-              {reviewData.nameofreview}
-            </h1>
-            <div>
-              ⭐ {reviewData.rate} <small> out of 5</small>
+          {sidebarMode === "view" ? (
+            <div className="space-y-4">
+              <DetalisFormatted title="User" detail={reviewData.nameofreview} />
+              <DetalisFormatted title="Date" detail={reviewData.date} />
+              <DetalisFormatted
+                title="Rating"
+                detail={
+                  typeof reviewData.rate === "number"
+                    ? `${reviewData.rate.toFixed(2)} / 5`
+                    : reviewData.rate || "—"
+                }
+              />
+              <DetalisFormatted title="Review" detail={reviewData.Reviews} />
+              <DetalisFormatted
+                title="Status"
+                detail={reviewData.replyText ? "Replied" : "Pending"}
+              />
+              <DetalisFormatted
+                title="Reply"
+                detail={reviewData.replyText || "No reply yet"}
+              />
             </div>
-            <div>
-              <p>{reviewData.Reviews}</p>
-            </div>
-            <div className="mt-5">
+          ) : (
+            <div className="space-y-5">
+              <div className="p-2 space-y-6">
+                <p className="font-pmedium text-subtitle">
+                  {reviewData.nameofreview || "—"}
+                </p>
+                <p>
+                  ⭐ {reviewData.rate} <small> out of 5</small>
+                </p>
+                <p className="text-sm text-content">
+                  {reviewData.Reviews || "—"}
+                </p>
+              </div>
+
               <form
                 onSubmit={handleSubmit(replyReview)}
                 className="flex flex-col gap-4"
@@ -220,10 +309,9 @@ const Reviews = () => {
                   control={control}
                   rules={{
                     required: "Please add a review",
-                    // validate: {
-                    //   noOnlyWhitespace,
-                    //   isAlphanumeric,
-                    // },
+                    validate: {
+                      noOnlyWhitespace,
+                    },
                   }}
                   render={({ field }) => (
                     <TextField
@@ -248,8 +336,8 @@ const Reviews = () => {
                 />
               </form>
             </div>
-          </div>
-        </MuiAside>
+          )}
+        </MuiModal>
       </div>
     </>
   );

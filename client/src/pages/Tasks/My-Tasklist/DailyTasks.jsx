@@ -137,6 +137,10 @@ const DailyTasks = () => {
   //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
 
   //--------Column configs----------------//
+
+  const formatDateTime = (value) =>
+    value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
+
   const departmentColumns = [
     { headerName: "SR no", field: "srno", width: 100, sort: "desc" },
     {
@@ -151,10 +155,22 @@ const DailyTasks = () => {
         </div>
       ),
     },
-    { headerName: "Assigned Date", field: "assignedDate" },
+    {
+      headerName: "Assigned Date",
+      field: "assignedDate",
+    },
     // { headerName: "Assigned Time", field: "createdAt" },
-    { headerName: "Due Date", field: "dueDate" },
-    { headerName: "Due Time", field: "dueTime" },
+    {
+      headerName: "Due Date",
+      field: "dueDate",
+      cellRenderer: (params) => {
+        const formattedDate = humanDate(params.data?.dueDate);
+        const formattedTime = params.data?.dueTime;
+
+        return [formattedDate, formattedTime].filter(Boolean).join(", ");
+      },
+    },
+
     {
       field: "status",
       headerName: "Status",
@@ -253,7 +269,19 @@ const DailyTasks = () => {
     // { headerName: "Department", field: "department" },
     { headerName: "Completed By", field: "completedBy" },
     // { headerName: "Completed Date", field: "completedDate" },
-    { headerName: "Completed Time", field: "completedTime" },
+    {
+      headerName: "Completed Date",
+      field: "completedTime",
+      cellRenderer: (params) => {
+        const completedDate = params.data?.completedDate;
+        const completedTime = params.data?.completedTime;
+
+        const formattedDate = completedDate;
+        const formattedTime = completedTime;
+
+        return [formattedDate, formattedTime].filter(Boolean).join(", ");
+      },
+    },
     {
       field: "status",
       headerName: "Status",
@@ -371,8 +399,8 @@ const DailyTasks = () => {
           modalMode === "add-task"
             ? "Add My Task"
             : modalMode === "view"
-            ? "Completed task"
-            : "View Task"
+            ? "View Task"
+            : "Completed task"
         }
       >
         {modalMode === "add-task" && (
@@ -517,16 +545,15 @@ const DailyTasks = () => {
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
             <DetalisFormatted
               title={"Assigned Date"}
-              detail={humanDate(selectedTask?.assignedDate)}
+              detail={`${humanDate(selectedTask?.assignedDate)}`}
             />
             <DetalisFormatted
               title={"Due Date"}
-              detail={humanDate(selectedTask?.dueDate)}
+              detail={`${humanDate(selectedTask?.dueDate)}, ${
+                selectedTask?.dueTime
+              }`}
             />
-            <DetalisFormatted
-              title={"Due Time"}
-              detail={selectedTask?.dueTime}
-            />
+
             <DetalisFormatted
               title={"Added  By"}
               detail={selectedTask?.assignedBy}
@@ -544,20 +571,14 @@ const DailyTasks = () => {
             />
             <DetalisFormatted
               title={"Completed Date"}
-              detail={selectedTask?.completedDate}
+              detail={`${selectedTask?.completedDate}, ${selectedTask?.completedTime}`}
             />
-            <DetalisFormatted
-              title={"Completed Time"}
-              detail={selectedTask?.completedTime}
-            />
+
             <DetalisFormatted
               title={"Due Date"}
-              detail={selectedTask?.dueDate}
+              detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
             />
-            <DetalisFormatted
-              title={"Due Time"}
-              detail={selectedTask?.dueTime}
-            />
+
             <DetalisFormatted
               title={"Completed By"}
               detail={selectedTask?.completedBy}

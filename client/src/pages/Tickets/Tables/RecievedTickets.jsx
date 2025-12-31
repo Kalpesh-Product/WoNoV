@@ -172,7 +172,6 @@ const RecievedTickets = ({ title, departmentId }) => {
       image: ticket.image?.url,
     }));
   };
-  
 
   const handleRejectSubmit = () => {
     if (!rejectionReason.trim()) {
@@ -197,7 +196,6 @@ const RecievedTickets = ({ title, departmentId }) => {
 
   // Example usage
   const rows = isLoading ? [] : transformTicketsData(tickets);
-
 
   const handleOpenAssignModal = (ticketId) => {
     setSelectedTicketId(ticketId);
@@ -239,50 +237,49 @@ const RecievedTickets = ({ title, departmentId }) => {
           >
             <MdOutlineRemoveRedEye />
           </div>
-          {(!isTop || (isTop && departmentId === topManagementDepartment)) && (
-            <ThreeDotMenu
-              rowId={params.data.id}
-              menuItems={[
-                // Conditionally add "Accept"
-                ...(auth.user.role.length > 0 &&
-                // Case 1: If user is in Top Management & ticket is for Top Management
-                ((auth.user.role[0].roleTitle === "Top Management" &&
-                  params.data.raisedToDepartment === "Top Management") ||
-                  // Case 2: If user is not Top Management
-                  auth.user.role[0].roleTitle !== "Top Management")
-                  ? [
-                      {
-                        label: "Accept",
-                        onClick: () => acceptMutate(params.data),
-                        isLoading: isLoading,
-                      },
-                    ]
-                  : []),
 
-                // {
-                //   label: "Accept",
-                //   onClick: () => acceptMutate(params.data),
-                //   isLoading: isLoading,
-                // },
-                // Conditionally add "Assign"
-                ...(auth.user.role.length > 0 &&
-                (auth.user.role[0].roleTitle === "Master Admin" ||
-                  auth.user.role[0].roleTitle === "Super Admin" ||
-                  auth.user.role[0].roleTitle.endsWith("Admin"))
-                  ? [
-                      {
-                        label: "Assign",
-                        onClick: () => handleOpenAssignModal(params.data.id),
-                      },
-                      {
-                        label: "Reject",
-                        onClick: () => handleRejectClick(params.data), // ✅ open modal
-                      },
-                    ]
-                  : []),
-              ]}
-            />
-          )}
+          <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[
+              // Conditionally add "Accept"
+              ...(auth.user.role.length > 0 &&
+              // Case 1: If user is in Top Management & ticket is for Top Management
+              ((auth.user.role[0].roleTitle === "Top Management" &&
+                params.data.raisedToDepartment === "Top Management") ||
+                // Case 2: If user is not Top Management
+                auth.user.role[0].roleTitle !== "Top Management")
+                ? [
+                    {
+                      label: "Accept",
+                      onClick: () => acceptMutate(params.data),
+                      isLoading: isLoading,
+                    },
+                  ]
+                : []),
+
+              // {
+              //   label: "Accept",
+              //   onClick: () => acceptMutate(params.data),
+              //   isLoading: isLoading,
+              // },
+              // Conditionally add "Assign"
+              ...(auth.user.role.length > 0 &&
+              (auth.user.role[0].roleTitle === "Master Admin" ||
+                auth.user.role[0].roleTitle === "Super Admin" ||
+                auth.user.role[0].roleTitle.endsWith("Admin"))
+                ? [
+                    {
+                      label: "Assign",
+                      onClick: () => handleOpenAssignModal(params.data.id),
+                    },
+                    {
+                      label: "Reject",
+                      onClick: () => handleRejectClick(params.data), // ✅ open modal
+                    },
+                  ]
+                : []),
+            ]}
+          />
         </div>
       ),
     },

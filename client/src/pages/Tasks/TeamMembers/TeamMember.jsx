@@ -36,7 +36,7 @@ const TeamMember = () => {
     { field: "name", headerName: "Name", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     { field: "role", headerName: "Role", flex: 1 },
-    { field: "tasks", headerName: "Completed Task", flex: 1 },
+    { field: "tasks", headerName: "Department Completed Task", flex: 1 },
     // { field: "status", headerName: "Status", flex: 1 },
     // {
     //   field: "action",
