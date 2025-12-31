@@ -837,6 +837,7 @@ const TasksDashboard = () => {
             data={pieChartDataMap[config.dataKey]}
             options={pieChartOptionsMap[config.optionsKey]}
             height={325}
+            centerAlign
           />
         </WidgetSection>
       )),

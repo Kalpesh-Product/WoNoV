@@ -94,12 +94,13 @@ const MeetingFormLayout = () => {
       internalBooked: auth.user?._id,
       internalParticipants: [],
       externalParticipants: [],
+      manualExternalParticipants: [],
     },
     mode: "onChange",
   });
   const { fields, append } = useFieldArray({
     control,
-    name: "manualExternalParticipants", // ⬅️ changed here
+    name: "manualExternalParticipants",
   });
 
   const isReceptionist = auth.user?.role?.some((item) =>
@@ -121,6 +122,12 @@ const MeetingFormLayout = () => {
   const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
   const externalCompany = watch("externalCompany");
   const bookedBy = watch("bookedBy");
+
+  useEffect(() => {
+    if (meetingType !== "External") return;
+
+    setValue("externalParticipants", [], { shouldDirty: true });
+  }, [externalCompany, meetingType, setValue]);
 
   const isSameDaySelection = useMemo(
     () =>
@@ -407,7 +414,16 @@ const MeetingFormLayout = () => {
   //-------------------------------API vISITORS-------------------------------//
 
   const onSubmit = (data) => {
-    createMeeting(data);
+    const { manualExternalParticipants, ...restData } = data;
+    const combinedExternalParticipants = [
+      ...(data.externalParticipants || []),
+      ...(manualExternalParticipants || []),
+    ];
+
+    createMeeting({
+      ...restData,
+      externalParticipants: combinedExternalParticipants,
+    });
   };
 
   const addParticipant = () => {
@@ -836,6 +852,7 @@ const MeetingFormLayout = () => {
                     render={({ field }) => (
                       <Autocomplete
                         multiple
+                        disabled={!externalCompany}
                         options={externalUsers.filter(
                           (item) =>
                             item.visitorFlag === "Client" &&
@@ -849,7 +866,12 @@ const MeetingFormLayout = () => {
                         } // Display names
                         onChange={(_, newValue) =>
                           field.onChange(
-                            newValue.map((user) => ({ name: user.firstName }))
+                            newValue.map((user) => ({
+                              name: `${user.firstName ?? ""} ${
+                                user.lastName ?? ""
+                              }`.trim(),
+                              mobileNumber: user.mobileNumber,
+                            }))
                           )
                         } // Sync selected users with form state
                         renderTags={(selected, getTagProps) =>
@@ -867,6 +889,7 @@ const MeetingFormLayout = () => {
                             {...params}
                             label="Select Participants"
                             size="small"
+                            disabled={!externalCompany}
                             fullWidth
                           />
                         )}
@@ -881,7 +904,7 @@ const MeetingFormLayout = () => {
                 {fields.map((field, index) => (
                   <React.Fragment key={field.id}>
                     <Controller
-                      name={`externalParticipants.${index}.name`}
+                      name={`manualExternalParticipants.${index}.name`}
                       control={control}
                       render={({ field }) => (
                         <TextField
@@ -894,7 +917,7 @@ const MeetingFormLayout = () => {
                       )}
                     />
                     <Controller
-                      name={`externalParticipants.${index}.mobileNumber`}
+                      name={`manualExternalParticipants.${index}.mobileNumber`}
                       control={control}
                       render={({ field }) => (
                         <TextField
@@ -974,7 +997,7 @@ const MeetingFormLayout = () => {
                     {...field}
                     fullWidth
                     multiline
-                    rows={3}
+                    rows={1}
                     size="small"
                     error={!!errors.subject}
                     helperText={errors?.subject?.message}

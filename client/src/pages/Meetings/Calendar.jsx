@@ -126,7 +126,6 @@ const Calender = () => {
     });
   };
 
-
   return (
     <div className="flex w-[70%] md:w-full">
       <div className="flex-1 p-4 bg-white">
@@ -297,6 +296,15 @@ const Calender = () => {
                 title="Company"
                 detail={selectedEvent.extendedProps.client}
               /> */}
+              <DetalisFormatted
+                title="Company"
+                detail={
+                  selectedEvent.extendedProps.client?.companyName ||
+                  selectedEvent.extendedProps.externalClient ||
+                  selectedEvent.extendedProps.client ||
+                  "N/A"
+                }
+              />
               <br />
               <div className="font-bold">People Involved</div>
               {selectedEvent.extendedProps.participants?.length > 0 && (
@@ -322,7 +330,9 @@ const Calender = () => {
                 title="Booked By"
                 detail={
                   selectedEvent.extendedProps.bookedBy
-                    ? `${selectedEvent.extendedProps.bookedBy?.firstName || ""} ${selectedEvent.extendedProps.bookedBy?.lastName || ""}` 
+                    ? `${
+                        selectedEvent.extendedProps.bookedBy?.firstName || ""
+                      } ${selectedEvent.extendedProps.bookedBy?.lastName || ""}`
                     : selectedEvent.extendedProps?.clientBookedBy?.employeeName
                 }
               />
@@ -336,7 +346,9 @@ const Calender = () => {
               />
               <DetalisFormatted
                 title="Department"
-                detail={selectedEvent.extendedProps.department?.map((item)=>item.name)}
+                detail={selectedEvent.extendedProps.department?.map(
+                  (item) => item.name
+                )}
               />
 
               <br />

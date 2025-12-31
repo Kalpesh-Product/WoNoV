@@ -194,8 +194,16 @@ const TasksViewDepartment = () => {
     { headerName: "Added By", field: "assignedBy", width: 300 },
     { headerName: "Added Date", field: "assignedDate" },
     // { headerName: "Assigned Time", field: "createdAt" },
-    { headerName: "Due Date", field: "dueDate" },
-    { headerName: "Due Time", field: "dueTime" },
+    {
+      headerName: "Due Date",
+      field: "dueDate",
+      cellRenderer: (params) => {
+        const formattedDate = humanDate(params.data?.dueDate);
+        const formattedTime = humanTime(params.data?.dueTime);
+
+        return [formattedDate, formattedTime].filter(Boolean).join(", ");
+      },
+    },
     {
       field: "status",
       headerName: "Status",
@@ -269,7 +277,19 @@ const TasksViewDepartment = () => {
     // { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Completed By", field: "completedBy", width: 300 },
     // { headerName: "Completed Date", field: "completedDate" },
-    { headerName: "Completed Time", field: "completedTime" },
+    {
+      headerName: "Completed Date",
+      field: "completedTime",
+      cellRenderer: (params) => {
+        const completedDate = params.data?.completedDate;
+        const completedTime = params.data?.completedTime;
+
+        const formattedDate = humanDate(completedDate);
+        const formattedTime = humanTime(completedTime);
+
+        return [formattedDate, formattedTime].filter(Boolean).join(", ");
+      },
+    },
     // { headerName: "Due Time", field: "dueTime" },
     // { headerName: "Due Date", field: "dueDate" },
     // { headerName: "Due Time", field: "dueTime" },
@@ -331,7 +351,7 @@ const TasksViewDepartment = () => {
                       assignedDate: item.assignedDate,
                       status: item.status,
                       dueDate: item.dueDate,
-                      dueTime: humanTime(item.dueTime),
+                      dueTime: item.dueTime,
                       assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                     }))}
                   dateColumn={"assignedDate"}
@@ -362,12 +382,12 @@ const TasksViewDepartment = () => {
                             id: item._id,
                             taskName: item.taskName,
                             completedBy: item.completedBy,
-                            assignedDate: humanDate(item.assignedDate),
-                            dueDate: humanDate(item.dueDate),
-                            dueTime: humanTime(item.dueTime),
+                            assignedDate: item.assignedDate,
+                            dueDate: item.dueDate,
+                            dueTime: item.dueTime,
                             completedDate: item.completedDate,
                             completedDateLabel: humanDate(item.completedDate),
-                            completedTime: humanTime(item.completedDate),
+                            completedTime: item.completedDate,
                             assignedBy:
                               item.assignedBy?.firstName ||
                               item.assignedBy?.lastName
@@ -593,11 +613,9 @@ const TasksViewDepartment = () => {
             />
             <DetalisFormatted
               title={"Due Date"}
-              detail={humanDate(selectedTask?.dueDate)}
-            />
-            <DetalisFormatted
-              title={"Due Time"}
-              detail={selectedTask?.dueTime}
+              detail={`${humanDate(selectedTask?.dueDate)}, ${humanTime(
+                selectedTask?.dueTime
+              )}`}
             />
 
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
@@ -608,7 +626,7 @@ const TasksViewDepartment = () => {
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskName} />
             <DetalisFormatted
               title={"Added Date"}
-              detail={selectedTask?.assignedDate}
+              detail={humanDate(selectedTask?.assignedDate)}
             />
             <DetalisFormatted
               title={"Added By"}
@@ -616,24 +634,19 @@ const TasksViewDepartment = () => {
             />
             <DetalisFormatted
               title={"Completed Date"}
-              detail={selectedTask?.completedDateLabel}
+              detail={`${humanDate(selectedTask?.completedDate)}, ${humanTime(
+                selectedTask?.completedTime
+              )}`}
             />
-            <DetalisFormatted
-              title={"Completed Time"}
-              detail={selectedTask?.completedTime}
-            />
-
             <DetalisFormatted
               title={"Completed By"}
               detail={selectedTask?.completedBy}
             />
             <DetalisFormatted
               title={"Due Date"}
-              detail={selectedTask?.dueDate}
-            />
-            <DetalisFormatted
-              title={"Due Time"}
-              detail={selectedTask?.dueTime}
+              detail={`${humanDate(selectedTask?.dueDate)}, ${humanTime(
+                selectedTask?.dueTime
+              )}`}
             />
 
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />

@@ -206,11 +206,18 @@ const PerformanceKra = () => {
       : []),
   ];
 
+  const formatDateTime = (value) =>
+    value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
+
   const completedColumns = [
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "Completed Time", field: "dueDate" },
+    {
+      headerName: "Completed Time",
+      field: "dueDate",
+      cellRenderer: (params) => formatDateTime(params.value),
+    },
     { headerName: "Completed By", field: "completedBy" },
     {
       field: "status",

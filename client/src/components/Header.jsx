@@ -37,7 +37,6 @@ import { queryClient } from "../main";
 import relativeTime from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
 
-
 const Header = ({
   notifications = [],
   unseenCount = 0,
@@ -170,9 +169,9 @@ const Header = ({
                 </Badge>
               </button>
 
-              <button className="bg-[#1E3D73] p-2 text-white rounded-md">
+              {/* <button className="bg-[#1E3D73] p-2 text-white rounded-md">
                 <MdOutlineMailOutline size={20} />
-              </button>
+              </button> */}
             </div>
           </>
         )}

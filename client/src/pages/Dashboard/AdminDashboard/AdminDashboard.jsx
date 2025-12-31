@@ -1053,6 +1053,7 @@ const AdminDashboard = () => {
               data={config.data}
               options={config.options}
               width={config.width}
+              centerAlign
             />
           ) : (
             <CircularProgress color="#1E3D73" />

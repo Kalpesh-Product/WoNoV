@@ -164,11 +164,23 @@ const PerformanceMonthly = () => {
       }
     },
   });
+
+  const formatDateTime = (value) =>
+    value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
+
   const departmentColumns = [
     { headerName: "Sr no", field: "srNo", width: 100 },
     { headerName: "KPA List", field: "taskName", flex: 1 },
-    // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "Due Date", field: "dueDate" },
+    {
+      headerName: "Start Date",
+      field: "assignedDate",
+      cellRenderer: (params) => formatDateTime(params.value),
+    },
+    {
+      headerName: "End Date",
+      field: "dueDate",
+      cellRenderer: (params) => formatDateTime(params.value),
+    },
     {
       field: "status",
       headerName: "Status",
@@ -219,10 +231,16 @@ const PerformanceMonthly = () => {
         ]
       : []),
   ];
+
   const completedColumns = [
     { headerName: "Sr no", field: "srNo", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", width: 300 },
-    { headerName: "Completed Time", field: "completionTime", flex: 1 },
+    {
+      headerName: "Completed Time",
+      field: "completionTime",
+      flex: 1,
+      cellRenderer: (params) => formatDateTime(params.value),
+    },
     { headerName: "Completed By", field: "completedBy" },
     {
       field: "status",
@@ -299,8 +317,7 @@ const PerformanceMonthly = () => {
                   ...completedEntries.map((item, index) => ({
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                    completionDate: humanDate(item.completionDate),
-                    completionTime: humanTime(item.completionDate),
+                    completionTime: item.completionDate,
                     completedBy: item.completedBy,
                     status: item.status,
                   })),
