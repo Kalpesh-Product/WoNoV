@@ -141,7 +141,8 @@ const PaymentSchedule = () => {
                           fontSize: "0.875rem",
                           fontWeight: "bold",
                           textTransform: "capitalize",
-                        }}>
+                        }}
+                      >
                         {status}
                       </span>
                     }
@@ -168,7 +169,8 @@ const PaymentSchedule = () => {
                         className="w-3 h-3 rounded-full mt-[0.3rem]"
                         style={{
                           backgroundColor: event.backgroundColor,
-                        }}></div>
+                        }}
+                      ></div>
                       <div className="flex flex-col">
                         <span className="text-content font-medium">
                           {event.title}
@@ -194,6 +196,7 @@ const PaymentSchedule = () => {
         {/* Calendar Section */}
         <div className="w-full h-full overflow-y-auto">
           <FullCalendar
+            allDayText="All Day"
             headerToolbar={{
               left: "today",
               center: "prev title next",
@@ -224,7 +227,8 @@ const PaymentSchedule = () => {
           selectedEvent
             ? statusColorMap[selectedEvent.extendedProps.status]
             : ""
-        }>
+        }
+      >
         {selectedEvent && (
           <div className="flex flex-col gap-3">
             <div className="font-bold">General Information</div>

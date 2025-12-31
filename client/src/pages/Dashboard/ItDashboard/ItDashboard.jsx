@@ -57,7 +57,7 @@ const ItDashboard = () => {
       permission: PERMISSIONS.IT_FINANCE.value,
     },
     {
-      route: "/app/dashboard/it-dashboard/mix-bag",
+      route: "/app/dashboard/IT-dashboard/mix-bag",
       title: "Mix Bag",
       icon: <MdFormatListBulleted />,
       permission: PERMISSIONS.IT_MIX_BAG.value,
