@@ -823,7 +823,7 @@ const assignTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
   const logAction = "Assign Ticket";
   const logSourceKey = "ticket";
-  const { user, company, ip, departments } = req;
+  const { user, company, ip, departments, roles } = req;
 
   try {
     const { ticketId } = req.params;
@@ -870,10 +870,30 @@ const assignTicket = async (req, res, next) => {
     }
 
     // Check if the ticket's raised department is among the user's departments
-    const userDepartments = departments.map((dept) => dept._id.toString());
-    const ticketInDepartment = userDepartments.some(
-      (deptId) => foundTicket.raisedToDepartment.toString() === deptId
-    );
+
+    // const userDepartments = departments.map((dept) => dept._id.toString());
+    // const ticketInDepartment =
+    //   userDepartments.some(
+    //     (deptId) => foundTicket.raisedToDepartment.toString() === deptId
+    //   )
+
+    const isMasterAdmin =
+      roles?.includes("Master Admin") || roles?.includes("Super Admin");
+
+    let ticketInDepartment = false;
+
+    if (isMasterAdmin) {
+      ticketInDepartment = true;
+    } else {
+      const userDepartments = Array.isArray(departments)
+        ? departments.map((dept) => dept._id.toString())
+        : [];
+
+      ticketInDepartment = userDepartments.some(
+        (deptId) => foundTicket.raisedToDepartment.toString() === deptId
+      );
+    }
+
     if (!ticketInDepartment) {
       throw new CustomError(
         "User does not have permission to assign this ticket",
