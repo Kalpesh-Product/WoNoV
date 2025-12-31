@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 
 const ItOfficessNew = () => {
   const axios = useAxiosPrivate();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const { data: unitsData = [], isPending: isUnitsLoading } = useQuery({
     queryKey: ["unitsData"],
     queryFn: async () => {
@@ -21,22 +21,24 @@ const ItOfficessNew = () => {
   const inrFormat = (val) => val.toLocaleString("en-IN");
 
   // Prepare table and chart data
-  const tableData = isUnitsLoading ? [] : unitsData
-    .filter((unit) => unit.isActive)
-    .map((unit, index) => {
-      return {
-        ...unit,
-        srNo: index + 1,
-        unitNo: unit.unitNo || "-",
-        unitName: unit.unitName || "-",
-        unitId: unit._id,
-        buildingName: unit.building?.buildingName || "-",
-        sqft: (unit.sqft) || 0,
-        clientsCount: unit.coworkingClientsCount || 0,
-      };
-    });
+  const tableData = isUnitsLoading
+    ? []
+    : unitsData
+        .filter((unit) => unit.isActive)
+        .map((unit, index) => {
+          return {
+            ...unit,
+            srNo: index + 1,
+            unitNo: unit.unitNo || "-",
+            unitName: unit.unitName || "-",
+            unitId: unit._id,
+            buildingName: unit.building?.buildingName || "-",
+            sqft: unit.sqft || 0,
+            clientsCount: unit.coworkingClientsCount || 0,
+          };
+        });
 
-    console.log("table data : ", tableData)
+  console.log("table data : ", tableData);
 
   const chartData = tableData.map((unit) => ({
     unitNo: unit.unitNo,
@@ -91,20 +93,24 @@ const ItOfficessNew = () => {
 
   const columns = [
     { headerName: "SR NO", field: "srNo", width: 100 },
-    { headerName: "Unit No", field: "unitNo", flex: 1, cellRenderer: (params) => (
+    {
+      headerName: "Unit No",
+      field: "unitNo",
+      flex: 1,
+      cellRenderer: (params) => (
         <span
           role="button"
           onClick={() => {
-            navigate(
-              `/app/dashboard/it-dashboard/it-offices/${params.value}`,
-              { state: { unitId: params.data._id, unitName: params.value } }
-            );
+            navigate(`/app/dashboard/IT-dashboard/IT-offices/${params.value}`, {
+              state: { unitId: params.data._id, unitName: params.value },
+            });
           }}
           className="text-primary underline cursor-pointer"
         >
           {params.value}
         </span>
-      ), },
+      ),
+    },
     { headerName: "Building", field: "buildingName", flex: 1 },
     { headerName: "Sqft", field: "sqft", width: 120 },
     {
@@ -122,14 +128,14 @@ const ItOfficessNew = () => {
         border
         padding
         title={"IT Offices"}
-        TitleAmount={`TOTAL OFFICES : ${unitsData.length || 0}`} 
+        TitleAmount={`TOTAL OFFICES : ${unitsData.length || 0}`}
       >
         <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
       </WidgetSection>
 
       <PageFrame>
         <YearWiseTable
-        key={unitsData.length}
+          key={unitsData.length}
           data={tableData}
           columns={columns}
           search

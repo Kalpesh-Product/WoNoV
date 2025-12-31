@@ -443,6 +443,7 @@ const MeetingFormLayout = () => {
           </div>
         ) : (
           <FullCalendar
+            allDayText="All Day"
             allDaySlot={false} // 🔴 This removes the "All-day" tab in timeGrid views
             key={events.length}
             headerToolbar={{
@@ -462,7 +463,6 @@ const MeetingFormLayout = () => {
               minute: "2-digit",
               meridiem: "lowercase",
             }}
-            allDayText=""
             select={handleDateClick}
             selectAllow={({ start }) => {
               const now = new Date();

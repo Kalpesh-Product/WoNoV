@@ -26,214 +26,213 @@ const ItOffices = () => {
           revenue: 226000, // 85000 + 72000 + 69000
           clients: [
             {
-              "client": "Zomato",
-              "representative": "Rajesh Kumar",
-              "registerDate": "2024-01-15",
-              "actualRevenue": 85000
+              client: "Zomato",
+              representative: "Rajesh Kumar",
+              registerDate: "2024-01-15",
+              actualRevenue: 85000,
             },
             {
-              "client": "Uber",
-              "representative": "Neha Sharma",
-              "registerDate": "2024-02-10",
-              "actualRevenue": 72000
+              client: "Uber",
+              representative: "Neha Sharma",
+              registerDate: "2024-02-10",
+              actualRevenue: 72000,
             },
             {
-              "client": "Ola",
-              "representative": "Amit Verma",
-              "registerDate": "2024-03-05",
-              "actualRevenue": 69000
+              client: "Ola",
+              representative: "Amit Verma",
+              registerDate: "2024-03-05",
+              actualRevenue: 69000,
             },
             {
-              "client": "Swiggy",
-              "representative": "Priya Patel",
-              "registerDate": "2024-04-12",
-              "actualRevenue": 78000
+              client: "Swiggy",
+              representative: "Priya Patel",
+              registerDate: "2024-04-12",
+              actualRevenue: 78000,
             },
             {
-              "client": "Amazon",
-              "representative": "Vikram Singh",
-              "registerDate": "2024-05-20",
-              "actualRevenue": 92000
+              client: "Amazon",
+              representative: "Vikram Singh",
+              registerDate: "2024-05-20",
+              actualRevenue: 92000,
             },
             {
-              "client": "Flipkart",
-              "representative": "Anjali Gupta",
-              "registerDate": "2024-06-08",
-              "actualRevenue": 81000
-            }
-          ]
+              client: "Flipkart",
+              representative: "Anjali Gupta",
+              registerDate: "2024-06-08",
+              actualRevenue: 81000,
+            },
+          ],
         },
         {
           name: "ST-701B",
           revenue: 138000, // 60000 + 78000
           clients: [
             {
-              "client": "Tata Consultancy Services",
-              "representative": "Sunil Mehra",
-              "registerDate": "2024-01-20",
-              "actualRevenue": 60000
+              client: "Tata Consultancy Services",
+              representative: "Sunil Mehra",
+              registerDate: "2024-01-20",
+              actualRevenue: 60000,
             },
             {
-              "client": "Infosys",
-              "representative": "Priya Iyer",
-              "registerDate": "2024-02-25",
-              "actualRevenue": 78000
+              client: "Infosys",
+              representative: "Priya Iyer",
+              registerDate: "2024-02-25",
+              actualRevenue: 78000,
             },
             {
-              "client": "Wipro",
-              "representative": "Rahul Desai",
-              "registerDate": "2024-03-15",
-              "actualRevenue": 65000
+              client: "Wipro",
+              representative: "Rahul Desai",
+              registerDate: "2024-03-15",
+              actualRevenue: 65000,
             },
             {
-              "client": "HCL Technologies",
-              "representative": "Ananya Reddy",
-              "registerDate": "2024-04-05",
-              "actualRevenue": 72000
+              client: "HCL Technologies",
+              representative: "Ananya Reddy",
+              registerDate: "2024-04-05",
+              actualRevenue: 72000,
             },
             {
-              "client": "Tech Mahindra",
-              "representative": "Karan Malhotra",
-              "registerDate": "2024-05-12",
-              "actualRevenue": 68000
+              client: "Tech Mahindra",
+              representative: "Karan Malhotra",
+              registerDate: "2024-05-12",
+              actualRevenue: 68000,
             },
             {
-              "client": "Accenture",
-              "representative": "Divya Nair",
-              "registerDate": "2024-06-18",
-              "actualRevenue": 85000
-            }
-          ]
+              client: "Accenture",
+              representative: "Divya Nair",
+              registerDate: "2024-06-18",
+              actualRevenue: 85000,
+            },
+          ],
         },
         {
           name: "ST-601A",
           revenue: 208000, // 52000 + 97000 + 59000
           clients: [
             {
-              "client": "Reliance Industries",
-              "representative": "Deepak Nair",
-              "registerDate": "2024-01-18",
-              "actualRevenue": 52000
+              client: "Reliance Industries",
+              representative: "Deepak Nair",
+              registerDate: "2024-01-18",
+              actualRevenue: 52000,
             },
             {
-              "client": "Wipro",
-              "representative": "Kavita Rao",
-              "registerDate": "2024-02-22",
-              "actualRevenue": 97000
+              client: "Wipro",
+              representative: "Kavita Rao",
+              registerDate: "2024-02-22",
+              actualRevenue: 97000,
             },
             {
-              "client": "Mahindra & Mahindra",
-              "representative": "Suresh Menon",
-              "registerDate": "2024-03-09",
-              "actualRevenue": 59000
+              client: "Mahindra & Mahindra",
+              representative: "Suresh Menon",
+              registerDate: "2024-03-09",
+              actualRevenue: 59000,
             },
             {
-              "client": "Tata Motors",
-              "representative": "Arjun Khanna",
-              "registerDate": "2024-04-14",
-              "actualRevenue": 75000
+              client: "Tata Motors",
+              representative: "Arjun Khanna",
+              registerDate: "2024-04-14",
+              actualRevenue: 75000,
             },
             {
-              "client": "Adani Group",
-              "representative": "Meera Joshi",
-              "registerDate": "2024-05-21",
-              "actualRevenue": 88000
+              client: "Adani Group",
+              representative: "Meera Joshi",
+              registerDate: "2024-05-21",
+              actualRevenue: 88000,
             },
             {
-              "client": "Larsen & Toubro",
-              "representative": "Vikram Sethi",
-              "registerDate": "2024-06-05",
-              "actualRevenue": 68000
-            }
-          ]
+              client: "Larsen & Toubro",
+              representative: "Vikram Sethi",
+              registerDate: "2024-06-05",
+              actualRevenue: 68000,
+            },
+          ],
         },
         {
           name: "ST-601B",
           revenue: 207000, // 64000 + 89000 + 54000
           clients: [
             {
-              "client": "Reliance Industries",
-              "representative": "Anjali Desai",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 64000
+              client: "Reliance Industries",
+              representative: "Anjali Desai",
+              registerDate: "2024-03-12",
+              actualRevenue: 64000,
             },
             {
-              "client": "Wipro",
-              "representative": "Ravi Chandra",
-              "registerDate": "2024-04-18",
-              "actualRevenue": 89000
+              client: "Wipro",
+              representative: "Ravi Chandra",
+              registerDate: "2024-04-18",
+              actualRevenue: 89000,
             },
             {
-              "client": "Mahindra & Mahindra",
-              "representative": "Meena Joshi",
-              "registerDate": "2024-05-10",
-              "actualRevenue": 54000
+              client: "Mahindra & Mahindra",
+              representative: "Meena Joshi",
+              registerDate: "2024-05-10",
+              actualRevenue: 54000,
             },
             {
-              "client": "Tata Consultancy Services",
-              "representative": "Sanjay Verma",
-              "registerDate": "2024-06-05",
-              "actualRevenue": 72000
+              client: "Tata Consultancy Services",
+              representative: "Sanjay Verma",
+              registerDate: "2024-06-05",
+              actualRevenue: 72000,
             },
             {
-              "client": "Infosys",
-              "representative": "Priyanka Reddy",
-              "registerDate": "2024-07-15",
-              "actualRevenue": 81000
+              client: "Infosys",
+              representative: "Priyanka Reddy",
+              registerDate: "2024-07-15",
+              actualRevenue: 81000,
             },
             {
-              "client": "HDFC Bank",
-              "representative": "Amit Khanna",
-              "registerDate": "2024-08-20",
-              "actualRevenue": 95000
-            }
-          ]
+              client: "HDFC Bank",
+              representative: "Amit Khanna",
+              registerDate: "2024-08-20",
+              actualRevenue: 95000,
+            },
+          ],
         },
         {
           name: "ST-501A",
           revenue: 232000, // 77000 + 94000 + 61000
           clients: [
             {
-              "client": "Reliance Industries",
-              "representative": "Anjali Desai",
-              "registerDate": "2024-03-12",
-              "actualRevenue": 77000
+              client: "Reliance Industries",
+              representative: "Anjali Desai",
+              registerDate: "2024-03-12",
+              actualRevenue: 77000,
             },
             {
-              "client": "Wipro",
-              "representative": "Ravi Chandra",
-              "registerDate": "2024-04-18",
-              "actualRevenue": 94000
+              client: "Wipro",
+              representative: "Ravi Chandra",
+              registerDate: "2024-04-18",
+              actualRevenue: 94000,
             },
             {
-              "client": "Mahindra & Mahindra",
-              "representative": "Meena Joshi",
-              "registerDate": "2024-05-10",
-              "actualRevenue": 61000
+              client: "Mahindra & Mahindra",
+              representative: "Meena Joshi",
+              registerDate: "2024-05-10",
+              actualRevenue: 61000,
             },
             {
-              "client": "Bharti Airtel",
-              "representative": "Vikram Singhania",
-              "registerDate": "2024-06-08",
-              "actualRevenue": 83000
+              client: "Bharti Airtel",
+              representative: "Vikram Singhania",
+              registerDate: "2024-06-08",
+              actualRevenue: 83000,
             },
             {
-              "client": "Aditya Birla Group",
-              "representative": "Neha Kapoor",
-              "registerDate": "2024-07-14",
-              "actualRevenue": 72000
+              client: "Aditya Birla Group",
+              representative: "Neha Kapoor",
+              registerDate: "2024-07-14",
+              actualRevenue: 72000,
             },
             {
-              "client": "State Bank of India",
-              "representative": "Rajeev Malhotra",
-              "registerDate": "2024-08-22",
-              "actualRevenue": 105000
-            }
-          ]
+              client: "State Bank of India",
+              representative: "Rajeev Malhotra",
+              registerDate: "2024-08-22",
+              actualRevenue: 105000,
+            },
+          ],
         },
       ],
     },
-
 
     {
       month: "May",
@@ -243,131 +242,130 @@ const ItOffices = () => {
           revenue: 150000, // 60000 + 50000 + 40000
           clients: [
             {
-              "client": "Paytm",
-              "representative": "Ravi Bhatia",
-              "registerDate": "2024-02-11",
-              "actualRevenue": 60000
+              client: "Paytm",
+              representative: "Ravi Bhatia",
+              registerDate: "2024-02-11",
+              actualRevenue: 60000,
             },
             {
-              "client": "Byju's",
-              "representative": "Sneha Kapoor",
-              "registerDate": "2024-03-09",
-              "actualRevenue": 50000
+              client: "Byju's",
+              representative: "Sneha Kapoor",
+              registerDate: "2024-03-09",
+              actualRevenue: 50000,
             },
             {
-              "client": "Swiggy",
-              "representative": "Ankit Reddy",
-              "registerDate": "2024-04-14",
-              "actualRevenue": 40000
+              client: "Swiggy",
+              representative: "Ankit Reddy",
+              registerDate: "2024-04-14",
+              actualRevenue: 40000,
             },
             {
-              "client": "Zomato",
-              "representative": "Priya Malhotra",
-              "registerDate": "2024-05-18",
-              "actualRevenue": 55000
+              client: "Zomato",
+              representative: "Priya Malhotra",
+              registerDate: "2024-05-18",
+              actualRevenue: 55000,
             },
             {
-              "client": "Ola Cabs",
-              "representative": "Vikram Patel",
-              "registerDate": "2024-06-22",
-              "actualRevenue": 45000
+              client: "Ola Cabs",
+              representative: "Vikram Patel",
+              registerDate: "2024-06-22",
+              actualRevenue: 45000,
             },
             {
-              "client": "PhonePe",
-              "representative": "Arjun Sharma",
-              "registerDate": "2024-07-15",
-              "actualRevenue": 65000
-            }
-          ]
+              client: "PhonePe",
+              representative: "Arjun Sharma",
+              registerDate: "2024-07-15",
+              actualRevenue: 65000,
+            },
+          ],
         },
         {
           name: "ST-701B",
           revenue: 90000, // 50000 + 40000
-          clients:[
+          clients: [
             {
-              "client": "HDFC Bank",
-              "representative": "Rohit Joshi",
-              "registerDate": "2024-02-28",
-              "actualRevenue": 50000
+              client: "HDFC Bank",
+              representative: "Rohit Joshi",
+              registerDate: "2024-02-28",
+              actualRevenue: 50000,
             },
             {
-              "client": "ICICI Bank",
-              "representative": "Pooja Nair",
-              "registerDate": "2024-03-07",
-              "actualRevenue": 40000
+              client: "ICICI Bank",
+              representative: "Pooja Nair",
+              registerDate: "2024-03-07",
+              actualRevenue: 40000,
             },
             {
-              "client": "State Bank of India",
-              "representative": "Amit Patel",
-              "registerDate": "2024-01-15",
-              "actualRevenue": 65000
+              client: "State Bank of India",
+              representative: "Amit Patel",
+              registerDate: "2024-01-15",
+              actualRevenue: 65000,
             },
             {
-              "client": "Axis Bank",
-              "representative": "Neha Sharma",
-              "registerDate": "2024-03-22",
-              "actualRevenue": 45000
+              client: "Axis Bank",
+              representative: "Neha Sharma",
+              registerDate: "2024-03-22",
+              actualRevenue: 45000,
             },
             {
-              "client": "Kotak Mahindra Bank",
-              "representative": "Vikram Singh",
-              "registerDate": "2024-02-10",
-              "actualRevenue": 55000
+              client: "Kotak Mahindra Bank",
+              representative: "Vikram Singh",
+              registerDate: "2024-02-10",
+              actualRevenue: 55000,
             },
             {
-              "client": "Yes Bank",
-              "representative": "Priya Gupta",
-              "registerDate": "2024-04-05",
-              "actualRevenue": 38000
-            }
-          ]
+              client: "Yes Bank",
+              representative: "Priya Gupta",
+              registerDate: "2024-04-05",
+              actualRevenue: 38000,
+            },
+          ],
         },
         {
           name: "ST-601A",
           revenue: 140000, // 60000 + 50000 + 30000
           clients: [
             {
-              "client": "Asian Paints",
-              "representative": "Nikhil Rao",
-              "registerDate": "2024-05-20",
-              "actualRevenue": 60000
+              client: "Asian Paints",
+              representative: "Nikhil Rao",
+              registerDate: "2024-05-20",
+              actualRevenue: 60000,
             },
             {
-              "client": "Tanishq",
-              "representative": "Isha Kulkarni",
-              "registerDate": "2024-06-08",
-              "actualRevenue": 50000
+              client: "Tanishq",
+              representative: "Isha Kulkarni",
+              registerDate: "2024-06-08",
+              actualRevenue: 50000,
             },
             {
-              "client": "Amul",
-              "representative": "Vikas Sharma",
-              "registerDate": "2024-07-15",
-              "actualRevenue": 30000
+              client: "Amul",
+              representative: "Vikas Sharma",
+              registerDate: "2024-07-15",
+              actualRevenue: 30000,
             },
             {
-              "client": "Reliance Retail",
-              "representative": "Rajiv Mehta",
-              "registerDate": "2024-08-10",
-              "actualRevenue": 75000
+              client: "Reliance Retail",
+              representative: "Rajiv Mehta",
+              registerDate: "2024-08-10",
+              actualRevenue: 75000,
             },
             {
-              "client": "Tata Motors",
-              "representative": "Ananya Desai",
-              "registerDate": "2024-04-25",
-              "actualRevenue": 55000
+              client: "Tata Motors",
+              representative: "Ananya Desai",
+              registerDate: "2024-04-25",
+              actualRevenue: 55000,
             },
             {
-              "client": "ITC Limited",
-              "representative": "Arjun Reddy",
-              "registerDate": "2024-09-12",
-              "actualRevenue": 48000
-            }
-          ]
+              client: "ITC Limited",
+              representative: "Arjun Reddy",
+              registerDate: "2024-09-12",
+              actualRevenue: 48000,
+            },
+          ],
         },
       ],
     },
   ];
-
 
   const [selectedMonth, setSelectedMonth] = useState(
     mockBusinessRevenueData[0].month
@@ -401,7 +399,6 @@ const ItOffices = () => {
       // name: "Revenue",
       name: "Offices",
       data: selectedMonthData.domains.map((domain) => domain.clients.length),
-
     },
   ];
 
@@ -421,7 +418,7 @@ const ItOffices = () => {
       bar: { horizontal: false, columnWidth: "30%", borderRadius: 5 },
     },
     legend: { position: "top" },
-     colors: ["#54C4A7", "#EB5C45"],
+    colors: ["#54C4A7", "#EB5C45"],
   };
 
   return (
@@ -460,7 +457,6 @@ const ItOffices = () => {
             <span className="text-sm text-muted font-pmedium text-title flex items-center gap-1">
               EXPENSE
             </span>
-
           </div>
         </div>
         {selectedMonthData.domains.map((domain, index) => {
@@ -489,7 +485,7 @@ const ItOffices = () => {
                       onClick={() => {
                         localStorage.setItem("client", domain.name);
                         navigate(
-                          `/app/dashboard/it-dashboard/it-offices/it-offices-layout/${domain.name}`
+                          `/app/dashboard/It-dashboard/it-offices/it-offices-layout/${domain.name}`
                         );
                       }}
                     >

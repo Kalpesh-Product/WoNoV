@@ -173,6 +173,7 @@ const FrontendPayment = () => {
         {/* Calendar Section */}
         <div className="w-full h-full overflow-y-auto">
           <FullCalendar
+            allDayText="All Day"
             headerToolbar={{
               left: "today",
               center: "prev title next",
@@ -231,7 +232,8 @@ const FrontendPayment = () => {
                   {Number(selectedEvent.extendedProps.amount).toLocaleString(
                     "en-IN"
                   )}
-                &nbsp;INR</span>
+                  &nbsp;INR
+                </span>
               </span>
             </div>
           </div>
