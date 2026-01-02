@@ -21,6 +21,7 @@ import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "./../../../utils/humanDateForamt";
+import formatDateTime from "../../../utils/formatDateTime";
 // import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
@@ -353,7 +354,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
                   ticket.assignees.map((item) => item.firstName)[0]
                 }`,
                 acceptedAt: ticket.acceptedAt
-                  ? humanTime(ticket.acceptedAt)
+                  ? ticket.acceptedAt
                   : "-",
                 priority: ticket.priority,
                 image: ticket.image ? ticket.image.url : null,
@@ -486,7 +487,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
             />
             <DetalisFormatted
               title="Raised At"
-              detail={humanDate(selectedTicket.createdAt)}
+              // detail={humanDate(selectedTicket.createdAt)}
+              detail={formatDateTime(selectedTicket.createdAt)}
             />
             <DetalisFormatted
               title="From Department"
@@ -512,7 +514,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
             />
             <DetalisFormatted
               title="Accepted at"
-              detail={selectedTicket?.acceptedAt}
+              // detail={selectedTicket?.acceptedAt}
+              detail={formatDateTime(selectedTicket?.acceptedAt)}
             />
             {/* <DetalisFormatted title="Assigned to" detail={selectedTicket?.assignees} /> */}
           </div>

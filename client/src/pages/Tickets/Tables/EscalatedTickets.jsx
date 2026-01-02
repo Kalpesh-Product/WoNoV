@@ -10,6 +10,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useState } from "react";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "./../../../utils/humanDateForamt";
+import formatDateTime from "../../../utils/formatDateTime";
 
 const EscalatedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -68,7 +69,10 @@ const EscalatedTickets = ({ title, departmentId }) => {
             ticket.escalatedTo.length > 0
               ? ticket.escalatedTo[escalatedIndex].raisedToDepartment.name
               : null;
-
+          const escalatedAt =
+            ticket.escalatedTo.length > 0
+              ? ticket.escalatedTo[escalatedIndex].createdAt
+              : null;
           const raisedBy = `${ticket.raisedBy?.firstName} ${ticket.raisedBy?.lastName}`;
           const acceptedBy = ticket.acceptedBy
             ? `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}`
@@ -95,6 +99,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
             status: ticket.status || "Pending",
             acceptedAt: ticket.acceptedAt || "N/A",
             escalatedStatus,
+            escalatedAt,
             escalatedTo:
               ticket.escalatedTo
                 .map((dept) => dept.raisedToDepartment.name)
@@ -261,7 +266,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
               />
               <DetalisFormatted
                 title="Raised At"
-                detail={humanDate(new Date(selectedTicket.raisedAt))}
+                detail={formatDateTime(selectedTicket.raisedAt)}
               />
               <DetalisFormatted
                 title="From Department"
@@ -281,12 +286,12 @@ const EscalatedTickets = ({ title, departmentId }) => {
                 detail={selectedTicket?.priority || "N/A"}
               />
               <DetalisFormatted
-                title="Accepted by"
+                title="Accepted By"
                 detail={selectedTicket?.acceptedBy || "N/A"}
               />
               <DetalisFormatted
-                title="Accepted at"
-                detail={humanDate(selectedTicket?.acceptedAt) || "N/A"}
+                title="Accepted At"
+                detail={formatDateTime(selectedTicket?.acceptedAt)}
               />
               <DetalisFormatted
                 title="Escalated To"
@@ -296,6 +301,10 @@ const EscalatedTickets = ({ title, departmentId }) => {
               <DetalisFormatted
                 title="Escalated Status"
                 detail={selectedTicket.escalatedStatus}
+              />
+               <DetalisFormatted
+                title="Escalated At"
+                detail={formatDateTime(selectedTicket?.escalatedAt)}
               />
             </div>
           )}

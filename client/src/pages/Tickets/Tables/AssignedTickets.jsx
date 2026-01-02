@@ -22,6 +22,7 @@ import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import { DateEnv } from "@fullcalendar/core/internal";
 import useAuth from "../../../hooks/useAuth";
+import formatDateTime from "../../../utils/formatDateTime";
 
 const AssignedTickets = ({ title, departmentId }) => {
   const { auth } = useAuth();
@@ -659,7 +660,7 @@ const AssignedTickets = ({ title, departmentId }) => {
             />
             <DetalisFormatted
               title="Raised At"
-              detail={humanDate(new Date(selectedTicket.raisedAt))}
+              detail={formatDateTime(selectedTicket.raisedAt)}
             />
             <DetalisFormatted
               title="From Department"
@@ -684,7 +685,7 @@ const AssignedTickets = ({ title, departmentId }) => {
             />
             <DetalisFormatted
               title="Assigned at"
-              detail={humanDate(selectedTicket?.assignedAt) || "N/A"}
+              detail={formatDateTime(selectedTicket.assignedAt)}
             />
           </div>
         )}

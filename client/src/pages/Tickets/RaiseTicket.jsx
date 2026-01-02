@@ -25,6 +25,7 @@ import humanTime from "../../utils/humanTime";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import humanDate from "../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
+import formatDateTime from "../../utils/formatDateTime";
 
 const RaiseTicket = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -144,8 +145,7 @@ const RaiseTicket = () => {
     setViewDetails(true);
   };
 
-  const formatDateTime = (value) =>
-    value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
+   
 
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No", width: 80 },
@@ -539,8 +539,8 @@ const RaiseTicket = () => {
                   closedBy: ticket?.closedBy
                     ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
                     : "None",
-                  acceptedAt: ticket.acceptedAt,
-                  closedAt: ticket.closedAt ? ticket.closedAt : "None",
+                  acceptedAt: ticket.acceptedAt ? ticket.acceptedAt : "N/A",
+                  closedAt: ticket.closedAt ? ticket.closedAt : "N/A",
                   priority: ticket.priority,
                   image: ticket.image ? ticket.image.url : null,
                   raisedAt: ticket.createdAt,
@@ -585,20 +585,21 @@ const RaiseTicket = () => {
             detail={viewTicketDetails?.priority}
           />
           <DetalisFormatted
-            title="Accepted by"
+            title="Accepted By"
             detail={viewTicketDetails?.acceptedBy}
           />
+         
           <DetalisFormatted
-            title="Accepted Date"
-            detail={humanDate(viewTicketDetails?.acceptedAt)}
+            title="Accepted At"
+            detail={formatDateTime(viewTicketDetails?.acceptedAt)}
           />
           <DetalisFormatted
-            title="Accepted at"
-            detail={humanTime(viewTicketDetails?.acceptedAt)}
-          />
-          <DetalisFormatted
-            title="Closed by"
+            title="Closed By"
             detail={viewTicketDetails?.closedBy}
+          />
+          <DetalisFormatted
+            title="Closed At"
+            detail={formatDateTime(viewTicketDetails?.closedAt)}
           />
           {viewTicketDetails.image && (
             <div className="lg:col-span-1">

@@ -15,6 +15,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import StatusChip from "../../../components/StatusChip";
+import formatDateTime from "../../../utils/formatDateTime";
 
 const RecievedTickets = ({ title, departmentId }) => {
   const [open, setOpen] = useState(false);
@@ -327,7 +328,7 @@ const RecievedTickets = ({ title, departmentId }) => {
             />
             <DetalisFormatted
               title="Raised At"
-              detail={humanDate(new Date(selectedTicket.raisedDate))}
+              detail={formatDateTime(selectedTicket.raisedDate)}
             />
             <DetalisFormatted
               title="From Department"

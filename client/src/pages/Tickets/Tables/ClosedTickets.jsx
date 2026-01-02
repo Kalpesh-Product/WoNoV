@@ -9,6 +9,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import StatusChip from "../../../components/StatusChip";
+import formatDateTime from "../../../utils/formatDateTime";
 
 const ClosedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -50,7 +51,14 @@ const ClosedTickets = ({ title, departmentId }) => {
             ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
             : "",
           acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
-          closedAt: ticket.closedAt ? humanTime(ticket.closedAt) : "-",
+            assignees:
+              ticket.assignees.length > 0
+                ? `${ticket.assignees.map(
+                    (item) => `${item.firstName} ${item.lastName}`
+                  )}`
+                : "N/A",
+          assignedAt: ticket.assignedAt || null,
+          closedAt: ticket.closedAt ? ticket.closedAt : "-",
           closedBy: ticket?.closedBy
             ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
             : "None",
@@ -133,7 +141,7 @@ const ClosedTickets = ({ title, departmentId }) => {
           />
           <DetalisFormatted
             title="Raised At"
-            detail={humanDate(viewTicketDetails.createdAt)}
+            detail={formatDateTime(viewTicketDetails.createdAt)}
           />
           <DetalisFormatted
             title="From Department"
@@ -149,20 +157,28 @@ const ClosedTickets = ({ title, departmentId }) => {
             detail={viewTicketDetails?.priority}
           />
           <DetalisFormatted
-            title="Accepted by"
+            title="Accepted By"
             detail={viewTicketDetails?.acceptedBy}
           />
           <DetalisFormatted
-            title="Accepted at"
-            detail={viewTicketDetails?.acceptedAt}
+            title="Accepted At"
+            detail={formatDateTime(viewTicketDetails.createdAt)}
+          />
+           <DetalisFormatted
+            title="Assignees"
+            detail={viewTicketDetails?.assignees}
           />
           <DetalisFormatted
-            title="Closed by"
+            title="Assigned At"
+            detail={formatDateTime(viewTicketDetails?.assignedAt)}
+          />
+          <DetalisFormatted
+            title="Closed By"
             detail={viewTicketDetails?.closedBy}
           />
           <DetalisFormatted
-            title="Closed at"
-            detail={viewTicketDetails?.closedAt}
+            title="Closed At"
+            detail={formatDateTime(viewTicketDetails.closedAt)}
           />
           <DetalisFormatted
             title="Closing Remark"

@@ -630,11 +630,11 @@ const SupportTickets = ({ title, departmentId }) => {
               detail={selectedTicket?.priority || ""}
             />
             <DetalisFormatted
-              title="Accepted by"
+              title="Accepted By"
               detail={selectedTicket?.acceptedBy || ""}
             />
             <DetalisFormatted
-              title="Accepted at"
+              title="Accepted At"
               detail={selectedTicket?.acceptedAt || ""}
             />
             <DetalisFormatted
@@ -642,7 +642,7 @@ const SupportTickets = ({ title, departmentId }) => {
               detail={selectedTicket?.supportRequestedBy || ""}
             />
             <DetalisFormatted
-              title="Support requested at"
+              title="Support Requested At"
               detail={selectedTicket?.supportRequestedAt || ""}
             />
             <DetalisFormatted
@@ -654,7 +654,7 @@ const SupportTickets = ({ title, departmentId }) => {
               detail={selectedTicket?.assignedTo || ""}
             />
             <DetalisFormatted
-              title="Assigned at"
+              title="AssignedAt"
               detail={selectedTicket?.assignedAt || ""}
             />
             <DetalisFormatted
@@ -662,7 +662,7 @@ const SupportTickets = ({ title, departmentId }) => {
               detail={selectedTicket?.closedBy || ""}
             />
             <DetalisFormatted
-              title="Closed at"
+              title="Closed At"
               detail={selectedTicket?.closedAt || ""}
             />
           </div>

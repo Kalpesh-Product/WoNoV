@@ -288,6 +288,9 @@ const AdminPerSqFtExpense = () => {
     yaxis: {
       max: roundedMax,
       title: { text: "Expense per Sq. Ft." },
+       labels: {
+          formatter: (value) => `${Math.round(value)}`,
+        },
     },
     xaxis: {
       categories: tableData.map((item) => item.unitNo),
