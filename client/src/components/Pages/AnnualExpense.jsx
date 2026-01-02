@@ -131,7 +131,7 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
         tableData: {
           rows: [],
           columns: [
-            // { field: "expanseName", headerName: "Expense Name", flex: 1 },
+            { field: "expanseName", headerName: "Expense Name", flex: 1 },
             // { field: "department", headerName: "Department", flex: 200 },
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
             { field: "projectedAmount", headerName: "Amount (INR)", flex: 1 },

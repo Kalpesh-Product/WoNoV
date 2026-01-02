@@ -44,6 +44,20 @@ const AdminDashboard = () => {
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
+    const userDepartments = auth?.user?.departments || [];
+  const departmentIds = useMemo(
+    () => userDepartments.map((dept) => dept?._id).filter(Boolean),
+    [userDepartments]
+  );
+  const departmentNames = useMemo(
+    () =>
+      userDepartments
+        .map((dept) => dept?.name?.toLowerCase())
+        .filter(Boolean),
+    [userDepartments]
+  );
+  const hasMultipleDepartments = departmentIds.length > 1;
+
   //------------------------PAGE ACCESS START-------------------//
   const cardsConfig = [
     {
@@ -183,8 +197,48 @@ const AdminDashboard = () => {
     : 0;
 
   const totalOverallExpense = isHrFinanceLoading
-    ? []
+    ? 0
     : hrFinance.reduce((sum, item) => sum + item.actualAmount || 0, 0);
+
+    const expensePerSqFtTotals = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
+      return { totalSqFt: 0, totalExpense: 0, perSqFtExpense: 0 };
+    }
+
+    const groupedByUnit = hrFinance.reduce((acc, item) => {
+      const unit = item.unit;
+
+      if (!unit?._id) return acc;
+
+      const unitNo = unit.unitNo || "-";
+
+      if (!acc[unitNo]) {
+        acc[unitNo] = {
+          sqft: Number(unit.sqft) || 0,
+          totalExpense: 0,
+        };
+      }
+
+      acc[unitNo].totalExpense += Number(item.actualAmount) || 0;
+
+      return acc;
+    }, {});
+
+    const totals = Object.values(groupedByUnit).reduce(
+      (acc, unit) => {
+        acc.totalSqFt += unit.sqft;
+        acc.totalExpense += unit.totalExpense;
+        return acc;
+      },
+      { totalSqFt: 0, totalExpense: 0 }
+    );
+
+    const perSqFtExpense =
+      totals.totalSqFt > 0 ? totals.totalExpense / totals.totalSqFt : 0;
+
+    return { ...totals, perSqFtExpense };
+  }, [hrFinance, isHrFinanceLoading]);
+
   //----------------------Monthly average-----------------------//
   //----------------------Units data-----------------------//
   const { data: unitsData = [], isLoading: isUnitsData } = useQuery({
@@ -239,6 +293,20 @@ const AdminDashboard = () => {
       }
     },
   });
+
+    const { data: tasksSummary = [], isLoading: isTasksSummaryLoading } =
+    useQuery({
+      queryKey: ["tasks-summary"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/tasks/get-tasks-summary");
+          return response.data;
+        } catch (error) {
+          throw new Error("Error fetching tasks summary");
+        }
+      },
+      enabled: hasMultipleDepartments,
+    });
 
   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
     useQuery({
@@ -680,6 +748,49 @@ const AdminDashboard = () => {
 
   let simplifiedClientsPie = [];
 
+   const totalDueTasks = useMemo(() => {
+    if (hasMultipleDepartments) {
+      if (isTasksSummaryLoading) return 0;
+
+      return tasksSummary
+        .filter((dept) => {
+          const deptId =
+            typeof dept?.department === "object"
+              ? dept?.department?._id
+              : dept?.department;
+          const deptName =
+            typeof dept?.department === "object"
+              ? dept?.department?.name
+              : dept?.department;
+          const normalizedName =
+            typeof deptName === "string" ? deptName.toLowerCase() : "";
+
+          return (
+            (deptId && departmentIds.includes(deptId)) ||
+            (normalizedName && departmentNames.includes(normalizedName))
+          );
+        })
+        .reduce((sum, dept) => {
+          const departmentTasks = Array.isArray(dept?.tasks)
+            ? dept.tasks.filter((task) => task?.taskType === "Department")
+            : [];
+          return sum + departmentTasks.length;
+        }, 0);
+    }
+
+    const departmentTasks = tasks.filter(
+      (task) => task?.taskType === "Department"
+    );
+    return departmentTasks.length || 0;
+  }, [
+    departmentIds,
+    departmentNames,
+    hasMultipleDepartments,
+    isTasksSummaryLoading,
+    tasks,
+    tasksSummary,
+  ]);
+
   if (!isClientsDataPending && Array.isArray(clientsData)) {
     let otherTotalDesks = 0;
 
@@ -781,7 +892,8 @@ const AdminDashboard = () => {
     {
       key: PERMISSIONS.ADMIN_MONTHLY_DUE_TASKS.value,
       title: "Total",
-      data: tasks.length || 0,
+      // data: tasks.length || 0,
+      data: totalDueTasks,
       description: "Monthly Due Tasks",
       route: "/app/tasks/department-tasks",
     },
@@ -795,7 +907,8 @@ const AdminDashboard = () => {
     {
       key: PERMISSIONS.ADMIN_EXPENSE_PER_SQFT.value,
       title: "Total",
-      data: `INR ${inrFormat(totalOverallExpense / totalSqFt)}`,
+      // data: `INR ${inrFormat(totalOverallExpense / totalSqFt)}`,
+      data: `INR ${inrFormat(expensePerSqFtTotals.perSqFtExpense)}`,
       description: "Expense Per Sq. Ft.",
       route: "per-sq-ft-expense",
     },
@@ -810,7 +923,7 @@ const AdminDashboard = () => {
       key: PERMISSIONS.ADMIN_TOP_EXECUTIVE.value,
       title: "Top Executive",
       data: "",
-      description: "Mr. Machindranath Parkar",
+      description: "Ms. Utkarsha Palkar",
       route: "admin-executive-expense",
     },
   ];

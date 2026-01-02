@@ -16,8 +16,22 @@ const MonthlyInvoiceCommon = () => {
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
   const departmentId = department?._id;
-  console.log("department : ", departmentId);
 
+   const formatDateTime = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
   const [viewModal, setViewModal] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
 
@@ -47,7 +61,13 @@ const MonthlyInvoiceCommon = () => {
     { headerName: "Invoice Name", field: "invoiceName", flex: 1 },
     { headerName: "GSTIN", field: "gstIn", flex: 1 },
     { headerName: "Invoice Date", field: "invoiceDate", flex: 1 },
-    { headerName: "Due Date", field: "dueDate", flex: 1 },
+ 
+     {
+      headerName: "Due Date",
+      field: "dueDate",
+      flex: 1,
+      valueFormatter: (params) => formatDateTime(params.value),
+    },
     {
       headerName: "Status",
       field: "isPaid",
@@ -211,14 +231,17 @@ const MonthlyInvoiceCommon = () => {
             />
             <DetalisFormatted
               title="Due Date"
-              detail={
-                viewDetails?.dueDate
-                  ? new Date(viewDetails.dueDate).toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })
-                  : "-"
+              // detail={
+              //   viewDetails?.dueDate
+              //     ? new Date(viewDetails.dueDate).toLocaleDateString("en-IN", {
+              //         day: "2-digit",
+              //         month: "short",
+              //         year: "numeric",
+              //       })
+              //     : "-"
+              // }
+                            detail={
+                viewDetails?.dueDate ? formatDateTime(viewDetails.dueDate) : "-"
               }
             />
             <DetalisFormatted
