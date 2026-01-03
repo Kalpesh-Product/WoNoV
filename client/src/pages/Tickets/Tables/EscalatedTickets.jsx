@@ -34,6 +34,31 @@ const EscalatedTickets = ({ title, departmentId }) => {
     setOpenView(true);
   };
 
+  const formatAssignments = (assignments = []) => {
+    const assignmentDetails = Array.isArray(assignments)
+      ? assignments.map((assignment) => {
+          const assignee = assignment?.assignee;
+          const assigneeName =
+            assignee?.firstName && assignee?.lastName
+              ? `${assignee.firstName} ${assignee.lastName}`
+              : "Unknown";
+          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+
+          return { assigneeName, assignedAtFormatted };
+        })
+      : [];
+
+    const assignedToDisplay = assignmentDetails
+      .map(({ assigneeName, assignedAtFormatted }) =>
+        assignedAtFormatted && assignedAtFormatted !== "N/A"
+          ? `${assigneeName} (${assignedAtFormatted})`
+          : assigneeName
+      )
+      .join(", ");
+
+    return { assignedToDisplay, assignmentDetails };
+  };
+
   const { mutate } = useMutation({
     mutationKey: ["close-ticket"],
     mutationFn: async (ticketId) => {
@@ -104,6 +129,14 @@ const EscalatedTickets = ({ title, departmentId }) => {
               ticket.escalatedTo
                 .map((dept) => dept.raisedToDepartment.name)
                 .join(", ") || "N/A",
+            ...(() => {
+              const { assignedToDisplay, assignmentDetails } =
+                formatAssignments(ticket.assignedTo);
+              return {
+                assignedTo: assignedToDisplay,
+                assignedToDetails: assignmentDetails,
+              };
+            })(),
           };
 
           return escalatedTicket;
@@ -287,12 +320,37 @@ const EscalatedTickets = ({ title, departmentId }) => {
               />
               <DetalisFormatted
                 title="Accepted By"
-                detail={selectedTicket?.acceptedBy || "N/A"}
+                detail={selectedTicket?.acceptedBy || ""}
               />
               <DetalisFormatted
                 title="Accepted At"
                 detail={formatDateTime(selectedTicket?.acceptedAt)}
               />
+              {selectedTicket?.assignedToDetails?.length ? (
+                <div className="text-content flex items-start w-full">
+                  <span className="w-[50%]">Assignees</span>
+                  <span>:</span>
+                  <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                    {selectedTicket.assignedToDetails.map(
+                      (assignment, index) => (
+                        <div key={`${assignment.assigneeName}-${index}`}>
+                          <div className="font-medium">
+                            {assignment.assigneeName}
+                          </div>
+                          <div className="text-borderGray">
+                            {assignment.assignedAtFormatted || "N/A"}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <DetalisFormatted
+                  title="Assignees"
+                  detail={selectedTicket?.assignees || ""}
+                />
+              )}
               <DetalisFormatted
                 title="Escalated To"
                 detail={selectedTicket.escalatedTo || "N/A"}
@@ -302,7 +360,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
                 title="Escalated Status"
                 detail={selectedTicket.escalatedStatus}
               />
-               <DetalisFormatted
+              <DetalisFormatted
                 title="Escalated At"
                 detail={formatDateTime(selectedTicket?.escalatedAt)}
               />

@@ -123,6 +123,31 @@ const RaiseTicket = () => {
     },
   });
 
+  const formatAssignments = (assignments = []) => {
+    const assignmentDetails = Array.isArray(assignments)
+      ? assignments.map((assignment) => {
+          const assignee = assignment?.assignee;
+          const assigneeName =
+            assignee?.firstName && assignee?.lastName
+              ? `${assignee.firstName} ${assignee.lastName}`
+              : "Unknown";
+          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+
+          return { assigneeName, assignedAtFormatted };
+        })
+      : [];
+
+    const assignedToDisplay = assignmentDetails
+      .map(({ assigneeName, assignedAtFormatted }) =>
+        assignedAtFormatted && assignedAtFormatted !== "N/A"
+          ? `${assigneeName} (${assignedAtFormatted})`
+          : assigneeName
+      )
+      .join(", ");
+
+    return { assignedToDisplay, assignmentDetails };
+  };
+
   const handleDepartmentSelect = (deptId) => {
     setSelectedDepartment(deptId);
 
@@ -144,8 +169,6 @@ const RaiseTicket = () => {
     setViewTicketDetails(ticket);
     setViewDetails(true);
   };
-
-   
 
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No", width: 80 },
@@ -542,6 +565,14 @@ const RaiseTicket = () => {
                   acceptedAt: ticket.acceptedAt ? ticket.acceptedAt : "N/A",
                   closedAt: ticket.closedAt ? ticket.closedAt : "N/A",
                   priority: ticket.priority,
+                  ...(() => {
+                    const { assignedToDisplay, assignmentDetails } =
+                      formatAssignments(ticket.assignedTo);
+                    return {
+                      assignedTo: assignedToDisplay,
+                      assignedToDetails: assignmentDetails,
+                    };
+                  })(),
                   image: ticket.image ? ticket.image.url : null,
                   raisedAt: ticket.createdAt,
                 };
@@ -588,11 +619,40 @@ const RaiseTicket = () => {
             title="Accepted By"
             detail={viewTicketDetails?.acceptedBy}
           />
-         
+
           <DetalisFormatted
             title="Accepted At"
             detail={formatDateTime(viewTicketDetails?.acceptedAt)}
           />
+          {/* <DetalisFormatted
+            title="Assigned To"
+            detail={viewTicketDetails?.assignedTo || ""}
+          /> */}
+          {viewTicketDetails?.assignedToDetails?.length ? (
+            <div className="text-content flex items-start w-full">
+              <span className="w-[50%]">Assignees</span>
+              <span>:</span>
+              <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                {viewTicketDetails.assignedToDetails.map(
+                  (assignment, index) => (
+                    <div key={`${assignment.assigneeName}-${index}`}>
+                      <div className="font-medium">
+                        {assignment.assigneeName}
+                      </div>
+                      <div className="text-borderGray">
+                        {assignment.assignedAtFormatted || "N/A"}
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          ) : (
+            <DetalisFormatted
+              title="Assigned At"
+              detail={formatDateTime(viewTicketDetails?.assignedAt)}
+            />
+          )}
           <DetalisFormatted
             title="Closed By"
             detail={viewTicketDetails?.closedBy}

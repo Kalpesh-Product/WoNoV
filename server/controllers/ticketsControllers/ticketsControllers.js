@@ -590,6 +590,10 @@ const getAllTickets = async (req, res, next) => {
         },
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName middleName lastName" },
+        {
+          path: "assignedTo.assignee",
+          select: "firstName lastName",
+        },
         { path: "closedBy", select: "firstName middleName lastName" },
         { path: "assignees", select: "firstName middleName lastName" },
       ])
@@ -1480,13 +1484,17 @@ const filterMyTickets = async (req, res, next) => {
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
       .select(
-        "raisedBy raisedToDepartment status ticket description reject acceptedAt image createdAt closingReason"
+        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedAt image createdAt closingReason"
       )
       .populate([
         { path: "raisedBy", select: "firstName lastName" },
         { path: "raisedToDepartment", select: "name" },
         { path: "reject.rejectedBy", select: "firstName lastName email" },
         { path: "acceptedBy", select: "firstName lastName email" },
+        {
+          path: "assignedTo.assignee",
+          select: "firstName lastName",
+        },
         { path: "closedBy", select: "firstName lastName email" },
       ])
       .lean()

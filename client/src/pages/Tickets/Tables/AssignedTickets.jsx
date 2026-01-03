@@ -98,6 +98,31 @@ const AssignedTickets = ({ title, departmentId }) => {
     setOpenView(true);
   };
 
+  const formatAssignments = (assignments = []) => {
+    const assignmentDetails = Array.isArray(assignments)
+      ? assignments.map((assignment) => {
+          const assignee = assignment?.assignee;
+          const assigneeName =
+            assignee?.firstName && assignee?.lastName
+              ? `${assignee.firstName} ${assignee.lastName}`
+              : "Unknown";
+          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+
+          return { assigneeName, assignedAtFormatted };
+        })
+      : [];
+
+    const assignedToDisplay = assignmentDetails
+      .map(({ assigneeName, assignedAtFormatted }) =>
+        assignedAtFormatted && assignedAtFormatted !== "N/A"
+          ? `${assigneeName} (${assignedAtFormatted})`
+          : assigneeName
+      )
+      .join(", ");
+
+    return { assignedToDisplay, assignmentDetails };
+  };
+
   // Transform Tickets Data
   const transformTicketsData = (tickets) => {
     return !tickets.length
@@ -120,6 +145,14 @@ const AssignedTickets = ({ title, departmentId }) => {
                 : ["N/A"],
             priority: ticket.priority,
             ticketTitle: ticket.ticket || "No Title",
+            ...(() => {
+              const { assignedToDisplay, assignmentDetails } =
+                formatAssignments(ticket.assignedTo);
+              return {
+                assignees: assignedToDisplay || "N/A",
+                assignedToDetails: assignmentDetails,
+              };
+            })(),
             assignees:
               ticket.assignees.length > 0
                 ? `${ticket.assignees.map(
@@ -149,7 +182,7 @@ const AssignedTickets = ({ title, departmentId }) => {
       width: 100,
     },
     { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
-    { field: "assignees", headerName: "Assigned To", width: 300 },
+    // { field: "assignees", headerName: "Assigned To", width: 300 },
     // {
     //   field: "tickets",
     //   headerName: "Tickets",
@@ -679,14 +712,30 @@ const AssignedTickets = ({ title, departmentId }) => {
               title="Priority"
               detail={selectedTicket?.priority || "N/A"}
             />
-            <DetalisFormatted
-              title="Assignees"
-              detail={selectedTicket?.assignees || "N/A"}
-            />
-            <DetalisFormatted
-              title="Assigned at"
-              detail={formatDateTime(selectedTicket.assignedAt)}
-            />
+
+            {selectedTicket?.assignedToDetails?.length ? (
+              <div className="text-content flex items-start w-full">
+                <span className="w-[50%]">Assignees</span>
+                <span>:</span>
+                <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                  {selectedTicket.assignedToDetails.map((assignment, index) => (
+                    <div key={`${assignment.assigneeName}-${index}`}>
+                      <div className="font-medium">
+                        {assignment.assigneeName}
+                      </div>
+                      <div className="text-borderGray">
+                        {assignment.assignedAtFormatted || "N/A"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <DetalisFormatted
+                title="Assignees"
+                detail={selectedTicket?.assignees || "N/A"}
+              />
+            )}
           </div>
         )}
       </MuiModal>

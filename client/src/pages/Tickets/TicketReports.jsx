@@ -13,6 +13,7 @@ import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import humanTime from "../../utils/humanTime";
 import StatusChip from "../../components/StatusChip";
+import formatDateTime from "../../utils/formatDateTime";
 
 const TicketReports = () => {
   const { auth } = useAuth();
@@ -80,7 +81,34 @@ const TicketReports = () => {
       ),
     },
   ];
-  console.log("selected meeting", selectedMeeting);
+
+  const formatAssignments = (assignments = []) => {
+    const assignmentDetails = Array.isArray(assignments)
+      ? assignments.map((assignment) => {
+          const assignee = assignment?.assignee;
+          const assigneeName =
+            assignee?.firstName && assignee?.lastName
+              ? `${assignee.firstName} ${assignee.lastName}`
+              : "Unknown";
+          const assignedAtFormatted = assignment?.assignedAt
+            ? `${humanDate(assignment.assignedAt)}, ${humanTime(
+                assignment.assignedAt
+              )}`
+            : "";
+          return { assigneeName, assignedAtFormatted };
+        })
+      : [];
+
+    const assignedToDisplay = assignmentDetails
+      .map(({ assigneeName, assignedAtFormatted }) =>
+        assignedAtFormatted
+          ? `${assigneeName} (${assignedAtFormatted})`
+          : assigneeName
+      )
+      .join(", ");
+
+    return { assignedToDisplay, assignmentDetails };
+  };
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -120,6 +148,14 @@ const TicketReports = () => {
                     item.reject?.rejectedBy?.lastName || ""
                   }`,
                   reason: item.reject?.reason,
+                  ...(() => {
+                    const { assignedToDisplay, assignmentDetails } =
+                      formatAssignments(item.assignedTo);
+                    return {
+                      assignedTo: assignedToDisplay,
+                      assignedToDetails: assignmentDetails,
+                    };
+                  })(),
                 })),
               ]}
               dateColumn={"createdAt"}
@@ -171,7 +207,7 @@ const TicketReports = () => {
               title={"Priority"}
               detail={selectedMeeting?.priority || ""}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title={"Assignees"}
               detail={
                 Array.isArray(selectedMeeting?.assignees) &&
@@ -181,19 +217,42 @@ const TicketReports = () => {
                       .join(", ")
                   : "None"
               }
-            />
+            /> */}
             <DetalisFormatted
               title={"Accepted By"}
               detail={selectedMeeting.acceptedBy || "None"}
             />
-            <DetalisFormatted
-              title={"Accepted Date"}
-              detail={humanDate(selectedMeeting?.acceptedAt) || "N/A"}
-            />
+
             <DetalisFormatted
               title={"Accepted At"}
-              detail={humanTime(selectedMeeting?.acceptedAt) || "N/A"}
+              detail={formatDateTime(selectedMeeting?.acceptedAt) || "N/A"}
             />
+
+            {selectedMeeting?.assignedToDetails?.length ? (
+              <div className="text-content flex items-start w-full">
+                <span className="w-[50%]">Assignees</span>
+                <span>:</span>
+                <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                  {selectedMeeting.assignedToDetails.map(
+                    (assignment, index) => (
+                      <div key={`${assignment.assigneeName}-${index}`}>
+                        <div className="font-medium">
+                          {assignment.assigneeName}
+                        </div>
+                        <div className="text-borderGray">
+                          {assignment.assignedAtFormatted || "N/A"}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            ) : (
+              <DetalisFormatted
+                title="Assignees"
+                detail={selectedMeeting?.assignedTo || ""}
+              />
+            )}
             <DetalisFormatted
               title="Closed Date"
               detail={humanDate(selectedMeeting?.closedAt)}

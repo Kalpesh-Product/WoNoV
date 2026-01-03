@@ -126,6 +126,31 @@ const AcceptedTickets = ({ title, departmentId }) => {
     },
   });
 
+  const formatAssignments = (assignments = []) => {
+    const assignmentDetails = Array.isArray(assignments)
+      ? assignments.map((assignment) => {
+          const assignee = assignment?.assignee;
+          const assigneeName =
+            assignee?.firstName && assignee?.lastName
+              ? `${assignee.firstName} ${assignee.lastName}`
+              : "Unknown";
+          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+
+          return { assigneeName, assignedAtFormatted };
+        })
+      : [];
+
+    const assignedToDisplay = assignmentDetails
+      .map(({ assigneeName, assignedAtFormatted }) =>
+        assignedAtFormatted && assignedAtFormatted !== "N/A"
+          ? `${assigneeName} (${assignedAtFormatted})`
+          : assigneeName
+      )
+      .join(", ");
+
+    return { assignedToDisplay, assignmentDetails };
+  };
+
   const { mutate: closeTicket, isPending: isClosing } = useMutation({
     mutationKey: ["close-ticket"],
     mutationFn: async ({ ticketId, closingRemark }) => {
@@ -302,7 +327,16 @@ const AcceptedTickets = ({ title, departmentId }) => {
               (item) => `${item.firstName} ${item.lastName}`
             )[0]
           }`,
-      assignees: `${ticket.assignees.map((item) => item.firstName)[0]}`,
+      // assignees: `${ticket.assignees.map((item) => item.firstName)[0]}`,
+      ...(() => {
+        const { assignedToDisplay, assignmentDetails } = formatAssignments(
+          ticket.assignedTo
+        );
+        return {
+          assignees: assignedToDisplay,
+          assignedToDetails: assignmentDetails,
+        };
+      })(),
       acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
       priority: ticket.priority,
       image: ticket.image ? ticket.image.url : null,
@@ -350,12 +384,18 @@ const AcceptedTickets = ({ title, departmentId }) => {
                         (item) => `${item.firstName} ${item.lastName}`
                       )[0]
                     }`,
-                assignees: `${
-                  ticket.assignees.map((item) => item.firstName)[0]
-                }`,
-                acceptedAt: ticket.acceptedAt
-                  ? ticket.acceptedAt
-                  : "-",
+                // assignees: `${
+                //   ticket.assignees.map((item) => item.firstName)[0]
+                // }`,
+                ...(() => {
+                  const { assignedToDisplay, assignmentDetails } =
+                    formatAssignments(ticket.assignedTo);
+                  return {
+                    assignees: assignedToDisplay,
+                    assignedToDetails: assignmentDetails,
+                  };
+                })(),
+                acceptedAt: ticket.acceptedAt ? ticket.acceptedAt : "-",
                 priority: ticket.priority,
                 image: ticket.image ? ticket.image.url : null,
               })),
@@ -517,6 +557,30 @@ const AcceptedTickets = ({ title, departmentId }) => {
               // detail={selectedTicket?.acceptedAt}
               detail={formatDateTime(selectedTicket?.acceptedAt)}
             />
+
+            {selectedTicket?.assignedToDetails?.length ? (
+              <div className="text-content flex items-start w-full">
+                <span className="w-[50%]">Assignees</span>
+                <span>:</span>
+                <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                  {selectedTicket.assignedToDetails.map((assignment, index) => (
+                    <div key={`${assignment.assigneeName}-${index}`}>
+                      <div className="font-medium">
+                        {assignment.assigneeName}
+                      </div>
+                      <div className="text-borderGray">
+                        {assignment.assignedAtFormatted || "N/A"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <DetalisFormatted
+                title="Assignees"
+                detail={selectedTicket?.assignees || ""}
+              />
+            )}
             {/* <DetalisFormatted title="Assigned to" detail={selectedTicket?.assignees} /> */}
           </div>
         )}
