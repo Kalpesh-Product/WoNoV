@@ -373,7 +373,7 @@ const SupportTickets = ({ title, departmentId }) => {
       headerName: "From Department",
       width: 100,
     },
-    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
+    { field: "ticketTitle", headerName: "Reason", width: 250 },
     // {
     //   field: "tickets",
     //   headerName: "Ticket Type",
@@ -433,34 +433,7 @@ const SupportTickets = ({ title, departmentId }) => {
         );
       },
     },
-    {
-      field: "assignedToDetails",
-      headerName: "Assigned To",
-      width: 220,
-      cellRenderer: (params) => {
-        if (!params.value || !params.value.length) {
-          return <span className="text-small text-borderGray">N/A</span>;
-        }
 
-        return (
-          <div className="flex flex-col gap-2 py-2">
-            {params.value.map((assignment, index) => (
-              <div
-                key={`${assignment.assigneeName}-${index}`}
-                className="text-small"
-              >
-                <div className="font-medium">{assignment.assigneeName}</div>
-                {assignment.assignedAtFormatted ? (
-                  <div className="text-borderGray">
-                    {assignment.assignedAtFormatted}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        );
-      },
-    },
     {
       field: "actions",
       headerName: "Actions",
@@ -708,14 +681,34 @@ const SupportTickets = ({ title, departmentId }) => {
               title="Reason For Support"
               detail={selectedTicket?.reason || ""}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Assigned To"
               detail={selectedTicket?.assignedTo || ""}
-            />
-            <DetalisFormatted
-              title="Assigned At"
-              detail={selectedTicket?.assignedAt || ""}
-            />
+            /> */}
+            {selectedTicket?.assignedToDetails?.length ? (
+              <div className="text-content flex items-start w-full">
+                <span className="w-[50%]">Assignees</span>
+                <span>:</span>
+                <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                  {selectedTicket.assignedToDetails.map((assignment, index) => (
+                    <div key={`${assignment.assigneeName}-${index}`}>
+                      <div className="font-medium">
+                        {assignment.assigneeName}
+                      </div>
+                      <div className="text-borderGray">
+                        {assignment.assignedAtFormatted || "N/A"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <DetalisFormatted
+                title="Assigned To"
+                detail={selectedTicket?.assignedAt || ""}
+              />
+            )}
+
             <DetalisFormatted
               title="Closed By"
               detail={selectedTicket?.closedBy || ""}

@@ -314,6 +314,10 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
             path: "assignees",
             select: "firstName lastName",
           },
+          {
+            path: "assignedTo.assignee",
+            select: "firstName lastName",
+          },
         ],
       })
       .populate({
