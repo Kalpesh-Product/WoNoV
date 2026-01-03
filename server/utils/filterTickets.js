@@ -48,6 +48,15 @@ async function fetchTickets(query, companyId) {
           },
         },
         {
+          path: "assignedTo.assignee",
+          select: "firstName lastName",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
+        },
+        {
           path: "assignees",
           select: "firstName lastName",
           populate: {
@@ -279,7 +288,7 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
       .populate({
         path: "ticket",
         select:
-          "ticket description status acceptedBy acceptedAt assignedAt closedAt assignees image raisedBy raisedToDepartment",
+          "ticket description status acceptedBy assignedTo acceptedAt assignedAt closedAt assignees image raisedBy raisedToDepartment",
         populate: [
           {
             path: "raisedBy",

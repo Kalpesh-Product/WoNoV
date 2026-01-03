@@ -39,7 +39,21 @@ const ticketsSchema = new mongoose.Schema(
         ref: "Ticket",
       },
     ],
+    assignedTo: [
+      {
+        assignee: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "UserData",
+          required: true,
+        },
+        assignedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     assignees: [
+      //deprecated in support & assigned tickets
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "UserData",
@@ -69,7 +83,7 @@ const ticketsSchema = new mongoose.Schema(
       },
     },
     resolvedDate: Date,
-    assignedAt: Date,
+    assignedAt: Date, //deprecated in support & assigned tickets
     escalatededAt: Date,
     company: {
       type: mongoose.Schema.Types.ObjectId,

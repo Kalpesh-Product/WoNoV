@@ -86,9 +86,38 @@ const SupportTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
-          const assignedTo = ticket.ticket?.assignees[0]
-            ? `${ticket.ticket?.assignees[0].firstName} ${ticket.ticket?.assignees[0].lastName}`
-            : "";
+          // const assignedTo = ticket.ticket?.assignees[0]
+          //   ? `${ticket.ticket?.assignees[0].firstName} ${ticket.ticket?.assignees[0].lastName}`
+          //   : "";
+          const assignmentDetails = Array.isArray(ticket.ticket?.assignedTo)
+            ? ticket.ticket.assignedTo.map((assignment) => {
+                const assignee = assignment?.assignee;
+                const assigneeName =
+                  assignee?.firstName && assignee?.lastName
+                    ? `${assignee.firstName} ${assignee.lastName}`
+                    : "Unknown";
+                const assignedAtFormatted = assignment?.assignedAt
+                  ? `${humanDate(assignment.assignedAt)}, ${humanTime(
+                      assignment.assignedAt
+                    )}`
+                  : "";
+                return { assigneeName, assignedAtFormatted };
+              })
+            : [];
+
+          const assignedToDisplay = assignmentDetails
+            .map(({ assigneeName, assignedAtFormatted }) =>
+              assignedAtFormatted
+                ? `${assigneeName} (${assignedAtFormatted})`
+                : assigneeName
+            )
+            .join(", ");
+
+          const assignedAtDisplay = assignmentDetails
+            .map(({ assignedAtFormatted }) => assignedAtFormatted)
+            .filter(Boolean)
+            .join(", ");
+
           const closedBy = ticket.ticket.closedBy
             ? `${ticket.ticket.closedBy.firstName} ${ticket.ticket.closedBy.lastName}`
             : "";
@@ -129,6 +158,7 @@ const SupportTickets = ({ title, departmentId }) => {
                   ticket.ticket?.closedAt
                 )}`
               : "",
+
             closedBy,
             supportRequestedBy,
             supportRequestedAt: ticket?.createdAt
@@ -136,7 +166,8 @@ const SupportTickets = ({ title, departmentId }) => {
                   ticket?.createdAt
                 )}`
               : "",
-            assignedTo: assignedTo,
+            assignedTo: assignedToDisplay,
+            assignedToDetails: assignmentDetails,
             tickets:
               ticket.ticket?.assignees.length > 0
                 ? "Assigned Ticket"
@@ -403,6 +434,34 @@ const SupportTickets = ({ title, departmentId }) => {
       },
     },
     {
+      field: "assignedToDetails",
+      headerName: "Assigned To",
+      width: 220,
+      cellRenderer: (params) => {
+        if (!params.value || !params.value.length) {
+          return <span className="text-small text-borderGray">N/A</span>;
+        }
+
+        return (
+          <div className="flex flex-col gap-2 py-2">
+            {params.value.map((assignment, index) => (
+              <div
+                key={`${assignment.assigneeName}-${index}`}
+                className="text-small"
+              >
+                <div className="font-medium">{assignment.assigneeName}</div>
+                {assignment.assignedAtFormatted ? (
+                  <div className="text-borderGray">
+                    {assignment.assignedAtFormatted}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
       field: "actions",
       headerName: "Actions",
       pinned: "right",
@@ -654,7 +713,7 @@ const SupportTickets = ({ title, departmentId }) => {
               detail={selectedTicket?.assignedTo || ""}
             />
             <DetalisFormatted
-              title="AssignedAt"
+              title="Assigned At"
               detail={selectedTicket?.assignedAt || ""}
             />
             <DetalisFormatted

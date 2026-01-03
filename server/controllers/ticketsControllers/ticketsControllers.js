@@ -904,12 +904,30 @@ const assignTicket = async (req, res, next) => {
     }
 
     // Update the ticket by adding the assignees and setting status to "In Progress"
+
+    const existingAssigneeIds = (foundTicket.assignees || []).map((id) =>
+      id.toString()
+    );
+
+    const newAssignees = assignees.filter(
+      (assigneeId) => !existingAssigneeIds.includes(assigneeId.toString())
+    );
+
+    const assignmentTimestamp = new Date();
+
+    const assignedToEntries = newAssignees.map((assigneeId) => ({
+      assignee: assigneeId,
+      assignedAt: assignmentTimestamp,
+    }));
+
     const updatedTicket = await Tickets.findOneAndUpdate(
       { _id: ticketId },
+
       {
-        $addToSet: { assignees: assignees },
+        $addToSet: { assignees: { $each: newAssignees } },
+        $push: { assignedTo: { $each: assignedToEntries } },
         status: "In Progress",
-        assignedAt: new Date(),
+        assignedAt: assignmentTimestamp,
       },
       { new: true }
     );
