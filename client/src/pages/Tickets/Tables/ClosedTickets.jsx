@@ -32,6 +32,19 @@ const ClosedTickets = ({ title, departmentId }) => {
     setOpenModal(true);
   };
 
+  const formatEscalation = (escalations = []) => {
+    if (!Array.isArray(escalations) || !escalations.length) {
+      return { escalatedTo: "", escalatedStatus: "", escalatedAt: "" };
+    }
+
+    const latest = escalations[escalations.length - 1];
+    return {
+      escalatedTo: latest?.raisedToDepartment?.name || "",
+      escalatedStatus: latest?.status || "",
+      escalatedAt: formatDateTime(latest?.createdAt) || "",
+    };
+  };
+
   const formatAssignments = (assignments = []) => {
     const assignmentDetails = Array.isArray(assignments)
       ? assignments.map((assignment) => {
@@ -76,6 +89,15 @@ const ClosedTickets = ({ title, departmentId }) => {
             ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
             : "",
           acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
+          ...(() => {
+            const { assignedToDisplay, assignmentDetails } = formatAssignments(
+              ticket.assignedTo
+            );
+            return {
+              assignees: assignedToDisplay || "N/A",
+              assignedToDetails: assignmentDetails,
+            };
+          })(),
           //   assignees:
           //     ticket.assignees.length > 0
           //       ? `${ticket.assignees.map(
@@ -92,12 +114,13 @@ const ClosedTickets = ({ title, departmentId }) => {
               assignedToDetails: assignmentDetails,
             };
           })(),
-          closedAt: ticket.closedAt ? ticket.closedAt : "-",
+          closedAt: ticket.closedAt ? formatDateTime(ticket.closedAt) : "-",
           closedBy: ticket?.closedBy
             ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
             : "None",
           priority: ticket.priority,
           image: ticket.image ? ticket.image.url : null,
+          ...formatEscalation(ticket.escalatedTo),
         }));
   };
 
@@ -224,6 +247,18 @@ const ClosedTickets = ({ title, departmentId }) => {
               detail={viewTicketDetails?.assignees}
             />
           )}
+          <DetalisFormatted
+            title="Escalated To"
+            detail={viewTicketDetails?.escalatedTo || ""}
+          />
+          <DetalisFormatted
+            title="Escalated Status"
+            detail={viewTicketDetails?.escalatedStatus || ""}
+          />
+          <DetalisFormatted
+            title="Escalated At"
+            detail={viewTicketDetails?.escalatedAt || ""}
+          />
           <DetalisFormatted
             title="Closed By"
             detail={viewTicketDetails?.closedBy}

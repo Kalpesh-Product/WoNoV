@@ -8,18 +8,19 @@ const BreadCrumbComponent = () => {
 
   // Extract query parameters
   const searchParams = new URLSearchParams(location.search);
-  
+
   // Convert query parameters into an array of key-value pairs
   const queryParamEntries = Array.from(searchParams.entries());
 
   // Extract and process the path, excluding 'app' for display purposes
-const pathSegments =
-  location.pathname === "/app/dashboard"
-    ? ["dashboard"]
-    : location.pathname
-        .split("/")
-        .filter((segment) => segment && segment !== "app" && segment !== "dashboard");
-
+  const pathSegments =
+    location.pathname === "/app/dashboard"
+      ? ["dashboard"]
+      : location.pathname
+          .split("/")
+          .filter(
+            (segment) => segment && segment !== "app" && segment !== "dashboard"
+          );
 
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {
@@ -27,13 +28,27 @@ const pathSegments =
 
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");
-    const isDirectAppPath = location.pathname.startsWith(`/app/${path}`) && !location.pathname.includes("/dashboard");
-    const fullPath = isDirectAppPath ? `/app/${path}` : `/app/dashboard/${path}`;
+    const isDirectAppPath =
+      location.pathname.startsWith(`/app/${path}`) &&
+      !location.pathname.includes("/dashboard");
+    const fullPath = isDirectAppPath
+      ? `/app/${path}`
+      : `/app/dashboard/${path}`;
 
     // Capitalize for display
+    // const displayText = decodeURIComponent(segment)
+    // .replace(/-/g, " ")
+    // .replace(/\b\w/g, (char) => char.toUpperCase());
+
     const displayText = decodeURIComponent(segment)
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+      .replace(/-/g, " ")
+      .split(" ")
+      .map((word) =>
+        word.toLowerCase() === "amc"
+          ? "AMC"
+          : word.charAt(0).toUpperCase() + word.slice(1)
+      )
+      .join(" ");
 
     return isLast ? (
       <Typography key={index} color="text.primary">

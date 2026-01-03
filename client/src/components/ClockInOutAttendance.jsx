@@ -540,6 +540,13 @@ const ClockInOutAttendance = () => {
     },
   ];
 
+  // const isPrimaryDisabled =  isClockingIn || isClockingOut;
+  // const isBreakDisabled = isStartbreak || isEndBreak;
+
+  //Temporarily disabled
+  const isPrimaryDisabled = true;
+  const isBreakDisabled = true;
+
   return (
     <div className="flex flex-col  gap-4 p-0 h-80">
       <div className="grid grid-cols-1 gap-4">
@@ -565,8 +572,12 @@ const ClockInOutAttendance = () => {
                 hasClockedIn && !correctionPending
                   ? "bg-[#EB5C45]"
                   : "bg-wonoGreen  transition-all"
-              }  text-white flex justify-center items-center hover:scale-105`}
-              disabled={isClockingIn || isClockingOut}
+              } text-white flex justify-center items-center ${
+                isPrimaryDisabled
+                  ? "cursor-not-allowed opacity-60"
+                  : "hover:scale-105"
+              }`}
+              disabled={isPrimaryDisabled}
             >
               {hasClockedIn && !correctionPending
                 ? "Clock Out"
@@ -582,8 +593,12 @@ const ClockInOutAttendance = () => {
                   hasTakenBreak
                     ? "bg-[#FB923C]"
                     : "bg-[#FACC15]  transition-all"
-                }  text-white flex justify-center items-center hover:scale-105`}
-                disabled={isStartbreak || isEndBreak}
+                }   text-white flex justify-center items-center ${
+                  isBreakDisabled
+                    ? "cursor-not-allowed opacity-60"
+                    : "hover:scale-105"
+                }`}
+                disabled={isBreakDisabled}
               >
                 {hasTakenBreak
                   ? "End Break"

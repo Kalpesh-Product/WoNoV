@@ -110,6 +110,21 @@ const TicketReports = () => {
     return { assignedToDisplay, assignmentDetails };
   };
 
+  const formatEscalation = (escalations = []) => {
+    if (!Array.isArray(escalations) || !escalations.length) {
+      return { escalatedTo: "", escalatedStatus: "", escalatedAt: "" };
+    }
+
+    const latest = escalations[escalations.length - 1];
+    return {
+      escalatedTo: latest?.raisedToDepartment?.name || "",
+      escalatedStatus: latest?.status || "",
+      escalatedAt: latest?.createdAt
+        ? `${humanDate(latest.createdAt)}, ${humanTime(latest.createdAt)}`
+        : "",
+    };
+  };
+
   return (
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
@@ -156,6 +171,15 @@ const TicketReports = () => {
                       assignedToDetails: assignmentDetails,
                     };
                   })(),
+                  ...formatEscalation(item.escalatedTo),
+                  ...(() => {
+                    const { assignedToDisplay, assignmentDetails } =
+                      formatAssignments(item.assignedTo);
+                    return {
+                      assignedTo: assignedToDisplay,
+                      assignedToDetails: assignmentDetails,
+                    };
+                  })(),
                 })),
               ]}
               dateColumn={"createdAt"}
@@ -193,7 +217,7 @@ const TicketReports = () => {
             />
             <DetalisFormatted
               title={"Raised At"}
-              detail={`${selectedMeeting?.date || "N/A"}`}
+              detail={`${formatDateTime(selectedMeeting?.date) || "N/A"}`}
             />
             <DetalisFormatted
               title={"Raised To Department"}
@@ -227,6 +251,18 @@ const TicketReports = () => {
               title={"Accepted At"}
               detail={formatDateTime(selectedMeeting?.acceptedAt) || "N/A"}
             />
+            <DetalisFormatted
+              title={"Escalated To"}
+              detail={selectedMeeting?.escalatedTo || ""}
+            />
+            <DetalisFormatted
+              title={"Escalated Status"}
+              detail={selectedMeeting?.escalatedStatus || ""}
+            />
+            <DetalisFormatted
+              title={"Escalated At"}
+              detail={selectedMeeting?.escalatedAt || ""}
+            />
 
             {selectedMeeting?.assignedToDetails?.length ? (
               <div className="text-content flex items-start w-full">
@@ -253,13 +289,10 @@ const TicketReports = () => {
                 detail={selectedMeeting?.assignedTo || ""}
               />
             )}
-            <DetalisFormatted
-              title="Closed Date"
-              detail={humanDate(selectedMeeting?.closedAt)}
-            />
+
             <DetalisFormatted
               title="Closed At"
-              detail={humanTime(selectedMeeting?.closedAt)}
+              detail={formatDateTime(selectedMeeting?.closedAt)}
             />
             <DetalisFormatted
               title="Closed By"

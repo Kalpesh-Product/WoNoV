@@ -1074,6 +1074,15 @@ const ticketsReports = async (req, res, next) => {
         { path: "acceptedBy", select: "firstName lastName email" },
         { path: "closedBy", select: "firstName lastName email" },
         { path: "assignees", select: "firstName lastName email" },
+        { path: "assignedTo.assignee", select: "firstName lastName email" },
+        {
+          path: "escalatedTo",
+          select: "status raisedToDepartment createdAt",
+          populate: {
+            path: "raisedToDepartment",
+            select: "name",
+          },
+        },
         { path: "company", select: "companyName" },
         { path: "reject.rejectedBy", select: "firstName lastName email" },
       ])
