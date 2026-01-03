@@ -148,6 +148,19 @@ const RaiseTicket = () => {
     return { assignedToDisplay, assignmentDetails };
   };
 
+  const formatEscalation = (escalations = []) => {
+    if (!Array.isArray(escalations) || !escalations.length) {
+      return { escalatedTo: "", escalatedStatus: "", escalatedAt: "" };
+    }
+
+    const latest = escalations[escalations.length - 1];
+    return {
+      escalatedTo: latest?.raisedToDepartment?.name || "",
+      escalatedStatus: latest?.status || "",
+      escalatedAt: latest?.createdAt ? formatDateTime(latest.createdAt) : "",
+    };
+  };
+
   const handleDepartmentSelect = (deptId) => {
     setSelectedDepartment(deptId);
 
@@ -575,6 +588,7 @@ const RaiseTicket = () => {
                   })(),
                   image: ticket.image ? ticket.image.url : null,
                   raisedAt: ticket.createdAt,
+                  ...formatEscalation(ticket.escalatedTo),
                 };
               })}
               columns={recievedTicketsColumns}
@@ -653,6 +667,18 @@ const RaiseTicket = () => {
               detail={formatDateTime(viewTicketDetails?.assignedAt)}
             />
           )}
+          <DetalisFormatted
+            title="Escalated To"
+            detail={viewTicketDetails?.escalatedTo || ""}
+          />
+          <DetalisFormatted
+            title="Escalated Status"
+            detail={viewTicketDetails?.escalatedStatus || ""}
+          />
+          <DetalisFormatted
+            title="Escalated At"
+            detail={viewTicketDetails?.escalatedAt || ""}
+          />
           <DetalisFormatted
             title="Closed By"
             detail={viewTicketDetails?.closedBy}

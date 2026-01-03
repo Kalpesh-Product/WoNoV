@@ -1504,6 +1504,14 @@ const filterMyTickets = async (req, res, next) => {
           path: "assignedTo.assignee",
           select: "firstName lastName",
         },
+        {
+          path: "escalatedTo",
+          select: "status raisedToDepartment createdAt",
+          populate: {
+            path: "raisedToDepartment",
+            select: "name",
+          },
+        },
         { path: "closedBy", select: "firstName lastName email" },
       ])
       .lean()
