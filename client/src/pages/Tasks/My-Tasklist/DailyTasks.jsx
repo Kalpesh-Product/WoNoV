@@ -281,7 +281,12 @@ const DailyTasks = () => {
 
       //   return [formattedDate, formattedTime].filter(Boolean).join(", ");
       // },
-      field: "completedDateTime",
+      field: "completedDate",
+      cellRenderer: (params) => params.value,
+    },
+    {
+      headerName: "Completed Time",
+      field: "completedTime",
       cellRenderer: (params) => params.value,
       valueFormatter: (params) => params.value,
     },

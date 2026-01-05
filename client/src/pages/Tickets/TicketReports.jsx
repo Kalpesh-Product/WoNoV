@@ -51,7 +51,7 @@ const TicketReports = () => {
       field: "createdAt",
       headerName: "Date",
       flex: 1,
-      cellRenderer: (params) => humanDate(params.value),
+      cellRenderer: (params) => params.value,
     },
     { field: "raisedToDepartment", headerName: "Raised To", flex: 1 },
     { field: "raisedBy", headerName: "Raised By", flex: 1 },
@@ -150,7 +150,7 @@ const TicketReports = () => {
                       (assignee) => `${assignee.firstName} ${assignee.lastName}`
                     ) || "",
                   company: item.company?.companyName,
-                  createdAt: item.createdAt || "",
+                  createdAt: humanDate(item.createdAt) || "",
                   updatedAt: item.updatedAt || "",
                   acceptedBy: `${item.acceptedBy?.firstName || ""} ${
                     item.acceptedBy?.lastName || ""

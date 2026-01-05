@@ -46,6 +46,7 @@ const MyTaskReports = () => {
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
+    { field: "dueTime", headerName: "Due Time" },
     { field: "completedDate", headerName: "Completed Date" },
     { field: "completedTime", headerName: "Completed Time" },
     { field: "department", headerName: "Department" },
@@ -65,8 +66,9 @@ const MyTaskReports = () => {
               : taskList.map((task, index) => ({
                   ...task,
                   taskName: task.taskName,
-                  assignedDate: (task.assignedDate),
+                  assignedDate: task.assignedDate,
                   dueDate: humanDate(task.dueDate),
+                  dueTime: humanTime(task.dueDate),
                   completedDate: humanDate(task.completedDate),
                   completedTime: humanTime(task.completedDate),
                   assignedBy: `${task.assignedBy.firstName} ${task.assignedBy.lastName}`,

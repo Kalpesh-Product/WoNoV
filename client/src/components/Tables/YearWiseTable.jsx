@@ -25,6 +25,7 @@ const YearWiseTable = ({
   checkAll,
   key,
   exportData,
+  exportAllColumns = false,
   dropdownColumns = [],
   handleBatchAction,
   batchButton,
@@ -189,6 +190,7 @@ const YearWiseTable = ({
     if (agGridRef.current) {
       agGridRef.current.api.exportDataAsCsv({
         fileName: `${tableTitle || "data"}.csv`,
+        allColumns: exportAllColumns,
       });
     }
   };

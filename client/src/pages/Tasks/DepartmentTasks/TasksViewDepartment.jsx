@@ -276,20 +276,27 @@ const TasksViewDepartment = () => {
     // { headerName: "Assigned Time", field: "assignedDate" },
     // { headerName: "Assigned Date", field: "assignedDate" },
     { headerName: "Completed By", field: "completedBy", width: 300 },
-    // { headerName: "Completed Date", field: "completedDate" },
+    { headerName: "Completed Date", field: "completedDate" },
     {
-      headerName: "Completed Date",
+      headerName: "Completed Time",
       field: "completedTime",
       cellRenderer: (params) => {
-        const completedDate = params.data?.completedDate;
-        const completedTime = params.data?.completedTime;
-
-        const formattedDate = humanDate(completedDate);
-        const formattedTime = humanTime(completedTime);
-
-        return [formattedDate, formattedTime].filter(Boolean).join(", ");
+        return humanTime(params.data?.completedTime);
       },
     },
+    // {
+    //   headerName: "Completed Date",
+    //   field: "completedTime",
+    //   cellRenderer: (params) => {
+    //     const completedDate = params.data?.completedDate;
+    //     const completedTime = params.data?.completedTime;
+
+    //     const formattedDate = humanDate(completedDate);
+    //     const formattedTime = humanTime(completedTime);
+
+    //     return [formattedDate, formattedTime].filter(Boolean).join(", ");
+    //   },
+    // },
     // { headerName: "Due Time", field: "dueTime" },
     // { headerName: "Due Date", field: "dueDate" },
     // { headerName: "Due Time", field: "dueTime" },
@@ -371,7 +378,7 @@ const TasksViewDepartment = () => {
             {!departmentLoading ? (
               <WidgetSection padding>
                 <YearWiseTable
-                  tableTitle={`COMPLETED TASKS`}
+                  tableTitle={`COMPLETED TASK`}
                   exportData={true}
                   data={
                     completedTasksFetchPending

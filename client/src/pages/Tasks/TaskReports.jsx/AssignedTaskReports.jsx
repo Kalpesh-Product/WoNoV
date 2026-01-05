@@ -40,7 +40,6 @@ const AssignedTaskReports = () => {
     setSelectedTask(params);
     setOpenModal(true);
   };
-  console.log("selectedTask : ", selectedTask);
 
   const myTaskReportsColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
@@ -60,17 +59,21 @@ const AssignedTaskReports = () => {
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
+    {
+      field: "dueTime",
+      headerName: "Due Time",
+      cellRenderer: (params) => params.value,
+    },
     // { field: "completedDate", headerName: "Completed Date" },
     {
       field: "completedDate",
       headerName: "Completed Date",
-      valueFormatter: (params) =>
-        `${humanDate(params.value)}, ${humanTime(params.value)}`,
+      cellRenderer: (params) => `${humanDate(params.value)}`,
     },
     {
       field: "completedTime",
       headerName: "Completed Time",
-      cellRenderer: (params) => humanTime(params.value),
+      cellRenderer: (params) => params.value,
     },
     { field: "department", headerName: "Department" },
     // { field: "endDate", headerName: "End Date" },
@@ -107,8 +110,9 @@ const AssignedTaskReports = () => {
                   taskName: task.taskName,
                   assignedDate: task.assignedDate,
                   dueDate: task.dueDate,
+                  dueTime: humanTime(task.dueTime),
                   completedDate: task.completedDate,
-                  completedTime: task.completedDate,
+                  completedTime: humanTime(task.completedDate),
                   assignedBy: task.assignedBy
                     ? [
                         task.assignedBy.firstName,

@@ -24,7 +24,7 @@ const EditProject = () => {
   const { id } = useParams(); // Get project ID from URL
   const location = useLocation(); // Get project details from state
   const [openModal, setOpenModal] = useState(false);
-  const axios = useAxiosPrivate()
+  const axios = useAxiosPrivate();
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -37,7 +37,6 @@ const EditProject = () => {
     },
   });
 
-
   const onSubmit = (data) => {
     reset(); // Reset form after submission
     setOpenModal(false);
@@ -45,14 +44,13 @@ const EditProject = () => {
 
   const project = location.state?.project; // Extract project data
 
-
   if (!project) {
     return <Typography variant="h6">Project not found!</Typography>;
   }
 
   // ✅ Convert project data: Each assignee becomes a separate row
   const projectData = Object.keys(project.assignees).map((assignee, index) => ({
-    srNo: index+1, // Unique ID for AgGrid
+    srNo: index + 1, // Unique ID for AgGrid
     id: `${project.id}-${index}`, // Unique ID for AgGrid
     assignee, // Individual assignee
     dailyTasks: project.assignees[assignee].dailyTasks,
@@ -147,7 +145,13 @@ const EditProject = () => {
               <Autocomplete
                 {...field}
                 multiple
-                options={["Aiwinraj KS", "Sankalp Kalangutkar", "Aaron Dsouza", "Kalpesh Naik", "Muskan Dodmani"]} // Example list
+                options={[
+                  "Aiwinraj KS",
+                  "Sankalp Kalangutkar",
+                  "Aaron Dsouza",
+                  "Kalpesh Naik",
+                  "Muskan Dodmani",
+                ]} // Example list
                 renderInput={(params) => (
                   <TextField
                     {...params}
