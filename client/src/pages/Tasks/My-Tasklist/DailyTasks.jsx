@@ -271,16 +271,18 @@ const DailyTasks = () => {
     // { headerName: "Completed Date", field: "completedDate" },
     {
       headerName: "Completed Date",
-      field: "completedTime",
-      cellRenderer: (params) => {
-        const completedDate = params.data?.completedDate;
-        const completedTime = params.data?.completedTime;
+      // field: "completedTime",
+      // cellRenderer: (params) => {
+      //   const completedDate = params.data?.completedDate;
+      //   const completedTime = params.data?.completedTime;
 
-        const formattedDate = completedDate;
-        const formattedTime = completedTime;
+      //   const formattedDate = completedDate;
+      //   const formattedTime = completedTime;
 
-        return [formattedDate, formattedTime].filter(Boolean).join(", ");
-      },
+      //   return [formattedDate, formattedTime].filter(Boolean).join(", ");
+      // },
+      field: "completedDateTime",
+      cellRenderer: (params) => params.value,
     },
     {
       field: "status",
@@ -335,6 +337,9 @@ const DailyTasks = () => {
         dueTime: humanTime(item.dueTime),
         completedDate: humanDate(item.completedDate),
         completedTime: humanTime(item.completedDate),
+        completedDateTime: `${humanDate(item.completedDate)}, ${humanTime(
+          item.completedDate
+        )}`,
         status: item.status,
       }));
 

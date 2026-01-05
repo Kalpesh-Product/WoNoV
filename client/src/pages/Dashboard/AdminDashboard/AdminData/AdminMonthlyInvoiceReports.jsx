@@ -117,7 +117,8 @@ const AdminMonthlyInvoiceReports = () => {
         <div className="p-2 mb-2  flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleDetailsClick(params.data)}>
+            onClick={() => handleDetailsClick(params.data)}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -258,7 +259,7 @@ const AdminMonthlyInvoiceReports = () => {
           search={true}
           searchColumn={"Asset Number"}
           tableTitle={"Monthly Invoice Reports"}
-          buttonTitle={"Add Invoice"}
+          buttonTitle={"Add Invoiced"}
           data={[]}
           columns={invoiceColumns}
           handleClick={handleAddAsset}
@@ -268,7 +269,8 @@ const AdminMonthlyInvoiceReports = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "add" ? "Add Invoice" : "Invoice Details"}>
+        title={modalMode === "add" ? "Add Invoice" : "Invoice Details"}
+      >
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -286,7 +288,8 @@ const AdminMonthlyInvoiceReports = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept.name}>
                           {dept.name}
@@ -309,11 +312,13 @@ const AdminMonthlyInvoiceReports = () => {
                       label="Category"
                       size="small"
                       error={!!errors.category}
-                      helperText={errors.category?.message}>
+                      helperText={errors.category?.message}
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem
                           key={category._id}
-                          value={category.categoryName}>
+                          value={category.categoryName}
+                        >
                           {category.categoryName}
                         </MenuItem>
                       ))}
@@ -424,7 +429,8 @@ const AdminMonthlyInvoiceReports = () => {
                       size="small"
                       error={!!errors.vendor}
                       helperText={errors.vendor?.message}
-                      fullWidth>
+                      fullWidth
+                    >
                       {vendorDetials.map((vendor) => (
                         <MenuItem key={vendor._id} value={vendor.name}>
                           {vendor.name}

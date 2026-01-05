@@ -17,7 +17,7 @@ const MonthlyInvoiceCommon = () => {
   const department = usePageDepartment();
   const departmentId = department?._id;
 
-   const formatDateTime = (value) => {
+  const formatDateTime = (value) => {
     if (!value) return "-";
 
     const date = new Date(value);
@@ -61,8 +61,8 @@ const MonthlyInvoiceCommon = () => {
     { headerName: "Invoice Name", field: "invoiceName", flex: 1 },
     { headerName: "GSTIN", field: "gstIn", flex: 1 },
     { headerName: "Invoice Date", field: "invoiceDate", flex: 1 },
- 
-     {
+
+    {
       headerName: "Due Date",
       field: "dueDate",
       flex: 1,
@@ -240,7 +240,7 @@ const MonthlyInvoiceCommon = () => {
               //       })
               //     : "-"
               // }
-                            detail={
+              detail={
                 viewDetails?.dueDate ? formatDateTime(viewDetails.dueDate) : "-"
               }
             />
@@ -324,14 +324,18 @@ const MonthlyInvoiceCommon = () => {
                 <DetalisFormatted
                   title="Approved At"
                   detail={
-                    viewDetails.finance.approvedAt
-                      ? new Date(
-                          viewDetails.finance.approvedAt
-                        ).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })
+                    // viewDetails.finance.approvedAt
+                    //   ? new Date(
+                    //       viewDetails.finance.approvedAt
+                    //     ).toLocaleDateString("en-IN", {
+                    //       day: "2-digit",
+                    //       month: "short",
+                    //       year: "numeric",
+                    //     })
+                    //   : "-"
+
+                    viewDetails?.finance?.approvedAt
+                      ? formatDateTime(viewDetails?.finance?.approvedAt)
                       : "-"
                   }
                 />

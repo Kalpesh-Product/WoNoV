@@ -61,6 +61,10 @@ const PerformanceKra = () => {
   const showCheckBox = allowedDept;
   const isHr = department === "HR";
 
+  const matchingDepartment = auth.user?.departments?.some(
+    (dept) => dept._id === deptId
+  );
+
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
   }, [department]);
@@ -184,7 +188,7 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-    ...(!isTop || isHr
+    ...(matchingDepartment
       ? [
           {
             headerName: "Actions",

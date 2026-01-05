@@ -277,10 +277,7 @@ const Reviews = () => {
                 }
               />
               <DetalisFormatted title="Review" detail={reviewData.Reviews} />
-              <DetalisFormatted
-                title="Status"
-                detail={reviewData.replyText ? "Replied" : "Pending"}
-              />
+
               <DetalisFormatted
                 title="Reply"
                 detail={reviewData.replyText || "No reply yet"}
