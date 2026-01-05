@@ -158,7 +158,10 @@ const YearWiseTable = ({
 
   const formattedColumns = useMemo(() => {
     return columns.map((col) => {
-      if (col.field?.toLowerCase().includes("date")) {
+      if (
+        col.field?.toLowerCase().includes("date") &&
+        typeof col.valueFormatter !== "function"
+      ) {
         return {
           ...col,
           valueFormatter: (params) => {

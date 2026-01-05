@@ -283,6 +283,7 @@ const DailyTasks = () => {
       // },
       field: "completedDateTime",
       cellRenderer: (params) => params.value,
+      valueFormatter: (params) => params.value,
     },
     {
       field: "status",

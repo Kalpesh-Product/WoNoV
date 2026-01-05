@@ -60,7 +60,13 @@ const AssignedTaskReports = () => {
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
-    { field: "completedDate", headerName: "Completed Date" },
+    // { field: "completedDate", headerName: "Completed Date" },
+    {
+      field: "completedDate",
+      headerName: "Completed Date",
+      valueFormatter: (params) =>
+        `${humanDate(params.value)}, ${humanTime(params.value)}`,
+    },
     {
       field: "completedTime",
       headerName: "Completed Time",
