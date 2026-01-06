@@ -159,10 +159,7 @@ const YearWiseTable = ({
 
   const formattedColumns = useMemo(() => {
     return columns.map((col) => {
-      if (
-        col.field?.toLowerCase().includes("date") &&
-        typeof col.valueFormatter !== "function"
-      ) {
+      if (col.field?.toLowerCase().includes("date")) {
         return {
           ...col,
           valueFormatter: (params) => {
@@ -191,6 +188,7 @@ const YearWiseTable = ({
       agGridRef.current.api.exportDataAsCsv({
         fileName: `${tableTitle || "data"}.csv`,
         allColumns: exportAllColumns,
+        columnKeys: formattedColumns.map((col) => col.field).filter(Boolean),
       });
     }
   };
