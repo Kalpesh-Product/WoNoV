@@ -80,6 +80,77 @@ const TicketReports = () => {
         </>
       ),
     },
+    { field: "priority", headerName: "Priority", hide: true },
+    { field: "description", headerName: "Description", hide: true },
+    { field: "company", headerName: "Company", hide: true },
+    { field: "assignees", headerName: "Assignees", hide: true },
+    { field: "assignedTo", headerName: "Assigned To", hide: true },
+    { field: "acceptedBy", headerName: "Accepted By", hide: true },
+    {
+      field: "acceptedAtDate",
+      headerName: "Accepted At Date",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "acceptedAtTime",
+      headerName: "Accepted Time",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "assignedAtDate",
+      headerName: "Assigned Date",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "assignedAtTime",
+      headerName: "Assigned Time",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    { field: "escalatedTo", headerName: "Escalated To", hide: true },
+    { field: "escalatedStatus", headerName: "Escalated Status", hide: true },
+    {
+      field: "escalatedAtDate",
+      headerName: "Escalated Date",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "escalatedAtTime",
+      headerName: "Escalated Time",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    { field: "closedBy", headerName: "Closed By", hide: true },
+    {
+      field: "closedAtDate",
+      headerName: "Closed Date",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "closedAtTime",
+      headerName: "Closed Time",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "updatedAtDate",
+      headerName: "Updated Date",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "updatedAtTime",
+      headerName: "Updated Time",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    { field: "rejectedBy", headerName: "Rejected By", hide: true },
+    { field: "reason", headerName: "Rejection Reason", hide: true },
   ];
 
   const formatAssignments = (assignments = []) => {
