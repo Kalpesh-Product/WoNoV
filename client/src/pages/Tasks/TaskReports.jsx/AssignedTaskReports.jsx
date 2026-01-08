@@ -11,6 +11,7 @@ import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { formatDateTimeFields } from "../../../utils/formatDateTime";
 
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
@@ -37,10 +38,9 @@ const AssignedTaskReports = () => {
   });
 
   const handleViewDetails = (params) => {
-    setSelectedTask(params);
+    setSelectedTask(formatDateTimeFields(params));
     setOpenModal(true);
   };
-  console.log("selectedTask : ", selectedTask);
 
   const myTaskReportsColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
@@ -60,14 +60,20 @@ const AssignedTaskReports = () => {
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
-    { field: "completedDate", headerName: "Completed Date" },
+    {
+      field: "dueTime",
+      headerName: "Due Time",
+    },
+    {
+      field: "completedDate",
+      headerName: "Completed Date",
+    },
     {
       field: "completedTime",
       headerName: "Completed Time",
-      cellRenderer: (params) => humanTime(params.value),
     },
     { field: "department", headerName: "Department" },
-    // { field: "endDate", headerName: "End Date" },
+    { field: "status", headerName: "Status" },
     // {
     //   field: "actions",
     //   headerName: "Actions",
@@ -101,6 +107,7 @@ const AssignedTaskReports = () => {
                   taskName: task.taskName,
                   assignedDate: task.assignedDate,
                   dueDate: task.dueDate,
+                  dueTime: task.dueTime,
                   completedDate: task.completedDate,
                   completedTime: task.completedDate,
                   assignedBy: task.assignedBy
@@ -114,6 +121,7 @@ const AssignedTaskReports = () => {
                     : "",
                   department: task.department?.name || task.department,
                   description: task.description,
+                  status: task.status,
                 }))
           }
           columns={myTaskReportsColumns}
@@ -142,20 +150,17 @@ const AssignedTaskReports = () => {
             />
             <DetalisFormatted
               title="Assigned Date"
-              detail={humanDate(selectedTask.assignedDate)}
+              detail={selectedTask.assignedDate}
             />
             <DetalisFormatted
               title="Due Date"
-              detail={humanDate(selectedTask.dueDate)}
+              detail={`${selectedTask.dueDate}, ${selectedTask.dueTime}`}
             />
             <DetalisFormatted
               title="Completed Date"
-              detail={humanDate(selectedTask.completedDate)}
+              detail={`${selectedTask.completedDate}, ${selectedTask.completedTime}`}
             />
-            <DetalisFormatted
-              title="Completed Time"
-              detail={humanTime(selectedTask.completedTime)}
-            />
+
             <DetalisFormatted
               title="Department"
               detail={selectedTask.department}
@@ -165,7 +170,6 @@ const AssignedTaskReports = () => {
               title="Status"
               detail={selectedTask.status || "—"}
             />
-            <DetalisFormatted title="Remarks" detail={selectedTask.remarks} />
           </div>
         )}
       </MuiModal>

@@ -14,7 +14,7 @@ const YearWiseTable = ({
   data = [],
   columns = [],
   dateColumn,
-  formatTime = false,
+  formatTime = true,
   formatDate = true,
   tableHeight,
   tableTitle,
@@ -25,6 +25,7 @@ const YearWiseTable = ({
   checkAll,
   key,
   exportData,
+  exportAllColumns = false,
   dropdownColumns = [],
   handleBatchAction,
   batchButton,
@@ -162,10 +163,29 @@ const YearWiseTable = ({
         return {
           ...col,
           valueFormatter: (params) => {
+            if (typeof params.value === "string") {
+              const trimmedValue = params.value.trim();
+              if (/^\d{2}-\d{2}-\d{4}$/.test(trimmedValue)) {
+                return trimmedValue;
+              }
+            }
+
+            const date = dayjs(params.value);
+            if (!date.isValid()) return params.value;
+            // if (formatTime) return date.format("hh:mm A");
+            if (formatDate) return date.format("DD-MM-YYYY");
+            return params.value;
+          },
+        };
+      }
+      if (col.field?.toLowerCase().includes("time")) {
+        return {
+          ...col,
+          valueFormatter: (params) => {
             const date = dayjs(params.value);
             if (!date.isValid()) return params.value;
             if (formatTime) return date.format("hh:mm A");
-            if (formatDate) return date.format("DD-MM-YYYY");
+            // if (formatDate) return date.format("DD-MM-YYYY");
             return params.value;
           },
         };
@@ -186,6 +206,8 @@ const YearWiseTable = ({
     if (agGridRef.current) {
       agGridRef.current.api.exportDataAsCsv({
         fileName: `${tableTitle || "data"}.csv`,
+        allColumns: exportAllColumns,
+        columnKeys: formattedColumns.map((col) => col.field).filter(Boolean),
       });
     }
   };

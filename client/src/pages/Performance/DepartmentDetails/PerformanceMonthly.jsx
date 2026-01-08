@@ -3,7 +3,7 @@ import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, TextField } from "@mui/material";
@@ -13,7 +13,7 @@ import MuiModal from "../../../components/MuiModal";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
@@ -21,9 +21,14 @@ import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import {
+  setSelectedDepartment,
+  setSelectedDepartmentName,
+} from "../../../redux/slices/performanceSlice";
 
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
+  const dispatch = useDispatch();
   const { auth } = useAuth();
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
@@ -61,6 +66,10 @@ const PerformanceMonthly = () => {
   const isHr = department === "HR";
   // const showCheckBox = !isTop || isHr
   const showCheckBox = allowedDept;
+
+  const matchingDepartment = auth.user?.departments?.some(
+    (dept) => dept._id === deptId
+  );
 
   const {
     handleSubmit: submitDailyKra,
@@ -210,7 +219,7 @@ const PerformanceMonthly = () => {
         );
       },
     },
-    ...(!isTop || isHr
+    ...(matchingDepartment
       ? [
           {
             headerName: "Actions",
@@ -235,13 +244,16 @@ const PerformanceMonthly = () => {
   const completedColumns = [
     { headerName: "Sr no", field: "srNo", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", width: 300 },
+
+    { headerName: "Completed By", field: "completedBy" },
+    {
+      headerName: "Completed Date",
+      field: "completionDate",
+    },
     {
       headerName: "Completed Time",
       field: "completionTime",
-      flex: 1,
-      cellRenderer: (params) => formatDateTime(params.value),
     },
-    { headerName: "Completed By", field: "completedBy" },
     {
       field: "status",
       headerName: "Status",
@@ -317,7 +329,8 @@ const PerformanceMonthly = () => {
                   ...completedEntries.map((item, index) => ({
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                    completionTime: item.completionDate,
+                    completionDate: humanDate(item.completionDate),
+                    completionTime: humanTime(item.completionDate),
                     completedBy: item.completedBy,
                     status: item.status,
                   })),

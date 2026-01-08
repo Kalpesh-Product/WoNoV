@@ -97,25 +97,47 @@ const AgTableComponent = React.memo(
       }));
     };
 
-    const removeFilter = (field) => {
-      setAppliedFilters((prev) => {
-        const updatedFilters = { ...prev };
-        delete updatedFilters[field];
-        return updatedFilters;
-      });
-      setFilters((prev) => {
-        const updatedFilters = { ...prev };
-        delete updatedFilters[field];
-        return updatedFilters;
-      });
-      applyFilters();
-    };
+    // const removeFilter = (field) => {
+    //   setAppliedFilters((prev) => {
+    //     const updatedFilters = { ...prev };
+    //     delete updatedFilters[field];
+    //     return updatedFilters;
+    //   });
+    //   setFilters((prev) => {
+    //     const updatedFilters = { ...prev };
+    //     delete updatedFilters[field];
+    //     return updatedFilters;
+    //   });
+    //   applyFilters();
+    // };
 
-    const applyFilters = () => {
-      setAppliedFilters(filters);
+    // const applyFilters = () => {
+    //   setAppliedFilters(filters);
+    //   const filtered = data.filter((row) => {
+    //     return Object.keys(filters).every((field) => {
+    //       const filterValue = filters[field]?.toLowerCase();
+    //       return (
+    //         !filterValue ||
+    //         row[field]?.toString().toLowerCase().includes(filterValue)
+    //       );
+    //     });
+    //   });
+    //   setFilteredData(filtered);
+    //   setFilterDrawerOpen(false);
+    // };
+
+    const applyFilters = (filtersToApply = filters) => {
+      const safeFilters =
+        filtersToApply && typeof filtersToApply === "object"
+          ? filtersToApply?.nativeEvent || filtersToApply?.target
+            ? filters
+            : filtersToApply
+          : filters;
+
+      setAppliedFilters(safeFilters);
       const filtered = data.filter((row) => {
-        return Object.keys(filters).every((field) => {
-          const filterValue = filters[field]?.toLowerCase();
+        return Object.keys(safeFilters).every((field) => {
+          const filterValue = safeFilters[field]?.toLowerCase();
           return (
             !filterValue ||
             row[field]?.toString().toLowerCase().includes(filterValue)
@@ -124,6 +146,15 @@ const AgTableComponent = React.memo(
       });
       setFilteredData(filtered);
       setFilterDrawerOpen(false);
+    };
+
+    const removeFilter = (field) => {
+      setFilters((prev) => {
+        const updatedFilters = { ...prev };
+        delete updatedFilters[field];
+        applyFilters(updatedFilters);
+        return updatedFilters;
+      });
     };
 
     const clearFilters = () => {

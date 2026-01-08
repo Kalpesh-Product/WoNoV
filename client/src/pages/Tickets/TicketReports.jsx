@@ -44,14 +44,23 @@ const TicketReports = () => {
     },
   });
 
+  const splitDateAndTime = (value) => ({
+    date: value ? humanDate(value) : "",
+    time: value ? humanTime(value) : "",
+  });
+
   const kraColumn = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "ticket", headerName: "Ticket", flex: 1 },
     {
-      field: "createdAt",
-      headerName: "Date",
+      field: "createdAtDate",
+      headerName: "Raised Date",
       flex: 1,
-      cellRenderer: (params) => humanDate(params.value),
+    },
+    {
+      field: "createdAtTime",
+      headerName: "Raised Time",
+      flex: 1,
     },
     { field: "raisedToDepartment", headerName: "Raised To", flex: 1 },
     { field: "raisedBy", headerName: "Raised By", flex: 1 },
@@ -80,6 +89,52 @@ const TicketReports = () => {
         </>
       ),
     },
+    { field: "priority", headerName: "Priority", hide: true },
+    { field: "description", headerName: "Description", hide: true },
+    { field: "company", headerName: "Company", hide: true },
+    { field: "assignedTo", headerName: "Assigned To", hide: true },
+    { field: "acceptedBy", headerName: "Accepted By", hide: true },
+    {
+      field: "acceptedAtDate",
+      headerName: "Accepted Date",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+
+    {
+      field: "assignedAtTime",
+      headerName: "Assigned Time",
+      hide: true,
+      cellRenderer: (params) => humanTime(params.value),
+    },
+    { field: "escalatedTo", headerName: "Escalated To", hide: true },
+    { field: "escalatedStatus", headerName: "Escalated Status", hide: true },
+    {
+      field: "escalatedAtDate",
+      headerName: "Escalated Date",
+      hide: true,
+    },
+    {
+      field: "escalatedAtTime",
+      headerName: "Escalated Time",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    { field: "closedBy", headerName: "Closed By", hide: true },
+    {
+      field: "closedAtDate",
+      headerName: "Closed Date",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "closedAtTime",
+      headerName: "Closed Time",
+      hide: true,
+      cellRenderer: (params) => params.value,
+    },
+    { field: "rejectedBy", headerName: "Rejected By", hide: true },
+    { field: "reason", headerName: "Rejection Reason", hide: true },
   ];
 
   const formatAssignments = (assignments = []) => {
@@ -91,10 +146,12 @@ const TicketReports = () => {
               ? `${assignee.firstName} ${assignee.lastName}`
               : "Unknown";
           const assignedAtFormatted = assignment?.assignedAt
-            ? `${humanDate(assignment.assignedAt)}, ${humanTime(
-                assignment.assignedAt
-              )}`
+            ? formatDateTime(assignment.assignedAt)
             : "";
+
+          // `${humanDate(assignment.assignedAt)}, ${humanTime(
+          //     assignment.assignedAt
+          //   )}`
           return { assigneeName, assignedAtFormatted };
         })
       : [];
@@ -112,16 +169,25 @@ const TicketReports = () => {
 
   const formatEscalation = (escalations = []) => {
     if (!Array.isArray(escalations) || !escalations.length) {
-      return { escalatedTo: "", escalatedStatus: "", escalatedAt: "" };
+      return {
+        escalatedTo: "",
+        escalatedStatus: "",
+        escalatedAt: "",
+        escalatedAtDate: "",
+        escalatedAtTime: "",
+      };
     }
 
     const latest = escalations[escalations.length - 1];
+
     return {
       escalatedTo: latest?.raisedToDepartment?.name || "",
       escalatedStatus: latest?.status || "",
       escalatedAt: latest?.createdAt
         ? `${humanDate(latest.createdAt)}, ${humanTime(latest.createdAt)}`
         : "",
+      escalatedAtDate: latest?.createdAt,
+      escalatedAtTime: latest?.createdAt,
     };
   };
 
@@ -150,7 +216,8 @@ const TicketReports = () => {
                       (assignee) => `${assignee.firstName} ${assignee.lastName}`
                     ) || "",
                   company: item.company?.companyName,
-                  createdAt: item.createdAt || "",
+                  createdAtDate: item.createdAt || "",
+                  createdAtTime: item.createdAt || "",
                   updatedAt: item.updatedAt || "",
                   acceptedBy: `${item.acceptedBy?.firstName || ""} ${
                     item.acceptedBy?.lastName || ""
@@ -158,10 +225,19 @@ const TicketReports = () => {
                   closedBy: item?.closedBy
                     ? `${item.closedBy.firstName} ${item.closedBy.lastName}`
                     : "None",
-                  closedAt: item.closedAt ? item.closedAt : "None",
+                  closedAtDate: item.closedAt || "",
+                  closedAtTime: item.closedAt || "",
                   rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
                     item.reject?.rejectedBy?.lastName || ""
                   }`,
+                  acceptedAtDate: item.acceptedAt || "",
+                  acceptedAtTime: item.acceptedAt || "",
+                  assignedAt:
+                    item.assignedAt ||
+                    (Array.isArray(item.assignedTo) &&
+                      item.assignedTo[item.assignedTo.length - 1]
+                        ?.assignedAt) ||
+                    "",
                   reason: item.reject?.reason,
                   ...(() => {
                     const { assignedToDisplay, assignmentDetails } =
@@ -173,11 +249,33 @@ const TicketReports = () => {
                   })(),
                   ...formatEscalation(item.escalatedTo),
                   ...(() => {
-                    const { assignedToDisplay, assignmentDetails } =
-                      formatAssignments(item.assignedTo);
+                    // const { assignedToDisplay, assignmentDetails } =
+                    //   formatAssignments(item.assignedTo);
+
+                    const latestAssignment =
+                      Array.isArray(item.assignedTo) && item.assignedTo.length
+                        ? item.assignedTo[item.assignedTo.length - 1]
+                        : null;
+
+                    const { date: assignedAtDate, time: assignedAtTime } =
+                      splitDateAndTime(
+                        item.assignedAt || latestAssignment?.assignedAt
+                      );
+
                     return {
-                      assignedTo: assignedToDisplay,
-                      assignedToDetails: assignmentDetails,
+                      // assignedTo: assignedToDisplay,
+                      // assignedToDetails: assignmentDetails,
+
+                      assignedAtDate,
+                      assignedAtTime,
+                    };
+                  })(),
+                  ...(() => {
+                    const { escalatedAtDate, escalatedAtTime } =
+                      formatEscalation(item.escalatedTo);
+                    return {
+                      escalatedAtDate,
+                      escalatedAtTime,
                     };
                   })(),
                 })),
@@ -217,7 +315,7 @@ const TicketReports = () => {
             />
             <DetalisFormatted
               title={"Raised At"}
-              detail={`${formatDateTime(selectedMeeting?.date) || "N/A"}`}
+              detail={`${formatDateTime(selectedMeeting?.createdAt) || "N/A"}`}
             />
             <DetalisFormatted
               title={"Raised To Department"}

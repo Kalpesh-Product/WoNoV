@@ -61,6 +61,10 @@ const PerformanceKra = () => {
   const showCheckBox = allowedDept;
   const isHr = department === "HR";
 
+  const matchingDepartment = auth.user?.departments?.some(
+    (dept) => dept._id === deptId
+  );
+
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
   }, [department]);
@@ -184,7 +188,7 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-    ...(!isTop || isHr
+    ...(matchingDepartment
       ? [
           {
             headerName: "Actions",
@@ -213,12 +217,18 @@ const PerformanceKra = () => {
     { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
     { headerName: "KRA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
+
+    { headerName: "Completed By", field: "completedBy" },
+    {
+      headerName: "Completed Date",
+      field: "dueDate",
+      cellRenderer: (params) => humanDate(params.value),
+    },
     {
       headerName: "Completed Time",
       field: "dueDate",
-      cellRenderer: (params) => formatDateTime(params.value),
+      cellRenderer: (params) => humanTime(params.value),
     },
-    { headerName: "Completed By", field: "completedBy" },
     {
       field: "status",
       headerName: "Status",
@@ -300,6 +310,8 @@ const PerformanceKra = () => {
                     dueDate: item.dueDate,
                     status: item.status,
                     completedBy: item.completedBy,
+                    completedDate: humanDate(item.completedDate),
+                    completedTime: humanTime(item.completedDate),
                   }))}
                   dateColumn={"dueDate"}
                   columns={completedColumns}

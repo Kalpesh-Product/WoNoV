@@ -28,6 +28,7 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import { noOnlyWhitespace } from "../../../utils/validators";
 
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { formatDateTimeFields } from "../../../utils/formatDateTime";
 
 const TasksViewDepartment = () => {
   const axios = useAxiosPrivate();
@@ -182,7 +183,7 @@ const TasksViewDepartment = () => {
           role="button"
           onClick={() => {
             setModalMode("view");
-            setSelectedTask(params.data);
+            setSelectedTask(formatDateTimeFields(params.data));
             setOpenMultiModal(true);
           }}
           className="text-primary underline cursor-pointer"
@@ -264,7 +265,7 @@ const TasksViewDepartment = () => {
           role="button"
           onClick={() => {
             setModalMode("completed");
-            setSelectedTask(params.data);
+            setSelectedTask(formatDateTimeFields(params.data));
             setOpenMultiModal(true);
           }}
           className="text-primary underline cursor-pointer"
@@ -274,54 +275,46 @@ const TasksViewDepartment = () => {
       ),
     },
     // { headerName: "Assigned Time", field: "assignedDate" },
-    // { headerName: "Assigned Date", field: "assignedDate" },
+    { headerName: "Description", field: "description", hide: true },
+    { headerName: "Assigned Date", field: "assignedDate", hide: true },
+    { headerName: "Due Date", field: "dueDate", hide: true },
+    { headerName: "Due Time", field: "dueTime", hide: true },
     { headerName: "Completed By", field: "completedBy", width: 300 },
-    // { headerName: "Completed Date", field: "completedDate" },
+    { headerName: "Completed Date", field: "completedDate" },
     {
-      headerName: "Completed Date",
+      headerName: "Completed Time",
       field: "completedTime",
-      cellRenderer: (params) => {
-        const completedDate = params.data?.completedDate;
-        const completedTime = params.data?.completedTime;
-
-        const formattedDate = humanDate(completedDate);
-        const formattedTime = humanTime(completedTime);
-
-        return [formattedDate, formattedTime].filter(Boolean).join(", ");
-      },
     },
-    // { headerName: "Due Time", field: "dueTime" },
-    // { headerName: "Due Date", field: "dueDate" },
-    // { headerName: "Due Time", field: "dueTime" },
-    {
-      field: "status",
-      headerName: "Status",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
-          Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
-        };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
-        );
-      },
-    },
+    // {
+    //   field: "status",
+    //   headerName: "Status",
+    //   cellRenderer: (params) => {
+    //     const statusColorMap = {
+    //       Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+    //       InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+    //       resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+    //       open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+    //       Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
+    //     };
+
+    //     const { backgroundColor, color } = statusColorMap[params.value] || {
+    //       backgroundColor: "gray",
+    //       color: "white",
+    //     };
+    //     return (
+    //       <>
+    //         <Chip
+    //           label={params.value}
+    //           style={{
+    //             backgroundColor,
+    //             color,
+    //           }}
+    //         />
+    //       </>
+    //     );
+    //   },
+    // },
   ];
 
   return (
@@ -371,7 +364,7 @@ const TasksViewDepartment = () => {
             {!departmentLoading ? (
               <WidgetSection padding>
                 <YearWiseTable
-                  tableTitle={`COMPLETED TASKS`}
+                  tableTitle={`COMPLETED TASK`}
                   exportData={true}
                   data={
                     completedTasksFetchPending
@@ -383,6 +376,7 @@ const TasksViewDepartment = () => {
                             taskName: item.taskName,
                             completedBy: item.completedBy,
                             assignedDate: item.assignedDate,
+                            description: item.description,
                             dueDate: item.dueDate,
                             dueTime: item.dueTime,
                             completedDate: item.completedDate,
@@ -605,7 +599,7 @@ const TasksViewDepartment = () => {
             </div>
             <DetalisFormatted
               title={"Added Date"}
-              detail={humanDate(selectedTask?.assignedDate)}
+              detail={selectedTask?.assignedDate}
             />
             <DetalisFormatted
               title={"Added By"}
@@ -613,9 +607,7 @@ const TasksViewDepartment = () => {
             />
             <DetalisFormatted
               title={"Due Date"}
-              detail={`${humanDate(selectedTask?.dueDate)}, ${humanTime(
-                selectedTask?.dueTime
-              )}`}
+              detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
             />
 
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
@@ -625,8 +617,12 @@ const TasksViewDepartment = () => {
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskName} />
             <DetalisFormatted
+              title={"Description"}
+              detail={selectedTask?.description}
+            />
+            <DetalisFormatted
               title={"Added Date"}
-              detail={humanDate(selectedTask?.assignedDate)}
+              detail={selectedTask?.assignedDate}
             />
             <DetalisFormatted
               title={"Added By"}
@@ -634,9 +630,7 @@ const TasksViewDepartment = () => {
             />
             <DetalisFormatted
               title={"Completed Date"}
-              detail={`${humanDate(selectedTask?.completedDate)}, ${humanTime(
-                selectedTask?.completedTime
-              )}`}
+              detail={`${selectedTask?.completedDate}, ${selectedTask?.completedTime}`}
             />
             <DetalisFormatted
               title={"Completed By"}
@@ -644,9 +638,7 @@ const TasksViewDepartment = () => {
             />
             <DetalisFormatted
               title={"Due Date"}
-              detail={`${humanDate(selectedTask?.dueDate)}, ${humanTime(
-                selectedTask?.dueTime
-              )}`}
+              detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
             />
 
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />

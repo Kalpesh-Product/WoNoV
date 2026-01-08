@@ -636,12 +636,10 @@ const BookMeetings = () => {
             onSubmit={reviewForm(submitReview)}
             className="flex flex-col gap-4"
           >
-              <span className="text-content">
-                How was your meeting room experience ?
-              </span>
+            <span className="text-content">
+              How was your meeting room experience ?
+            </span>
             <div className="flex gap-4 items-center">
-        
-           
               <Controller
                 name="rating"
                 control={reviewControl}
@@ -700,6 +698,10 @@ const BookMeetings = () => {
               <DetalisFormatted
                 title="Date"
                 detail={selectedMeeting?.date || "N/A"}
+              />
+              <DetalisFormatted
+                title="Status"
+                detail={selectedMeeting?.status || "N/A"}
               />
               <DetalisFormatted
                 title="Room"
