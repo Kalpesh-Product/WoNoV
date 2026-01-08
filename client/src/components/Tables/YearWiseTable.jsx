@@ -163,6 +163,13 @@ const YearWiseTable = ({
         return {
           ...col,
           valueFormatter: (params) => {
+            if (typeof params.value === "string") {
+              const trimmedValue = params.value.trim();
+              if (/^\d{2}-\d{2}-\d{4}$/.test(trimmedValue)) {
+                return trimmedValue;
+              }
+            }
+
             const date = dayjs(params.value);
             if (!date.isValid()) return params.value;
             // if (formatTime) return date.format("hh:mm A");

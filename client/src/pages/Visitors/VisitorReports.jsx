@@ -10,7 +10,9 @@ import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
-import formatDateTime from "../../utils/formatDateTime";
+import formatDateTime, {
+  formatDateTimeFields,
+} from "../../utils/formatDateTime";
 
 const VisitorReports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,7 +28,7 @@ const VisitorReports = () => {
   });
 
   const handleDetailsClick = (visitor) => {
-    setSelectedVisitor(visitor);
+    setSelectedVisitor(formatDateTimeFields(visitor));
     setIsModalOpen(true);
   };
 
@@ -62,45 +64,21 @@ const VisitorReports = () => {
     {
       field: "dateOfVisit",
       headerName: "Date Of Visit",
-      cellRenderer: (params) => {
-        return humanDate(params.value);
-      },
     },
     {
       field: "scheduledDate",
       headerName: "Scheduled Date",
       hide: true,
-      cellRenderer: (params) => humanDate(params.value),
     },
-    {
-      field: "checkInDate",
-      headerName: "Check In Date",
-      cellRenderer: (params) => {
-        return params.value;
-      },
-      hide: true,
-    },
+
     {
       field: "checkInTime",
       headerName: "Check In Time",
-      cellRenderer: (params) => {
-        return params.value;
-      },
     },
-    {
-      field: "checkOutDate",
-      headerName: "Check Out Date",
-      cellRenderer: (params) => {
-        return params.value;
-      },
-      hide: true,
-    },
+
     {
       field: "checkOutTime",
       headerName: "Check Out Time",
-      cellRenderer: (params) => {
-        return params.value;
-      },
     },
 
     // {
@@ -174,17 +152,17 @@ const VisitorReports = () => {
       panNumber: visitor.panNumber || "-",
       gstNumber: visitor.gstNumber || "-",
       checkIn: visitor.checkIn,
-      checkInDate: humanDate(visitor.checkIn),
-      checkInTime: humanTime(visitor.checkIn),
+      checkInDate: visitor.checkIn,
+      checkInTime: visitor.checkIn,
       checkOut: visitor.checkOut,
-      checkOutDate: humanDate(visitor.checkOut),
-      checkOutTime: humanTime(visitor.checkOut),
+      checkOutDate: visitor.checkOut,
+      checkOutTime: visitor.checkOut,
       rawData: visitor, // Pass full object for modal
       visitorFlag: visitor.visitorFlag || "-",
       visitorType: visitor.visitorType || "-",
       date: visitor.dateOfVisit || visitor.checkIn,
-      dateOfVisit: humanDate(visitor.dateOfVisit) || visitor.checkInDate,
-      scheduledDate: humanDate(visitor.scheduledDate),
+      dateOfVisit: visitor.dateOfVisit || visitor.checkInDate,
+      scheduledDate: visitor.scheduledDate,
       gstFile: visitor?.gstFile?.link,
       otherFile: visitor?.otherFile?.link,
       panFile: visitor?.panFile?.link,

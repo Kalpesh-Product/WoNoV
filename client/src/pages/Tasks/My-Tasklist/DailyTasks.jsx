@@ -29,6 +29,7 @@ import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { formatDateTimeFields } from "../../../utils/formatDateTime";
 
 const DailyTasks = () => {
   const axios = useAxiosPrivate();
@@ -165,9 +166,8 @@ const DailyTasks = () => {
       field: "dueDate",
       cellRenderer: (params) => {
         const formattedDate = humanDate(params.data?.dueDate);
-        const formattedTime = params.data?.dueTime;
-
-        return [formattedDate, formattedTime].filter(Boolean).join(", ");
+        const formattedTime = humanTime(params.data?.dueTime);
+        return `${formattedDate}, ${formattedTime}`;
       },
     },
 
@@ -254,7 +254,7 @@ const DailyTasks = () => {
           role="button"
           onClick={() => {
             setModalMode("view-completed");
-            setSelectedTask(params.data);
+            setSelectedTask(formatDateTimeFields(params.data));
             setOpenModal(true);
           }}
           className="text-primary underline cursor-pointer"
@@ -263,10 +263,10 @@ const DailyTasks = () => {
         </div>
       ),
     },
-    // { headerName: "Assigned Date", field: "assignedDate" },
-    // { headerName: "Due Date", field: "dueDate" },
-    // { headerName: "Due Time", field: "dueTime" },
-    // { headerName: "Department", field: "department" },
+    { headerName: "Assigned Date", field: "assignedDate", hide: true },
+    { headerName: "Due Date", field: "dueDate", hide: true },
+    { headerName: "Due Time", field: "dueTime", hide: true },
+    { headerName: "Department", field: "department", hide: true },
     { headerName: "Completed By", field: "completedBy" },
     // { headerName: "Completed Date", field: "completedDate" },
     {
@@ -282,43 +282,40 @@ const DailyTasks = () => {
       //   return [formattedDate, formattedTime].filter(Boolean).join(", ");
       // },
       field: "completedDate",
-      cellRenderer: (params) => params.value,
     },
     {
       headerName: "Completed Time",
       field: "completedTime",
-      cellRenderer: (params) => params.value,
-      valueFormatter: (params) => params.value,
     },
-    {
-      field: "status",
-      headerName: "Status",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
-          Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
-        };
+    // {
+    //   field: "status",
+    //   headerName: "Status",
+    //   cellRenderer: (params) => {
+    //     const statusColorMap = {
+    //       Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+    //       InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+    //       resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+    //       open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+    //       Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
+    //     };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
-        );
-      },
-    },
+    //     const { backgroundColor, color } = statusColorMap[params.value] || {
+    //       backgroundColor: "gray",
+    //       color: "white",
+    //     };
+    //     return (
+    //       <>
+    //         <Chip
+    //           label={params.value}
+    //           style={{
+    //             backgroundColor,
+    //             color,
+    //           }}
+    //         />
+    //       </>
+    //     );
+    //   },
+    // },
   ];
   //--------Column configs----------------//
 
@@ -326,7 +323,7 @@ const DailyTasks = () => {
   const handleViewTask = (data) => {
     setModalMode("view");
     setOpenModal(true);
-    setSelectedTask(data);
+    setSelectedTask(formatDateTimeFields(data));
   };
   //----------function handlers-------------//
 
@@ -338,11 +335,11 @@ const DailyTasks = () => {
         taskList: item.taskName,
         department: item.department?.name,
         completedBy: item.completedBy,
-        assignedDate: humanDate(item.assignedDate),
-        dueDate: humanDate(item.dueDate),
-        dueTime: humanTime(item.dueTime),
-        completedDate: humanDate(item.completedDate),
-        completedTime: humanTime(item.completedDate),
+        assignedDate: item.assignedDate,
+        dueDate: item.dueDate,
+        dueTime: item.dueTime,
+        completedDate: item.completedDate,
+        completedTime: item.completedDate,
         completedDateTime: `${humanDate(item.completedDate)}, ${humanTime(
           item.completedDate
         )}`,
@@ -373,7 +370,7 @@ const DailyTasks = () => {
                     assignedDate: item.assignedDate,
                     dueDate: item.dueDate,
                     status: item.status,
-                    dueTime: humanTime(item.dueTime),
+                    dueTime: item.dueTime,
                     // createdAt: humanTime(item.createdAt),
                     assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                   })),
@@ -556,13 +553,11 @@ const DailyTasks = () => {
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
             <DetalisFormatted
               title={"Assigned Date"}
-              detail={`${humanDate(selectedTask?.assignedDate)}`}
+              detail={`${selectedTask?.assignedDate}`}
             />
             <DetalisFormatted
               title={"Due Date"}
-              detail={`${humanDate(selectedTask?.dueDate)}, ${
-                selectedTask?.dueTime
-              }`}
+              detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
             />
 
             <DetalisFormatted

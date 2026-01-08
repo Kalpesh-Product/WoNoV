@@ -11,6 +11,7 @@ import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { formatDateTimeFields } from "../../../utils/formatDateTime";
 
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
@@ -37,7 +38,7 @@ const AssignedTaskReports = () => {
   });
 
   const handleViewDetails = (params) => {
-    setSelectedTask(params);
+    setSelectedTask(formatDateTimeFields(params));
     setOpenModal(true);
   };
 
@@ -62,18 +63,14 @@ const AssignedTaskReports = () => {
     {
       field: "dueTime",
       headerName: "Due Time",
-      cellRenderer: (params) => params.value,
     },
-    // { field: "completedDate", headerName: "Completed Date" },
     {
       field: "completedDate",
       headerName: "Completed Date",
-      cellRenderer: (params) => `${params.value}`,
     },
     {
       field: "completedTime",
       headerName: "Completed Time",
-      cellRenderer: (params) => params.value,
     },
     { field: "department", headerName: "Department" },
     { field: "status", headerName: "Status" },
@@ -108,11 +105,11 @@ const AssignedTaskReports = () => {
                   srNo: index + 1,
                   ...task,
                   taskName: task.taskName,
-                  assignedDate: humanDate(task.assignedDate),
-                  dueDate: humanDate(task.dueDate),
-                  dueTime: humanTime(task.dueTime),
-                  completedDate: humanDate(task.completedDate),
-                  completedTime: humanTime(task.completedDate),
+                  assignedDate: task.assignedDate,
+                  dueDate: task.dueDate,
+                  dueTime: task.dueTime,
+                  completedDate: task.completedDate,
+                  completedTime: task.completedDate,
                   assignedBy: task.assignedBy
                     ? [
                         task.assignedBy.firstName,
@@ -155,15 +152,15 @@ const AssignedTaskReports = () => {
               title="Assigned Date"
               detail={selectedTask.assignedDate}
             />
-            <DetalisFormatted title="Due Date" detail={selectedTask.dueDate} />
+            <DetalisFormatted
+              title="Due Date"
+              detail={`${selectedTask.dueDate}, ${selectedTask.dueTime}`}
+            />
             <DetalisFormatted
               title="Completed Date"
-              detail={selectedTask.completedDate}
+              detail={`${selectedTask.completedDate}, ${selectedTask.completedTime}`}
             />
-            <DetalisFormatted
-              title="Completed Time"
-              detail={selectedTask.completedTime}
-            />
+
             <DetalisFormatted
               title="Department"
               detail={selectedTask.department}

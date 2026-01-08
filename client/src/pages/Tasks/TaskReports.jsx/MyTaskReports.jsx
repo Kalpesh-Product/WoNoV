@@ -123,16 +123,16 @@ const MyTaskReports = () => {
               title="Assigned Date"
               detail={selectedTask.assignedDate}
             />
-            <DetalisFormatted title="Due Date" detail={selectedTask.dueDate} />
-            <DetalisFormatted title="Due Time" detail={selectedTask.dueTime} />
+            <DetalisFormatted
+              title="Due Date"
+              detail={`${selectedTask.dueDate}, ${selectedTask.dueTime}`}
+            />
+
             <DetalisFormatted
               title="Completed Date"
-              detail={selectedTask.completedDate}
+              detail={`${selectedTask.completedDate}, ${selectedTask.completedTime}`}
             />
-            <DetalisFormatted
-              title="Completed Time"
-              detail={selectedTask.completedTime}
-            />
+
             <DetalisFormatted
               title="Department"
               detail={selectedTask.department}
