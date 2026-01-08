@@ -14,7 +14,7 @@ const YearWiseTable = ({
   data = [],
   columns = [],
   dateColumn,
-  formatTime = false,
+  formatTime = true,
   formatDate = true,
   tableHeight,
   tableTitle,
@@ -165,8 +165,20 @@ const YearWiseTable = ({
           valueFormatter: (params) => {
             const date = dayjs(params.value);
             if (!date.isValid()) return params.value;
-            if (formatTime) return date.format("hh:mm A");
+            // if (formatTime) return date.format("hh:mm A");
             if (formatDate) return date.format("DD-MM-YYYY");
+            return params.value;
+          },
+        };
+      }
+      if (col.field?.toLowerCase().includes("time")) {
+        return {
+          ...col,
+          valueFormatter: (params) => {
+            const date = dayjs(params.value);
+            if (!date.isValid()) return params.value;
+            if (formatTime) return date.format("hh:mm A");
+            // if (formatDate) return date.format("DD-MM-YYYY");
             return params.value;
           },
         };

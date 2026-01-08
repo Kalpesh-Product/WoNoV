@@ -10,6 +10,7 @@ import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import formatDateTime from "../../utils/formatDateTime";
 
 const VisitorReports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,6 +44,17 @@ const VisitorReports = () => {
         </div>
       ),
     },
+    { field: "gender", headerName: "Gender", hide: true },
+    { field: "visitorCompany", headerName: "Visitor Company", hide: true },
+    { field: "toMeetCompany", headerName: "Company To Meet", hide: true },
+    { field: "department", headerName: "Department", hide: true },
+    { field: "idProofType", headerName: "ID Type", hide: true },
+    { field: "idProofNumber", headerName: "ID Number", hide: true },
+    { field: "gstNumber", headerName: "GST Number", hide: true },
+    { field: "gstFile", headerName: "GST File", hide: true },
+    { field: "panNumber", headerName: "PAN Number", hide: true },
+    { field: "panFile", headerName: "Pan File", hide: true },
+    { field: "otherFile", headerName: "Other File", hide: true },
     { field: "email", headerName: "Email" },
     { field: "phone", headerName: "Phone No" },
     { field: "purpose", headerName: "Purpose" },
@@ -55,19 +67,42 @@ const VisitorReports = () => {
       },
     },
     {
-      field: "checkIn",
-      headerName: "Check In",
+      field: "scheduledDate",
+      headerName: "Scheduled Date",
+      hide: true,
+      cellRenderer: (params) => humanDate(params.value),
+    },
+    {
+      field: "checkInDate",
+      headerName: "Check In Date",
       cellRenderer: (params) => {
-        return humanTime(params.value);
+        return params.value;
+      },
+      hide: true,
+    },
+    {
+      field: "checkInTime",
+      headerName: "Check In Time",
+      cellRenderer: (params) => {
+        return params.value;
       },
     },
     {
-      field: "checkOut",
-      headerName: "Check Out",
+      field: "checkOutDate",
+      headerName: "Check Out Date",
       cellRenderer: (params) => {
-        return humanTime(params.value);
+        return params.value;
+      },
+      hide: true,
+    },
+    {
+      field: "checkOutTime",
+      headerName: "Check Out Time",
+      cellRenderer: (params) => {
+        return params.value;
       },
     },
+
     // {
     //   field: "actions",
     //   headerName: "Actions",
@@ -83,25 +118,80 @@ const VisitorReports = () => {
   ];
 
   // Format table rows for AgTable
-  const rows = visitorsData.map((visitor, index) => ({
-    srNo: index + 1,
-    name: `${visitor.firstName || ""} ${visitor.lastName || ""}`,
-    address: visitor.address || "-",
-    email: visitor.email || "-",
-    phone: visitor.phoneNumber || "-",
-    purpose: visitor.purposeOfVisit || "-",
-    toMeet: visitor.toMeet
+
+  // const rows = visitorsData.map((visitor, index) => ({
+  //   srNo: index + 1,
+  //   name: `${visitor.firstName || ""} ${visitor.lastName || ""}`,
+  //   address: visitor.address || "-",
+  //   email: visitor.email || "-",
+  //   phone: visitor.phoneNumber || "-",
+  //   purpose: visitor.purposeOfVisit || "-",
+  //   toMeet: visitor.toMeet
+  //     ? `${visitor.toMeet?.firstName} ${visitor.toMeet?.lastName}`
+  //     : visitor.clientToMeet
+  //     ? visitor?.clientToMeet?.employeeName
+  //     : "",
+  //   checkIn: visitor.checkIn,
+  //   checkInTime: humanTime(visitor.checkIn),
+  //   checkOut: visitor.checkOut,
+  //   checkOutTime: humanTime(visitor.checkOut),
+  //   rawData: visitor, // Pass full object for modal
+  //   visitorType: visitor.visitorFlag || "-",
+  //   date: visitor.checkIn,
+  //   dateOfVisit: visitor.checkIn,
+  // }));
+
+  const rows = visitorsData.map((visitor, index) => {
+    const toMeetName = visitor.toMeet
       ? `${visitor.toMeet?.firstName} ${visitor.toMeet?.lastName}`
       : visitor.clientToMeet
       ? visitor?.clientToMeet?.employeeName
-      : "",
-    checkIn: visitor.checkIn,
-    checkOut: visitor.checkOut,
-    rawData: visitor, // Pass full object for modal
-    visitorType: visitor.visitorFlag || "-",
-    date: visitor.checkIn,
-    dateOfVisit: visitor.checkIn,
-  }));
+      : "-";
+
+    const toMeetCompany =
+      visitor.toMeetCompany === "6799f0cd6a01edbe1bc3fcea"
+        ? "BIZNest"
+        : visitor?.toMeetCompany?.clientName ||
+          visitor?.toMeetCompany?.companyName ||
+          visitor?.toMeetCompany?.name ||
+          visitor?.toMeetCompany ||
+          "-";
+
+    return {
+      srNo: index + 1,
+      name:
+        `${visitor.firstName || ""} ${visitor.lastName || ""}`.trim() || "-",
+      gender: visitor.gender || "-",
+      email: visitor.email || "-",
+      phone: visitor.phoneNumber || "-",
+      purpose: visitor.purposeOfVisit || "-",
+      toMeet: toMeetName,
+      toMeetCompany,
+      visitorCompany: visitor.visitorCompany || "-",
+      department: visitor.department?.name || "-",
+      idProofType: visitor.idProof?.idType || "-",
+      idProofNumber: visitor.idProof?.idNumber || "-",
+      panNumber: visitor.panNumber || "-",
+      gstNumber: visitor.gstNumber || "-",
+      checkIn: visitor.checkIn,
+      checkInDate: humanDate(visitor.checkIn),
+      checkInTime: humanTime(visitor.checkIn),
+      checkOut: visitor.checkOut,
+      checkOutDate: humanDate(visitor.checkOut),
+      checkOutTime: humanTime(visitor.checkOut),
+      rawData: visitor, // Pass full object for modal
+      visitorFlag: visitor.visitorFlag || "-",
+      visitorType: visitor.visitorType || "-",
+      date: visitor.dateOfVisit || visitor.checkIn,
+      dateOfVisit: humanDate(visitor.dateOfVisit) || visitor.checkInDate,
+      scheduledDate: humanDate(visitor.scheduledDate),
+      gstFile: visitor?.gstFile?.link,
+      otherFile: visitor?.otherFile?.link,
+      panFile: visitor?.panFile?.link,
+      brandName: visitor?.brandName,
+      registeredClientCompany: visitor?.registeredClientCompany,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -129,30 +219,136 @@ const VisitorReports = () => {
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <div className="font-bold">Personal Information</div>
             <DetalisFormatted title="Name" detail={selectedVisitor.name} />
+            <DetalisFormatted
+              title="Visitor Type"
+              detail={selectedVisitor.visitorType}
+            />
+            <DetalisFormatted title="Gender" detail={selectedVisitor.gender} />
             <DetalisFormatted title="Phone" detail={selectedVisitor.phone} />
             <DetalisFormatted title="Email" detail={selectedVisitor.email} />
-            {/* <DetalisFormatted
-              title="Address"
-              detail={selectedVisitor.address}
-            /> */}
+            {selectedVisitor.visitorFlag !== "Client" && (
+              <DetalisFormatted
+                title="Visitor Company"
+                detail={selectedVisitor.visitorCompany}
+              />
+            )}
             <br />
             <div className="font-bold">Visit Details</div>
-            <DetalisFormatted title="To Meet" detail={selectedVisitor.toMeet} />
+
+            {selectedVisitor.visitorFlag !== "Client" && (
+              <>
+                <DetalisFormatted
+                  title="To Meet"
+                  detail={selectedVisitor.toMeet}
+                />
+                <DetalisFormatted
+                  title="Company To Meet"
+                  detail={selectedVisitor.toMeetCompany}
+                />
+                {selectedVisitor.toMeetCompany === "BIZNest" && (
+                  <DetalisFormatted
+                    title="Department"
+                    detail={selectedVisitor.department}
+                  />
+                )}
+              </>
+            )}
+
             <DetalisFormatted
               title="Purpose"
               detail={selectedVisitor.purpose}
             />
+            {selectedVisitor.visitorFlag === "Client" && (
+              <>
+                <DetalisFormatted
+                  title="ID Type"
+                  detail={selectedVisitor.idProofType}
+                />
+
+                <DetalisFormatted
+                  title="ID Number"
+                  detail={selectedVisitor.idProofNumber}
+                />
+
+                <DetalisFormatted
+                  title="GST Number"
+                  detail={selectedVisitor.gstNumber}
+                />
+
+                <DetalisFormatted
+                  title="GST File"
+                  detail={
+                    selectedVisitor.gstFile ? (
+                      <a
+                        href={selectedVisitor.gstFile}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        File
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+                <DetalisFormatted
+                  title="PAN Number"
+                  detail={selectedVisitor.panNumber}
+                />
+
+                <DetalisFormatted
+                  title="PAN File"
+                  detail={
+                    selectedVisitor.panFile ? (
+                      <a
+                        href={selectedVisitor.panFile}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        File
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+
+                <DetalisFormatted
+                  title="Other File"
+                  detail={
+                    selectedVisitor.otherFile ? (
+                      <a
+                        href={selectedVisitor.otherFile}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        File
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+              </>
+            )}
             <DetalisFormatted
               title="Check In"
-              detail={selectedVisitor.checkIn}
+              detail={selectedVisitor.checkInTime}
             />
             <DetalisFormatted
               title="Check Out"
-              detail={selectedVisitor.checkOut}
+              detail={selectedVisitor.checkOutTime}
             />
             <DetalisFormatted
               title="Date of Visit"
-              detail={humanDate(selectedVisitor.rawData?.dateOfVisit)}
+              detail={selectedVisitor.dateOfVisit}
+            />
+            <DetalisFormatted
+              title="Scheduled Date"
+              detail={selectedVisitor.scheduledDate}
             />
             {selectedVisitor.rawData?.image?.url && (
               <div className="lg:col-span-2">

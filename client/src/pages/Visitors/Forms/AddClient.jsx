@@ -137,7 +137,7 @@ const AddClient = () => {
       ));
     },
     onError: (error) => {
-      toast.error(error.message || "Error Adding Visitor");
+      toast.error(error.response.data.message || "Error Adding Visitor");
     },
   });
   const onSubmit = (data) => {

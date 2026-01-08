@@ -68,7 +68,7 @@ const AssignedTaskReports = () => {
     {
       field: "completedDate",
       headerName: "Completed Date",
-      cellRenderer: (params) => `${humanDate(params.value)}`,
+      cellRenderer: (params) => `${params.value}`,
     },
     {
       field: "completedTime",
@@ -76,7 +76,7 @@ const AssignedTaskReports = () => {
       cellRenderer: (params) => params.value,
     },
     { field: "department", headerName: "Department" },
-    // { field: "endDate", headerName: "End Date" },
+    { field: "status", headerName: "Status" },
     // {
     //   field: "actions",
     //   headerName: "Actions",
@@ -108,10 +108,10 @@ const AssignedTaskReports = () => {
                   srNo: index + 1,
                   ...task,
                   taskName: task.taskName,
-                  assignedDate: task.assignedDate,
-                  dueDate: task.dueDate,
+                  assignedDate: humanDate(task.assignedDate),
+                  dueDate: humanDate(task.dueDate),
                   dueTime: humanTime(task.dueTime),
-                  completedDate: task.completedDate,
+                  completedDate: humanDate(task.completedDate),
                   completedTime: humanTime(task.completedDate),
                   assignedBy: task.assignedBy
                     ? [
@@ -124,6 +124,7 @@ const AssignedTaskReports = () => {
                     : "",
                   department: task.department?.name || task.department,
                   description: task.description,
+                  status: task.status,
                 }))
           }
           columns={myTaskReportsColumns}
@@ -152,19 +153,16 @@ const AssignedTaskReports = () => {
             />
             <DetalisFormatted
               title="Assigned Date"
-              detail={humanDate(selectedTask.assignedDate)}
+              detail={selectedTask.assignedDate}
             />
-            <DetalisFormatted
-              title="Due Date"
-              detail={humanDate(selectedTask.dueDate)}
-            />
+            <DetalisFormatted title="Due Date" detail={selectedTask.dueDate} />
             <DetalisFormatted
               title="Completed Date"
-              detail={humanDate(selectedTask.completedDate)}
+              detail={selectedTask.completedDate}
             />
             <DetalisFormatted
               title="Completed Time"
-              detail={humanTime(selectedTask.completedTime)}
+              detail={selectedTask.completedTime}
             />
             <DetalisFormatted
               title="Department"
@@ -175,7 +173,6 @@ const AssignedTaskReports = () => {
               title="Status"
               detail={selectedTask.status || "—"}
             />
-            <DetalisFormatted title="Remarks" detail={selectedTask.remarks} />
           </div>
         )}
       </MuiModal>
