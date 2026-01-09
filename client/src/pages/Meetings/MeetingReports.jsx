@@ -111,6 +111,7 @@ const MeetingReports = () => {
     {
       field: "action",
       headerName: "Actions",
+      // suppressExport: true,
       pinned: "right",
       cellRenderer: (params) => {
         return (

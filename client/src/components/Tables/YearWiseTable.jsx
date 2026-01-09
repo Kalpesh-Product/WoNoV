@@ -202,12 +202,24 @@ const YearWiseTable = ({
     }));
   }, [filteredData, dateColumn]);
 
+  // const handleExportPass = () => {
+  //   if (agGridRef.current) {
+  //     agGridRef.current.api.exportDataAsCsv({
+  //       fileName: `${tableTitle || "data"}.csv`,
+  //       allColumns: exportAllColumns,
+  //       columnKeys: formattedColumns.map((col) => col.field).filter(Boolean),
+  //     });
+  //   }
+  // };
   const handleExportPass = () => {
     if (agGridRef.current) {
       agGridRef.current.api.exportDataAsCsv({
         fileName: `${tableTitle || "data"}.csv`,
         allColumns: exportAllColumns,
-        columnKeys: formattedColumns.map((col) => col.field).filter(Boolean),
+        columnKeys: formattedColumns
+          .filter((col) => !col.field?.toLowerCase().includes("action"))
+          .map((col) => col.field)
+          .filter(Boolean),
       });
     }
   };
