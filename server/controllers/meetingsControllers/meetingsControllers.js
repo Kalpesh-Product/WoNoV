@@ -491,17 +491,22 @@ const getMeetings = async (req, res, next) => {
     );
 
     const transformedMeetings = filteredMeetings.map((meeting, index) => {
-      let totalParticipants = [];
-      if (
-        internalParticipants[index].length &&
-        clientParticipants[index].length &&
-        meeting.externalParticipants.length
-      ) {
-        totalParticipants = [
-          ...internalParticipants[index],
-          ...meeting.externalParticipants,
-        ];
-      }
+      // let totalParticipants = [];
+      // if (
+      //   internalParticipants[index].length &&
+      //   clientParticipants[index].length &&
+      //   meeting.externalParticipants.length
+      // ) {
+      //   totalParticipants = [
+      //     ...internalParticipants[index],
+      //     ...meeting.externalParticipants,
+      //   ];
+      // }
+      const totalParticipants = [
+        ...(internalParticipants[index] || []),
+        ...(clientParticipants[index] || []),
+        ...(meeting.externalParticipants || []),
+      ];
 
       const meetingReviews = reviews.find(
         (review) => review.meeting.toString() === meeting._id.toString()
@@ -546,7 +551,7 @@ const getMeetings = async (req, res, next) => {
           : null,
         paymentAmount: meeting.paymentAmount ? meeting.paymentAmount : null,
         paymentMode: meeting.paymentMode ? meeting.paymentMode : null,
-        paymentStatus: meeting.paymentStatus ? meeting.paymentStatus : null,
+        paymentStatus: meeting?.paymentStatus ? "Paid" : "Unpaid",
         paymentProof: meeting.paymentProof ? meeting.paymentProof.link : null,
         meetingType: meeting.meetingType,
         housekeepingStatus: meeting.houeskeepingStatus,
@@ -562,14 +567,15 @@ const getMeetings = async (req, res, next) => {
         agenda: meeting.agenda,
         subject: meeting.subject,
         housekeepingChecklist: [...(meeting.housekeepingChecklist ?? [])],
-        participants:
-          totalParticipants.length > 0
-            ? totalParticipants
-            : internalParticipants[index].length > 0
-            ? internalParticipants[index]
-            : clientParticipants[index].length > 0
-            ? clientParticipants[index]
-            : meeting.externalParticipants,
+        // participants:
+        //   totalParticipants.length > 0
+        //     ? totalParticipants
+        //     : internalParticipants[index].length > 0
+        //     ? internalParticipants[index]
+        //     : clientParticipants[index].length > 0
+        //     ? clientParticipants[index]
+        //     : meeting.externalParticipants,
+        participants: totalParticipants,
         reviews: meetingReviews ? meetingReviews : [],
         discountAmount: meeting.discountAmount,
         paymentVerification: meeting.paymentVerification,
