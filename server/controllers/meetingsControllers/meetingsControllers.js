@@ -1134,7 +1134,15 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    if (newEndTimeObj <= meeting.endTime) {
+    const normalizedNewEndTime = new Date(meeting.endTime);
+    normalizedNewEndTime.setHours(
+      newEndTimeObj.getHours(),
+      newEndTimeObj.getMinutes(),
+      newEndTimeObj.getSeconds(),
+      newEndTimeObj.getMilliseconds()
+    );
+
+    if (normalizedNewEndTime <= meeting.endTime) {
       throw new CustomError(
         "New end time must be later than the current end time",
         logPath,
@@ -1147,7 +1155,7 @@ const extendMeeting = async (req, res, next) => {
     const conflictingMeeting = await Meeting.findOne({
       bookedRoom: meeting.bookedRoom._id,
       startDate: meeting.startDate,
-      startTime: { $lt: newEndTimeObj },
+      startTime: { $lt: normalizedNewEndTime },
       endTime: { $gt: meeting.endTime },
       _id: { $ne: meetingId },
     });
@@ -1162,7 +1170,7 @@ const extendMeeting = async (req, res, next) => {
 
     // Step 1: Calculate additional duration
     const oldEndTime = new Date(meeting.endTime);
-    const addedMs = newEndTimeObj - oldEndTime;
+    const addedMs = normalizedNewEndTime - oldEndTime;
     const addedHours = addedMs / (1000 * 60 * 60);
 
     const creditPerHour = meeting.bookedRoom.perHourCredit || 0;
@@ -1200,7 +1208,7 @@ const extendMeeting = async (req, res, next) => {
     // Step 3: Update meeting details
     // meeting.endTime = newEndTimeObj;
     // meeting.endDate = newEndTimeObj;
-    meeting.extendTime = newEndTimeObj;
+    meeting.extendTime = normalizedNewEndTime;
     meeting.creditsUsed = (meeting.creditsUsed || 0) + addedCredits;
     await meeting.save();
 

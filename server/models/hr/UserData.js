@@ -139,7 +139,7 @@ const userDataSchema = new mongoose.Schema(
       ref: "Role",
     },
     refreshToken: { type: String },
-    dateOfExit: { type: Date },
+    dateOfExit: { type: Date, default: null },
     shift: { type: String, required: true },
     // policies: {
     //   // shift: { type: String, required: true },

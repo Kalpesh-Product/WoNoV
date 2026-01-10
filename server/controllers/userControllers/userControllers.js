@@ -649,19 +649,19 @@ const bulkInsertUsers = async (req, res, next) => {
 
                 // console.log("reportsToId", reportsToId);
                 const hashedPassword = await bcrypt.hash(
-                  `${row["First Name"]}@0625`,
+                  `${row["First Name"].trim()}@0625`,
                   10
                 );
 
                 const userObj = {
                   empId: row["Emp ID"],
-                  firstName: row["First Name"],
-                  middleName: row["Middle Name (optional)"] || "",
-                  lastName: row["Last Name"],
-                  gender: row["Gender"],
+                  firstName: row["First Name"].trim(),
+                  middleName: row["Middle Name (optional)"].trim() || "",
+                  lastName: row["Last Name"].trim(),
+                  gender: row["Gender"].trim(),
                   dateOfBirth: new Date(row["Date Of Birth"]),
                   phone: row["Phone Number"],
-                  email: row["Company Email"],
+                  email: row["Company Email"].trim().toLowerCase(),
                   company: new mongoose.Types.ObjectId(companyId),
                   password: hashedPassword,
 
@@ -680,7 +680,13 @@ const bulkInsertUsers = async (req, res, next) => {
                   },
                   designation: row["Designation"],
                   startDate: new Date(row["Date Of Joining"]),
-                  dateOfExit: new Date(row["Date of Exit"]) || null,
+                  // dateOfExit: new Date(row["Date of Exit"]) || null,
+                  dateOfExit:
+                    row["Date of Exit"] &&
+                    !isNaN(Date.parse(row["Date of Exit"]))
+                      ? new Date(row["Date of Exit"])
+                      : null,
+
                   isActive: row["Date of Exit"] ? false : true,
                   workLocation: row["Work Building"],
                   shift: row["Shift Policy"] || "General",
