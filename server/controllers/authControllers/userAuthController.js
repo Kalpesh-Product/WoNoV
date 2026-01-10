@@ -14,8 +14,9 @@ const login = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    if (!password)
+    if (!password) {
       return res.status(400).json({ message: "Invalid credentials" });
+    }
 
     const userExists = await User.findOne({ email })
       .select(
@@ -40,11 +41,11 @@ const login = async (req, res, next) => {
       .exec();
 
     if (!userExists) {
-      return res.status(404).json({ message: "Invalid credentials" });
+      return res.status(404).json({ message: "No user found" });
     }
     const isPasswordValid = await bcrypt.compare(password, userExists.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ message: "Invalid password" });
     }
     let currentTime = new Date();
 

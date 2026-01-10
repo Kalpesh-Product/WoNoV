@@ -111,6 +111,7 @@ const MeetingReports = () => {
     {
       field: "action",
       headerName: "Actions",
+      // suppressExport: true,
       pinned: "right",
       cellRenderer: (params) => {
         return (
@@ -158,7 +159,13 @@ const MeetingReports = () => {
                       item?.externalClient ||
                       "N/A",
                     receptionist: item?.receptionist,
-                    department: item.department,
+                    // department: item.department,
+                    department: item.department?.length
+                      ? item.department
+                          .map((dept) => dept?.name)
+                          .filter(Boolean)
+                          .join(", ")
+                      : "Top Management",
                     roomName: item.roomName,
                     location: item.location?.unitNo,
                     unitName: item.location?.unitName,
@@ -179,12 +186,26 @@ const MeetingReports = () => {
                     paymentStatus: item.paymentStatus,
                     paymentVerification: item.paymentVerification,
                     paymentProofUrl: item?.paymentProof,
+                    // participants: item.participants
+                    //   ?.map((p) =>
+                    //     p.firstName
+                    //       ? `${p.firstName || ""} ${p.lastName || ""} `
+                    //       : `${p.name || ""}`
+                    //   )
+                    //   .join(", "),
                     participants: item.participants
-                      ?.map((p) =>
-                        p.firstName
-                          ? `${p.firstName || ""} ${p.lastName || ""} `
-                          : `${p.name || ""}`
-                      )
+                      ?.map((participant) => {
+                        if (participant?.firstName) {
+                          return `${participant.firstName || ""} ${
+                            participant.lastName || ""
+                          }`.trim();
+                        }
+                        if (participant?.employeeName) {
+                          return participant.employeeName;
+                        }
+                        return participant?.name || "";
+                      })
+                      .filter(Boolean)
                       .join(", "),
                   };
                 }),
@@ -268,7 +289,7 @@ const MeetingReports = () => {
               title="Receptionist"
               detail={selectedMeeting?.receptionist || "Unknown"}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Department"
               detail={
                 selectedMeeting?.department?.length
@@ -276,6 +297,17 @@ const MeetingReports = () => {
                       .map((item) => item.name)
                       .join(", ")
                   : "Top Management"
+              }
+            /> */}
+            <DetalisFormatted
+              title="Department"
+              detail={
+                Array.isArray(selectedMeeting?.department)
+                  ? selectedMeeting.department
+                      .map((item) => item.name)
+                      .filter(Boolean)
+                      .join(", ") || "Top Management"
+                  : selectedMeeting?.department || "Top Management"
               }
             />
 
