@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { MenuItem, TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { DesktopDatePicker } from "@mui/x-date-pickers";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
 const EmployeeOnboard = () => {
   const {
@@ -50,6 +52,51 @@ const EmployeeOnboard = () => {
   const handleReset = () => {
     reset();
   };
+
+  const { data: unitsData = [] } = useQuery({
+    queryKey: ["unitsData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+      return response.data;
+    },
+  });
+
+  const { data: departmentsData = [] } = useQuery({
+    queryKey: ["departmentsData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/departments/get-departments");
+      return response.data.departments || [];
+    },
+  });
+
+  const { data: rolesData = [] } = useQuery({
+    queryKey: ["rolesData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/roles/get-roles");
+      return response.data.roles || [];
+    },
+  });
+
+  const workLocations = useMemo(() => {
+    const unitSet = new Set();
+    return unitsData
+      .map((unit) => unit.unitNo)
+      .filter((unitNo) => {
+        if (!unitNo || unitSet.has(unitNo)) {
+          return false;
+        }
+        unitSet.add(unitNo);
+        return true;
+      });
+  }, [unitsData]);
+
+  const adminRoles = useMemo(
+    () =>
+      rolesData.filter((role) =>
+        role.roleTitle?.toLowerCase().includes("admin")
+      ),
+    [rolesData]
+  );
 
   return (
     <PageFrame>
@@ -329,9 +376,19 @@ const EmployeeOnboard = () => {
                         size="small"
                         label="Work Location"
                         fullWidth
+                        select
                         helperText={errors?.workLocation?.message}
                         error={!!errors.workLocation}
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select Work Location
+                        </MenuItem>
+                        {workLocations.map((unitNo) => (
+                          <MenuItem key={unitNo} value={unitNo}>
+                            {unitNo}
+                          </MenuItem>
+                        ))}
+                      </TextField>
                     )}
                   />
 
@@ -600,47 +657,49 @@ const EmployeeOnboard = () => {
                   </span>
                 </div>
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  <Controller
-                    name="employerPf"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Employer PF"
-                        select
-                        fullWidth
-                      >
-                        <MenuItem value="" disabled>
-                          Select Employer PF
-                        </MenuItem>
-                        <MenuItem value="12%">12%</MenuItem>
-                        <MenuItem value="13%">13%</MenuItem>
-                        <MenuItem value="15%">15%</MenuItem>
-                      </TextField>
-                    )}
-                  />
-                  <Controller
-                    name="includeEsi"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Include ESI"
-                        select
-                        fullWidth
-                      >
-                        <MenuItem value="" disabled>
-                          Select Include ESI
-                        </MenuItem>
-                        <MenuItem value="yes">Yes</MenuItem>
-                        <MenuItem value="no">No</MenuItem>
-                      </TextField>
-                    )}
-                  />
+                  <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4  ">
+                    <Controller
+                      name="employerPf"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Employer PF"
+                          select
+                          fullWidth
+                        >
+                          <MenuItem value="" disabled>
+                            Select Employer PF
+                          </MenuItem>
+                          <MenuItem value="12%">12%</MenuItem>
+                          <MenuItem value="13%">13%</MenuItem>
+                          <MenuItem value="15%">15%</MenuItem>
+                        </TextField>
+                      )}
+                    />
+                    <Controller
+                      name="includeEsi"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Include ESI"
+                          select
+                          fullWidth
+                        >
+                          <MenuItem value="" disabled>
+                            Select Include ESI
+                          </MenuItem>
+                          <MenuItem value="yes">Yes</MenuItem>
+                          <MenuItem value="no">No</MenuItem>
+                        </TextField>
+                      )}
+                    />
+                  </div>
                   <Controller
                     name="esiContribution"
                     control={control}
