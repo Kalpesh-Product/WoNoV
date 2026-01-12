@@ -72,6 +72,7 @@ const createUser = async (req, res, next) => {
       workLocation,
       reportsTo,
       shift,
+      workSchedulePolicy,
       policies,
       attendanceSource,
       homeAddress,
@@ -90,12 +91,11 @@ const createUser = async (req, res, next) => {
       !lastName ||
       !email ||
       !phone ||
-      !companyId ||
       !employeeType ||
       !departments ||
       !designation ||
       !startDate ||
-      !shift ||
+      !workSchedulePolicy ||
       !workLocation
     ) {
       throw new CustomError(
@@ -202,7 +202,7 @@ const createUser = async (req, res, next) => {
       phone,
       email,
       role,
-      company: companyId,
+      company,
       password: hashedPassword,
       attendanceSource,
       departments,

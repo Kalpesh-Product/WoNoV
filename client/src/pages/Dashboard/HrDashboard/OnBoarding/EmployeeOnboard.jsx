@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { MenuItem, TextField } from "@mui/material";
+import { Checkbox, ListItemText, MenuItem, TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { DesktopDatePicker } from "@mui/x-date-pickers";
@@ -18,59 +18,113 @@ const EmployeeOnboard = () => {
     reset,
     formState: { errors },
   } = useForm({
+    // defaultValues: {
+    //   empId: "",
+    //   firstName: "",
+    //   middleName: "",
+    //   lastName: "",
+    //   gender: "",
+    //   dateOfBirth: null,
+    //   phone: "",
+    //   email: "",
+    //   startDate: null,
+    //   workLocation: "",
+    //   employeeType: "",
+    //   departments: [],
+    //   role: [],
+    //   reportsTo: "",
+    //   jobTitle: "",
+    //   jobDescription: "",
+    //   shift: "",
+    //   workSchedulePolicy: "",
+    //   attendanceSource: "web",
+    //   leavePolicy: "",
+    //   holidayPolicy: "",
+    //   aadharId: "",
+    //   pan: "",
+    //   pfUan: "",
+    //   pfAcNo: "",
+    //   esiAccountNo: "",
+    //   employerPf: "",
+    //   includeInPayroll: "",
+    //   payrollBatch: "",
+    //   professionTaxExemption: "",
+    //   includePF: "",
+    //   pfContributionRate: "",
+    //   employeePF: "",
+    //   includeEsi: "",
+    //   esiContribution: "",
+    //   hraType: "",
+    //   tdsCalculationBasedOn: "",
+    //   incomeTaxRegime: "",
+    //   addressLine1: "",
+    //   addressLine2: "",
+    //   country: "",
+    //   state: "",
+    //   city: "",
+    //   pinCode: "",
+    //   bankIfsc: "",
+    //   bankName: "",
+    //   branchName: "",
+    //   nameOnAccount: "",
+    //   accountNumber: "",
+    //   fatherName: "",
+    //   motherName: "",
+    //   maritalStatus: "",
+    // },
     defaultValues: {
-      empId: "",
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      gender: "",
+      empId: "EMP00081",
+      firstName: "Rahul",
+      middleName: "Kumar",
+      lastName: "Sharma",
+      gender: "male",
       dateOfBirth: null,
-      phone: "",
-      email: "",
+      phone: "9876543210",
+      email: "rahul.sharma@example.com",
       startDate: null,
-      workLocation: "",
-      employeeType: "",
-      departments: "",
-      role: "",
+      workLocation: "ST 701 A",
+      employeeType: "Full-time",
+      departments: [],
+      role: [],
       reportsTo: "",
-      jobTitle: "",
-      jobDescription: "",
-      shift: "",
-      workSchedulePolicy: "",
+      jobTitle: "Admin & Co-founder office Operations",
+      jobDescription: "Responsible for maintaining  office Operations",
+      workSchedulePolicy: "General Shift",
+      // workSchedulePolicy: "Mon-Fri",
       attendanceSource: "web",
       leavePolicy: "",
       holidayPolicy: "",
-      aadharId: "",
-      pan: "",
-      pfUan: "",
-      pfAcNo: "",
-      esiAccountNo: "",
-      employerPf: "",
-      includeInPayroll: "",
-      payrollBatch: "",
-      professionTaxExemption: "",
-      includePF: "",
-      pfContributionRate: "",
-      employeePF: "",
-      includeEsi: "",
-      esiContribution: "",
-      hraType: "",
-      tdsCalculationBasedOn: "",
-      incomeTaxRegime: "",
-      addressLine1: "",
-      addressLine2: "",
-      country: "",
-      state: "",
-      city: "",
-      pinCode: "",
-      bankIfsc: "",
-      bankName: "",
-      branchName: "",
-      nameOnAccount: "",
-      accountNumber: "",
-      fatherName: "",
-      motherName: "",
-      maritalStatus: "",
+      aadharId: "123456789012",
+      pan: "ABCDE1234F",
+      pfUan: "100200300400",
+      pfAcNo: "PF123456789",
+      esiAccountNo: "ESI987654321",
+      employerPf: "12%",
+      includeInPayroll: "yes",
+      payrollBatch: "April-2024",
+      professionTaxExemption: "no",
+      includePF: "yes",
+      pfContributionRate: "12",
+      employeePF: "12",
+      includeEsi: "yes",
+      esiContribution: "restrict-21000",
+      hraType: "metro-50",
+      tdsCalculationBasedOn: "tax-slabs",
+      incomeTaxRegime: "new",
+      addressLine1: "Flat 302, Green Residency",
+      addressLine2: "MG Road",
+      country: "India",
+      state: "Karnataka",
+      city: "Bengaluru",
+      pinCode: "560001",
+      bankIfsc: "HDFC0001234",
+      bankName: "HDFC Bank",
+      branchName: "MG Road Branch",
+      nameOnAccount: "Rahul Sharma",
+      accountNumber: "123456789012",
+      fatherName: "Suresh Sharma",
+      motherName: "Anita Sharma",
+      maritalStatus: "Single",
     },
   });
 
@@ -203,6 +257,19 @@ const EmployeeOnboard = () => {
       return response.data || [];
     },
   });
+
+  const departmentNameById = useMemo(
+    () =>
+      new Map(
+        departmentsData.map((department) => [department._id, department.name])
+      ),
+    [departmentsData]
+  );
+
+  const roleTitleById = useMemo(
+    () => new Map(rolesData.map((role) => [role._id, role.roleTitle])),
+    [rolesData]
+  );
 
   const workLocations = useMemo(() => {
     const unitSet = new Set();
@@ -563,16 +630,27 @@ const EmployeeOnboard = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Controller
-                    name="department"
+                    name="departments"
                     control={control}
                     rules={{ required: "Department is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
+                        value={field.value || []}
                         size="small"
                         label="Department"
                         fullWidth
                         select
+                        SelectProps={{
+                          multiple: true,
+                          renderValue: (selected) =>
+                            selected
+                              .map(
+                                (deptId) =>
+                                  departmentNameById.get(deptId) || deptId
+                              )
+                              .join(", "),
+                        }}
                         helperText={errors?.departments?.message}
                         error={!!errors.departments}
                       >
@@ -581,7 +659,10 @@ const EmployeeOnboard = () => {
                         </MenuItem>
                         {departmentsData.map((department) => (
                           <MenuItem key={department._id} value={department._id}>
-                            {department.name}
+                            <Checkbox
+                              checked={field.value?.includes(department._id)}
+                            />
+                            <ListItemText primary={department.name} />
                           </MenuItem>
                         ))}
                       </TextField>
@@ -591,14 +672,27 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="role"
                     control={control}
-                    rules={{ required: "Role is required" }}
+                    rules={{
+                      validate: (value) =>
+                        value?.length ? true : "Role is required",
+                    }}
                     render={({ field }) => (
                       <TextField
                         {...field}
+                        value={field.value || []}
                         size="small"
                         label="Role"
                         fullWidth
                         select
+                        SelectProps={{
+                          multiple: true,
+                          renderValue: (selected) =>
+                            selected
+                              .map(
+                                (roleId) => roleTitleById.get(roleId) || roleId
+                              )
+                              .join(", "),
+                        }}
                         helperText={errors?.role?.message}
                         error={!!errors.role}
                       >
@@ -607,7 +701,10 @@ const EmployeeOnboard = () => {
                         </MenuItem>
                         {rolesData.map((role) => (
                           <MenuItem key={role._id} value={role._id}>
-                            {role.roleTitle}
+                            <Checkbox
+                              checked={field.value?.includes(role._id)}
+                            />
+                            <ListItemText primary={role.roleTitle} />
                           </MenuItem>
                         ))}
                       </TextField>
@@ -786,8 +883,15 @@ const EmployeeOnboard = () => {
                       {...field}
                       size="small"
                       label="Include In Payroll"
+                      select
                       fullWidth
-                    />
+                    >
+                      <MenuItem value="" disabled>
+                        Select Include In Payroll
+                      </MenuItem>
+                      <MenuItem value="yes">Yes</MenuItem>
+                      <MenuItem value="no">No</MenuItem>
+                    </TextField>
                   )}
                 />
 
@@ -814,8 +918,15 @@ const EmployeeOnboard = () => {
                       {...field}
                       size="small"
                       label="Profession Tax Exemption"
+                      select
                       fullWidth
-                    />
+                    >
+                      <MenuItem value="" disabled>
+                        Select Profession Tax Exemption
+                      </MenuItem>
+                      <MenuItem value="yes">Yes</MenuItem>
+                      <MenuItem value="no">No</MenuItem>
+                    </TextField>
                   )}
                 />
 
@@ -829,8 +940,15 @@ const EmployeeOnboard = () => {
                         {...field}
                         size="small"
                         label="Include PF"
+                        select
                         fullWidth
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select Include PF
+                        </MenuItem>
+                        <MenuItem value="yes">Yes</MenuItem>
+                        <MenuItem value="no">No</MenuItem>
+                      </TextField>
                     )}
                   />
                   <Controller
