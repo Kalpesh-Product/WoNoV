@@ -144,7 +144,7 @@ const userDataSchema = new mongoose.Schema(
     },
     refreshToken: { type: String },
     dateOfExit: { type: Date, default: null },
-    shift: { type: String, required: true },
+    shift: { type: String },
 
     // policies: {
     //   // shift: { type: String, required: true },

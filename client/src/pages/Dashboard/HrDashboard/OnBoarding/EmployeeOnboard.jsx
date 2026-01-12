@@ -77,12 +77,12 @@ const EmployeeOnboard = () => {
       firstName: "Rahul",
       middleName: "Kumar",
       lastName: "Sharma",
-      gender: "male",
+      gender: "Male",
       dateOfBirth: null,
       phone: "9876543210",
       email: "rahul.sharma@example.com",
       startDate: null,
-      workLocation: "ST 701 A",
+      workLocation: "",
       employeeType: "Full-time",
       departments: [],
       role: [],
@@ -167,7 +167,7 @@ const EmployeeOnboard = () => {
       phone: data.phone?.trim(),
       email: data.email?.trim(),
       role: data.role,
-      departments: data.departments ? [data.departments] : [],
+      departments: data.departments ? data.departments : [],
       employeeType: data.employeeType ? { name: data.employeeType } : undefined,
       designation: data.jobTitle?.trim(),
       jobTitle: data.jobTitle?.trim(),
@@ -177,7 +177,7 @@ const EmployeeOnboard = () => {
       reportsTo: data.reportsTo || undefined,
       shift: data.shift,
       policies: {
-        workSchedulePolicy: data.shift,
+        workSchedulePolicy: data.workSchedulePolicy,
         attendanceSource: data.attendanceSource,
         leavePolicy: normalizePolicyValue(data.leavePolicy),
         holidayPolicy: normalizePolicyValue(data.holidayPolicy),
@@ -376,8 +376,8 @@ const EmployeeOnboard = () => {
                         <MenuItem value="" disabled>
                           Select a Gender
                         </MenuItem>
-                        <MenuItem value="male">Male</MenuItem>
-                        <MenuItem value="female">Female</MenuItem>
+                        <MenuItem value="Male">Male</MenuItem>
+                        <MenuItem value="Female">Female</MenuItem>
                       </TextField>
                     )}
                   />

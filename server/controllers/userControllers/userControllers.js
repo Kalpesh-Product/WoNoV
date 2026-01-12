@@ -95,7 +95,6 @@ const createUser = async (req, res, next) => {
       !departments ||
       !designation ||
       !startDate ||
-      !workSchedulePolicy ||
       !workLocation
     ) {
       throw new CustomError(
