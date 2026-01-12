@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const testDataSchema = new mongoose.Schema(
+const testuserDataSchema = new mongoose.Schema(
   {
     empId: {
       type: String,
@@ -84,7 +84,7 @@ const testDataSchema = new mongoose.Schema(
       trim: true,
     },
     employeeType: {
-      name: { type: String },
+      name: { type: String, required: true },
       leavesCount: [
         {
           leaveType: { type: String, required: true },
@@ -97,31 +97,38 @@ const testDataSchema = new mongoose.Schema(
 
       trim: true,
     },
-    //   clockInDetails: {
-    //     hasClockedIn: {
-    //       type: Boolean,
-    //       default: false,
-    //     },
-    //     clockInTime: {
-    //       type: Date,
-    //       default: null,
-    //     },
-    //     clockOutTime: {
-    //       type: Date,
-    //       default: null,
-    //     },
-    //     breaks: [
-    //       {
-    //         start: {
-    //           type: Date,
-    //         },
-    //         end: {
-    //           type: Date,
-    //         },
-    //       },
-    //     ],
-    //   },
+    jobDescription: {
+      type: String,
+      trim: true,
+    },
+    clockInDetails: {
+      hasClockedIn: {
+        type: Boolean,
+        default: false,
+      },
+      clockInTime: {
+        type: Date,
+        default: null,
+      },
+      clockOutTime: {
+        type: Date,
+        default: null,
+      },
+      breaks: [
+        {
+          start: {
+            type: Date,
+          },
+          end: {
+            type: Date,
+          },
+        },
+      ],
+    },
     startDate: {
+      type: Date,
+    },
+    endDate: {
       type: Date,
     },
     workLocation: {
@@ -136,12 +143,21 @@ const testDataSchema = new mongoose.Schema(
       ref: "Role",
     },
     refreshToken: { type: String },
-    dateOfExit: { type: Date },
+    dateOfExit: { type: Date, default: null },
     shift: { type: String, required: true },
+
+    // policies: {
+    //   // shift: { type: String, required: true },
+    //   workSchedulePolicy: { type: String, required: true },
+    //   attendanceSource: { type: String },
+    //   leavePolicy: { type: String },
+    //   holidayPolicy: { type: String },
+    // },
     homeAddress: {
       addressLine1: { type: String },
       addressLine2: { type: String },
       city: { type: String },
+      country: { type: String },
       state: { type: String },
       pinCode: { type: String },
       notes: { type: String },
@@ -173,6 +189,12 @@ const testDataSchema = new mongoose.Schema(
       includePF: { type: Boolean },
       pfContributionRate: { type: String },
       employeePF: { type: String },
+      employerPf: { type: String },
+      includeEsi: { type: Boolean },
+      esiContribution: { type: String },
+      hraType: { type: String },
+      tdsCalculationBasedOn: { type: String },
+      incomeTaxRegime: { type: String },
     },
     familyInformation: {
       fatherName: { type: String },
@@ -190,8 +212,10 @@ const testDataSchema = new mongoose.Schema(
       default: 10,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-const TestUserData = mongoose.model("TestUserData", testDataSchema);
+const TestUserData = mongoose.model("TestUserData", testuserDataSchema);
 module.exports = TestUserData;

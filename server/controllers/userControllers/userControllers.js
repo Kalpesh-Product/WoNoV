@@ -28,6 +28,31 @@ const createUser = async (req, res, next) => {
   const ip = req.ip;
 
   try {
+    // const {
+    //   empId,
+    //   firstName,
+    //   middleName,
+    //   lastName,
+    //   gender,
+    //   dateOfBirth,
+    //   phone,
+    //   email,
+    //   role,
+    //   departments,
+    //   employeeType,
+    //   designation,
+    //   startDate,
+    //   workLocation,
+    //   reportsTo,
+    //   shift,
+    //   policies,
+    //   homeAddress,
+    //   bankInformation,
+    //   panAadhaarDetails,
+    //   payrollInformation,
+    //   familyInformation,
+    // } = req.body;
+
     const {
       empId,
       firstName,
@@ -41,12 +66,24 @@ const createUser = async (req, res, next) => {
       departments,
       employeeType,
       designation,
+      jobTitle,
+      jobDescription,
       startDate,
       workLocation,
       reportsTo,
       shift,
       policies,
+      attendanceSource,
+      workSchedulePolicy,
+      leavePolicy,
+      holidayPolicy,
       homeAddress,
+      addressLine1,
+      addressLine2,
+      country,
+      state,
+      city,
+      pinCode,
       bankInformation,
       panAadhaarDetails,
       payrollInformation,
@@ -161,7 +198,7 @@ const createUser = async (req, res, next) => {
     }
 
     // Hash the default password
-    const defaultPassword = "123456";
+    const defaultPassword = `${firstName.trim()}@0625`;
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
     const newUser = new User({
@@ -194,40 +231,40 @@ const createUser = async (req, res, next) => {
 
     const savedUser = await newUser.save();
 
-    // Log the successful creation of the user
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "User created successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: savedUser._id,
-      changes: {
-        empId: savedUser.empId,
-        firstName: savedUser.firstName,
-        lastName: savedUser.lastName,
-        email: savedUser.email,
-        phone: savedUser.phone,
-        role: savedUser.role,
-        companyId: savedUser.company,
-        designation: savedUser.designation,
-        startDate: savedUser.startDate,
-        workLocation: savedUser.workLocation,
+    const policyAgreements = [
+      {
+        name: "Work Schedule Policy",
+        value: policies.workSchedulePolicy,
       },
-    });
+      { name: "Leave Policy", value: policies.leavePolicy },
+      { name: "Holiday Policy", value: policies.holidayPolicy },
+    ];
 
-    return res.status(201).json({ message: "User created successfully" });
-  } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
+    const agreementsToCreate = policyAgreements
+      .filter((policy) => policy.value)
+      .map((policy) => {
+        const value = String(policy.value);
+        const isUrl = value.startsWith("https");
+
+        return {
+          name: policy.name,
+          user: savedUser._id,
+          url: isUrl ? value : undefined,
+          type:
+            policy.name === "Work Schedule Policy" && !isUrl
+              ? value
+              : undefined,
+          isActive: true,
+        };
+      });
+
+    if (agreementsToCreate.length) {
+      await Agreements.insertMany(agreementsToCreate);
     }
+
+    return res.status(201).json({ message: "Employee onboarded successfully" });
+  } catch (error) {
+    next(error);
   }
 };
 

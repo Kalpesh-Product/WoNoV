@@ -23,8 +23,8 @@ const EmployeeOnboard = () => {
       middleName: "",
       lastName: "",
       gender: "",
-      dob: null,
-      mobileNumber: "",
+      dateOfBirth: null,
+      phone: "",
       startDate: null,
       workLocation: "",
       employeeType: "",
@@ -193,7 +193,7 @@ const EmployeeOnboard = () => {
                   />
 
                   <Controller
-                    name="dob"
+                    name="dateOfBirth"
                     control={control}
                     rules={{ required: "Date of Birth is required" }}
                     render={({ field }) => (
@@ -210,7 +210,7 @@ const EmployeeOnboard = () => {
                   />
                 </div>
                 <Controller
-                  name="mobilePhone"
+                  name="phone"
                   control={control}
                   rules={{
                     required: "Mobile number is required",
@@ -225,8 +225,8 @@ const EmployeeOnboard = () => {
                       size="small"
                       label="Mobile Phone"
                       fullWidth
-                      helperText={errors?.mobilePhone?.message}
-                      error={!!errors.mobilePhone}
+                      helperText={errors?.phone?.message}
+                      error={!!errors.phone}
                     />
                   )}
                 />
@@ -522,7 +522,7 @@ const EmployeeOnboard = () => {
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Controller
-                    name="shift"
+                    name="workSchedulePolicy"
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
@@ -919,83 +919,77 @@ const EmployeeOnboard = () => {
                   )}
                 />
               </div>
+            </div>
+            <div>
+              {/* Section: KYC Information */}
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">KYC</span>
+              </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <Controller
+                  name="aadharID"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Aadhar ID"
+                      fullWidth
+                    />
+                  )}
+                />
 
-              <div>
-                {/* Section: KYC Information */}
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">KYC</span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  <Controller
-                    name="aadharID"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Aadhar ID"
-                        fullWidth
-                      />
-                    )}
-                  />
+                <Controller
+                  name="pan"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField {...field} size="small" label="PAN" fullWidth />
+                  )}
+                />
 
-                  <Controller
-                    name="pan"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="PAN"
-                        fullWidth
-                      />
-                    )}
-                  />
+                <Controller
+                  name="pfUan"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="PF UAN"
+                      fullWidth
+                    />
+                  )}
+                />
 
-                  <Controller
-                    name="pfUan"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="PF UAN"
-                        fullWidth
-                      />
-                    )}
-                  />
+                <Controller
+                  name="pfAcNo"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="PF A/c No"
+                      fullWidth
+                    />
+                  )}
+                />
 
-                  <Controller
-                    name="pfAcNo"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="PF A/c No"
-                        fullWidth
-                      />
-                    )}
-                  />
-
-                  <Controller
-                    name="esiAccountNo"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="ESI A/c No"
-                        fullWidth
-                      />
-                    )}
-                  />
-                </div>
+                <Controller
+                  name="esiAccountNo"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="ESI A/c No"
+                      fullWidth
+                    />
+                  )}
+                />
               </div>
             </div>
 
