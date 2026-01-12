@@ -67,7 +67,8 @@ const EmployeeOnboard = () => {
     queryKey: ["departmentsData"],
     queryFn: async () => {
       const response = await axios.get("/api/departments/get-departments");
-      return response.data.departments || [];
+      console.log("deparment:", response.data[0].name);
+      return response.data || [];
     },
   });
 
@@ -75,7 +76,7 @@ const EmployeeOnboard = () => {
     queryKey: ["rolesData"],
     queryFn: async () => {
       const response = await axios.get("/api/roles/get-roles");
-      return response.data.roles || [];
+      return response.data || [];
     },
   });
 
@@ -95,7 +96,7 @@ const EmployeeOnboard = () => {
   const adminRoles = useMemo(
     () =>
       rolesData.filter((role) =>
-        role.roleTitle?.toLowerCase().includes("admin")
+        role.roleTitle?.toLowerCase().endsWith("admin")
       ),
     [rolesData]
   );
@@ -436,14 +437,17 @@ const EmployeeOnboard = () => {
                         <MenuItem value="" disabled>
                           Select Department
                         </MenuItem>
-                        {departmentsData.map((department) => (
-                          <MenuItem
-                            key={department._id}
-                            value={department.name}
-                          >
-                            {department.name}
-                          </MenuItem>
-                        ))}
+                        {departmentsData.map((department) => {
+                          console.log("departments:", department);
+                          return (
+                            <MenuItem
+                              key={department._id}
+                              value={department.name}
+                            >
+                              {department.name}
+                            </MenuItem>
+                          );
+                        })}
                       </TextField>
                     )}
                   />
