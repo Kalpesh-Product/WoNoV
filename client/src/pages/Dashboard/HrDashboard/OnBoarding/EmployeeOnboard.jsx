@@ -519,42 +519,27 @@ const EmployeeOnboard = () => {
                 <span className="text-subtitle font-pmedium">Policies</span>
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                <Controller
-                  name="shift"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Shift"
-                      select
-                      fullWidth
-                    >
-                      <MenuItem value="" disabled>
-                        Select Shift
-                      </MenuItem>
-                      <MenuItem value="General Shift">General Shift</MenuItem>
-                      <MenuItem value="Night Shift">Night Shift</MenuItem>
-                    </TextField>
-                  )}
-                />
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Controller
-                    name="workSchedulePolicy"
+                    name="shift"
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
-                        label="Work Schedule Policy"
+                        label="Shift"
+                        select
                         fullWidth
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select Shift
+                        </MenuItem>
+                        <MenuItem value="General Shift">General Shift</MenuItem>
+                        <MenuItem value="Night Shift">Night Shift</MenuItem>
+                      </TextField>
                     )}
                   />
-
                   <Controller
                     name="attendanceSource"
                     control={control}
@@ -568,6 +553,22 @@ const EmployeeOnboard = () => {
                       />
                     )}
                   />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* <Controller
+                    name="workSchedulePolicy"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Work Schedule Policy"
+                        fullWidth
+                      />
+                    )}
+                  /> */}
+
                   <Controller
                     name="leavePolicy"
                     control={control}
@@ -691,151 +692,150 @@ const EmployeeOnboard = () => {
                 />
               </div>
             </div>
+
+            {/* Section: Payroll Information II*/}
             <div>
-              {/* Section: Payroll Information II*/}
-              <div>
-                <div className="py-4 border-b-default border-borderGray">
-                  <span className="text-subtitle font-pmedium">
-                    Payroll Information II
-                  </span>
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4  ">
-                    <Controller
-                      name="employerPf"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Employer PF"
-                          select
-                          fullWidth
-                        >
-                          <MenuItem value="" disabled>
-                            Select Employer PF
-                          </MenuItem>
-                          <MenuItem value="12%">12%</MenuItem>
-                          <MenuItem value="13%">13%</MenuItem>
-                          <MenuItem value="15%">15%</MenuItem>
-                        </TextField>
-                      )}
-                    />
-                    <Controller
-                      name="includeEsi"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label="Include ESI"
-                          select
-                          fullWidth
-                        >
-                          <MenuItem value="" disabled>
-                            Select Include ESI
-                          </MenuItem>
-                          <MenuItem value="yes">Yes</MenuItem>
-                          <MenuItem value="no">No</MenuItem>
-                        </TextField>
-                      )}
-                    />
-                  </div>
-                  <Controller
-                    name="esiContribution"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="ESI Contribution"
-                        select
-                        fullWidth
-                      >
-                        <MenuItem value="" disabled>
-                          Select ESI Contribution
-                        </MenuItem>
-                        <MenuItem value="restrict-21000">
-                          Restrict Contribution to 21,000 of ESI Gross
-                        </MenuItem>
-                        <MenuItem value="no-restriction">
-                          No Restriction
-                        </MenuItem>
-                      </TextField>
-                    )}
-                  />
-                  <Controller
-                    name="hraType"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="HRA"
-                        select
-                        fullWidth
-                      >
-                        <MenuItem value="" disabled>
-                          Select HRA
-                        </MenuItem>
-                        <MenuItem value="metro-50">Metropolitan (50%)</MenuItem>
-                        <MenuItem value="non-metro-40">
-                          Non-Metropolitan (40%)
-                        </MenuItem>
-                        <MenuItem value="custom">Custom</MenuItem>
-                      </TextField>
-                    )}
-                  />
-                  <Controller
-                    name="tdsCalculationBasedOn"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="TDS Calculation Based on"
-                        select
-                        fullWidth
-                      >
-                        <MenuItem value="" disabled>
-                          Select TDS Calculation
-                        </MenuItem>
-                        <MenuItem value="tax-slabs">
-                          Tax Slabs (Salaried Employee)
-                        </MenuItem>
-                        <MenuItem value="tax-percentage">
-                          Tax Percentage (Consultants)
-                        </MenuItem>
-                      </TextField>
-                    )}
-                  />
-                  <Controller
-                    name="incomeTaxRegime"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Income Tax Regime"
-                        select
-                        fullWidth
-                      >
-                        <MenuItem value="" disabled>
-                          Select Income Tax Regime
-                        </MenuItem>
-                        <MenuItem value="old">Old Tax Regime</MenuItem>
-                        <MenuItem value="new">New Tax Regime</MenuItem>
-                      </TextField>
-                    )}
-                  />
-                </div>
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">
+                  Payroll Information II
+                </span>
               </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4  ">
+                  <Controller
+                    name="employerPf"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Employer PF"
+                        select
+                        fullWidth
+                      >
+                        <MenuItem value="" disabled>
+                          Select Employer PF
+                        </MenuItem>
+                        <MenuItem value="12%">12%</MenuItem>
+                        <MenuItem value="13%">13%</MenuItem>
+                        <MenuItem value="15%">15%</MenuItem>
+                      </TextField>
+                    )}
+                  />
+                  <Controller
+                    name="includeEsi"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Include ESI"
+                        select
+                        fullWidth
+                      >
+                        <MenuItem value="" disabled>
+                          Select Include ESI
+                        </MenuItem>
+                        <MenuItem value="yes">Yes</MenuItem>
+                        <MenuItem value="no">No</MenuItem>
+                      </TextField>
+                    )}
+                  />
+                </div>
+                <Controller
+                  name="esiContribution"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="ESI Contribution"
+                      select
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select ESI Contribution
+                      </MenuItem>
+                      <MenuItem value="restrict-21000">
+                        Restrict Contribution to 21,000 of ESI Gross
+                      </MenuItem>
+                      <MenuItem value="no-restriction">No Restriction</MenuItem>
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="hraType"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="HRA"
+                      select
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select HRA
+                      </MenuItem>
+                      <MenuItem value="metro-50">Metropolitan (50%)</MenuItem>
+                      <MenuItem value="non-metro-40">
+                        Non-Metropolitan (40%)
+                      </MenuItem>
+                      <MenuItem value="custom">Custom</MenuItem>
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="tdsCalculationBasedOn"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="TDS Calculation Based on"
+                      select
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select TDS Calculation
+                      </MenuItem>
+                      <MenuItem value="tax-slabs">
+                        Tax Slabs (Salaried Employee)
+                      </MenuItem>
+                      <MenuItem value="tax-percentage">
+                        Tax Percentage (Consultants)
+                      </MenuItem>
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="incomeTaxRegime"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Income Tax Regime"
+                      select
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select Income Tax Regime
+                      </MenuItem>
+                      <MenuItem value="old">Old Tax Regime</MenuItem>
+                      <MenuItem value="new">New Tax Regime</MenuItem>
+                    </TextField>
+                  )}
+                />
+              </div>
+            </div>
+            <div>
               {/* Section: Bank Information */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
@@ -912,79 +912,86 @@ const EmployeeOnboard = () => {
                   )}
                 />
               </div>
-            </div>
-            <div>
-              {/* Section: KYC Information */}
-              <div className="py-4 border-b-default border-borderGray">
-                <span className="text-subtitle font-pmedium">KYC</span>
+
+              <div>
+                {/* Section: KYC Information */}
+                <div className="py-4 border-b-default border-borderGray">
+                  <span className="text-subtitle font-pmedium">KYC</span>
+                </div>
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                  <Controller
+                    name="aadharID"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Aadhar ID"
+                        fullWidth
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="pan"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="PAN"
+                        fullWidth
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="pfUan"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="PF UAN"
+                        fullWidth
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="pfAcNo"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="PF A/c No"
+                        fullWidth
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="esiAccountNo"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="ESI A/c No"
+                        fullWidth
+                      />
+                    )}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                <Controller
-                  name="aadharID"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Aadhar ID"
-                      fullWidth
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="pan"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField {...field} size="small" label="PAN" fullWidth />
-                  )}
-                />
-
-                <Controller
-                  name="pfUan"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="PF UAN"
-                      fullWidth
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="pfAcNo"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="PF A/c No"
-                      fullWidth
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="esiAccountNo"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="ESI A/c No"
-                      fullWidth
-                    />
-                  )}
-                />
-              </div>
             </div>
+
             <div>
               {/* Section: Family Information */}
               <div className="py-4 border-b-default border-borderGray">
