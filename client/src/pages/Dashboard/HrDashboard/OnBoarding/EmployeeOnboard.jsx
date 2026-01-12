@@ -8,6 +8,7 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
 
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import UploadFileInput from "../../../../components/UploadFileInput";
 
 const EmployeeOnboard = () => {
   const axios = useAxiosPrivate();
@@ -33,7 +34,7 @@ const EmployeeOnboard = () => {
       jobDescription: "",
       shift: "",
       workSchedulePolicy: "",
-      attendanceSource: "",
+      attendanceSource: "web",
       leavePolicy: "",
       holidayPolicy: "",
       aadharId: "",
@@ -543,14 +544,18 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="attendanceSource"
                     control={control}
-                    defaultValue=""
+                    defaultValue="web"
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
+                        select
                         label="Attendance Source"
                         fullWidth
-                      />
+                      >
+                        <MenuItem value="web">Web</MenuItem>
+                        <MenuItem value="mobile">Mobile</MenuItem>
+                      </TextField>
                     )}
                   />
                 </div>
@@ -574,11 +579,12 @@ const EmployeeOnboard = () => {
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Leave Policy"
-                        fullWidth
+                      <UploadFileInput
+                        label="leave Policy"
+                        onChange={field.onChange}
+                        value={field.value}
+                        allowedExtensions={["pdf"]}
+                        previewType="auto"
                       />
                     )}
                   />
@@ -587,11 +593,12 @@ const EmployeeOnboard = () => {
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
+                      <UploadFileInput
                         label="Holiday Policy"
-                        fullWidth
+                        onChange={field.onChange}
+                        value={field.value}
+                        allowedExtensions={["pdf"]}
+                        previewType="auto"
                       />
                     )}
                   />
