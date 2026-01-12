@@ -97,6 +97,10 @@ const userDataSchema = new mongoose.Schema(
 
       trim: true,
     },
+    jobDescription: {
+      type: String,
+      trim: true,
+    },
     clockInDetails: {
       hasClockedIn: {
         type: Boolean,
@@ -140,7 +144,8 @@ const userDataSchema = new mongoose.Schema(
     },
     refreshToken: { type: String },
     dateOfExit: { type: Date, default: null },
-    shift: { type: String, required: true },
+    shift: { type: String },
+
     // policies: {
     //   // shift: { type: String, required: true },
     //   workSchedulePolicy: { type: String, required: true },
@@ -152,6 +157,7 @@ const userDataSchema = new mongoose.Schema(
       addressLine1: { type: String },
       addressLine2: { type: String },
       city: { type: String },
+      country: { type: String },
       state: { type: String },
       pinCode: { type: String },
       notes: { type: String },
@@ -183,6 +189,12 @@ const userDataSchema = new mongoose.Schema(
       includePF: { type: Boolean },
       pfContributionRate: { type: String },
       employeePF: { type: String },
+      employerPf: { type: String },
+      includeEsi: { type: Boolean },
+      esiContribution: { type: String },
+      hraType: { type: String },
+      tdsCalculationBasedOn: { type: String },
+      incomeTaxRegime: { type: String },
     },
     familyInformation: {
       fatherName: { type: String },
