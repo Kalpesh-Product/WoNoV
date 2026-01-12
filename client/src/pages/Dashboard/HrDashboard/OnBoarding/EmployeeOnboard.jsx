@@ -6,9 +6,11 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 import { DesktopDatePicker } from "@mui/x-date-pickers";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
 const EmployeeOnboard = () => {
+  const axios = useAxiosPrivate();
   const {
     control,
     handleSubmit,
@@ -57,7 +59,7 @@ const EmployeeOnboard = () => {
     queryKey: ["unitsData"],
     queryFn: async () => {
       const response = await axios.get("/api/company/fetch-units");
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     },
   });
 
@@ -402,9 +404,16 @@ const EmployeeOnboard = () => {
                         size="small"
                         label="Employee Type"
                         fullWidth
+                        select
                         helperText={errors?.employeeType?.message}
                         error={!!errors.employeeType}
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select Employee Type
+                        </MenuItem>
+                        <MenuItem value="Full-time">Full-time</MenuItem>
+                        <MenuItem value="Part-time">Part-time</MenuItem>
+                      </TextField>
                     )}
                   />
                 </div>
@@ -420,9 +429,22 @@ const EmployeeOnboard = () => {
                         size="small"
                         label="Department"
                         fullWidth
+                        select
                         helperText={errors?.department?.message}
                         error={!!errors.department}
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select Department
+                        </MenuItem>
+                        {departmentsData.map((department) => (
+                          <MenuItem
+                            key={department._id}
+                            value={department.name}
+                          >
+                            {department.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
                     )}
                   />
 
@@ -436,9 +458,19 @@ const EmployeeOnboard = () => {
                         size="small"
                         label="Reports To"
                         fullWidth
+                        select
                         helperText={errors?.reportsTo?.message}
                         error={!!errors.reportsTo}
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select Reporting Manager
+                        </MenuItem>
+                        {adminRoles.map((role) => (
+                          <MenuItem key={role._id} value={role.roleTitle}>
+                            {role.roleTitle}
+                          </MenuItem>
+                        ))}
+                      </TextField>
                     )}
                   />
                 </div>
@@ -492,8 +524,15 @@ const EmployeeOnboard = () => {
                       {...field}
                       size="small"
                       label="Shift"
+                      select
                       fullWidth
-                    />
+                    >
+                      <MenuItem value="" disabled>
+                        Select Shift
+                      </MenuItem>
+                      <MenuItem value="General Shift">General Shift</MenuItem>
+                      <MenuItem value="Night Shift">Night Shift</MenuItem>
+                    </TextField>
                   )}
                 />
 
