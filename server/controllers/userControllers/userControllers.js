@@ -84,24 +84,176 @@ const createUser = async (req, res, next) => {
     const companyId = req.company;
 
     // Validate required fields
-    if (
-      !empId ||
-      !firstName ||
-      !lastName ||
-      !email ||
-      !phone ||
-      !employeeType ||
-      !departments ||
-      !designation ||
-      !startDate ||
-      !workLocation
-    ) {
-      throw new CustomError(
-        "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/i;
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i;
+    const aadhaarRegex = /^[0-9]{12}$/;
+    const accountNumberRegex = /^[0-9]{9,18}$/;
+    const pfUANRegex = /^[0-9]{12}$/;
+    const pfAccountNumberRegex = /^[A-Z0-9\/-]{10,25}$/i;
+    const esiAccountNumberRegex = /^[0-9]{10,17}$/;
+
+    const validationSchema = yup.object({
+      empId: yup.string().trim().required("empId is required"),
+      firstName: yup.string().trim().required("firstName is required"),
+
+      lastName: yup.string().trim().required("lastName is required"),
+      gender: yup.string().trim().required("gender is required"),
+      dateOfBirth: yup.mixed().required("dateOfBirth is required"),
+      phone: yup.string().trim().required("phone is required"),
+      email: yup.string().trim().email().required("email is required"),
+      role: yup
+        .mixed()
+        .test("role-required", "role is required", (value) =>
+          Array.isArray(value) ? value.length > 0 : Boolean(value)
+        ),
+      departments: yup
+        .array()
+        .of(yup.string().required())
+        .min(1, "departments is required")
+        .required("departments is required"),
+      employeeType: yup
+        .mixed()
+        .test("employeeType-required", "employeeType is required", (value) => {
+          if (!value) return false;
+          if (typeof value === "string") return value.trim() !== "";
+          if (typeof value === "object") {
+            return typeof value.name === "string" && value.name.trim() !== "";
+          }
+          return false;
+        }),
+      jobTitle: yup.string().trim().required("jobTitle is required"),
+      jobDescription: yup
+        .string()
+        .trim()
+        .required("jobDescription is required"),
+      startDate: yup.mixed().required("startDate is required"),
+      workLocation: yup.string().trim().required("workLocation is required"),
+      reportsTo: yup.string().trim().required("reportsTo is required"),
+      attendanceSource: yup
+        .string()
+        .trim()
+        .required("attendanceSource is required"),
+      policies: yup.object({
+        workSchedulePolicy: yup
+          .string()
+          .trim()
+          .required("workSchedulePolicy is required"),
+        leavePolicy: yup.string().trim().required("leavePolicy is required"),
+        holidayPolicy: yup
+          .string()
+          .trim()
+          .required("holidayPolicy is required"),
+      }),
+      homeAddress: yup.object({
+        addressLine1: yup.string().trim().required("addressLine1 is required"),
+        addressLine2: yup.string().trim().required("addressLine2 is required"),
+        country: yup.string().trim().required("country is required"),
+        state: yup.string().trim().required("state is required"),
+        city: yup.string().trim().required("city is required"),
+        pinCode: yup.string().trim().required("pinCode is required"),
+      }),
+      bankInformation: yup.object({
+        bankIFSC: yup
+          .string()
+          .trim()
+          .matches(ifscRegex, "bankIFSC is invalid")
+          .required("bankIFSC is required"),
+        bankName: yup.string().trim().required("bankName is required"),
+        branchName: yup.string().trim().required("branchName is required"),
+        nameOnAccount: yup
+          .string()
+          .trim()
+          .required("nameOnAccount is required"),
+        accountNumber: yup
+          .string()
+          .trim()
+          .matches(accountNumberRegex, "accountNumber is invalid")
+          .required("accountNumber is required"),
+      }),
+      panAadhaarDetails: yup.object({
+        aadhaarId: yup
+          .string()
+          .trim()
+          .matches(aadhaarRegex, "aadhaarId is invalid")
+          .required("aadhaarId is required"),
+        pan: yup
+          .string()
+          .trim()
+          .matches(panRegex, "pan is invalid")
+          .required("pan is required"),
+        pfAccountNumber: yup
+          .string()
+          .trim()
+          .required("pfAccountNumber is required")
+          .matches(pfAccountNumberRegex, "pfAccountNumber is invalid"),
+        pfUAN: yup
+          .string()
+          .trim()
+          .required("pfUAN is required")
+          .matches(pfUANRegex, "pfUAN is invalid"),
+        esiAccountNumber: yup
+          .string()
+          .trim()
+          .required("esiAccountNumber is required")
+          .matches(esiAccountNumberRegex, "esiAccountNumber is invalid"),
+      }),
+      payrollInformation: yup.object({
+        includeInPayroll: yup.mixed().required("includeInPayroll is required"),
+        payrollBatch: yup.string().trim().required("payrollBatch is required"),
+        professionTaxExemption: yup
+          .mixed()
+          .required("professionTaxExemption is required"),
+        includePF: yup.mixed().required("includePF is required"),
+        pfContributionRate: yup
+          .string()
+          .trim()
+          .required("pfContributionRate is required"),
+        employeePF: yup.string().trim().required("employeePF is required"),
+        employerPf: yup.string().trim().required("employerPf is required"),
+        includeEsi: yup.mixed().required("includeEsi is required"),
+        esiContribution: yup
+          .string()
+          .trim()
+          .required("esiContribution is required"),
+        hraType: yup.string().trim().required("hraType is required"),
+        tdsCalculationBasedOn: yup
+          .string()
+          .trim()
+          .required("tdsCalculationBasedOn is required"),
+        incomeTaxRegime: yup
+          .string()
+          .trim()
+          .required("incomeTaxRegime is required"),
+      }),
+      familyInformation: yup.object({
+        fatherName: yup.string().trim().required("fatherName is required"),
+        motherName: yup.string().trim().required("motherName is required"),
+        maritalStatus: yup
+          .string()
+          .trim()
+          .required("maritalStatus is required"),
+        emergencyPhone: yup
+          .string()
+          .trim()
+          .required("emergencyPhone is required"),
+      }),
+    });
+
+    try {
+      await validationSchema.validate(req.body, {
+        abortEarly: false,
+        stripUnknown: true,
+      });
+    } catch (error) {
+      if (error instanceof yup.ValidationError) {
+        throw new CustomError(
+          `Missing or invalid fields: ${error.errors.join(", ")}`,
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+      throw error;
     }
 
     // Validate departments: check for any invalid department IDs
