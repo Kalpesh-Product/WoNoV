@@ -18,60 +18,6 @@ const EmployeeOnboard = () => {
     reset,
     formState: { errors },
   } = useForm({
-    // defaultValues: {
-    //   empId: "",
-    //   firstName: "",
-    //   middleName: "",
-    //   lastName: "",
-    //   gender: "",
-    //   dateOfBirth: null,
-    //   phone: "",
-    //   email: "",
-    //   startDate: null,
-    //   workLocation: "",
-    //   employeeType: "",
-    //   departments: [],
-    //   role: [],
-    //   reportsTo: "",
-    //   jobTitle: "",
-    //   jobDescription: "",
-    //   shift: "",
-    //   workSchedulePolicy: "",
-    //   attendanceSource: "web",
-    //   leavePolicy: "",
-    //   holidayPolicy: "",
-    //   aadharId: "",
-    //   pan: "",
-    //   pfUan: "",
-    //   pfAcNo: "",
-    //   esiAccountNo: "",
-    //   employerPf: "",
-    //   includeInPayroll: "",
-    //   payrollBatch: "",
-    //   professionTaxExemption: "",
-    //   includePF: "",
-    //   pfContributionRate: "",
-    //   employeePF: "",
-    //   includeEsi: "",
-    //   esiContribution: "",
-    //   hraType: "",
-    //   tdsCalculationBasedOn: "",
-    //   incomeTaxRegime: "",
-    //   addressLine1: "",
-    //   addressLine2: "",
-    //   country: "",
-    //   state: "",
-    //   city: "",
-    //   pinCode: "",
-    //   bankIfsc: "",
-    //   bankName: "",
-    //   branchName: "",
-    //   nameOnAccount: "",
-    //   accountNumber: "",
-    //   fatherName: "",
-    //   motherName: "",
-    //   maritalStatus: "",
-    // },
     defaultValues: {
       empId: "EMP00081",
       firstName: "Rahul",
@@ -142,6 +88,7 @@ const EmployeeOnboard = () => {
 
   const { mutate: createUser, isPending } = useMutation({
     mutationFn: async (payload) => {
+      console.log("sent payload:", payload);
       const response = await axios.post("/api/users/create-user", payload);
       return response.data;
     },
@@ -226,6 +173,7 @@ const EmployeeOnboard = () => {
       },
     };
 
+    console.log("sedning payload");
     createUser(payload);
   };
 
@@ -839,12 +787,11 @@ const EmployeeOnboard = () => {
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
-                      <UploadFileInput
-                        label="leave Policy"
-                        onChange={field.onChange}
-                        value={field.value}
-                        allowedExtensions={["pdf"]}
-                        previewType="auto"
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Leave Policy"
+                        fullWidth
                       />
                     )}
                   />
@@ -853,12 +800,11 @@ const EmployeeOnboard = () => {
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
-                      <UploadFileInput
+                      <TextField
+                        {...field}
+                        size="small"
                         label="Holiday Policy"
-                        onChange={field.onChange}
-                        value={field.value}
-                        allowedExtensions={["pdf"]}
-                        previewType="auto"
+                        fullWidth
                       />
                     )}
                   />

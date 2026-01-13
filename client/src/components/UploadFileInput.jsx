@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useId, useRef, useState } from "react";
 import { TextField, IconButton, Avatar, Box } from "@mui/material";
 import { LuImageUp } from "react-icons/lu";
 import { MdDelete } from "react-icons/md";
@@ -14,6 +14,8 @@ const UploadFileInput = ({
   id,
 }) => {
   const fileInputRef = useRef(null);
+  const generatedId = useId();
+  const inputId = id ?? `file-upload-${generatedId}`;
   const [previewUrl, setPreviewUrl] = useState(
     value ? URL.createObjectURL(value) : null
   );
@@ -92,7 +94,7 @@ const UploadFileInput = ({
         accept={acceptAttr}
         disabled={disabled}
         hidden
-        id={id ?? "file-upload"}
+        id={inputId}
         onChange={handleFileChange}
       />
 
@@ -108,11 +110,7 @@ const UploadFileInput = ({
         InputProps={{
           readOnly: true,
           endAdornment: (
-            <IconButton
-              component="label"
-              htmlFor={id ?? "file-upload"}
-              color="primary"
-            >
+            <IconButton component="label" htmlFor={inputId} color="primary">
               <LuImageUp />
             </IconButton>
           ),
