@@ -26,6 +26,7 @@ const EmployeeOnboard = () => {
       gender: "Male",
       dateOfBirth: null,
       phone: "9876543210",
+      emergencyPhone: "9876543219",
       email: "rahul.sharma@example.com",
       startDate: null,
       workLocation: "",
@@ -88,7 +89,6 @@ const EmployeeOnboard = () => {
 
   const { mutate: createUser, isPending } = useMutation({
     mutationFn: async (payload) => {
-      console.log("sent payload:", payload);
       const response = await axios.post("/api/users/create-user", payload);
       return response.data;
     },
@@ -112,6 +112,7 @@ const EmployeeOnboard = () => {
       gender: data.gender,
       dateOfBirth: data.dateOfBirth,
       phone: data.phone?.trim(),
+
       email: data.email?.trim(),
       role: data.role,
       departments: data.departments ? data.departments : [],
@@ -170,10 +171,10 @@ const EmployeeOnboard = () => {
         fatherName: data.fatherName?.trim(),
         motherName: data.motherName?.trim(),
         maritalStatus: data.maritalStatus?.trim(),
+        emergencyPhone: data.emergencyPhone?.trim(),
       },
     };
 
-    console.log("sedning payload");
     createUser(payload);
   };
 
@@ -336,13 +337,17 @@ const EmployeeOnboard = () => {
                     rules={{ required: "Date of Birth is required" }}
                     render={({ field }) => (
                       <DesktopDatePicker
-                        inputFormat=""
-                        slotProps={{ textField: { size: "small" } }}
+                        inputFormat="DD/MM/YYYY"
                         label="Date of Birth"
                         {...field}
-                        renderInput={(params) => (
-                          <TextField fullWidth {...params} />
-                        )}
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!errors.startDate,
+                            helperText: errors?.startDate?.message,
+                          },
+                        }}
                       />
                     )}
                   />
@@ -1266,6 +1271,27 @@ const EmployeeOnboard = () => {
                       size="small"
                       label="Marital Status"
                       fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="emergencyPhone"
+                  control={control}
+                  rules={{
+                    required: "Emergency mobile number is required",
+                    pattern: {
+                      value: /^[0-9]{10}$/,
+                      message: "Enter a valid 10-digit number",
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Emergency Mobile Phone"
+                      fullWidth
+                      helperText={errors?.emergencyPhone?.message}
+                      error={!!errors.emergencyPhone}
                     />
                   )}
                 />

@@ -146,13 +146,6 @@ const userDataSchema = new mongoose.Schema(
     dateOfExit: { type: Date, default: null },
     shift: { type: String },
 
-    // policies: {
-    //   // shift: { type: String, required: true },
-    //   workSchedulePolicy: { type: String, required: true },
-    //   attendanceSource: { type: String },
-    //   leavePolicy: { type: String },
-    //   holidayPolicy: { type: String },
-    // },
     homeAddress: {
       addressLine1: { type: String },
       addressLine2: { type: String },
@@ -201,6 +194,11 @@ const userDataSchema = new mongoose.Schema(
       motherName: { type: String },
       maritalStatus: {
         type: String,
+      },
+      emergencyPhone: {
+        type: String,
+        minlength: 7,
+        maxlength: 20,
       },
     },
     isActive: {
