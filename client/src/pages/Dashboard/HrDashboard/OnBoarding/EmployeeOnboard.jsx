@@ -18,116 +18,116 @@ const EmployeeOnboard = () => {
     reset,
     formState: { errors },
   } = useForm({
+    // defaultValues: {
+    //   empId: "",
+    //   firstName: "",
+    //   middleName: "",
+    //   lastName: "",
+    //   gender: "",
+    //   dateOfBirth: null,
+    //   phone: "",
+    //   emergencyPhone: "",
+    //   email: "",
+    //   startDate: null,
+    //   workLocation: "",
+    //   employeeType: "",
+    //   departments: [],
+    //   role: [],
+    //   reportsTo: "",
+    //   jobTitle: "",
+    //   jobDescription: "",
+    //   workSchedulePolicy: "",
+    //   attendanceSource: "",
+    //   leavePolicy: "",
+    //   holidayPolicy: "",
+    //   aadharId: "",
+    //   pan: "",
+    //   pfUan: "",
+    //   pfAcNo: "",
+    //   esiAccountNo: "",
+    //   employerPf: "",
+    //   includeInPayroll: "",
+    //   payrollBatch: "",
+    //   professionTaxExemption: "",
+    //   includePF: "",
+    //   pfContributionRate: "",
+    //   employeePF: "",
+    //   includeEsi: "",
+    //   esiContribution: "",
+    //   hraType: "",
+    //   tdsCalculationBasedOn: "",
+    //   incomeTaxRegime: "",
+    //   addressLine1: "",
+    //   addressLine2: "",
+    //   country: "",
+    //   state: "",
+    //   city: "",
+    //   pinCode: "",
+    //   bankIfsc: "",
+    //   bankName: "",
+    //   branchName: "",
+    //   nameOnAccount: "",
+    //   accountNumber: "",
+    //   fatherName: "",
+    //   motherName: "",
+    //   maritalStatus: "",
+    // },
+
     defaultValues: {
-      empId: "",
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      gender: "",
+      empId: "EMP00081",
+      firstName: "Rahul",
+      middleName: "Kumar",
+      lastName: "Sharma",
+      gender: "Male",
       dateOfBirth: null,
-      phone: "",
-      emergencyPhone: "",
-      email: "",
+      phone: "9876543210",
+      emergencyPhone: "9876543219",
+      email: "rahul.sharma@example.com",
       startDate: null,
       workLocation: "",
-      employeeType: "",
+      employeeType: "Full-time",
       departments: [],
       role: [],
       reportsTo: "",
-      jobTitle: "",
-      jobDescription: "",
-      workSchedulePolicy: "",
-      attendanceSource: "",
+      jobTitle: "Admin & Co-founder office Operations",
+      jobDescription: "Responsible for maintaining  office Operations",
+      workSchedulePolicy: "General Shift",
+      // workSchedulePolicy: "Mon-Fri",
+      attendanceSource: "web",
       leavePolicy: "",
       holidayPolicy: "",
-      aadharId: "",
-      pan: "",
-      pfUan: "",
-      pfAcNo: "",
-      esiAccountNo: "",
-      employerPf: "",
-      includeInPayroll: "",
-      payrollBatch: "",
-      professionTaxExemption: "",
-      includePF: "",
-      pfContributionRate: "",
-      employeePF: "",
-      includeEsi: "",
+      aadharId: "123456789012",
+      pan: "ABCDE1234F",
+      pfUan: "100200300400",
+      pfAcNo: "PF123456789",
+      esiAccountNo: "ESI987654321",
+      employerPf: "12%",
+      includeInPayroll: "yes",
+      payrollBatch: "April-2024",
+      professionTaxExemption: "no",
+      includePF: "yes",
+      pfContributionRate: "12",
+      employeePF: "12",
+      includeEsi: "yes",
       esiContribution: "",
       hraType: "",
       tdsCalculationBasedOn: "",
       incomeTaxRegime: "",
-      addressLine1: "",
-      addressLine2: "",
-      country: "",
-      state: "",
-      city: "",
-      pinCode: "",
-      bankIfsc: "",
-      bankName: "",
-      branchName: "",
-      nameOnAccount: "",
-      accountNumber: "",
-      fatherName: "",
-      motherName: "",
-      maritalStatus: "",
+      addressLine1: "Flat 302, Green Residency",
+      addressLine2: "MG Road",
+      country: "India",
+      state: "Karnataka",
+      city: "Bengaluru",
+      pinCode: "560001",
+      bankIfsc: "HDFC0001234",
+      bankName: "HDFC Bank",
+      branchName: "MG Road Branch",
+      nameOnAccount: "Rahul Sharma",
+      accountNumber: "123456789012",
+      fatherName: "Suresh Sharma",
+      motherName: "Anita Sharma",
+      maritalStatus: "Single",
     },
-
-    // defaultValues: {
-    //   empId: "EMP00081",
-    //   firstName: "Rahul",
-    //   middleName: "Kumar",
-    //   lastName: "Sharma",
-    //   gender: "Male",
-    //   dateOfBirth: null,
-    //   phone: "9876543210",
-    //   emergencyPhone: "9876543219",
-    //   email: "rahul.sharma@example.com",
-    //   startDate: null,
-    //   workLocation: "",
-    //   employeeType: "Full-time",
-    //   departments: [],
-    //   role: [],
-    //   reportsTo: "",
-    //   jobTitle: "Admin & Co-founder office Operations",
-    //   jobDescription: "Responsible for maintaining  office Operations",
-    //   workSchedulePolicy: "General Shift",
-    //   // workSchedulePolicy: "Mon-Fri",
-    //   attendanceSource: "web",
-    //   leavePolicy: "",
-    //   holidayPolicy: "",
-    //   aadharId: "123456789012",
-    //   pan: "ABCDE1234F",
-    //   pfUan: "100200300400",
-    //   pfAcNo: "PF123456789",
-    //   esiAccountNo: "ESI987654321",
-    //   employerPf: "12%",
-    //   includeInPayroll: "yes",
-    //   payrollBatch: "April-2024",
-    //   professionTaxExemption: "no",
-    //   includePF: "yes",
-    //   pfContributionRate: "12",
-    //   employeePF: "12",
-    //   includeEsi: "yes",
-    //   esiContribution: "restrict-21000",
-    //   hraType: "metro-50",
-    //   tdsCalculationBasedOn: "tax-slabs",
-    //   incomeTaxRegime: "new",
-    //   addressLine1: "Flat 302, Green Residency",
-    //   addressLine2: "MG Road",
-    //   country: "India",
-    //   state: "Karnataka",
-    //   city: "Bengaluru",
-    //   pinCode: "560001",
-    //   bankIfsc: "HDFC0001234",
-    //   bankName: "HDFC Bank",
-    //   branchName: "MG Road Branch",
-    //   nameOnAccount: "Rahul Sharma",
-    //   accountNumber: "123456789012",
-    //   fatherName: "Suresh Sharma",
-    //   motherName: "Anita Sharma",
-    //   maritalStatus: "Single",
-    // },
   });
 
   const normalizeBoolean = (value) => {
@@ -1108,10 +1108,10 @@ const EmployeeOnboard = () => {
                       <MenuItem value="" disabled>
                         Select ESI Contribution
                       </MenuItem>
-                      <MenuItem value="restrict-21000">
+                      <MenuItem value="Restrict Contribution to 21,000 of ESI Gross">
                         Restrict Contribution to 21,000 of ESI Gross
                       </MenuItem>
-                      <MenuItem value="no-restriction">No Restriction</MenuItem>
+                      <MenuItem value="No Restriction">No Restriction</MenuItem>
                     </TextField>
                   )}
                 />
@@ -1133,11 +1133,13 @@ const EmployeeOnboard = () => {
                       <MenuItem value="" disabled>
                         Select HRA
                       </MenuItem>
-                      <MenuItem value="metro-50">Metropolitan (50%)</MenuItem>
-                      <MenuItem value="non-metro-40">
+                      <MenuItem value="Metropolitan (50%)">
+                        Metropolitan (50%)
+                      </MenuItem>
+                      <MenuItem value="Non-Metropolitan (40%)">
                         Non-Metropolitan (40%)
                       </MenuItem>
-                      <MenuItem value="custom">Custom</MenuItem>
+                      <MenuItem value="Custom">Custom</MenuItem>
                     </TextField>
                   )}
                 />
@@ -1159,10 +1161,10 @@ const EmployeeOnboard = () => {
                       <MenuItem value="" disabled>
                         Select TDS Calculation
                       </MenuItem>
-                      <MenuItem value="tax-slabs">
+                      <MenuItem value="Tax Slabs (Salaried Employee)">
                         Tax Slabs (Salaried Employee)
                       </MenuItem>
-                      <MenuItem value="tax-percentage">
+                      <MenuItem value="Tax Percentage (Consultants)">
                         Tax Percentage (Consultants)
                       </MenuItem>
                     </TextField>
@@ -1186,8 +1188,8 @@ const EmployeeOnboard = () => {
                       <MenuItem value="" disabled>
                         Select Income Tax Regime
                       </MenuItem>
-                      <MenuItem value="old">Old Tax Regime</MenuItem>
-                      <MenuItem value="new">New Tax Regime</MenuItem>
+                      <MenuItem value="Old Tax Regime">Old Tax Regime</MenuItem>
+                      <MenuItem value="New Tax Regime">New Tax Regime</MenuItem>
                     </TextField>
                   )}
                 />
@@ -1205,7 +1207,13 @@ const EmployeeOnboard = () => {
                   name="bankIfsc"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Bank IFSC is required" }}
+                  rules={{
+                    required: "Bank IFSC is required",
+                    pattern: {
+                      value: /^[A-Z]{4}0[A-Z0-9]{6}$/i,
+                      message: "Enter a valid IFSC code",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1272,7 +1280,13 @@ const EmployeeOnboard = () => {
                   name="accountNumber"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Account Number is required" }}
+                  rules={{
+                    required: "Account Number is required",
+                    pattern: {
+                      value: /^[0-9]{9,18}$/,
+                      message: "Enter a valid account number",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1296,7 +1310,13 @@ const EmployeeOnboard = () => {
                   name="aadharId"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Aadhar ID is required" }}
+                  rules={{
+                    required: "Aadhar ID is required",
+                    pattern: {
+                      value: /^[0-9]{12}$/,
+                      message: "Enter a valid Aadhar ID",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1313,7 +1333,13 @@ const EmployeeOnboard = () => {
                   name="pan"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "PAN is required" }}
+                  rules={{
+                    required: "PAN is required",
+                    pattern: {
+                      value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i,
+                      message: "Enter a valid PAN",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1330,7 +1356,13 @@ const EmployeeOnboard = () => {
                   name="pfUan"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "PF UAN is required" }}
+                  rules={{
+                    required: "PF UAN is required",
+                    pattern: {
+                      value: /^[0-9]{12}$/,
+                      message: "Enter a valid PF UAN",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1347,7 +1379,13 @@ const EmployeeOnboard = () => {
                   name="pfAcNo"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "PF A/c No is required" }}
+                  rules={{
+                    required: "PF A/c No is required",
+                    pattern: {
+                      value: /^[A-Z0-9/-]{10,25}$/i,
+                      message: "Enter a valid PF A/c No",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1364,7 +1402,13 @@ const EmployeeOnboard = () => {
                   name="esiAccountNo"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "ESI A/c No is required" }}
+                  rules={{
+                    required: "ESI A/c No is required",
+                    pattern: {
+                      value: /^[0-9]{10,17}$/,
+                      message: "Enter a valid ESI A/c No",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}

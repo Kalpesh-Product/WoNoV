@@ -92,6 +92,10 @@ const userDataSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    attendanceSource: {
+      type: String,
+      trim: true,
+    },
     employeeType: {
       name: { type: String, required: true },
       leavesCount: [
@@ -155,7 +159,7 @@ const userDataSchema = new mongoose.Schema(
       required: true,
     },
     refreshToken: { type: String },
-    dateOfExit: { type: Date, default: null, required: true },
+    dateOfExit: { type: Date, default: null },
     shift: { type: String },
 
     homeAddress: {

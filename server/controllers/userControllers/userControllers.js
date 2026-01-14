@@ -7,6 +7,7 @@ const { default: mongoose } = require("mongoose");
 const Department = require("../../models/Departments");
 const { createLog } = require("../../utils/moduleLogs");
 const csvParser = require("csv-parser");
+const yup = require("yup");
 const { Readable } = require("stream");
 const { formatDate } = require("../../utils/formatDateTime");
 const CustomError = require("../../utils/customErrorlogs");
@@ -28,31 +29,6 @@ const createUser = async (req, res, next) => {
   const ip = req.ip;
 
   try {
-    // const {
-    //   empId,
-    //   firstName,
-    //   middleName,
-    //   lastName,
-    //   gender,
-    //   dateOfBirth,
-    //   phone,
-    //   email,
-    //   role,
-    //   departments,
-    //   employeeType,
-    //   designation,
-    //   startDate,
-    //   workLocation,
-    //   reportsTo,
-    //   shift,
-    //   policies,
-    //   homeAddress,
-    //   bankInformation,
-    //   panAadhaarDetails,
-    //   payrollInformation,
-    //   familyInformation,
-    // } = req.body;
-
     const {
       empId,
       firstName,
@@ -458,6 +434,39 @@ const fetchUser = async (req, res, next) => {
 const fetchSingleUser = async (req, res) => {
   try {
     const { empid } = req.params;
+    // const user = await User.findOne({ empId: empid })
+    //   .select("-password")
+    //   .populate([
+    //     { path: "reportsTo" },
+    //     { path: "departments", select: "name" },
+    //     { path: "company", select: "name" },
+    //     { path: "role", select: "roleTitle modulePermissions" },
+    //     {
+    //       path: "workLocation",
+    //       select: "_id unitName unitNo",
+    //       populate: {
+    //         path: "building",
+    //         select: "_id buildingName fullAddress",
+    //       },
+    //     },
+    //   ])
+    //   .lean()
+    //   .exec();
+
+    // if (!user) {
+    //   return res.status(404).json({ message: "User not found" });
+    // }
+
+    // const reportsTo = await User.findOne({
+    //   role: { $in: [user.reportsTo] },
+    // }).select("firstName lastName");
+
+    // const policies = await Agreements.find({
+    //   user: { $in: [user._id] },
+    // });
+
+    // console.log("policies", policies);
+
     const user = await User.findOne({ empId: empid })
       .select("-password")
       .populate([
@@ -474,16 +483,24 @@ const fetchSingleUser = async (req, res) => {
           },
         },
       ])
-      .lean()
-      .exec();
+      .lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const reportsTo = await User.find({
-      role: { $in: [user.reportsTo] },
-    }).select("firstName lastName");
+    const [reportsTo, policies] = await Promise.all([
+      User.findOne({ role: { $in: [user.reportsTo] } })
+        .select("firstName lastName")
+        .lean(),
+
+      Agreements.find({ user: user._id }).lean(),
+    ]);
+
+    const policyMap = policies.reduce((acc, policy) => {
+      acc[policy.name] = policy;
+      return acc;
+    }, {});
 
     const formattedUser = {
       firstName: user.firstName || "",
@@ -494,34 +511,66 @@ const fetchSingleUser = async (req, res) => {
       employeeID: user.empId || "",
       mobilePhone: user.phone || "",
       startDate: user.startDate ? user.startDate : "",
-      workLocation: user.workLocation || "",
+      // workLocation: user.workLocation || "",
+      workLocation:
+        user.workLocation?.unitName ||
+        user.workLocation?.unitNo ||
+        user.workLocation?.building?.buildingName ||
+        user.workLocation ||
+        "",
       employeeType: user.employeeType?.name || "",
-      department: user.departments?.[0]?.name || "",
+      departments:
+        user.departments?.map((department) => department?.name).join(", ") ||
+        "",
+      role: user.role?.map((role) => role?.roleTitle).join(", ") || "",
+      reportsTo:
+        `${reportsTo?.firstName} ${reportsTo?.lastName} (${user.reportsTo?.roleTitle})` ||
+        "",
       jobTitle: user.designation || "",
-      jobDescription: "",
+      jobDescription: user.jobDescription || "",
       shift: user.policies?.shift || "",
-      workSchedulePolicy: user.policies?.workSchedulePolicy || "",
-      attendanceSource: user.policies?.attendanceSource || "",
-      leavePolicy: user.policies?.leavePolicy || "",
-      holidayPolicy: user.policies?.holidayPolicy || "",
-      aadharID: user.panAadhaarDetails?.aadhaarId || "",
+      workSchedulePolicy: policyMap?.["Work Schedule Policy"]?.type || "",
+      attendanceSource: user?.attendanceSource || "",
+      leavePolicy: policyMap?.["Leave Policy"]?.url || "",
+      holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
+      aadhaarID: user.panAadhaarDetails?.aadhaarId || "",
       pan: user.panAadhaarDetails?.pan || "",
-      pFAcNo: user.panAadhaarDetails?.pfAccountNumber || "",
+      pfAccountNumber: user.panAadhaarDetails?.pfAccountNumber || "",
+      pfUan: user.panAadhaarDetails?.pfUAN || "",
+      esiAccountNumber: user.panAadhaarDetails?.esiAccountNumber || "",
+      bankName: user.bankInformation?.bankName || "",
+      bankIfsc: user.bankInformation?.bankIFSC || "",
+      branchName: user.bankInformation?.branchName || "",
+      nameOnAccount: user.bankInformation?.nameOnAccount || "",
+      accountNumber: user.bankInformation?.accountNumber || "",
       addressLine1: user.homeAddress?.addressLine1 || "",
       addressLine2: user.homeAddress?.addressLine2 || "",
       state: user.homeAddress?.state || "",
       city: user.homeAddress?.city || "",
+      country: user.homeAddress?.country || "",
       pinCode: user.homeAddress?.pinCode || "",
+      fatherName: user.familyInformation?.fatherName || "",
+      motherName: user.familyInformation?.motherName || "",
+      maritalStatus: user.familyInformation?.maritalStatus || "",
+      emergencyPhone: user.familyInformation?.emergencyPhone || "",
+      email: user.email || "",
       includeInPayroll: user.payrollInformation?.includeInPayroll
         ? "Yes"
         : "No",
-      payrollBatch: "",
+      payrollBatch: user.payrollInformation?.payrollBatch || "",
       professionalTaxExemption: user.payrollInformation?.professionTaxExemption
         ? "Yes"
         : "No",
       includePF: user.payrollInformation?.includePF ? "Yes" : "No",
       pFContributionRate: user.payrollInformation?.pfContributionRate || "",
       employeePF: user.payrollInformation?.employeePF || "",
+      employerPf: user.payrollInformation?.employerPf || "",
+      includeEsi: user.payrollInformation?.includeEsi ? "Yes" : "No",
+      esiContribution: user.payrollInformation?.esiContribution || "",
+      hraType: user.payrollInformation?.hraType || "",
+      tdsCalculationBasedOn:
+        user.payrollInformation?.tdsCalculationBasedOn || "",
+      incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
     };
 
     res.status(200).json(formattedUser);
@@ -614,6 +663,8 @@ const updateProfile = async (req, res, next) => {
       "lastName",
       "phone",
       "dateOfBirth",
+      "gender",
+      "email",
     ];
     const filteredUpdateData = {};
 

@@ -79,16 +79,29 @@ const UserDetails = () => {
       setUploading(false);
     }
   };
+  const { data: userDetails, isLoading } = useQuery({
+    queryKey: ["userDetails"],
+    queryFn: async () => {
+      const res = await axios.get(`/api/users/fetch-single-user/${empId}`);
+      return res.data;
+    },
+  });
 
   const user = {
     name: `${auth?.user?.firstName} ${auth?.user?.lastName}`,
     email: auth?.user?.email,
     designation: auth?.user?.designation,
+    department:
+      auth.user.departments?.map((department) => department?.name).join(", ") ||
+      "",
     status: true,
     avatarColor: "#1976d2",
     workLocation:
-      auth?.user?.company?.workLocations?.[0]?.buildingName ??
-      "Unknown Location",
+      userDetails?.workLocation?.unitName ||
+      userDetails?.workLocation?.unitNo ||
+      userDetails?.workLocation?.building?.buildingName ||
+      userDetails?.workLocation ||
+      "",
   };
 
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -101,14 +114,6 @@ const UserDetails = () => {
       setPreviewUrl(URL.createObjectURL(selectedFile)); // Generate preview URL
     }
   };
-
-  const { data: userDetails, isLoading } = useQuery({
-    queryKey: ["userDetails"],
-    queryFn: async () => {
-      const res = await axios.get(`/api/users/fetch-single-user/${empId}`);
-      return res.data;
-    },
-  });
 
   const {
     control,
@@ -141,7 +146,48 @@ const UserDetails = () => {
   });
 
   const onSubmit = (data) => {
-    mutation.mutate(data);
+    const payload = {
+      firstName: data.firstName,
+      middleName: data.middleName,
+      lastName: data.lastName,
+      gender: data.gender,
+      phone: data.mobilePhone,
+      email: data.email,
+      homeAddress: {
+        addressLine1: data.addressLine1,
+        addressLine2: data.addressLine2,
+        country: data.country,
+        state: data.state,
+        city: data.city,
+        pinCode: data.pinCode,
+      },
+      bankInformation: {
+        bankName: data.bankName,
+        bankIFSC: data.bankIfsc,
+        branchName: data.branchName,
+        nameOnAccount: data.nameOnAccount,
+        accountNumber: data.accountNumber,
+      },
+      panAadhaarDetails: {
+        aadhaarId: data.aadhaarId,
+        pan: data.pan,
+        pfUAN: data.pfUan,
+        pfAccountNumber: data.pfAccountNumber,
+        esiAccountNumber: data.esiAccountNumber,
+      },
+      familyInformation: {
+        fatherName: data.fatherName,
+        motherName: data.motherName,
+        maritalStatus: data.maritalStatus,
+        emergencyPhone: data.emergencyPhone,
+      },
+    };
+
+    if (data.dob) {
+      payload.dateOfBirth = dayjs(data.dob).toDate();
+    }
+
+    mutation.mutate(payload);
   };
 
   if (isLoading || !userDetails)
@@ -168,7 +214,9 @@ const UserDetails = () => {
     { name: "startDate", label: "Start Date", type: "date", disabled: true },
     { name: "workLocation", label: "Work Location", disabled: true },
     { name: "employeeType", label: "Employee Type", disabled: true },
-    { name: "department", label: "Department", disabled: true },
+    { name: "departments", label: "Department", disabled: true },
+    { name: "role", label: "Role", disabled: true },
+    { name: "reportsTo", label: "Reports To", disabled: true },
     { name: "jobTitle", label: "Job Title", disabled: true },
     { name: "jobDescription", label: "Job Description", disabled: true },
     { name: "shift", label: "Shift", disabled: true },
@@ -180,14 +228,27 @@ const UserDetails = () => {
     { name: "attendanceSource", label: "Attendance Source", disabled: true },
     { name: "leavePolicy", label: "Leave Policy", disabled: true },
     { name: "holidayPolicy", label: "Holiday Policy", disabled: true },
-    { name: "aadharID", label: "Aadhar ID", disabled: false },
+    { name: "aadhaarId", label: "Aadhaar ID", disabled: false },
     { name: "pan", label: "PAN", disabled: false },
-    { name: "pFAcNo", label: "PF Account No", disabled: true },
+    { name: "pfUan", label: "PF UAN", disabled: false },
+    { name: "pfAccountNumber", label: "PF Account No", disabled: true },
+    { name: "esiAccountNumber", label: "ESI Account No", disabled: false },
+    { name: "bankName", label: "Bank Name", disabled: false },
+    { name: "bankIfsc", label: "Bank IFSC", disabled: false },
+    { name: "branchName", label: "Branch Name", disabled: false },
+    { name: "nameOnAccount", label: "Name On Account", disabled: false },
+    { name: "accountNumber", label: "Account Number", disabled: false },
+
     { name: "addressLine1", label: "Address Line 1", disabled: false },
     { name: "addressLine2", label: "Address Line 2", disabled: false },
     { name: "state", label: "State", disabled: false },
     { name: "city", label: "City", disabled: false },
+    { name: "country", label: "Country", disabled: false },
     { name: "pinCode", label: "Pin Code", disabled: false },
+    { name: "fatherName", label: "Father Name", disabled: false },
+    { name: "motherName", label: "Mother Name", disabled: false },
+    { name: "maritalStatus", label: "Marital Status", disabled: false },
+    { name: "emergencyPhone", label: "Emergency Phone", disabled: false },
     {
       name: "includeInPayroll",
       label: "Include In Payroll",
@@ -216,11 +277,27 @@ const UserDetails = () => {
       disabled: true,
     },
     { name: "employeePF", label: "Employee PF", disabled: true },
+    { name: "employerPf", label: "Employer PF", disabled: true },
+    {
+      name: "includeEsi",
+      label: "Include ESI",
+      type: "select",
+      options: ["Yes", "No"],
+      disabled: true,
+    },
+    { name: "esiContribution", label: "ESI Contribution", disabled: true },
+    { name: "hraType", label: "HRA", disabled: true },
+    {
+      name: "tdsCalculationBasedOn",
+      label: "TDS Calculation Based On",
+      disabled: true,
+    },
+    { name: "incomeTaxRegime", label: "Income Tax Regime", disabled: true },
   ];
 
   const sections = [
     {
-      title: "Personal Information",
+      title: "Personal Informations",
       fields: [
         "firstName",
         "middleName",
@@ -228,12 +305,26 @@ const UserDetails = () => {
         "gender",
         "dob",
         "mobilePhone",
+        "email",
+        "fatherName",
+        "motherName",
+        "maritalStatus",
+        "emergencyPhone",
         "aadharID",
         "pan",
+        "pfUan",
+        "pfAccountNumber",
+        "esiAccountNumber",
+        "bankName",
+        "bankIfsc",
+        "branchName",
+        "nameOnAccount",
+        "accountNumber",
         "addressLine1",
         "addressLine2",
         "state",
         "city",
+        "country",
         "pinCode",
       ],
     },
@@ -244,10 +335,12 @@ const UserDetails = () => {
         "startDate",
         "workLocation",
         "employeeType",
-        "department",
+        "departments",
+        "role",
+        "reportsTo",
         "jobTitle",
         "jobDescription",
-        "shift",
+        // "shift",
         "workSchedulePolicy",
         "attendanceSource",
       ],
@@ -261,9 +354,15 @@ const UserDetails = () => {
         "includePF",
         "pFContributionRate",
         "employeePF",
+        "employerPf",
+        "includeEsi",
+        "esiContribution",
+        "hraType",
+        "tdsCalculationBasedOn",
+        "incomeTaxRegime",
         "leavePolicy",
         "holidayPolicy",
-        "pFAcNo",
+        "pfAccountNumber",
       ],
     },
   ];
@@ -373,11 +472,7 @@ const UserDetails = () => {
               <div className="flex flex-col gap-4 text-gray-500">
                 <span>{user.email}</span>
                 <span>{auth?.user?.phone ?? "N/A"}</span>
-                <span>
-                  {auth?.user?.departments?.length > 0
-                    ? auth.user.departments[0].name
-                    : "N/A"}
-                </span>
+                <span>{user.department}</span>
 
                 <span>{user.workLocation}</span>
               </div>
