@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   TextField,
   Select,
@@ -32,7 +32,8 @@ import {
 
 const UserDetails = () => {
   const axios = useAxiosPrivate();
-  const { auth } = useAuth();
+  const { auth, setAuth } = useAuth();
+  const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const empId = auth?.user?.empId ?? "";
 
@@ -62,19 +63,29 @@ const UserDetails = () => {
       // alert(response.data.message || "Image uploaded successfully!");
       // toast.success(response.data.message || "Profile Image uploaded successfully!");
       toast.success("Profile Image uploaded successfully!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000); // delay of 1000ms = 1 second
+      // setTimeout(() => {
+      //   window.location.reload();
+      // }, 1000); // delay of 1000ms = 1 second
       if (response.data.profilePicture?.url) {
         setPreviewUrl(response.data.profilePicture.url);
       }
+      setAuth((prev) => ({
+        ...prev,
+        user: {
+          ...prev.user,
+          profilePicture:
+            response.data.profilePicture || prev.user?.profilePicture,
+        },
+      }));
+      queryClient.invalidateQueries({ queryKey: ["userDetails"] });
     } catch (error) {
       console.error("Upload Error:", error);
       // alert("Failed to upload image.");
-      toast.success("Profile Image uploaded successfully!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000); // delay of 1000ms = 1 second
+      toast.error(error.response?.data?.message || "Failed to upload image.");
+      // toast.success("Profile Image uploaded successfully!");
+      // setTimeout(() => {
+      //   window.location.reload();
+      // }, 1000); // delay of 1000ms = 1 second
     } finally {
       setUploading(false);
     }
@@ -136,9 +147,25 @@ const UserDetails = () => {
     mutationFn: async (updatedData) => {
       return axios.patch(`/api/users/update-single-user`, updatedData);
     },
-    onSuccess: (data) => {
-      toast.success(data.message || "User details updated successfully!");
+    onSuccess: (response, variables) => {
+      toast.success(
+        response?.data?.message || "User details updated successfully!"
+      );
       setEditMode(false);
+      setAuth((prev) => ({
+        ...prev,
+        user: {
+          ...prev.user,
+          firstName: variables?.firstName || prev.user?.firstName,
+          middleName: variables?.middleName || prev.user?.middleName,
+          lastName: variables?.lastName || prev.user?.lastName,
+          phone: variables?.phone || prev.user?.phone,
+          email: variables?.email || prev.user?.email,
+          gender: variables?.gender || prev.user?.gender,
+          dateOfBirth: variables?.dateOfBirth || prev.user?.dateOfBirth,
+        },
+      }));
+      queryClient.invalidateQueries({ queryKey: ["userDetails"] });
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update user details");
@@ -169,7 +196,7 @@ const UserDetails = () => {
         accountNumber: data.accountNumber,
       },
       panAadhaarDetails: {
-        aadhaarId: data.aadhaarId,
+        aadhaarId: data.aadhaarID,
         pan: data.pan,
         pfUAN: data.pfUan,
         pfAccountNumber: data.pfAccountNumber,
@@ -206,7 +233,7 @@ const UserDetails = () => {
       label: "Gender",
       type: "select",
       options: ["Male", "Female", "Other"],
-      disabled: true,
+      disabled: false,
     },
     { name: "dob", label: "Date of Birth", type: "date", disabled: false },
     { name: "employeeID", label: "Employee ID", disabled: true },
@@ -228,10 +255,10 @@ const UserDetails = () => {
     { name: "attendanceSource", label: "Attendance Source", disabled: true },
     { name: "leavePolicy", label: "Leave Policy", disabled: true },
     { name: "holidayPolicy", label: "Holiday Policy", disabled: true },
-    { name: "aadhaarId", label: "Aadhaar ID", disabled: false },
+    { name: "aadhaarID", label: "Aadhaar ID", disabled: false },
     { name: "pan", label: "PAN", disabled: false },
     { name: "pfUan", label: "PF UAN", disabled: false },
-    { name: "pfAccountNumber", label: "PF Account No", disabled: true },
+    { name: "pfAccountNumber", label: "PF Account No", disabled: false },
     { name: "esiAccountNumber", label: "ESI Account No", disabled: false },
     { name: "bankName", label: "Bank Name", disabled: false },
     { name: "bankIfsc", label: "Bank IFSC", disabled: false },
@@ -362,7 +389,6 @@ const UserDetails = () => {
         "incomeTaxRegime",
         "leavePolicy",
         "holidayPolicy",
-        "pfAccountNumber",
       ],
     },
   ];

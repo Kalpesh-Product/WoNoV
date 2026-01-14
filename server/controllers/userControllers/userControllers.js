@@ -666,18 +666,59 @@ const updateProfile = async (req, res, next) => {
       "gender",
       "email",
     ];
-    const filteredUpdateData = {};
+    const trimIfString = (value) =>
+      typeof value === "string" ? value.trim() : value;
+    const updatePayload = {};
 
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {
-        if (field === "password") {
-          const hashedPassword = await bcrypt.hash(updateData[field], 10);
-          filteredUpdateData.password = hashedPassword;
-        } else {
-          filteredUpdateData[field] = updateData[field].trim();
-        }
+        updatePayload[field] = trimIfString(updateData[field]);
       }
     }
+
+    const allowedNestedFields = {
+      homeAddress: [
+        "addressLine1",
+        "addressLine2",
+        "country",
+        "state",
+        "city",
+        "pinCode",
+      ],
+      bankInformation: [
+        "bankName",
+        "bankIFSC",
+        "branchName",
+        "nameOnAccount",
+        "accountNumber",
+      ],
+      panAadhaarDetails: [
+        "aadhaarId",
+        "pan",
+        "pfUAN",
+        "pfAccountNumber",
+        "esiAccountNumber",
+      ],
+      familyInformation: [
+        "fatherName",
+        "motherName",
+        "maritalStatus",
+        "emergencyPhone",
+      ],
+    };
+
+    Object.entries(allowedNestedFields).forEach(([section, fields]) => {
+      const sectionData = updateData?.[section];
+      if (!sectionData || typeof sectionData !== "object") return;
+
+      fields.forEach((field) => {
+        if (sectionData[field] !== undefined) {
+          updatePayload[`${section}.${field}`] = trimIfString(
+            sectionData[field]
+          );
+        }
+      });
+    });
 
     let profilePictureUpdate = null;
 
@@ -735,10 +776,10 @@ const updateProfile = async (req, res, next) => {
       };
 
       // Add to update payload
-      filteredUpdateData.profilePicture = profilePictureUpdate;
+      updatePayload.profilePicture = profilePictureUpdate;
     }
 
-    if (Object.keys(filteredUpdateData).length === 0) {
+    if (Object.keys(updatePayload).length === 0) {
       throw new CustomError(
         "No valid fields to update",
         logPath,
@@ -749,26 +790,13 @@ const updateProfile = async (req, res, next) => {
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: filteredUpdateData },
+      { $set: updatePayload },
       { new: true, runValidators: true }
     ).select("-password");
 
     if (!updatedUser) {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
     }
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "User data updated successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: updatedUser._id,
-      changes: filteredUpdateData,
-    });
 
     return res.status(200).json({
       message: "User data updated successfully",
