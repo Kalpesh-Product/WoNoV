@@ -26,6 +26,7 @@ const EmployeeOnboard = () => {
     //   gender: "",
     //   dateOfBirth: null,
     //   phone: "",
+    //   emergencyPhone: "",
     //   email: "",
     //   startDate: null,
     //   workLocation: "",
@@ -35,9 +36,8 @@ const EmployeeOnboard = () => {
     //   reportsTo: "",
     //   jobTitle: "",
     //   jobDescription: "",
-    //   shift: "",
     //   workSchedulePolicy: "",
-    //   attendanceSource: "web",
+    //   attendanceSource: "",
     //   leavePolicy: "",
     //   holidayPolicy: "",
     //   aadharId: "",
@@ -72,6 +72,7 @@ const EmployeeOnboard = () => {
     //   motherName: "",
     //   maritalStatus: "",
     // },
+
     defaultValues: {
       empId: "EMP00081",
       firstName: "Rahul",
@@ -80,6 +81,7 @@ const EmployeeOnboard = () => {
       gender: "Male",
       dateOfBirth: null,
       phone: "9876543210",
+      emergencyPhone: "9876543219",
       email: "rahul.sharma@example.com",
       startDate: null,
       workLocation: "",
@@ -107,10 +109,10 @@ const EmployeeOnboard = () => {
       pfContributionRate: "12",
       employeePF: "12",
       includeEsi: "yes",
-      esiContribution: "restrict-21000",
-      hraType: "metro-50",
-      tdsCalculationBasedOn: "tax-slabs",
-      incomeTaxRegime: "new",
+      esiContribution: "",
+      hraType: "",
+      tdsCalculationBasedOn: "",
+      incomeTaxRegime: "",
       addressLine1: "Flat 302, Green Residency",
       addressLine2: "MG Road",
       country: "India",
@@ -165,6 +167,7 @@ const EmployeeOnboard = () => {
       gender: data.gender,
       dateOfBirth: data.dateOfBirth,
       phone: data.phone?.trim(),
+
       email: data.email?.trim(),
       role: data.role,
       departments: data.departments ? data.departments : [],
@@ -223,6 +226,7 @@ const EmployeeOnboard = () => {
         fatherName: data.fatherName?.trim(),
         motherName: data.motherName?.trim(),
         maritalStatus: data.maritalStatus?.trim(),
+        emergencyPhone: data.emergencyPhone?.trim(),
       },
     };
 
@@ -388,13 +392,17 @@ const EmployeeOnboard = () => {
                     rules={{ required: "Date of Birth is required" }}
                     render={({ field }) => (
                       <DesktopDatePicker
-                        inputFormat=""
-                        slotProps={{ textField: { size: "small" } }}
+                        inputFormat="DD/MM/YYYY"
                         label="Date of Birth"
                         {...field}
-                        renderInput={(params) => (
-                          <TextField fullWidth {...params} />
-                        )}
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!errors.dateOfBirth,
+                            helperText: errors?.dateOfBirth?.message,
+                          },
+                        }}
                       />
                     )}
                   />
@@ -467,12 +475,15 @@ const EmployeeOnboard = () => {
                   name="addressLine1"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Address Line 1 is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Address Line 1"
                       fullWidth
+                      helperText={errors?.addressLine1?.message}
+                      error={!!errors.addressLine1}
                     />
                   )}
                 />
@@ -480,12 +491,15 @@ const EmployeeOnboard = () => {
                   name="addressLine2"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Address Line 2 is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Address Line 2"
                       fullWidth
+                      helperText={errors?.addressLine2?.message}
+                      error={!!errors.addressLine2}
                     />
                   )}
                 />
@@ -494,12 +508,15 @@ const EmployeeOnboard = () => {
                     name="country"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "Country is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
                         label="Country"
                         fullWidth
+                        helperText={errors?.country?.message}
+                        error={!!errors.country}
                       />
                     )}
                   />
@@ -507,12 +524,15 @@ const EmployeeOnboard = () => {
                     name="state"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "State is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
                         label="State"
                         fullWidth
+                        helperText={errors?.state?.message}
+                        error={!!errors.state}
                       />
                     )}
                   />
@@ -521,12 +541,15 @@ const EmployeeOnboard = () => {
                     name="city"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "City is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
                         label="City"
                         fullWidth
+                        helperText={errors?.city?.message}
+                        error={!!errors.city}
                       />
                     )}
                   />
@@ -535,12 +558,15 @@ const EmployeeOnboard = () => {
                     name="pinCode"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "Pin Code is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
                         label="Pin Code"
                         fullWidth
+                        helperText={errors?.pinCode?.message}
+                        error={!!errors.pinCode}
                       />
                     )}
                   />
@@ -783,6 +809,7 @@ const EmployeeOnboard = () => {
                     name="workSchedulePolicy"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "Shift is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -805,6 +832,7 @@ const EmployeeOnboard = () => {
                     name="attendanceSource"
                     control={control}
                     defaultValue="web"
+                    rules={{ required: "Attendance source is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -812,6 +840,8 @@ const EmployeeOnboard = () => {
                         select
                         label="Attendance Source"
                         fullWidth
+                        helperText={errors?.attendanceSource?.message}
+                        error={!!errors.attendanceSource}
                       >
                         <MenuItem value="web">Web</MenuItem>
                         <MenuItem value="mobile">Mobile</MenuItem>
@@ -838,13 +868,15 @@ const EmployeeOnboard = () => {
                     name="leavePolicy"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "Leave Policy is required" }}
                     render={({ field }) => (
-                      <UploadFileInput
-                        label="leave Policy"
-                        onChange={field.onChange}
-                        value={field.value}
-                        allowedExtensions={["pdf"]}
-                        previewType="auto"
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Leave Policy"
+                        fullWidth
+                        helperText={errors?.leavePolicy?.message}
+                        error={!!errors.leavePolicy}
                       />
                     )}
                   />
@@ -852,13 +884,15 @@ const EmployeeOnboard = () => {
                     name="holidayPolicy"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "Holiday Policy is required" }}
                     render={({ field }) => (
-                      <UploadFileInput
+                      <TextField
+                        {...field}
+                        size="small"
                         label="Holiday Policy"
-                        onChange={field.onChange}
-                        value={field.value}
-                        allowedExtensions={["pdf"]}
-                        previewType="auto"
+                        fullWidth
+                        helperText={errors?.holidayPolicy?.message}
+                        error={!!errors.holidayPolicy}
                       />
                     )}
                   />
@@ -878,6 +912,7 @@ const EmployeeOnboard = () => {
                   name="includeInPayroll"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Include In Payroll is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -885,6 +920,8 @@ const EmployeeOnboard = () => {
                       label="Include In Payroll"
                       select
                       fullWidth
+                      helperText={errors?.includeInPayroll?.message}
+                      error={!!errors.includeInPayroll}
                     >
                       <MenuItem value="" disabled>
                         Select Include In Payroll
@@ -899,12 +936,15 @@ const EmployeeOnboard = () => {
                   name="payrollBatch"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Payroll Batch is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Payroll Batch"
                       fullWidth
+                      helperText={errors?.payrollBatch?.message}
+                      error={!!errors.payrollBatch}
                     />
                   )}
                 />
@@ -913,6 +953,7 @@ const EmployeeOnboard = () => {
                   name="professionTaxExemption"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Profession Tax Exemption is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -920,6 +961,8 @@ const EmployeeOnboard = () => {
                       label="Profession Tax Exemption"
                       select
                       fullWidth
+                      helperText={errors?.professionTaxExemption?.message}
+                      error={!!errors.professionTaxExemption}
                     >
                       <MenuItem value="" disabled>
                         Select Profession Tax Exemption
@@ -935,6 +978,7 @@ const EmployeeOnboard = () => {
                     name="includePF"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "Include PF is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -942,6 +986,8 @@ const EmployeeOnboard = () => {
                         label="Include PF"
                         select
                         fullWidth
+                        helperText={errors?.includePF?.message}
+                        error={!!errors.includePF}
                       >
                         <MenuItem value="" disabled>
                           Select Include PF
@@ -955,12 +1001,15 @@ const EmployeeOnboard = () => {
                     name="pfContributionRate"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "PF Contribution Rate is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
                         label="PF Contribution Rate"
                         fullWidth
+                        helperText={errors?.pfContributionRate?.message}
+                        error={!!errors.pfContributionRate}
                       />
                     )}
                   />
@@ -969,12 +1018,15 @@ const EmployeeOnboard = () => {
                   name="employeePF"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Employee PF is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Employee PF"
                       fullWidth
+                      helperText={errors?.employeePF?.message}
+                      error={!!errors.employeePF}
                     />
                   )}
                 />
@@ -994,6 +1046,7 @@ const EmployeeOnboard = () => {
                     name="employerPf"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "Employer PF is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -1001,6 +1054,8 @@ const EmployeeOnboard = () => {
                         label="Employer PF"
                         select
                         fullWidth
+                        helperText={errors?.employerPf?.message}
+                        error={!!errors.employerPf}
                       >
                         <MenuItem value="" disabled>
                           Select Employer PF
@@ -1015,6 +1070,7 @@ const EmployeeOnboard = () => {
                     name="includeEsi"
                     control={control}
                     defaultValue=""
+                    rules={{ required: "Include ESI is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -1022,6 +1078,8 @@ const EmployeeOnboard = () => {
                         label="Include ESI"
                         select
                         fullWidth
+                        helperText={errors?.includeEsi?.message}
+                        error={!!errors.includeEsi}
                       >
                         <MenuItem value="" disabled>
                           Select Include ESI
@@ -1036,6 +1094,7 @@ const EmployeeOnboard = () => {
                   name="esiContribution"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "ESI Contribution is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1043,14 +1102,16 @@ const EmployeeOnboard = () => {
                       label="ESI Contribution"
                       select
                       fullWidth
+                      helperText={errors?.esiContribution?.message}
+                      error={!!errors.esiContribution}
                     >
                       <MenuItem value="" disabled>
                         Select ESI Contribution
                       </MenuItem>
-                      <MenuItem value="restrict-21000">
+                      <MenuItem value="Restrict Contribution to 21,000 of ESI Gross">
                         Restrict Contribution to 21,000 of ESI Gross
                       </MenuItem>
-                      <MenuItem value="no-restriction">No Restriction</MenuItem>
+                      <MenuItem value="No Restriction">No Restriction</MenuItem>
                     </TextField>
                   )}
                 />
@@ -1058,6 +1119,7 @@ const EmployeeOnboard = () => {
                   name="hraType"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "HRA is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1065,15 +1127,19 @@ const EmployeeOnboard = () => {
                       label="HRA"
                       select
                       fullWidth
+                      helperText={errors?.hraType?.message}
+                      error={!!errors.hraType}
                     >
                       <MenuItem value="" disabled>
                         Select HRA
                       </MenuItem>
-                      <MenuItem value="metro-50">Metropolitan (50%)</MenuItem>
-                      <MenuItem value="non-metro-40">
+                      <MenuItem value="Metropolitan (50%)">
+                        Metropolitan (50%)
+                      </MenuItem>
+                      <MenuItem value="Non-Metropolitan (40%)">
                         Non-Metropolitan (40%)
                       </MenuItem>
-                      <MenuItem value="custom">Custom</MenuItem>
+                      <MenuItem value="Custom">Custom</MenuItem>
                     </TextField>
                   )}
                 />
@@ -1081,6 +1147,7 @@ const EmployeeOnboard = () => {
                   name="tdsCalculationBasedOn"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "TDS Calculation Based on is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1088,14 +1155,16 @@ const EmployeeOnboard = () => {
                       label="TDS Calculation Based on"
                       select
                       fullWidth
+                      helperText={errors?.tdsCalculationBasedOn?.message}
+                      error={!!errors.tdsCalculationBasedOn}
                     >
                       <MenuItem value="" disabled>
                         Select TDS Calculation
                       </MenuItem>
-                      <MenuItem value="tax-slabs">
+                      <MenuItem value="Tax Slabs (Salaried Employee)">
                         Tax Slabs (Salaried Employee)
                       </MenuItem>
-                      <MenuItem value="tax-percentage">
+                      <MenuItem value="Tax Percentage (Consultants)">
                         Tax Percentage (Consultants)
                       </MenuItem>
                     </TextField>
@@ -1105,6 +1174,7 @@ const EmployeeOnboard = () => {
                   name="incomeTaxRegime"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Income Tax Regime is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1112,12 +1182,14 @@ const EmployeeOnboard = () => {
                       label="Income Tax Regime"
                       select
                       fullWidth
+                      helperText={errors?.incomeTaxRegime?.message}
+                      error={!!errors.incomeTaxRegime}
                     >
                       <MenuItem value="" disabled>
                         Select Income Tax Regime
                       </MenuItem>
-                      <MenuItem value="old">Old Tax Regime</MenuItem>
-                      <MenuItem value="new">New Tax Regime</MenuItem>
+                      <MenuItem value="Old Tax Regime">Old Tax Regime</MenuItem>
+                      <MenuItem value="New Tax Regime">New Tax Regime</MenuItem>
                     </TextField>
                   )}
                 />
@@ -1135,12 +1207,21 @@ const EmployeeOnboard = () => {
                   name="bankIfsc"
                   control={control}
                   defaultValue=""
+                  rules={{
+                    required: "Bank IFSC is required",
+                    pattern: {
+                      value: /^[A-Z]{4}0[A-Z0-9]{6}$/i,
+                      message: "Enter a valid IFSC code",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Bank IFSC"
                       fullWidth
+                      helperText={errors?.bankIfsc?.message}
+                      error={!!errors.bankIfsc}
                     />
                   )}
                 />
@@ -1149,12 +1230,15 @@ const EmployeeOnboard = () => {
                   name="bankName"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Bank Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Bank Name"
                       fullWidth
+                      helperText={errors?.bankName?.message}
+                      error={!!errors.bankName}
                     />
                   )}
                 />
@@ -1163,12 +1247,15 @@ const EmployeeOnboard = () => {
                   name="branchName"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Branch Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Branch Name"
                       fullWidth
+                      helperText={errors?.branchName?.message}
+                      error={!!errors.branchName}
                     />
                   )}
                 />
@@ -1177,12 +1264,15 @@ const EmployeeOnboard = () => {
                   name="nameOnAccount"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Name On Account is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Name On Account"
                       fullWidth
+                      helperText={errors?.nameOnAccount?.message}
+                      error={!!errors.nameOnAccount}
                     />
                   )}
                 />
@@ -1190,12 +1280,21 @@ const EmployeeOnboard = () => {
                   name="accountNumber"
                   control={control}
                   defaultValue=""
+                  rules={{
+                    required: "Account Number is required",
+                    pattern: {
+                      value: /^[0-9]{9,18}$/,
+                      message: "Enter a valid account number",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
-                      label="AccountNumber"
+                      label="Account Number"
                       fullWidth
+                      helperText={errors?.accountNumber?.message}
+                      error={!!errors.accountNumber}
                     />
                   )}
                 />
@@ -1211,12 +1310,21 @@ const EmployeeOnboard = () => {
                   name="aadharId"
                   control={control}
                   defaultValue=""
+                  rules={{
+                    required: "Aadhar ID is required",
+                    pattern: {
+                      value: /^[0-9]{12}$/,
+                      message: "Enter a valid Aadhar ID",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Aadhar ID"
                       fullWidth
+                      helperText={errors?.aadharId?.message}
+                      error={!!errors.aadharId}
                     />
                   )}
                 />
@@ -1225,8 +1333,22 @@ const EmployeeOnboard = () => {
                   name="pan"
                   control={control}
                   defaultValue=""
+                  rules={{
+                    required: "PAN is required",
+                    pattern: {
+                      value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i,
+                      message: "Enter a valid PAN",
+                    },
+                  }}
                   render={({ field }) => (
-                    <TextField {...field} size="small" label="PAN" fullWidth />
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="PAN"
+                      fullWidth
+                      helperText={errors?.pan?.message}
+                      error={!!errors.pan}
+                    />
                   )}
                 />
 
@@ -1234,12 +1356,21 @@ const EmployeeOnboard = () => {
                   name="pfUan"
                   control={control}
                   defaultValue=""
+                  rules={{
+                    required: "PF UAN is required",
+                    pattern: {
+                      value: /^[0-9]{12}$/,
+                      message: "Enter a valid PF UAN",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="PF UAN"
                       fullWidth
+                      helperText={errors?.pfUan?.message}
+                      error={!!errors.pfUan}
                     />
                   )}
                 />
@@ -1248,12 +1379,21 @@ const EmployeeOnboard = () => {
                   name="pfAcNo"
                   control={control}
                   defaultValue=""
+                  rules={{
+                    required: "PF A/c No is required",
+                    pattern: {
+                      value: /^[A-Z0-9/-]{10,25}$/i,
+                      message: "Enter a valid PF A/c No",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="PF A/c No"
                       fullWidth
+                      helperText={errors?.pfAcNo?.message}
+                      error={!!errors.pfAcNo}
                     />
                   )}
                 />
@@ -1262,12 +1402,21 @@ const EmployeeOnboard = () => {
                   name="esiAccountNo"
                   control={control}
                   defaultValue=""
+                  rules={{
+                    required: "ESI A/c No is required",
+                    pattern: {
+                      value: /^[0-9]{10,17}$/,
+                      message: "Enter a valid ESI A/c No",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="ESI A/c No"
                       fullWidth
+                      helperText={errors?.esiAccountNo?.message}
+                      error={!!errors.esiAccountNo}
                     />
                   )}
                 />
@@ -1286,12 +1435,15 @@ const EmployeeOnboard = () => {
                   name="fatherName"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Father Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Father Name"
                       fullWidth
+                      helperText={errors?.fatherName?.message}
+                      error={!!errors.fatherName}
                     />
                   )}
                 />
@@ -1300,12 +1452,15 @@ const EmployeeOnboard = () => {
                   name="motherName"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Mother Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Mother Name"
                       fullWidth
+                      helperText={errors?.motherName?.message}
+                      error={!!errors.motherName}
                     />
                   )}
                 />
@@ -1314,12 +1469,36 @@ const EmployeeOnboard = () => {
                   name="maritalStatus"
                   control={control}
                   defaultValue=""
+                  rules={{ required: "Marital Status is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       size="small"
                       label="Marital Status"
                       fullWidth
+                      helperText={errors?.maritalStatus?.message}
+                      error={!!errors.maritalStatus}
+                    />
+                  )}
+                />
+                <Controller
+                  name="emergencyPhone"
+                  control={control}
+                  rules={{
+                    required: "Emergency Mobile Number is required",
+                    pattern: {
+                      value: /^[0-9]{10}$/,
+                      message: "Enter a valid 10-digit number",
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Emergency Mobile Phone"
+                      fullWidth
+                      helperText={errors?.emergencyPhone?.message}
+                      error={!!errors.emergencyPhone}
                     />
                   )}
                 />

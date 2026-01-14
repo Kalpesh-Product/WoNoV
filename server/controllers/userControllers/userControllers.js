@@ -7,6 +7,7 @@ const { default: mongoose } = require("mongoose");
 const Department = require("../../models/Departments");
 const { createLog } = require("../../utils/moduleLogs");
 const csvParser = require("csv-parser");
+const yup = require("yup");
 const { Readable } = require("stream");
 const { formatDate } = require("../../utils/formatDateTime");
 const CustomError = require("../../utils/customErrorlogs");
@@ -28,31 +29,6 @@ const createUser = async (req, res, next) => {
   const ip = req.ip;
 
   try {
-    // const {
-    //   empId,
-    //   firstName,
-    //   middleName,
-    //   lastName,
-    //   gender,
-    //   dateOfBirth,
-    //   phone,
-    //   email,
-    //   role,
-    //   departments,
-    //   employeeType,
-    //   designation,
-    //   startDate,
-    //   workLocation,
-    //   reportsTo,
-    //   shift,
-    //   policies,
-    //   homeAddress,
-    //   bankInformation,
-    //   panAadhaarDetails,
-    //   payrollInformation,
-    //   familyInformation,
-    // } = req.body;
-
     const {
       empId,
       firstName,
@@ -72,7 +48,6 @@ const createUser = async (req, res, next) => {
       workLocation,
       reportsTo,
       shift,
-      workSchedulePolicy,
       policies,
       attendanceSource,
       homeAddress,
@@ -85,24 +60,176 @@ const createUser = async (req, res, next) => {
     const companyId = req.company;
 
     // Validate required fields
-    if (
-      !empId ||
-      !firstName ||
-      !lastName ||
-      !email ||
-      !phone ||
-      !employeeType ||
-      !departments ||
-      !designation ||
-      !startDate ||
-      !workLocation
-    ) {
-      throw new CustomError(
-        "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/i;
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i;
+    const aadhaarRegex = /^[0-9]{12}$/;
+    const accountNumberRegex = /^[0-9]{9,18}$/;
+    const pfUANRegex = /^[0-9]{12}$/;
+    const pfAccountNumberRegex = /^[A-Z0-9\/-]{10,25}$/i;
+    const esiAccountNumberRegex = /^[0-9]{10,17}$/;
+
+    const validationSchema = yup.object({
+      empId: yup.string().trim().required("empId is required"),
+      firstName: yup.string().trim().required("firstName is required"),
+
+      lastName: yup.string().trim().required("lastName is required"),
+      gender: yup.string().trim().required("gender is required"),
+      dateOfBirth: yup.mixed().required("dateOfBirth is required"),
+      phone: yup.string().trim().required("phone is required"),
+      email: yup.string().trim().email().required("email is required"),
+      role: yup
+        .mixed()
+        .test("role-required", "role is required", (value) =>
+          Array.isArray(value) ? value.length > 0 : Boolean(value)
+        ),
+      departments: yup
+        .array()
+        .of(yup.string().required())
+        .min(1, "departments is required")
+        .required("departments is required"),
+      employeeType: yup
+        .mixed()
+        .test("employeeType-required", "employeeType is required", (value) => {
+          if (!value) return false;
+          if (typeof value === "string") return value.trim() !== "";
+          if (typeof value === "object") {
+            return typeof value.name === "string" && value.name.trim() !== "";
+          }
+          return false;
+        }),
+      jobTitle: yup.string().trim().required("jobTitle is required"),
+      jobDescription: yup
+        .string()
+        .trim()
+        .required("jobDescription is required"),
+      startDate: yup.mixed().required("startDate is required"),
+      workLocation: yup.string().trim().required("workLocation is required"),
+      reportsTo: yup.string().trim().required("reportsTo is required"),
+      attendanceSource: yup
+        .string()
+        .trim()
+        .required("attendanceSource is required"),
+      policies: yup.object({
+        workSchedulePolicy: yup
+          .string()
+          .trim()
+          .required("workSchedulePolicy is required"),
+        leavePolicy: yup.string().trim().required("leavePolicy is required"),
+        holidayPolicy: yup
+          .string()
+          .trim()
+          .required("holidayPolicy is required"),
+      }),
+      homeAddress: yup.object({
+        addressLine1: yup.string().trim().required("addressLine1 is required"),
+        addressLine2: yup.string().trim().required("addressLine2 is required"),
+        country: yup.string().trim().required("country is required"),
+        state: yup.string().trim().required("state is required"),
+        city: yup.string().trim().required("city is required"),
+        pinCode: yup.string().trim().required("pinCode is required"),
+      }),
+      bankInformation: yup.object({
+        bankIFSC: yup
+          .string()
+          .trim()
+          .matches(ifscRegex, "bankIFSC is invalid")
+          .required("bankIFSC is required"),
+        bankName: yup.string().trim().required("bankName is required"),
+        branchName: yup.string().trim().required("branchName is required"),
+        nameOnAccount: yup
+          .string()
+          .trim()
+          .required("nameOnAccount is required"),
+        accountNumber: yup
+          .string()
+          .trim()
+          .matches(accountNumberRegex, "accountNumber is invalid")
+          .required("accountNumber is required"),
+      }),
+      panAadhaarDetails: yup.object({
+        aadhaarId: yup
+          .string()
+          .trim()
+          .matches(aadhaarRegex, "aadhaarId is invalid")
+          .required("aadhaarId is required"),
+        pan: yup
+          .string()
+          .trim()
+          .matches(panRegex, "pan is invalid")
+          .required("pan is required"),
+        pfAccountNumber: yup
+          .string()
+          .trim()
+          .required("pfAccountNumber is required")
+          .matches(pfAccountNumberRegex, "pfAccountNumber is invalid"),
+        pfUAN: yup
+          .string()
+          .trim()
+          .required("pfUAN is required")
+          .matches(pfUANRegex, "pfUAN is invalid"),
+        esiAccountNumber: yup
+          .string()
+          .trim()
+          .required("esiAccountNumber is required")
+          .matches(esiAccountNumberRegex, "esiAccountNumber is invalid"),
+      }),
+      payrollInformation: yup.object({
+        includeInPayroll: yup.mixed().required("includeInPayroll is required"),
+        payrollBatch: yup.string().trim().required("payrollBatch is required"),
+        professionTaxExemption: yup
+          .mixed()
+          .required("professionTaxExemption is required"),
+        includePF: yup.mixed().required("includePF is required"),
+        pfContributionRate: yup
+          .string()
+          .trim()
+          .required("pfContributionRate is required"),
+        employeePF: yup.string().trim().required("employeePF is required"),
+        employerPf: yup.string().trim().required("employerPf is required"),
+        includeEsi: yup.mixed().required("includeEsi is required"),
+        esiContribution: yup
+          .string()
+          .trim()
+          .required("esiContribution is required"),
+        hraType: yup.string().trim().required("hraType is required"),
+        tdsCalculationBasedOn: yup
+          .string()
+          .trim()
+          .required("tdsCalculationBasedOn is required"),
+        incomeTaxRegime: yup
+          .string()
+          .trim()
+          .required("incomeTaxRegime is required"),
+      }),
+      familyInformation: yup.object({
+        fatherName: yup.string().trim().required("fatherName is required"),
+        motherName: yup.string().trim().required("motherName is required"),
+        maritalStatus: yup
+          .string()
+          .trim()
+          .required("maritalStatus is required"),
+        emergencyPhone: yup
+          .string()
+          .trim()
+          .required("emergencyPhone is required"),
+      }),
+    });
+
+    try {
+      await validationSchema.validate(req.body, {
+        abortEarly: false,
+        stripUnknown: true,
+      });
+    } catch (error) {
+      if (error instanceof yup.ValidationError) {
+        throw new CustomError(
+          `Missing or invalid fields: ${error.errors.join(", ")}`,
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+      throw error;
     }
 
     // Validate departments: check for any invalid department IDs
@@ -212,7 +339,6 @@ const createUser = async (req, res, next) => {
       startDate,
       workLocation,
       reportsTo,
-      shift,
       policies,
       homeAddress,
       bankInformation,
@@ -308,6 +434,39 @@ const fetchUser = async (req, res, next) => {
 const fetchSingleUser = async (req, res) => {
   try {
     const { empid } = req.params;
+    // const user = await User.findOne({ empId: empid })
+    //   .select("-password")
+    //   .populate([
+    //     { path: "reportsTo" },
+    //     { path: "departments", select: "name" },
+    //     { path: "company", select: "name" },
+    //     { path: "role", select: "roleTitle modulePermissions" },
+    //     {
+    //       path: "workLocation",
+    //       select: "_id unitName unitNo",
+    //       populate: {
+    //         path: "building",
+    //         select: "_id buildingName fullAddress",
+    //       },
+    //     },
+    //   ])
+    //   .lean()
+    //   .exec();
+
+    // if (!user) {
+    //   return res.status(404).json({ message: "User not found" });
+    // }
+
+    // const reportsTo = await User.findOne({
+    //   role: { $in: [user.reportsTo] },
+    // }).select("firstName lastName");
+
+    // const policies = await Agreements.find({
+    //   user: { $in: [user._id] },
+    // });
+
+    // console.log("policies", policies);
+
     const user = await User.findOne({ empId: empid })
       .select("-password")
       .populate([
@@ -324,16 +483,24 @@ const fetchSingleUser = async (req, res) => {
           },
         },
       ])
-      .lean()
-      .exec();
+      .lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const reportsTo = await User.find({
-      role: { $in: [user.reportsTo] },
-    }).select("firstName lastName");
+    const [reportsTo, policies] = await Promise.all([
+      User.findOne({ role: { $in: [user.reportsTo] } })
+        .select("firstName lastName")
+        .lean(),
+
+      Agreements.find({ user: user._id }).lean(),
+    ]);
+
+    const policyMap = policies.reduce((acc, policy) => {
+      acc[policy.name] = policy;
+      return acc;
+    }, {});
 
     const formattedUser = {
       firstName: user.firstName || "",
@@ -344,34 +511,66 @@ const fetchSingleUser = async (req, res) => {
       employeeID: user.empId || "",
       mobilePhone: user.phone || "",
       startDate: user.startDate ? user.startDate : "",
-      workLocation: user.workLocation || "",
+      // workLocation: user.workLocation || "",
+      workLocation:
+        user.workLocation?.unitName ||
+        user.workLocation?.unitNo ||
+        user.workLocation?.building?.buildingName ||
+        user.workLocation ||
+        "",
       employeeType: user.employeeType?.name || "",
-      department: user.departments?.[0]?.name || "",
+      departments:
+        user.departments?.map((department) => department?.name).join(", ") ||
+        "",
+      role: user.role?.map((role) => role?.roleTitle).join(", ") || "",
+      reportsTo:
+        `${reportsTo?.firstName} ${reportsTo?.lastName} (${user.reportsTo?.roleTitle})` ||
+        "",
       jobTitle: user.designation || "",
-      jobDescription: "",
+      jobDescription: user.jobDescription || "",
       shift: user.policies?.shift || "",
-      workSchedulePolicy: user.policies?.workSchedulePolicy || "",
-      attendanceSource: user.policies?.attendanceSource || "",
-      leavePolicy: user.policies?.leavePolicy || "",
-      holidayPolicy: user.policies?.holidayPolicy || "",
-      aadharID: user.panAadhaarDetails?.aadhaarId || "",
+      workSchedulePolicy: policyMap?.["Work Schedule Policy"]?.type || "",
+      attendanceSource: user?.attendanceSource || "",
+      leavePolicy: policyMap?.["Leave Policy"]?.url || "",
+      holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
+      aadhaarID: user.panAadhaarDetails?.aadhaarId || "",
       pan: user.panAadhaarDetails?.pan || "",
-      pFAcNo: user.panAadhaarDetails?.pfAccountNumber || "",
+      pfAccountNumber: user.panAadhaarDetails?.pfAccountNumber || "",
+      pfUan: user.panAadhaarDetails?.pfUAN || "",
+      esiAccountNumber: user.panAadhaarDetails?.esiAccountNumber || "",
+      bankName: user.bankInformation?.bankName || "",
+      bankIfsc: user.bankInformation?.bankIFSC || "",
+      branchName: user.bankInformation?.branchName || "",
+      nameOnAccount: user.bankInformation?.nameOnAccount || "",
+      accountNumber: user.bankInformation?.accountNumber || "",
       addressLine1: user.homeAddress?.addressLine1 || "",
       addressLine2: user.homeAddress?.addressLine2 || "",
       state: user.homeAddress?.state || "",
       city: user.homeAddress?.city || "",
+      country: user.homeAddress?.country || "",
       pinCode: user.homeAddress?.pinCode || "",
+      fatherName: user.familyInformation?.fatherName || "",
+      motherName: user.familyInformation?.motherName || "",
+      maritalStatus: user.familyInformation?.maritalStatus || "",
+      emergencyPhone: user.familyInformation?.emergencyPhone || "",
+      email: user.email || "",
       includeInPayroll: user.payrollInformation?.includeInPayroll
         ? "Yes"
         : "No",
-      payrollBatch: "",
+      payrollBatch: user.payrollInformation?.payrollBatch || "",
       professionalTaxExemption: user.payrollInformation?.professionTaxExemption
         ? "Yes"
         : "No",
       includePF: user.payrollInformation?.includePF ? "Yes" : "No",
       pFContributionRate: user.payrollInformation?.pfContributionRate || "",
       employeePF: user.payrollInformation?.employeePF || "",
+      employerPf: user.payrollInformation?.employerPf || "",
+      includeEsi: user.payrollInformation?.includeEsi ? "Yes" : "No",
+      esiContribution: user.payrollInformation?.esiContribution || "",
+      hraType: user.payrollInformation?.hraType || "",
+      tdsCalculationBasedOn:
+        user.payrollInformation?.tdsCalculationBasedOn || "",
+      incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
     };
 
     res.status(200).json(formattedUser);
@@ -464,19 +663,62 @@ const updateProfile = async (req, res, next) => {
       "lastName",
       "phone",
       "dateOfBirth",
+      "gender",
+      "email",
     ];
-    const filteredUpdateData = {};
+    const trimIfString = (value) =>
+      typeof value === "string" ? value.trim() : value;
+    const updatePayload = {};
 
     for (const field of allowedFields) {
       if (updateData[field] !== undefined) {
-        if (field === "password") {
-          const hashedPassword = await bcrypt.hash(updateData[field], 10);
-          filteredUpdateData.password = hashedPassword;
-        } else {
-          filteredUpdateData[field] = updateData[field].trim();
-        }
+        updatePayload[field] = trimIfString(updateData[field]);
       }
     }
+
+    const allowedNestedFields = {
+      homeAddress: [
+        "addressLine1",
+        "addressLine2",
+        "country",
+        "state",
+        "city",
+        "pinCode",
+      ],
+      bankInformation: [
+        "bankName",
+        "bankIFSC",
+        "branchName",
+        "nameOnAccount",
+        "accountNumber",
+      ],
+      panAadhaarDetails: [
+        "aadhaarId",
+        "pan",
+        "pfUAN",
+        "pfAccountNumber",
+        "esiAccountNumber",
+      ],
+      familyInformation: [
+        "fatherName",
+        "motherName",
+        "maritalStatus",
+        "emergencyPhone",
+      ],
+    };
+
+    Object.entries(allowedNestedFields).forEach(([section, fields]) => {
+      const sectionData = updateData?.[section];
+      if (!sectionData || typeof sectionData !== "object") return;
+
+      fields.forEach((field) => {
+        if (sectionData[field] !== undefined) {
+          updatePayload[`${section}.${field}`] = trimIfString(
+            sectionData[field]
+          );
+        }
+      });
+    });
 
     let profilePictureUpdate = null;
 
@@ -534,10 +776,10 @@ const updateProfile = async (req, res, next) => {
       };
 
       // Add to update payload
-      filteredUpdateData.profilePicture = profilePictureUpdate;
+      updatePayload.profilePicture = profilePictureUpdate;
     }
 
-    if (Object.keys(filteredUpdateData).length === 0) {
+    if (Object.keys(updatePayload).length === 0) {
       throw new CustomError(
         "No valid fields to update",
         logPath,
@@ -548,26 +790,13 @@ const updateProfile = async (req, res, next) => {
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: filteredUpdateData },
+      { $set: updatePayload },
       { new: true, runValidators: true }
     ).select("-password");
 
     if (!updatedUser) {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
     }
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "User data updated successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: updatedUser._id,
-      changes: filteredUpdateData,
-    });
 
     return res.status(200).json({
       message: "User data updated successfully",
