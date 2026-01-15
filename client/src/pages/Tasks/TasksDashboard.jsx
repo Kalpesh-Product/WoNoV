@@ -326,7 +326,7 @@ const TasksDashboard = () => {
             }`,
             assignedDate: humanDate(task.assignedDate),
             dueDate: task.dueDate
-              ? dayjs(task.dueDate).format("DD-MM-YYYY hh:mm A")
+              ? `${humanDate(task.dueDate)}, ${humanTime(task.dueTime)}`
               : "N/A",
           };
         });
