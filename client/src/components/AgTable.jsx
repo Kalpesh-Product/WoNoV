@@ -179,6 +179,15 @@ const AgTableComponent = React.memo(
       handleBatchAction(selectedRows);
     };
 
+    const filterableColumns = useMemo(
+      () =>
+        columns.filter((column) => {
+          const fieldName = column.field?.toString().toLowerCase();
+          return fieldName && !fieldName.includes("action");
+        }),
+      [columns]
+    );
+
     const modifiedColumns = useMemo(() => {
       if (!enableCheckbox) return columns;
 
@@ -308,7 +317,7 @@ const AgTableComponent = React.memo(
           onClose={() => setFilterDrawerOpen(false)}
           title="Advanced Filter"
         >
-          {columns.map((column) =>
+          {filterableColumns.map((column) =>
             dropdownColumns.includes(column.field) ? (
               <TextField
                 key={column.field}

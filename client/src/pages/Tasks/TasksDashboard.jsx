@@ -305,13 +305,21 @@ const TasksDashboard = () => {
   //   { taskName: "Test Emergency Lights", type: "Monthly", endTime: "04:15 PM" },
   //   { taskName: "Calibrate Sensors", type: "Monthly", endTime: "01:00 PM" },
   // ];
+  const currDate = new Date();
+  const currentYear = new Date().getFullYear();
 
   const today = dayjs().startOf("day");
   const recentlyAddedTasksData = isTaskListLoading
     ? []
     : taskList
+        .filter((task) => {
+          const taskDate = new Date(task.assignedDate);
 
-        .filter((task) => dayjs(task.assignedDate).isSame(today, "day"))
+          return (
+            taskDate.getDate() === currDate.getDate() &&
+            taskDate.getFullYear() === currentYear
+          );
+        })
         .map((task, index) => {
           const taskType = task.taskType ?? task.assignmentType ?? "Self";
 
@@ -326,7 +334,7 @@ const TasksDashboard = () => {
             }`,
             assignedDate: humanDate(task.assignedDate),
             dueDate: task.dueDate
-              ? dayjs(task.dueDate).format("DD-MM-YYYY hh:mm A")
+              ? `${humanDate(task.dueDate)}, ${humanTime(task.dueTime)}`
               : "N/A",
           };
         });
@@ -615,22 +623,31 @@ const TasksDashboard = () => {
   ];
 
   const myTodayMeetingsData = !meetingsQuery.isLoading
-    ? meetingsQuery.data.map((meeting, index) => {
-        return {
-          id: index + 1,
-          meeting: meeting.subject,
-          location: meeting.roomName,
-          participants:
-            meeting?.participants?.length > 0
-              ? meeting.participants.map((participant) => ({
-                  name: participant.email,
-                  avatar:
-                    "https://ui-avatars.com/api/?name=Alice+Johnson&background=random",
-                }))
-              : [],
-          time: humanTime(meeting.startTime),
-        };
-      })
+    ? meetingsQuery.data
+        .filter((meet) => {
+          const meetDate = new Date(meet.date);
+
+          return (
+            meetDate.getDate() === currDate.getDate() &&
+            meetDate.getFullYear() === currentYear
+          );
+        })
+        .map((meeting, index) => {
+          return {
+            id: index + 1,
+            meeting: meeting.subject,
+            location: meeting.roomName,
+            participants:
+              meeting?.participants?.length > 0
+                ? meeting.participants.map((participant) => ({
+                    name: participant.email,
+                    avatar:
+                      "https://ui-avatars.com/api/?name=Alice+Johnson&background=random",
+                  }))
+                : [],
+            time: humanTime(meeting.startTime),
+          };
+        })
     : [];
 
   const availableFYs = Array.from(new Set(series.map((s) => s.group)));
@@ -734,7 +751,7 @@ const TasksDashboard = () => {
       },
       meeting: {
         key: PERMISSIONS.TASKS_MY_MEETINGS_TODAY.value,
-        title: "My Meetings Today",
+        title: "My Today's Meetings",
       },
     },
   ];
@@ -855,7 +872,7 @@ const TasksDashboard = () => {
             columns={priorityTasksColumns}
           /> */}
           <MuiTable
-            Title="Recently Added Tasks"
+            Title="My Today's Tasks"
             columns={recentlyAddedTasksCol}
             rows={recentlyAddedTasksData}
             rowKey="id"

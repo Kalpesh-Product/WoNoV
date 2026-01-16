@@ -469,7 +469,7 @@ const myTodayMeetingsData = [
 // -----------------------Recently Added Tasks Start--------------------//
 
 const recentlyAddedTasksCol = [
-  { id: "id", label: "Sr.no" },
+  { id: "id", label: "Sr No" },
   { id: "taskName", label: "Task" },
   { id: "taskType", label: "Task Type", align: "center" },
   {
