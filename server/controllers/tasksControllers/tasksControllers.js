@@ -694,7 +694,7 @@ const getMyTodayTasks = async (req, res, next) => {
 
     const tasks = await Task.find({
       company,
-      assignedDate: { $gte: start, $lte: end },
+      // assignedDate: { $gte: start, $lte: end },
       // assignedDate: { $gte: startOfDay, $lte: endOfDay },
       $or: [{ assignedBy: { $in: [user] } }, { completedBy: { $in: [user] } }],
     })
@@ -707,6 +707,8 @@ const getMyTodayTasks = async (req, res, next) => {
     if (!tasks) {
       return res.status(400).json({ message: "Failed to fetch the tasks" });
     }
+
+    console.log("tasks:", tasks);
 
     const transformedTasks = tasks.map((task) => {
       const completedBy = task.completedBy
@@ -729,7 +731,7 @@ const getMyTodayTasks = async (req, res, next) => {
         completedBy,
       };
     });
-
+    console.log("transformedTasks:", transformedTasks);
     return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
