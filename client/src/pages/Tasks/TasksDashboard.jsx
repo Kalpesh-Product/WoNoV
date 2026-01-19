@@ -874,7 +874,7 @@ const TasksDashboard = () => {
             columns={priorityTasksColumns}
           /> */}
           <MuiTable
-            Title="My Today's Tasks"
+            Title="My Today's Task"
             columns={recentlyAddedTasksCol}
             rows={recentlyAddedTasksData}
             rowKey="id"
