@@ -314,14 +314,8 @@ const TasksDashboard = () => {
     ? []
     : taskList
 
-        // .filter((task) => isTodayForUser(task.assignedDate))
-        .filter((task) => {
-          const taskDate = task?.date || task?.assignedDate;
-          if (!taskDate) return false;
-          const parsedTaskDate = dayjs(taskDate);
-          if (!parsedTaskDate.isValid()) return false;
-          return parsedTaskDate.isSame(today, "day");
-        })
+        .filter((task) => isTodayForUser(task?.assignedDate))
+
         .map((task, index) => {
           const taskType = task.taskType ?? task.assignmentType ?? "Self";
 
@@ -874,7 +868,7 @@ const TasksDashboard = () => {
             columns={priorityTasksColumns}
           /> */}
           <MuiTable
-            Title="My Today's Tasks"
+            Title="My Today's Task"
             columns={recentlyAddedTasksCol}
             rows={recentlyAddedTasksData}
             rowKey="id"

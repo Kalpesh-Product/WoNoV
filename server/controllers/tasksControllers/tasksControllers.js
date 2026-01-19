@@ -91,11 +91,11 @@ const createTasks = async (req, res, next) => {
         logSourceKey
       );
     }
-    const parsedDueDate = toUtcStartOfDay(dueDate);
+    const parsedDueDate = toUtcStartOfDay(dueDate, timezone);
 
-    if (!parsedAssignedDate) {
+    if (!parsedDueDate) {
       throw new CustomError(
-        "Invalid assigned date",
+        "Invalid due date",
         logPath,
         logAction,
         logSourceKey
@@ -681,18 +681,21 @@ const getMyTodayTasks = async (req, res, next) => {
     const timezone = getRequestTimezone(req);
     const { start, end } = getTodayUtcRange(timezone);
 
-    // const startOfDay = new Date();
+    const startOfDay = new Date();
     // startOfDay.setHours(0, 0, 0, 0);
 
-    // const endOfDay = new Date();
+    const endOfDay = new Date();
     // endOfDay.setHours(23, 59, 59, 999);
 
-    // startOfDay.setUTCHours(0, 0, 0, 0);
-    // endOfDay.setUTCHours(23, 59, 59, 999);
+    // console.log("start:", startOfDay);
+    // console.log("end:", endOfDay);
+    console.log("start:", start);
+    console.log("end:", end);
 
     const tasks = await Task.find({
       company,
       assignedDate: { $gte: start, $lte: end },
+      // assignedDate: { $gte: startOfDay, $lte: endOfDay },
       $or: [{ assignedBy: { $in: [user] } }, { completedBy: { $in: [user] } }],
     })
       .populate("department", "name")
