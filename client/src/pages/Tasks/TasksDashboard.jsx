@@ -308,18 +308,12 @@ const TasksDashboard = () => {
   const currDate = new Date();
   const currentYear = new Date().getFullYear();
 
-  const today = dayjs().startOf("day");
+  // const today = dayjs().startOf("day");
   const recentlyAddedTasksData = isTaskListLoading
     ? []
     : taskList
-        .filter((task) => {
-          const taskDate = new Date(task.assignedDate);
 
-          return (
-            taskDate.getDate() === currDate.getDate() &&
-            taskDate.getFullYear() === currentYear
-          );
-        })
+        // .filter((task) => dayjs(task.assignedDate).isSame(today, "day"))
         .map((task, index) => {
           const taskType = task.taskType ?? task.assignmentType ?? "Self";
 
@@ -622,15 +616,16 @@ const TasksDashboard = () => {
     },
   ];
 
+  const today = dayjs().startOf("day");
+
   const myTodayMeetingsData = !meetingsQuery.isLoading
     ? meetingsQuery.data
-        .filter((meet) => {
-          const meetDate = new Date(meet.date);
-
-          return (
-            meetDate.getDate() === currDate.getDate() &&
-            meetDate.getFullYear() === currentYear
-          );
+        .filter((meeting) => {
+          const meetingDate = meeting?.date || meeting?.startTime;
+          if (!meetingDate) return false;
+          const parsedMeetingDate = dayjs(meetingDate);
+          if (!parsedMeetingDate.isValid()) return false;
+          return parsedMeetingDate.isSame(today, "day");
         })
         .map((meeting, index) => {
           return {
