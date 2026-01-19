@@ -91,11 +91,11 @@ const createTasks = async (req, res, next) => {
         logSourceKey
       );
     }
-    const parsedDueDate = toUtcStartOfDay(dueDate);
+    const parsedDueDate = toUtcStartOfDay(dueDate, timezone);
 
-    if (!parsedAssignedDate) {
+    if (!parsedDueDate) {
       throw new CustomError(
-        "Invalid assigned date",
+        "Invalid due date",
         logPath,
         logAction,
         logSourceKey
