@@ -17,6 +17,7 @@ import YearlyGraph from "../../components/graphs/YearlyGraph";
 import { PERMISSIONS } from "../../constants/permissions";
 import useAuth from "../../hooks/useAuth";
 import { configYearlyGrpah, filterPermissions } from "../../utils/accessConfig";
+import { isTodayForUser } from "../../utils/date";
 
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
@@ -306,12 +307,19 @@ const TasksDashboard = () => {
   //   { taskName: "Calibrate Sensors", type: "Monthly", endTime: "01:00 PM" },
   // ];
 
-  // const today = dayjs().startOf("day");
+  const today = dayjs().startOf("day");
   const recentlyAddedTasksData = isTaskListLoading
     ? []
     : taskList
 
-        // .filter((task) => dayjs(task.assignedDate).isSame(today, "day"))
+        .filter((task) => isTodayForUser(task.assignedDate))
+        .filter((task) => {
+          const taskDate = task?.date || task?.assignedDate;
+          if (!taskDate) return false;
+          const parsedTaskDate = dayjs(taskDate);
+          if (!parsedTaskDate.isValid()) return false;
+          return parsedTaskDate.isSame(today, "day");
+        })
         .map((task, index) => {
           const taskType = task.taskType ?? task.assignmentType ?? "Self";
 
@@ -614,16 +622,15 @@ const TasksDashboard = () => {
     },
   ];
 
-  const today = dayjs().startOf("day");
-
   const myTodayMeetingsData = !meetingsQuery.isLoading
     ? meetingsQuery.data
         .filter((meeting) => {
-          const meetingDate = meeting?.date || meeting?.startTime;
-          if (!meetingDate) return false;
-          const parsedMeetingDate = dayjs(meetingDate);
-          if (!parsedMeetingDate.isValid()) return false;
-          return parsedMeetingDate.isSame(today, "day");
+          // const meetingDate = meeting?.date || meeting?.startTime;
+          // if (!meetingDate) return false;
+          // const parsedMeetingDate = dayjs(meetingDate);
+          // if (!parsedMeetingDate.isValid()) return false;
+          // return parsedMeetingDate.isSame(today, "day");
+          return isTodayForUser(meeting?.date || meeting?.startTime);
         })
         .map((meeting, index) => {
           return {
