@@ -60,47 +60,47 @@ const createTasks = async (req, res, next) => {
       );
     }
 
-    // const parsedAssignedDate = new Date(assignedDate);
-    // const parsedDueDate = new Date(dueDate);
+    const parsedAssignedDate = new Date(assignedDate);
+    const parsedDueDate = new Date(dueDate);
 
-    // if (isNaN(parsedAssignedDate.getTime())) {
-    //   throw new CustomError(
-    //     "Invalid date format",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
-    // if (isNaN(parsedDueDate.getTime())) {
-    //   throw new CustomError(
-    //     "Invalid date format",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
-
-    const timezone = getRequestTimezone(req);
-    const parsedAssignedDate = toUtcStartOfDay(assignedDate, timezone);
-
-    if (!parsedAssignedDate) {
+    if (isNaN(parsedAssignedDate.getTime())) {
       throw new CustomError(
-        "Invalid assigned date",
+        "Invalid date format",
         logPath,
         logAction,
         logSourceKey
       );
     }
-    const parsedDueDate = toUtcStartOfDay(dueDate, timezone);
-
-    if (!parsedDueDate) {
+    if (isNaN(parsedDueDate.getTime())) {
       throw new CustomError(
-        "Invalid due date",
+        "Invalid date format",
         logPath,
         logAction,
         logSourceKey
       );
     }
+
+    // const timezone = getRequestTimezone(req);
+    // const parsedAssignedDate = toUtcStartOfDay(assignedDate, timezone);
+
+    // if (!parsedAssignedDate) {
+    //   throw new CustomError(
+    //     "Invalid assigned date",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
+    // const parsedDueDate = toUtcStartOfDay(dueDate, timezone);
+
+    // if (!parsedDueDate) {
+    //   throw new CustomError(
+    //     "Invalid due date",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
 
     if (
       typeof description !== "string" ||
