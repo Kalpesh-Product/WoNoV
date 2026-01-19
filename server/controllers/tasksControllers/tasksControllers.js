@@ -8,6 +8,11 @@ const validateUsers = require("../../utils/validateUsers");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const emitter = require("../../utils/eventEmitter");
+const {
+  toUtcStartOfDay,
+  getTodayUtcRange,
+  getRequestTimezone,
+} = require("../../utils/dateTimezone");
 
 const createTasks = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -55,20 +60,42 @@ const createTasks = async (req, res, next) => {
       );
     }
 
-    const parsedAssignedDate = new Date(assignedDate);
-    const parsedDueDate = new Date(dueDate);
+    // const parsedAssignedDate = new Date(assignedDate);
+    // const parsedDueDate = new Date(dueDate);
 
-    if (isNaN(parsedAssignedDate.getTime())) {
+    // if (isNaN(parsedAssignedDate.getTime())) {
+    //   throw new CustomError(
+    //     "Invalid date format",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
+    // if (isNaN(parsedDueDate.getTime())) {
+    //   throw new CustomError(
+    //     "Invalid date format",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey
+    //   );
+    // }
+
+    const timezone = getRequestTimezone(req);
+    const parsedAssignedDate = toUtcStartOfDay(assignedDate, timezone);
+
+    if (!parsedAssignedDate) {
       throw new CustomError(
-        "Invalid date format",
+        "Invalid assigned date",
         logPath,
         logAction,
         logSourceKey
       );
     }
-    if (isNaN(parsedDueDate.getTime())) {
+    const parsedDueDate = toUtcStartOfDay(dueDate);
+
+    if (!parsedAssignedDate) {
       throw new CustomError(
-        "Invalid date format",
+        "Invalid assigned date",
         logPath,
         logAction,
         logSourceKey
@@ -111,7 +138,7 @@ const createTasks = async (req, res, next) => {
       // priority: priority ? priority : "High",
       // assignedTo: existingUsers,
       assignedBy: user,
-      assignedDate,
+      assignedDate: parsedAssignedDate,
       dueDate: parsedDueDate,
       dueTime: dueTime,
       company,
@@ -651,16 +678,21 @@ const getMyCompletedTasks = async (req, res, next) => {
 const getMyTodayTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
+    const timezone = getRequestTimezone(req);
+    const { start, end } = getTodayUtcRange(timezone);
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    // const startOfDay = new Date();
+    // startOfDay.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    // const endOfDay = new Date();
+    // endOfDay.setHours(23, 59, 59, 999);
+
+    // startOfDay.setUTCHours(0, 0, 0, 0);
+    // endOfDay.setUTCHours(23, 59, 59, 999);
 
     const tasks = await Task.find({
       company,
-      assignedDate: { $gte: startOfDay, $lte: endOfDay },
+      assignedDate: { $gte: start, $lte: end },
       $or: [{ assignedBy: { $in: [user] } }, { completedBy: { $in: [user] } }],
     })
       .populate("department", "name")
