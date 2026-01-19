@@ -44,7 +44,7 @@ const taskSchema = new mongoose.Schema(
       type: Date,
     },
     dueTime: {
-      type: String,
+      type: Date,
       default: null,
     },
     status: {
