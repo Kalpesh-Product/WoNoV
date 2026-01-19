@@ -306,12 +306,12 @@ const TasksDashboard = () => {
   //   { taskName: "Calibrate Sensors", type: "Monthly", endTime: "01:00 PM" },
   // ];
 
-  const today = dayjs().startOf("day");
+  // const today = dayjs().startOf("day");
   const recentlyAddedTasksData = isTaskListLoading
     ? []
     : taskList
 
-        .filter((task) => dayjs(task.assignedDate).isSame(today, "day"))
+        // .filter((task) => dayjs(task.assignedDate).isSame(today, "day"))
         .map((task, index) => {
           const taskType = task.taskType ?? task.assignmentType ?? "Self";
 
@@ -614,23 +614,33 @@ const TasksDashboard = () => {
     },
   ];
 
+  const today = dayjs().startOf("day");
+
   const myTodayMeetingsData = !meetingsQuery.isLoading
-    ? meetingsQuery.data.map((meeting, index) => {
-        return {
-          id: index + 1,
-          meeting: meeting.subject,
-          location: meeting.roomName,
-          participants:
-            meeting?.participants?.length > 0
-              ? meeting.participants.map((participant) => ({
-                  name: participant.email,
-                  avatar:
-                    "https://ui-avatars.com/api/?name=Alice+Johnson&background=random",
-                }))
-              : [],
-          time: humanTime(meeting.startTime),
-        };
-      })
+    ? meetingsQuery.data
+        .filter((meeting) => {
+          const meetingDate = meeting?.date || meeting?.startTime;
+          if (!meetingDate) return false;
+          const parsedMeetingDate = dayjs(meetingDate);
+          if (!parsedMeetingDate.isValid()) return false;
+          return parsedMeetingDate.isSame(today, "day");
+        })
+        .map((meeting, index) => {
+          return {
+            id: index + 1,
+            meeting: meeting.subject,
+            location: meeting.roomName,
+            participants:
+              meeting?.participants?.length > 0
+                ? meeting.participants.map((participant) => ({
+                    name: participant.email,
+                    avatar:
+                      "https://ui-avatars.com/api/?name=Alice+Johnson&background=random",
+                  }))
+                : [],
+            time: humanTime(meeting.startTime),
+          };
+        })
     : [];
 
   const availableFYs = Array.from(new Set(series.map((s) => s.group)));
