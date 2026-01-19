@@ -312,7 +312,7 @@ const TasksDashboard = () => {
     ? []
     : taskList
 
-        .filter((task) => isTodayForUser(task.assignedDate))
+        // .filter((task) => isTodayForUser(task.assignedDate))
         .filter((task) => {
           const taskDate = task?.date || task?.assignedDate;
           if (!taskDate) return false;
