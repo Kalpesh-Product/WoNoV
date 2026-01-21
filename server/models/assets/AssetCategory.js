@@ -19,10 +19,15 @@ const categorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
+    appliesTo: {
+      type: [String],
+      enum: ["asset", "inventory"],
+      required: true,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const AssetCategory = mongoose.model("AssetCategory", categorySchema);
