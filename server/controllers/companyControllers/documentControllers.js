@@ -8,6 +8,8 @@ const { PDFDocument } = require("pdf-lib");
 const path = require("path");
 const Department = require("../../models/Departments");
 
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
 const uploadCompanyDocument = async (req, res, next) => {
   const { documentName, type } = req.body;
   const file = req.file;
@@ -31,7 +33,7 @@ const uploadCompanyDocument = async (req, res, next) => {
     if (!allowedExtensions.includes(extension)) {
       return res.status(400).json({
         message: `Unsupported file type. Allowed extensions: ${allowedExtensions.join(
-          ", "
+          ", ",
         )}`,
       });
     }
@@ -51,7 +53,7 @@ const uploadCompanyDocument = async (req, res, next) => {
     if (extension === ".pdf") {
       const pdfDoc = await PDFDocument.load(file.buffer);
       pdfDoc.setTitle(
-        file.originalname ? file.originalname.split(".")[0] : "Untitled"
+        file.originalname ? file.originalname.split(".")[0] : "Untitled",
       );
       finalBuffer = await pdfDoc.save();
     }
@@ -62,7 +64,7 @@ const uploadCompanyDocument = async (req, res, next) => {
     const response = await handleDocumentUpload(
       finalBuffer,
       folderName,
-      sanitizedFileName
+      sanitizedFileName,
     );
 
     if (!response?.public_id) {
@@ -73,10 +75,10 @@ const uploadCompanyDocument = async (req, res, next) => {
       type === "template"
         ? "templates"
         : type === "sop"
-        ? "sop"
-        : type === "policy"
-        ? "policies"
-        : "agreements";
+          ? "sop"
+          : type === "policy"
+            ? "policies"
+            : "agreements";
 
     await Company.findByIdAndUpdate(foundUser.company._id, {
       $push: {
@@ -122,7 +124,7 @@ const updateCompanyDocument = async (req, res, next) => {
             [`${path}.$.name`]: newName,
             [`${path}.$.updatedAt`]: new Date(),
           },
-        }
+        },
       );
       return result;
     };
@@ -280,7 +282,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
     }
 
     const department = foundCompany.selectedDepartments.find(
-      (dept) => dept.department._id.toString() === departmentId
+      (dept) => dept.department._id.toString() === departmentId,
     );
 
     if (!department) {
@@ -295,7 +297,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
     if (file.mimetype === "application/pdf") {
       const pdfDoc = await PDFDocument.load(file.buffer);
       pdfDoc.setTitle(
-        originalFilename ? originalFilename.split(".")[0] : "Untitled"
+        originalFilename ? originalFilename.split(".")[0] : "Untitled",
       );
       processedBuffer = await pdfDoc.save();
     }
@@ -303,7 +305,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
     const response = await handleDocumentUpload(
       processedBuffer,
       `${foundUser.company.companyName}/departments/${department.department.name}/documents/${type}`,
-      originalFilename
+      originalFilename,
     );
 
     if (!response.public_id) {
@@ -330,7 +332,7 @@ const uploadDepartmentDocument = async (req, res, next) => {
           },
         },
       },
-      { new: true }
+      { new: true },
     ).exec();
 
     if (!updatedCompany) {
@@ -381,7 +383,7 @@ const updateDepartmentDocument = async (req, res, next) => {
 
       // Try to find a matching Policy
       const policyDoc = dept.policies?.find(
-        (doc) => doc._id.toString() === documentId
+        (doc) => doc._id.toString() === documentId,
       );
       if (policyDoc) {
         policyDoc.name = newName;
@@ -440,7 +442,7 @@ const deleteDepartmentDocument = async (req, res, next) => {
 
       // Try to find and mark Policy doc as inactive
       const policyDoc = dept.policies?.find(
-        (doc) => doc._id.toString() === documentId
+        (doc) => doc._id.toString() === documentId,
       );
       if (policyDoc) {
         policyDoc.isActive = false;
@@ -480,7 +482,7 @@ const getDepartmentDocuments = async (req, res, next) => {
 
     const companyData = await Company.findOne({ _id: companyId }).lean().exec();
     const department = companyData?.selectedDepartments?.find(
-      (dept) => dept.department.toString() === departmentId
+      (dept) => dept.department.toString() === departmentId,
     );
 
     if (!department) {
@@ -565,7 +567,7 @@ const addCompanyKyc = async (req, res, next) => {
     if (type === "companyKyc") {
       let kycDocs = company.kycDetails.companyKyc || [];
       const existingIndex = kycDocs.findIndex(
-        (doc) => doc.name === documentName
+        (doc) => doc.name === documentName,
       );
       let createdDate = now;
 
@@ -579,7 +581,7 @@ const addCompanyKyc = async (req, res, next) => {
       uploadResult = await handleDocumentUpload(
         buffer,
         `${company.companyName}/kyc/${type}/${documentName?.trim()}`,
-        originalname
+        originalname,
       );
 
       const doc = {
@@ -604,7 +606,7 @@ const addCompanyKyc = async (req, res, next) => {
 
       let directorKyc = company.kycDetails.directorKyc || [];
       let directorEntry = directorKyc.find(
-        (d) => d.nameOfDirector === nameOfDirector
+        (d) => d.nameOfDirector === nameOfDirector,
       );
 
       if (!directorEntry) {
@@ -617,7 +619,7 @@ const addCompanyKyc = async (req, res, next) => {
       }
 
       const existingDocIndex = directorEntry.documents.findIndex(
-        (doc) => doc.name === documentName
+        (doc) => doc.name === documentName,
       );
 
       let createdDate = now;
@@ -634,7 +636,7 @@ const addCompanyKyc = async (req, res, next) => {
         `${
           company.companyName
         }/kyc/${type}/${nameOfDirector}/${documentName?.trim()}`,
-        originalname
+        originalname,
       );
 
       const newDoc = {
@@ -650,7 +652,7 @@ const addCompanyKyc = async (req, res, next) => {
 
       // Update the full directorKyc array
       const updatedDirectorKyc = directorKyc.map((d) =>
-        d.nameOfDirector === nameOfDirector ? directorEntry : d
+        d.nameOfDirector === nameOfDirector ? directorEntry : d,
       );
 
       updatedFields["kycDetails.directorKyc"] = updatedDirectorKyc;
@@ -663,7 +665,7 @@ const addCompanyKyc = async (req, res, next) => {
     await Company.findOneAndUpdate(
       { _id: companyId },
       { $set: updatedFields },
-      { new: true }
+      { new: true },
     );
 
     res.status(200).json({
@@ -684,7 +686,7 @@ const getCompanyKyc = async (req, res, next) => {
     }
 
     const company = await Company.findOne({ _id: companyId }).select(
-      "kycDetails companyName"
+      "kycDetails companyName",
     );
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
@@ -710,7 +712,7 @@ const getCompanyKyc = async (req, res, next) => {
           createdDate: doc.createdDate,
           updatedDate: doc.updatedDate,
         })),
-      })
+      }),
     );
 
     res.status(200).json({
@@ -734,7 +736,7 @@ const getComplianceDocuments = async (req, res, next) => {
     }
 
     const company = await Company.findById(companyId).select(
-      "complianceDocuments"
+      "complianceDocuments",
     );
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
@@ -788,7 +790,7 @@ const uploadComplianceDocument = async (req, res, next) => {
     const uploadResult = await handleDocumentUpload(
       buffer,
       `${company.companyName?.trim()}/compliance/${documentName?.trim()}`,
-      originalname
+      originalname,
     );
 
     const newDoc = {
@@ -805,7 +807,7 @@ const uploadComplianceDocument = async (req, res, next) => {
     await Company.findByIdAndUpdate(
       companyId,
       { $set: { complianceDocuments: docs } },
-      { new: true }
+      { new: true },
     );
 
     res.status(200).json({
@@ -817,59 +819,153 @@ const uploadComplianceDocument = async (req, res, next) => {
   }
 };
 
+// const handleDepartmentTemplateUpload = async (req, res, next) => {
+//   try {
+//     const { departmentId } = req.params;
+//     const file = req.file;
+//     const { company } = req;
+//     const { documentName } = req.body;
+
+//     if (!documentName) {
+//       return res.status(400).json({ message: "Document name is required" });
+//     }
+
+//     // Check if file is present
+//     if (!file) {
+//       return res.status(400).json({ message: "No file uploaded" });
+//     }
+
+//     // Validate company
+//     const foundCompany = await Company.findOne({ _id: company }).lean().exec();
+//     if (!foundCompany) {
+//       return res.status(404).json({ message: "Company not found" });
+//     }
+
+//     const foundDepartment = await Department.findOne({ _id: departmentId })
+//       .lean()
+//       .exec();
+
+//     // Upload to Cloudinary
+//     const uploadPath = `${foundCompany.companyName}/departments/${foundDepartment.name}/templates`;
+//     const uploadedFile = await handleDocumentUpload(
+//       file.buffer,
+//       uploadPath,
+//       file.originalname,
+//     );
+
+//     // Construct template object
+//     const newTemplate = {
+//       name: documentName,
+//       documentLink: uploadedFile.secure_url,
+//       documentId: uploadedFile.public_id,
+//       isActive: true,
+//       createdAt: new Date(),
+//       updatedAt: null,
+//     };
+
+//     // Update the department
+//     const updatedDepartment = await Department.findOneAndUpdate(
+//       { _id: departmentId },
+//       { $push: { templates: newTemplate } },
+//       { new: true },
+//     );
+
+//     if (!updatedDepartment) {
+//       return res.status(404).json({ message: "Department not found" });
+//     }
+
+//     return res.status(200).json({
+//       message: "Template uploaded successfully",
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const handleDepartmentTemplateUpload = async (req, res, next) => {
   try {
     const { departmentId } = req.params;
-    const file = req.file;
-    const { company } = req;
     const { documentName } = req.body;
+    const { company } = req;
+    const file = req.file;
 
-    // Check if file is present
+    // ---------- Basic validations ----------
+    if (!documentName?.trim()) {
+      return res.status(400).json({ message: "Document name is required" });
+    }
+
     if (!file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Validate company
-    const foundCompany = await Company.findOne({ _id: company }).lean().exec();
+    // ---------- File size validation ----------
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return res.status(400).json({
+        message: "File size exceeds 5MB limit",
+      });
+    }
+
+    // ---------- CSV validation ----------
+    const allowedMimeTypes = ["text/csv", "application/vnd.ms-excel"];
+
+    const fileExt = path.extname(file.originalname).toLowerCase();
+
+    if (fileExt !== ".csv" || !allowedMimeTypes.includes(file.mimetype)) {
+      return res.status(400).json({
+        message: "Only CSV files are allowed",
+      });
+    }
+
+    // ---------- Validate company ----------
+    const foundCompany = await Company.findById(company).lean();
     if (!foundCompany) {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const foundDepartment = await Department.findOne({ _id: departmentId })
-      .lean()
-      .exec();
+    // ---------- Validate department ----------
+    const foundDepartment = await Department.findById(departmentId);
+    if (!foundDepartment) {
+      return res.status(404).json({ message: "Department not found" });
+    }
 
-    // Upload to Cloudinary
+    // ---------- Enforce unique template name per department ----------
+    const normalizedName = documentName.trim().toLowerCase();
+
+    const nameExists = foundDepartment.templates?.some(
+      (t) => t.name?.trim().toLowerCase() === normalizedName,
+    );
+
+    if (nameExists) {
+      return res.status(409).json({
+        message: "A template with this name already exists in the department",
+      });
+    }
+
+    // ---------- Upload to Cloudinary ----------
     const uploadPath = `${foundCompany.companyName}/departments/${foundDepartment.name}/templates`;
+
     const uploadedFile = await handleDocumentUpload(
       file.buffer,
       uploadPath,
-      file.originalname
+      file.originalname,
     );
 
-    // Construct template object
+    // ---------- Construct template ----------
     const newTemplate = {
-      name: documentName,
+      name: documentName.trim(),
       documentLink: uploadedFile.secure_url,
       documentId: uploadedFile.public_id,
       isActive: true,
       createdAt: new Date(),
-      updatedAt: null,
     };
 
-    // Update the department
-    const updatedDepartment = await Department.findOneAndUpdate(
-      { _id: departmentId },
-      { $push: { templates: newTemplate } },
-      { new: true }
-    );
-
-    if (!updatedDepartment) {
-      return res.status(404).json({ message: "Department not found" });
-    }
+    // ---------- Persist ----------
+    foundDepartment.templates.push(newTemplate);
+    await foundDepartment.save();
 
     return res.status(200).json({
       message: "Template uploaded successfully",
+      template: newTemplate,
     });
   } catch (error) {
     next(error);
@@ -904,7 +1000,7 @@ const deleteDepartmentTemplate = async (req, res, next) => {
 
     // Find the specific template
     const template = department.templates.find(
-      (t) => t.documentId === documentId
+      (t) => t.documentId === documentId,
     );
 
     if (!template) {
@@ -964,7 +1060,7 @@ const updateDepartmentTemplate = async (req, res, next) => {
     const uploadedFile = await handleDocumentUpload(
       file.buffer,
       uploadPath,
-      file.originalname
+      file.originalname,
     );
 
     // Update template fields
