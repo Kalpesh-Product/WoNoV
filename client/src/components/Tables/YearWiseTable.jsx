@@ -21,6 +21,9 @@ const YearWiseTable = ({
   buttonTitle,
   buttonDisabled,
   handleSubmit,
+  secondaryButtonTitle,
+  secondaryButtonDisabled,
+  handleSecondarySubmit,
   checkbox,
   checkAll,
   key,
@@ -135,7 +138,7 @@ const YearWiseTable = ({
     return filteredData.reduce((sum, item) => {
       const rawValue = item[totalKey];
       const numericValue = parseFloat(
-        String(rawValue || "0").replace(/,/g, "")
+        String(rawValue || "0").replace(/,/g, ""),
       );
       return sum + (isNaN(numericValue) ? 0 : numericValue);
     }, 0);
@@ -148,8 +151,8 @@ const YearWiseTable = ({
       const amt = parseFloat(
         String(item.actualAmount || item.projectedAmount || "0").replace(
           /,/g,
-          ""
-        )
+          "",
+        ),
       );
       return sum + (isNaN(amt) ? 0 : amt);
     }, 0);
@@ -282,6 +285,13 @@ const YearWiseTable = ({
             )}
           </Popover>
 
+          {secondaryButtonTitle && (
+            <PrimaryButton
+              title={secondaryButtonTitle}
+              handleSubmit={handleSecondarySubmit}
+              disabled={secondaryButtonDisabled}
+            />
+          )}
           {buttonTitle && (
             <PrimaryButton
               title={buttonTitle}

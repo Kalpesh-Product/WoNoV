@@ -22,29 +22,15 @@ import {
 } from "../../../utils/validators";
 import { useEffect } from "react";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
-
-const maintainanceCategories = [
-  { id: 1, name: "Electrical" },
-  { id: 2, name: "Civil" },
-  { id: 3, name: "Plumbing" },
-  { id: 4, name: "HVAC" },
-  { id: 5, name: "Interiors design & Installations" },
-  { id: 6, name: "Utilities" },
-];
-
-const adminCategories = [
-  { id: 1, name: "HK Inventory" },
-  { id: 2, name: "Stationary" },
-  { id: 3, name: "First Aid" },
-];
-
 const Inventory = () => {
   const department = usePageDepartment();
   console.log("department : ", department);
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
+
   const {
     handleSubmit,
     control,
@@ -62,6 +48,17 @@ const Inventory = () => {
       newPurchaseInventoryValue: "",
       closingInventoryUnits: "",
       category: "",
+    },
+  });
+  const {
+    handleSubmit: handleCategorySubmit,
+    control: categoryControl,
+    formState: { errors: categoryErrors },
+    reset: resetCategoryForm,
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      categoryName: "",
     },
   });
   const {
@@ -95,7 +92,7 @@ const Inventory = () => {
     setValue("newPurchasePerUnitPrice", selectedAsset?.newPurchasePerUnitPrice);
     setValue(
       "newPurchaseInventoryValue",
-      selectedAsset?.newPurchaseInventoryValue
+      selectedAsset?.newPurchaseInventoryValue,
     );
     setValue("closingInventoryUnits", selectedAsset?.closingInventoryUnits);
     setValue("category", selectedAsset?.category || selectedAsset?.Category);
@@ -105,7 +102,7 @@ const Inventory = () => {
     queryKey: ["maintainance-inventory"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/inventory/get-inventories?department=${department._id}`
+        `/api/inventory/get-inventories?department=${department._id}`,
       );
 
       return response.data.map((item) => {
@@ -122,7 +119,18 @@ const Inventory = () => {
       });
     },
   });
-
+  const { data: inventoryCategories = [] } = useQuery({
+    queryKey: ["inventory-categories", department?._id],
+    queryFn: async () => {
+      if (!department?._id) {
+        return [];
+      }
+      const response = await axios.get(
+        `/api/assets/get-category?departmentId=${department._id}&appliesTo=inventory`,
+      );
+      return response.data;
+    },
+  });
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationFn: async (formData) => {
       const response = await axios.post(
@@ -132,7 +140,7 @@ const Inventory = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       return response.data;
     },
@@ -146,6 +154,33 @@ const Inventory = () => {
       console.error(error);
     },
   });
+
+  const { mutate: createCategory, isPending: isCreatingCategory } = useMutation(
+    {
+      mutationFn: async (data) => {
+        const response = await axios.post("/api/assets/create-asset-category", {
+          assetCategoryName: data.categoryName,
+          departmentId: department._id,
+          appliesTo: "inventory",
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Category added successfully!");
+        queryClient.invalidateQueries({
+          queryKey: ["inventory-categories", department?._id],
+        });
+        setIsCategoryModalOpen(false);
+        resetCategoryForm();
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message || "Failed to add category.",
+        );
+        console.error(error);
+      },
+    },
+  );
   const { mutate: updateAsset, isPending: isUpdatingAsset } = useMutation({
     mutationFn: async (formData) => {
       const response = await axios.patch(
@@ -155,7 +190,7 @@ const Inventory = () => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       return response.data;
     },
@@ -181,7 +216,9 @@ const Inventory = () => {
     setSelectedAsset(null);
     setIsModalOpen(true);
   };
-
+  const handleOpenCategoryModal = () => {
+    setIsCategoryModalOpen(true);
+  };
   const handleFormSubmit = (data) => {
     const formData = new FormData();
 
@@ -194,7 +231,7 @@ const Inventory = () => {
     formData.append("newPurchasePerUnitPrice", data.newPurchasePerUnitPrice);
     formData.append(
       "newPurchaseInventoryValue",
-      data.newPurchaseInventoryValue
+      data.newPurchaseInventoryValue,
     );
     formData.append("closingInventoryUnits", data.closingInventoryUnits);
     formData.append("category", data.category);
@@ -202,6 +239,9 @@ const Inventory = () => {
     addAsset(formData);
   };
 
+  const handleCategoryFormSubmit = (data) => {
+    createCategory(data);
+  };
   const inventoryColumns = [
     {
       field: "id",
@@ -308,6 +348,8 @@ const Inventory = () => {
           tableTitle={"List Of Inventory"}
           hideTitle={true}
           buttonTitle={"Add Inventory"}
+          secondaryButtonTitle={"Add Category"}
+          handleSecondarySubmit={handleOpenCategoryModal}
           data={inventoryData || []}
           tableHeight={450}
           dateColumn={"date"}
@@ -316,6 +358,44 @@ const Inventory = () => {
         />
       </PageFrame>
 
+      <MuiModal
+        open={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        title="Add Category"
+      >
+        <form
+          onSubmit={handleCategorySubmit(handleCategoryFormSubmit)}
+          className="grid grid-cols-1 gap-4"
+        >
+          <Controller
+            name="categoryName"
+            control={categoryControl}
+            rules={{
+              required: "Category name is required",
+              validate: {
+                isAlphanumeric,
+                noOnlyWhitespace,
+              },
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Category Name"
+                size="small"
+                fullWidth
+                error={!!categoryErrors.categoryName}
+                helperText={categoryErrors.categoryName?.message}
+              />
+            )}
+          />
+          <PrimaryButton
+            title={isCreatingCategory ? "Adding..." : "Add Category"}
+            className="w-full"
+            type="submit"
+            disabled={isCreatingCategory}
+          />
+        </form>
+      </MuiModal>
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -342,21 +422,31 @@ const Inventory = () => {
                     error={!!errors.category}
                     helperText={errors.category?.message}
                   >
-                    {/* Replace with your actual options */}
                     <MenuItem value="">Select category</MenuItem>
-                    {department.name === "Administration"
+                    {inventoryCategories
+                      .filter((category) => category.isActive)
+                      .map((category) => (
+                        <MenuItem
+                          key={category._id}
+                          value={category.categoryName}
+                        >
+                          {category.categoryName}
+                        </MenuItem>
+                      ))}
+
+                    {/* {department.name === "Administration"
                       ? adminCategories.map((m) => (
                           <MenuItem key={m.id} value={m.name}>
                             {m.name}
                           </MenuItem>
                         ))
                       : department.name === "Maintenance"
-                      ? maintainanceCategories.map((m) => (
-                          <MenuItem key={m.id} value={m.name}>
-                            {m.name}
-                          </MenuItem>
-                        ))
-                      : []}
+                        ? maintainanceCategories.map((m) => (
+                            <MenuItem key={m.id} value={m.name}>
+                              {m.name}
+                            </MenuItem>
+                          ))
+                        : []} */}
                   </TextField>
                 )}
               />
@@ -611,21 +701,30 @@ const Inventory = () => {
                     error={!!updateErrors.category}
                     helperText={updateErrors.category?.message}
                   >
-                    {/* Replace with your actual options */}
                     <MenuItem value="">Select category</MenuItem>
-                    {department.name === "Administration"
+                    {inventoryCategories
+                      .filter((category) => category.isActive)
+                      .map((category) => (
+                        <MenuItem
+                          key={category._id}
+                          value={category.categoryName}
+                        >
+                          {category.categoryName}
+                        </MenuItem>
+                      ))}
+                    {/* {department.name === "Administration"
                       ? adminCategories.map((m) => (
                           <MenuItem key={m.id} value={m.name}>
                             {m.name}
                           </MenuItem>
                         ))
                       : department.name === "Maintenance"
-                      ? maintainanceCategories.map((m) => (
-                          <MenuItem key={m.id} value={m.name}>
-                            {m.name}
-                          </MenuItem>
-                        ))
-                      : []}
+                        ? maintainanceCategories.map((m) => (
+                            <MenuItem key={m.id} value={m.name}>
+                              {m.name}
+                            </MenuItem>
+                          ))
+                        : []} */}
                   </TextField>
                 )}
               />
