@@ -22,6 +22,7 @@ import {
 } from "../../../utils/validators";
 import { useEffect } from "react";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import formatDateTime from "../../../utils/formatDateTime";
 const Inventory = () => {
   const department = usePageDepartment();
   console.log("department : ", department);
@@ -106,15 +107,15 @@ const Inventory = () => {
       );
 
       return response.data.map((item) => {
-        const safeDate =
-          item.date ||
-          item.createdAt ||
-          item.updatedAt ||
-          new Date().toISOString(); // last-resort fallback
+        // const safeDate =
+        //   item.date ||
+        //   item.createdAt ||
+        //   item.updatedAt ||
+        //   new Date().toISOString(); // last-resort fallback
 
         return {
           ...item,
-          date: safeDate,
+          // date: safeDate,
         };
       });
     },
@@ -222,17 +223,19 @@ const Inventory = () => {
   const handleFormSubmit = (data) => {
     const formData = new FormData();
 
+    const openingInventoryValue =
+      (data.openingInventoryUnits || 0) * (data.openingPerUnitPrice || 0);
+    const newPurchaseInventoryValue =
+      (data.newPurchaseUnits || 0) * (data.newPurchasePerUnitPrice || 0);
+
     formData.append("itemName", data.itemName);
     formData.append("department", department._id);
     formData.append("openingInventoryUnits", data.openingInventoryUnits);
     formData.append("openingPerUnitPrice", data.openingPerUnitPrice);
-    formData.append("openingInventoryValue", data.openingInventoryValue);
+    formData.append("openingInventoryValue", openingInventoryValue);
     formData.append("newPurchaseUnits", data.newPurchaseUnits);
     formData.append("newPurchasePerUnitPrice", data.newPurchasePerUnitPrice);
-    formData.append(
-      "newPurchaseInventoryValue",
-      data.newPurchaseInventoryValue,
-    );
+    formData.append("newPurchaseInventoryValue", newPurchaseInventoryValue);
     formData.append("closingInventoryUnits", data.closingInventoryUnits);
     formData.append("category", data.category);
 
@@ -313,9 +316,10 @@ const Inventory = () => {
     {
       field: "date",
       headerName: "Date",
-      valueFormatter: (params) => {
-        if (!params.value) return "N/A";
-        return humanDate(params.value);
+      cellRenderer: (params) => {
+        console.log(formatDateTime(params.value));
+        console.log(params.value);
+        return formatDateTime(params.value);
       },
     },
     {
@@ -506,7 +510,7 @@ const Inventory = () => {
                 )}
               />
 
-              <Controller
+              {/* <Controller
                 name="openingInventoryValue"
                 control={control}
                 rules={{ required: "Opening value required" }}
@@ -521,7 +525,7 @@ const Inventory = () => {
                     helperText={errors.openingInventoryValue?.message}
                   />
                 )}
-              />
+              /> */}
 
               <Controller
                 name="newPurchaseUnits"
@@ -557,7 +561,7 @@ const Inventory = () => {
                 )}
               />
 
-              <Controller
+              {/* <Controller
                 name="newPurchaseInventoryValue"
                 control={control}
                 rules={{ required: "New purchase value required" }}
@@ -572,7 +576,7 @@ const Inventory = () => {
                     helperText={errors.newPurchaseInventoryValue?.message}
                   />
                 )}
-              />
+              /> */}
 
               <Controller
                 name="closingInventoryUnits"
@@ -617,21 +621,46 @@ const Inventory = () => {
             />
             <DetalisFormatted
               title="Department"
-              detail={selectedAsset.department?.name || "N/A"}
+              detail={
+                selectedAsset.department?.name ||
+                selectedAsset.department ||
+                "N/A"
+              }
             />
             <DetalisFormatted
               title="Date"
-              detail={humanDate(selectedAsset.date)}
+              detail={formatDateTime(selectedAsset.date)}
+            />
+            <DetalisFormatted
+              title="Category"
+              detail={selectedAsset.category || selectedAsset.Category || "N/A"}
             />
             <br />
             <div className="font-bold">Inventory Units</div>
+
             <DetalisFormatted
               title="Opening Units"
               detail={selectedAsset.openingInventoryUnits ?? "N/A"}
             />
             <DetalisFormatted
+              title="Opening Per Unit Price"
+              detail={
+                selectedAsset.openingPerUnitPrice != null
+                  ? `INR ${inrFormat(selectedAsset.openingPerUnitPrice)}`
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted
               title="New Purchase Units"
               detail={selectedAsset.newPurchaseUnits ?? "N/A"}
+            />
+            <DetalisFormatted
+              title="New Purchase Per Unit Price"
+              detail={
+                selectedAsset.newPurchasePerUnitPrice != null
+                  ? `INR ${inrFormat(selectedAsset.newPurchasePerUnitPrice)}`
+                  : "N/A"
+              }
             />
             <DetalisFormatted
               title="Closing Units"
@@ -640,7 +669,7 @@ const Inventory = () => {
             <br />
             <div className="font-bold">Inventory Value</div>
             <DetalisFormatted
-              title="Opening Value (INR)"
+              title="Opening Value"
               detail={`INR ${
                 inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
               }`}
@@ -652,19 +681,14 @@ const Inventory = () => {
                 inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
               }`}
             />
-            <DetalisFormatted
-              title="Price"
-              detail={`INR ${
-                inrFormat(selectedAsset.newPurchasePerUnitPrice) ?? "N/A"
-              }`}
-            />
-            <DetalisFormatted
+
+            {/* <DetalisFormatted
               title="Purchase Date"
-              detail={humanDate(selectedAsset.purchaseDate)}
-            />
+              detail={formatDateTime(selectedAsset.purchaseDate)}
+            /> */}
             <br />
-            <div className="font-bold">Additional Information</div>
-            <DetalisFormatted
+            {/* <div className="font-bold">Additional Information</div> */}
+            {/* <DetalisFormatted
               title="Brand"
               detail={selectedAsset.brand || "N/A"}
             />
@@ -677,7 +701,7 @@ const Inventory = () => {
             <DetalisFormatted
               title="Warranty (Months)"
               detail={selectedAsset.warranty ?? "N/A"}
-            />
+            /> */}
           </div>
         )}
         {modalMode === "edit" && (
@@ -784,7 +808,7 @@ const Inventory = () => {
                 )}
               />
 
-              <Controller
+              {/* <Controller
                 name="openingInventoryValue"
                 control={updateControl}
                 rules={{ required: "Opening value required" }}
@@ -799,7 +823,7 @@ const Inventory = () => {
                     helperText={updateErrors.openingInventoryValue?.message}
                   />
                 )}
-              />
+              /> */}
 
               <Controller
                 name="newPurchaseUnits"
@@ -835,7 +859,7 @@ const Inventory = () => {
                 )}
               />
 
-              <Controller
+              {/* <Controller
                 name="newPurchaseInventoryValue"
                 control={updateControl}
                 rules={{ required: "New purchase value required" }}
@@ -850,7 +874,7 @@ const Inventory = () => {
                     helperText={updateErrors.newPurchaseInventoryValue?.message}
                   />
                 )}
-              />
+              /> */}
 
               <Controller
                 name="closingInventoryUnits"

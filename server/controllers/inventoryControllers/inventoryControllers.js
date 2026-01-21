@@ -31,10 +31,11 @@ const createInventory = async (req, res, next) => {
         "Invalid department Id provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
+    const date = new Date();
     const inventory = new Inventory({
       company: req.company,
       department,
@@ -47,6 +48,7 @@ const createInventory = async (req, res, next) => {
       newPurchaseInventoryValue,
       closingInventoryUnits,
       category,
+      date,
     });
 
     const saved = await inventory.save();
@@ -69,7 +71,7 @@ const createInventory = async (req, res, next) => {
     error instanceof CustomError
       ? next(error)
       : next(
-          new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+          new CustomError(error.message, logPath, logAction, logSourceKey, 500),
         );
   }
 };
@@ -114,7 +116,7 @@ const updateInventory = async (req, res) => {
     const updated = await Inventory.findOneAndUpdate(
       { _id: id, company: req.company },
       req.body,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updated) {
@@ -155,10 +157,10 @@ const bulkInsertInventory = async (req, res, next) => {
           openingInventoryValue: Number(row["Opening Inventory Value"]),
           newPurchaseUnits: Number(row["New Purchase Units"] || 0),
           newPurchasePerUnitPrice: Number(
-            row["New purchase per unit price"] || 0
+            row["New purchase per unit price"] || 0,
           ),
           newPurchaseInventoryValue: Number(
-            row["New purchase inventory value"] || 0
+            row["New purchase inventory value"] || 0,
           ),
           closingInventoryUnits: Number(row["Closing inventory units"] || 0),
           category: row["Category"],

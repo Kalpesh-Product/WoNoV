@@ -47,7 +47,6 @@ const inventorySchema = new mongoose.Schema(
     },
     date: {
       type: Date,
-      default: new Date(),
     },
 
     // Closing inventory
@@ -63,7 +62,7 @@ const inventorySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Inventory = mongoose.model("Inventory", inventorySchema);
