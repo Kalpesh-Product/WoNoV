@@ -4,8 +4,78 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const Category = require("../../models/category/Category");
 
 // Create Inventory Item
+// const createInventory = async (req, res, next) => {
+//   const logPath = "inventory/InventoryLog";
+//   const logAction = "Add inventory";
+//   const logSourceKey = "inventory";
+//   const { user, ip, company } = req;
+
+//   try {
+//     const {
+//       department,
+//       itemName,
+//       openingInventoryUnits,
+//       openingPerUnitPrice,
+//       openingInventoryValue,
+//       newPurchaseUnits,
+//       newPurchasePerUnitPrice,
+//       newPurchaseInventoryValue,
+//       closingInventoryUnits,
+//       category,
+//     } = req.body;
+
+//     if (!mongoose.Types.ObjectId.isValid) {
+//       throw new CustomError(
+//         "Invalid department Id provided",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     const date = new Date();
+//     const inventory = new Inventory({
+//       company: req.company,
+//       department,
+//       itemName,
+//       openingInventoryUnits,
+//       openingPerUnitPrice,
+//       openingInventoryValue,
+//       newPurchaseUnits,
+//       newPurchasePerUnitPrice,
+//       newPurchaseInventoryValue,
+//       closingInventoryUnits,
+//       category,
+//       date,
+//     });
+
+//     const saved = await inventory.save();
+
+//     await createLog({
+//       path: logPath,
+//       action: logAction,
+//       remarks: "Meeting added successfully and updated room status",
+//       status: "Success",
+//       user: user,
+//       ip: ip,
+//       company: company,
+//       sourceKey: logSourceKey,
+//       sourceId: saved._id,
+//       changes: inventory,
+//     });
+
+//     return res.status(201).json(saved);
+//   } catch (error) {
+//     error instanceof CustomError
+//       ? next(error)
+//       : next(
+//           new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+//         );
+//   }
+// };
 const createInventory = async (req, res, next) => {
   const logPath = "inventory/InventoryLog";
   const logAction = "Add inventory";
@@ -16,30 +86,99 @@ const createInventory = async (req, res, next) => {
     const {
       department,
       itemName,
-      openingInventoryUnits,
-      openingPerUnitPrice,
-      openingInventoryValue,
-      newPurchaseUnits,
-      newPurchasePerUnitPrice,
-      newPurchaseInventoryValue,
-      closingInventoryUnits,
+      openingInventoryUnits = 0,
+      openingPerUnitPrice = 0,
+      newPurchaseUnits = 0,
+      newPurchasePerUnitPrice = 0,
       category,
     } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid) {
+    /* ------------------ Basic validations ------------------ */
+
+    if (!itemName?.trim()) {
+      throw new CustomError(
+        "Item name is required",
+        logPath,
+        logAction,
+        logSourceKey,
+        400,
+      );
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(department)) {
       throw new CustomError(
         "Invalid department Id provided",
         logPath,
         logAction,
         logSourceKey,
+        400,
       );
     }
 
-    const date = new Date();
-    const inventory = new Inventory({
-      company: req.company,
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+      throw new CustomError(
+        "Invalid category Id provided",
+        logPath,
+        logAction,
+        logSourceKey,
+        400,
+      );
+    }
+
+    /* ------------------ Category validation ------------------ */
+
+    const validCategory = await Category.findOne({
+      _id: category,
+      company,
+      appliesTo: "inventory",
+      isActive: true,
+    }).lean();
+
+    if (!validCategory) {
+      throw new CustomError(
+        "Category is not valid for inventory",
+        logPath,
+        logAction,
+        logSourceKey,
+        400,
+      );
+    }
+
+    /* ------------------ Numeric sanity checks ------------------ */
+
+    const numbers = [
+      Number(openingInventoryUnits),
+      Number(openingPerUnitPrice),
+      Number(newPurchaseUnits),
+      Number(newPurchasePerUnitPrice),
+    ];
+
+    if (numbers.some((n) => typeof n !== "number" || n < 0)) {
+      throw new CustomError(
+        "Inventory values must be non-negative numbers",
+        logPath,
+        logAction,
+        logSourceKey,
+        400,
+      );
+    }
+
+    /* ------------------ Derived values (backend owned) ------------------ */
+
+    const openingInventoryValue = openingInventoryUnits * openingPerUnitPrice;
+
+    const newPurchaseInventoryValue =
+      newPurchaseUnits * newPurchasePerUnitPrice;
+
+    const closingInventoryUnits = openingInventoryUnits + newPurchaseUnits;
+
+    /* ------------------ Create inventory ------------------ */
+
+    const inventory = await Inventory.create({
+      company,
       department,
-      itemName,
+      itemName: itemName.trim(),
+      category,
       openingInventoryUnits,
       openingPerUnitPrice,
       openingInventoryValue,
@@ -47,32 +186,30 @@ const createInventory = async (req, res, next) => {
       newPurchasePerUnitPrice,
       newPurchaseInventoryValue,
       closingInventoryUnits,
-      category,
-      date,
     });
 
-    const saved = await inventory.save();
+    /* ------------------ Logging ------------------ */
 
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: "Meeting added successfully and updated room status",
+      remarks: "Inventory added successfully",
       status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
+      user,
+      ip,
+      company,
       sourceKey: logSourceKey,
-      sourceId: saved._id,
+      sourceId: inventory._id,
       changes: inventory,
     });
 
-    return res.status(201).json(saved);
+    return res.status(201).json(inventory);
   } catch (error) {
-    error instanceof CustomError
-      ? next(error)
-      : next(
-          new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-        );
+    return next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
   }
 };
 
@@ -100,7 +237,9 @@ const getInventories = async (req, res) => {
     if (department) query.department = department;
     if (category) query.category = category;
 
-    const inventories = await Inventory.find(query).populate("department");
+    const inventories = await Inventory.find(query).populate(
+      "department category",
+    );
     return res.status(200).json(inventories);
   } catch (error) {
     console.error("Fetch Inventory Error:", error);

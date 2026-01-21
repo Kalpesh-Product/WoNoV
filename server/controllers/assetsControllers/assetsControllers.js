@@ -1,7 +1,7 @@
 const Asset = require("../../models/assets/Assets");
 const User = require("../../models/hr/UserData");
 const Company = require("../../models/hr/Company");
-const Category = require("../../models/assets/AssetCategory");
+const Category = require("../../models/category/Category");
 const Vendor = require("../../models/hr/Vendor");
 const sharp = require("sharp");
 const {
@@ -12,7 +12,7 @@ const {
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const Department = require("../../models/Departments");
-const AssetSubCategory = require("../../models/assets/AssetSubCategories");
+const AssetSubCategory = require("../../models/category/SubCategories");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 
@@ -28,7 +28,7 @@ const getAssetsWithDepartments = async (req, res, next) => {
     const userDepartments = foundUser.departments || [];
 
     const isTopManagement = userDepartments.some(
-      (dept) => dept.name === "Top Management"
+      (dept) => dept.name === "Top Management",
     );
 
     const departmentMatch = {
@@ -71,7 +71,7 @@ const getAssets = async (req, res, next) => {
     const user = await User.findById(userId).lean().exec();
 
     const isTopManagement = userDepartments.some(
-      (dept) => dept.name === "Top Management"
+      (dept) => dept.name === "Top Management",
     );
     const userDepartmentIds = userDepartments.map((dept) => dept._id);
 
@@ -188,7 +188,7 @@ const addAsset = async (req, res, next) => {
         "Company not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     const doesDepartmentExist = await Department.findOne({ _id: departmentId })
@@ -199,7 +199,7 @@ const addAsset = async (req, res, next) => {
         "Department not selected by your company",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     const foundCategory = await Category.findOne({ _id: categoryId })
@@ -210,18 +210,18 @@ const addAsset = async (req, res, next) => {
         "No category found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     const categoryExistsInDepartment = doesDepartmentExist.assetCategories.find(
-      (ct) => ct._id.toString() === categoryId
+      (ct) => ct._id.toString() === categoryId,
     );
     if (!categoryExistsInDepartment)
       throw new CustomError(
         "No such category exists in the department",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     if (vendorId) {
@@ -231,7 +231,7 @@ const addAsset = async (req, res, next) => {
           "Vendor not found",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
     }
 
@@ -245,7 +245,7 @@ const addAsset = async (req, res, next) => {
         "Sub-category not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     const assetIds = [];
@@ -260,7 +260,7 @@ const addAsset = async (req, res, next) => {
           .toBuffer();
         const uploadRes = await handleFileUpload(
           `data:image/webp;base64,${buffer.toString("base64")}`,
-          `${foundUser?.company?.companyName}/departments/assets/${subcategory.category.categoryName}/${subcategory.subCategoryName}/${name}`
+          `${foundUser?.company?.companyName}/departments/assets/${subcategory.category.categoryName}/${subcategory.subCategoryName}/${name}`,
         );
         assetImage = {
           url: uploadRes.secure_url,
@@ -271,7 +271,7 @@ const addAsset = async (req, res, next) => {
           "Asset image upload failed",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
@@ -329,7 +329,7 @@ const addAsset = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -371,7 +371,7 @@ const editAsset = async (req, res, next) => {
         "Asset ID is required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     const foundAsset = await Asset.findById(assetId);
@@ -380,7 +380,7 @@ const editAsset = async (req, res, next) => {
         "Asset not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     const foundUser = await User.findById(user)
@@ -393,14 +393,14 @@ const editAsset = async (req, res, next) => {
     const company = foundUser.company;
 
     const foundCompany = await Company.findById(company).select(
-      "selectedDepartments companyName"
+      "selectedDepartments companyName",
     );
     if (!foundCompany)
       throw new CustomError(
         "Company not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     const department = await Department.findById(departmentId);
@@ -409,7 +409,7 @@ const editAsset = async (req, res, next) => {
         "Invalid department",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     const category = await Category.findById(categoryId);
@@ -418,29 +418,28 @@ const editAsset = async (req, res, next) => {
         "Category not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     const categoryExists = department.assetCategories?.some(
-      (cat) => cat._id.toString() === categoryId
+      (cat) => cat._id.toString() === categoryId,
     );
     if (!categoryExists)
       throw new CustomError(
         "Category not linked to department",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
-    const subCategory = await AssetSubCategory.findById(subCategoryId).populate(
-      "category"
-    );
+    const subCategory =
+      await AssetSubCategory.findById(subCategoryId).populate("category");
     if (!subCategory)
       throw new CustomError(
         "Sub-category not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     if (vendorId) {
@@ -450,7 +449,7 @@ const editAsset = async (req, res, next) => {
           "Vendor not found",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
     }
 
@@ -466,7 +465,7 @@ const editAsset = async (req, res, next) => {
 
       const uploadRes = await handleFileUpload(
         `data:image/webp;base64,${buffer.toString("base64")}`,
-        `${foundCompany.companyName}/departments/assets/${subCategory.category.categoryName}/${subCategory.subCategoryName}/${name}`
+        `${foundCompany.companyName}/departments/assets/${subCategory.category.categoryName}/${subCategory.subCategoryName}/${name}`,
       );
 
       assetImage = {
@@ -481,7 +480,7 @@ const editAsset = async (req, res, next) => {
       const uploadResult = await handleDocumentUpload(
         warrantyDocumentFile.buffer,
         `${foundCompany.companyName}/departments/assets/warrantyDocuments/${name}`,
-        warrantyDocumentFile.originalname
+        warrantyDocumentFile.originalname,
       );
       warrantyDocInfo = {
         link: uploadResult.secure_url,
@@ -493,8 +492,8 @@ const editAsset = async (req, res, next) => {
       isDamaged || isUnderMaintenance
         ? "Inactive"
         : status
-        ? status
-        : foundAsset.status;
+          ? status
+          : foundAsset.status;
 
     const updatePayload = {
       assetType,
@@ -535,7 +534,7 @@ const editAsset = async (req, res, next) => {
         "Failed to update asset",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
 
     return res.status(200).json({
@@ -546,7 +545,7 @@ const editAsset = async (req, res, next) => {
     next(
       error instanceof CustomError
         ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
     );
   }
 };
@@ -568,7 +567,7 @@ const bulkInsertAssets = async (req, res, next) => {
     const departmentDoc = await Department.findById(department).lean();
 
     const subCategoryMap = new Map(
-      subCategories.map((cat) => [cat.subCategoryName, cat])
+      subCategories.map((cat) => [cat.subCategoryName, cat]),
     );
     const vendorsMap = new Map(vendors.map((v) => [v.name, v._id]));
 

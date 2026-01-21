@@ -2,9 +2,9 @@ const Department = require("../../models/Departments");
 const Company = require("../../models/hr/Company");
 const { createLog } = require("../../utils/moduleLogs");
 const mongoose = require("mongoose");
-const AssetCategory = require("../../models/assets/AssetCategory");
+const AssetCategory = require("../../models/category/Category");
 const CustomError = require("../../utils/customErrorlogs");
-const AssetSubCategory = require("../../models/assets/AssetSubCategories");
+const AssetSubCategory = require("../../models/category/SubCategories");
 
 const addAssetCategory = async (req, res, next) => {
   const { assetCategoryName, departmentId, appliesTo = "asset" } = req.body;
@@ -65,7 +65,7 @@ const addAssetCategory = async (req, res, next) => {
     }
 
     // Check for duplicate category in same company & department
-    const existingCategory = await AssetCategory.findOne({
+    const existingCategory = await Category.findOne({
       categoryName: assetCategoryName,
       department: departmentId,
       company: company,

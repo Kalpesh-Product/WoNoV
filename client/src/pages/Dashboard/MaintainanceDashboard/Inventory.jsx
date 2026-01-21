@@ -25,7 +25,7 @@ import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import formatDateTime from "../../../utils/formatDateTime";
 const Inventory = () => {
   const department = usePageDepartment();
-  console.log("department : ", department);
+
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -96,6 +96,8 @@ const Inventory = () => {
       selectedAsset?.newPurchaseInventoryValue,
     );
     setValue("closingInventoryUnits", selectedAsset?.closingInventoryUnits);
+    setValue("categoryName", selectedAsset?.categoryName || "");
+    setValue("categoryId", selectedAsset?.categoryId || null);
     setValue("category", selectedAsset?.category || selectedAsset?.Category);
   }, [selectedAsset]);
 
@@ -115,7 +117,9 @@ const Inventory = () => {
 
         return {
           ...item,
-          // date: safeDate,
+          dateRaw: item.date,
+          categoryId: item.category._id,
+          categoryName: item.category.categoryName,
         };
       });
     },
@@ -237,7 +241,7 @@ const Inventory = () => {
     formData.append("newPurchasePerUnitPrice", data.newPurchasePerUnitPrice);
     formData.append("newPurchaseInventoryValue", newPurchaseInventoryValue);
     formData.append("closingInventoryUnits", data.closingInventoryUnits);
-    formData.append("category", data.category);
+    formData.append("category", data.categoryId);
 
     addAsset(formData);
   };
@@ -308,17 +312,15 @@ const Inventory = () => {
     //   cellRenderer: (params) => params.data?.category || params.data?.Category,
     // },
     {
-      field: "category",
+      field: "categoryName",
       headerName: "Category",
       cellRenderer: (params) => params.value,
     },
 
     {
-      field: "date",
+      field: "dateRaw",
       headerName: "Date",
       cellRenderer: (params) => {
-        console.log(formatDateTime(params.value));
-        console.log(params.value);
         return formatDateTime(params.value);
       },
     },
@@ -430,10 +432,7 @@ const Inventory = () => {
                     {inventoryCategories
                       .filter((category) => category.isActive)
                       .map((category) => (
-                        <MenuItem
-                          key={category._id}
-                          value={category.categoryName}
-                        >
+                        <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
                         </MenuItem>
                       ))}
@@ -629,11 +628,11 @@ const Inventory = () => {
             />
             <DetalisFormatted
               title="Date"
-              detail={formatDateTime(selectedAsset.date)}
+              detail={formatDateTime(selectedAsset.dateRaw)}
             />
             <DetalisFormatted
               title="Category"
-              detail={selectedAsset.category || selectedAsset.Category || "N/A"}
+              detail={selectedAsset.categoryName || "N/A"}
             />
             <br />
             <div className="font-bold">Inventory Units</div>
@@ -729,10 +728,7 @@ const Inventory = () => {
                     {inventoryCategories
                       .filter((category) => category.isActive)
                       .map((category) => (
-                        <MenuItem
-                          key={category._id}
-                          value={category.categoryName}
-                        >
+                        <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
                         </MenuItem>
                       ))}
