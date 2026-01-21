@@ -17,6 +17,7 @@ const leaveRoutes = require("./routes/leaveRoutes");
 const employeeAgreementRoutes = require("./routes/employeeAgreementRoutes");
 const meetingsRoutes = require("./routes/meetingRoutes");
 const assetsRoutes = require("./routes/assetsRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 const departmentsRoutes = require("./routes/departmentRoutes");
 const companyRoutes = require("./routes/companyRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -77,6 +78,7 @@ app.use("/api/budget", verifyJwt, auditLogger, budgetRoutes);
 app.use("/api/departments", verifyJwt, auditLogger, departmentsRoutes);
 app.use("/api/designations", verifyJwt, auditLogger, designationRoutes);
 app.use("/api/tech", verifyJwt, auditLogger, techRoutes);
+app.use("/api/category", verifyJwt, auditLogger, categoryRoutes);
 app.use("/api/assets", verifyJwt, auditLogger, assetsRoutes);
 app.use("/api/meetings", verifyJwt, auditLogger, meetingsRoutes);
 app.use("/api/tickets", verifyJwt, auditLogger, ticketsRoutes);
@@ -86,7 +88,7 @@ app.use(
   "/api/employee-agreements",
   verifyJwt,
   auditLogger,
-  employeeAgreementRoutes
+  employeeAgreementRoutes,
 );
 app.use("/api/notifications", verifyJwt, notificationRoutes);
 // app.use("/api/editor", websiteRoutes);

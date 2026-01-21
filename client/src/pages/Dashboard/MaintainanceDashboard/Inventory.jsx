@@ -36,6 +36,7 @@ const Inventory = () => {
     handleSubmit,
     control,
     formState: { errors },
+    reset: resetAddInventory,
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -67,6 +68,7 @@ const Inventory = () => {
     control: updateControl,
     formState: { errors: updateErrors },
     setValue,
+    reset: resetUpdateInventory,
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -153,6 +155,7 @@ const Inventory = () => {
       toast.success("Inventory added successfully!");
       queryClient.invalidateQueries({ queryKey: ["maintainance-inventory"] });
       setIsModalOpen(false);
+      resetAddInventory();
     },
     onError: (error) => {
       toast.error("Failed to add inventory. Please try again.");
@@ -203,6 +206,7 @@ const Inventory = () => {
       toast.success("Inventory updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["maintainance-inventory"] });
       setIsModalOpen(false);
+      resetUpdateInventory();
     },
     onError: (error) => {
       toast.error("Failed to update inventory. Please try again.");
@@ -227,21 +231,21 @@ const Inventory = () => {
   const handleFormSubmit = (data) => {
     const formData = new FormData();
 
-    const openingInventoryValue =
-      (data.openingInventoryUnits || 0) * (data.openingPerUnitPrice || 0);
-    const newPurchaseInventoryValue =
-      (data.newPurchaseUnits || 0) * (data.newPurchasePerUnitPrice || 0);
+    // const openingInventoryValue =
+    //   (data.openingInventoryUnits || 0) * (data.openingPerUnitPrice || 0);
+    // const newPurchaseInventoryValue =
+    //   (data.newPurchaseUnits || 0) * (data.newPurchasePerUnitPrice || 0);
 
     formData.append("itemName", data.itemName);
     formData.append("department", department._id);
     formData.append("openingInventoryUnits", data.openingInventoryUnits);
     formData.append("openingPerUnitPrice", data.openingPerUnitPrice);
-    formData.append("openingInventoryValue", openingInventoryValue);
+    // formData.append("openingInventoryValue", openingInventoryValue);
     formData.append("newPurchaseUnits", data.newPurchaseUnits);
     formData.append("newPurchasePerUnitPrice", data.newPurchasePerUnitPrice);
-    formData.append("newPurchaseInventoryValue", newPurchaseInventoryValue);
-    formData.append("closingInventoryUnits", data.closingInventoryUnits);
-    formData.append("category", data.categoryId);
+    // formData.append("newPurchaseInventoryValue", newPurchaseInventoryValue);
+    // formData.append("closingInventoryUnits", data.closingInventoryUnits);
+    formData.append("category", data.category);
 
     addAsset(formData);
   };
@@ -577,7 +581,7 @@ const Inventory = () => {
                 )}
               /> */}
 
-              <Controller
+              {/* <Controller
                 name="closingInventoryUnits"
                 control={control}
                 rules={{ required: "Closing units required" }}
@@ -592,7 +596,7 @@ const Inventory = () => {
                     helperText={errors.closingInventoryUnits?.message}
                   />
                 )}
-              />
+              /> */}
 
               <PrimaryButton
                 title="Add Inventory"
@@ -872,7 +876,7 @@ const Inventory = () => {
                 )}
               /> */}
 
-              <Controller
+              {/* <Controller
                 name="closingInventoryUnits"
                 control={updateControl}
                 rules={{ required: "Closing units required" }}
@@ -887,7 +891,7 @@ const Inventory = () => {
                     helperText={updateErrors.closingInventoryUnits?.message}
                   />
                 )}
-              />
+              /> */}
 
               <PrimaryButton
                 title="Update Inventory"

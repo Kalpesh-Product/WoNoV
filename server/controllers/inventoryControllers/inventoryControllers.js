@@ -7,75 +7,7 @@ const csvParser = require("csv-parser");
 const Category = require("../../models/category/Category");
 
 // Create Inventory Item
-// const createInventory = async (req, res, next) => {
-//   const logPath = "inventory/InventoryLog";
-//   const logAction = "Add inventory";
-//   const logSourceKey = "inventory";
-//   const { user, ip, company } = req;
 
-//   try {
-//     const {
-//       department,
-//       itemName,
-//       openingInventoryUnits,
-//       openingPerUnitPrice,
-//       openingInventoryValue,
-//       newPurchaseUnits,
-//       newPurchasePerUnitPrice,
-//       newPurchaseInventoryValue,
-//       closingInventoryUnits,
-//       category,
-//     } = req.body;
-
-//     if (!mongoose.Types.ObjectId.isValid) {
-//       throw new CustomError(
-//         "Invalid department Id provided",
-//         logPath,
-//         logAction,
-//         logSourceKey,
-//       );
-//     }
-
-//     const date = new Date();
-//     const inventory = new Inventory({
-//       company: req.company,
-//       department,
-//       itemName,
-//       openingInventoryUnits,
-//       openingPerUnitPrice,
-//       openingInventoryValue,
-//       newPurchaseUnits,
-//       newPurchasePerUnitPrice,
-//       newPurchaseInventoryValue,
-//       closingInventoryUnits,
-//       category,
-//       date,
-//     });
-
-//     const saved = await inventory.save();
-
-//     await createLog({
-//       path: logPath,
-//       action: logAction,
-//       remarks: "Meeting added successfully and updated room status",
-//       status: "Success",
-//       user: user,
-//       ip: ip,
-//       company: company,
-//       sourceKey: logSourceKey,
-//       sourceId: saved._id,
-//       changes: inventory,
-//     });
-
-//     return res.status(201).json(saved);
-//   } catch (error) {
-//     error instanceof CustomError
-//       ? next(error)
-//       : next(
-//           new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-//         );
-//   }
-// };
 const createInventory = async (req, res, next) => {
   const logPath = "inventory/InventoryLog";
   const logAction = "Add inventory";
@@ -170,7 +102,8 @@ const createInventory = async (req, res, next) => {
     const newPurchaseInventoryValue =
       newPurchaseUnits * newPurchasePerUnitPrice;
 
-    const closingInventoryUnits = openingInventoryUnits + newPurchaseUnits;
+    const closingInventoryUnits =
+      Number(openingInventoryUnits) + Number(newPurchaseUnits);
 
     /* ------------------ Create inventory ------------------ */
 
@@ -186,6 +119,7 @@ const createInventory = async (req, res, next) => {
       newPurchasePerUnitPrice,
       newPurchaseInventoryValue,
       closingInventoryUnits,
+      date: new Date(),
     });
 
     /* ------------------ Logging ------------------ */
