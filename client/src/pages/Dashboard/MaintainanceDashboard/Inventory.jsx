@@ -133,7 +133,7 @@ const Inventory = () => {
         return [];
       }
       const response = await axios.get(
-        `/api/assets/get-category?departmentId=${department._id}&appliesTo=inventory`,
+        `/api/category/get-category?departmentId=${department._id}&appliesTo=inventory`,
       );
       return response.data;
     },
@@ -166,7 +166,7 @@ const Inventory = () => {
   const { mutate: createCategory, isPending: isCreatingCategory } = useMutation(
     {
       mutationFn: async (data) => {
-        const response = await axios.post("/api/assets/create-asset-category", {
+        const response = await axios.post("/api/category/create-category", {
           assetCategoryName: data.categoryName,
           departmentId: department._id,
           appliesTo: "inventory",

@@ -9,9 +9,11 @@ const {
 
 const router = require("express").Router();
 
-router.post("/create-asset-category", addAssetCategory);
-router.post("/create-asset-subcategory", addSubCategory);
-router.patch("/update-asset-category", updateCategory);
-router.patch("/update-asset-subcategory", updateSubCategory);
+router.post("/create-category", addAssetCategory);
+router.post("/create-subcategory", addSubCategory);
+router.patch("/update-category", updateCategory);
+router.patch("/update-subcategory", updateSubCategory);
 router.get("/get-category", getCategory);
 router.get("/get-subcategory", getSubCategory);
+
+module.exports = router;

@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { queryClient } from "../../../main";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
-import PageFrame from "../../../components/Pages/PageFrame";  
+import PageFrame from "../../../components/Pages/PageFrame";
 import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useSelector } from "react-redux";
@@ -51,7 +51,7 @@ const AssetsCategories = () => {
 
   const { mutate: createCategory, isPending: pendingCreate } = useMutation({
     mutationFn: async (data) => {
-      const response = await axios.post("/api/assets/create-asset-category", {
+      const response = await axios.post("/api/assets/create-category", {
         assetCategoryName: data.categoryName,
         departmentId: departmentId,
       });
@@ -69,10 +69,7 @@ const AssetsCategories = () => {
   });
   const { mutate: editCategory, isPending: pendingEdit } = useMutation({
     mutationFn: async (data) => {
-      const response = await axios.patch(
-        "/api/assets/update-asset-category",
-        data
-      );
+      const response = await axios.patch("/api/assets/update-category", data);
       return response.data;
       // console.log("edit form : ", data);
     },
@@ -92,7 +89,7 @@ const AssetsCategories = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/assets/get-category?departmentId=${departmentId}`
+            `/api/category/get-category?departmentId=${departmentId}`,
           );
           return response.data;
         } catch (error) {
@@ -180,14 +177,16 @@ const AssetsCategories = () => {
     ? []
     : assetCategories.map((item, index) => {
         const status = item.isActive ? "Active" : "Inactive";
-        const subCategories = item.subCategories.map((sub)=> sub.subCategoryName)
+        const subCategories = item.subCategories.map(
+          (sub) => sub.subCategoryName,
+        );
 
         return {
           ...item,
           _id: item._id,
           srNo: index + 1,
           status: status,
-          subCategories
+          subCategories,
         };
       });
   //--------------------Table Data------------------------------//
@@ -217,8 +216,8 @@ const AssetsCategories = () => {
           modalMode === "add"
             ? "Add Category"
             : modalMode === "view"
-            ? "View Category"
-            : "Edit Category"
+              ? "View Category"
+              : "Edit Category"
         }
       >
         {modalMode === "add" && (
@@ -321,7 +320,11 @@ const AssetsCategories = () => {
             />
             <DetalisFormatted
               title={"Sub Categories"}
-              detail={selectedAsset?.subCategories ? [...selectedAsset.subCategories].join(","): "N/A"}
+              detail={
+                selectedAsset?.subCategories
+                  ? [...selectedAsset.subCategories].join(",")
+                  : "N/A"
+              }
             />
             <DetalisFormatted
               title={"Department"}

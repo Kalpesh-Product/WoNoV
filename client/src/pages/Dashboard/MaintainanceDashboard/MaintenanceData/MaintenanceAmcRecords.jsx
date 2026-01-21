@@ -48,7 +48,7 @@ const MaintenanceAmcRecords = (disabled) => {
     queryKey: ["assetsCategories"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/assets/get-category");
+        const response = await axios.get("/api/category/get-category");
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -117,7 +117,8 @@ const MaintenanceAmcRecords = (disabled) => {
           onClick={() => {
             handleDetailsClick(params.data);
           }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center">
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
+        >
           <span className="text-subtitle">
             <MdOutlineRemoveRedEye />
           </span>
@@ -268,7 +269,8 @@ const MaintenanceAmcRecords = (disabled) => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "view" ? "View Details" : "Add Record"}>
+        title={modalMode === "view" ? "View Details" : "Add Record"}
+      >
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -285,7 +287,8 @@ const MaintenanceAmcRecords = (disabled) => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}>
+                        } `}
+                      >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -295,7 +298,8 @@ const MaintenanceAmcRecords = (disabled) => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}>
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             component="label"
@@ -310,7 +314,8 @@ const MaintenanceAmcRecords = (disabled) => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
+                            }}
+                          >
                             Select Image
                             <input
                               type="file"
@@ -336,7 +341,8 @@ const MaintenanceAmcRecords = (disabled) => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}>
+                            }}
+                          >
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -354,7 +360,8 @@ const MaintenanceAmcRecords = (disabled) => {
                       label="Asset Type"
                       size="small"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -374,7 +381,8 @@ const MaintenanceAmcRecords = (disabled) => {
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -395,7 +403,8 @@ const MaintenanceAmcRecords = (disabled) => {
                       fullWidth
                       select
                       label="Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -415,7 +424,8 @@ const MaintenanceAmcRecords = (disabled) => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}

@@ -38,15 +38,15 @@ router.patch(
 );
 router.get("/get-assets", getAssets);
 router.get("/get-assets-with-departments", getAssetsWithDepartments);
-// router.post("/create-asset-category", addAssetCategory);
-// router.post("/create-asset-subcategory", addSubCategory);
+// router.post("/create-category", addAssetCategory);
+// router.post("/create-subcategory", addSubCategory);
 router.post(
   "/bulk-insert-assets/:department",
   upload.single("assets"),
   bulkInsertAssets,
 );
-// router.patch("/update-asset-category", updateCategory);
-// router.patch("/update-asset-subcategory", updateSubCategory);
+// router.patch("/update-category", updateCategory);
+// router.patch("/update-subcategory", updateSubCategory);
 // router.get("/get-category", getCategory);
 // router.get("/get-subcategory", getSubCategory);
 

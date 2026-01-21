@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const AssetCategory = require("../../models/category/Category");
 const CustomError = require("../../utils/customErrorlogs");
 const AssetSubCategory = require("../../models/category/SubCategories");
+const Category = require("../../models/category/Category");
 
 const addAssetCategory = async (req, res, next) => {
   const { assetCategoryName, departmentId, appliesTo = "asset" } = req.body;

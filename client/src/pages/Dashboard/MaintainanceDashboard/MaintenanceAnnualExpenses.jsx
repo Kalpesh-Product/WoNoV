@@ -48,7 +48,7 @@ const MaintenanceAnnualExpenses = () => {
   //   queryKey: ["assetsCategories"],
   //   queryFn: async () => {
   //     try {
-  //       const response = await axios.get("/api/assets/get-category");
+  //       const response = await axios.get("/api/category/get-category");
   //       return response.data;
   //     } catch (error) {
   //       throw new Error(error.response.data.message);
@@ -113,7 +113,8 @@ const MaintenanceAnnualExpenses = () => {
           onClick={() => {
             handleDetailsClick(params.data);
           }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center">
+          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
+        >
           <span className="text-subtitle">
             <MdOutlineRemoveRedEye />
           </span>
@@ -231,7 +232,8 @@ const MaintenanceAnnualExpenses = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "view" ? "View Details" : "Add Expense"}>
+        title={modalMode === "view" ? "View Details" : "Add Expense"}
+      >
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -246,7 +248,8 @@ const MaintenanceAnnualExpenses = () => {
                       label="Category"
                       size="small"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="" disabled>
                         Select an Asset Type
                       </MenuItem>

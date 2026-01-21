@@ -47,7 +47,7 @@ const AdminVendorDatabase = () => {
     queryKey: ["assetsCategories"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/assets/get-category");
+        const response = await axios.get("/api/category/get-category");
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -118,10 +118,11 @@ const AdminVendorDatabase = () => {
             onClick={() => {
               const fullVendor = vendorsList.find(
                 (v) =>
-                  v.name === params.data.name && v.email === params.data.email
+                  v.name === params.data.name && v.email === params.data.email,
               );
               handleDetailsClick(fullVendor);
-            }}>
+            }}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -281,7 +282,8 @@ const AdminVendorDatabase = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "add" ? "Add Vendor" : "Vendor Details"}>
+        title={modalMode === "add" ? "Add Vendor" : "Vendor Details"}
+      >
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>

@@ -56,7 +56,7 @@ const AssetsDashboard = () => {
       queryKey: ["categories"],
       queryFn: async () => {
         try {
-          const response = await axios.get(`/api/assets/get-category`);
+          const response = await axios.get(`/api/category/get-category`);
           return response.data;
         } catch (error) {
           console.error(error.message);
@@ -100,12 +100,12 @@ const AssetsDashboard = () => {
     },
   ];
   const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
+    (card) => !card.permission || userPermissions.includes(card.permission),
   );
   //---------- Nav Cards ---------//
 
   const isTopManagement = departments.some(
-    (dept) => dept.name === "Top Management"
+    (dept) => dept.name === "Top Management",
   );
   const deptNames = departments.map((dept) => dept.name);
 
@@ -114,7 +114,7 @@ const AssetsDashboard = () => {
   if (!isTopManagement) {
     assetsDept = !isDepartmentLoading
       ? departmentAssets.filter((dept) =>
-          deptNames.includes(dept.departmentName)
+          deptNames.includes(dept.departmentName),
         )
       : [];
   }
@@ -132,17 +132,17 @@ const AssetsDashboard = () => {
     return asset.ownershipType === "Owned";
   }).length;
   const totalAssignedAssets = totalAssets.filter(
-    (asset) => asset.isAssigned
+    (asset) => asset.isAssigned,
   ).length;
   const totalUnassignedAssets = totalAssets.length - totalAssignedAssets;
 
   const totalAssetsUnderMaintenance = totalAssets.filter(
-    (asset) => asset.isUnderMaintenance
+    (asset) => asset.isUnderMaintenance,
   ).length;
 
   const totalAssetsPrice = totalAssets.reduce(
     (acc, asset) => acc + asset?.price,
-    0
+    0,
   );
 
   // Assigned and Unassigned Assets Pie Chart
@@ -183,10 +183,10 @@ const AssetsDashboard = () => {
   // -----------------------Physical vs Digital Assets Pie Data Start--------------------
 
   const physicalAssets = totalAssets.filter(
-    (asset) => asset.assetType === "Physical"
+    (asset) => asset.assetType === "Physical",
   ).length;
   const digitalAssets = totalAssets.filter(
-    (asset) => asset.assetType === "Digital"
+    (asset) => asset.assetType === "Digital",
   ).length;
 
   const physicalDigitalPieData = [
@@ -247,7 +247,7 @@ const AssetsDashboard = () => {
 
   const allowedPieCharts = pieChartConfigs.filter(
     (widget) =>
-      !widget.permission || userPermissions.includes(widget.permission)
+      !widget.permission || userPermissions.includes(widget.permission),
   );
 
   //---------- Pie Charts ---------//
@@ -287,7 +287,7 @@ const AssetsDashboard = () => {
 
   const totalDepartmentAssets = departmentWiseAssets.reduce(
     (sum, dept) => sum + dept.value,
-    0
+    0,
   );
 
   const departmentPieData = departmentWiseAssets.map((dept) => ({

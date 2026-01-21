@@ -151,7 +151,7 @@ const ItAssetList = () => {
     queryKey: ["assetsCategories"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/assets/get-category");
+        const response = await axios.get("/api/category/get-category");
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -228,12 +228,13 @@ const ItAssetList = () => {
                     item.brand === params.data.brand &&
                     item.price
                       .toString()
-                      .includes(params.data.price.replace(/,/g, "")) // fuzzy match in case formatting differs
+                      .includes(params.data.price.replace(/,/g, "")), // fuzzy match in case formatting differs
                 );
                 if (fullAsset) {
                   handleDetailsClick(fullAsset);
                 }
-              }}>
+              }}
+            >
               <MdOutlineRemoveRedEye />
             </span>
           </div>
@@ -291,7 +292,8 @@ const ItAssetList = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "add" ? "Add Asset" : "Asset Details"}>
+        title={modalMode === "add" ? "Add Asset" : "Asset Details"}
+      >
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -308,7 +310,8 @@ const ItAssetList = () => {
                           errors.assetImage
                             ? "border-red-500"
                             : "border-gray-300"
-                        } `}>
+                        } `}
+                      >
                         <div
                           className="w-full h-48 flex justify-center items-center relative"
                           style={{
@@ -318,7 +321,8 @@ const ItAssetList = () => {
                             backgroundSize: "contain",
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
-                          }}>
+                          }}
+                        >
                           <Button
                             variant="outlined"
                             component="label"
@@ -333,7 +337,8 @@ const ItAssetList = () => {
                               padding: "8px 16px",
                               borderRadius: "8px",
                               boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.3)",
-                            }}>
+                            }}
+                          >
                             Select Image
                             <input
                               type="file"
@@ -359,7 +364,8 @@ const ItAssetList = () => {
                               left: "50%",
                               transform: "translate(-50%, -50%)",
                               margin: 0,
-                            }}>
+                            }}
+                          >
                             {errors.assetImage.message}
                           </FormHelperText>
                         )}
@@ -376,7 +382,8 @@ const ItAssetList = () => {
                       {...field}
                       label="Asset Type"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="">Select an Asset Type</MenuItem>
                       <MenuItem value="Physical">Physical</MenuItem>
                       <MenuItem value="Digital">Digital</MenuItem>
@@ -396,7 +403,8 @@ const ItAssetList = () => {
                       {...field}
                       select
                       label="Department"
-                      size="small">
+                      size="small"
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept._id}>
                           {dept.name}
@@ -417,7 +425,8 @@ const ItAssetList = () => {
                       fullWidth
                       select
                       label="Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem key={category._id} value={category._id}>
                           {category.categoryName}
@@ -437,7 +446,8 @@ const ItAssetList = () => {
                       fullWidth
                       select
                       label="Sub-Category"
-                      size="small">
+                      size="small"
+                    >
                       {assetsCategories.subCategories?.map((subCategory) => (
                         <MenuItem key={subCategory._id} value={subCategory._id}>
                           {subCategory.categoryName}
@@ -592,7 +602,7 @@ const ItAssetList = () => {
               <DetalisFormatted
                 title="Price"
                 detail={`INR ${Number(selectedAsset.price).toLocaleString(
-                  "en-IN"
+                  "en-IN",
                 )}`}
               />
               <DetalisFormatted
