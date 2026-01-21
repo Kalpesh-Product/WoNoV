@@ -7,11 +7,18 @@ const CustomError = require("../../utils/customErrorlogs");
 const AssetSubCategory = require("../../models/assets/AssetSubCategories");
 
 const addAssetCategory = async (req, res, next) => {
-  const { assetCategoryName, departmentId } = req.body;
+  const { assetCategoryName, departmentId, appliesTo = "asset" } = req.body;
   const { company, user, ip } = req;
   const logPath = "assets/AssetLog";
   const logAction = "Add Asset Category";
   const logSourceKey = "category";
+  const isValidType = ["asset", "inventory"].includes(appliesTo);
+
+  if (!isValidType) {
+    return res
+      .status(400)
+      .json({ message: "Category can be applied to asset or inventory only" });
+  }
 
   try {
     // Validation
@@ -20,7 +27,7 @@ const addAssetCategory = async (req, res, next) => {
         "Missing required fields",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -32,7 +39,7 @@ const addAssetCategory = async (req, res, next) => {
         "Invalid ID(s) provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -43,7 +50,7 @@ const addAssetCategory = async (req, res, next) => {
         "Department doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -53,7 +60,7 @@ const addAssetCategory = async (req, res, next) => {
         "Company doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -69,7 +76,7 @@ const addAssetCategory = async (req, res, next) => {
         "Category already exists in this department",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -78,6 +85,7 @@ const addAssetCategory = async (req, res, next) => {
       categoryName: assetCategoryName,
       department: departmentId,
       company,
+      appliesTo,
     });
 
     const savedCategory = await newAssetCategory.save();
@@ -109,7 +117,7 @@ const addAssetCategory = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -129,7 +137,7 @@ const addSubCategory = async (req, res, next) => {
         "Missing required fields",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -141,7 +149,7 @@ const addSubCategory = async (req, res, next) => {
         "Invalid ID(s) provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -152,7 +160,7 @@ const addSubCategory = async (req, res, next) => {
         "Category doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -163,7 +171,7 @@ const addSubCategory = async (req, res, next) => {
         "Company doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -178,7 +186,7 @@ const addSubCategory = async (req, res, next) => {
         "Subcategory already exists in this category",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -213,7 +221,7 @@ const addSubCategory = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -233,7 +241,7 @@ const updateCategory = async (req, res, next) => {
         "Missing assetCategoryId",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -242,7 +250,7 @@ const updateCategory = async (req, res, next) => {
         "Invalid category ID",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -253,7 +261,7 @@ const updateCategory = async (req, res, next) => {
         "Category doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -263,7 +271,7 @@ const updateCategory = async (req, res, next) => {
       {
         categoryName: categoryName ? categoryName : category.categoryName,
         isActive: typeof status === "boolean" ? status : category.isActive,
-      }
+      },
     );
 
     if (!updatedCategory) {
@@ -275,7 +283,7 @@ const updateCategory = async (req, res, next) => {
         { category: updatedCategory._id },
         {
           isActive: false,
-        }
+        },
       );
 
       if (!subCategory) {
@@ -291,7 +299,7 @@ const updateCategory = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -311,7 +319,7 @@ const updateSubCategory = async (req, res, next) => {
         "Missing assetSubCategoryId",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -320,7 +328,7 @@ const updateSubCategory = async (req, res, next) => {
         "Invalid subcategory ID",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -331,7 +339,7 @@ const updateSubCategory = async (req, res, next) => {
         "Subcategory doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -343,7 +351,7 @@ const updateSubCategory = async (req, res, next) => {
           ? subCategoryName
           : subcategory.subCategoryName,
         isActive: typeof status === "boolean" ? status : subcategory.isActive,
-      }
+      },
     );
 
     if (!updatedSubCategory) {
@@ -358,7 +366,7 @@ const updateSubCategory = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -366,10 +374,17 @@ const updateSubCategory = async (req, res, next) => {
 
 const getCategory = async (req, res, next) => {
   const { company, departments, roles } = req;
-  const { departmentId } = req.query;
+  const { departmentId, appliesTo = "asset" } = req.query;
+  const isValidType = ["asset", "inventory"].includes(appliesTo);
+
+  if (!isValidType) {
+    return res
+      .status(400)
+      .json({ message: "Category can be applied to asset or inventory only" });
+  }
 
   try {
-    let query = { company };
+    let query = { company, appliesTo };
 
     if (departmentId) {
       if (!mongoose.Types.ObjectId.isValid(departmentId)) {
@@ -387,7 +402,7 @@ const getCategory = async (req, res, next) => {
 
     const assetCategories = await AssetCategory.find(query).populate(
       "department",
-      "_id name"
+      "_id name",
     );
 
     const categoryIds = assetCategories.map((cat) => cat._id);
@@ -423,10 +438,17 @@ const getCategory = async (req, res, next) => {
 
 const getSubCategory = async (req, res, next) => {
   const company = req.company;
-  const { departmentId } = req.query;
+  const { departmentId, appliesTo = "asset" } = req.query;
+  const isValidType = ["asset", "inventory"].includes(appliesTo);
+
+  if (!isValidType) {
+    return res
+      .status(400)
+      .json({ message: "Category can be applied to asset or inventory only" });
+  }
 
   try {
-    let query = { company };
+    let query = { company, appliesTo };
     if (departmentId) {
       if (!mongoose.Types.ObjectId.isValid(departmentId)) {
         return res.status(400).json({ message: "Invalid department ID" });
