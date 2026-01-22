@@ -116,7 +116,7 @@ const ListOfAssets = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/assets/get-assets?departmentId=${departmentId}`
+          `/api/assets/get-assets?departmentId=${departmentId}`,
         );
         const filtered = response.data.flatMap((item) => item.assets);
         return filtered;
@@ -132,7 +132,7 @@ const ListOfAssets = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/assets/get-subcategory?departmentId=${departmentId}`
+            `/api/assets/get-subcategory?departmentId=${departmentId}`,
           );
           return response.data;
         } catch (error) {
@@ -143,7 +143,7 @@ const ListOfAssets = () => {
   const filteredSubCategories = !selectedCategory
     ? []
     : assetSubCategories?.filter(
-        (item) => item.category?._id === selectedCategory
+        (item) => item.category?._id === selectedCategory,
       ) || [];
 
   const { data: vendorDetails = [], isPending: isVendorDetails } = useQuery({
@@ -151,7 +151,7 @@ const ListOfAssets = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/vendors/get-vendors/${departmentId}`
+          `/api/vendors/get-vendors/${departmentId}`,
         );
         return response.data;
       } catch (error) {
@@ -199,7 +199,6 @@ const ListOfAssets = () => {
     },
   });
   useEffect(() => {
-
     const selected = assetsList.find((item) => item._id === selectedAsset?._id);
     if (selected) {
       setSelectedForEdit(selected);
@@ -207,7 +206,7 @@ const ListOfAssets = () => {
   }, [selectedAsset, assetsList]);
 
   useEffect(() => {
-    console.log("status",selectedForEdit.status)
+    console.log("status", selectedForEdit.status);
     if (modalMode === "edit" && selectedForEdit) {
       editRequest({
         assetMongoId: selectedForEdit?._id || "",
@@ -231,11 +230,13 @@ const ListOfAssets = () => {
             : "",
         locationId: selectedForEdit?.location?._id || "",
         floor: selectedForEdit?.floor?._id || "",
-        isUnderMaintenance: typeof selectedForEdit?.isUnderMaintenance === "boolean"
+        isUnderMaintenance:
+          typeof selectedForEdit?.isUnderMaintenance === "boolean"
             ? String(selectedForEdit.isUnderMaintenance)
             : "",
-        status: selectedForEdit?.status === "Active" ? "Active" :  "Inactive",
-        isDamaged: typeof selectedForEdit?.isDamaged === "boolean"
+        status: selectedForEdit?.status === "Active" ? "Active" : "Inactive",
+        isDamaged:
+          typeof selectedForEdit?.isDamaged === "boolean"
             ? String(selectedForEdit.isDamaged)
             : "",
         assetImage: null,
@@ -247,8 +248,7 @@ const ListOfAssets = () => {
   const { mutate: editAsset, isPending: isUpdateAsset } = useMutation({
     mutationKey: ["editAsset"],
     mutationFn: async (data) => {
-
-       console.log("data for edit",data)
+      console.log("data for edit", data);
       const formData = new FormData();
       formData.append("departmentId", departmentId);
       formData.append("categoryId", data.categoryId);
@@ -263,12 +263,12 @@ const ListOfAssets = () => {
       formData.append("warranty", Number(data.warranty));
       formData.append("ownershipType", data.ownershipType);
       formData.append("rentedMonths", Number(data.rentedMonths));
-      formData.append("status", data.status); 
-      formData.append("isDamaged", data.isDamaged); 
-      formData.append("isUnderMaintenance", data.isUnderMaintenance); 
+      formData.append("status", data.status);
+      formData.append("isDamaged", data.isDamaged);
+      formData.append("isUnderMaintenance", data.isUnderMaintenance);
       formData.append("tangable", data.tangable);
       formData.append("locationId", data.locationId);
-  
+
       if (data.assetImage) {
         formData.append("assetImage", data.assetImage);
       }
@@ -276,7 +276,10 @@ const ListOfAssets = () => {
         formData.append("warrantyDocument", data.warrantyDocument);
       }
 
-      const response = await axios.patch(`/api/assets/update-asset/${data.assetMongoId}`, formData);
+      const response = await axios.patch(
+        `/api/assets/update-asset/${data.assetMongoId}`,
+        formData,
+      );
       return response.data;
     },
     onSuccess: function (data) {
@@ -296,7 +299,7 @@ const ListOfAssets = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/assets/get-category?departmentId=${departmentId}`
+            `/api/category/get-category?departmentId=${departmentId}`,
           );
           return response.data;
         } catch (error) {
@@ -323,7 +326,7 @@ const ListOfAssets = () => {
     const unit = units.find(
       (unit) =>
         unit.unitNo === selectedUnit &&
-        unit.building?.buildingName === selectedLocation // use ?. here too
+        unit.building?.buildingName === selectedLocation, // use ?. here too
     );
     return unit ? unit._id : null;
   }, [selectedUnit, selectedLocation, units]);
@@ -335,8 +338,8 @@ const ListOfAssets = () => {
             loc.building?._id ?? `unknown-${loc.unitNo}`,
             loc.building?.buildingName ?? "Unknown Building",
           ])
-        : []
-    ).entries()
+        : [],
+    ).entries(),
   );
   //-----------------------API----------------------//
   //-----------------------Event handlers----------------------//
@@ -396,17 +399,16 @@ const ListOfAssets = () => {
   const tableData = isAssetsListPending
     ? []
     : assetsList.map((item) => {
-      return {
-        ...item,
-        assetMongoId: item?.asset?._id,
-        department: item?.department?.name,
-        subCategory: item?.subCategory?.subCategoryName,
-        subCatId: item?.subCategory?._id,
-        categoryId: item?.subCategory?.category?._id,
-        category: item?.subCategory?.category.categoryName,
-     
-      }
-    });
+        return {
+          ...item,
+          assetMongoId: item?.asset?._id,
+          department: item?.department?.name,
+          subCategory: item?.subCategory?.subCategoryName,
+          subCatId: item?.subCategory?._id,
+          categoryId: item?.subCategory?.category?._id,
+          category: item?.subCategory?.category.categoryName,
+        };
+      });
   //-----------------------Table Data----------------------//
 
   return (
@@ -423,7 +425,13 @@ const ListOfAssets = () => {
 
       <MuiModal
         open={isModalOpen}
-        title={modalMode === "add" ? "Add Asset" : modalMode === "view"? "View Details" : "Edit Asset"}
+        title={
+          modalMode === "add"
+            ? "Add Asset"
+            : modalMode === "view"
+              ? "View Details"
+              : "Edit Asset"
+        }
         onClose={() => setIsModalOpen(false)}
       >
         {modalMode === "add" && (
@@ -753,7 +761,7 @@ const ListOfAssets = () => {
                     .filter(
                       (unit) =>
                         unit.building &&
-                        unit.building.buildingName === selectedLocation
+                        unit.building.buildingName === selectedLocation,
                     )
                     .map((unit) => (
                       <MenuItem key={unit._id} value={unit._id}>
@@ -786,10 +794,14 @@ const ListOfAssets = () => {
         )}
         {modalMode === "edit" && (
           <form
-            onSubmit={handleEditSubmit((data) => editAsset({...data,
-            isDamaged :data.isDamaged === "true" ? true : false,
-            isUnderMaintenance: data.isUnderMaintenance === "true" ? true : false,
-            }))}
+            onSubmit={handleEditSubmit((data) =>
+              editAsset({
+                ...data,
+                isDamaged: data.isDamaged === "true" ? true : false,
+                isUnderMaintenance:
+                  data.isUnderMaintenance === "true" ? true : false,
+              }),
+            )}
             className="grid grid-cols-2 gap-4"
           >
             <Controller
@@ -868,7 +880,7 @@ const ListOfAssets = () => {
                 />
               )}
             />
-             <Controller
+            <Controller
               name="rentedMonths"
               control={editControl}
               rules={{ required: "Rented Months is required" }}
@@ -920,7 +932,7 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
-             <Controller
+            <Controller
               name="assetType"
               control={editControl}
               rules={{ required: "Asset Type is required" }}
@@ -1001,7 +1013,7 @@ const ListOfAssets = () => {
               )}
             />
 
-             <Controller
+            <Controller
               name="isUnderMaintenance"
               control={editControl}
               rules={{ required: "Under Maintenance is required" }}
@@ -1028,7 +1040,7 @@ const ListOfAssets = () => {
               // rules={{ required: "Asset Image is required" }}
               render={({ field }) => (
                 <UploadFileInput
-                id="asset-image"
+                  id="asset-image"
                   value={field.value}
                   label="Asset Image"
                   onChange={field.onChange}
@@ -1041,7 +1053,7 @@ const ListOfAssets = () => {
               // rules={{ required: "Warranty Document is required" }}
               render={({ field }) => (
                 <UploadFileInput
-                 id="warranty-document"
+                  id="warranty-document"
                   value={field.value}
                   label="Warranty Document"
                   allowedExtensions={["pdf"]}
@@ -1064,97 +1076,112 @@ const ListOfAssets = () => {
             <DetalisFormatted title={""} detail={""} />
           </div>
         )} */}
-           {modalMode === "view" && (
-                  <div className="grid grid-cols-1 gap-4">
-                    <DetalisFormatted
-                      title={"Asset ID"}
-                      detail={selectedAsset?.assetId || "N/A"}
-                    />
-                    <DetalisFormatted
-                      title={"Asset Name"}
-                      detail={selectedAsset?.name || "N/A"}
-                    />
-                    <DetalisFormatted
-                      title={"Asset Type"}
-                      detail={selectedAsset?.assetType || "N/A"}
-                    />
-                    <DetalisFormatted
-                      title={"Brand"}
-                      detail={selectedAsset?.brand || "N/A"}
-                    />
-                    <DetalisFormatted
-                      title={"Department"}
-                      detail={selectedAsset?.department || "N/A"}
-                    />
-                    <DetalisFormatted
-                      title={"UnitNo"}
-                      detail={selectedAsset?.location?.unitNo || "N/A"}
-                    />
-                    <DetalisFormatted
-                      title={"Ownership Type"}
-                      detail={selectedAsset?.ownershipType || "N/A"}
-                    />
-                    <DetalisFormatted
-                      title={"Price"}
-                      detail={`INR ${inrFormat(selectedAsset?.price)}`}
-                    />
-                    <DetalisFormatted
-                      title={"Purchase Date"}
-                      detail={humanDate(selectedAsset?.purchaseDate)}
-                    />
-                    <DetalisFormatted
-                      title={"Category"}
-                      detail={selectedAsset?.category || "N/A"}
-                    />
-                    <DetalisFormatted
-                      title={"Sub Category"}
-                      detail={selectedAsset?.subCategory || "N/A"}
-                    />
-                    <DetalisFormatted
-                      title={"Tangible"}
-                      detail={selectedAsset?.tangable ? "Yes" : "No"}
-                    />
-                    <DetalisFormatted title={"Status"} detail={selectedAsset?.status || "N/A"}/>
+        {modalMode === "view" && (
+          <div className="grid grid-cols-1 gap-4">
+            <DetalisFormatted
+              title={"Asset ID"}
+              detail={selectedAsset?.assetId || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Asset Name"}
+              detail={selectedAsset?.name || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Asset Type"}
+              detail={selectedAsset?.assetType || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Brand"}
+              detail={selectedAsset?.brand || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Department"}
+              detail={selectedAsset?.department || "N/A"}
+            />
+            <DetalisFormatted
+              title={"UnitNo"}
+              detail={selectedAsset?.location?.unitNo || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Ownership Type"}
+              detail={selectedAsset?.ownershipType || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Price"}
+              detail={`INR ${inrFormat(selectedAsset?.price)}`}
+            />
+            <DetalisFormatted
+              title={"Purchase Date"}
+              detail={humanDate(selectedAsset?.purchaseDate)}
+            />
+            <DetalisFormatted
+              title={"Category"}
+              detail={selectedAsset?.category || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Sub Category"}
+              detail={selectedAsset?.subCategory || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Tangible"}
+              detail={selectedAsset?.tangable ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Status"}
+              detail={selectedAsset?.status || "N/A"}
+            />
 
-                       <DetalisFormatted
-                      title={"Under Maintenance"}
-                      detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
-                    />
+            <DetalisFormatted
+              title={"Under Maintenance"}
+              detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
+            />
 
-                       <DetalisFormatted
-                      title={"Damaged"}
-                      detail={selectedAsset?.isDamaged ? "Yes" : "No"}
-                    />
-                    <DetalisFormatted title={"Assigned"} detail={selectedAsset?.isAssigned ? "Yes" : "No"}/>
+            <DetalisFormatted
+              title={"Damaged"}
+              detail={selectedAsset?.isDamaged ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Assigned"}
+              detail={selectedAsset?.isAssigned ? "Yes" : "No"}
+            />
 
-                    <DetalisFormatted title={"Asset Image"} detail={selectedAsset?.assetImage?.url ? (
+            <DetalisFormatted
+              title={"Asset Image"}
+              detail={
+                selectedAsset?.assetImage?.url ? (
                   <a
                     className="text-primary underline cursor-pointer"
                     href={selectedAsset.assetImage.url}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                      Asset Image
+                    Asset Image
                   </a>
                 ) : (
                   "N/A"
-                )}/>
+                )
+              }
+            />
 
-                    <DetalisFormatted title={"Warranty Document"} detail={selectedAsset?.warrantyDocument?.link ? (
+            <DetalisFormatted
+              title={"Warranty Document"}
+              detail={
+                selectedAsset?.warrantyDocument?.link ? (
                   <a
                     className="text-primary underline cursor-pointer"
                     href={selectedAsset.warrantyDocument.link}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                      Warranty Document
+                    Warranty Document
                   </a>
                 ) : (
                   "N/A"
-                )}/>
-
-                  </div>
-                )}
+                )
+              }
+            />
+          </div>
+        )}
       </MuiModal>
     </PageFrame>
   );

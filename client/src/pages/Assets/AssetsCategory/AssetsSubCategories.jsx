@@ -63,10 +63,10 @@ const AssetsSubCategories = () => {
   const { mutate: createSubCategory, isPending: pendingCreate } = useMutation({
     mutationFn: async (data) => {
       console.log("data", data);
-      const response = await axios.post(
-        "/api/assets/create-asset-subcategory",
-        { ...data, assetSubCategoryName: data.subCategoryName }
-      );
+      const response = await axios.post("/api/assets/create-subcategory", {
+        ...data,
+        assetSubCategoryName: data.subCategoryName,
+      });
       return response.data;
     },
     onSuccess: function (data) {
@@ -86,7 +86,7 @@ const AssetsSubCategories = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/assets/get-subcategory?departmentId=${departmentId}`
+            `/api/assets/get-subcategory?departmentId=${departmentId}`,
           );
           return response.data;
         } catch (error) {
@@ -100,7 +100,7 @@ const AssetsSubCategories = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/assets/get-category?departmentId=${departmentId}`
+          `/api/category/get-category?departmentId=${departmentId}`,
         );
         return response.data;
       } catch (error) {
@@ -112,8 +112,8 @@ const AssetsSubCategories = () => {
   const { mutate: editSubCategory, isPending: pendingEdit } = useMutation({
     mutationFn: async (data) => {
       const response = await axios.patch(
-        "/api/assets/update-asset-subcategory",
-        data
+        "/api/assets/update-subcategory",
+        data,
       );
       return response.data;
       // console.log("edit form : ", data);
@@ -244,8 +244,8 @@ const AssetsSubCategories = () => {
           modalMode === "add"
             ? "Add Sub Category"
             : modalMode === "view"
-            ? "View Sub Category"
-            : "Edit Sub Category"
+              ? "View Sub Category"
+              : "Edit Sub Category"
         }
       >
         {modalMode === "add" && (

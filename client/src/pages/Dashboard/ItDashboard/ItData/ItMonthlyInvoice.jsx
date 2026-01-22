@@ -48,7 +48,7 @@ const ItMonthlyInvoice = () => {
     queryKey: ["assetsCategories"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/assets/get-category");
+        const response = await axios.get("/api/category/get-category");
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -116,7 +116,8 @@ const ItMonthlyInvoice = () => {
         <div className="p-2 mb-2  flex gap-2">
           <span
             className="text-subtitle cursor-pointer"
-            onClick={() => handleDetailsClick(params.data)}>
+            onClick={() => handleDetailsClick(params.data)}
+          >
             <MdOutlineRemoveRedEye />
           </span>
         </div>
@@ -266,7 +267,8 @@ const ItMonthlyInvoice = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "add" ? "Add Invoice" : "Asset Details"}>
+        title={modalMode === "add" ? "Add Invoice" : "Asset Details"}
+      >
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -286,11 +288,13 @@ const ItMonthlyInvoice = () => {
                       label="Category"
                       size="small"
                       error={!!errors.name}
-                      helperText={errors.name?.message}>
+                      helperText={errors.name?.message}
+                    >
                       {assetsCategories.map((category) => (
                         <MenuItem
                           key={category._id}
-                          value={category.categoryName}>
+                          value={category.categoryName}
+                        >
                           {category.categoryName}
                         </MenuItem>
                       ))}
@@ -311,7 +315,8 @@ const ItMonthlyInvoice = () => {
                       label="Department"
                       size="small"
                       error={!!errors.department}
-                      helperText={errors.department?.message}>
+                      helperText={errors.department?.message}
+                    >
                       {auth.user.company.selectedDepartments?.map((dept) => (
                         <MenuItem key={dept._id} value={dept.name}>
                           {dept.name}
@@ -424,7 +429,8 @@ const ItMonthlyInvoice = () => {
                       label="Vendor"
                       size="small"
                       error={!!errors.vendor}
-                      helperText={errors.vendor?.message}>
+                      helperText={errors.vendor?.message}
+                    >
                       {vendorDetials.map((vendor) => (
                         <MenuItem key={vendor._id} value={vendor.name}>
                           {vendor.name}

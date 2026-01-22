@@ -47,7 +47,6 @@ const inventorySchema = new mongoose.Schema(
     },
     date: {
       type: Date,
-      default: new Date(),
     },
 
     // Closing inventory
@@ -57,13 +56,13 @@ const inventorySchema = new mongoose.Schema(
       default: 0,
     },
     category: {
-      type: String,
-      required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Inventory = mongoose.model("Inventory", inventorySchema);

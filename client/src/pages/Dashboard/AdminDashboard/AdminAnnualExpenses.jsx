@@ -46,7 +46,7 @@ const AdminAnnualExpenses = () => {
     queryKey: ["assetsCategories"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/assets/get-category");
+        const response = await axios.get("/api/category/get-category");
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -186,7 +186,8 @@ const AdminAnnualExpenses = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Add Expense">
+        title="Add Expense"
+      >
         {modalMode === "add" && (
           <div>
             <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -201,7 +202,8 @@ const AdminAnnualExpenses = () => {
                       label="Category"
                       size="small"
                       helperText={!!errors.assetType?.message}
-                      select>
+                      select
+                    >
                       <MenuItem value="" disabled>
                         Select an Asset Type
                       </MenuItem>
