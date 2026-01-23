@@ -104,7 +104,8 @@ const Inventory = () => {
   }, [selectedAsset]);
 
   const { data: inventoryData, isPending: isInventoryLoading } = useQuery({
-    queryKey: ["maintainance-inventory"],
+    queryKey: ["maintainance-inventory", department?._id],
+    enabled: Boolean(department?._id),
     queryFn: async () => {
       const response = await axios.get(
         `/api/inventory/get-inventories?department=${department._id}`,
@@ -158,7 +159,7 @@ const Inventory = () => {
       resetAddInventory();
     },
     onError: (error) => {
-      toast.error("Failed to add inventory. Please try again.");
+      toast.error(error.response.data.message);
       console.error(error);
     },
   });
