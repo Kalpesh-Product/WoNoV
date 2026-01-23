@@ -118,11 +118,18 @@ const Inventory = () => {
         //   item.updatedAt ||
         //   new Date().toISOString(); // last-resort fallback
 
+        const safeDate = item.date || item.createdAt || item.updatedAt;
+
+        console.log("dept", department._id);
+        console.log("name", item.Category || item.category.categoryName);
+
         return {
           ...item,
-          dateRaw: item.date,
+          date: safeDate,
+          dateRaw: safeDate,
           categoryId: item.category._id,
-          categoryName: item.category.categoryName,
+          categoryName: item.Category || item.category.categoryName,
+          // categoryName: item.category?.categoryName || "N/A",
         };
       });
     },
@@ -154,7 +161,10 @@ const Inventory = () => {
     },
     onSuccess: () => {
       toast.success("Inventory added successfully!");
-      queryClient.invalidateQueries({ queryKey: ["maintainance-inventory"] });
+      // queryClient.invalidateQueries({ queryKey: ["maintainance-inventory"] });
+      queryClient.invalidateQueries({
+        queryKey: ["maintainance-inventory", department?._id],
+      });
       setIsModalOpen(false);
       resetAddInventory();
     },
@@ -205,7 +215,9 @@ const Inventory = () => {
     },
     onSuccess: () => {
       toast.success("Inventory updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["maintainance-inventory"] });
+      queryClient.invalidateQueries({
+        queryKey: ["maintainance-inventory", department?._id],
+      });
       setIsModalOpen(false);
       resetUpdateInventory();
     },
@@ -319,7 +331,10 @@ const Inventory = () => {
     {
       field: "categoryName",
       headerName: "Category",
-      cellRenderer: (params) => params.value,
+      cellRenderer: (params) => {
+        console.log("params", params.value);
+        return params.value;
+      },
     },
 
     {
@@ -383,10 +398,6 @@ const Inventory = () => {
             control={categoryControl}
             rules={{
               required: "Category name is required",
-              validate: {
-                isAlphanumeric,
-                noOnlyWhitespace,
-              },
             }}
             render={({ field }) => (
               <TextField
