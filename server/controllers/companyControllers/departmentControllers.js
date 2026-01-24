@@ -3,76 +3,97 @@ const User = require("../../models/hr/UserData");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 
+// const createDepartment = async (req, res, next) => {
+//   const { deptId, deptName } = req.body;
+//   const user = req.user;
+//   const ip = req.ip;
+//   const company = req.company;
+//   const logPath = "hr/HrLog";
+//   const logAction = "Create Department";
+//   const logSourceKey = "department";
+
+//   try {
+//     if (!deptId || !deptName) {
+//       throw new CustomError(
+//         "Missing required fields",
+//         logPath,
+//         logAction,
+//         logSourceKey
+//       );
+//     }
+
+//     if (mongoose.Types.ObjectId.isValid(deptId)) {
+//       throw new CustomError(
+//         "Invalid department ID",
+//         logPath,
+//         logAction,
+//         logSourceKey
+//       );
+//     }
+
+//     const deptExists = await Department.findOne({ departmentId: deptId })
+//       .lean()
+//       .exec();
+//     if (deptExists) {
+//       throw new CustomError(
+//         "Department already exists",
+//         logPath,
+//         logAction,
+//         logSourceKey
+//       );
+//     }
+
+//     const newDept = new Department({
+//       departmentId: deptId,
+//       name: deptName,
+//     });
+
+//     await newDept.save();
+
+//     // Log the successful department creation
+//     await createLog({
+//       path: logPath,
+//       action: logAction,
+//       remarks: "New department created",
+//       status: "Success",
+//       user: user,
+//       ip: ip,
+//       company: company,
+//       sourceKey: logSourceKey,
+//       sourceId: newDept._id,
+//       changes: { deptId, deptName },
+//     });
+
+//     return res.status(201).json({ message: "New department created" });
+//   } catch (error) {
+//     if (error instanceof CustomError) {
+//       next(error);
+//     } else {
+//       next(
+//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+//       );
+//     }
+//   }
+// };
+
 const createDepartment = async (req, res, next) => {
-  const { deptId, deptName } = req.body;
-  const user = req.user;
-  const ip = req.ip;
-  const company = req.company;
-  const logPath = "hr/HrLog";
-  const logAction = "Create Department";
-  const logSourceKey = "department";
-
   try {
-    if (!deptId || !deptName) {
-      throw new CustomError(
-        "Missing required fields",
-        logPath,
-        logAction,
-        logSourceKey
-      );
+    const { name } = req.body;
+    if (!name) {
+      return res
+        .status(400)
+        .json({ message: "Please provide a name for the department" });
     }
-
-    if (mongoose.Types.ObjectId.isValid(deptId)) {
-      throw new CustomError(
-        "Invalid department ID",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    const deptExists = await Department.findOne({ departmentId: deptId })
-      .lean()
-      .exec();
-    if (deptExists) {
-      throw new CustomError(
-        "Department already exists",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    const newDept = new Department({
-      departmentId: deptId,
-      name: deptName,
+    const departmentId = `D-000${crypto.randomInt(100)}`;
+    const newDepartment = new Department({
+      name,
+      departmentId,
     });
 
-    await newDept.save();
-
-    // Log the successful department creation
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "New department created",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: newDept._id,
-      changes: { deptId, deptName },
-    });
-
-    return res.status(201).json({ message: "New department created" });
+    await newDepartment.save();
+    res.status(201).json({ message: "New Department created" });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-      );
-    }
+    next(error);
   }
 };
 
