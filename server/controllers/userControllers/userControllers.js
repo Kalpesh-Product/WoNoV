@@ -3,7 +3,7 @@ const UserData = require("../../models/hr/UserData");
 const bcrypt = require("bcryptjs");
 const User = require("../../models/hr/UserData");
 const Role = require("../../models/roles/Roles");
-const { default: mongoose } = require("mongoose");
+const { mongoose } = require("mongoose");
 const Department = require("../../models/Departments");
 const { createLog } = require("../../utils/moduleLogs");
 const csvParser = require("csv-parser");
@@ -56,7 +56,7 @@ const createUser = async (req, res, next) => {
       payrollInformation,
       familyInformation,
     } = req.body;
-
+    a;
     const companyId = req.company;
 
     // Validate required fields
