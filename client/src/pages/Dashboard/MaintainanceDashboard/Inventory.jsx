@@ -3,7 +3,7 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../components/MuiModal";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { MenuItem, TextField } from "@mui/material";
 import { toast } from "sonner";
 import DetalisFormatted from "../../../components/DetalisFormatted";
@@ -37,6 +37,7 @@ const Inventory = () => {
     control,
     formState: { errors },
     reset: resetAddInventory,
+    setValue: setAddValue,
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -102,6 +103,66 @@ const Inventory = () => {
     setValue("categoryId", selectedAsset?.categoryId || null);
     setValue("category", selectedAsset?.category || selectedAsset?.Category);
   }, [selectedAsset]);
+
+  const openingUnits = useWatch({ control, name: "openingInventoryUnits" });
+  const openingUnitPrice = useWatch({ control, name: "openingPerUnitPrice" });
+  const newPurchaseUnits = useWatch({ control, name: "newPurchaseUnits" });
+  const newPurchaseUnitPrice = useWatch({
+    control,
+    name: "newPurchasePerUnitPrice",
+  });
+  const updateOpeningUnits = useWatch({
+    control: updateControl,
+    name: "openingInventoryUnits",
+  });
+  const updateOpeningUnitPrice = useWatch({
+    control: updateControl,
+    name: "openingPerUnitPrice",
+  });
+  const updateNewPurchaseUnits = useWatch({
+    control: updateControl,
+    name: "newPurchaseUnits",
+  });
+  const updateNewPurchaseUnitPrice = useWatch({
+    control: updateControl,
+    name: "newPurchasePerUnitPrice",
+  });
+
+  useEffect(() => {
+    const units = Number(openingUnits) || 0;
+    const price = Number(openingUnitPrice) || 0;
+    setAddValue("openingInventoryValue", units * price, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [openingUnits, openingUnitPrice, setAddValue]);
+
+  useEffect(() => {
+    const units = Number(newPurchaseUnits) || 0;
+    const price = Number(newPurchaseUnitPrice) || 0;
+    setAddValue("newPurchaseInventoryValue", units * price, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [newPurchaseUnits, newPurchaseUnitPrice, setAddValue]);
+
+  useEffect(() => {
+    const units = Number(updateOpeningUnits) || 0;
+    const price = Number(updateOpeningUnitPrice) || 0;
+    setValue("openingInventoryValue", units * price, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [setValue, updateOpeningUnitPrice, updateOpeningUnits]);
+
+  useEffect(() => {
+    const units = Number(updateNewPurchaseUnits) || 0;
+    const price = Number(updateNewPurchaseUnitPrice) || 0;
+    setValue("newPurchaseInventoryValue", units * price, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [setValue, updateNewPurchaseUnitPrice, updateNewPurchaseUnits]);
 
   const { data: inventoryData, isPending: isInventoryLoading } = useQuery({
     queryKey: ["maintainance-inventory", department?._id],
@@ -253,11 +314,14 @@ const Inventory = () => {
     formData.append("department", department._id);
     formData.append("openingInventoryUnits", data.openingInventoryUnits);
     formData.append("openingPerUnitPrice", data.openingPerUnitPrice);
-    // formData.append("openingInventoryValue", openingInventoryValue);
+    formData.append("openingInventoryValue", data.openingInventoryValue);
     formData.append("newPurchaseUnits", data.newPurchaseUnits);
     formData.append("newPurchasePerUnitPrice", data.newPurchasePerUnitPrice);
-    // formData.append("newPurchaseInventoryValue", newPurchaseInventoryValue);
-    // formData.append("closingInventoryUnits", data.closingInventoryUnits);
+    formData.append(
+      "newPurchaseInventoryValue",
+      data.newPurchaseInventoryValue,
+    );
+    formData.append("closingInventoryUnits", data.closingInventoryUnits);
     formData.append("category", data.category);
 
     addAsset(formData);
@@ -525,10 +589,10 @@ const Inventory = () => {
                 )}
               />
 
-              {/* <Controller
+              <Controller
                 name="openingInventoryValue"
                 control={control}
-                rules={{ required: "Opening value required" }}
+                // rules={{ required: "Opening value required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -536,11 +600,12 @@ const Inventory = () => {
                     type="number"
                     size="small"
                     fullWidth
-                    error={!!errors.openingInventoryValue}
-                    helperText={errors.openingInventoryValue?.message}
+                    // error={!!errors.openingInventoryValue}
+                    // helperText={errors.openingInventoryValue?.message}
+                    disabled
                   />
                 )}
-              /> */}
+              />
 
               <Controller
                 name="newPurchaseUnits"
@@ -576,10 +641,10 @@ const Inventory = () => {
                 )}
               />
 
-              {/* <Controller
+              <Controller
                 name="newPurchaseInventoryValue"
                 control={control}
-                rules={{ required: "New purchase value required" }}
+                // rules={{ required: "New purchase value required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -587,13 +652,14 @@ const Inventory = () => {
                     type="number"
                     size="small"
                     fullWidth
-                    error={!!errors.newPurchaseInventoryValue}
-                    helperText={errors.newPurchaseInventoryValue?.message}
+                    // error={!!errors.newPurchaseInventoryValue}
+                    // helperText={errors.newPurchaseInventoryValue?.message}
+                    disabled
                   />
                 )}
-              /> */}
+              />
 
-              {/* <Controller
+              <Controller
                 name="closingInventoryUnits"
                 control={control}
                 rules={{ required: "Closing units required" }}
@@ -608,7 +674,7 @@ const Inventory = () => {
                     helperText={errors.closingInventoryUnits?.message}
                   />
                 )}
-              /> */}
+              />
 
               <PrimaryButton
                 title="Add Inventory"
@@ -820,7 +886,7 @@ const Inventory = () => {
                 )}
               />
 
-              {/* <Controller
+              <Controller
                 name="openingInventoryValue"
                 control={updateControl}
                 rules={{ required: "Opening value required" }}
@@ -831,11 +897,12 @@ const Inventory = () => {
                     type="number"
                     size="small"
                     fullWidth
-                    error={!!updateErrors.openingInventoryValue}
-                    helperText={updateErrors.openingInventoryValue?.message}
+                    // error={!!updateErrors.openingInventoryValue}
+                    // helperText={updateErrors.openingInventoryValue?.message}
+                    disabled
                   />
                 )}
-              /> */}
+              />
 
               <Controller
                 name="newPurchaseUnits"
@@ -871,10 +938,10 @@ const Inventory = () => {
                 )}
               />
 
-              {/* <Controller
+              <Controller
                 name="newPurchaseInventoryValue"
                 control={updateControl}
-                rules={{ required: "New purchase value required" }}
+                // rules={{ required: "New purchase value required" }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -882,13 +949,14 @@ const Inventory = () => {
                     type="number"
                     size="small"
                     fullWidth
-                    error={!!updateErrors.newPurchaseInventoryValue}
-                    helperText={updateErrors.newPurchaseInventoryValue?.message}
+                    // error={!!updateErrors.newPurchaseInventoryValue}
+                    // helperText={updateErrors.newPurchaseInventoryValue?.message}
+                    disabled
                   />
                 )}
-              /> */}
+              />
 
-              {/* <Controller
+              <Controller
                 name="closingInventoryUnits"
                 control={updateControl}
                 rules={{ required: "Closing units required" }}
@@ -903,7 +971,7 @@ const Inventory = () => {
                     helperText={updateErrors.closingInventoryUnits?.message}
                   />
                 )}
-              /> */}
+              />
 
               <PrimaryButton
                 title="Update Inventory"

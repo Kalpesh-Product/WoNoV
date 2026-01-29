@@ -20,8 +20,11 @@ const createInventory = async (req, res, next) => {
       itemName,
       openingInventoryUnits = 0,
       openingPerUnitPrice = 0,
+      openingInventoryValue,
       newPurchaseUnits = 0,
       newPurchasePerUnitPrice = 0,
+      newPurchaseInventoryValue,
+      closingInventoryUnits,
       category,
     } = req.body;
 
@@ -94,16 +97,6 @@ const createInventory = async (req, res, next) => {
         400,
       );
     }
-
-    /* ------------------ Derived values (backend owned) ------------------ */
-
-    const openingInventoryValue = openingInventoryUnits * openingPerUnitPrice;
-
-    const newPurchaseInventoryValue =
-      newPurchaseUnits * newPurchasePerUnitPrice;
-
-    const closingInventoryUnits =
-      Number(openingInventoryUnits) + Number(newPurchaseUnits);
 
     /* ------------------ Create inventory ------------------ */
 
