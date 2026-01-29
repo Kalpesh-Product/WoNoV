@@ -9,6 +9,11 @@ const assetsSchema = new mongoose.Schema(
     assetId: {
       type: String,
       required: true,
+      unique: true,
+    },
+    departmentAssetId: {
+      type: String,
+      unique: true,
     },
     rentedMonths: {
       type: Number,
@@ -37,6 +42,7 @@ const assetsSchema = new mongoose.Schema(
       required: true,
     },
     price: {
+      //per unit
       type: Number,
       required: true,
     },
@@ -90,7 +96,7 @@ const assetsSchema = new mongoose.Schema(
       url: String,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Asset = mongoose.model("Asset", assetsSchema);

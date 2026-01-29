@@ -46,6 +46,9 @@ const LeadSchema = new mongoose.Schema(
     emailAddress: {
       type: String,
     },
+    source: {
+      type: String,
+    },
     leadSource: {
       type: String,
     },
@@ -72,10 +75,10 @@ const LeadSchema = new mongoose.Schema(
       type: String,
     },
     lastFollowUpDate: {
-      type: Date
+      type: Date,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Lead = mongoose.model("Lead", LeadSchema);

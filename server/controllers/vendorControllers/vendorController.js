@@ -40,7 +40,7 @@ const onboardVendor = async (req, res, next) => {
         "Missing required fields",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -62,7 +62,7 @@ const onboardVendor = async (req, res, next) => {
         "Email already exists",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -77,14 +77,14 @@ const onboardVendor = async (req, res, next) => {
 
     // Check if the user is part of the given department
     const isMember = currentUser.departments.find(
-      (dept) => dept._id.toString() === departmentId
+      (dept) => dept._id.toString() === departmentId,
     );
     if (!isMember) {
       throw new CustomError(
         "You are not a member of this department.",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -112,7 +112,7 @@ const onboardVendor = async (req, res, next) => {
         "You are not authorized to onboard a vendor for this department.",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -164,7 +164,7 @@ const onboardVendor = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -185,7 +185,7 @@ const updateVendor = async (req, res, next) => {
         "Vendor ID is required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -204,20 +204,20 @@ const updateVendor = async (req, res, next) => {
         "Vendor not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     // Check if the user is a member of the department the vendor belongs to
     const isMember = currentUser.departments.find(
-      (dept) => dept._id.toString() === vendor.departmentId.toString()
+      (dept) => dept._id.toString() === vendor.departmentId.toString(),
     );
     if (!isMember) {
       throw new CustomError(
         "You are not a member of this department.",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -244,7 +244,7 @@ const updateVendor = async (req, res, next) => {
         "You are not authorized to update this vendor.",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -252,7 +252,7 @@ const updateVendor = async (req, res, next) => {
     const updatedVendor = await Vendor.findByIdAndUpdate(
       vendorId,
       { ...updateData, updatedAt: new Date() },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     // Log the vendor update
@@ -277,7 +277,7 @@ const updateVendor = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -340,6 +340,7 @@ const bulkInsertVendors = async (req, res, next) => {
               bankName: row["Bank Name"]?.trim(),
               branchName: row["Branch Name"]?.trim(),
               accountNumber: row["Account No"]?.trim(),
+              nameOnAccount: row["Name On Account"]?.trim(),
               ifscCode: row["IFSC Code"]?.trim(),
               departmentId,
               company,
@@ -355,7 +356,7 @@ const bulkInsertVendors = async (req, res, next) => {
 
     // Optional: check for required fields and filter invalid rows
     const validVendors = vendors.filter(
-      (v) => v.name && v.email && v.companyName && v.address
+      (v) => v.name && v.email && v.companyName && v.address,
     );
 
     if (!validVendors.length) {
@@ -365,7 +366,6 @@ const bulkInsertVendors = async (req, res, next) => {
     }
 
     const insertedVendors = await Vendor.insertMany(validVendors);
-
 
     res.status(201).json({
       message: `${insertedVendors.length} vendors inserted successfully.`,

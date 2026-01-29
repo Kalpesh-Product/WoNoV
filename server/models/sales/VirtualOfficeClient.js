@@ -14,7 +14,7 @@ const virtualOfficeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
     },
-    terStartDate: {
+    termStartDate: {
       type: Date,
     },
     totalTerm: {
@@ -39,12 +39,12 @@ const virtualOfficeSchema = new mongoose.Schema(
       type: Date,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const VirtualOfficeClient = mongoose.model(
   "VirtualOfficeClient",
-  virtualOfficeSchema
+  virtualOfficeSchema,
 );
 
 module.exports = VirtualOfficeClient;
