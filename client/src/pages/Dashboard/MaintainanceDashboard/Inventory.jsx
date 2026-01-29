@@ -485,180 +485,190 @@ const Inventory = () => {
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === "view" ? "View Details" : "Add Inventory"}
+        title={
+          modalMode === "view"
+            ? "View Details"
+            : modalMode === "add"
+              ? "Add Inventory"
+              : "Edit Inventory"
+        }
       >
         {modalMode === "add" && (
           <div>
             <form
               onSubmit={handleSubmit(handleFormSubmit)}
-              className="grid grid-cols-2 gap-4"
+              className="flex flex-col gap-4"
             >
-              <Controller
-                name="category"
-                control={control}
-                rules={{ required: "Category required" }}
-                render={({ field }) => (
-                  <TextField
-                    className="col-span-2"
-                    {...field}
-                    label="Category"
-                    size="small"
-                    fullWidth
-                    select
-                    error={!!errors.category}
-                    helperText={errors.category?.message}
-                  >
-                    <MenuItem value="">Select category</MenuItem>
-                    {inventoryCategories
-                      .filter((category) => category.isActive)
-                      .map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.categoryName}
-                        </MenuItem>
-                      ))}
-
-                    {/* {department.name === "Administration"
-                      ? adminCategories.map((m) => (
-                          <MenuItem key={m.id} value={m.name}>
-                            {m.name}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Controller
+                  name="category"
+                  control={control}
+                  rules={{ required: "Category required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Category"
+                      size="small"
+                      fullWidth
+                      select
+                      error={!!errors.category}
+                      helperText={errors.category?.message}
+                    >
+                      <MenuItem value="">Select category</MenuItem>
+                      {inventoryCategories
+                        .filter((category) => category.isActive)
+                        .map((category) => (
+                          <MenuItem key={category._id} value={category._id}>
+                            {category.categoryName}
                           </MenuItem>
-                        ))
-                      : department.name === "Maintenance"
-                        ? maintainanceCategories.map((m) => (
+                        ))}
+
+                      {/* {department.name === "Administration"
+                        ? adminCategories.map((m) => (
                             <MenuItem key={m.id} value={m.name}>
                               {m.name}
                             </MenuItem>
                           ))
-                        : []} */}
-                  </TextField>
-                )}
-              />
-              <Controller
-                name="itemName"
-                control={control}
-                rules={{
-                  required: "Item name is required",
-                  validate: {
-                    isAlphanumeric,
-                    noOnlyWhitespace,
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Item Name"
-                    fullWidth
-                    size="small"
-                    error={!!errors.itemName}
-                    helperText={errors.itemName?.message}
-                  />
-                )}
-              />
+                        : department.name === "Maintenance"
+                          ? maintainanceCategories.map((m) => (
+                              <MenuItem key={m.id} value={m.name}>
+                                {m.name}
+                              </MenuItem>
+                            ))
+                          : []} */}
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="itemName"
+                  control={control}
+                  rules={{
+                    required: "Item name is required",
+                    validate: {
+                      isAlphanumeric,
+                      noOnlyWhitespace,
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Item Name"
+                      fullWidth
+                      size="small"
+                      error={!!errors.itemName}
+                      helperText={errors.itemName?.message}
+                    />
+                  )}
+                />
+              </div>
 
-              <Controller
-                name="openingInventoryUnits"
-                control={control}
-                rules={{ required: "Opening units required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Opening Units"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    error={!!errors.openingInventoryUnits}
-                    helperText={errors.openingInventoryUnits?.message}
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Controller
+                  name="openingInventoryUnits"
+                  control={control}
+                  rules={{ required: "Opening units required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Opening Units"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!errors.openingInventoryUnits}
+                      helperText={errors.openingInventoryUnits?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                name="openingPerUnitPrice"
-                control={control}
-                rules={{ required: "Per unit price required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Opening Per Unit Price"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    error={!!errors.openingPerUnitPrice}
-                    helperText={errors.openingPerUnitPrice?.message}
-                  />
-                )}
-              />
+                <Controller
+                  name="openingPerUnitPrice"
+                  control={control}
+                  rules={{ required: "Per unit price required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Opening Per Unit Price"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!errors.openingPerUnitPrice}
+                      helperText={errors.openingPerUnitPrice?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                name="openingInventoryValue"
-                control={control}
-                // rules={{ required: "Opening value required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Opening Value"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    // error={!!errors.openingInventoryValue}
-                    // helperText={errors.openingInventoryValue?.message}
-                    disabled
-                  />
-                )}
-              />
+                <Controller
+                  name="openingInventoryValue"
+                  control={control}
+                  // rules={{ required: "Opening value required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Opening Value"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      // error={!!errors.openingInventoryValue}
+                      // helperText={errors.openingInventoryValue?.message}
+                      disabled
+                    />
+                  )}
+                />
+              </div>
 
-              <Controller
-                name="newPurchaseUnits"
-                control={control}
-                rules={{ required: "New purchase units required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="New Purchase Units"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    error={!!errors.newPurchaseUnits}
-                    helperText={errors.newPurchaseUnits?.message}
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Controller
+                  name="newPurchaseUnits"
+                  control={control}
+                  rules={{ required: "New purchase units required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="New Purchase Units"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!errors.newPurchaseUnits}
+                      helperText={errors.newPurchaseUnits?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                name="newPurchasePerUnitPrice"
-                control={control}
-                rules={{ required: "New per unit price required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="New Purchase Per Unit Price"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    error={!!errors.newPurchasePerUnitPrice}
-                    helperText={errors.newPurchasePerUnitPrice?.message}
-                  />
-                )}
-              />
+                <Controller
+                  name="newPurchasePerUnitPrice"
+                  control={control}
+                  rules={{ required: "New per unit price required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="New Purchase Per Unit Price"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!errors.newPurchasePerUnitPrice}
+                      helperText={errors.newPurchasePerUnitPrice?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                name="newPurchaseInventoryValue"
-                control={control}
-                // rules={{ required: "New purchase value required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="New Purchase Value"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    // error={!!errors.newPurchaseInventoryValue}
-                    // helperText={errors.newPurchaseInventoryValue?.message}
-                    disabled
-                  />
-                )}
-              />
-
+                <Controller
+                  name="newPurchaseInventoryValue"
+                  control={control}
+                  // rules={{ required: "New purchase value required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="New Purchase Value"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      // error={!!errors.newPurchaseInventoryValue}
+                      // helperText={errors.newPurchaseInventoryValue?.message}
+                      disabled
+                    />
+                  )}
+                />
+              </div>
               <Controller
                 name="closingInventoryUnits"
                 control={control}
@@ -789,33 +799,33 @@ const Inventory = () => {
           <div>
             <form
               onSubmit={handleUpdate((data) => updateAsset(data))}
-              className="grid grid-cols-2 gap-4"
+              className="flex flex-col gap-4"
             >
-              <Controller
-                name="category"
-                control={updateControl}
-                rules={{ required: "Category required" }}
-                render={({ field }) => (
-                  <TextField
-                    className="col-span-2"
-                    {...field}
-                    label="Category"
-                    size="small"
-                    fullWidth
-                    select
-                    error={!!updateErrors.category}
-                    helperText={updateErrors.category?.message}
-                  >
-                    <MenuItem value="">Select category</MenuItem>
-                    {inventoryCategories
-                      .filter((category) => category.isActive)
-                      .map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.categoryName}
-                        </MenuItem>
-                      ))}
-                    {/* {department.name === "Administration"
-                      ? adminCategories.map((m) => (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Controller
+                  name="category"
+                  control={updateControl}
+                  rules={{ required: "Category required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Category"
+                      size="small"
+                      fullWidth
+                      select
+                      error={!!updateErrors.category}
+                      helperText={updateErrors.category?.message}
+                    >
+                      <MenuItem value="">Select category</MenuItem>
+                      {inventoryCategories
+                        .filter((category) => category.isActive)
+                        .map((category) => (
+                          <MenuItem key={category._id} value={category._id}>
+                            {category.categoryName}
+                          </MenuItem>
+                        ))}
+                      {/* {department.name === "Administration"
+                        ? adminCategories.map((m) => (
                           <MenuItem key={m.id} value={m.name}>
                             {m.name}
                           </MenuItem>
@@ -826,136 +836,146 @@ const Inventory = () => {
                               {m.name}
                             </MenuItem>
                           ))
-                        : []} */}
-                  </TextField>
-                )}
-              />
-              <Controller
-                name="itemName"
-                control={updateControl}
-                rules={{
-                  required: "Item name is required",
-                  validate: {
-                    isAlphanumeric,
-                    noOnlyWhitespace,
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Item Name"
-                    fullWidth
-                    size="small"
-                    error={!!updateErrors.itemName}
-                    helperText={updateErrors.itemName?.message}
-                  />
-                )}
-              />
+                         : department.name === "Maintenance"
+                          ? maintainanceCategories.map((m) => (
+                              <MenuItem key={m.id} value={m.name}>
+                                {m.name}
+                              </MenuItem>
+                            ))
+                          : []} */}
+                    </TextField>
+                  )}
+                />
+                <Controller
+                  name="itemName"
+                  control={updateControl}
+                  rules={{
+                    required: "Item name is required",
+                    validate: {
+                      isAlphanumeric,
+                      noOnlyWhitespace,
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Item Name"
+                      fullWidth
+                      size="small"
+                      error={!!updateErrors.itemName}
+                      helperText={updateErrors.itemName?.message}
+                    />
+                  )}
+                />
+              </div>
 
-              <Controller
-                name="openingInventoryUnits"
-                control={updateControl}
-                rules={{ required: "Opening units required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Opening Units"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    error={!!updateErrors.openingInventoryUnits}
-                    helperText={updateErrors.openingInventoryUnits?.message}
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Controller
+                  name="openingInventoryUnits"
+                  control={updateControl}
+                  rules={{ required: "Opening units required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Opening Units"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!updateErrors.openingInventoryUnits}
+                      helperText={updateErrors.openingInventoryUnits?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                name="openingPerUnitPrice"
-                control={updateControl}
-                rules={{ required: "Per unit price required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Opening Per Unit Price"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    error={!!updateErrors.openingPerUnitPrice}
-                    helperText={updateErrors.openingPerUnitPrice?.message}
-                  />
-                )}
-              />
+                <Controller
+                  name="openingPerUnitPrice"
+                  control={updateControl}
+                  rules={{ required: "Per unit price required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Opening Per Unit Price"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!updateErrors.openingPerUnitPrice}
+                      helperText={updateErrors.openingPerUnitPrice?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                name="openingInventoryValue"
-                control={updateControl}
-                rules={{ required: "Opening value required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Opening Value"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    // error={!!updateErrors.openingInventoryValue}
-                    // helperText={updateErrors.openingInventoryValue?.message}
-                    disabled
-                  />
-                )}
-              />
+                <Controller
+                  name="openingInventoryValue"
+                  control={updateControl}
+                  rules={{ required: "Opening value required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Opening Value"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      // error={!!updateErrors.openingInventoryValue}
+                      // helperText={updateErrors.openingInventoryValue?.message}
+                      disabled
+                    />
+                  )}
+                />
+              </div>
 
-              <Controller
-                name="newPurchaseUnits"
-                control={updateControl}
-                rules={{ required: "New purchase units required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="New Purchase Units"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    error={!!updateErrors.newPurchaseUnits}
-                    helperText={updateErrors.newPurchaseUnits?.message}
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Controller
+                  name="newPurchaseUnits"
+                  control={updateControl}
+                  rules={{ required: "New purchase units required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="New Purchase Units"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!updateErrors.newPurchaseUnits}
+                      helperText={updateErrors.newPurchaseUnits?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                name="newPurchasePerUnitPrice"
-                control={updateControl}
-                rules={{ required: "New per unit price required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="New Purchase Per Unit Price"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    error={!!updateErrors.newPurchasePerUnitPrice}
-                    helperText={updateErrors.newPurchasePerUnitPrice?.message}
-                  />
-                )}
-              />
+                <Controller
+                  name="newPurchasePerUnitPrice"
+                  control={updateControl}
+                  rules={{ required: "New per unit price required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="New Purchase Per Unit Price"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!updateErrors.newPurchasePerUnitPrice}
+                      helperText={updateErrors.newPurchasePerUnitPrice?.message}
+                    />
+                  )}
+                />
 
-              <Controller
-                name="newPurchaseInventoryValue"
-                control={updateControl}
-                // rules={{ required: "New purchase value required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="New Purchase Value"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    // error={!!updateErrors.newPurchaseInventoryValue}
-                    // helperText={updateErrors.newPurchaseInventoryValue?.message}
-                    disabled
-                  />
-                )}
-              />
-
+                <Controller
+                  name="newPurchaseInventoryValue"
+                  control={updateControl}
+                  // rules={{ required: "New purchase value required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="New Purchase Value"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      // error={!!updateErrors.newPurchaseInventoryValue}
+                      // helperText={updateErrors.newPurchaseInventoryValue?.message}
+                      disabled
+                    />
+                  )}
+                />
+              </div>
               <Controller
                 name="closingInventoryUnits"
                 control={updateControl}
