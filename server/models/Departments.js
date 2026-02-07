@@ -17,19 +17,19 @@ const departmentSchema = new mongoose.Schema({
     {
       name: {
         type: String,
-        required: true,
+        // required: true,
       },
       documentLink: {
         type: String,
-        required: true,
+        // required: true,
       },
       documentId: {
         type: String,
-        required: true,
+        // required: true,
       },
       isActive: {
         type: Boolean,
-        default: true,
+        // default: true,
       },
       createdAt: {
         type: Date,

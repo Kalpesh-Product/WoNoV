@@ -4,6 +4,8 @@ const {
   getDepartments,
   assignAdmin,
   createDepartment,
+  editDepartment,
+  markDepartmentStatus,
 } = require("../controllers/companyControllers/departmentControllers");
 
 router.post("/add-department", createDepartment);

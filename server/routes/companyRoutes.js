@@ -70,6 +70,8 @@ const {
 
 const {
   createDepartment,
+  editDepartment,
+  markDepartmentStatus,
 } = require("../controllers/companyControllers/departmentControllers");
 
 const {
@@ -91,6 +93,8 @@ router.post("/add-shift", addShift);
 
 // Department and roles
 router.post("/add-department", createDepartment);
+router.patch("/edit-department", editDepartment);
+router.patch("/mark-department-status", markDepartmentStatus);
 router.patch("/update-company-data", updateCompanySubItem);
 
 // Employee/Leave types
@@ -110,14 +114,14 @@ router.patch(
     { name: "clearImage", maxCount: 1 },
     { name: "occupiedImage", maxCount: 1 },
   ]),
-  updateUnit
+  updateUnit,
 );
 router.patch("/assign-primary-unit", assignPrimaryUnit);
 router.post("/bulk-add-locations", upload.single("units"), bulkInsertUnits);
 router.post(
   "/upload-location-image",
   upload.single("locationImage"),
-  uploadUnitImage
+  uploadUnitImage,
 );
 
 // KYC & Compliance
@@ -127,7 +131,7 @@ router.get("/get-compliance-documents", getComplianceDocuments);
 router.post(
   "/add-compliance-document",
   upload.single("document"),
-  uploadComplianceDocument
+  uploadComplianceDocument,
 );
 
 // Job Applications
@@ -136,7 +140,7 @@ router.get("/get-job-applications", getJobApplications);
 router.post(
   "/bulk-insert-job-applications",
   upload.single("job-applications"),
-  bulkInsertJobApplications
+  bulkInsertJobApplications,
 );
 
 // Housekeeping
@@ -145,17 +149,17 @@ router.get("/housekeeping-members", getHouseKeepingStaff);
 router.post(
   "/bulk-insert-housekeeping-members",
   upload.single("housekeeping-members"),
-  bulkInsertHousekeepingMembers
+  bulkInsertHousekeepingMembers,
 );
 router.post(
   "/bulk-insert-housekeeping-schedule",
   upload.single("housekeeping-schedule"),
-  bulkInsertHouseKeepingSchedule
+  bulkInsertHouseKeepingSchedule,
 );
 router.patch("/update-housekeeping-member/:id", updateHouseKeepingMember);
 router.delete(
   "/soft-delete-housekeeping-member/:id",
-  softDeleteHouseKeepingMember
+  softDeleteHouseKeepingMember,
 );
 router.post("/assign-new-housekeeping-schedule", assignHouseKeepingMember);
 router.get("/get-housekeeping-schedule", getHouseKeepingAssignments);
@@ -164,7 +168,7 @@ router.get("/get-housekeeping-schedule", getHouseKeepingAssignments);
 router.post(
   "/upload-company-document",
   upload.single("document"),
-  uploadCompanyDocument
+  uploadCompanyDocument,
 );
 router.patch("/update-company-document", updateCompanyDocument);
 router.patch("/delete-company-document", toggleCompanyDocumentStatus);
@@ -174,7 +178,7 @@ router.get("/get-company-documents/:type", getCompanyDocuments);
 router.post(
   "/add-department-document/:departmentId",
   upload.single("department-document"),
-  uploadDepartmentDocument
+  uploadDepartmentDocument,
 );
 router.patch("/update-department-document", updateDepartmentDocument);
 router.patch("/delete-department-document", deleteDepartmentDocument);
@@ -182,14 +186,14 @@ router.get("/get-department-documents", getDepartmentDocuments);
 router.post(
   "/upload-department-templates/:departmentId",
   upload.single("template"),
-  handleDepartmentTemplateUpload
+  handleDepartmentTemplateUpload,
 );
 router.get("/department-templates/:departmentId", getDepartmentTemplates);
 router.delete("/delete-department-templates", deleteDepartmentTemplate);
 router.patch(
   "/update-department-template",
   upload.single("template"),
-  updateDepartmentTemplate
+  updateDepartmentTemplate,
 );
 
 module.exports = router;

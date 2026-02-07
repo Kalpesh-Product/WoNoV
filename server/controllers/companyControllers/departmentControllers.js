@@ -1,80 +1,9 @@
 const Department = require("../../models/Departments");
 const User = require("../../models/hr/UserData");
+const Role = require("../../models/roles/Roles");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
-
-// const createDepartment = async (req, res, next) => {
-//   const { deptId, deptName } = req.body;
-//   const user = req.user;
-//   const ip = req.ip;
-//   const company = req.company;
-//   const logPath = "hr/HrLog";
-//   const logAction = "Create Department";
-//   const logSourceKey = "department";
-
-//   try {
-//     if (!deptId || !deptName) {
-//       throw new CustomError(
-//         "Missing required fields",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     if (mongoose.Types.ObjectId.isValid(deptId)) {
-//       throw new CustomError(
-//         "Invalid department ID",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const deptExists = await Department.findOne({ departmentId: deptId })
-//       .lean()
-//       .exec();
-//     if (deptExists) {
-//       throw new CustomError(
-//         "Department already exists",
-//         logPath,
-//         logAction,
-//         logSourceKey
-//       );
-//     }
-
-//     const newDept = new Department({
-//       departmentId: deptId,
-//       name: deptName,
-//     });
-
-//     await newDept.save();
-
-//     // Log the successful department creation
-//     await createLog({
-//       path: logPath,
-//       action: logAction,
-//       remarks: "New department created",
-//       status: "Success",
-//       user: user,
-//       ip: ip,
-//       company: company,
-//       sourceKey: logSourceKey,
-//       sourceId: newDept._id,
-//       changes: { deptId, deptName },
-//     });
-
-//     return res.status(201).json({ message: "New department created" });
-//   } catch (error) {
-//     if (error instanceof CustomError) {
-//       next(error);
-//     } else {
-//       next(
-//         new CustomError(error.message, logPath, logAction, logSourceKey, 500)
-//       );
-//     }
-//   }
-// };
+const mongoose = require("mongoose");
 
 const createDepartment = async (req, res, next) => {
   try {
@@ -112,6 +41,144 @@ const getDepartments = async (req, res, next) => {
   }
 };
 
+const editDepartment = async (req, res, next) => {
+  const { departmentId, name, managerId } = req.body;
+
+  try {
+    if (!departmentId) {
+      return res.status(400).json({ message: "Department ID is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+      return res.status(400).json({ message: "Invalid department ID" });
+    }
+
+    if (!name && !managerId) {
+      return res.status(400).json({ message: "No update fields provided" });
+    }
+
+    const department = await Department.findById(departmentId);
+    if (!department) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    const departmentNameExists = await Department.findOne({ name });
+
+    console.log("department exists", departmentNameExists);
+    if (departmentNameExists) {
+      return res.status(400).json({ message: "Department name exists" });
+    }
+
+    if (name) {
+      department.name = name;
+    }
+
+    const updatedDepartment = await department.save();
+
+    let updatedManager = null;
+    if (managerId) {
+      if (!mongoose.Types.ObjectId.isValid(managerId)) {
+        return res.status(400).json({ message: "Invalid manager ID" });
+      }
+
+      const departmentName = (name || department.name || "").trim();
+      if (!departmentName) {
+        return res
+          .status(400)
+          .json({ message: "Department name is required to assign a manager" });
+      }
+
+      const normalizedDepartmentName = departmentName
+        .toUpperCase()
+        .replace(/\s+/g, "_");
+      const [manager, role] = await Promise.all([
+        User.findById(managerId),
+        Role.findOne({
+          roleID: { $regex: normalizedDepartmentName, $options: "i" },
+        }),
+      ]);
+
+      if (!manager) {
+        return res.status(404).json({ message: "Manager not found" });
+      }
+
+      if (!role) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+
+      await User.updateMany(
+        {
+          _id: { $ne: managerId },
+          departments: department._id,
+          role: role._id,
+        },
+        {
+          $pull: {
+            departments: department._id,
+            role: role._id,
+          },
+        },
+      );
+
+      updatedManager = await User.findByIdAndUpdate(
+        managerId,
+        {
+          $addToSet: {
+            departments: department._id,
+            role: role._id,
+          },
+        },
+        { new: true },
+      );
+    }
+
+    return res.status(200).json({
+      message: "Department updated successfully",
+      department: updatedDepartment,
+      manager: updatedManager,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const markDepartmentStatus = async (req, res, next) => {
+  const { departmentId, isActive } = req.body;
+
+  try {
+    if (!departmentId) {
+      return res.status(400).json({ message: "Department ID is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+      return res.status(400).json({ message: "Invalid department ID" });
+    }
+
+    if (typeof isActive !== "boolean") {
+      return res
+        .status(400)
+        .json({ message: "isActive must be a boolean value" });
+    }
+
+    const updatedDepartment = await Department.findByIdAndUpdate(
+      departmentId,
+      { isActive },
+      { new: true },
+    );
+
+    if (!updatedDepartment) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    return res.status(200).json({
+      message: "Department status updated successfully",
+      department: updatedDepartment,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const assignAdmin = async (req, res, next) => {
   const logPath = "hr/HrLog";
   const logAction = "Assign Admin";
@@ -125,7 +192,7 @@ const assignAdmin = async (req, res, next) => {
         "Department and Admin IDs are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -142,7 +209,7 @@ const assignAdmin = async (req, res, next) => {
         "Department not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -172,10 +239,16 @@ const assignAdmin = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
 };
 
-module.exports = { createDepartment, assignAdmin, getDepartments };
+module.exports = {
+  createDepartment,
+  assignAdmin,
+  getDepartments,
+  editDepartment,
+  markDepartmentStatus,
+};

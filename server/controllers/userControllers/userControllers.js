@@ -56,7 +56,7 @@ const createUser = async (req, res, next) => {
       payrollInformation,
       familyInformation,
     } = req.body;
-    a;
+
     const companyId = req.company;
 
     // Validate required fields
@@ -80,7 +80,7 @@ const createUser = async (req, res, next) => {
       role: yup
         .mixed()
         .test("role-required", "role is required", (value) =>
-          Array.isArray(value) ? value.length > 0 : Boolean(value)
+          Array.isArray(value) ? value.length > 0 : Boolean(value),
         ),
       departments: yup
         .array()
@@ -226,7 +226,7 @@ const createUser = async (req, res, next) => {
           `Missing or invalid fields: ${error.errors.join(", ")}`,
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
       throw error;
@@ -234,14 +234,14 @@ const createUser = async (req, res, next) => {
 
     // Validate departments: check for any invalid department IDs
     const invalidDepartmentIds = departments.filter(
-      (id) => !mongoose.Types.ObjectId.isValid(id)
+      (id) => !mongoose.Types.ObjectId.isValid(id),
     );
     if (invalidDepartmentIds.length > 0) {
       throw new CustomError(
         "Invalid department ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -255,7 +255,7 @@ const createUser = async (req, res, next) => {
         "Department not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -268,7 +268,7 @@ const createUser = async (req, res, next) => {
         "Company not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -281,7 +281,7 @@ const createUser = async (req, res, next) => {
         "Employee ID or email already exists",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -292,7 +292,7 @@ const createUser = async (req, res, next) => {
         "Invalid role provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -309,7 +309,7 @@ const createUser = async (req, res, next) => {
           "A master admin already exists",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
@@ -591,7 +591,7 @@ const checkPassword = async (req, res, next) => {
 
     const isPasswordValid = await bcrypt.compare(
       currentPassword,
-      userExists.password
+      userExists.password,
     );
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid password" });
@@ -627,7 +627,7 @@ const updatePassword = async (req, res, next) => {
     const updatedUser = await User.findByIdAndUpdate(
       { _id: user },
       { $set: { password: hashedPassword } }, // Update the password field
-      { new: true, runValidators: true } // Return the updated document and enforce validation
+      { new: true, runValidators: true }, // Return the updated document and enforce validation
     )
       .lean()
       .exec();
@@ -714,7 +714,7 @@ const updateProfile = async (req, res, next) => {
       fields.forEach((field) => {
         if (sectionData[field] !== undefined) {
           updatePayload[`${section}.${field}`] = trimIfString(
-            sectionData[field]
+            sectionData[field],
           );
         }
       });
@@ -733,7 +733,7 @@ const updateProfile = async (req, res, next) => {
               "Failed to delete old profile picture",
               logPath,
               logAction,
-              logSourceKey
+              logSourceKey,
             );
           }
         } catch (error) {
@@ -741,7 +741,7 @@ const updateProfile = async (req, res, next) => {
             "Error deleting old profile picture: " + error.message,
             logPath,
             logAction,
-            logSourceKey
+            logSourceKey,
           );
         }
       }
@@ -758,7 +758,7 @@ const updateProfile = async (req, res, next) => {
       const base64Image = `data:image/webp;base64,${buffer.toString("base64")}`;
       const uploadResult = await handleFileUpload(
         base64Image,
-        `${foundCompany.companyName}/users/${foundUser.empId}-${foundUser.firstName}_${foundUser.lastName}/profile-picture`
+        `${foundCompany.companyName}/users/${foundUser.empId}-${foundUser.firstName}_${foundUser.lastName}/profile-picture`,
       );
 
       if (!uploadResult.public_id) {
@@ -766,7 +766,7 @@ const updateProfile = async (req, res, next) => {
           "Unable to upload profile picture",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -784,14 +784,14 @@ const updateProfile = async (req, res, next) => {
         "No valid fields to update",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $set: updatePayload },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).select("-password");
 
     if (!updatedUser) {
@@ -807,7 +807,7 @@ const updateProfile = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -825,7 +825,7 @@ const bulkInsertUsers = async (req, res, next) => {
         "No file uploaded",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -844,7 +844,7 @@ const bulkInsertUsers = async (req, res, next) => {
         "Company not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
     const departments = await Department.find().lean().exec();
@@ -858,7 +858,7 @@ const bulkInsertUsers = async (req, res, next) => {
     // );
 
     const departmentMap = new Map(
-      departments.map((dept) => [dept.departmentId, dept._id])
+      departments.map((dept) => [dept.departmentId, dept._id]),
     );
 
     // Fetch roles and build a role map (assuming each role document has roleID)
@@ -909,7 +909,7 @@ const bulkInsertUsers = async (req, res, next) => {
                 // console.log("reportsToId", reportsToId);
                 const hashedPassword = await bcrypt.hash(
                   `${row["First Name"].trim()}@0625`,
-                  10
+                  10,
                 );
 
                 const userObj = {
@@ -977,7 +977,7 @@ const bulkInsertUsers = async (req, res, next) => {
                       row["Profession Tax Exemption"] === "Yes",
                     includePF: row["Include PF"] === "Yes",
                     pfContributionRate: parseFloat(
-                      row["Employer PF Contri"] || "0"
+                      row["Employer PF Contri"] || "0",
                     ),
                     employeePF: parseFloat(row["Employee PF"] || "0"),
                   },
@@ -1020,11 +1020,11 @@ const bulkInsertUsers = async (req, res, next) => {
                     error.message,
                     "hr/HrLog",
                     "Bulk Insert Users",
-                    "user"
-                  )
+                    "user",
+                  ),
                 );
               }
-            })()
+            })(),
           );
         })
         .on("end", () => resolve())
@@ -1034,9 +1034,9 @@ const bulkInsertUsers = async (req, res, next) => {
               err.message,
               "hr/HrLog",
               "Bulk Insert Users",
-              "user"
-            )
-          )
+              "user",
+            ),
+          ),
         );
     });
 
@@ -1048,7 +1048,7 @@ const bulkInsertUsers = async (req, res, next) => {
         "No valid data found in CSV",
         "hr/HrLog",
         "Bulk Insert Users",
-        "user"
+        "user",
       );
     }
 
@@ -1073,14 +1073,14 @@ const bulkInsertUsers = async (req, res, next) => {
 
     const transformedAgreements = newAgreements.map((agreement) => {
       const matchedUser = uploadedUserData.find(
-        (user) => user.empId === agreement.empId
+        (user) => user.empId === agreement.empId,
       );
 
       return matchedUser ? { ...agreement, user: matchedUser._id } : agreement;
     });
 
     const uploadedAgreements = await Agreements.insertMany(
-      transformedAgreements
+      transformedAgreements,
     );
 
     return res.status(201).json({
@@ -1094,8 +1094,8 @@ const bulkInsertUsers = async (req, res, next) => {
         500,
         "hr/HrLog",
         "Bulk Insert Users",
-        "user"
-      )
+        "user",
+      ),
     );
   }
 };
@@ -1152,7 +1152,7 @@ const getEmployeePoliciesByEmpId = async (req, res) => {
   try {
     const employee = await UserData.findOne(
       { empId: employeeId },
-      { policies: 1, firstName: 1, lastName: 1, empId: 1 }
+      { policies: 1, firstName: 1, lastName: 1, empId: 1 },
     );
 
     if (!employee) {
