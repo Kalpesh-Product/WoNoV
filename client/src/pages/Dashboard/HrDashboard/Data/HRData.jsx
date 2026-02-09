@@ -7,34 +7,33 @@ const Data = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-const tabs = [
-  {
-    label: "Job Application List",
-    path: "job-application-list",
-    permission: PERMISSIONS.HR_JOB_APPLICATION_LIST.value,
-  },
-  {
-    label: "Payroll Reports",
-    path: "payroll-reports",
-    permission: PERMISSIONS.HR_PAYROLL_REPORTS.value,
-  },
-  {
-    label: "Asset List",
-    path: "asset-list",
-    permission: PERMISSIONS.HR_ASSET_LIST.value,
-  },
-  {
-    label: "Monthly Invoice Reports",
-    path: "monthly-invoice-reports",
-    permission: PERMISSIONS.HR_MONTHLY_INVOICE_REPORTS.value,
-  },
-  {
-    label: "Vendor",
-    path: "vendor",
-    permission: PERMISSIONS.HR_VENDOR.value,
-  },
-];
-
+  const tabs = [
+    {
+      label: "Job Application List",
+      path: "job-application-list",
+      permission: PERMISSIONS.HR_JOB_APPLICATION_LIST.value,
+    },
+    // {
+    //   label: "Payroll Reports",
+    //   path: "payroll-reports",
+    //   permission: PERMISSIONS.HR_PAYROLL_REPORTS.value,
+    // },
+    {
+      label: "Asset List",
+      path: "asset-list",
+      permission: PERMISSIONS.HR_ASSET_LIST.value,
+    },
+    {
+      label: "Monthly Invoice Reports",
+      path: "monthly-invoice-reports",
+      permission: PERMISSIONS.HR_MONTHLY_INVOICE_REPORTS.value,
+    },
+    {
+      label: "Vendor",
+      path: "vendor",
+      permission: PERMISSIONS.HR_VENDOR.value,
+    },
+  ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   // useEffect(() => {
@@ -50,14 +49,16 @@ const tabs = [
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
-    location.pathname.includes(tab.path)
+    location.pathname.includes(tab.path),
   );
   return (
-      <TabLayout
+    <TabLayout
       basePath="/app/dashboard/HR-dashboard/data"
       defaultTabPath="job-application-list"
       tabs={tabs}
-      hideTabsCondition={(pathname) => pathname.includes("job-application-list/")}
+      hideTabsCondition={(pathname) =>
+        pathname.includes("job-application-list/")
+      }
     />
   );
 };
