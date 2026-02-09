@@ -4,23 +4,115 @@ const Role = require("../../models/roles/Roles");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const mongoose = require("mongoose");
+const crypto = require("crypto");
+const Company = require("../../models/hr/Company");
+
+// const createDepartment = async (req, res, next) => {
+//   try {
+//     const deptName = req.body?.deptName?.trim();
+
+//     if (!deptName) {
+//       return res.status(400).json({
+//         message: "Department name is required",
+//       });
+//     }
+
+//     // Prevent duplicate departments (case-insensitive)
+//     const existingDepartment = await Department.findOne({
+//       name: { $regex: `^${deptName}$`, $options: "i" },
+//     }).lean();
+
+//     if (existingDepartment) {
+//       return res.status(409).json({
+//         message: "Department already exists",
+//       });
+//     }
+
+//     const departmentId = `D-000${crypto.randomInt(100)}`;
+
+//     await Department.create({
+//       name: deptName,
+//       departmentId,
+//     });
+
+//     return res.status(201).json({
+//       message: "Department created successfully",
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 const createDepartment = async (req, res, next) => {
   try {
-    const { name } = req.body;
-    if (!name) {
-      return res
-        .status(400)
-        .json({ message: "Please provide a name for the department" });
+    const deptName = req.body?.deptName?.trim();
+    const companyId = req.userData.company;
+
+    if (!deptName) {
+      return res.status(400).json({ message: "Department name is required" });
     }
+
+    // 1️⃣ Prevent duplicate departments (case-insensitive)
+    const existingDepartment = await Department.findOne({
+      name: { $regex: `^${deptName}$`, $options: "i" },
+    }).lean();
+
+    if (existingDepartment) {
+      return res.status(409).json({ message: "Department already exists" });
+    }
+
+    // 2️⃣ Create Department
     const departmentId = `D-000${crypto.randomInt(100)}`;
-    const newDepartment = new Department({
-      name,
+    const department = await Department.create({
+      name: deptName,
       departmentId,
     });
 
-    await newDepartment.save();
-    res.status(201).json({ message: "New Department created" });
+    // 3️⃣ Create roles
+    const normalizedDept = deptName.toUpperCase().replace(/\s+/g, "_");
+
+    const adminRolePayload = {
+      roleTitle: `${deptName} Admin`,
+      roleID: `ROLE_${normalizedDept}_ADMIN`,
+    };
+
+    const employeeRolePayload = {
+      roleTitle: `${deptName} Employee`,
+      roleID: `ROLE_${normalizedDept}_EMPLOYEE`,
+    };
+
+    const [adminRole, employeeRole] = await Role.insertMany([
+      adminRolePayload,
+      employeeRolePayload,
+    ]);
+
+    // 4️⃣ Add department to company.selectedDepartments
+    await Company.updateOne(
+      { _id: companyId },
+      {
+        $push: {
+          selectedDepartments: {
+            department: department._id,
+            admin: adminRole._id,
+            assetCategories: [],
+            ticketIssues: [],
+            policies: [],
+            sop: [],
+          },
+        },
+      },
+    );
+
+    return res.status(201).json({
+      message: "Department created successfully",
+      data: {
+        department,
+        roles: {
+          admin: adminRole,
+          employee: employeeRole,
+        },
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -29,7 +121,7 @@ const createDepartment = async (req, res, next) => {
 const getDepartments = async (req, res, next) => {
   try {
     // Fetch all departments
-    const departments = await Department.find({ isActive: true })
+    const departments = await Department.find()
       //  .populate("company", "companyName") // Populate company reference with selected fields
       //.populate("admin", "name email") // Populate admin reference with selected fields
       //.populate("designations", "title responsibilities") // Populate admin reference with selected fields
@@ -42,7 +134,9 @@ const getDepartments = async (req, res, next) => {
 };
 
 const editDepartment = async (req, res, next) => {
-  const { departmentId, name, managerId } = req.body;
+  const { company } = req.userData;
+
+  const { departmentId, name, managerId, roleId } = req.body;
 
   try {
     if (!departmentId) {
@@ -62,10 +156,12 @@ const editDepartment = async (req, res, next) => {
       return res.status(404).json({ message: "Department not found" });
     }
 
-    const departmentNameExists = await Department.findOne({ name });
+    const departmentNameExists = await Department.findOne({
+      name,
+      _id: { $ne: departmentId },
+    });
 
-    console.log("department exists", departmentNameExists);
-    if (departmentNameExists) {
+    if (name && departmentNameExists) {
       return res.status(400).json({ message: "Department name exists" });
     }
 
@@ -88,13 +184,10 @@ const editDepartment = async (req, res, next) => {
           .json({ message: "Department name is required to assign a manager" });
       }
 
-      const normalizedDepartmentName = departmentName
-        .toUpperCase()
-        .replace(/\s+/g, "_");
       const [manager, role] = await Promise.all([
         User.findById(managerId),
         Role.findOne({
-          roleID: { $regex: normalizedDepartmentName, $options: "i" },
+          _id: roleId,
         }),
       ]);
 
@@ -106,19 +199,23 @@ const editDepartment = async (req, res, next) => {
         return res.status(404).json({ message: "Role not found" });
       }
 
-      await User.updateMany(
-        {
-          _id: { $ne: managerId },
-          departments: department._id,
-          role: role._id,
-        },
-        {
-          $pull: {
-            departments: department._id,
-            role: role._id,
+      const currentAdmin = await User.findOne({
+        company,
+        departments: department._id,
+        role: role._id,
+      });
+
+      if (currentAdmin && currentAdmin._id.toString() !== managerId) {
+        await User.updateOne(
+          { _id: currentAdmin._id },
+          {
+            $pull: {
+              departments: department._id,
+              role: role._id,
+            },
           },
-        },
-      );
+        );
+      }
 
       updatedManager = await User.findByIdAndUpdate(
         managerId,

@@ -12,6 +12,7 @@ const departmentSchema = new mongoose.Schema({
   },
   isActive: {
     type: Boolean,
+    default: true,
   },
   templates: [
     {

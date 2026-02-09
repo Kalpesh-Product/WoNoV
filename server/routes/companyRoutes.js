@@ -97,7 +97,7 @@ router.patch("/edit-department", editDepartment);
 router.patch("/mark-department-status", markDepartmentStatus);
 router.patch("/update-company-data", updateCompanySubItem);
 
-// Employee/Leave types
+// Employee/Leave typess
 router.post("/add-employee-type", addEmployeeType);
 router.post("/add-leave-type", addLeaveType);
 
