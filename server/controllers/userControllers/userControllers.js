@@ -388,10 +388,14 @@ const createUser = async (req, res, next) => {
 };
 
 const fetchUser = async (req, res, next) => {
-  const { deptId } = req.query;
+  const { deptId, status = "true" } = req.query;
   const company = req.company;
 
   try {
+    if (status && !["true", "false"].includes(status)) {
+      return res.status(400).json({ message: "Status must be true/false" });
+    }
+
     if (deptId) {
       const users = await User.find({
         departments: deptId,
@@ -409,7 +413,10 @@ const fetchUser = async (req, res, next) => {
       return res.status(200).json(users);
     }
 
-    const users = await User.find({ company: company, isActive: true })
+    const users = await User.find({
+      company: company,
+      isActive: status === "true",
+    })
       .select("-password")
       .populate([
         { path: "reportsTo", select: "_id roleTitle" },
