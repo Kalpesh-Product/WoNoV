@@ -170,7 +170,11 @@ router.post(
   upload.single("document"),
   uploadCompanyDocument,
 );
-router.patch("/update-company-document", updateCompanyDocument);
+router.patch(
+  "/update-company-document",
+  upload.single("document"),
+  updateCompanyDocument,
+);
 router.patch("/delete-company-document", toggleCompanyDocumentStatus);
 router.get("/get-company-documents/:type", getCompanyDocuments);
 
