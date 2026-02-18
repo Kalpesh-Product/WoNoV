@@ -9,8 +9,8 @@ function generateQuery(queryMapping, roles) {
   const matchedRole =
     roleHierarchy.find((roleTitle) =>
       roles.some(
-        (userRole) => userRole === roleTitle || userRole.endsWith(roleTitle)
-      )
+        (userRole) => userRole === roleTitle || userRole.endsWith(roleTitle),
+      ),
     ) || "None";
 
   return queryMapping[matchedRole] || {};
@@ -101,14 +101,14 @@ async function fetchTickets(query, companyId) {
       const department = company.selectedDepartments.find(
         (dept) =>
           dept.department.toString() ===
-          ticket.raisedToDepartment?._id.toString()
+          ticket.raisedToDepartment?._id.toString(),
       );
 
       let priority = "Low"; // Default priority
 
       if (department) {
         const issue = department.ticketIssues.find(
-          (issue) => issue.title === ticket.ticket
+          (issue) => issue.title === ticket.ticket,
         );
         priority = issue?.priority || "High";
       }
@@ -138,7 +138,7 @@ async function filterAcceptedAssignedTickets(
   user,
   roles,
   userDepartments,
-  companyId
+  companyId,
 ) {
   // Role-based query mapping
   const queryMapping = {
@@ -275,8 +275,8 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
   const matchedRole =
     roleHierarchy.find((roleTitle) =>
       roles.some(
-        (userRole) => userRole === roleTitle || userRole.endsWith(roleTitle)
-      )
+        (userRole) => userRole === roleTitle || userRole.endsWith(roleTitle),
+      ),
     ) || "None";
 
   try {
@@ -326,31 +326,37 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
       })
       .select("-company");
 
-    // if (matchedRole === "Master Admin" || matchedRole === "Super Admin") {
-    //   return supportTickets;
-    // }
-    // if (matchedRole.endsWith("Admin")) {
-    //   let adminTickets = supportTickets.filter((ticket) => {
-    //     return userDepartments.some((dept) => {
-    //       return ticket.ticket.raisedToDepartment._id.equals(
-    //         new mongoose.Types.ObjectId(dept)
-    //       );
-    //     });
-    //   });
+    let filteredTickets = [];
+    if (matchedRole === "Master Admin" || matchedRole === "Super Admin") {
+      filteredTickets = supportTickets;
+    } else if (
+      matchedRole.endsWith("Admin") &&
+      !["Master Admin", "Super Admin"].includes(matchedRole)
+    ) {
+      filteredTickets = supportTickets.filter((ticket) => {
+        return [userDepartments].some((dept) => {
+          return ticket.ticket.raisedToDepartment._id.equals(
+            new mongoose.Types.ObjectId(dept),
+          );
+        });
+      });
+    } else {
+      filteredTickets = supportTickets.filter((ticket) =>
+        ticket.user._id.equals(new mongoose.Types.ObjectId(user)),
+      );
+    }
 
-    //   return adminTickets;
-    // }
+    // const isAdmin = matchedRole.endsWith("Admin");
 
-    const isAdmin = matchedRole.endsWith("Admin");
+    // let employeeTickets = isAdmin
+    //   ? supportTickets
+    //   : supportTickets.filter((ticket) =>
+    //       ticket.user._id.equals(new mongoose.Types.ObjectId(user))
+    //     );
 
-    let employeeTickets = isAdmin
-      ? supportTickets
-      : supportTickets.filter((ticket) =>
-          ticket.user._id.equals(new mongoose.Types.ObjectId(user))
-        );
+    if (!filteredTickets.length) return [];
 
-    if (!employeeTickets) return [];
-    const tickets = employeeTickets;
+    const tickets = filteredTickets;
 
     const company = await Company.findById(companyId)
       .select("selectedDepartments")
@@ -363,14 +369,14 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
       const department = company.selectedDepartments.find(
         (dept) =>
           dept.department.toString() ===
-          ticket.ticket.raisedToDepartment?._id.toString()
+          ticket.ticket.raisedToDepartment?._id.toString(),
       );
 
       let priority = "Low"; // Default priority
 
       if (department) {
         const issue = department.ticketIssues.find(
-          (issue) => issue.title === ticket.ticket.ticket
+          (issue) => issue.title === ticket.ticket.ticket,
         );
 
         priority = issue?.priority || "High";
@@ -393,7 +399,7 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
 
     // console.log("updatedTickets", updatedTickets);
     return updatedTickets;
-    // return employeeTickets;
+    // return filteredTickets;
   } catch (error) {
     return [];
   }
