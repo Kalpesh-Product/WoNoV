@@ -122,6 +122,7 @@ app.all("*", (req, res) => {
 });
 
 app.use(errorHandler);
+// test
 
 mongoose.connection.once("open", () => {
   console.log("Connected to MongoDB");
