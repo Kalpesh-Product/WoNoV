@@ -57,7 +57,7 @@ const createCoworkingClient = async (req, res, next) => {
         "CoworkingClient already exists",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -66,7 +66,7 @@ const createCoworkingClient = async (req, res, next) => {
         "Invalid unit ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
     const unitExists = await Unit.findOne({ _id: unit });
@@ -75,7 +75,7 @@ const createCoworkingClient = async (req, res, next) => {
         "Unit doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -84,7 +84,7 @@ const createCoworkingClient = async (req, res, next) => {
         "Invalid service ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -95,7 +95,7 @@ const createCoworkingClient = async (req, res, next) => {
         "Provide co-working service ID",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -126,7 +126,7 @@ const createCoworkingClient = async (req, res, next) => {
         "All required fields must be provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -141,7 +141,7 @@ const createCoworkingClient = async (req, res, next) => {
         "Invalid numerical values",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -150,7 +150,7 @@ const createCoworkingClient = async (req, res, next) => {
         "Start date must be before end date",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -213,7 +213,7 @@ const createCoworkingClient = async (req, res, next) => {
         {
           bookedDesks: totalBookedDesks,
           availableDesks: totalDesks - totalBookedDesks,
-        }
+        },
       );
     } else {
       const booking = new Desk({
@@ -257,7 +257,7 @@ const createCoworkingClient = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -328,7 +328,7 @@ const getCoworkingClients = async (req, res, next) => {
       return {
         ...client,
         members: members.filter(
-          (member) => member?.client._id.toString() === client?._id.toString()
+          (member) => member?.client._id.toString() === client?._id.toString(),
         ),
       };
     });
@@ -390,7 +390,7 @@ const deleteCoworkingClient = async (req, res, next) => {
     const client = await CoworkingClient.findByIdAndUpdate(
       id,
       { isActive: false },
-      { new: true }
+      { new: true },
     );
     if (!client) {
       return res.status(404).json({ message: "CoworkingClient not found" });
@@ -557,7 +557,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "No image provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -567,7 +567,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Company ID, Location ID, Client ID, and Image Type are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -577,7 +577,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Invalid image type",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -588,7 +588,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Client doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -624,7 +624,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Error processing image before upload",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -634,7 +634,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
     const updatedClient = await CoworkingClient.findByIdAndUpdate(
       { _id: clientId },
       { $set: { [imageType]: imageDetails } },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedClient || !updatedClient[imageType]) {
@@ -642,7 +642,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Failed to upload the image",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -669,7 +669,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }

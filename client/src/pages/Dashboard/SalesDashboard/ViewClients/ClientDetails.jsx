@@ -4,13 +4,18 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import humanDate from "../../../../utils/humanDateForamt";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { setSelectedClient } from "../../../../redux/slices/clientSlice";
+import { setClientData } from "../../../../redux/slices/salesSlice";
 
 const ClientDetails = () => {
+  const dispatch = useDispatch();
+  const axios = useAxiosPrivate();
   const selectedClient = useSelector((state) => state.client.selectedClient);
-  console.log(selectedClient);
+  const clientsData = useSelector((state) => state.sales.clientsData);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       clientName: "",
@@ -95,13 +100,127 @@ const ClientDetails = () => {
     setIsEditing(!isEditing);
   };
 
-  const onSubmit = (data) => {
-    setIsEditing(!isEditing);
-    toast.success("User details updated successfully");
+  const onSubmit = async (data) => {
+    if (!selectedClient?._id) {
+      toast.error("Client details not found");
+      return;
+    }
+
+    const payload = {
+      clientName: data.clientName,
+      sector: data.sector,
+      hoCity: data.hoCity,
+      hoState: data.hoState,
+      bookingType: data.bookingType,
+      unitNo: data.unitNo,
+      cabinDesks: Number(data.cabinDesks) || 0,
+      openDesks: Number(data.openDesks) || 0,
+      totalDesks:
+        (Number(data.cabinDesks) || 0) + (Number(data.openDesks) || 0),
+      ratePerCabinDesk: Number(data.ratePerCabinDesk) || 0,
+      ratePerOpenDesk: Number(data.ratePerOpenDesk) || 0,
+      annualIncrement: Number(data.annualIncrement) || 0,
+      perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
+      totalMeetingCredits: Number(data.totalMeetingCredits) || 0,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      lockinPeriod: Number(data.lockinPeriod) || 0,
+      rentDate: data.rentDate,
+      nextIncrement: data.nextIncrement,
+      localPoc: {
+        name: data.localPocName,
+        email: data.localPocEmail,
+        phone: data.localPocPhone,
+      },
+      hOPoc: {
+        name: data.hoPocName,
+        email: data.hoPocEmail,
+        phone: data.hoPocPhone,
+      },
+    };
+
+    try {
+      const response = await axios.patch(
+        `/api/sales/update-co-working-clients/${selectedClient._id}`,
+        payload,
+      );
+
+      const updatedClient = {
+        ...selectedClient,
+        ...response?.data?.client,
+        ...payload,
+        localPocName: payload.localPoc.name,
+        localPocEmail: payload.localPoc.email,
+        localPocPhone: payload.localPoc.phone,
+        hoPocName: payload.hOPoc.name,
+        hoPocEmail: payload.hOPoc.email,
+        hoPocPhone: payload.hOPoc.phone,
+      };
+
+      dispatch(setSelectedClient(updatedClient));
+      dispatch(
+        setClientData(
+          clientsData.map((item) =>
+            item._id === selectedClient._id
+              ? { ...item, ...updatedClient }
+              : item,
+          ),
+        ),
+      );
+
+      reset({
+        ...data,
+        totalDesks: payload.totalDesks,
+      });
+      setIsEditing(false);
+      toast.success(
+        response?.data?.message || "Client details updated successfully",
+      );
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Unable to update client details",
+      );
+    }
   };
 
   const handleReset = () => {
-    reset();
+    if (selectedClient) {
+      reset({
+        clientName: selectedClient.clientName,
+        serviceName: selectedClient.service?.serviceName || "",
+        serviceDescription: selectedClient.service?.description || "",
+        sector: selectedClient.sector,
+        hoCity: selectedClient.hoCity,
+        hoState: selectedClient.hoState,
+        unitName: selectedClient.unit?.unitName || "",
+        unitNo: selectedClient.unitNo || "",
+        buildingName: selectedClient.unit?.building?.buildingName || "",
+        buildingAddress: selectedClient.unit?.building?.fullAddress || "",
+        cabinDesks: selectedClient.cabinDesks,
+        openDesks: selectedClient.openDesks,
+        totalDesks: selectedClient.totalDesks,
+        ratePerOpenDesk: selectedClient.ratePerOpenDesk,
+        ratePerCabinDesk: selectedClient.ratePerCabinDesk,
+        annualIncrement: selectedClient.annualIncrement,
+        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
+        totalMeetingCredits: selectedClient.totalMeetingCredits,
+        startDate: selectedClient.startDate,
+        bookingType: selectedClient.bookingType,
+        endDate: selectedClient.endDate,
+        lockinPeriod: selectedClient.lockinPeriod,
+        rentDate: selectedClient.rentDate,
+        nextIncrement: selectedClient.nextIncrement,
+        localPocName: selectedClient.localPocName || "",
+        localPocEmail: selectedClient.localPocEmail || "",
+        localPocPhone: selectedClient.localPocPhone || "",
+        hoPocName: selectedClient.hoPocName || "",
+        hoPocEmail: selectedClient.hoPocEmail || "",
+        hoPocPhone: selectedClient.hoPocPhone || "",
+        isActive: selectedClient.isActive,
+        createdAt: selectedClient.createdAt,
+        updatedAt: selectedClient.updatedAt,
+      });
+    }
   };
 
   return (
@@ -115,7 +234,7 @@ const ClientDetails = () => {
         <div>
           <PrimaryButton
             handleSubmit={handleEditToggle}
-            title={isEditing ? "Save" : "Edit"}
+            title={isEditing ? "Cancel" : "Edit"}
           />
         </div>
       </div>

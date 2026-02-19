@@ -88,7 +88,8 @@ router.post(
   bulkInsertCoworkingMembers,
 );
 router.get("/co-working-clients", getCoworkingClients);
-router.patch("/update-co-working-clients", updateCoworkingClient);
+// router.patch("/update-co-working-clients", updateCoworkingClient);
+router.patch("/update-co-working-clients/:id", updateCoworkingClient);
 router.get("/co-working-members", getMembersByUnit);
 router.get("/co-working-client-members", getMemberByClient);
 router.post(
