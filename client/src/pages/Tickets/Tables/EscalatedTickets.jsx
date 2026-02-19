@@ -22,7 +22,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
     queryKey: ["escalate-tickets"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/tickets/ticket-filter/escalate/${departmentId}`
+        `/api/tickets/ticket-filter/escalate/${departmentId}`,
       );
 
       return response.data;
@@ -52,7 +52,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
       .map(({ assigneeName, assignedAtFormatted }) =>
         assignedAtFormatted && assignedAtFormatted !== "N/A"
           ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName
+          : assigneeName,
       )
       .join(", ");
 
@@ -119,8 +119,8 @@ const EscalatedTickets = ({ title, departmentId }) => {
               ticket?.assignees.length > 0
                 ? "Ticket Assigned"
                 : ticket?.acceptedBy
-                ? "Ticket Accepted"
-                : "N/A",
+                  ? "Ticket Accepted"
+                  : "N/A",
             status: ticket.status || "Pending",
             acceptedAt: ticket.acceptedAt || "N/A",
             escalatedStatus,
@@ -249,12 +249,13 @@ const EscalatedTickets = ({ title, departmentId }) => {
       headerName: "Action",
       pinned: "right",
       cellRenderer: (params) => {
-        const menuItems = [
-          {
-            label: "View",
-            onClick: () => handleViewTicket(params.data),
-          },
-        ];
+        // const menuItems = [
+        //   {
+        //     label: "View",
+        //     onClick: () => handleViewTicket(params.data),
+        //   },
+        // ];
+        const menuItems = [];
 
         // Allow closing the original ticket only if escalated ticket is closed
         const isClosed = params.data.escalatedStatus === "Closed";
@@ -265,7 +266,16 @@ const EscalatedTickets = ({ title, departmentId }) => {
           });
         }
         return (
-          <ThreeDotMenu rowId={params.data.meetingId} menuItems={menuItems} />
+          <div className="flex items-center gap-2">
+            <div
+              role="button"
+              onClick={() => handleViewTicket(params.data)}
+              className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+            >
+              <MdOutlineRemoveRedEye />
+            </div>
+            <ThreeDotMenu rowId={params.data.meetingId} menuItems={menuItems} />
+          </div>
         );
       },
     },
@@ -341,7 +351,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
                             {assignment.assignedAtFormatted || "N/A"}
                           </div>
                         </div>
-                      )
+                      ),
                     )}
                   </div>
                 </div>

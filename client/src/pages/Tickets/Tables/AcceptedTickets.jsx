@@ -27,6 +27,7 @@ import { noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import StatusChip from "../../../components/StatusChip";
 import useAuth from "../../../hooks/useAuth";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const AcceptedTickets = ({ title, departmentId }) => {
   const axios = useAxiosPrivate();
@@ -112,11 +113,11 @@ const AcceptedTickets = ({ title, departmentId }) => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/ticket-filter/accept/${departmentId}`
+          `/api/tickets/ticket-filter/accept/${departmentId}`,
         );
         const filtered = response.data;
         const hasAssigned = filtered.some(
-          (ticket) => ticket.assignees?.length > 0
+          (ticket) => ticket.assignees?.length > 0,
         );
         return filtered;
       } catch (error) {
@@ -144,7 +145,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
       .map(({ assigneeName, assignedAtFormatted }) =>
         assignedAtFormatted && assignedAtFormatted !== "N/A"
           ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName
+          : assigneeName,
       )
       .join(", ");
 
@@ -187,7 +188,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
     },
     onError: function (error) {
       toast.error(
-        error.response.data.message || "Failed to create support ticket"
+        error.response.data.message || "Failed to create support ticket",
       );
     },
   });
@@ -262,9 +263,9 @@ const AcceptedTickets = ({ title, departmentId }) => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => {
-        const commonItems = [
-          { label: "View", onClick: () => handleViewTicket(params.data) },
-        ];
+        // const commonItems = [
+        //   { label: "View", onClick: () => handleViewTicket(params.data) },
+        // ];
 
         const showOtherActions =
           !isTop || (isTop && departmentId === topManagementDepartment);
@@ -296,10 +297,14 @@ const AcceptedTickets = ({ title, departmentId }) => {
 
         return (
           <div className="flex gap-2">
-            <ThreeDotMenu
-              rowId={params.data.id}
-              menuItems={[...commonItems, ...additionalItems]}
-            />
+            <div
+              role="button"
+              onClick={() => handleViewTicket(params.data)}
+              className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+            >
+              <MdOutlineRemoveRedEye />
+            </div>
+            <ThreeDotMenu rowId={params.data.id} menuItems={additionalItems} />
           </div>
         );
       },
@@ -324,13 +329,13 @@ const AcceptedTickets = ({ title, departmentId }) => {
         ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
         : `${
             ticket.assignees.map(
-              (item) => `${item.firstName} ${item.lastName}`
+              (item) => `${item.firstName} ${item.lastName}`,
             )[0]
           }`,
       // assignees: `${ticket.assignees.map((item) => item.firstName)[0]}`,
       ...(() => {
         const { assignedToDisplay, assignmentDetails } = formatAssignments(
-          ticket.assignedTo
+          ticket.assignedTo,
         );
         return {
           assignees: assignedToDisplay,
@@ -373,7 +378,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
                   ticket.raisedBy?.departments?.map((dept) => dept.name) ||
                   "N/A",
                 raisedToDepartment: ticket.raisedBy?.departments?.map(
-                  (item) => item.name || "N/A"
+                  (item) => item.name || "N/A",
                 ),
                 ticketTitle: ticket?.ticket || "No Title",
                 status: ticket.status || "Pending",
@@ -381,7 +386,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
                   ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
                   : `${
                       ticket.assignees.map(
-                        (item) => `${item.firstName} ${item.lastName}`
+                        (item) => `${item.firstName} ${item.lastName}`,
                       )[0]
                     }`,
                 // assignees: `${
@@ -596,7 +601,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
             closeTicket({
               ticketId: closingTicketId,
               closingRemark: data.closingRemark,
-            })
+            }),
           )}
           className="grid grid-cols-1 gap-4"
         >

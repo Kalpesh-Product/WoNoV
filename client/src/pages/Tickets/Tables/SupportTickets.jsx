@@ -11,6 +11,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
 import { Controller, useForm } from "react-hook-form";
@@ -56,7 +57,7 @@ const SupportTickets = ({ title, departmentId }) => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/ticket-filter/support/${departmentId}`
+          `/api/tickets/ticket-filter/support/${departmentId}`,
         );
 
         return response.data;
@@ -98,7 +99,7 @@ const SupportTickets = ({ title, departmentId }) => {
                     : "Unknown";
                 const assignedAtFormatted = assignment?.assignedAt
                   ? `${humanDate(assignment.assignedAt)}, ${humanTime(
-                      assignment.assignedAt
+                      assignment.assignedAt,
                     )}`
                   : "";
                 return { assigneeName, assignedAtFormatted };
@@ -109,7 +110,7 @@ const SupportTickets = ({ title, departmentId }) => {
             .map(({ assigneeName, assignedAtFormatted }) =>
               assignedAtFormatted
                 ? `${assigneeName} (${assignedAtFormatted})`
-                : assigneeName
+                : assigneeName,
             )
             .join(", ");
 
@@ -145,17 +146,17 @@ const SupportTickets = ({ title, departmentId }) => {
             }`,
             acceptedAt: ticket.ticket?.acceptedAt
               ? `${humanDate(ticket.ticket?.acceptedAt)}, ${humanTime(
-                  ticket.ticket?.acceptedAt
+                  ticket.ticket?.acceptedAt,
                 )}`
               : "",
             assignedAt: ticket.ticket?.assignedAt
               ? `${humanDate(ticket.ticket?.assignedAt)}, ${humanTime(
-                  ticket.ticket?.assignedAt
+                  ticket.ticket?.assignedAt,
                 )}`
               : "",
             closedAt: ticket.ticket?.closedAt
               ? `${humanDate(ticket.ticket?.closedAt)}, ${humanTime(
-                  ticket.ticket?.closedAt
+                  ticket.ticket?.closedAt,
                 )}`
               : "",
 
@@ -163,7 +164,7 @@ const SupportTickets = ({ title, departmentId }) => {
             supportRequestedBy,
             supportRequestedAt: ticket?.createdAt
               ? `${humanDate(ticket?.createdAt)}, ${humanTime(
-                  ticket?.createdAt
+                  ticket?.createdAt,
                 )}`
               : "",
             assignedTo: assignedToDisplay,
@@ -172,10 +173,10 @@ const SupportTickets = ({ title, departmentId }) => {
               ticket.ticket?.assignees.length > 0
                 ? "Assigned Ticket"
                 : ticket.ticket?.acceptedBy
-                ? "Accepted Ticket"
-                : "N/A",
+                  ? "Accepted Ticket"
+                  : "N/A",
             raisedDate: `${humanDate(ticket?.createdAt)}, ${humanTime(
-              ticket?.createdAt
+              ticket?.createdAt,
             )}`,
             status: ticket.ticket.status || "Pending",
             raisedToDepartment:
@@ -208,7 +209,7 @@ const SupportTickets = ({ title, departmentId }) => {
     mutationKey: ["accept-ticket"],
     mutationFn: async (ticketId) => {
       const response = await axios.patch(
-        `/api/tickets/accept-ticket/${ticketId}`
+        `/api/tickets/accept-ticket/${ticketId}`,
       );
 
       return response.data;
@@ -247,7 +248,7 @@ const SupportTickets = ({ title, departmentId }) => {
   const fetchSubOrdinates = async () => {
     try {
       const response = await axios.get(
-        `/api/users/assignees?deptId=${departmentId}`
+        `/api/users/assignees?deptId=${departmentId}`,
       );
 
       return response.data;
@@ -273,7 +274,7 @@ const SupportTickets = ({ title, departmentId }) => {
         `/api/tickets/assign-ticket/${data.ticketId}`,
         {
           assignees: data.assignedEmployees,
-        }
+        },
       );
 
       return response.data.message;
@@ -292,7 +293,7 @@ const SupportTickets = ({ title, departmentId }) => {
 
   const onSubmit = (formData) => {
     const assignedEmployeeIds = Object.keys(formData.selectedEmployees).filter(
-      (id) => formData.selectedEmployees[id]
+      (id) => formData.selectedEmployees[id],
     ); // ✅ Keep only selected IDs
 
     if (assignedEmployeeIds.length === 0) {
@@ -439,12 +440,12 @@ const SupportTickets = ({ title, departmentId }) => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => {
-        const commonItems = [
-          {
-            label: "View",
-            onClick: () => handleViewTicket(params.data),
-          },
-        ];
+        // const commonItems = [
+        //   {
+        //     label: "View",
+        //     onClick: () => handleViewTicket(params.data),
+        //   },
+        // ];
 
         const showOtherActions =
           !isTop || (isTop && departmentId === topManagementDepartment);
@@ -479,10 +480,16 @@ const SupportTickets = ({ title, departmentId }) => {
           : [];
 
         return (
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[...commonItems, ...conditionalItems]}
-          />
+          <div className="flex items-center gap-2">
+            <div
+              role="button"
+              onClick={() => handleViewTicket(params.data)}
+              className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+            >
+              <MdOutlineRemoveRedEye />
+            </div>
+            <ThreeDotMenu rowId={params.data.id} menuItems={conditionalItems} />
+          </div>
         );
       },
     },
@@ -731,7 +738,7 @@ const SupportTickets = ({ title, departmentId }) => {
             closeTicket({
               ticketId: closingTicketId,
               closingRemark: data.closingRemark,
-            })
+            }),
           )}
           className="grid grid-cols-1 gap-4"
         >
