@@ -21,7 +21,8 @@ const ManageTicketsHome = () => {
     additionalTopUserIds: [
       // "67b83885daad0f7bab2f1852",
       // "681a10b13fc9dc666ede401c",
-      "67b83885daad0f7bab2f1888",
+      // "67b83885daad0f7bab2f1888",
+      // "6961fcd737afa664ab215d10",
     ],
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));

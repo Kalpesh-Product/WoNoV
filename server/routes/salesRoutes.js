@@ -27,6 +27,8 @@ const {
   createLead,
   getLeads,
   bulkInsertLeads,
+  editLead,
+  updateCoworkingClientStatus,
 } = require("../controllers/salesControllers/leadsControllers");
 
 const {
@@ -88,7 +90,8 @@ router.post(
   bulkInsertCoworkingMembers,
 );
 router.get("/co-working-clients", getCoworkingClients);
-router.patch("/update-co-working-clients", updateCoworkingClient);
+// router.patch("/update-co-working-clients", updateCoworkingClient);
+router.patch("/update-co-working-clients/:id", updateCoworkingClient);
 router.get("/co-working-members", getMembersByUnit);
 router.get("/co-working-client-members", getMemberByClient);
 router.post(
@@ -163,6 +166,8 @@ router.get("/services", getClientServices);
 
 //Lead routes
 router.post("/create-lead", createLead);
+router.patch("/edit-lead", editLead);
+router.patch("/coworking-client/status/:clientId", updateCoworkingClientStatus);
 router.get("/leads", getLeads);
 router.post("/bulk-insert-leads", upload.single("leads"), bulkInsertLeads);
 

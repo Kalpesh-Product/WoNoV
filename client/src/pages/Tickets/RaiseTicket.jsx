@@ -42,7 +42,7 @@ const RaiseTicket = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments"
+        "api/company/get-company-data?field=selectedDepartments",
       );
       return response.data?.selectedDepartments;
     } catch (error) {
@@ -141,7 +141,7 @@ const RaiseTicket = () => {
       .map(({ assigneeName, assignedAtFormatted }) =>
         assignedAtFormatted && assignedAtFormatted !== "N/A"
           ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName
+          : assigneeName,
       )
       .join(", ");
 
@@ -166,7 +166,7 @@ const RaiseTicket = () => {
 
     // Find the selected department and get its ticketIssues
     const selectedDept = fetchedDepartments.find(
-      (dept) => dept.department._id === deptId
+      (dept) => dept.department._id === deptId,
     );
 
     setTicketIssues(selectedDept?.ticketIssues || []);
@@ -328,7 +328,7 @@ const RaiseTicket = () => {
                                   dept.department.name !== "Marketing" &&
                                   dept.department.name !== "Expansion" &&
                                   dept.department.name !== "Compliance" &&
-                                  dept.department.name !== "Legal"
+                                  dept.department.name !== "Legal",
                               )
                               .map((dept) => (
                                 <MenuItem
@@ -379,11 +379,13 @@ const RaiseTicket = () => {
                         >
                           <MenuItem value="">Select Ticket Title</MenuItem>
                           {ticketIssues.length > 0 ? (
-                            ticketIssues.map((issue) => (
-                              <MenuItem key={issue._id} value={issue.title}>
-                                {issue.title}
-                              </MenuItem>
-                            ))
+                            ticketIssues
+                              .filter((issue) => issue.title !== "Other")
+                              .map((issue) => (
+                                <MenuItem key={issue._id} value={issue.title}>
+                                  {issue.title}
+                                </MenuItem>
+                              ))
                           ) : (
                             <MenuItem disabled>No Issues Available</MenuItem>
                           )}
@@ -657,7 +659,7 @@ const RaiseTicket = () => {
                         {assignment.assignedAtFormatted || "N/A"}
                       </div>
                     </div>
-                  )
+                  ),
                 )}
               </div>
             </div>

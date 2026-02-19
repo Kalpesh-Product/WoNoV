@@ -21,7 +21,7 @@ const ManageTickets = () => {
 
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const selectedDepartment = useSelector(
-    (state) => state.performance.selectedDepartment
+    (state) => state.performance.selectedDepartment,
   );
 
   const ticketLabel =
@@ -31,18 +31,36 @@ const ManageTickets = () => {
       : "Personal";
 
   const isAdmin = auth.user?.role?.some((item) =>
-    item.roleTitle.includes("Admin")
+    item.roleTitle.includes("Admin"),
+  );
+
+  const canViewEscalatedTickets = userPermissions.includes(
+    PERMISSIONS.TICKETS_ESCALATED_TICKETS.value,
+  );
+  const canViewSupportTickets = userPermissions.includes(
+    PERMISSIONS.TICKETS_SUPPORT_TICKETS.value,
   );
 
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/tickets/department-tickets/${selectedDepartment}`
+        `/api/tickets/department-tickets/${selectedDepartment}`,
       );
       return response.data;
     },
   });
+
+  const { data: supportTicketsData = [], isLoading: isSupportLoading } =
+    useQuery({
+      queryKey: ["supported-tickets", selectedDepartment],
+      queryFn: async () => {
+        const response = await axios.get(
+          `/api/tickets/ticket-filter/support/${selectedDepartment}`,
+        );
+        return response.data;
+      },
+    });
 
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
@@ -56,12 +74,13 @@ const ManageTickets = () => {
       .filter((item) => item.acceptedBy?._id === auth.user?._id)
       .filter((item) => item.status === "In Progress").length,
     inProgressTickets: ticketsData.filter(
-      (item) => item.status === "In Progress"
+      (item) => item.status === "In Progress",
     ).length,
     assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0)
       .length,
     escalatedTickets: ticketsData.filter((item) => item.status === "Escalated")
       .length,
+    supportTickets: supportTicketsData.length,
   };
 
   const widgets = [
@@ -76,7 +95,7 @@ const ManageTickets = () => {
           titleDataColor={"red"}
           TitleAmount={String(ticketsFilteredData.recievedTickets).padStart(
             2,
-            "0"
+            "0",
           )}
         >
           <TicketCard
@@ -109,7 +128,7 @@ const ManageTickets = () => {
           titleDataColor={"black"}
           TitleAmount={String(ticketsFilteredData.acceptedTickets).padStart(
             2,
-            "0"
+            "0",
           )}
         >
           <TicketCard
@@ -126,13 +145,25 @@ const ManageTickets = () => {
             fontFamily={"Poppins-Bold"}
             titleColor={"#1E3D73"}
           />
-          <TicketCard
-            title={"Escalated Tickets"}
-            data={ticketsFilteredData.escalatedTickets}
-            fontColor={"#1E3D73"}
-            fontFamily={"Poppins-Bold"}
-            titleColor={"#1E3D73"}
-          />
+          {canViewEscalatedTickets ? (
+            <TicketCard
+              title={"Escalated Tickets"}
+              data={ticketsFilteredData.escalatedTickets}
+              fontColor={"#1E3D73"}
+              fontFamily={"Poppins-Bold"}
+              titleColor={"#1E3D73"}
+            />
+          ) : (
+            canViewSupportTickets && (
+              <TicketCard
+                title={"Support Tickets"}
+                data={ticketsFilteredData.supportTickets}
+                fontColor={"#1E3D73"}
+                fontFamily={"Poppins-Bold"}
+                titleColor={"#1E3D73"}
+              />
+            )
+          )}
         </WidgetSection>,
       ],
     },
@@ -217,7 +248,7 @@ const ManageTickets = () => {
   return (
     <div>
       {/* Widgets */}
-      {!isLoading ? (
+      {!isLoading && !isSupportLoading ? (
         <div>
           {widgets.map((widget, index) => (
             <div key={index}>

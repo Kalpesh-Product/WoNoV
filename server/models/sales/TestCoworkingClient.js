@@ -14,8 +14,8 @@ const clientSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      // required: true,
-      // unique: true,
+      //   required: true,
+      //   unique: true,
       trim: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
@@ -90,8 +90,10 @@ const clientSchema = new mongoose.Schema(
       imageId: String,
       imageUrl: String,
     },
-    rentDate: { type: Date },
-    // rentDate: { type: String },
+    rentDate: {
+      type: String,
+      trim: true,
+    },
     nextIncrement: {
       type: Date,
     },
@@ -154,11 +156,6 @@ const clientSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-clientSchema.index(
-  { email: 1 },
-  { unique: true, partialFilterExpression: { email: { $type: "string" } } },
-);
+const TestCoworkingClient = mongoose.model("TestCoworkingClient", clientSchema);
 
-const CoworkingClient = mongoose.model("CoworkingClient", clientSchema);
-
-module.exports = CoworkingClient;
+module.exports = TestCoworkingClient;

@@ -23,6 +23,7 @@ import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import { DateEnv } from "@fullcalendar/core/internal";
 import useAuth from "../../../hooks/useAuth";
 import formatDateTime from "../../../utils/formatDateTime";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const AssignedTickets = ({ title, departmentId }) => {
   const { auth } = useAuth();
@@ -43,7 +44,7 @@ const AssignedTickets = ({ title, departmentId }) => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/ticket-filter/assign/${departmentId}`
+          `/api/tickets/ticket-filter/assign/${departmentId}`,
         );
 
         return response.data;
@@ -116,7 +117,7 @@ const AssignedTickets = ({ title, departmentId }) => {
       .map(({ assigneeName, assignedAtFormatted }) =>
         assignedAtFormatted && assignedAtFormatted !== "N/A"
           ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName
+          : assigneeName,
       )
       .join(", ");
 
@@ -156,15 +157,15 @@ const AssignedTickets = ({ title, departmentId }) => {
             assignees:
               ticket.assignees.length > 0
                 ? `${ticket.assignees.map(
-                    (item) => `${item.firstName} ${item.lastName}`
+                    (item) => `${item.firstName} ${item.lastName}`,
                   )}`
                 : "N/A",
             tickets:
               ticket.assignees.length > 0
                 ? "Assigned Ticket"
                 : ticket.ticket?.acceptedBy
-                ? "Accepted Ticket"
-                : "N/A",
+                  ? "Accepted Ticket"
+                  : "N/A",
             assignedAt: ticket.assignedAt || "N/A",
             status: ticket.status || "Pending",
           };
@@ -275,12 +276,12 @@ const AssignedTickets = ({ title, departmentId }) => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => {
-        const commonItems = [
-          {
-            label: "View",
-            onClick: () => handleViewTicket(params.data),
-          },
-        ];
+        // const commonItems = [
+        //   {
+        //     label: "View",
+        //     onClick: () => handleViewTicket(params.data),
+        //   },
+        // ];
 
         const roleTitle = auth?.user?.role?.[0]?.roleTitle || "";
         const canReassignTicket = isTop;
@@ -315,10 +316,16 @@ const AssignedTickets = ({ title, departmentId }) => {
         ];
 
         return (
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[...commonItems, ...conditionalItems]}
-          />
+          <div className="flex items-center gap-2">
+            <div
+              role="button"
+              onClick={() => handleViewTicket(params.data)}
+              className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+            >
+              <MdOutlineRemoveRedEye />
+            </div>
+            <ThreeDotMenu rowId={params.data.id} menuItems={conditionalItems} />
+          </div>
         );
       },
     },
@@ -362,7 +369,7 @@ const AssignedTickets = ({ title, departmentId }) => {
     },
     onError: function (error) {
       toast.error(
-        error.response?.data?.message || "Failed to create support ticket"
+        error.response?.data?.message || "Failed to create support ticket",
       );
     },
   });
@@ -370,7 +377,7 @@ const AssignedTickets = ({ title, departmentId }) => {
   const fetchSubOrdinates = async () => {
     try {
       const response = await axios.get(
-        `/api/users/assignees?deptId=${departmentId}`
+        `/api/users/assignees?deptId=${departmentId}`,
       );
 
       return response.data;
@@ -396,7 +403,7 @@ const AssignedTickets = ({ title, departmentId }) => {
         `/api/tickets/assign-ticket/${data.ticketId}`,
         {
           assignees: data.assignedEmployees,
-        }
+        },
       );
 
       return response.data.message;
@@ -415,7 +422,7 @@ const AssignedTickets = ({ title, departmentId }) => {
 
   const onSubmit = (formData) => {
     const assignedEmployeeIds = Object.keys(formData.selectedEmployees).filter(
-      (id) => formData.selectedEmployees[id]
+      (id) => formData.selectedEmployees[id],
     ); // ✅ Keep only selected IDs
 
     if (assignedEmployeeIds.length === 0) {
@@ -439,7 +446,7 @@ const AssignedTickets = ({ title, departmentId }) => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "api/company/get-company-data?field=selectedDepartments"
+          "api/company/get-company-data?field=selectedDepartments",
         );
         return response.data?.selectedDepartments;
       } catch (error) {
@@ -613,7 +620,7 @@ const AssignedTickets = ({ title, departmentId }) => {
                       getOptionLabel={(dept) => `${dept.department.name}`}
                       onChange={(_, newValue) =>
                         field.onChange(
-                          newValue.map((dept) => dept.department._id)
+                          newValue.map((dept) => dept.department._id),
                         )
                       }
                       renderTags={(selected, getTagProps) =>
@@ -750,7 +757,7 @@ const AssignedTickets = ({ title, departmentId }) => {
             closeTicket({
               ticketId: closingTicketId,
               closingRemark: data.closingRemark,
-            })
+            }),
           )}
           className="grid grid-cols-1 gap-4"
         >
