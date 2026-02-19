@@ -14,6 +14,7 @@ const {
 const sharp = require("sharp");
 const ClientService = require("../../models/sales/ClientService");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+const TestCoworkingClient = require("../../models/sales/TestCoworkingClient");
 
 const createCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -360,24 +361,296 @@ const getCoworkingClientRevenues = async (req, res, next) => {
   }
 };
 
+// const updateCoworkingClient = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({ message: "Invalid client ID format" });
+//     }
+//     const client = await CoworkingClient.findByIdAndUpdate(id, req.body, {
+//       new: true,
+//       runValidators: true,
+//     }).populate("company unit");
+//     if (!client) {
+//       return res.status(404).json({ message: "CoworkingClient not found" });
+//     }
+//     res
+//       .status(200)
+//       .json({ message: "CoworkingClient updated successfully", client });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const updateCoworkingClient = async (req, res, next) => {
+  const logPath = "sales/SalesLog";
+  const logAction = "Edit CoworkingClient";
+  const logSourceKey = "client";
+
+  const { user, ip, company } = req;
+
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid client ID format" });
+    const { clientId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      throw new CustomError(
+        "Invalid client ID",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
     }
-    const client = await CoworkingClient.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    }).populate("company unit");
-    if (!client) {
-      return res.status(404).json({ message: "CoworkingClient not found" });
+
+    const existingClient = await CoworkingClient.findOne({
+      _id: clientId,
+      company,
+    });
+
+    if (!existingClient) {
+      throw new CustomError(
+        "Client not found",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
     }
-    res
-      .status(200)
-      .json({ message: "CoworkingClient updated successfully", client });
+
+    const {
+      clientName,
+      service,
+      unit,
+      cabinDesks = 0,
+      openDesks = 0,
+      ratePerOpenDesk,
+      ratePerCabinDesk,
+      annualIncrement,
+      startDate,
+      endDate,
+      hOPocName,
+      hOPocEmail,
+      hOPocPhone,
+      localPocName,
+      localPocEmail,
+      localPocPhone,
+    } = req.body;
+
+    // ✅ Duplicate name check (excluding self)
+    if (clientName) {
+      const nameExists = await CoworkingClient.findOne({
+        clientName,
+        _id: { $ne: clientId },
+      });
+
+      if (nameExists) {
+        throw new CustomError(
+          "Another client with this name already exists",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
+    // ✅ Validate unit if changed
+    if (unit) {
+      if (!mongoose.Types.ObjectId.isValid(unit)) {
+        throw new CustomError(
+          "Invalid unit ID",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      const unitExists = await Unit.findById(unit);
+      if (!unitExists) {
+        throw new CustomError(
+          "Unit doesn't exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
+    // ✅ Validate service if changed
+    if (service) {
+      if (!mongoose.Types.ObjectId.isValid(service)) {
+        throw new CustomError(
+          "Invalid service ID",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      const serviceExists = await ClientService.findById(service);
+      if (!serviceExists) {
+        throw new CustomError(
+          "Service doesn't exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
+    // ✅ Numeric validations
+    const newBookedDesks = Number(cabinDesks) + Number(openDesks);
+
+    if (
+      req.body.ratePerOpenDesk !== undefined &&
+      req.body.ratePerOpenDesk <= 0
+    ) {
+      return res.status(400).json({ message: "Invalid ratePerOpenDesk" });
+    }
+
+    if (
+      req.body.ratePerCabinDesk !== undefined &&
+      req.body.ratePerCabinDesk <= 0
+    ) {
+      return res.status(400).json({ message: "Invalid ratePerCabinDesk" });
+    }
+
+    if (
+      req.body.annualIncrement !== undefined &&
+      req.body.annualIncrement < 0
+    ) {
+      return res.status(400).json({ message: "Invalid annualIncrement" });
+    }
+
+    // if (new Date(startDate) >= new Date(endDate)) {
+    //   throw new CustomError(
+    //     "Start date must be before end date",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
+
+    if (req.body.startDate && req.body.endDate) {
+      if (new Date(req.body.startDate) >= new Date(req.body.endDate)) {
+        return res.status(400).json({
+          message: "Start date must be before end date",
+        });
+      }
+    }
+
+    // 🔥 DESK ADJUSTMENT LOGIC
+    const oldBookedDesks = existingClient.totalDesks;
+    const deskDifference = newBookedDesks - oldBookedDesks;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    const startOfMonth = new Date(year, month, 1);
+    const endOfMonth = new Date(year, month + 1, 1);
+
+    const deskRecord = await Desk.findOne({
+      unit: unit || existingClient.unit,
+      month: { $gte: startOfMonth, $lt: endOfMonth },
+    });
+
+    if (deskRecord) {
+      const updatedBooked = deskRecord.bookedDesks + deskDifference;
+
+      if (updatedBooked < 0) {
+        throw new CustomError(
+          "Desk calculation error",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      deskRecord.bookedDesks = updatedBooked;
+      deskRecord.availableDesks = deskRecord.availableDesks - deskDifference;
+
+      await deskRecord.save();
+    }
+
+    // ✅ Whitelist update
+    const allowedFields = [
+      "clientName",
+      "email",
+      "phone",
+      "service",
+      "sector",
+      "hoCity",
+      "hoState",
+      "unit",
+      "cabinDesks",
+      "openDesks",
+      "ratePerOpenDesk",
+      "ratePerCabinDesk",
+      "annualIncrement",
+      "perDeskMeetingCredits",
+      "totalMeetingCredits",
+      "startDate",
+      "endDate",
+      "lockinPeriod",
+      "rentDate",
+      "nextIncrement",
+    ];
+
+    const updateData = {};
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+
+    updateData.totalDesks = newBookedDesks;
+
+    // nested POCs
+    updateData.hOPoc = {
+      name: hOPocName,
+      email: hOPocEmail,
+      phone: hOPocPhone,
+    };
+
+    updateData.localPoc = {
+      name: localPocName,
+      email: localPocEmail,
+      phone: localPocPhone,
+    };
+
+    const oldState = existingClient.toObject();
+
+    existingClient.set(updateData);
+
+    await existingClient.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "CoworkingClient updated successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: existingClient._id,
+      changes: {
+        before: oldState,
+        after: existingClient,
+        deskAdjustment: deskDifference,
+      },
+    });
+
+    return res.status(200).json({
+      message: "CoworkingClient updated successfully",
+    });
   } catch (error) {
-    next(error);
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+      );
+    }
   }
 };
 
@@ -515,22 +788,78 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
 
         coWorkingClients.push(newClientObj);
       })
+      // .on("end", async () => {
+      //   try {
+      //     if (coWorkingClients.length === 0) {
+      //       return res
+      //         .status(400)
+      //         .json({ message: "No valid clients found in the file" });
+      //     }
+
+      //     await TestCoworkingClient.insertMany(coWorkingClients);
+      //     res.status(201).json({
+      //       message: `${coWorkingClients.length} clients inserted successfully`,
+      //     });
+      //   } catch (err) {
+      //     next(err);
+      //   }
+      // })
       .on("end", async () => {
         try {
           if (coWorkingClients.length === 0) {
-            return res
-              .status(400)
-              .json({ message: "No valid clients found in the file" });
+            return res.status(400).json({
+              message: "No valid clients found in the file",
+            });
           }
 
-          await CoworkingClient.insertMany(coWorkingClients);
-          res.status(201).json({
-            message: `${coWorkingClients.length} clients inserted successfully`,
+          // ✅ 1. Remove duplicates inside CSV itself
+          const uniqueMap = new Map();
+
+          coWorkingClients.forEach((client) => {
+            const key = `${client.clientName}_${client.unit}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, client);
+            }
+          });
+
+          const uniqueClients = Array.from(uniqueMap.values());
+
+          // ✅ 2. Fetch existing clients from DB
+          const existingClients = await TestCoworkingClient.find({
+            company,
+            clientName: { $in: uniqueClients.map((c) => c.clientName) },
+            unit: { $in: uniqueClients.map((c) => c.unit) },
+          })
+            .select("clientName unit")
+            .lean();
+
+          const existingSet = new Set(
+            existingClients.map((c) => `${c.clientName}_${c.unit.toString()}`),
+          );
+
+          // ✅ 3. Filter out DB duplicates
+          const finalClients = uniqueClients.filter((client) => {
+            const key = `${client.clientName}_${client.unit.toString()}`;
+            return !existingSet.has(key);
+          });
+
+          if (finalClients.length === 0) {
+            return res.status(400).json({
+              message: "All clients already exist. Nothing inserted.",
+            });
+          }
+
+          await CoworkingClient.insertMany(finalClients);
+
+          return res.status(201).json({
+            message: `${finalClients.length} clients inserted successfully`,
+            skipped: uniqueClients.length - finalClients.length,
           });
         } catch (err) {
           next(err);
         }
       })
+
       .on("error", (error) => {
         console.error("Error reading CSV file:", error);
         next(error);
