@@ -27,6 +27,8 @@ const {
   createLead,
   getLeads,
   bulkInsertLeads,
+  editLead,
+  updateCoworkingClientStatus,
 } = require("../controllers/salesControllers/leadsControllers");
 
 const {
@@ -164,6 +166,8 @@ router.get("/services", getClientServices);
 
 //Lead routes
 router.post("/create-lead", createLead);
+router.patch("/edit-lead", editLead);
+router.patch("/coworking-client/status/:clientId", updateCoworkingClientStatus);
 router.get("/leads", getLeads);
 router.post("/bulk-insert-leads", upload.single("leads"), bulkInsertLeads);
 
