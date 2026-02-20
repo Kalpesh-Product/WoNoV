@@ -92,7 +92,7 @@ router.post(
 );
 router.get("/co-working-clients", getCoworkingClients);
 // router.patch("/update-co-working-clients", updateCoworkingClient);
-router.patch("/update-co-working-clients/:id", updateCoworkingClient);
+router.patch("/update-co-working-clients/:clientId", updateCoworkingClient);
 router.patch("/co-working-member/:memberId", updateCoworkingMember);
 router.get("/co-working-members", getMembersByUnit);
 router.get("/co-working-client-members", getMemberByClient);
