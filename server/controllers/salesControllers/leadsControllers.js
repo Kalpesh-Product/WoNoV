@@ -62,7 +62,7 @@ const createLead = async (req, res, next) => {
         "All required fields must be provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -72,7 +72,7 @@ const createLead = async (req, res, next) => {
         "Start date must be a future date",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -82,7 +82,7 @@ const createLead = async (req, res, next) => {
         "Lead already exists",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -91,7 +91,7 @@ const createLead = async (req, res, next) => {
         "Invalid proposed location ID",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -101,7 +101,7 @@ const createLead = async (req, res, next) => {
         "Proposed location doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -110,7 +110,7 @@ const createLead = async (req, res, next) => {
         "Invalid numerical values",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -160,7 +160,292 @@ const createLead = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+      );
+    }
+  }
+};
+
+const editLead = async (req, res, next) => {
+  const logPath = "sales/SalesLog";
+  const logAction = "Edit Lead";
+  const logSourceKey = "lead";
+
+  const { user, ip, company } = req;
+
+  try {
+    const { leadId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(leadId)) {
+      throw new CustomError(
+        "Invalid Lead ID",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const existingLead = await Lead.findOne({ _id: leadId, company });
+
+    if (!existingLead) {
+      throw new CustomError("Lead not found", logPath, logAction, logSourceKey);
+    }
+
+    const {
+      proposedLocations,
+      emailAddress,
+      totalDesks,
+      clientBudget,
+      startDate,
+    } = req.body;
+
+    // ✅ Required field validation (same discipline as create)
+    const requiredFields = [
+      "dateOfContact",
+      "companyName",
+      "serviceCategory",
+      "leadStatus",
+      "proposedLocations",
+      "sector",
+      "headOfficeLocation",
+      "officeInGoa",
+      "pocName",
+      "designation",
+      "contactNumber",
+      "emailAddress",
+      "leadSource",
+      "period",
+      "totalDesks",
+      "clientBudget",
+      "startDate",
+    ];
+
+    for (const field of requiredFields) {
+      if (
+        req.body[field] === undefined ||
+        req.body[field] === null ||
+        req.body[field] === ""
+      ) {
+        throw new CustomError(
+          "All required fields must be provided",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
+    // ✅ Future date validation
+    const currDate = new Date();
+    if (new Date(startDate) < currDate) {
+      throw new CustomError(
+        "Start date must be a future date",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    // ✅ Duplicate email check (excluding self)
+    const emailExists = await Lead.findOne({
+      emailAddress,
+      _id: { $ne: leadId },
+    });
+
+    if (emailExists) {
+      throw new CustomError(
+        "Another lead with this email already exists",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    // ✅ Proposed location validation
+    if (!mongoose.Types.ObjectId.isValid(proposedLocations)) {
+      throw new CustomError(
+        "Invalid proposed location ID",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const unitExists = await Unit.findById(proposedLocations);
+    if (!unitExists) {
+      throw new CustomError(
+        "Proposed location doesn't exist",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    // ✅ Numeric validation
+    if (totalDesks < 1 || clientBudget <= 0) {
+      throw new CustomError(
+        "Invalid numerical values",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    // ✅ Whitelist fields for update
+    const allowedFields = [
+      "dateOfContact",
+      "companyName",
+      "serviceCategory",
+      "leadStatus",
+      "proposedLocations",
+      "sector",
+      "headOfficeLocation",
+      "officeInGoa",
+      "pocName",
+      "designation",
+      "contactNumber",
+      "emailAddress",
+      "leadSource",
+      "period",
+      "openDesks",
+      "cabinDesks",
+      "totalDesks",
+      "clientBudget",
+      "startDate",
+      "remarksComments",
+      "lastFollowUpDate",
+    ];
+
+    const updateData = {};
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+
+    // Save old state for logging
+    const oldLead = existingLead.toObject();
+
+    // ✅ Apply update safely
+    existingLead.set(updateData);
+
+    await existingLead.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Lead updated successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: existingLead._id,
+      changes: {
+        before: oldLead,
+        after: existingLead,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Lead updated successfully",
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+      );
+    }
+  }
+};
+
+const updateCoworkingClientStatus = async (req, res, next) => {
+  const logPath = "sales/SalesLog";
+  const logAction = "Update CoworkingClient Status";
+  const logSourceKey = "client";
+
+  const { user, ip, company } = req;
+
+  try {
+    const { clientId } = req.params;
+    const { isActive } = req.body;
+
+    // ✅ Validate ID
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      throw new CustomError(
+        "Invalid client ID",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    // ✅ Validate boolean strictly
+    if (typeof isActive !== "boolean") {
+      throw new CustomError(
+        "isActive must be true or false",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const existingClient = await CoworkingClient.findOne({
+      _id: clientId,
+      company,
+    });
+
+    if (!existingClient) {
+      throw new CustomError(
+        "Client not found",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const oldStatus = existingClient.isActive;
+
+    // No-op protection
+    if (oldStatus === isActive) {
+      return res.status(200).json({
+        message: `Client is already ${isActive ? "active" : "inactive"}`,
+      });
+    }
+
+    existingClient.isActive = isActive;
+    await existingClient.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Client marked as ${isActive ? "Active" : "Inactive"}`,
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: existingClient._id,
+      changes: {
+        isActive: {
+          before: oldStatus,
+          after: isActive,
+        },
+      },
+    });
+
+    return res.status(200).json({
+      message: `Client ${isActive ? "activated" : "deactivated"} successfully`,
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -170,7 +455,7 @@ const getLeads = async (req, res, next) => {
   try {
     const { company } = req;
     const leads = await Lead.find({ company }).populate(
-      "serviceCategory proposedLocations"
+      "serviceCategory proposedLocations",
     );
     if (!leads.length) {
       return res.status(404).json({ message: "No leads found" });
@@ -195,7 +480,7 @@ const bulkInsertLeads = async (req, res, next) => {
 
     const services = await ClientService.find().lean();
     const servicesMap = new Map(
-      services.map((s) => [s.name.toLowerCase(), s._id])
+      services.map((s) => [s.name.toLowerCase(), s._id]),
     );
 
     const newLeads = [];
@@ -288,6 +573,10 @@ const bulkInsertLeads = async (req, res, next) => {
   }
 };
 
-module.exports = bulkInsertLeads;
-
-module.exports = { createLead, getLeads, bulkInsertLeads };
+module.exports = {
+  createLead,
+  editLead,
+  updateCoworkingClientStatus,
+  getLeads,
+  bulkInsertLeads,
+};
