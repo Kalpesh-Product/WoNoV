@@ -102,8 +102,6 @@ const createCoworkingClient = async (req, res, next) => {
 
     if (
       !clientName ||
-      !email ||
-      !phone ||
       !service ||
       !sector ||
       !hoCity ||
@@ -432,6 +430,7 @@ const updateCoworkingClient = async (req, res, next) => {
       localPocName,
       localPocEmail,
       localPocPhone,
+      clientInvoiceName,
     } = req.body;
 
     // ✅ Duplicate name check (excluding self)
@@ -592,6 +591,7 @@ const updateCoworkingClient = async (req, res, next) => {
       "lockinPeriod",
       "rentDate",
       "nextIncrement",
+      "clientInvoiceName",
     ];
 
     const updateData = {};
