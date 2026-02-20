@@ -26,24 +26,15 @@ const createMember = async (req, res, next) => {
       emergencyNo,
       biometricStatus,
       client,
+      dateOfJoining,
     } = req.body;
 
-    if (!name || !email || !dob || !phone || !client) {
+    if (!name || !client) {
       throw new CustomError(
         "Missing required fields",
         logPath,
         logAction,
-        logSourceKey
-      );
-    }
-
-    const existing = await CoworkingMembers.findOne({ email });
-    if (existing) {
-      throw new CustomError(
-        "Client member already exists with this email",
-        logPath,
-        logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -52,7 +43,22 @@ const createMember = async (req, res, next) => {
         "Invalid client ID",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
+      );
+    }
+
+    const clientExists = await CoworkingClient.findById(client);
+    if (!clientExists) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    const existing = await CoworkingMembers.findOne({ employeeName: name });
+    if (existing) {
+      throw new CustomError(
+        "Client member already exists",
+        logPath,
+        logAction,
+        logSourceKey,
       );
     }
 
@@ -65,7 +71,7 @@ const createMember = async (req, res, next) => {
       dob,
       emergencyName,
       emergencyNo,
-      dateOfJoining: new Date(),
+      dateOfJoining: dateOfJoining || new Date(),
       biometricStatus,
       client,
       company,
@@ -96,9 +102,92 @@ const createMember = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
+  }
+};
+
+const updateCoworkingMember = async (req, res, next) => {
+  try {
+    const { memberId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(memberId)) {
+      return res.status(400).json({ message: "Invalid member ID" });
+    }
+
+    const existingMember = await CoworkingMembers.findById(memberId);
+
+    if (!existingMember) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    const {
+      name,
+      designation,
+      email,
+      phone,
+      bloodGroup,
+      dob,
+      emergencyName,
+      emergencyNo,
+      biometricStatus,
+      client,
+      dateOfJoining,
+    } = req.body;
+
+    // Validate client if provided
+    if (client) {
+      if (!mongoose.Types.ObjectId.isValid(client)) {
+        return res.status(400).json({ message: "Invalid client ID" });
+      }
+
+      const clientExists = await CoworkingClient.findById(client);
+      if (!clientExists) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+    }
+
+    // Prevent duplicate name (excluding current member)
+    if (name) {
+      const duplicate = await CoworkingMembers.findOne({
+        employeeName: name,
+        _id: { $ne: memberId },
+      });
+
+      if (duplicate) {
+        return res
+          .status(400)
+          .json({ message: "Client member with this name already exists" });
+      }
+    }
+
+    // Update only provided fields
+    existingMember.employeeName = name ?? existingMember.employeeName;
+    existingMember.designation = designation ?? existingMember.designation;
+    existingMember.email = email ?? existingMember.email;
+    existingMember.mobileNo = phone ?? existingMember.mobileNo;
+    existingMember.bloodGroup = bloodGroup ?? existingMember.bloodGroup;
+    existingMember.dob = dob ?? existingMember.dob;
+    existingMember.emergencyName =
+      emergencyName ?? existingMember.emergencyName;
+    existingMember.emergencyNo = emergencyNo ?? existingMember.emergencyNo;
+    existingMember.biometricStatus =
+      biometricStatus ?? existingMember.biometricStatus;
+    existingMember.client = client ?? existingMember.client;
+    existingMember.dateOfJoining =
+      dateOfJoining ?? existingMember.dateOfJoining;
+
+    await existingMember.save();
+
+    return res.status(200).json({
+      message: "Coworking client member updated successfully",
+      data: existingMember,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || "Internal Server Error",
+    });
   }
 };
 
@@ -118,6 +207,7 @@ const getAllMembers = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(client)) {
       return res.status(400).json({ message: "Invalid client ID provided" });
     }
+    s;
 
     const members = await CoworkingMembers.find({
       company,
@@ -158,7 +248,7 @@ const getMembersByUnit = async (req, res, next) => {
 
     const totalOccupiedDesks = clients.reduce(
       (acc, client) => acc + (client.openDesks + client.cabinDesks),
-      0
+      0,
     );
 
     const members = await CoworkingMembers.find({
@@ -277,7 +367,7 @@ const getMemberById = async (req, res) => {
 
     const member = await CoworkingMembers.findById(memberId).populate(
       "client",
-      "clientName service"
+      "clientName service",
     );
 
     if (!member) {
@@ -318,34 +408,6 @@ const getMemberByClient = async (req, res) => {
   }
 };
 
-const updateMember = async (req, res, next) => {
-  try {
-    const { memberId, data } = req.body;
-
-    if (!memberId) {
-      return res.status(400).json({ message: "Member ID is missing" });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(memberId)) {
-      return res.status(400).json({ message: "Invalid memeber ID provided" });
-    }
-
-    const updatedMember = await CoworkingMembers.findByIdAndUpdate(
-      memberId,
-      data,
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedMember) {
-      return res.status(404).json({ message: "Member not found" });
-    }
-
-    res.status(200).json(updatedMember);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
 const bulkInsertCoworkingMembers = async (req, res, next) => {
   try {
     const file = req.file;
@@ -353,12 +415,12 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
 
     const coworkingClients = await CoworkingClient.find().lean().exec();
     const coworkingClientsMap = new Map(
-      coworkingClients.map((client) => [client.clientName.trim(), client._id])
+      coworkingClients.map((client) => [client.clientName.trim(), client._id]),
     );
 
     const units = await Unit.find().lean().exec();
     const unitMap = new Map(
-      units.map((unit) => [`${unit.unitNo}`.trim(), unit._id])
+      units.map((unit) => [`${unit.unitNo}`.trim(), unit._id]),
     );
 
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
@@ -402,8 +464,8 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
             biometricStatus?.toLowerCase() === "yes"
               ? "Active"
               : biometricStatus?.toLowerCase() === "no"
-              ? "Inactive"
-              : "Pending";
+                ? "Inactive"
+                : "Pending";
 
           members.push({
             company: company._id,
@@ -456,7 +518,7 @@ module.exports = {
   getAllMembers,
   getMemberById,
   getMemberByClient,
-  updateMember,
+  updateCoworkingMember,
   getMembersByUnit,
   bulkInsertCoworkingMembers,
 };
