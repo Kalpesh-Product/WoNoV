@@ -61,6 +61,9 @@ const clientSchema = new mongoose.Schema(
     ratePerOpenDesk: {
       type: Number,
     },
+    ratePerCabinDesk: {
+      type: Number,
+    },
     annualIncrement: {
       type: Number,
     },
