@@ -135,80 +135,11 @@ mongoose.connection.once("open", () => {
 //   console.log(hashed);
 // })();
 
+// For Generating multiple hashed passwords
 // (async () => {
-//   const passwords = [
-//     "Aarif@4827",
-//     "Abrar@9154",
-//     "Allan@3076",
-//     "Arjunkumar@6892",
-//     "Arpita@1548",
-//     "Dasmon@7731",
-//     "Faizan@2609",
-//     "Gourish@9483",
-//     "Hema@5217",
-//     "Irfan@8364",
-//     "Jisha@4025",
-//     "Kabir@7198",
-//     "Kalpesh@6432",
-//     "Kashif@8906",
-//     "Kiran@2754",
-//     "Machindranath@9341",
-//     "Mehak@5087",
-//     "Muskan@7613",
-//     "Myra@2196",
-//     "Narshiva@8459",
-//     "Nasreen@3904",
-//     "Praktan@6725",
-//     "Rahul@1589",
-//     "Rajesh@9042",
-//     "Rehana@3178",
-//     "Roshan@7860",
-//     "Samiksha@5293",
-//     "Sarhan@8617",
-//     "Savita@2445",
-//     "Shawn@9931",
-//     "Siddhi@4068",
-//     "Utkarsha@7314",
-//     "Varsha@5820",
-//     "Vishal@1673",
-//   ];
+//   const passwords = [];
 
-// const emailArray = [
-//   "aarif.biznest@gmail.com",
-//   "abrar@biznest.co.in",
-//   "allan.wono@gmail.com",
-//   "arjunkumar.biznest@gmail.com",
-//   "arpita.biznest@gmail.com",
-//   "dasmon.biznest@gmail.com",
-//   "faizanbiznest@gmail.com",
-//   "gourish.wono@gmail.com",
-//   "accounts@biznest.co.in",
-//   "irfan.biznest@gmail.com",
-//   "people@biznest.co.in",
-//   "sales@biznest.co.in",
-//   "kalpeshbiznest@gmail.com",
-//   "kashif@biznest.co.in",
-//   "kiran.biznest@gmail.com",
-//   "parkar@biznest.co.in",
-//   "mehak.wono@gmail.com",
-//   "muskan.wono@gmail.com",
-//   "myra.biznest@gmail.com",
-//   "financeops@biznest.co.in",
-//   "nasreen@biznest.co.in",
-//   "madkaikarpraktan@gmail.com",
-//   "rahul.sharma@company.com",
-//   "service@biznest.co.in",
-//   "rehana.commonform@gmail.com",
-//   "roshan.sharma@company.com",
-//   "samiksha.biznest@gmail.com",
-//   "sarhan.biznest@gmail.com",
-//   "savita.wono@gmail.com",
-//   "shawnsilveria.wono@gmail.com",
-//   "finance.biznest07@gmail.com",
-//   "utkarsha.biznest@gmail.com",
-//   "varshakolkar20@gmail.com",
-//   "vishal.wono@gmail.com",
-// ];
+// const emailArray = [];
 
 //   const results = await Promise.all(
 //     passwords.map(async (rawPassword, i) => {
