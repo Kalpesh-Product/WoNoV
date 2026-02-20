@@ -22,6 +22,7 @@ const clientSchema = new mongoose.Schema(
     },
     bookingType: {
       type: String,
+      trim: true,
     },
     phone: {
       type: String,
@@ -59,6 +60,9 @@ const clientSchema = new mongoose.Schema(
     },
 
     ratePerOpenDesk: {
+      type: Number,
+    },
+    ratePerCabinDesk: {
       type: Number,
     },
     annualIncrement: {

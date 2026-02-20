@@ -50,6 +50,8 @@ const createCoworkingClient = async (req, res, next) => {
       hOPocName,
       hOPocEmail,
       hOPocPhone,
+      bookingType,
+      clientInvoiceName,
     } = req.body;
 
     const clientExists = await CoworkingClient.findOne({ clientName });
@@ -102,9 +104,6 @@ const createCoworkingClient = async (req, res, next) => {
 
     if (
       !clientName ||
-      !email ||
-      !phone ||
-      !service ||
       !sector ||
       !hoCity ||
       !hoState ||
@@ -155,12 +154,20 @@ const createCoworkingClient = async (req, res, next) => {
       );
     }
 
+    const serviceId = await ClientService.findOne({
+      serviceName: "ClientService",
+    }).lean();
+
+    if (!serviceId) {
+      return res.status(404).json({ message: "Co-working service not found" });
+    }
+
     const client = new CoworkingClient({
       company,
       clientName,
       email,
       phone,
-      service,
+      service: serviceId._id,
       sector,
       hoCity,
       hoState,
@@ -188,6 +195,8 @@ const createCoworkingClient = async (req, res, next) => {
         email: localPocEmail,
         phone: localPocPhone,
       },
+      bookingType,
+      clientInvoiceName,
     });
 
     const totalDesks = unitExists.cabinDesks + unitExists.openDesks;
@@ -432,6 +441,8 @@ const updateCoworkingClient = async (req, res, next) => {
       localPocName,
       localPocEmail,
       localPocPhone,
+      clientInvoiceName,
+      bookingType,
     } = req.body;
 
     // ✅ Duplicate name check (excluding self)
@@ -592,6 +603,8 @@ const updateCoworkingClient = async (req, res, next) => {
       "lockinPeriod",
       "rentDate",
       "nextIncrement",
+      "clientInvoiceName",
+      "bookingType",
     ];
 
     const updateData = {};

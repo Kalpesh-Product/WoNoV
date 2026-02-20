@@ -11,6 +11,7 @@ const {
   getHierarchy,
   getCompanyAttandances,
   updateCompanySubItem,
+  addDepartmentTicketIssues,
 } = require("../controllers/companyControllers/companyControllers");
 
 const {
@@ -199,5 +200,6 @@ router.patch(
   upload.single("template"),
   updateDepartmentTemplate,
 );
+router.patch("/ticket-issues", addDepartmentTicketIssues);
 
 module.exports = router;
