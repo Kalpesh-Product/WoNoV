@@ -22,6 +22,7 @@ const clientSchema = new mongoose.Schema(
     },
     bookingType: {
       type: String,
+      trim: true,
     },
     phone: {
       type: String,
