@@ -12,7 +12,7 @@ export function useTopDepartment({
   const allowedUserIds = [
     "67b83885daad0f7bab2f184f", // Abrar
     "67b83885daad0f7bab2f1852", // Kashif
-    "67b83885daad0f7bab2f1864", // Kalpesh
+    // "67b83885daad0f7bab2f1864", // Kalpesh
   ];
 
   const topUserId = allowedUserIds.find((id) => loggedInUserId === id);
@@ -32,7 +32,7 @@ export function useTopDepartment({
 
   const topDepartmentIds = useMemo(() => {
     return Array.from(
-      new Set([...baseTopDepartmentIds, ...additionalTopDepartmentIds])
+      new Set([...baseTopDepartmentIds, ...additionalTopDepartmentIds]),
     );
   }, [additionalTopDepartmentIds]);
 

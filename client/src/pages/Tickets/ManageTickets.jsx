@@ -74,7 +74,7 @@ const ManageTickets = () => {
       .filter((item) => item.acceptedBy?._id === auth.user?._id)
       .filter((item) => item.status === "In Progress").length,
     inProgressTickets: ticketsData.filter(
-      (item) => item.status === "In Progress",
+      (item) => item.status === "In Progress" || item.status === "Escalated",
     ).length,
     assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0)
       .length,
