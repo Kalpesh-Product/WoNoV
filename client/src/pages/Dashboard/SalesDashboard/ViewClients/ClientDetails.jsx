@@ -1,4 +1,4 @@
-import { Avatar, Button, Chip, TextField } from "@mui/material";
+import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -98,6 +98,22 @@ const ClientDetails = () => {
   }, [selectedClient, reset]);
 
   const [isEditing, setIsEditing] = useState(false);
+
+  const bookingTypeOptions = React.useMemo(() => {
+    const options = new Set();
+
+    clientsData?.forEach((client) => {
+      if (client?.bookingType) {
+        options.add(client.bookingType);
+      }
+    });
+
+    if (selectedClient?.bookingType) {
+      options.add(selectedClient.bookingType);
+    }
+
+    return [...options];
+  }, [clientsData, selectedClient?.bookingType]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -286,16 +302,35 @@ const ClientDetails = () => {
                         <Controller
                           name={fieldKey}
                           control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
+                          render={({ field }) =>
+                            fieldKey === "bookingType" ? (
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label="Booking Type"
+                                fullWidth
+                              >
+                                {bookingTypeOptions.map((bookingType) => (
+                                  <MenuItem
+                                    key={bookingType}
+                                    value={bookingType}
+                                  >
+                                    {bookingType}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            ) : (
+                              <TextField
+                                {...field}
+                                size="small"
+                                label={fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
+                                fullWidth
+                              />
+                            )
+                          }
                         />
                       ) : (
                         <div className="py-2 flex justify-between items-center gap-2">
