@@ -689,6 +689,184 @@ const deleteCoworkingClient = async (req, res, next) => {
   }
 };
 
+// const bulkInsertCoworkingClients = async (req, res, next) => {
+//   try {
+//     const file = req.file;
+//     const company = req.company;
+
+//     if (!file) {
+//       return res.status(400).json({ message: "Please provide a CSV file" });
+//     }
+
+//     // Fetch all units for the company and map them by unit number
+//     const units = await Unit.find({ company })
+//       .populate([{ path: "building", select: "buildingName" }])
+//       .lean()
+//       .exec();
+
+//     const unitMap = new Map(units.map((unit) => [unit.unitNo, unit._id]));
+
+//     // Convert file buffer to readable stream
+//     const stream = Readable.from(file.buffer.toString("utf-8").trim());
+//     const getClientService = await ClientService.findOne({
+//       serviceName: "Co-working",
+//       company,
+//     })
+//       .lean()
+//       .exec();
+
+//     let coWorkingClients = [];
+
+//     stream
+//       .pipe(csvParser())
+//       .on("data", (row) => {
+//         const {
+//           "Client Name": clientName,
+//           "Client Invoice Name": clientInvoiceName,
+//           Sector: sector,
+//           "Booking Type": bookingType,
+//           "HO City": hoCity,
+//           "HO State": hoState,
+//           Unit: unitNo,
+//           "Cabin Desks": cabinDesks,
+//           "Open Desks": openDesks,
+//           "Rate Per Desk": ratePerDesk,
+//           "Annual Increment": annualIncrement,
+//           "Per Desk Meeting Credits": perDeskMeetingCredits,
+//           "Start Date": startDate,
+//           "End Date": endDate,
+//           "Lockin Period": lockinPeriod,
+//           "Rent Date": rentDate,
+//           "Next Increment": nextIncrement,
+//           "Local POC Name": localPocName,
+//           "Local POC Email": localPocEmail,
+//           "Local POC Mobile": localPocPhone,
+//           "HO POC Name": hoPocName,
+//           "HO POC Email": hoPocEmail,
+//           "HO POC Mobile": hoPocPhone,
+//         } = row;
+
+//         const unitId = unitMap.get(unitNo);
+//         if (!unitId) {
+//           console.warn(`Unit not found for unitNo: ${unitNo}`);
+//           return;
+//         }
+
+//         const parsedCabinDesks = parseInt(cabinDesks) || 0;
+//         const parsedOpenDesks = parseInt(openDesks) || 0;
+//         const totalDesks = parsedCabinDesks + parsedOpenDesks;
+//         const parsedMeetingCredits = parseInt(perDeskMeetingCredits) || 0;
+//         const totalMeetingCredits = totalDesks * parsedMeetingCredits;
+//         const parsedAnnualIncrement = parseFloat(annualIncrement) || 0;
+//         const parsedLockinPeriod = parseInt(lockinPeriod) || 0;
+
+//         const parsedStartDate = startDate ? new Date(startDate) : null;
+//         const parsedEndDate = endDate ? new Date(endDate) : null;
+
+//         const newClientObj = {
+//           company,
+//           clientName,
+//           clientInvoiceName,
+//           sector,
+//           bookingType,
+//           hoCity,
+//           service: getClientService._id,
+//           hoState,
+//           unit: unitId,
+//           cabinDesks: parsedCabinDesks,
+//           openDesks: parsedOpenDesks,
+//           totalDesks,
+//           ratePerCabinDesk: ratePerDesk,
+//           ratePerOpenDesk: ratePerDesk,
+//           annualIncrement: parsedAnnualIncrement,
+//           perDeskMeetingCredits: parsedMeetingCredits,
+//           totalMeetingCredits,
+//           startDate: parsedStartDate,
+//           endDate: parsedEndDate,
+//           lockinPeriod: parsedLockinPeriod,
+//           rentDate,
+//           nextIncrement,
+//           localPoc: {
+//             name: localPocName,
+//             email: localPocEmail,
+//             phone: localPocPhone,
+//           },
+//           hOPoc: {
+//             name: hoPocName,
+//             email: hoPocEmail,
+//             phone: hoPocPhone,
+//           },
+//           isActive: true,
+//         };
+
+//         coWorkingClients.push(newClientObj);
+//       })
+
+//       .on("end", async () => {
+//         try {
+//           if (coWorkingClients.length === 0) {
+//             return res.status(400).json({
+//               message: "No valid clients found in the file",
+//             });
+//           }
+
+//           // ✅ 1. Remove duplicates inside CSV itself
+//           const uniqueMap = new Map();
+
+//           coWorkingClients.forEach((client) => {
+//             const key = `${client.clientName}_${client.unit}`;
+//             if (!uniqueMap.has(key)) {
+//               uniqueMap.set(key, client);
+//             }
+//           });
+
+//           const uniqueClients = Array.from(uniqueMap.values());
+
+//           // ✅ 2. Fetch existing clients from DB
+//           const existingClients = await TestCoworkingClient.find({
+//             company,
+//             clientName: { $in: uniqueClients.map((c) => c.clientName) },
+//             unit: { $in: uniqueClients.map((c) => c.unit) },
+//           })
+//             .select("clientName unit")
+//             .lean();
+
+//           const existingSet = new Set(
+//             existingClients.map((c) => `${c.clientName}_${c.unit.toString()}`),
+//           );
+
+//           // ✅ 3. Filter out DB duplicates
+//           const finalClients = uniqueClients.filter((client) => {
+//             const key = `${client.clientName}_${client.unit.toString()}`;
+//             return !existingSet.has(key);
+//           });
+
+//           if (finalClients.length === 0) {
+//             return res.status(400).json({
+//               message: "All clients already exist. Nothing inserted.",
+//             });
+//           }
+
+//           await CoworkingClient.insertMany(finalClients);
+
+//           return res.status(201).json({
+//             message: `${finalClients.length} clients inserted successfully`,
+//             skipped: uniqueClients.length - finalClients.length,
+//           });
+//         } catch (err) {
+//           next(err);
+//         }
+//       })
+
+//       .on("error", (error) => {
+//         console.error("Error reading CSV file:", error);
+//         next(error);
+//       });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const bulkInsertCoworkingClients = async (req, res, next) => {
   try {
     const file = req.file;
@@ -698,175 +876,139 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
       return res.status(400).json({ message: "Please provide a CSV file" });
     }
 
-    // Fetch all units for the company and map them by unit number
-    const units = await Unit.find({ company })
-      .populate([{ path: "building", select: "buildingName" }])
-      .lean()
-      .exec();
-
+    // Fetch units
+    const units = await Unit.find({ company }).lean().exec();
     const unitMap = new Map(units.map((unit) => [unit.unitNo, unit._id]));
 
-    // Convert file buffer to readable stream
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
     const getClientService = await ClientService.findOne({
       serviceName: "Co-working",
       company,
-    })
-      .lean()
-      .exec();
+    }).lean();
 
     let coWorkingClients = [];
+    let unitNotFound = [];
 
     stream
       .pipe(csvParser())
       .on("data", (row) => {
-        const {
-          "Client Name": clientName,
-          "Client Invoice Name": clientInvoiceName,
-          Sector: sector,
-          "Booking Type": bookingType,
-          "HO City": hoCity,
-          "HO State": hoState,
-          Unit: unitNo,
-          "Cabin Desks": cabinDesks,
-          "Open Desks": openDesks,
-          "Rate Per Desk": ratePerDesk,
-          "Annual Increment": annualIncrement,
-          "Per Desk Meeting Credits": perDeskMeetingCredits,
-          "Start Date": startDate,
-          "End Date": endDate,
-          "Lockin Period": lockinPeriod,
-          "Rent Date": rentDate,
-          "Next Increment": nextIncrement,
-          "Local POC Name": localPocName,
-          "Local POC Email": localPocEmail,
-          "Local POC Mobile": localPocPhone,
-          "HO POC Name": hoPocName,
-          "HO POC Email": hoPocEmail,
-          "HO POC Mobile": hoPocPhone,
-        } = row;
+        const { "Client Name": clientName, Unit: unitNo } = row;
 
-        const unitId = unitMap.get(unitNo);
-        if (!unitId) {
-          console.warn(`Unit not found for unitNo: ${unitNo}`);
-          return;
+        if (!clientName) return; // skip empty rows
+
+        let unitId = null;
+
+        // Unit is OPTIONAL
+        if (unitNo) {
+          unitId = unitMap.get(unitNo);
+
+          if (!unitId) {
+            unitNotFound.push({
+              clientName,
+              unitNo,
+              reason: "Unit not found",
+            });
+            return;
+          }
         }
-
-        const parsedCabinDesks = parseInt(cabinDesks) || 0;
-        const parsedOpenDesks = parseInt(openDesks) || 0;
-        const totalDesks = parsedCabinDesks + parsedOpenDesks;
-        const parsedMeetingCredits = parseInt(perDeskMeetingCredits) || 0;
-        const totalMeetingCredits = totalDesks * parsedMeetingCredits;
-        const parsedAnnualIncrement = parseFloat(annualIncrement) || 0;
-        const parsedLockinPeriod = parseInt(lockinPeriod) || 0;
-
-        const parsedStartDate = startDate ? new Date(startDate) : null;
-        const parsedEndDate = endDate ? new Date(endDate) : null;
 
         const newClientObj = {
           company,
-          clientName,
-          clientInvoiceName,
-          sector,
-          bookingType,
-          hoCity,
-          service: getClientService._id,
-          hoState,
-          unit: unitId,
-          cabinDesks: parsedCabinDesks,
-          openDesks: parsedOpenDesks,
-          totalDesks,
-          ratePerCabinDesk: ratePerDesk,
-          ratePerOpenDesk: ratePerDesk,
-          annualIncrement: parsedAnnualIncrement,
-          perDeskMeetingCredits: parsedMeetingCredits,
-          totalMeetingCredits,
-          startDate: parsedStartDate,
-          endDate: parsedEndDate,
-          lockinPeriod: parsedLockinPeriod,
-          rentDate,
-          nextIncrement,
-          localPoc: {
-            name: localPocName,
-            email: localPocEmail,
-            phone: localPocPhone,
-          },
-          hOPoc: {
-            name: hoPocName,
-            email: hoPocEmail,
-            phone: hoPocPhone,
-          },
+          clientName: clientName.trim(),
+          service: getClientService?._id,
           isActive: true,
         };
 
+        if (unitId) {
+          newClientObj.unit = unitId;
+        }
+
         coWorkingClients.push(newClientObj);
       })
-      // .on("end", async () => {
-      //   try {
-      //     if (coWorkingClients.length === 0) {
-      //       return res
-      //         .status(400)
-      //         .json({ message: "No valid clients found in the file" });
-      //     }
 
-      //     await TestCoworkingClient.insertMany(coWorkingClients);
-      //     res.status(201).json({
-      //       message: `${coWorkingClients.length} clients inserted successfully`,
-      //     });
-      //   } catch (err) {
-      //     next(err);
-      //   }
-      // })
       .on("end", async () => {
         try {
           if (coWorkingClients.length === 0) {
             return res.status(400).json({
               message: "No valid clients found in the file",
+              unitNotFound,
             });
           }
 
-          // ✅ 1. Remove duplicates inside CSV itself
+          // ----------------------------
+          // 1️⃣ Remove CSV duplicates
+          // ----------------------------
           const uniqueMap = new Map();
+          const csvDuplicates = [];
 
           coWorkingClients.forEach((client) => {
-            const key = `${client.clientName}_${client.unit}`;
+            const key = `${client.clientName}_${client.unit?.toString() || "NO_UNIT"}`;
+
             if (!uniqueMap.has(key)) {
               uniqueMap.set(key, client);
+            } else {
+              csvDuplicates.push({
+                clientName: client.clientName,
+                unit: client.unit || null,
+                reason: "Duplicate in CSV",
+              });
             }
           });
 
           const uniqueClients = Array.from(uniqueMap.values());
 
-          // ✅ 2. Fetch existing clients from DB
-          const existingClients = await TestCoworkingClient.find({
+          // ----------------------------
+          // 2️⃣ Fetch ALL possible matches from DB
+          // ----------------------------
+          const existingClients = await CoworkingClient.find({
             company,
             clientName: { $in: uniqueClients.map((c) => c.clientName) },
-            unit: { $in: uniqueClients.map((c) => c.unit) },
           })
             .select("clientName unit")
             .lean();
 
           const existingSet = new Set(
-            existingClients.map((c) => `${c.clientName}_${c.unit.toString()}`),
+            existingClients.map(
+              (c) => `${c.clientName}_${c.unit?.toString() || "NO_UNIT"}`,
+            ),
           );
 
-          // ✅ 3. Filter out DB duplicates
+          // ----------------------------
+          // 3️⃣ Filter DB duplicates
+          // ----------------------------
+          const dbDuplicates = [];
+
           const finalClients = uniqueClients.filter((client) => {
-            const key = `${client.clientName}_${client.unit.toString()}`;
-            return !existingSet.has(key);
+            const key = `${client.clientName}_${client.unit?.toString() || "NO_UNIT"}`;
+
+            if (existingSet.has(key)) {
+              dbDuplicates.push({
+                clientName: client.clientName,
+                unit: client.unit || null,
+                reason: "Already exists in database",
+              });
+              return false;
+            }
+
+            return true;
           });
 
-          if (finalClients.length === 0) {
-            return res.status(400).json({
-              message: "All clients already exist. Nothing inserted.",
-            });
+          // ----------------------------
+          // 4️⃣ Insert Remaining
+          // ----------------------------
+          if (finalClients.length > 0) {
+            await CoworkingClient.insertMany(finalClients);
           }
-
-          await CoworkingClient.insertMany(finalClients);
 
           return res.status(201).json({
             message: `${finalClients.length} clients inserted successfully`,
-            skipped: uniqueClients.length - finalClients.length,
+            insertedCount: finalClients.length,
+            skippedCount:
+              unitNotFound.length + csvDuplicates.length + dbDuplicates.length,
+            unitNotFound,
+            csvDuplicates,
+            dbDuplicates,
           });
         } catch (err) {
           next(err);
@@ -874,7 +1016,6 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
       })
 
       .on("error", (error) => {
-        console.error("Error reading CSV file:", error);
         next(error);
       });
   } catch (error) {
