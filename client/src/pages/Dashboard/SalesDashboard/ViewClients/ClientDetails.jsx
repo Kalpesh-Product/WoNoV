@@ -1,10 +1,13 @@
 import { Avatar, Button, Chip, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
+import dayjs from "dayjs";
 import humanDate from "../../../../utils/humanDateForamt";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -222,6 +225,25 @@ const ClientDetails = () => {
       });
     }
   };
+
+  const renderDatePickerField = (field, label) => (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <DatePicker
+        label={label}
+        format="DD-MM-YYYY"
+        value={field.value ? dayjs(field.value) : null}
+        onChange={(dateValue) =>
+          field.onChange(dateValue ? dayjs(dateValue).toISOString() : "")
+        }
+        slotProps={{
+          textField: {
+            size: "small",
+            fullWidth: true,
+          },
+        }}
+      />
+    </LocalizationProvider>
+  );
 
   return (
     <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">
@@ -469,14 +491,9 @@ const ClientDetails = () => {
                       <Controller
                         name="startDate"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Start Date"
-                            fullWidth
-                          />
-                        )}
+                        render={({ field }) =>
+                          renderDatePickerField(field, "Start Date")
+                        }
                       />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
@@ -503,14 +520,9 @@ const ClientDetails = () => {
                       <Controller
                         name="endDate"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="End Date"
-                            fullWidth
-                          />
-                        )}
+                        render={({ field }) =>
+                          renderDatePickerField(field, "End Date")
+                        }
                       />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
@@ -571,14 +583,9 @@ const ClientDetails = () => {
                       <Controller
                         name="rentDate"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Rent Date"
-                            fullWidth
-                          />
-                        )}
+                        render={({ field }) =>
+                          renderDatePickerField(field, "Rent Date")
+                        }
                       />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
@@ -592,7 +599,7 @@ const ClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {control._defaultValues.rentDate}
+                            {humanDate(control._defaultValues.rentDate)}
                           </span>
                         </div>
                       </div>
@@ -605,14 +612,9 @@ const ClientDetails = () => {
                       <Controller
                         name="nextIncrement"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Next Increment"
-                            fullWidth
-                          />
-                        )}
+                        render={({ field }) =>
+                          renderDatePickerField(field, "Next Increment")
+                        }
                       />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
