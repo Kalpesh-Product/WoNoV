@@ -124,6 +124,13 @@ const AdminClientMembers = () => {
           onSubmit={handleSubmit(handleUpdateMember)}
           className="flex flex-col gap-4"
         >
+          <TextField
+            label="Company Name"
+            value={selectedClient?.clientName || ""}
+            size="small"
+            fullWidth
+            disabled
+          />
           <Controller
             name="employeeName"
             control={control}
