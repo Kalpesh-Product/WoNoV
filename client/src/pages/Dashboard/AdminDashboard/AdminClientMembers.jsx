@@ -7,6 +7,8 @@ import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { TextField } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { toast } from "sonner";
 
@@ -31,6 +33,7 @@ const AdminClientMembers = () => {
       employeeName: "",
       email: "",
       phone: "",
+      dob: null,
     },
   });
 
@@ -40,6 +43,7 @@ const AdminClientMembers = () => {
       employeeName: member.employeeName || "",
       email: member.email || "",
       phone: member.phone || "",
+      dob: member.dob && dayjs(member.dob).isValid() ? dayjs(member.dob) : null,
     });
     setOpenEditModal(true);
   };
@@ -58,6 +62,7 @@ const AdminClientMembers = () => {
           employeeName: data.employeeName,
           email: data.email,
           phone: data.phone,
+          dob: data.dob ? dayjs(data.dob).toISOString() : null,
         };
       }),
     );
@@ -160,6 +165,24 @@ const AdminClientMembers = () => {
             control={control}
             render={({ field }) => (
               <TextField {...field} label="Phone" size="small" fullWidth />
+            )}
+          />
+
+          <Controller
+            name="dob"
+            control={control}
+            render={({ field: { value, onChange, ...restField } }) => (
+              <DatePicker
+                {...restField}
+                value={value && dayjs(value).isValid() ? dayjs(value) : null}
+                onChange={(newValue) => onChange(newValue || null)}
+                label="Date of Birth"
+                format="DD-MM-YYYY"
+                error={!!errors.dob}
+                helperText={errors.dob?.message}
+                fullWidth
+                slotProps={{ textField: { size: "small" } }}
+              />
             )}
           />
 
