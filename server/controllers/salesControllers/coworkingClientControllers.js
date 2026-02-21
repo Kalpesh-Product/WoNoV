@@ -276,7 +276,7 @@ const createCoworkingClient = async (req, res, next) => {
 const getCoworkingClients = async (req, res, next) => {
   try {
     const { company } = req;
-    const { coworkingclientid, unitId } = req.query;
+    const { coworkingclientid, unitId, active } = req.query;
 
     if (
       coworkingclientid &&
@@ -304,6 +304,8 @@ const getCoworkingClients = async (req, res, next) => {
       query = { _id: coworkingclientid };
     } else if (unitId) {
       query.unit = unitId;
+    } else if (active) {
+      query.isActive = active === "true" ? true : false;
     }
 
     const populateOptions = [
