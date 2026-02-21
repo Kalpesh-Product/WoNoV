@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
 const Visitor = require("../../models/visitor/Visitor");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
@@ -11,6 +13,7 @@ const emitter = require("../../utils/eventEmitter");
 const Department = require("../../models/Departments");
 const { PDFDocument } = require("pdf-lib");
 const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const Building = require("../../models/locations/Building");
 
 const fetchVisitors = async (req, res, next) => {
   const { company } = req;
@@ -198,7 +201,7 @@ const addVisitor = async (req, res, next) => {
         "Invalid to meet company's ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
     if (toMeetCompany && !toMeet && !clientToMeet) {
@@ -206,7 +209,7 @@ const addVisitor = async (req, res, next) => {
         "Missing person to meet field",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
     if (toMeet && !mongoose.Types.ObjectId.isValid(toMeet)) {
@@ -214,7 +217,7 @@ const addVisitor = async (req, res, next) => {
         "Invalid to meet ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
     if (clientToMeet && !mongoose.Types.ObjectId.isValid(clientToMeet)) {
@@ -222,7 +225,7 @@ const addVisitor = async (req, res, next) => {
         "Invalid client to meet ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -248,7 +251,7 @@ const addVisitor = async (req, res, next) => {
           "Missing scheduled date",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
       if (
@@ -281,7 +284,7 @@ const addVisitor = async (req, res, next) => {
           "Another visitor is already scheduled to meet this person during that day.",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
@@ -295,7 +298,7 @@ const addVisitor = async (req, res, next) => {
           "No client member found",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
@@ -322,7 +325,7 @@ const addVisitor = async (req, res, next) => {
           "Client company not found",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     } else if (toMeetCompany) {
@@ -332,7 +335,7 @@ const addVisitor = async (req, res, next) => {
           "Company not found",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
@@ -400,7 +403,7 @@ const addVisitor = async (req, res, next) => {
             `Invalid ${field} file type`,
             logPath,
             logAction,
-            logSourceKey
+            logSourceKey,
           );
         }
 
@@ -416,7 +419,7 @@ const addVisitor = async (req, res, next) => {
         const uploadRes = await handleDocumentUpload(
           processedBuffer,
           `${companyData.companyName}/visitors/clients/${field}`,
-          originalFilename
+          originalFilename,
         );
 
         if (!uploadRes.public_id) {
@@ -424,7 +427,7 @@ const addVisitor = async (req, res, next) => {
             `Failed to upload ${field}`,
             logPath,
             logAction,
-            logSourceKey
+            logSourceKey,
           );
         }
 
@@ -438,9 +441,8 @@ const addVisitor = async (req, res, next) => {
     const savedVisitor = await visitor.save();
 
     if (!isDepartmentEmpty) {
-      const foundDepartment = await Department.findById(department).select(
-        "name"
-      );
+      const foundDepartment =
+        await Department.findById(department).select("name");
       const userDetails = await UserData.findById({ _id: toMeet });
       const deptEmployees = await UserData.find({
         departments: { $in: department },
@@ -468,7 +470,7 @@ const addVisitor = async (req, res, next) => {
     next(
       error instanceof CustomError
         ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
     );
   }
 };
@@ -488,7 +490,7 @@ const updateVisitor = async (req, res, next) => {
         "Invalid visitor ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -526,7 +528,7 @@ const updateVisitor = async (req, res, next) => {
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     if (!updatedVisitor) {
@@ -534,7 +536,7 @@ const updateVisitor = async (req, res, next) => {
         "Visitor not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -559,7 +561,7 @@ const updateVisitor = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -630,10 +632,199 @@ const fetchTeamMembers = async (req, res, next) => {
   }
 };
 
+const bulkInsertExternalClients = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const company = req.company;
+
+    if (!file) {
+      return res.status(400).json({ message: "Please provide a CSV file" });
+    }
+
+    // 🔹 Fetch Buildings (Only 2 valid ones)
+    const buildings = await Building.find({
+      company,
+      buildingName: { $in: ["Sunteck Kanaka", "Dempo Trade Centre"] },
+    }).lean();
+
+    if (!buildings.length) {
+      return res.status(400).json({ message: "Buildings not found" });
+    }
+
+    const buildingMap = new Map(buildings.map((b) => [b.buildingName, b._id]));
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    let visitors = [];
+    let skipped = [];
+
+    stream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        const {
+          firstName,
+          lastName,
+          email,
+          gender,
+          phoneNumber,
+          panNumber,
+          gstNumber,
+          dateOfVisit,
+          registeredClientCompany,
+          brandName,
+          buildingName, // if you later add column
+        } = row;
+
+        if (!firstName) {
+          skipped.push({
+            firstName,
+            lastName,
+            reason: "Missing required fields",
+          });
+          return;
+        }
+
+        // 🔹 Default building logic (since CSV doesn't have building column)
+        // You can customize this logic however you want
+        const resolvedBuildingName =
+          buildingName && buildingMap.has(buildingName)
+            ? buildingName
+            : "Sunteck Kanaka"; // fallback
+
+        const buildingId = buildingMap.get(resolvedBuildingName);
+
+        if (!buildingId) {
+          skipped.push({
+            firstName,
+            lastName,
+            reason: "Invalid building",
+          });
+          return;
+        }
+
+        const parsedDate = new Date(dateOfVisit);
+
+        if (isNaN(parsedDate)) {
+          skipped.push({
+            firstName,
+            lastName,
+            reason: "Invalid dateOfVisit format",
+          });
+          return;
+        }
+
+        visitors.push({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email?.trim(),
+          gender,
+          phoneNumber: phoneNumber.toString(),
+          panNumber,
+          gstNumber,
+          dateOfVisit: parsedDate,
+          registeredClientCompany,
+          brandName,
+          visitorFlag: "Client",
+          visitorType: "Meeting",
+          building: buildingId,
+          company,
+        });
+      })
+
+      .on("end", async () => {
+        try {
+          if (!visitors.length) {
+            return res.status(400).json({
+              message: "No valid visitors found",
+              skipped,
+            });
+          }
+
+          // 1️⃣ Remove CSV duplicates
+          const uniqueMap = new Map();
+          const csvDuplicates = [];
+
+          visitors.forEach((visitor) => {
+            const key = `${visitor.phoneNumber}_${visitor.dateOfVisit.toISOString()}`;
+
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, visitor);
+            } else {
+              csvDuplicates.push({
+                phoneNumber: visitor.phoneNumber,
+                dateOfVisit: visitor.dateOfVisit,
+                reason: "Duplicate in CSV",
+              });
+            }
+          });
+
+          const uniqueVisitors = Array.from(uniqueMap.values());
+
+          // 2️⃣ Check existing DB duplicates
+          const existingVisitors = await Visitor.find({
+            company,
+            phoneNumber: { $in: uniqueVisitors.map((v) => v.phoneNumber) },
+            visitorFlag: "Client",
+            visitorType: "Meeting",
+          })
+            .select("phoneNumber dateOfVisit")
+            .lean();
+
+          const existingSet = new Set(
+            existingVisitors.map(
+              (v) =>
+                `${v.phoneNumber}_${new Date(v.dateOfVisit).toISOString()}`,
+            ),
+          );
+
+          const dbDuplicates = [];
+
+          const finalVisitors = uniqueVisitors.filter((visitor) => {
+            const key = `${visitor.phoneNumber}_${visitor.dateOfVisit.toISOString()}`;
+
+            if (existingSet.has(key)) {
+              dbDuplicates.push({
+                phoneNumber: visitor.phoneNumber,
+                dateOfVisit: visitor.dateOfVisit,
+                reason: "Already exists in database",
+              });
+              return false;
+            }
+
+            return true;
+          });
+
+          if (finalVisitors.length > 0) {
+            await Visitor.insertMany(finalVisitors);
+          }
+
+          return res.status(201).json({
+            message: `${finalVisitors.length} external clients inserted successfully`,
+            insertedCount: finalVisitors.length,
+            skippedCount:
+              skipped.length + csvDuplicates.length + dbDuplicates.length,
+            missingFieldSkipped: skipped,
+            csvDuplicates,
+            dbDuplicates,
+          });
+        } catch (err) {
+          next(err);
+        }
+      })
+
+      .on("error", (err) => {
+        next(err);
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   fetchVisitors,
   addVisitor,
   updateVisitor,
   fetchExternalCompanies,
   fetchTeamMembers,
+  bulkInsertExternalClients,
 };
