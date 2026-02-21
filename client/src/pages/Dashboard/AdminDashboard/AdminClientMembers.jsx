@@ -11,8 +11,11 @@ import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { toast } from "sonner";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useMutation } from "@tanstack/react-query";
 
 const AdminClientMembers = () => {
+  const axios = useAxiosPrivate();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const [members, setMembers] = useState(selectedClient?.members || []);
   const [openEditModal, setOpenEditModal] = useState(false);
@@ -42,33 +45,81 @@ const AdminClientMembers = () => {
     reset({
       employeeName: member.employeeName || "",
       email: member.email || "",
-      phone: member.phone || "",
+      phone: member.mobileNo || member.phone || "",
       dob: member.dob && dayjs(member.dob).isValid() ? dayjs(member.dob) : null,
     });
     setOpenEditModal(true);
   };
 
+  const { mutate: updateMember, isPending: isSubmitting } = useMutation({
+    mutationFn: async ({ memberId, payload }) => {
+      const response = await axios.patch(
+        `/api/sales/co-working-member/${memberId}`,
+        payload,
+      );
+      return response.data;
+    },
+    onSuccess: (response, variables) => {
+      const updatedMember = response?.data;
+
+      setMembers((prev) =>
+        prev.map((member) => {
+          const currentMemberId =
+            member._id || member.id || member.employeeName;
+
+          if (currentMemberId !== variables.memberId) {
+            return member;
+          }
+
+          return updatedMember ? { ...member, ...updatedMember } : member;
+        }),
+      );
+
+      toast.success(response?.message || "Member details updated successfully");
+      setOpenEditModal(false);
+      setSelectedMemberId(null);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update member",
+      );
+    },
+  });
+
   const handleUpdateMember = (data) => {
-    setMembers((prev) =>
-      prev.map((member) => {
-        const currentMemberId = member._id || member.id || member.employeeName;
+    const selectedMember = members.find((member) => {
+      const currentMemberId = member._id || member.id || member.employeeName;
+      return currentMemberId === selectedMemberId;
+    });
 
-        if (currentMemberId !== selectedMemberId) {
-          return member;
-        }
+    if (!selectedMember || !selectedMemberId) {
+      toast.error("Unable to find selected member");
+      return;
+    }
 
-        return {
-          ...member,
-          employeeName: data.employeeName,
-          email: data.email,
-          phone: data.phone,
-          dob: data.dob ? dayjs(data.dob).toISOString() : null,
-        };
-      }),
-    );
+    const payload = {
+      name: data.employeeName?.trim(),
+      designation: selectedMember.designation,
+      email: data.email?.trim() || selectedMember.email,
+      phone:
+        data.phone?.trim() || selectedMember.mobileNo || selectedMember.phone,
+      bloodGroup: selectedMember.bloodGroup,
+      dob: data.dob
+        ? dayjs(data.dob).format("YYYY-MM-DD")
+        : selectedMember.dob
+          ? dayjs(selectedMember.dob).format("YYYY-MM-DD")
+          : undefined,
+      emergencyName: selectedMember.emergencyName,
+      emergencyNo: selectedMember.emergencyNo,
+      biometricStatus: selectedMember.biometricStatus,
+      dateOfJoining: selectedMember.dateOfJoining
+        ? dayjs(selectedMember.dateOfJoining).format("YYYY-MM-DD")
+        : undefined,
+    };
 
-    toast.success("Member details updated successfully");
-    setOpenEditModal(false);
+    updateMember({ memberId: selectedMemberId, payload });
   };
 
   const memberData = useMemo(
@@ -149,7 +200,10 @@ const AdminClientMembers = () => {
 
       <MuiModal
         open={openEditModal}
-        onClose={() => setOpenEditModal(false)}
+        onClose={() => {
+          setOpenEditModal(false);
+          setSelectedMemberId(null);
+        }}
         title="Edit Member"
       >
         <form
@@ -213,7 +267,11 @@ const AdminClientMembers = () => {
             )}
           />
 
-          <PrimaryButton title="Submit" type="submit" />
+          <PrimaryButton
+            title="Submit"
+            type="submit"
+            isLoading={isSubmitting}
+          />
         </form>
       </MuiModal>
     </div>
