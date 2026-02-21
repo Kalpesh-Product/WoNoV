@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { TextField } from "@mui/material";
+import { Chip, TextField } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -77,6 +77,10 @@ const AdminClientMembers = () => {
         ...item,
         srNo: index + 1,
         email: item.email || "-",
+        status:
+          typeof item?.isActive === "boolean"
+            ? item.isActive
+            : item?.status === "Active",
       })),
     [members],
   );
@@ -89,6 +93,29 @@ const AdminClientMembers = () => {
       cellRenderer: (params) => <span>{params.value}</span>,
     },
     { field: "email", headerName: "Email", flex: 1 },
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const status = params.value ? "Active" : "Inactive";
+        const statusColorMap = {
+          Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Active: { backgroundColor: "#90EE90", color: "#006400" },
+        };
+
+        const { backgroundColor, color } = statusColorMap[status];
+
+        return (
+          <Chip
+            label={status}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
+        );
+      },
+    },
     {
       field: "actions",
       headerName: "Actions",
