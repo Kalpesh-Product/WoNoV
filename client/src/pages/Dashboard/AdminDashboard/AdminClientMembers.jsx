@@ -1,131 +1,102 @@
-import React from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Outlet } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
-import { Chip } from "@mui/material";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { useSelector } from "react-redux";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import MuiModal from "../../../components/MuiModal";
+import { Controller, useForm } from "react-hook-form";
+import { TextField } from "@mui/material";
+import PrimaryButton from "../../../components/PrimaryButton";
+import { toast } from "sonner";
 
 const AdminClientMembers = () => {
-  const navigate = useNavigate();
-   const selectedClient = useSelector((state) => state.client.selectedClient);
-   const memberData = selectedClient.members;
+  const selectedClient = useSelector((state) => state.client.selectedClient);
+  const [members, setMembers] = useState(selectedClient?.members || []);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [selectedMemberId, setSelectedMemberId] = useState(null);
 
+  useEffect(() => {
+    setMembers(selectedClient?.members || []);
+  }, [selectedClient]);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      employeeName: "",
+      email: "",
+      phone: "",
+    },
+  });
+
+  const handleEditMember = (member) => {
+    setSelectedMemberId(member._id || member.id || member.employeeName);
+    reset({
+      employeeName: member.employeeName || "",
+      email: member.email || "",
+      phone: member.phone || "",
+    });
+    setOpenEditModal(true);
+  };
+
+  const handleUpdateMember = (data) => {
+    setMembers((prev) =>
+      prev.map((member) => {
+        const currentMemberId = member._id || member.id || member.employeeName;
+
+        if (currentMemberId !== selectedMemberId) {
+          return member;
+        }
+
+        return {
+          ...member,
+          employeeName: data.employeeName,
+          email: data.email,
+          phone: data.phone,
+        };
+      }),
+    );
+
+    toast.success("Member details updated successfully");
+    setOpenEditModal(false);
+  };
+
+  const memberData = useMemo(
+    () =>
+      members.map((item, index) => ({
+        ...item,
+        srNo: index + 1,
+        email: item.email || "-",
+      })),
+    [members],
+  );
 
   const viewEmployeeColumns = [
     { field: "srNo", headerName: "SR No" },
     {
       field: "employeeName",
       headerName: "Member Name",
-      cellRenderer: (params) => (
-        <span
-          // style={{
-          //   color: "#1E3D73",
-          //   textDecoration: "underline",
-          //   cursor: "pointer",
-          // }}
-          // onClick={() =>
-          //   navigate(
-          //     `/app/dashboard/admin-dashboard/admin-client-list/${params.data.clientID}/members/view-member/${params.data.memberID}`
-          //   )
-          // }
-          >
-          {params.value}
-        </span>
-      ),
+      cellRenderer: (params) => <span>{params.value}</span>,
     },
     { field: "email", headerName: "Email", flex: 1 },
-    { field: "credits", headerName: "Credits", flex: 1 },
-    // {
-    //   field: "status",
-    //   headerName: "Status",
-    //   cellRenderer: (params) => {
-    //     const statusColorMap = {
-    //       Active: { backgroundColor: "#90EE90", color: "#006400" },
-    //       Inactive: { backgroundColor: "#D3D3D3", color: "#696969" },
-    //     };
-
-    //     const { backgroundColor, color } = statusColorMap[params.value] || {
-    //       backgroundColor: "gray",
-    //       color: "white",
-    //     };
-    //     return (
-    //       <Chip
-    //         label={params.value}
-    //         style={{
-    //           backgroundColor,
-    //           color,
-    //         }}
-    //       />
-    //     );
-    //   },
-    // },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.srNo}
+          menuItems={[
+            { label: "Edit", onClick: () => handleEditMember(params.data) },
+          ]}
+        />
+      ),
+    },
   ];
-
-  // const rows = [
-  //   {
-  //     srno: "1",
-  //     employeeName: "Aiwinraj",
-  //     clientID: "CO001",
-  //     memberID: "MO001",
-  //     email: "aiwinraj.wono@gmail.com",
-  //     role: "Employee",
-  //     status: "Active",
-  //   },
-  //   {
-  //     srno: "2",
-  //     employeeName: "Allan",
-  //     clientID: "CO002",
-  //     memberID: "MO002",
-  //     email: "allan.wono@gmail.com",
-  //     role: "Employee",
-  //     status: "Active",
-  //   },
-  //   {
-  //     srno: "3",
-  //     employeeName: "Sankalp",
-  //     clientID: "CO003",
-  //     memberID: "MO003",
-  //     email: "sankalp.wono@gmail.com",
-  //     role: "Employee",
-  //     status: "Active",
-  //   },
-  //   {
-  //     srno: "4",
-  //     employeeName: "Anushri",
-  //     clientID: "CO004",
-  //     memberID: "MO004",
-  //     email: "anushri.wono@gmail.com",
-  //     role: "Employee",
-  //     status: "Active",
-  //   },
-  //   {
-  //     srno: "5",
-  //     employeeName: "Muskan",
-  //     clientID: "CO005",
-  //     memberID: "MO005",
-  //     email: "muskan.wono@gmail.com",
-  //     role: "Employee",
-  //     status: "Active",
-  //   },
-  //   {
-  //     srno: "6",
-  //     employeeName: "Kalpesh",
-  //     clientID: "CO006",
-  //     memberID: "MO006",
-  //     email: "kalpesh.wono@gmail.com",
-  //     role: "Employee",
-  //     status: "Active",
-  //   },
-  //   {
-  //     srno: "7",
-  //     employeeName: "Allan2",
-  //     clientID: "CO007",
-  //     memberID: "MO007",
-  //     email: "allan2.wono@gmail.com",
-  //     role: "Employee",
-  //     status: "InActive",
-  //   },
-  // ];
 
   return (
     <div>
@@ -135,11 +106,7 @@ const AdminClientMembers = () => {
             search={true}
             searchColumn="Email"
             tableTitle={`${selectedClient?.clientName} - Member Details`}
-            data={memberData.map((item,index)=>({
-              ...item,
-              srNo : index+1,
-              email : item.email || "-",
-            }))}
+            data={memberData}
             columns={viewEmployeeColumns}
           />
         </PageFrame>
@@ -147,6 +114,51 @@ const AdminClientMembers = () => {
       <div>
         <Outlet />
       </div>
+
+      <MuiModal
+        open={openEditModal}
+        onClose={() => setOpenEditModal(false)}
+        title="Edit Member"
+      >
+        <form
+          onSubmit={handleSubmit(handleUpdateMember)}
+          className="flex flex-col gap-4"
+        >
+          <Controller
+            name="employeeName"
+            control={control}
+            rules={{ required: "Member Name is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Member Name"
+                size="small"
+                fullWidth
+                error={!!errors?.employeeName}
+                helperText={errors?.employeeName?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name="email"
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} label="Email" size="small" fullWidth />
+            )}
+          />
+
+          <Controller
+            name="phone"
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} label="Phone" size="small" fullWidth />
+            )}
+          />
+
+          <PrimaryButton title="Submit" type="submit" />
+        </form>
+      </MuiModal>
     </div>
   );
 };
