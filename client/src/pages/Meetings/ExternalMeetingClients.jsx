@@ -158,7 +158,7 @@ const ExternalMeetingCLients = () => {
     },
   });
   const filteredMeetings = meetings.filter(
-    (item) => item.meetingStatus !== "Completed"
+    (item) => item.meetingStatus !== "Completed",
   );
 
   const transformedMeetings = filteredMeetings
@@ -189,7 +189,7 @@ const ExternalMeetingCLients = () => {
     queryKey: ["room"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/meetings/get-room/${paymentMeeting.roomName}`
+        `/api/meetings/get-room/${paymentMeeting.roomName}`,
       );
       return response.data;
     },
@@ -220,7 +220,7 @@ const ExternalMeetingCLients = () => {
     mutationFn: async (data) => {
       const respone = await axios.patch(
         `/api/meetings/cancel-meeting/${selectedMeetingId}`,
-        data
+        data,
       );
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       return respone.data;
@@ -251,7 +251,7 @@ const ExternalMeetingCLients = () => {
       mutationFn: async (data) => {
         const respone = await axios.patch(
           `/api/meetings/update-meeting-status`,
-          data
+          data,
         );
         queryClient.invalidateQueries({ queryKey: ["meetings"] });
         return respone.data;
@@ -262,7 +262,7 @@ const ExternalMeetingCLients = () => {
       onError: (error) => {
         toast.error(error.message);
       },
-    }
+    },
   );
 
   const { mutate: editMeeting, isPending: isEditPending } = useMutation({
@@ -272,7 +272,7 @@ const ExternalMeetingCLients = () => {
         {
           ...data,
           meetingId: selectedMeetingId,
-        }
+        },
       );
 
       return respone.data;
@@ -297,7 +297,7 @@ const ExternalMeetingCLients = () => {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       return response.data;
     },
@@ -318,7 +318,7 @@ const ExternalMeetingCLients = () => {
         {
           status: data,
           meetingId: selectedMeeting._id,
-        }
+        },
       );
 
       return respone.data;
@@ -433,7 +433,7 @@ const ExternalMeetingCLients = () => {
     if (!selectedMeetingId) return;
     setChecklists((prev) => {
       const updatedItems = prev[selectedMeetingId][type].map((item, i) =>
-        i === index ? { ...item, checked: !item.checked } : item
+        i === index ? { ...item, checked: !item.checked } : item,
       );
       return {
         ...prev,
@@ -449,7 +449,7 @@ const ExternalMeetingCLients = () => {
     if (!selectedMeetingId) return;
     setChecklists((prev) => {
       const updatedCustomItems = prev[selectedMeetingId].customItems.filter(
-        (_, i) => i !== index
+        (_, i) => i !== index,
       );
       return {
         ...prev,
@@ -474,7 +474,7 @@ const ExternalMeetingCLients = () => {
     if (!selectedMeetingId) return;
 
     const selectedMeeting = meetings.find(
-      (meeting) => meeting._id === selectedMeetingId
+      (meeting) => meeting._id === selectedMeetingId,
     );
     if (!selectedMeeting) return;
 
@@ -482,7 +482,7 @@ const ExternalMeetingCLients = () => {
       checklists[selectedMeetingId] || {};
 
     const allCheckedItems = [...defaultItems, ...customItems].filter(
-      (item) => item.checked
+      (item) => item.checked,
     );
 
     const housekeepingTasks = allCheckedItems.map((item) => ({
@@ -645,10 +645,10 @@ const ExternalMeetingCLients = () => {
         const isVerified = params.data.paymentVerification === "Verified";
 
         const menuItems = [
-          {
-            label: "View",
-            onClick: () => handleSelectedMeeting("viewDetails", params.data),
-          },
+          // {
+          //   label: "View",
+          //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
+          // },
           isPaid &&
             isFinance &&
             !isVerified && {
@@ -698,14 +698,14 @@ const ExternalMeetingCLients = () => {
 
         return (
           <div className="flex gap-2 items-center">
-            {/* <div
+            <div
               onClick={() => handleSelectedMeeting("viewDetails", params.data)}
               className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
             >
               <span className="text-subtitle">
                 <MdOutlineRemoveRedEye />
               </span>
-            </div> */}
+            </div>
 
             {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
           </div>
@@ -765,7 +765,7 @@ const ExternalMeetingCLients = () => {
                     />
                     {item.name}
                   </ListItem>
-                )
+                ),
               )}
             </List>
 
@@ -801,7 +801,7 @@ const ExternalMeetingCLients = () => {
                           </div>
                         </div>
                       </ListItem>
-                    )
+                    ),
                   )}
                 </List>
               </>
@@ -847,12 +847,12 @@ const ExternalMeetingCLients = () => {
           modalMode === "viewDetails"
             ? "Meeting Details"
             : modalMode === "cancel"
-            ? "Cancel Meeting"
-            : modalMode === "extend"
-            ? "Extend Meeting"
-            : modalMode === "edit"
-            ? "Edit Meeting"
-            : ""
+              ? "Cancel Meeting"
+              : modalMode === "extend"
+                ? "Extend Meeting"
+                : modalMode === "edit"
+                  ? "Edit Meeting"
+                  : ""
         }
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
@@ -872,7 +872,7 @@ const ExternalMeetingCLients = () => {
             <DetalisFormatted
               title="Time"
               detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
-                selectedMeeting.endTime
+                selectedMeeting.endTime,
               )}`}
             />
             <DetalisFormatted
@@ -1015,7 +1015,7 @@ const ExternalMeetingCLients = () => {
             <DetalisFormatted
               title="Discount"
               detail={`INR ${inrFormat(
-                selectedMeeting?.paymnetDiscountAmount
+                selectedMeeting?.paymnetDiscountAmount,
               )}`}
             />
             <DetalisFormatted

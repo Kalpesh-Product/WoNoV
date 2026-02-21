@@ -227,7 +227,7 @@ const getAllMembers = async (req, res, next) => {
 const getMembersByUnit = async (req, res, next) => {
   try {
     const { company } = req;
-    const { unitId } = req.query;
+    const { unitId, active } = req.query;
 
     if (!unitId) {
       return res.status(400).json({ message: "Unit is missing" });
@@ -237,11 +237,13 @@ const getMembersByUnit = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid unit ID provided" });
     }
 
-    const clients = await CoworkingClient.find({
-      unit: unitId,
-      isActive: true,
-      company,
-    }).populate({
+    let query = { unit: unitId, company };
+
+    if (active) {
+      query.isActive = active === "true" ? true : false;
+    }
+    console.log("query client member unint (client)", query);
+    const clients = await CoworkingClient.find(query).populate({
       path: "unit",
       select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
     });
@@ -250,11 +252,9 @@ const getMembersByUnit = async (req, res, next) => {
       (acc, client) => acc + (client.openDesks + client.cabinDesks),
       0,
     );
+    console.log("query client member unint (member)", query);
 
-    const members = await CoworkingMembers.find({
-      unit: unitId,
-      company,
-    })
+    const members = await CoworkingMembers.find(query)
       .populate([
         {
           path: "client",
@@ -382,7 +382,7 @@ const getMemberById = async (req, res) => {
 
 const getMemberByClient = async (req, res) => {
   try {
-    const { clientId } = req.query;
+    const { clientId, active } = req.query;
 
     if (!clientId) {
       return res.status(400).json({ message: "clientId ID is missing" });
@@ -392,9 +392,12 @@ const getMemberByClient = async (req, res) => {
       return res.status(400).json({ message: "Invalid client ID provided" });
     }
 
-    const member = await CoworkingMembers.find({
-      client: clientId,
-    })
+    let query = { client: clientId };
+    if (active) {
+      query.isActive = active === "true" ? true : false;
+    }
+    console.log("query client member", query);
+    const member = await CoworkingMembers.find(query)
       .populate("client", "clientName service")
       .select("employeeName email");
 

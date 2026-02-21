@@ -20,6 +20,7 @@ import PageFrame from "../../components/Pages/PageFrame";
 import { noOnlyWhitespace } from "../../utils/validators";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const Reviews = () => {
   const axios = useAxiosPrivate();
@@ -167,21 +168,27 @@ const Reviews = () => {
       //   );
       // },
       cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data.id}
-          menuItems={[
-            {
-              label: "View",
-              onClick: () => handleOpenSidebar(params.data, "view"),
-            },
-            {
-              label: !params.data.replyText ? "Reply to Review" : "Replied",
-              onClick: () => handleOpenSidebar(params.data, "reply"),
-              // disabled: !!params.data.reply,
-              disabled: !!params.data.replyText,
-            },
-          ]}
-        />
+        <div className="flex gap-2 items-center">
+          <div
+            onClick={() => handleOpenSidebar(params.data, "view")}
+            className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+          >
+            <span className="text-subtitle">
+              <MdOutlineRemoveRedEye />
+            </span>
+          </div>
+
+          <ThreeDotMenu
+            rowId={params.data.id}
+            menuItems={[
+              {
+                label: !params.data.replyText ? "Reply to Review" : "Replied",
+                onClick: () => handleOpenSidebar(params.data, "reply"),
+                disabled: !!params.data.replyText,
+              },
+            ]}
+          />
+        </div>
       ),
       flex: 1,
     },
