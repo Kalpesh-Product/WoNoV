@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const ManageVisitors = () => {
   const axios = useAxiosPrivate();
@@ -37,7 +38,7 @@ const ManageVisitors = () => {
     mutationFn: async (updatedData) => {
       const response = await axios.patch(
         `/api/visitors/update-visitor/${selectedVisitor.mongoId}`,
-        updatedData
+        updatedData,
       );
       return response.data;
     },
@@ -64,7 +65,7 @@ const ManageVisitors = () => {
       setValue("purposeOfVisit", visitor.purposeOfVisit || "");
       setValue(
         "checkOutRaw",
-        visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null
+        visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null,
       );
     }
   };
@@ -122,18 +123,23 @@ const ManageVisitors = () => {
       headerName: "Actions",
       cellRenderer: ({ data }) => {
         return (
-          <ThreeDotMenu
-            menuItems={[
-              {
-                label: "View details",
-                onClick: () => openModalWithMode(data, "view"),
-              },
-              {
-                label: "Edit",
-                onClick: () => openModalWithMode(data, "edit"),
-              },
-            ]}
-          />
+          <div className="flex items-center gap-2">
+            <div
+              role="button"
+              onClick={() => openModalWithMode(data, "view")}
+              className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+            >
+              <MdOutlineRemoveRedEye />
+            </div>
+            <ThreeDotMenu
+              menuItems={[
+                {
+                  label: "Edit",
+                  onClick: () => openModalWithMode(data, "edit"),
+                },
+              ]}
+            />
+          </div>
         );
       },
     },
@@ -159,8 +165,8 @@ const ManageVisitors = () => {
               toMeet: item.toMeet
                 ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
                 : item.clientToMeet
-                ? item?.clientToMeet?.employeeName
-                : "",
+                  ? item?.clientToMeet?.employeeName
+                  : "",
               checkIn: item.checkIn,
               checkOut: item.checkOut ? humanTime(item.checkOut) : "",
               checkOutRaw: item.checkOut,

@@ -81,7 +81,7 @@ const ExternalClients = () => {
     mutationFn: async (updatedData) => {
       const response = await axios.patch(
         `/api/visitors/update-visitor/${selectedVisitor.mongoId}`,
-        updatedData
+        updatedData,
       );
       return response.data;
     },
@@ -143,10 +143,10 @@ const ExternalClients = () => {
       headerName: "Actions",
       cellRenderer: (params) => {
         const menuItems = [
-          {
-            label: "View details",
-            onClick: () => handleDetailsClick({ ...params.data }),
-          },
+          // {
+          //   label: "View details",
+          //   onClick: () => handleDetailsClick({ ...params.data }),
+          // },
           {
             label: "Edit",
             onClick: () => {
@@ -159,15 +159,24 @@ const ExternalClients = () => {
         ];
 
         return (
-          <div
-            role="button"
-            disabled={params.data.checkOut}
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent row selection on click
-            }}
-            className="rounded-full w-fit hover:bg-borderGray"
-          >
-            <ThreeDotMenu menuItems={menuItems} />
+          <div className="flex items-center gap-2">
+            <div
+              role="button"
+              onClick={() => handleDetailsClick({ ...params.data })}
+              className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+            >
+              <MdOutlineRemoveRedEye />
+            </div>
+            <div
+              role="button"
+              disabled={params.data.checkOut}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent row selection on click
+              }}
+              className="rounded-full w-fit hover:bg-borderGray"
+            >
+              <ThreeDotMenu menuItems={menuItems} />
+            </div>
           </div>
         );
       },
@@ -183,13 +192,13 @@ const ExternalClients = () => {
       setValue("purposeOfVisit", selectedVisitor.purposeOfVisit || "");
       setValue(
         "checkOutRaw",
-        selectedVisitor.checkOutRaw ? dayjs(selectedVisitor.checkOutRaw) : null
+        selectedVisitor.checkOutRaw ? dayjs(selectedVisitor.checkOutRaw) : null,
       );
       setValue("paymentStatus", selectedVisitor.paymentStatus || "");
       setValue("brandName", selectedVisitor.brandName || "");
       setValue(
         "registeredClientCompany",
-        selectedVisitor.registeredClientCompany || ""
+        selectedVisitor.registeredClientCompany || "",
       );
     }
   }, [selectedVisitor, setValue]);
