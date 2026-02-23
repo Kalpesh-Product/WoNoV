@@ -365,6 +365,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
                 title="Escalated To"
                 detail={selectedTicket.escalatedTo || "N/A"}
               />
+              <DetalisFormatted title="Status" detail={selectedTicket.status} />
               <DetalisFormatted
                 title="Escalation Status"
                 detail={selectedTicket.escalatedStatus}
