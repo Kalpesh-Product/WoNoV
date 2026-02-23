@@ -627,10 +627,10 @@ const RaiseTicket = () => {
           />
 
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
-          <DetalisFormatted
+          {/* <DetalisFormatted
             title="Priority"
             detail={viewTicketDetails?.priority}
-          />
+          /> */}
           <DetalisFormatted
             title="Accepted By"
             detail={viewTicketDetails?.acceptedBy}
@@ -669,7 +669,7 @@ const RaiseTicket = () => {
               detail={formatDateTime(viewTicketDetails?.assignedAt)}
             />
           )}
-          <DetalisFormatted
+          {/* <DetalisFormatted
             title="Escalated To"
             detail={viewTicketDetails?.escalatedTo || ""}
           />
@@ -680,7 +680,7 @@ const RaiseTicket = () => {
           <DetalisFormatted
             title="Escalated At"
             detail={viewTicketDetails?.escalatedAt || ""}
-          />
+          /> */}
           <DetalisFormatted
             title="Closed By"
             detail={viewTicketDetails?.closedBy}
