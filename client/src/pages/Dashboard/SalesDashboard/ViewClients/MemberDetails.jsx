@@ -113,7 +113,6 @@ const MemberDetails = () => {
                     "bloodGroup",
                     "emergencyName",
                     "emergencyNo",
-                    "credits",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
