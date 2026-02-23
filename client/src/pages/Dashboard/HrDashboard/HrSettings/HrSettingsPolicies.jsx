@@ -50,7 +50,7 @@ const HrSettingsPolicies = () => {
     queryKey: ["policies"],
     queryFn: async () => {
       const response = await axios.get(
-        "/api/company/get-company-documents/policies"
+        "/api/company/get-company-documents/policies",
       );
       return response.data.policies;
     },
@@ -63,7 +63,7 @@ const HrSettingsPolicies = () => {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
       return response.data;
     },
@@ -82,7 +82,7 @@ const HrSettingsPolicies = () => {
     mutationFn: async (payload) => {
       const response = await axios.patch(
         `/api/company/update-company-data`,
-        payload
+        payload,
       );
       return response.data;
     },
@@ -249,8 +249,8 @@ const HrSettingsPolicies = () => {
           modalType === "edit"
             ? "Edit Policy Name"
             : modalType === "inactive"
-            ? "Mark Policy As Inactive"
-            : "Add New Policy"
+              ? "Mark Policy As Inactive"
+              : "Add New Policy"
         }
       >
         {modalType === "add" && (
@@ -324,7 +324,7 @@ const HrSettingsPolicies = () => {
         {modalType === "edit" && (
           <form
             onSubmit={handleSubmit(
-              modalType === "edit" ? handleUpdatePolicy : handleAddPolicy
+              modalType === "edit" ? handleUpdatePolicy : handleAddPolicy,
             )}
             className="flex flex-col gap-4"
           >

@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
+import { Chip } from "@mui/material";
 
 const AdminClientsData = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const AdminClientsData = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/sales/co-working-clients");
-        const data = response.data.filter((item) => item.isActive);
+        const data = response.data;
         dispatch(setClientData(data));
         return data;
       } catch (error) {
@@ -29,8 +30,8 @@ const AdminClientsData = () => {
     dispatch(setSelectedClient(clientData));
     navigate(
       `/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data/${encodeURIComponent(
-        clientData.clientName
-      )}`
+        clientData.clientName,
+      )}`,
     );
   };
 
@@ -53,6 +54,29 @@ const AdminClientsData = () => {
       ),
     },
     { field: "localPocEmail", headerName: "Email", flex: 1 },
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const status = params.value ? "Active" : "Inactive";
+        const statusColorMap = {
+          Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Active: { backgroundColor: "#90EE90", color: "#006400" },
+        };
+
+        const { backgroundColor, color } = statusColorMap[status];
+
+        return (
+          <Chip
+            label={status}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
+        );
+      },
+    },
     { field: "totalMeetingCredits", headerName: "Credits" },
     // {
     //   field: "status",
@@ -122,7 +146,7 @@ const AdminClientsData = () => {
   };
 
   const transformedData = transformClientsGroupedByMonth(
-    isClientsDataPending ? [] : clientsData
+    isClientsDataPending ? [] : clientsData,
   );
 
   return (
@@ -169,6 +193,7 @@ const AdminClientsData = () => {
                 hoPocName: item.hOPoc?.name,
                 hoPocEmail: item.hOPoc?.email,
                 hoPocPhone: item.hOPoc?.phone,
+                status: item.isActive,
                 isActive: item.isActive,
                 createdAt: item.createdAt,
                 updatedAt: item.updatedAt,
