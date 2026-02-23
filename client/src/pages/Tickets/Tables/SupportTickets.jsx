@@ -368,13 +368,14 @@ const SupportTickets = ({ title, departmentId }) => {
 
   const recievedTicketsColumns = [
     { field: "srno", headerName: "Sr No" },
-    { field: "raisedBy", headerName: "Raised By" },
+    { field: "", headerName: "Ticket Title" },
     {
       field: "selectedDepartment",
       headerName: "From Department",
-      width: 100,
     },
-    { field: "ticketTitle", headerName: "Reason", width: 250 },
+    { field: "raisedBy", headerName: "Raised By" },
+    { field: "ticketTitle", headerName: "Reason For Support", width: 250 },
+    { field: "", headerName: "Assigned To" },
     // {
     //   field: "tickets",
     //   headerName: "Ticket Type",
@@ -636,20 +637,12 @@ const SupportTickets = ({ title, departmentId }) => {
         {selectedTicket && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
-              title="Ticket"
+              title="Ticket Title"
               detail={selectedTicket?.ticket?.ticket || ""}
             />
             <DetalisFormatted
               title="Description"
               detail={selectedTicket?.ticket?.description || ""}
-            />
-            <DetalisFormatted
-              title="Raised By"
-              detail={selectedTicket.raisedBy || "Unknown"}
-            />
-            <DetalisFormatted
-              title="Raised At"
-              detail={selectedTicket.raisedDate}
             />
             <DetalisFormatted
               title="From Department"
@@ -660,14 +653,22 @@ const SupportTickets = ({ title, departmentId }) => {
               }
             />
             <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedBy || "Unknown"}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              detail={selectedTicket.raisedDate}
+            />
+            <DetalisFormatted
               title="Raised To Department"
               detail={selectedTicket.raisedToDepartment}
             />
-            <DetalisFormatted title="Status" detail={selectedTicket.status} />
             <DetalisFormatted
               title="Priority"
               detail={selectedTicket?.priority || ""}
             />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
             <DetalisFormatted
               title="Accepted By"
               detail={selectedTicket?.acceptedBy || ""}
@@ -676,25 +677,13 @@ const SupportTickets = ({ title, departmentId }) => {
               title="Accepted At"
               detail={selectedTicket?.acceptedAt || ""}
             />
-            <DetalisFormatted
-              title="Support requested By"
-              detail={selectedTicket?.supportRequestedBy || ""}
-            />
-            <DetalisFormatted
-              title="Support Requested At"
-              detail={selectedTicket?.supportRequestedAt || ""}
-            />
-            <DetalisFormatted
-              title="Reason For Support"
-              detail={selectedTicket?.reason || ""}
-            />
             {/* <DetalisFormatted
-              title="Assigned To"
-              detail={selectedTicket?.assignedTo || ""}
-            /> */}
+                  title="Assigned To"
+                  detail={selectedTicket?.assignedTo || ""}
+                /> */}
             {selectedTicket?.assignedToDetails?.length ? (
               <div className="text-content flex items-start w-full">
-                <span className="w-[50%]">Assignees</span>
+                <span className="w-[50%]">Assigned To</span>
                 <span>:</span>
                 <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
                   {selectedTicket.assignedToDetails.map((assignment, index) => (
@@ -715,6 +704,18 @@ const SupportTickets = ({ title, departmentId }) => {
                 detail={selectedTicket?.assignedAt || ""}
               />
             )}
+            <DetalisFormatted
+              title="Reason For Support"
+              detail={selectedTicket?.reason || ""}
+            />
+            <DetalisFormatted
+              title="Support requested By"
+              detail={selectedTicket?.supportRequestedBy || ""}
+            />
+            <DetalisFormatted
+              title="Support Requested At"
+              detail={selectedTicket?.supportRequestedAt || ""}
+            />
 
             <DetalisFormatted
               title="Closed By"
