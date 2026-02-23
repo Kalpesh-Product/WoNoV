@@ -375,6 +375,21 @@ const updateCoworkingClient = async (req, res, next) => {
       );
     }
 
+    if (typeof req.body.isActive === "boolean" && req.body.isActive === false) {
+      const updateClientMembers = await CoworkingMembers.updateMany(
+        {
+          client: clientId,
+        },
+        {
+          isActive: req.body.isActive,
+        },
+      );
+
+      if (!updateClientMembers) {
+        return res.status(400).json({ messages: "Client members not found" });
+      }
+    }
+
     const {
       clientName,
       service,
@@ -406,7 +421,7 @@ const updateCoworkingClient = async (req, res, next) => {
 
       if (nameExists) {
         throw new CustomError(
-          "Another client with this name already exists",
+          "Client with this name already exists",
           logPath,
           logAction,
           logSourceKey,
@@ -482,12 +497,14 @@ const updateCoworkingClient = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid annualIncrement" });
     }
 
-    const parsedRentDate = new Date(req.body.rentDate);
-    req.body.rentDate = parsedRentDate;
+    if (req.body.rentDate) {
+      const parsedRentDate = new Date(req.body.rentDate);
+      req.body.rentDate = parsedRentDate;
 
-    if (isNaN(parsedRentDate.getTime())) {
-      console.log("error on rent date");
-      return res.status(400).json({ message: "Invalid rent date" });
+      if (isNaN(parsedRentDate.getTime())) {
+        console.log("error on rent date");
+        return res.status(400).json({ message: "Invalid rent date" });
+      }
     }
 
     if (req.body.startDate && req.body.endDate) {
