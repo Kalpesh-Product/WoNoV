@@ -94,8 +94,11 @@ const clientSchema = new mongoose.Schema(
       imageId: String,
       imageUrl: String,
     },
-    rentDate: { type: Date },
+    // rentDate: { type: Date },
     // rentDate: { type: String },
+    rentDate: {
+      type: mongoose.Schema.Types.Mixed,
+    },
     nextIncrement: {
       type: Date,
     },

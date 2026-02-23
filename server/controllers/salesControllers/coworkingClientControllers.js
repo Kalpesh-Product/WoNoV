@@ -27,7 +27,6 @@ const createCoworkingClient = async (req, res, next) => {
       clientName,
       email,
       phone,
-      service,
       sector,
       hoCity,
       hoState,
@@ -82,20 +81,13 @@ const createCoworkingClient = async (req, res, next) => {
       );
     }
 
-    if (!mongoose.Types.ObjectId.isValid(service)) {
-      throw new CustomError(
-        "Invalid service ID provided",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    const coworkingService = await ClientService.findOne({ _id: service });
+    const coworkingService = await ClientService.findOne({
+      serviceName: "Co-working",
+    });
 
     if (!coworkingService) {
       throw new CustomError(
-        "Provide co-working service ID",
+        "Coworking service doesn't exists",
         logPath,
         logAction,
         logSourceKey,
@@ -130,6 +122,12 @@ const createCoworkingClient = async (req, res, next) => {
       );
     }
 
+    const parsedRentDate = new Date(rentDate);
+
+    if (isNaN(parsedRentDate.getTime())) {
+      return res.status(400).json({ message: "Invalid rent date" });
+    }
+
     const bookedDesks = cabinDesks + openDesks;
     if (
       bookedDesks < 1 ||
@@ -154,20 +152,12 @@ const createCoworkingClient = async (req, res, next) => {
       );
     }
 
-    const serviceId = await ClientService.findOne({
-      serviceName: "ClientService",
-    }).lean();
-
-    if (!serviceId) {
-      return res.status(404).json({ message: "Co-working service not found" });
-    }
-
     const client = new CoworkingClient({
       company,
       clientName,
       email,
       phone,
-      service: serviceId._id,
+      service: coworkingService._id,
       sector,
       hoCity,
       hoState,
@@ -183,7 +173,7 @@ const createCoworkingClient = async (req, res, next) => {
       startDate,
       endDate,
       lockinPeriod,
-      rentDate,
+      rentDate: parsedRentDate,
       nextIncrement,
       hOPoc: {
         name: hOPocName,
@@ -237,27 +227,7 @@ const createCoworkingClient = async (req, res, next) => {
       newbooking = await booking.save();
     }
 
-    const savedClient = await client.save();
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "CoworkingClient onboarded successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: savedClient._id,
-      changes: {
-        client: savedClient,
-        desks: {
-          deskId: newbooking ? newbooking._id : bookingExists._id,
-          unit,
-          bookedDesks,
-          availableDesks,
-        },
-      },
-    });
+    await client.save();
 
     return res
       .status(201)
@@ -372,27 +342,6 @@ const getCoworkingClientRevenues = async (req, res, next) => {
   }
 };
 
-// const updateCoworkingClient = async (req, res, next) => {
-//   try {
-//     const { id } = req.params;
-//     if (!mongoose.Types.ObjectId.isValid(id)) {
-//       return res.status(400).json({ message: "Invalid client ID format" });
-//     }
-//     const client = await CoworkingClient.findByIdAndUpdate(id, req.body, {
-//       new: true,
-//       runValidators: true,
-//     }).populate("company unit");
-//     if (!client) {
-//       return res.status(404).json({ message: "CoworkingClient not found" });
-//     }
-//     res
-//       .status(200)
-//       .json({ message: "CoworkingClient updated successfully", client });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 const updateCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
   const logAction = "Edit CoworkingClient";
@@ -445,6 +394,7 @@ const updateCoworkingClient = async (req, res, next) => {
       localPocPhone,
       clientInvoiceName,
       bookingType,
+      isActive,
     } = req.body;
 
     // ✅ Duplicate name check (excluding self)
@@ -532,14 +482,13 @@ const updateCoworkingClient = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid annualIncrement" });
     }
 
-    // if (new Date(startDate) >= new Date(endDate)) {
-    //   throw new CustomError(
-    //     "Start date must be before end date",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey,
-    //   );
-    // }
+    const parsedRentDate = new Date(req.body.rentDate);
+    req.body.rentDate = parsedRentDate;
+
+    if (isNaN(parsedRentDate.getTime())) {
+      console.log("error on rent date");
+      return res.status(400).json({ message: "Invalid rent date" });
+    }
 
     if (req.body.startDate && req.body.endDate) {
       if (new Date(req.body.startDate) >= new Date(req.body.endDate)) {
@@ -607,6 +556,7 @@ const updateCoworkingClient = async (req, res, next) => {
       "nextIncrement",
       "clientInvoiceName",
       "bookingType",
+      "isActive",
     ];
 
     const updateData = {};
@@ -669,6 +619,42 @@ const updateCoworkingClient = async (req, res, next) => {
   }
 };
 
+const updateClientStatus = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    const { isActive } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      return res.status(400).json({ message: "Invalid client ID" });
+    }
+
+    if (typeof isActive !== "boolean") {
+      return res.status(400).json({
+        message: "isActive must be true or false",
+      });
+    }
+
+    const client = await CoworkingClient.findById(clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    client.isActive = isActive;
+    await client.save();
+
+    return res.status(200).json({
+      message: `Client marked as ${isActive ? "Active" : "Inactive"}`,
+      data: client,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};
+
 const deleteCoworkingClient = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -690,184 +676,6 @@ const deleteCoworkingClient = async (req, res, next) => {
     next(error);
   }
 };
-
-// const bulkInsertCoworkingClients = async (req, res, next) => {
-//   try {
-//     const file = req.file;
-//     const company = req.company;
-
-//     if (!file) {
-//       return res.status(400).json({ message: "Please provide a CSV file" });
-//     }
-
-//     // Fetch all units for the company and map them by unit number
-//     const units = await Unit.find({ company })
-//       .populate([{ path: "building", select: "buildingName" }])
-//       .lean()
-//       .exec();
-
-//     const unitMap = new Map(units.map((unit) => [unit.unitNo, unit._id]));
-
-//     // Convert file buffer to readable stream
-//     const stream = Readable.from(file.buffer.toString("utf-8").trim());
-//     const getClientService = await ClientService.findOne({
-//       serviceName: "Co-working",
-//       company,
-//     })
-//       .lean()
-//       .exec();
-
-//     let coWorkingClients = [];
-
-//     stream
-//       .pipe(csvParser())
-//       .on("data", (row) => {
-//         const {
-//           "Client Name": clientName,
-//           "Client Invoice Name": clientInvoiceName,
-//           Sector: sector,
-//           "Booking Type": bookingType,
-//           "HO City": hoCity,
-//           "HO State": hoState,
-//           Unit: unitNo,
-//           "Cabin Desks": cabinDesks,
-//           "Open Desks": openDesks,
-//           "Rate Per Desk": ratePerDesk,
-//           "Annual Increment": annualIncrement,
-//           "Per Desk Meeting Credits": perDeskMeetingCredits,
-//           "Start Date": startDate,
-//           "End Date": endDate,
-//           "Lockin Period": lockinPeriod,
-//           "Rent Date": rentDate,
-//           "Next Increment": nextIncrement,
-//           "Local POC Name": localPocName,
-//           "Local POC Email": localPocEmail,
-//           "Local POC Mobile": localPocPhone,
-//           "HO POC Name": hoPocName,
-//           "HO POC Email": hoPocEmail,
-//           "HO POC Mobile": hoPocPhone,
-//         } = row;
-
-//         const unitId = unitMap.get(unitNo);
-//         if (!unitId) {
-//           console.warn(`Unit not found for unitNo: ${unitNo}`);
-//           return;
-//         }
-
-//         const parsedCabinDesks = parseInt(cabinDesks) || 0;
-//         const parsedOpenDesks = parseInt(openDesks) || 0;
-//         const totalDesks = parsedCabinDesks + parsedOpenDesks;
-//         const parsedMeetingCredits = parseInt(perDeskMeetingCredits) || 0;
-//         const totalMeetingCredits = totalDesks * parsedMeetingCredits;
-//         const parsedAnnualIncrement = parseFloat(annualIncrement) || 0;
-//         const parsedLockinPeriod = parseInt(lockinPeriod) || 0;
-
-//         const parsedStartDate = startDate ? new Date(startDate) : null;
-//         const parsedEndDate = endDate ? new Date(endDate) : null;
-
-//         const newClientObj = {
-//           company,
-//           clientName,
-//           clientInvoiceName,
-//           sector,
-//           bookingType,
-//           hoCity,
-//           service: getClientService._id,
-//           hoState,
-//           unit: unitId,
-//           cabinDesks: parsedCabinDesks,
-//           openDesks: parsedOpenDesks,
-//           totalDesks,
-//           ratePerCabinDesk: ratePerDesk,
-//           ratePerOpenDesk: ratePerDesk,
-//           annualIncrement: parsedAnnualIncrement,
-//           perDeskMeetingCredits: parsedMeetingCredits,
-//           totalMeetingCredits,
-//           startDate: parsedStartDate,
-//           endDate: parsedEndDate,
-//           lockinPeriod: parsedLockinPeriod,
-//           rentDate,
-//           nextIncrement,
-//           localPoc: {
-//             name: localPocName,
-//             email: localPocEmail,
-//             phone: localPocPhone,
-//           },
-//           hOPoc: {
-//             name: hoPocName,
-//             email: hoPocEmail,
-//             phone: hoPocPhone,
-//           },
-//           isActive: true,
-//         };
-
-//         coWorkingClients.push(newClientObj);
-//       })
-
-//       .on("end", async () => {
-//         try {
-//           if (coWorkingClients.length === 0) {
-//             return res.status(400).json({
-//               message: "No valid clients found in the file",
-//             });
-//           }
-
-//           // ✅ 1. Remove duplicates inside CSV itself
-//           const uniqueMap = new Map();
-
-//           coWorkingClients.forEach((client) => {
-//             const key = `${client.clientName}_${client.unit}`;
-//             if (!uniqueMap.has(key)) {
-//               uniqueMap.set(key, client);
-//             }
-//           });
-
-//           const uniqueClients = Array.from(uniqueMap.values());
-
-//           // ✅ 2. Fetch existing clients from DB
-//           const existingClients = await TestCoworkingClient.find({
-//             company,
-//             clientName: { $in: uniqueClients.map((c) => c.clientName) },
-//             unit: { $in: uniqueClients.map((c) => c.unit) },
-//           })
-//             .select("clientName unit")
-//             .lean();
-
-//           const existingSet = new Set(
-//             existingClients.map((c) => `${c.clientName}_${c.unit.toString()}`),
-//           );
-
-//           // ✅ 3. Filter out DB duplicates
-//           const finalClients = uniqueClients.filter((client) => {
-//             const key = `${client.clientName}_${client.unit.toString()}`;
-//             return !existingSet.has(key);
-//           });
-
-//           if (finalClients.length === 0) {
-//             return res.status(400).json({
-//               message: "All clients already exist. Nothing inserted.",
-//             });
-//           }
-
-//           await CoworkingClient.insertMany(finalClients);
-
-//           return res.status(201).json({
-//             message: `${finalClients.length} clients inserted successfully`,
-//             skipped: uniqueClients.length - finalClients.length,
-//           });
-//         } catch (err) {
-//           next(err);
-//         }
-//       })
-
-//       .on("error", (error) => {
-//         console.error("Error reading CSV file:", error);
-//         next(error);
-//       });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 
 const bulkInsertCoworkingClients = async (req, res, next) => {
   try {
@@ -1238,6 +1046,7 @@ const onboardedNames = [
 module.exports = {
   createCoworkingClient,
   updateCoworkingClient,
+  updateClientStatus,
   deleteCoworkingClient,
   getCoworkingClients,
   bulkInsertCoworkingClients,
