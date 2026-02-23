@@ -129,6 +129,18 @@ const AssignedTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
+          const mostRecentAssignment = Array.isArray(ticket.assignedTo)
+            ? ticket.assignedTo[ticket.assignedTo.length - 1]
+            : null;
+          const mostRecentAssigneeName =
+            mostRecentAssignment?.assignee?.firstName &&
+            mostRecentAssignment?.assignee?.lastName
+              ? `${mostRecentAssignment.assignee.firstName} ${mostRecentAssignment.assignee.lastName}`
+              : ticket.assignees?.length
+                ? `${ticket.assignees[ticket.assignees.length - 1]?.firstName || ""} ${ticket.assignees[ticket.assignees.length - 1]?.lastName || ""}`.trim() ||
+                  "N/A"
+                : "N/A";
+
           const supportTicket = {
             id: ticket._id,
             srno: index + 1,
@@ -137,6 +149,7 @@ const AssignedTickets = ({ title, departmentId }) => {
               ticket.raisedBy?.firstName && ticket.raisedBy?.lastName
                 ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
                 : "Unknown",
+            recentAssignee: mostRecentAssigneeName,
             raisedAt: ticket.createdAt,
             raisedToDepartment: ticket.raisedToDepartment.name,
             selectedDepartment:
@@ -176,13 +189,13 @@ const AssignedTickets = ({ title, departmentId }) => {
 
   const recievedTicketsColumns = [
     { field: "srno", headerName: "Sr No" },
-    { field: "raisedBy", headerName: "Raised By" },
+    { field: "ticketTitle", headerName: "Ticket Title" },
     {
       field: "selectedDepartment",
       headerName: "From Department",
-      width: 100,
     },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+    { field: "raisedBy", headerName: "Raised By" },
+    { field: "recentAssignee", headerName: "Asignees" },
     // { field: "assignees", headerName: "Assigned To", width: 300 },
     // {
     //   field: "tickets",
@@ -687,20 +700,12 @@ const AssignedTickets = ({ title, departmentId }) => {
         {selectedTicket && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
-              title="Ticket"
+              title="Ticket Title"
               detail={selectedTicket.ticketTitle || "N/A"}
             />
             <DetalisFormatted
               title="Description"
               detail={selectedTicket.description || "N/A"}
-            />
-            <DetalisFormatted
-              title="Raised By"
-              detail={selectedTicket.raisedBy || "Unknown"}
-            />
-            <DetalisFormatted
-              title="Raised At"
-              detail={formatDateTime(selectedTicket.raisedAt)}
             />
             <DetalisFormatted
               title="From Department"
@@ -711,15 +716,17 @@ const AssignedTickets = ({ title, departmentId }) => {
               }
             />
             <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedBy || "Unknown"}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              detail={formatDateTime(selectedTicket.raisedAt)}
+            />
+            <DetalisFormatted
               title="Raised To Department"
               detail={selectedTicket.raisedToDepartment || "N/A"}
             />
-            <DetalisFormatted title="Status" detail={selectedTicket.status} />
-            <DetalisFormatted
-              title="Priority"
-              detail={selectedTicket?.priority || "N/A"}
-            />
-
             {selectedTicket?.assignedToDetails?.length ? (
               <div className="text-content flex items-start w-full">
                 <span className="w-[50%]">Assignees</span>
@@ -743,6 +750,11 @@ const AssignedTickets = ({ title, departmentId }) => {
                 detail={selectedTicket?.assignees || "N/A"}
               />
             )}
+            <DetalisFormatted
+              title="Priority"
+              detail={selectedTicket?.priority || "N/A"}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
           </div>
         )}
       </MuiModal>

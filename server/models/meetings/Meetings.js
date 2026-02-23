@@ -50,6 +50,7 @@ const meetingSchema = new mongoose.Schema(
     },
     paymentStatus: {
       type: Boolean,
+      default: false,
     },
     paymentMode: {
       type: String,
@@ -144,7 +145,7 @@ const meetingSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Meeting = mongoose.model("Meeting", meetingSchema);

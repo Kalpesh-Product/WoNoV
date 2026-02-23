@@ -73,7 +73,7 @@ const addMeetings = async (req, res, next) => {
         "Missing required fields",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -82,7 +82,7 @@ const addMeetings = async (req, res, next) => {
         "Invalid client Id provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -91,7 +91,7 @@ const addMeetings = async (req, res, next) => {
         "Invalid Room Id provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -110,7 +110,7 @@ const addMeetings = async (req, res, next) => {
         "Invalid date format",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -124,7 +124,7 @@ const addMeetings = async (req, res, next) => {
         "Room is unavailable",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -134,7 +134,7 @@ const addMeetings = async (req, res, next) => {
 
     if (internalParticipants) {
       const invalidIds = internalParticipants.filter(
-        (id) => !mongoose.Types.ObjectId.isValid(id)
+        (id) => !mongoose.Types.ObjectId.isValid(id),
       );
 
       if (invalidIds.length > 0) {
@@ -142,7 +142,7 @@ const addMeetings = async (req, res, next) => {
           "Invalid internal participant IDs",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -158,7 +158,7 @@ const addMeetings = async (req, res, next) => {
         (id) =>
           !users.find((user) => {
             return user._id.toString() === id.toString();
-          })
+          }),
       );
 
       if (unmatchedIds.length > 0) {
@@ -166,7 +166,7 @@ const addMeetings = async (req, res, next) => {
           "Some internal participant IDs did not match any user",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -204,7 +204,7 @@ const addMeetings = async (req, res, next) => {
         "Room is already booked for the specified time",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -229,7 +229,7 @@ const addMeetings = async (req, res, next) => {
           meetingCreditBalance: { $gte: totalCreditsUsed },
         },
         { $inc: { meetingCreditBalance: -totalCreditsUsed } },
-        { new: true }
+        { new: true },
       );
 
       if (!updatedUser) {
@@ -237,7 +237,7 @@ const addMeetings = async (req, res, next) => {
           "Insufficient credits or booking user not found",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
@@ -276,7 +276,7 @@ const addMeetings = async (req, res, next) => {
         "Failed to book meeting",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -316,7 +316,7 @@ const addMeetings = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -344,7 +344,7 @@ const getAvaliableUsers = async (req, res, next) => {
       $and: [{ startTime: { $lte: end } }, { endTime: { $gte: start } }],
     })
       .select(
-        "bookedBy clientBookedBy internalParticipants clientParticipants startTime endTime"
+        "bookedBy clientBookedBy internalParticipants clientParticipants startTime endTime",
       )
       .lean()
       .exec();
@@ -356,13 +356,13 @@ const getAvaliableUsers = async (req, res, next) => {
         unavailableUserIds.add(meeting.clientBookedBy.toString());
       if (meeting.internalParticipants) {
         meeting.internalParticipants.forEach((userId) =>
-          unavailableUserIds.add(userId.toString())
+          unavailableUserIds.add(userId.toString()),
         );
       }
 
       if (meeting.clientParticipants) {
         meeting.clientParticipants.forEach((userId) =>
-          unavailableUserIds.add(userId.toString())
+          unavailableUserIds.add(userId.toString()),
         );
       }
     });
@@ -457,8 +457,10 @@ const getMeetings = async (req, res, next) => {
     });
 
     let filteredMeetings = meetings;
+
     if (
       !roles.includes("Administration Admin") &&
+      !roles.includes("Finance Admin") &&
       !roles.includes("Administration Employee") &&
       !roles.includes("Master Admin") &&
       !roles.includes("Super Admin")
@@ -468,7 +470,7 @@ const getMeetings = async (req, res, next) => {
           return false;
 
         const bookedDeptIds = meeting.bookedBy.departments.map((dept) =>
-          dept._id?.toString()
+          dept._id?.toString(),
         );
 
         return bookedDeptIds.some((deptId) => departmentIds.includes(deptId));
@@ -476,7 +478,7 @@ const getMeetings = async (req, res, next) => {
     }
 
     const reviews = await Review.find().select(
-      "-createdAt -updatedAt -__v -company"
+      "-createdAt -updatedAt -__v -company",
     );
 
     if (!reviews) {
@@ -484,10 +486,10 @@ const getMeetings = async (req, res, next) => {
     }
 
     const internalParticipants = filteredMeetings.map((meeting) =>
-      meeting.internalParticipants.map((participant) => participant)
+      meeting.internalParticipants.map((participant) => participant),
     );
     const clientParticipants = filteredMeetings.map((meeting) =>
-      meeting.clientParticipants.map((participant) => participant)
+      meeting.clientParticipants.map((participant) => participant),
     );
 
     const transformedMeetings = filteredMeetings.map((meeting, index) => {
@@ -509,13 +511,13 @@ const getMeetings = async (req, res, next) => {
       ];
 
       const meetingReviews = reviews.find(
-        (review) => review.meeting.toString() === meeting._id.toString()
+        (review) => review.meeting.toString() === meeting._id.toString(),
       );
 
       const isClient = meeting.client ? true : false;
 
       const isReceptionist = meeting.receptionist.departments.some(
-        (dept) => dept.name === "Administration"
+        (dept) => dept.name === "Administration",
       );
 
       let receptionist;
@@ -544,8 +546,8 @@ const getMeetings = async (req, res, next) => {
         client: isClient
           ? meeting.client.clientName
           : meeting.externalClient
-          ? null
-          : "BIZ Nest",
+            ? null
+            : "BIZ Nest",
         externalClient: meeting.externalClient
           ? meeting.externalClient.registeredClientCompany
           : null,
@@ -642,7 +644,7 @@ const getMyMeetings = async (req, res, next) => {
       ]);
 
     const reviews = await Review.find().select(
-      "-createdAt -updatedAt -__v -company"
+      "-createdAt -updatedAt -__v -company",
     );
 
     if (!reviews) {
@@ -650,11 +652,11 @@ const getMyMeetings = async (req, res, next) => {
     }
 
     const internalParticipants = meetings.map((meeting) =>
-      meeting.internalParticipants.map((participant) => participant)
+      meeting.internalParticipants.map((participant) => participant),
     );
 
     const clientParticipants = meetings.map((meeting) =>
-      meeting.clientParticipants.map((participant) => participant)
+      meeting.clientParticipants.map((participant) => participant),
     );
 
     const transformedMeetings = meetings.map((meeting, index) => {
@@ -671,7 +673,7 @@ const getMyMeetings = async (req, res, next) => {
       }
 
       const meetingReviews = reviews.find(
-        (review) => review.meeting.toString() === meeting._id.toString()
+        (review) => review.meeting.toString() === meeting._id.toString(),
       );
 
       const isClient = meeting.client ? true : false;
@@ -687,7 +689,7 @@ const getMyMeetings = async (req, res, next) => {
         : "";
 
       const isReceptionist = meeting.receptionist.departments.some(
-        (dept) => dept.name === "Administration"
+        (dept) => dept.name === "Administration",
       );
 
       let receptionist;
@@ -714,8 +716,8 @@ const getMyMeetings = async (req, res, next) => {
         client: isClient
           ? meeting.client.clientName
           : meeting.externalClient
-          ? null
-          : "BIZ Nest",
+            ? null
+            : "BIZ Nest",
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
@@ -741,10 +743,10 @@ const getMyMeetings = async (req, res, next) => {
           totalParticipants.length > 0
             ? totalParticipants
             : internalParticipants[index].length > 0
-            ? internalParticipants[index]
-            : clientParticipants[index].length > 0
-            ? clientParticipants[index]
-            : meeting.externalParticipants,
+              ? internalParticipants[index]
+              : clientParticipants[index].length > 0
+                ? clientParticipants[index]
+                : meeting.externalParticipants,
         reviews: meetingReviews ? meetingReviews : [],
         discountAmount: meeting.discountAmount,
         paymentVerification: meeting.paymentVerification,
@@ -768,7 +770,7 @@ const addHousekeepingTask = async (req, res, next) => {
         "All fields are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -777,12 +779,12 @@ const addHousekeepingTask = async (req, res, next) => {
         "Invalid meeting id provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const inCompleteTasks = housekeepingTasks.filter(
-      (task) => task.status === "Pending"
+      (task) => task.status === "Pending",
     );
 
     if (inCompleteTasks.length > 0) {
@@ -790,7 +792,7 @@ const addHousekeepingTask = async (req, res, next) => {
         "Please check out the tasks before submitting",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -804,13 +806,13 @@ const addHousekeepingTask = async (req, res, next) => {
         $set: { housekeepingChecklist: completedTasks },
         houeskeepingStatus: "Completed",
       },
-      { new: true }
+      { new: true },
     );
 
     const room = await Room.findOneAndUpdate(
       { name: roomName },
       { housekeepingStatus: "Completed", status: "Available" },
-      { new: true }
+      { new: true },
     );
 
     if (!foundMeeting) {
@@ -818,7 +820,7 @@ const addHousekeepingTask = async (req, res, next) => {
         "Failed to add the housekeeping tasks",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -827,7 +829,7 @@ const addHousekeepingTask = async (req, res, next) => {
         "Failed to update the room status",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -896,7 +898,7 @@ const deleteHousekeepingTask = async (req, res, next) => {
         "All fields are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -905,14 +907,14 @@ const deleteHousekeepingTask = async (req, res, next) => {
         "Invalid meeting ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const updatedMeeting = await Meeting.findByIdAndUpdate(
       meetingId,
       { $pull: { housekeepingChecklist: { name: housekeepingTask } } },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedMeeting) {
@@ -920,7 +922,7 @@ const deleteHousekeepingTask = async (req, res, next) => {
         "Failed to delete housekeeping task",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -945,7 +947,7 @@ const deleteHousekeepingTask = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -962,7 +964,7 @@ const getMeetingsByTypes = async (req, res, next) => {
         400,
         "meetings/MeetingLog",
         "Delete Meeting",
-        "meeting"
+        "meeting",
       );
     }
 
@@ -1025,7 +1027,7 @@ const cancelMeeting = async (req, res, next) => {
         "Meeting ID is required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1038,7 +1040,7 @@ const cancelMeeting = async (req, res, next) => {
         "Reason should be within 100 characters",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1046,7 +1048,7 @@ const cancelMeeting = async (req, res, next) => {
       meetingId,
       { status: "Cancelled" },
       { reason },
-      { new: true }
+      { new: true },
     ).populate({ path: "bookedBy", select: "firstName lastName" });
 
     if (!cancelledMeeting) {
@@ -1054,7 +1056,7 @@ const cancelMeeting = async (req, res, next) => {
         "Meeting not found, please check the ID",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1079,7 +1081,7 @@ const cancelMeeting = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -1098,7 +1100,7 @@ const extendMeeting = async (req, res, next) => {
         "Meeting ID and new end time are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1107,7 +1109,7 @@ const extendMeeting = async (req, res, next) => {
         "Invalid meeting ID",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1120,7 +1122,7 @@ const extendMeeting = async (req, res, next) => {
         "Meeting not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1130,7 +1132,7 @@ const extendMeeting = async (req, res, next) => {
         "Invalid new end time format",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1139,7 +1141,7 @@ const extendMeeting = async (req, res, next) => {
       newEndTimeObj.getHours(),
       newEndTimeObj.getMinutes(),
       newEndTimeObj.getSeconds(),
-      newEndTimeObj.getMilliseconds()
+      newEndTimeObj.getMilliseconds(),
     );
 
     if (normalizedNewEndTime <= meeting.endTime) {
@@ -1147,7 +1149,7 @@ const extendMeeting = async (req, res, next) => {
         "New end time must be later than the current end time",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1164,7 +1166,7 @@ const extendMeeting = async (req, res, next) => {
         "Room is already booked during the extended time",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1186,7 +1188,7 @@ const extendMeeting = async (req, res, next) => {
         "Booking user company not found for credit deduction",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1195,14 +1197,14 @@ const extendMeeting = async (req, res, next) => {
         "Insufficient credits to extend this meeting",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     // Atomic deduction of credits
     await bookingUserModel.findOneAndUpdate(
       { _id: bookingUserCompany },
-      { $inc: { meetingCreditBalance: -addedCredits } }
+      { $inc: { meetingCreditBalance: -addedCredits } },
     );
 
     // Step 3: Update meeting details
@@ -1235,7 +1237,7 @@ const extendMeeting = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -1301,7 +1303,7 @@ const updateMeeting = async (req, res, next) => {
         "Meeting not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1310,7 +1312,7 @@ const updateMeeting = async (req, res, next) => {
         "Meeting type is not external",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1342,7 +1344,7 @@ const updateMeeting = async (req, res, next) => {
           "Invalid payment proof file type",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -1358,7 +1360,7 @@ const updateMeeting = async (req, res, next) => {
       const response = await handleDocumentUpload(
         processedBuffer,
         `${company}/meetings/${meetingId}/payment-proof`,
-        originalFilename
+        originalFilename,
       );
 
       if (!response.public_id) {
@@ -1366,7 +1368,7 @@ const updateMeeting = async (req, res, next) => {
           "Failed to upload payment proof",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -1405,7 +1407,7 @@ const updateMeeting = async (req, res, next) => {
         "Failed to save meeting revenue",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1415,7 +1417,7 @@ const updateMeeting = async (req, res, next) => {
       },
       {
         meeting: updatedMeeting._id,
-      }
+      },
     );
 
     if (!updatedVisitor) {
@@ -1423,7 +1425,7 @@ const updateMeeting = async (req, res, next) => {
         "Failed to update visitor meeting reference",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1432,7 +1434,7 @@ const updateMeeting = async (req, res, next) => {
     next(
       error instanceof CustomError
         ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
     );
   }
 };
@@ -1444,7 +1446,7 @@ const updateMeetingPaymentStatus = async (req, res, next) => {
   const updatedMeeting = await Meeting.findByIdAndUpdate(
     meetingId,
     { paymentVerification: status },
-    { new: true }
+    { new: true },
   ).populate("bookedBy", "firstName lastName");
 
   if (!updatedMeeting) {
@@ -1462,7 +1464,7 @@ const updateMeetingStatus = async (req, res, next) => {
   const updatedMeeting = await Meeting.findByIdAndUpdate(
     meetingId,
     { status },
-    { new: true }
+    { new: true },
   ).populate("bookedBy", "firstName lastName");
 
   const updateRoomStatus = await Room.findByIdAndUpdate(
@@ -1470,7 +1472,7 @@ const updateMeetingStatus = async (req, res, next) => {
       _id: updatedMeeting.bookedRoom,
     },
     { status: "Available" },
-    { new: true }
+    { new: true },
   );
 
   if (!updatedMeeting) {
@@ -1509,10 +1511,10 @@ const getAllCompanies = async (req, res, next) => {
 
   //Fetching all the companies
   const foundCompany = await Company.find({ _id: company }).select(
-    "companyName"
+    "companyName",
   );
   const coworkingCompanies = await CoworkingClient.find({ company }).select(
-    "clientName"
+    "clientName",
   );
   const visitorCompanies = await ExternalCompany.find().select("companyName");
 
@@ -1553,7 +1555,7 @@ const getAllCompanies = async (req, res, next) => {
     return {
       ...client._doc,
       members: companyEmployees.filter(
-        (member) => member?.company._id.toString() === client?._id.toString()
+        (member) => member?.company._id.toString() === client?._id.toString(),
       ),
     };
   });
@@ -1562,7 +1564,7 @@ const getAllCompanies = async (req, res, next) => {
     return {
       ...client._doc,
       members: coworkingMembers.filter(
-        (member) => member?.client._id.toString() === client?._id.toString()
+        (member) => member?.client._id.toString() === client?._id.toString(),
       ),
     };
   });
@@ -1624,8 +1626,8 @@ const updateMeetingDetails = async (req, res, next) => {
       internalParticipants && internalParticipants.length > 0
         ? internalParticipants
         : clientParticipants && clientParticipants.length > 0
-        ? clientParticipants
-        : [];
+          ? clientParticipants
+          : [];
 
     const isClient = !!meeting.clientBookedBy;
     const BookingCompanyModel = isClient ? CoworkingClient : Company;
@@ -1682,7 +1684,7 @@ const updateMeetingDetails = async (req, res, next) => {
     let internalUsers = [];
     if (internalMeetingParticipants) {
       const invalidIds = internalMeetingParticipants.filter(
-        (id) => !mongoose.Types.ObjectId.isValid(id)
+        (id) => !mongoose.Types.ObjectId.isValid(id),
       );
       if (invalidIds.length > 0) {
         return res
@@ -1694,7 +1696,7 @@ const updateMeetingDetails = async (req, res, next) => {
         _id: { $in: internalMeetingParticipants },
       });
       const unmatchedIds = internalMeetingParticipants.filter(
-        (id) => !users.find((u) => u._id.toString() === id.toString())
+        (id) => !users.find((u) => u._id.toString() === id.toString()),
       );
 
       if (unmatchedIds.length > 0) {
@@ -1721,7 +1723,7 @@ const updateMeetingDetails = async (req, res, next) => {
           meetingCreditBalance: { $gte: creditDifference },
         },
         { $inc: { meetingCreditBalance: -creditDifference } },
-        { new: true }
+        { new: true },
       );
 
       if (!updatedUser) {
@@ -1749,7 +1751,7 @@ const updateMeetingDetails = async (req, res, next) => {
     const updatedMeeting = await Meeting.findByIdAndUpdate(
       meetingId,
       { $set: changes },
-      { new: true }
+      { new: true },
     ).populate([
       { path: "bookedRoom" },
       { path: "externalClient", select: "clientCompany" },

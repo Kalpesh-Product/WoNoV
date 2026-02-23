@@ -88,6 +88,43 @@ const AdminClientMembers = () => {
     },
   });
 
+  const { mutate: updateMemberStatus } = useMutation({
+    mutationFn: async ({ memberId, isActive }) => {
+      const response = await axios.patch(
+        `/api/sales/co-working-member/${memberId}/status`,
+        { isActive },
+      );
+      return response.data;
+    },
+    onSuccess: (response, variables) => {
+      setMembers((prev) =>
+        prev.map((member) => {
+          const currentMemberId =
+            member._id || member.id || member.employeeName;
+
+          if (currentMemberId !== variables.memberId) {
+            return member;
+          }
+
+          return {
+            ...member,
+            isActive: variables.isActive,
+            status: variables.isActive ? "Active" : "Inactive",
+          };
+        }),
+      );
+
+      toast.success(response?.message || "Member status updated successfully");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update member status",
+      );
+    },
+  });
+
   const handleUpdateMember = (data) => {
     const selectedMember = members.find((member) => {
       const currentMemberId = member._id || member.id || member.employeeName;
@@ -120,6 +157,22 @@ const AdminClientMembers = () => {
     };
 
     updateMember({ memberId: selectedMemberId, payload });
+  };
+
+  const handleToggleMemberStatus = (member) => {
+    const memberId = member._id || member.id || member.employeeName;
+
+    if (!memberId) {
+      toast.error("Unable to find selected member");
+      return;
+    }
+
+    const currentStatus =
+      typeof member?.isActive === "boolean"
+        ? member.isActive
+        : member?.status === "Active";
+
+    updateMemberStatus({ memberId, isActive: !currentStatus });
   };
 
   const memberData = useMemo(
@@ -175,6 +228,10 @@ const AdminClientMembers = () => {
           rowId={params.data.srNo}
           menuItems={[
             { label: "Edit", onClick: () => handleEditMember(params.data) },
+            {
+              label: params.data.status ? "Mark As Inactive" : "Mark As Active",
+              onClick: () => handleToggleMemberStatus(params.data),
+            },
           ]}
         />
       ),

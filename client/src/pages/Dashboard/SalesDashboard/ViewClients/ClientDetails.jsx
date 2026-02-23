@@ -130,6 +130,7 @@ const ClientDetails = () => {
       sector: data.sector,
       hoCity: data.hoCity,
       hoState: data.hoState,
+      isActive: data.isActive === true || data.isActive === "true",
       bookingType: data.bookingType,
       unitNo: data.unitNo,
       cabinDesks: Number(data.cabinDesks) || 0,
@@ -370,30 +371,46 @@ const ClientDetails = () => {
                     "ratePerCabinDesk",
                     "openDesks",
                     "ratePerOpenDesk",
+                    "isActive",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
                         <Controller
                           name={fieldKey}
                           control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
+                          render={({ field }) =>
+                            fieldKey === "isActive" ? (
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label="Status"
+                                fullWidth
+                              >
+                                <MenuItem value={true}>Active</MenuItem>
+                                <MenuItem value={false}>Inactive</MenuItem>
+                              </TextField>
+                            ) : (
+                              <TextField
+                                {...field}
+                                size="small"
+                                label={fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
+                                fullWidth
+                              />
+                            )
+                          }
                         />
                       ) : (
                         <div className="py-2 flex justify-between items-start gap-2">
                           <div className="w-[100%] justify-start flex">
                             <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
+                              {fieldKey === "isActive"
+                                ? "Status"
+                                : fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
                             </span>{" "}
                           </div>
                           <div className="">
@@ -401,7 +418,11 @@ const ClientDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {control._defaultValues[fieldKey] || "N/A"}
+                              {fieldKey === "isActive"
+                                ? control._defaultValues.isActive
+                                  ? "Active"
+                                  : "Inactive"
+                                : control._defaultValues[fieldKey] || "N/A"}
                             </span>
                           </div>
                         </div>

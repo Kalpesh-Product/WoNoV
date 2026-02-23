@@ -44,7 +44,7 @@ const RecievedTickets = ({ title, departmentId }) => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/get-tickets/${departmentId}`
+          `/api/tickets/get-tickets/${departmentId}`,
         );
 
         return response.data;
@@ -58,7 +58,7 @@ const RecievedTickets = ({ title, departmentId }) => {
     mutationKey: ["accept-ticket"],
     mutationFn: async (ticket) => {
       const response = await axios.patch(
-        `/api/tickets/accept-ticket/${ticket.id}`
+        `/api/tickets/accept-ticket/${ticket.id}`,
       );
 
       return response.data.message;
@@ -77,7 +77,7 @@ const RecievedTickets = ({ title, departmentId }) => {
     mutationFn: async (ticket) => {
       const response = await axios.patch(
         `/api/tickets/reject-ticket/${ticket.id}`,
-        { reason: ticket.specifiedReason }
+        { reason: ticket.specifiedReason },
       );
 
       return response.data.message;
@@ -99,7 +99,7 @@ const RecievedTickets = ({ title, departmentId }) => {
         `/api/tickets/assign-ticket/${data.ticketId}`,
         {
           assignees: data.assignedEmployees,
-        }
+        },
       );
 
       return response.data.message;
@@ -118,7 +118,7 @@ const RecievedTickets = ({ title, departmentId }) => {
   const fetchSubOrdinates = async () => {
     try {
       const response = await axios.get(
-        `/api/users/assignees?deptId=${departmentId}`
+        `/api/users/assignees?deptId=${departmentId}`,
       );
 
       return response.data;
@@ -140,7 +140,7 @@ const RecievedTickets = ({ title, departmentId }) => {
 
   const onSubmit = (formData) => {
     const assignedEmployeeIds = Object.keys(formData.selectedEmployees).filter(
-      (id) => formData.selectedEmployees[id]
+      (id) => formData.selectedEmployees[id],
     ); // ✅ Keep only selected IDs
 
     if (assignedEmployeeIds.length === 0) {
@@ -191,7 +191,7 @@ const RecievedTickets = ({ title, departmentId }) => {
           setRejectionReason("");
           setSelectedTicket(null);
         },
-      }
+      },
     );
   };
 
@@ -210,9 +210,9 @@ const RecievedTickets = ({ title, departmentId }) => {
 
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No" },
-    { field: "raisedBy", headerName: "Raised By" },
+    { field: "ticketTitle", headerName: "Ticket Title" },
     { field: "fromDepartment", headerName: "From Department" },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1 },
+    { field: "raisedBy", headerName: "Raised By" },
 
     {
       field: "status",
@@ -315,12 +315,16 @@ const RecievedTickets = ({ title, departmentId }) => {
         {selectedTicket && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
-              title="Ticket"
+              title="Ticket Title"
               detail={selectedTicket.ticketTitle}
             />
             <DetalisFormatted
               title="Description"
               detail={selectedTicket.description}
+            />
+            <DetalisFormatted
+              title="From Department"
+              detail={selectedTicket.fromDepartment || "N/A"}
             />
             <DetalisFormatted
               title="Raised By"
@@ -331,18 +335,14 @@ const RecievedTickets = ({ title, departmentId }) => {
               detail={formatDateTime(selectedTicket.raisedDate)}
             />
             <DetalisFormatted
-              title="From Department"
-              detail={selectedTicket.fromDepartment || "N/A"}
-            />
-            <DetalisFormatted
               title="Raised To Department"
               detail={selectedTicket.raisedToDepartment || "N/A"}
             />
-            <DetalisFormatted title="Status" detail={selectedTicket.status} />
             <DetalisFormatted
               title="Priority"
               detail={selectedTicket.priority}
             />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
 
             {selectedTicket.image && (
               <div className="lg:col-span-2">

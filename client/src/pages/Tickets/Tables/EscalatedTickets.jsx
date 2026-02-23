@@ -323,7 +323,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
                 title="Raised To Department"
                 detail={selectedTicket.raisedToDepartment || "N/A"}
               />
-              <DetalisFormatted title="Status" detail={selectedTicket.status} />
+              {/* <DetalisFormatted title="Status" detail={selectedTicket.status} /> */}
               <DetalisFormatted
                 title="Priority"
                 detail={selectedTicket?.priority || "N/A"}
@@ -367,7 +367,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
               />
               <DetalisFormatted title="Status" detail={selectedTicket.status} />
               <DetalisFormatted
-                title="Escalated Status"
+                title="Escalation Status"
                 detail={selectedTicket.escalatedStatus}
               />
               <DetalisFormatted
