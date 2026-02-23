@@ -129,6 +129,18 @@ const AssignedTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
+          const mostRecentAssignment = Array.isArray(ticket.assignedTo)
+            ? ticket.assignedTo[ticket.assignedTo.length - 1]
+            : null;
+          const mostRecentAssigneeName =
+            mostRecentAssignment?.assignee?.firstName &&
+            mostRecentAssignment?.assignee?.lastName
+              ? `${mostRecentAssignment.assignee.firstName} ${mostRecentAssignment.assignee.lastName}`
+              : ticket.assignees?.length
+                ? `${ticket.assignees[ticket.assignees.length - 1]?.firstName || ""} ${ticket.assignees[ticket.assignees.length - 1]?.lastName || ""}`.trim() ||
+                  "N/A"
+                : "N/A";
+
           const supportTicket = {
             id: ticket._id,
             srno: index + 1,
@@ -137,6 +149,7 @@ const AssignedTickets = ({ title, departmentId }) => {
               ticket.raisedBy?.firstName && ticket.raisedBy?.lastName
                 ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
                 : "Unknown",
+            recentAssignee: mostRecentAssigneeName,
             raisedAt: ticket.createdAt,
             raisedToDepartment: ticket.raisedToDepartment.name,
             selectedDepartment:
@@ -182,6 +195,7 @@ const AssignedTickets = ({ title, departmentId }) => {
       headerName: "From Department",
     },
     { field: "raisedBy", headerName: "Raised By" },
+    { field: "recentAssignee", headerName: "Asignees" },
     // { field: "assignees", headerName: "Assigned To", width: 300 },
     // {
     //   field: "tickets",
