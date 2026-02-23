@@ -243,13 +243,13 @@ const AcceptedTickets = ({ title, departmentId }) => {
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
 
-    { field: "raisedUser", headerName: "Raised By" },
+    { field: "ticketTitle", headerName: "Ticket Title" },
     {
       field: "raisedToDepartment",
       headerName: "From Department",
-      width: 100,
     },
-    { field: "ticketTitle", headerName: "Ticket Title" },
+    { field: "raisedUser", headerName: "Raised By" },
+    { field: "acceptedBy", headerName: "Accepted By" },
     {
       field: "status",
       headerName: "Status",
@@ -257,7 +257,6 @@ const AcceptedTickets = ({ title, departmentId }) => {
         return <StatusChip status={params.value} />;
       },
     },
-    { field: "acceptedBy", headerName: "Accepted By" },
     {
       field: "actions",
       headerName: "Actions",
@@ -519,21 +518,12 @@ const AcceptedTickets = ({ title, departmentId }) => {
         {selectedTicket && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
-              title="Ticket"
+              title="Ticket Title"
               detail={selectedTicket.ticketTitle}
             />
             <DetalisFormatted
               title="Description"
               detail={selectedTicket.description || "N/A"}
-            />
-            <DetalisFormatted
-              title="Raised By"
-              detail={selectedTicket.raisedUser}
-            />
-            <DetalisFormatted
-              title="Raised At"
-              // detail={humanDate(selectedTicket.createdAt)}
-              detail={formatDateTime(selectedTicket.createdAt)}
             />
             <DetalisFormatted
               title="From Department"
@@ -545,27 +535,32 @@ const AcceptedTickets = ({ title, departmentId }) => {
               detail={selectedTicket?.raisedByDepartment}
             />
             <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedUser}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              // detail={humanDate(selectedTicket.createdAt)}
+              detail={formatDateTime(selectedTicket.createdAt)}
+            />
+            <DetalisFormatted
               title="Raised To Department"
               detail={selectedTicket.raisedToDepartment || "N/A"}
             />
-            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+
             <DetalisFormatted
-              title="Priority"
-              detail={selectedTicket?.priority}
-            />
-            <DetalisFormatted
-              title="Accepted by"
+              title="Accepted By"
               detail={selectedTicket?.acceptedBy}
             />
             <DetalisFormatted
-              title="Accepted at"
+              title="Accepted At"
               // detail={selectedTicket?.acceptedAt}
               detail={formatDateTime(selectedTicket?.acceptedAt)}
             />
 
             {selectedTicket?.assignedToDetails?.length ? (
               <div className="text-content flex items-start w-full">
-                <span className="w-[50%]">Assignees</span>
+                <span className="w-[50%]">Assigned At</span>
                 <span>:</span>
                 <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
                   {selectedTicket.assignedToDetails.map((assignment, index) => (
@@ -582,10 +577,15 @@ const AcceptedTickets = ({ title, departmentId }) => {
               </div>
             ) : (
               <DetalisFormatted
-                title="Assignees"
+                title="Assigned At"
                 detail={selectedTicket?.assignees || ""}
               />
             )}
+            <DetalisFormatted
+              title="Priority"
+              detail={selectedTicket?.priority}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
             {/* <DetalisFormatted title="Assigned to" detail={selectedTicket?.assignees} /> */}
           </div>
         )}
