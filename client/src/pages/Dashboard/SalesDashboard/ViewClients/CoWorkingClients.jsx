@@ -4,9 +4,9 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { setClientData, } from "../../../../redux/slices/salesSlice";
+import { setClientData } from "../../../../redux/slices/salesSlice";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
-
+import { Chip } from "@mui/material";
 
 const CoWorkingClients = () => {
   const navigate = useNavigate();
@@ -15,20 +15,18 @@ const CoWorkingClients = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   useEffect(() => {
-    const fetchSourceIfEmpty = async () => {
-      if (clientsData.length === 0) {
-        try {
-          const response = await axios.get("/api/sales/co-working-clients");
-          dispatch(setClientData(response.data));
-        } catch (error) {
-          console.error("Failed to fetch leads", error);
-        }
+    const fetchClients = async () => {
+      try {
+        const response = await axios.get("/api/sales/co-working-clients");
+        dispatch(setClientData(response.data));
+      } catch (error) {
+        console.error("Failed to fetch leads", error);
       }
     };
 
-    fetchSourceIfEmpty();
-  }, [clientsData, dispatch]);
-   const handleClickRow = (clientData) => {
+    fetchClients();
+  }, [axios, dispatch]);
+  const handleClickRow = (clientData) => {
     dispatch(setSelectedClient(clientData));
     const isMixBag = location.pathname.includes("mix-bag");
     const isRevenueBasePath =
@@ -38,11 +36,11 @@ const CoWorkingClients = () => {
     if (isMixBag && isRevenueBasePath) {
       navigate(
         `/app/dashboard/sales-dashboard/mix-bag/clients/co-working/${clientData.clientName}`,
-        { replace: true }
+        { replace: true },
       );
     } else if (!isMixBag && isRevenueBasePath) {
       navigate(
-        `/app/dashboard/sales-dashboard/clients/co-working/${clientData.clientName}`
+        `/app/dashboard/sales-dashboard/clients/co-working/${clientData.clientName}`,
       );
     }
   };
@@ -65,6 +63,29 @@ const CoWorkingClients = () => {
         </span>
       ),
     },
+    {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const status = params.value ? "Active" : "Inactive";
+        const statusColorMap = {
+          Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Active: { backgroundColor: "#90EE90", color: "#006400" },
+        };
+
+        const { backgroundColor, color } = statusColorMap[status];
+
+        return (
+          <Chip
+            label={status}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
+        );
+      },
+    },
     { field: "desks", headerName: "Desks" },
     {
       field: "occupancy",
@@ -83,6 +104,7 @@ const CoWorkingClients = () => {
     _id: item._id,
     company: item.company,
     clientName: item.clientName,
+    status: item.isActive,
     serviceName: item.service?.serviceName,
     serviceDescription: item.service?.description,
     sector: item.sector,
@@ -124,8 +146,6 @@ const CoWorkingClients = () => {
     members: item.members || [],
   }));
 
- 
-
   return (
     <div className="p-4">
       <div className="w-full">
@@ -134,7 +154,11 @@ const CoWorkingClients = () => {
             search={true}
             tableTitle={"CO-WORKING CLIENT DETAILS"}
             buttonTitle={"Add Client"}
-            handleClick={() => navigate("/app/dashboard/sales-dashboard/mix-bag/clients/co-working/client-onboarding")}
+            handleClick={() =>
+              navigate(
+                "/app/dashboard/sales-dashboard/mix-bag/clients/co-working/client-onboarding",
+              )
+            }
             data={tableData}
             columns={viewEmployeeColumns}
           />
