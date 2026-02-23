@@ -185,53 +185,54 @@ const RaiseTicket = () => {
 
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No", width: 80 },
-    { field: "raisedBy", headerName: "Raised By", width: 150 },
-    { field: "raisedTo", headerName: "To Department", width: 150 },
-    {
-      field: "raisedAt",
-      headerName: "Raised At",
-      width: 200,
-      cellRenderer: (params) => formatDateTime(params.value),
-    },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
-    { field: "description", headerName: "Description", width: 300 },
+    { field: "raisedTo", headerName: "To Department", width: 150 },
+    // { field: "raisedBy", headerName: "Raised By", width: 150 },
+    // {
+    //   field: "raisedAt",
+    //   headerName: "Raised At",
+    //   width: 200,
+    //   cellRenderer: (params) => formatDateTime(params.value),
+    // },
+
+    // { field: "description", headerName: "Description", width: 300 },
     { field: "acceptedBy", headerName: "Accepted By", width: 300 },
-    {
-      field: "acceptedAt",
-      headerName: "Accepted At",
-      width: 300,
-      cellRenderer: (params) => formatDateTime(params.value),
-    },
+    // {
+    //   field: "acceptedAt",
+    //   headerName: "Accepted At",
+    //   width: 300,
+    //   cellRenderer: (params) => formatDateTime(params.value),
+    // },
 
-    {
-      field: "priority",
-      headerName: "Priority",
-      width: 130,
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          High: { backgroundColor: "#FFC5C5", color: "#8B0000" },
-          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" },
-          Low: { backgroundColor: "#ADD8E6", color: "#00008B" },
-        };
+    // {
+    //   field: "priority",
+    //   headerName: "Priority",
+    //   width: 130,
+    //   cellRenderer: (params) => {
+    //     const statusColorMap = {
+    //       High: { backgroundColor: "#FFC5C5", color: "#8B0000" },
+    //       Medium: { backgroundColor: "#FFECC5", color: "#CC8400" },
+    //       Low: { backgroundColor: "#ADD8E6", color: "#00008B" },
+    //     };
 
-        const { backgroundColor, color } = statusColorMap[
-          params.value === "high" ? "High" : params.value
-        ] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
+    //     const { backgroundColor, color } = statusColorMap[
+    //       params.value === "high" ? "High" : params.value
+    //     ] || {
+    //       backgroundColor: "gray",
+    //       color: "white",
+    //     };
 
-        return (
-          <Chip
-            label={params.value === "high" ? "High" : params.value}
-            style={{
-              backgroundColor,
-              color,
-            }}
-          />
-        );
-      },
-    },
+    //     return (
+    //       <Chip
+    //         label={params.value === "high" ? "High" : params.value}
+    //         style={{
+    //           backgroundColor,
+    //           color,
+    //         }}
+    //       />
+    //     );
+    //   },
+    // },
     {
       field: "status",
       headerName: "Status",
@@ -613,20 +614,19 @@ const RaiseTicket = () => {
             title="Description"
             detail={viewTicketDetails?.description}
           />
-          <DetalisFormatted
+          {/* <DetalisFormatted
             title="Raised By"
             detail={viewTicketDetails?.raisedBy}
+          /> */}
+          <DetalisFormatted
+            title="Raised To Department"
+            detail={viewTicketDetails?.raisedTo}
           />
           <DetalisFormatted
             title="Raised At"
             detail={formatDateTime(viewTicketDetails?.raisedAt)}
           />
-          <DetalisFormatted
-            title="Raised To Department"
-            detail={viewTicketDetails?.raisedTo}
-          />
 
-          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           {/* <DetalisFormatted
             title="Priority"
             detail={viewTicketDetails?.priority}
@@ -644,31 +644,7 @@ const RaiseTicket = () => {
             title="Assigned To"
             detail={viewTicketDetails?.assignedTo || ""}
           /> */}
-          {viewTicketDetails?.assignedToDetails?.length ? (
-            <div className="text-content flex items-start w-full">
-              <span className="w-[50%]">Assignees</span>
-              <span>:</span>
-              <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
-                {viewTicketDetails.assignedToDetails.map(
-                  (assignment, index) => (
-                    <div key={`${assignment.assigneeName}-${index}`}>
-                      <div className="font-medium">
-                        {assignment.assigneeName}
-                      </div>
-                      <div className="text-borderGray">
-                        {assignment.assignedAtFormatted || "N/A"}
-                      </div>
-                    </div>
-                  ),
-                )}
-              </div>
-            </div>
-          ) : (
-            <DetalisFormatted
-              title="Assigned At"
-              detail={formatDateTime(viewTicketDetails?.assignedAt)}
-            />
-          )}
+
           {/* <DetalisFormatted
             title="Escalated To"
             detail={viewTicketDetails?.escalatedTo || ""}
@@ -689,6 +665,7 @@ const RaiseTicket = () => {
             title="Closed At"
             detail={formatDateTime(viewTicketDetails?.closedAt)}
           />
+          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           {viewTicketDetails.image && (
             <div className="lg:col-span-1">
               <img
