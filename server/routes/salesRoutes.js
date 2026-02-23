@@ -8,6 +8,7 @@ const {
   uploadClientOccupancyImage,
   updateCoworkingClient,
   getCoworkingClientRevenues,
+  updateClientStatus,
 } = require("../controllers/salesControllers/coworkingClientControllers");
 const {
   bulkInsertWorkationClients,
@@ -83,17 +84,23 @@ const {
 } = require("../controllers/salesControllers/consolidatedRevenueControllers");
 
 //Coworking routes
-router.get("/consolidated-clients", getConsolidatedClients);
+router.post(
+  "/bulk-insert-co-working-clients",
+  upload.single("clients"),
+  bulkInsertCoworkingClients,
+);
 router.post("/onboard-co-working-client", createCoworkingClient);
-router.post("/onboard-co-working-member", createMember);
+router.patch("/update-co-working-clients/:clientId", updateCoworkingClient);
+router.get("/consolidated-clients", getConsolidatedClients);
+router.get("/co-working-clients", getCoworkingClients);
+router.patch("/co-working-client/:clientId/status", updateClientStatus);
+
 router.post(
   "/bulk-insert-co-working-client-members",
   upload.single("members"),
   bulkInsertCoworkingMembers,
 );
-router.get("/co-working-clients", getCoworkingClients);
-// router.patch("/update-co-working-clients", updateCoworkingClient);
-router.patch("/update-co-working-clients/:clientId", updateCoworkingClient);
+router.post("/onboard-co-working-member", createMember);
 router.patch("/co-working-member/:memberId", updateCoworkingMember);
 router.patch("/co-working-member/:memberId/status", updateMemberStatus);
 router.get("/co-working-members", getMembersByUnit);
@@ -102,11 +109,6 @@ router.post(
   "/upload-client-unit-image",
   upload.single("unitImage"),
   uploadClientOccupancyImage,
-);
-router.post(
-  "/bulk-insert-co-working-clients",
-  upload.single("clients"),
-  bulkInsertCoworkingClients,
 );
 
 //Virtual Office routes

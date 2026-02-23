@@ -426,7 +426,7 @@ const updateMemberStatus = async (req, res) => {
       });
     }
 
-    const member = await CoworkingMember.findById(memberId);
+    const member = await CoworkingMembers.findById(memberId);
 
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
