@@ -11,7 +11,7 @@ const visitorSchema = new mongoose.Schema(
     },
     lastName: {
       type: String,
-      required: true,
+      // required: true,
     },
     email: {
       type: String,
@@ -19,7 +19,7 @@ const visitorSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      required: true,
+      // required: true,
     },
     city: {
       type: String,
@@ -32,11 +32,11 @@ const visitorSchema = new mongoose.Schema(
     },
     phoneNumber: {
       type: String,
-      required: true,
+      // required: true,
     },
     purposeOfVisit: {
       type: String,
-      required: true,
+      // required: true,
     },
     panNumber: {
       type: String,
@@ -83,14 +83,13 @@ const visitorSchema = new mongoose.Schema(
     },
     dateOfVisit: {
       type: Date,
-      required: true,
+      // required: true,
     },
     checkIn: {
       type: Date,
     },
     checkOut: {
       type: Date,
-      default: null,
     },
     scheduledDate: {
       type: Date,
@@ -151,7 +150,7 @@ const visitorSchema = new mongoose.Schema(
       ref: "Unit",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Visitor = mongoose.model("Visitor", visitorSchema);
