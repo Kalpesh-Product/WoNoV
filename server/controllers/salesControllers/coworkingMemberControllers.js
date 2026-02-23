@@ -411,6 +411,42 @@ const getMemberByClient = async (req, res) => {
   }
 };
 
+const updateMemberStatus = async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const { isActive } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(memberId)) {
+      return res.status(400).json({ message: "Invalid member ID" });
+    }
+
+    if (typeof isActive !== "boolean") {
+      return res.status(400).json({
+        message: "isActive must be true or false",
+      });
+    }
+
+    const member = await CoworkingMember.findById(memberId);
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    member.isActive = isActive;
+    await member.save();
+
+    return res.status(200).json({
+      message: `Member marked as ${isActive ? "Active" : "Inactive"}`,
+      data: member,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};
+
 const bulkInsertCoworkingMembers = async (req, res, next) => {
   try {
     const file = req.file;
@@ -524,4 +560,5 @@ module.exports = {
   updateCoworkingMember,
   getMembersByUnit,
   bulkInsertCoworkingMembers,
+  updateMemberStatus,
 };

@@ -69,6 +69,7 @@ const {
   createMember,
   bulkInsertCoworkingMembers,
   updateCoworkingMember,
+  updateMemberStatus,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
 const {
   getVirtualOfficeRevenue,
@@ -94,6 +95,7 @@ router.get("/co-working-clients", getCoworkingClients);
 // router.patch("/update-co-working-clients", updateCoworkingClient);
 router.patch("/update-co-working-clients/:clientId", updateCoworkingClient);
 router.patch("/co-working-member/:memberId", updateCoworkingMember);
+router.patch("/co-working-member/:memberId/status", updateMemberStatus);
 router.get("/co-working-members", getMembersByUnit);
 router.get("/co-working-client-members", getMemberByClient);
 router.post(
