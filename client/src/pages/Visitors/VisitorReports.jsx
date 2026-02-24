@@ -34,7 +34,6 @@ const VisitorReports = () => {
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
-    { field: "visitorType", headerName: "Type" },
     {
       field: "name",
       headerName: "Name",
@@ -45,6 +44,14 @@ const VisitorReports = () => {
           </span>
         </div>
       ),
+    },
+    { field: "visitorType", headerName: "Type" },
+    { field: "registeredClientCompany", headerName: "Client Company" },
+    { field: "purpose", headerName: "Purpose" },
+    { field: "toMeet", headerName: "To Meet" },
+    {
+      field: "dateOfVisit",
+      headerName: "Date Of Visit",
     },
     { field: "gender", headerName: "Gender", hide: true },
     { field: "visitorCompany", headerName: "Visitor Company", hide: true },
@@ -59,12 +66,8 @@ const VisitorReports = () => {
     { field: "otherFile", headerName: "Other File", hide: true },
     { field: "email", headerName: "Email" },
     { field: "phone", headerName: "Phone No" },
-    { field: "purpose", headerName: "Purpose" },
-    { field: "toMeet", headerName: "To Meet" },
-    {
-      field: "dateOfVisit",
-      headerName: "Date Of Visit",
-    },
+
+
     {
       field: "scheduledDate",
       headerName: "Scheduled Date",
@@ -123,17 +126,17 @@ const VisitorReports = () => {
     const toMeetName = visitor.toMeet
       ? `${visitor.toMeet?.firstName} ${visitor.toMeet?.lastName}`
       : visitor.clientToMeet
-      ? visitor?.clientToMeet?.employeeName
-      : "-";
+        ? visitor?.clientToMeet?.employeeName
+        : "-";
 
     const toMeetCompany =
       visitor.toMeetCompany === "6799f0cd6a01edbe1bc3fcea"
         ? "BIZNest"
         : visitor?.toMeetCompany?.clientName ||
-          visitor?.toMeetCompany?.companyName ||
-          visitor?.toMeetCompany?.name ||
-          visitor?.toMeetCompany ||
-          "-";
+        visitor?.toMeetCompany?.companyName ||
+        visitor?.toMeetCompany?.name ||
+        visitor?.toMeetCompany ||
+        "-";
 
     return {
       srNo: index + 1,

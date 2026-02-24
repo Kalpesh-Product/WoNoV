@@ -52,10 +52,10 @@ const MeetingReports = () => {
   const filteredMeetings = isMeetingsPending
     ? []
     : meetings.filter((meeting) => {
-        const bookedByDepts =
-          meeting.bookedBy?.departments?.map((d) => d._id) || [];
-        return bookedByDepts.some((deptId) => loggedDeptIds.includes(deptId));
-      });
+      const bookedByDepts =
+        meeting.bookedBy?.departments?.map((d) => d._id) || [];
+      return bookedByDepts.some((deptId) => loggedDeptIds.includes(deptId));
+    });
 
   const handleSelectedMeeting = (meeting) => {
     setSelectedMeeting(meeting);
@@ -66,8 +66,9 @@ const MeetingReports = () => {
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
-    { field: "roomName", headerName: "Room Name" },
+    { field: "bookedBy", headerName: "Booked By" },
     { field: "buildingName", headerName: "Building Name" },
+    { field: "roomName", headerName: "Room Name" },
     { field: "unitName", headerName: "Unit Name" },
 
     { field: "meetingType", headerName: "Meeting Type" },
@@ -162,9 +163,9 @@ const MeetingReports = () => {
                     // department: item.department,
                     department: item.department?.length
                       ? item.department
-                          .map((dept) => dept?.name)
-                          .filter(Boolean)
-                          .join(", ")
+                        .map((dept) => dept?.name)
+                        .filter(Boolean)
+                        .join(", ")
                       : "Top Management",
                     roomName: item.roomName,
                     location: item.location?.unitNo,
@@ -196,9 +197,8 @@ const MeetingReports = () => {
                     participants: item.participants
                       ?.map((participant) => {
                         if (participant?.firstName) {
-                          return `${participant.firstName || ""} ${
-                            participant.lastName || ""
-                          }`.trim();
+                          return `${participant.firstName || ""} ${participant.lastName || ""
+                            }`.trim();
                         }
                         if (participant?.employeeName) {
                           return participant.employeeName;
@@ -304,9 +304,9 @@ const MeetingReports = () => {
               detail={
                 Array.isArray(selectedMeeting?.department)
                   ? selectedMeeting.department
-                      .map((item) => item.name)
-                      .filter(Boolean)
-                      .join(", ") || "Top Management"
+                    .map((item) => item.name)
+                    .filter(Boolean)
+                    .join(", ") || "Top Management"
                   : selectedMeeting?.department || "Top Management"
               }
             />
@@ -331,48 +331,48 @@ const MeetingReports = () => {
             {selectedMeeting?.meetingType
               ?.toLowerCase()
               ?.includes("external") && (
-              <>
-                <br />
-                <div className="font-bold">Payment Details</div>
-                <DetalisFormatted
-                  title="Amount"
-                  detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
-                />
-                <DetalisFormatted
-                  title="Discount"
-                  detail={`INR ${inrFormat(
-                    selectedMeeting?.paymnetDiscountAmount
-                  )}`}
-                />
-                <DetalisFormatted
-                  title="Mode"
-                  detail={selectedMeeting?.paymentMode || "N/A"}
-                />
-                <DetalisFormatted
-                  title="Status"
-                  detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
-                />
-                <DetalisFormatted
-                  title="Verification"
-                  detail={selectedMeeting?.paymentVerification || "N/A"}
-                />
-                {selectedMeeting?.paymentProofUrl && (
+                <>
+                  <br />
+                  <div className="font-bold">Payment Details</div>
                   <DetalisFormatted
-                    title="Proof"
-                    detail={
-                      <a
-                        href={selectedMeeting.paymentProofUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 underline"
-                      >
-                        View File
-                      </a>
-                    }
+                    title="Amount"
+                    detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
                   />
-                )}
-              </>
-            )}
+                  <DetalisFormatted
+                    title="Discount"
+                    detail={`INR ${inrFormat(
+                      selectedMeeting?.paymnetDiscountAmount
+                    )}`}
+                  />
+                  <DetalisFormatted
+                    title="Mode"
+                    detail={selectedMeeting?.paymentMode || "N/A"}
+                  />
+                  <DetalisFormatted
+                    title="Status"
+                    detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
+                  />
+                  <DetalisFormatted
+                    title="Verification"
+                    detail={selectedMeeting?.paymentVerification || "N/A"}
+                  />
+                  {selectedMeeting?.paymentProofUrl && (
+                    <DetalisFormatted
+                      title="Proof"
+                      detail={
+                        <a
+                          href={selectedMeeting.paymentProofUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          View File
+                        </a>
+                      }
+                    />
+                  )}
+                </>
+              )}
           </div>
         ) : (
           <CircularProgress />

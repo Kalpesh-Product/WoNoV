@@ -171,7 +171,7 @@ const ExternalMeetingCLients = () => {
           ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
           : meeting.clientBookedBy?.employeeName || "Unknown",
         startTime: meeting.startTime,
-        endTime: meeting.endTime,
+        endTime: meeting.extendTime > meeting.endTime ? meeting.extendTime : meeting.endTime,
         extendTime: meeting.extendTime,
         srNo: index + 1,
         paymentAmount: meeting.paymentAmount ?? 0,
@@ -181,6 +181,7 @@ const ExternalMeetingCLients = () => {
         paymentStatus: meeting.paymentStatus ?? false,
         paymentVerification: meeting.paymentVerification || "Under Review",
         client: meeting.client || "",
+        building: meeting.location?.building?.buildingName || "",
       };
     });
 
@@ -228,7 +229,7 @@ const ExternalMeetingCLients = () => {
     onSuccess: (data) => {
       toast.success(data.message);
     },
-    onError: (error) => {},
+    onError: (error) => { },
   });
 
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
@@ -553,6 +554,7 @@ const ExternalMeetingCLients = () => {
   const columns = [
     { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "bookedBy", headerName: "Booked By" },
+    { field: "building", headerName: "Building" },
     { field: "roomName", headerName: "Room Name" },
     {
       field: "date",
@@ -569,11 +571,11 @@ const ExternalMeetingCLients = () => {
       headerName: "End Time",
       cellRenderer: (params) => humanTime(params.value),
     },
-    {
-      field: "extendTime",
-      headerName: "Extended Time",
-      cellRenderer: (params) => humanTime(params.value) || "-",
-    },
+    // {
+    //   field: "extendTime",
+    //   headerName: "Extended Time",
+    //   cellRenderer: (params) => humanTime(params.value) || "-",
+    // },
     {
       field: "paymentAmount",
       headerName: "Amount (INR)",
@@ -650,49 +652,49 @@ const ExternalMeetingCLients = () => {
           //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
           // },
           isPaid &&
-            isFinance &&
-            !isVerified && {
-              label: "Verify Payment",
-              onClick: () => handleVerifyPayment(params.data, "Verified"),
-            },
+          isFinance &&
+          !isVerified && {
+            label: "Verify Payment",
+            onClick: () => handleVerifyPayment(params.data, "Verified"),
+          },
           isPaid &&
-            isFinance &&
-            isVerified && {
-              label: "Review Payment",
-              onClick: () => handleVerifyPayment(params.data, "Under Review"),
-            },
+          isFinance &&
+          isVerified && {
+            label: "Review Payment",
+            onClick: () => handleVerifyPayment(params.data, "Under Review"),
+          },
 
           // Show the following only when NOT finance
           ...(!isFinance
             ? [
-                !isPaid && {
-                  label: "Update Payment Details",
-                  onClick: () => handleOpenPaymentModal(params.data),
-                },
-                !isOngoing &&
-                  !isHousekeepingCompleted && {
-                    label: "Update Checklist",
-                    onClick: () =>
-                      handleOpenChecklistModal("update", params.data._id),
-                  },
-                isUpcoming && {
-                  label: "Edit",
-                  onClick: () => handleEditMeeting("edit", params.data),
-                },
-                !isOngoing &&
-                  !isHousekeepingPending && {
-                    label: "Mark As Ongoing",
-                    onClick: () => handleOngoing("ongoing", params.data._id),
-                  },
-                !isUpcoming && {
-                  label: "Mark As Completed",
-                  onClick: () => handleCompleted("complete", params.data._id),
-                },
-                !isCancelled && {
-                  label: "Cancel",
-                  onClick: () => handleSelectedMeeting("cancel", params.data),
-                },
-              ]
+              !isPaid && {
+                label: "Update Payment Details",
+                onClick: () => handleOpenPaymentModal(params.data),
+              },
+              !isOngoing &&
+              !isHousekeepingCompleted && {
+                label: "Update Checklist",
+                onClick: () =>
+                  handleOpenChecklistModal("update", params.data._id),
+              },
+              isUpcoming && {
+                label: "Edit",
+                onClick: () => handleEditMeeting("edit", params.data),
+              },
+              !isOngoing &&
+              !isHousekeepingPending && {
+                label: "Mark As Ongoing",
+                onClick: () => handleOngoing("ongoing", params.data._id),
+              },
+              !isUpcoming && {
+                label: "Mark As Completed",
+                onClick: () => handleCompleted("complete", params.data._id),
+              },
+              !isCancelled && {
+                label: "Cancel",
+                onClick: () => handleSelectedMeeting("cancel", params.data),
+              },
+            ]
             : []),
         ].filter(Boolean);
 
@@ -964,7 +966,7 @@ const ExternalMeetingCLients = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-              // detail={`N/A`}
+            // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"
