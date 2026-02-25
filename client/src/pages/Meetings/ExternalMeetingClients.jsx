@@ -171,7 +171,10 @@ const ExternalMeetingCLients = () => {
           ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
           : meeting.clientBookedBy?.employeeName || "Unknown",
         startTime: meeting.startTime,
-        endTime: meeting.endTime,
+        endTime:
+          meeting.extendTime > meeting.endTime
+            ? meeting.extendTime
+            : meeting.endTime,
         extendTime: meeting.extendTime,
         srNo: index + 1,
         paymentAmount: meeting.paymentAmount ?? 0,
@@ -181,6 +184,7 @@ const ExternalMeetingCLients = () => {
         paymentStatus: meeting.paymentStatus ?? false,
         paymentVerification: meeting.paymentVerification || "Under Review",
         client: meeting.client || "",
+        building: meeting.location?.building?.buildingName || "",
       };
     });
 
@@ -553,6 +557,7 @@ const ExternalMeetingCLients = () => {
   const columns = [
     { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "bookedBy", headerName: "Booked By" },
+    { field: "building", headerName: "Building" },
     { field: "roomName", headerName: "Room Name" },
     {
       field: "date",
@@ -569,11 +574,11 @@ const ExternalMeetingCLients = () => {
       headerName: "End Time",
       cellRenderer: (params) => humanTime(params.value),
     },
-    {
-      field: "extendTime",
-      headerName: "Extended Time",
-      cellRenderer: (params) => humanTime(params.value) || "-",
-    },
+    // {
+    //   field: "extendTime",
+    //   headerName: "Extended Time",
+    //   cellRenderer: (params) => humanTime(params.value) || "-",
+    // },
     {
       field: "paymentAmount",
       headerName: "Amount (INR)",

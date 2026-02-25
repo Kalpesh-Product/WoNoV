@@ -214,11 +214,12 @@ const ManageMeetings = () => {
       : meeting.clientBookedBy?.employeeName || "Unknown",
     bookedById: meeting.bookedBy ? meeting.bookedBy._id : "",
     startTime: meeting.startTime,
-    endTime: meeting.endTime,
+    endTime: meeting.extendTime > meeting.endTime ? meeting.extendTime : meeting.endTime,
     extendTime: meeting.extendTime,
     srNo: index + 1,
     company: meeting.client || "",
     clientBookedBy: meeting.clientBookedBy || "",
+    building: meeting.location?.building?.buildingName || "",
     department:
       meeting.bookedBy &&
       [...meeting.bookedBy.departments.map((dept) => dept.name)].join(","),
@@ -465,6 +466,7 @@ const ManageMeetings = () => {
     { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "client", headerName: "Company" },
     { field: "bookedBy", headerName: "Booked By" },
+    { field: "building", headerName: "Building" },
     { field: "roomName", headerName: "Room Name" },
     {
       field: "date",
@@ -481,11 +483,11 @@ const ManageMeetings = () => {
       headerName: "End Time",
       cellRenderer: (params) => humanTime(params.value),
     },
-    {
-      field: "extendTime",
-      headerName: "Extended Time",
-      cellRenderer: (params) => humanTime(params.value) || "-",
-    },
+    // {
+    //   field: "extendTime",
+    //   headerName: "Extended Time",
+    //   cellRenderer: (params) => humanTime(params.value) || "-",
+    // },
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
@@ -562,20 +564,20 @@ const ManageMeetings = () => {
 
         const menuItems = [
           !isOngoing &&
-            !isHousekeepingCompleted && {
-              label: "Update Checklist",
-              onClick: () =>
-                handleOpenChecklistModal("update", params.data._id),
-            },
+          !isHousekeepingCompleted && {
+            label: "Update Checklist",
+            onClick: () =>
+              handleOpenChecklistModal("update", params.data._id),
+          },
           isUpcoming && {
             label: "Edit",
             onClick: () => handleEditMeeting("edit", params.data),
           },
           !isOngoing &&
-            !isHousekeepingPending && {
-              label: "Mark As Ongoing",
-              onClick: () => handleOngoing("ongoing", params.data._id),
-            },
+          !isHousekeepingPending && {
+            label: "Mark As Ongoing",
+            onClick: () => handleOngoing("ongoing", params.data._id),
+          },
           !isUpcoming && {
             label: "Mark As Completed",
             onClick: () => handleCompleted("complete", params.data._id),
@@ -742,12 +744,12 @@ const ManageMeetings = () => {
           modalMode === "viewDetails"
             ? "Meeting Details"
             : modalMode === "cancel"
-            ? "Cancel Meeting"
-            : modalMode === "extend"
-            ? "Extend Meeting"
-            : modalMode === "edit"
-            ? "Edit Meeting"
-            : ""
+              ? "Cancel Meeting"
+              : modalMode === "extend"
+                ? "Extend Meeting"
+                : modalMode === "edit"
+                  ? "Edit Meeting"
+                  : ""
         }
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
@@ -797,8 +799,8 @@ const ManageMeetings = () => {
                       return p.firstName
                         ? `${p.firstName} ${p.lastName}`
                         : p.employeeName
-                        ? p.employeeName
-                        : "N/A";
+                          ? p.employeeName
+                          : "N/A";
                     })
                     .join(", ") || "N/A"
                 }
@@ -812,7 +814,7 @@ const ManageMeetings = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-              // detail={`N/A`}
+            // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"

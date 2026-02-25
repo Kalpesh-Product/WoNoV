@@ -43,10 +43,12 @@ const ExternalClients = () => {
     defaultValues: {
       firstName: "",
       lastName: "",
+      name: "",
       email: "",
       phoneNumber: "",
       purposeOfVisit: "",
       toMeet: "",
+      date: "",
       checkIn: "",
       checkOut: "",
       checkOutRaw: null,
@@ -63,6 +65,7 @@ const ExternalClients = () => {
         id: selectedVisitor?.mongoId,
         firstName: selectedVisitor.firstName || "",
         lastName: selectedVisitor.lastName || "",
+        name: `${selectedVisitor.firstName} ${selectedVisitor.lastName}`,
         address: selectedVisitor.address || "",
         email: selectedVisitor.email || "",
         phoneNumber: selectedVisitor.phoneNumber || "",
@@ -107,14 +110,16 @@ const ExternalClients = () => {
 
   const visitorsColumns = [
     { field: "srNo", headerName: "Sr No", sort: "desc" },
-    { field: "firstName", headerName: "First Name" },
-    { field: "lastName", headerName: "Last Name" },
-    { field: "email", headerName: "Email" },
-    { field: "phoneNumber", headerName: "Phone No" },
+    // { field: "firstName", headerName: "First Name" },
+    // { field: "lastName", headerName: "Last Name" },
+    { field: "name", headerName: "Name" },
+    // { field: "email", headerName: "Email" },
+    // { field: "phoneNumber", headerName: "Phone No" },
     {
       field: "purposeOfVisit",
       headerName: "Purpose",
     },
+    { field: "dateOfVisit", headerName: "Date of Visit" },
     {
       field: "checkIn",
       headerName: "Check In",
@@ -187,9 +192,12 @@ const ExternalClients = () => {
     if (selectedVisitor) {
       setValue("firstName", selectedVisitor.firstName || "");
       setValue("lastName", selectedVisitor.lastName || "");
+      setValue("name", selectedVisitor.name || "");
       setValue("email", selectedVisitor.email || "");
       setValue("phoneNumber", selectedVisitor.phoneNumber || "");
       setValue("purposeOfVisit", selectedVisitor.purposeOfVisit || "");
+      setValue("dateOfVisit", selectedVisitor.dateOfVisit || "");
+      setValue("checkInRaw", selectedVisitor.checkInRaw || "");
       setValue(
         "checkOutRaw",
         selectedVisitor.checkOutRaw ? dayjs(selectedVisitor.checkOutRaw) : null,
@@ -225,17 +233,19 @@ const ExternalClients = () => {
       const combinedCheckout =
         checkInDate && checkOutRaw
           ? checkInDate
-              .hour(checkOutRaw.hour())
-              .minute(checkOutRaw.minute())
-              .second(checkOutRaw.second())
-              .millisecond(checkOutRaw.millisecond())
+            .hour(checkOutRaw.hour())
+            .minute(checkOutRaw.minute())
+            .second(checkOutRaw.second())
+            .millisecond(checkOutRaw.millisecond())
           : checkOutRaw;
 
       const updatePayload = {
         firstName: data.firstName,
         lastName: data.lastName,
+        name: `${data.firstName} ${data.lastName}`,
         email: data.email,
         phoneNumber: data.phoneNumber,
+        dateOfVisit: data.dateOfVisit,
         purposeOfVisit: data.purposeOfVisit,
         // checkOut: data.checkOutRaw
         //   ? dayjs(data.checkOutRaw).toISOString()
@@ -272,8 +282,10 @@ const ExternalClients = () => {
                 mongoId: item._id,
                 firstName: item.firstName,
                 lastName: item.lastName,
+                name: `${item.firstName} ${item.lastName}`,
                 address: item.address,
                 phoneNumber: item.phoneNumber,
+                dateOfVisit: item.dateOfVisit,
                 email: item.email,
                 purposeOfVisit: item.purposeOfVisit,
                 toMeet: !item?.toMeet
@@ -349,6 +361,27 @@ const ExternalClients = () => {
                     detail={selectedVisitor.lastName}
                   />
                 )}
+                {/* Email */}
+                {isEditing ? (
+                  <Controller
+                    name="email"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Email"
+                        type="email"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Email"
+                    detail={selectedVisitor.email}
+                  />
+                )}
 
                 {/* Phone Number */}
                 {isEditing ? (
@@ -372,27 +405,7 @@ const ExternalClients = () => {
                   />
                 )}
 
-                {/* Email */}
-                {isEditing ? (
-                  <Controller
-                    name="email"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Email"
-                        type="email"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
-                  <DetalisFormatted
-                    title="Email"
-                    detail={selectedVisitor.email}
-                  />
-                )}
+
 
                 {/* Purpose of Visit */}
                 {isEditing ? (
@@ -454,6 +467,81 @@ const ExternalClients = () => {
                     detail={selectedVisitor.registeredClientCompany}
                   />
                 )}
+
+                {/* date of visit */}
+                {isEditing ? (
+                  <Controller
+                    name="date"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Date of Visit"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Date of Visit"
+                    detail={selectedVisitor.date}
+                  />
+                )}
+
+                {/* checkin time */}
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  {isEditing ? (
+                    <Controller
+                      name="checkInRaw"
+                      control={control}
+                      render={({ field }) => (
+                        <TimePicker
+                          label="Checkin Time"
+                          value={field.value ? dayjs(field.value) : null}
+                          onChange={field.onChange}
+                          slotProps={{ textField: { size: "small" } }}
+                          renderInput={(params) => (
+                            <TextField {...params} size="small" fullWidth />
+                          )}
+                          shouldDisableTime={(time, view) => {
+                            const startTime = selectedVisitor.checkIn;
+                            const timeValue = time.$d;
+
+                            if (!startTime) return false;
+
+                            const startDate = new Date(startTime);
+
+                            if (view === "hours") {
+                              return (
+                                timeValue.getHours() < startDate.getHours()
+                              );
+                            }
+
+                            if (view === "minutes") {
+                              const selectedHour = field.value
+                                ? new Date(field.value).getHours()
+                                : startDate.getHours();
+
+                              return (
+                                timeValue.getHours() === selectedHour &&
+                                timeValue.getMinutes() < startDate.getMinutes()
+                              );
+                            }
+
+                            return false;
+                          }}
+                        />
+                      )}
+                    />
+                  ) : (
+                    <DetalisFormatted
+                      title="Checkin Time"
+                      detail={humanTime(selectedVisitor?.checkInRaw)}
+                    />
+                  )}
+                </LocalizationProvider>
+
                 {/* Checkout time */}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   {isEditing ? (

@@ -128,9 +128,9 @@ const BookMeetings = () => {
   // Filter meeting rooms based on selected location
   const filteredMeetingRooms = selectedUnitId
     ? allMeetingRooms.filter(
-        (room) =>
-          room.location?.building?._id === selectedUnitId && room.isActive
-      )
+      (room) =>
+        room.location?.building?._id === selectedUnitId && room.isActive
+    )
     : [];
 
   const groupedRooms = filteredMeetingRooms.reduce((acc, room) => {
@@ -255,6 +255,7 @@ const BookMeetings = () => {
     { field: "agenda", headerName: "Agenda", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "roomName", headerName: "Room Name" },
+    { field: "buildingName", headerName: "Building Name" },
     {
       field: "location",
       headerName: "Location",
@@ -268,8 +269,8 @@ const BookMeetings = () => {
         const meetingReviews = Array.isArray(rawReview)
           ? rawReview
           : rawReview
-          ? [rawReview]
-          : [];
+            ? [rawReview]
+            : [];
         const userName = `${auth.user?.firstName} ${auth.user?.lastName}`;
 
         return (
@@ -279,7 +280,7 @@ const BookMeetings = () => {
             ) : (
               <>
                 {userName === params.data.bookedBy &&
-                params.data.status === "Completed" ? (
+                  params.data.status === "Completed" ? (
                   <span
                     onClick={() => handleAddReview(params.data)}
                     className="cursor-pointer"
@@ -467,6 +468,7 @@ const BookMeetings = () => {
                   agenda: meeting.agenda,
                   date: meeting.date,
                   roomName: meeting.roomName,
+                  buildingName: meeting.location?.building?.buildingName,
                   status: meeting.meetingStatus,
                   review: meeting.reviews?.review,
                   reply: meeting.reviews?.reply?.text,
@@ -596,9 +598,8 @@ const BookMeetings = () => {
                         label={
                           isBizNest
                             ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
-                            : `${user.employeeName ?? ""} (${
-                                user.clientName ?? ""
-                              })`
+                            : `${user.employeeName ?? ""} (${user.clientName ?? ""
+                            })`
                         }
                         {...getTagProps({ index })}
                         deleteIcon={<IoMdClose />}
@@ -706,6 +707,10 @@ const BookMeetings = () => {
               <DetalisFormatted
                 title="Room"
                 detail={selectedMeeting?.roomName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Building"
+                detail={selectedMeeting?.buildingName || "N/A"}
               />
               <DetalisFormatted
                 title="Location"
