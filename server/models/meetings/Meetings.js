@@ -66,8 +66,8 @@ const meetingSchema = new mongoose.Schema(
     },
     paymentVerification: {
       type: String,
-      enum: ["Under Review", "Verified"],
-      default: "Under Review",
+      enum: ["Pending", "Under Review", "Verified"],
+      default: "Pending",
     },
     internalParticipants: [
       {

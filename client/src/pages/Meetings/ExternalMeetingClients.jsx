@@ -171,7 +171,10 @@ const ExternalMeetingCLients = () => {
           ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
           : meeting.clientBookedBy?.employeeName || "Unknown",
         startTime: meeting.startTime,
-        endTime: meeting.extendTime > meeting.endTime ? meeting.extendTime : meeting.endTime,
+        endTime:
+          meeting.extendTime > meeting.endTime
+            ? meeting.extendTime
+            : meeting.endTime,
         extendTime: meeting.extendTime,
         srNo: index + 1,
         paymentAmount: meeting.paymentAmount ?? 0,
@@ -229,7 +232,7 @@ const ExternalMeetingCLients = () => {
     onSuccess: (data) => {
       toast.success(data.message);
     },
-    onError: (error) => { },
+    onError: (error) => {},
   });
 
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
@@ -637,7 +640,7 @@ const ExternalMeetingCLients = () => {
       cellRenderer: (params) => {
         const status = params.data.meetingStatus;
         const housekeepingStatus = params.data.housekeepingStatus;
-        const isPaid = params.data.paymentStatus === true;
+        const isPaid = params.data.paymentStatus === "Paid";
         const isUpcoming = status === "Upcoming";
         const isCancelled = status === "Cancelled";
         const isOngoing = status === "Ongoing";
@@ -645,6 +648,10 @@ const ExternalMeetingCLients = () => {
         const isHousekeepingPending = housekeepingStatus === "Pending";
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
         const isVerified = params.data.paymentVerification === "Verified";
+        const paymentVerificationStatus = params.data.paymentVerification;
+
+        const shouldHideMenu =
+          isCancelled || paymentVerificationStatus === "Verified" || !isPaid;
 
         const menuItems = [
           // {
@@ -652,49 +659,50 @@ const ExternalMeetingCLients = () => {
           //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
           // },
           isPaid &&
-          isFinance &&
-          !isVerified && {
-            label: "Verify Payment",
-            onClick: () => handleVerifyPayment(params.data, "Verified"),
-          },
+            isFinance &&
+            paymentVerificationStatus === "Under Review" && {
+              label: "Verify Payment",
+              onClick: () => handleVerifyPayment(params.data, "Verified"),
+            },
+
           isPaid &&
-          isFinance &&
-          isVerified && {
-            label: "Review Payment",
-            onClick: () => handleVerifyPayment(params.data, "Under Review"),
-          },
+            isFinance &&
+            paymentVerificationStatus === "Pending" && {
+              label: "Review Payment",
+              onClick: () => handleVerifyPayment(params.data, "Under Review"),
+            },
 
           // Show the following only when NOT finance
           ...(!isFinance
             ? [
-              !isPaid && {
-                label: "Update Payment Details",
-                onClick: () => handleOpenPaymentModal(params.data),
-              },
-              !isOngoing &&
-              !isHousekeepingCompleted && {
-                label: "Update Checklist",
-                onClick: () =>
-                  handleOpenChecklistModal("update", params.data._id),
-              },
-              isUpcoming && {
-                label: "Edit",
-                onClick: () => handleEditMeeting("edit", params.data),
-              },
-              !isOngoing &&
-              !isHousekeepingPending && {
-                label: "Mark As Ongoing",
-                onClick: () => handleOngoing("ongoing", params.data._id),
-              },
-              !isUpcoming && {
-                label: "Mark As Completed",
-                onClick: () => handleCompleted("complete", params.data._id),
-              },
-              !isCancelled && {
-                label: "Cancel",
-                onClick: () => handleSelectedMeeting("cancel", params.data),
-              },
-            ]
+                !isPaid && {
+                  label: "Update Payment Details",
+                  onClick: () => handleOpenPaymentModal(params.data),
+                },
+                !isOngoing &&
+                  !isHousekeepingCompleted && {
+                    label: "Update Checklist",
+                    onClick: () =>
+                      handleOpenChecklistModal("update", params.data._id),
+                  },
+                isUpcoming && {
+                  label: "Edit",
+                  onClick: () => handleEditMeeting("edit", params.data),
+                },
+                !isOngoing &&
+                  !isHousekeepingPending && {
+                    label: "Mark As Ongoing",
+                    onClick: () => handleOngoing("ongoing", params.data._id),
+                  },
+                !isUpcoming && {
+                  label: "Mark As Completed",
+                  onClick: () => handleCompleted("complete", params.data._id),
+                },
+                !isCancelled && {
+                  label: "Cancel",
+                  onClick: () => handleSelectedMeeting("cancel", params.data),
+                },
+              ]
             : []),
         ].filter(Boolean);
 
@@ -709,7 +717,10 @@ const ExternalMeetingCLients = () => {
               </span>
             </div>
 
-            {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
+            {/* {!isCancelled && <ThreeDotMenu menuItems={menuItems} />} */}
+            {!shouldHideMenu && menuItems.length > 0 && (
+              <ThreeDotMenu menuItems={menuItems} />
+            )}
           </div>
         );
       },
@@ -966,7 +977,7 @@ const ExternalMeetingCLients = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-            // detail={`N/A`}
+              // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"

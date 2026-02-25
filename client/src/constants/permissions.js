@@ -1809,6 +1809,135 @@ export const PERMISSIONS = {
     route: "/app/dashboard/frontend-dashboard/settings/policies",
   },
 
+  // Sidebar
+  // Sidebar
+  SIDEBAR_DASHBOARD: {
+    value: "sidebar_dashboard",
+    title: "DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_FINANCE_DASHBOARD: {
+    value: "sidebar_finance_dashboard",
+    title: "FINANCE DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_SALES_DASHBOARD: {
+    value: "sidebar_sales_dashboard",
+    title: "SALES DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_HR_DASHBOARD: {
+    value: "sidebar_hr_dashboard",
+    title: "HR DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_FRONTEND_DASHBOARD: {
+    value: "sidebar_frontend_dashboard",
+    title: "FRONTEND DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_ADMIN_DASHBOARD: {
+    value: "sidebar_admin_dashboard",
+    title: "ADMIN DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_MAINTENANCE_DASHBOARD: {
+    value: "sidebar_maintenance_dashboard",
+    title: "MAINTENANCE DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_IT_DASHBOARD: {
+    value: "sidebar_it_dashboard",
+    title: "IT DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_CAFE_DASHBOARD: {
+    value: "sidebar_cafe_dashboard",
+    title: "CAFE DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_TICKETS: {
+    value: "sidebar_tickets",
+    title: "TICKETS",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_MEETINGS: {
+    value: "sidebar_meetings",
+    title: "MEETINGS",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_TASKS: {
+    value: "sidebar_tasks",
+    title: "TASKS",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_PERFORMANCE: {
+    value: "sidebar_performance",
+    title: "PERFORMANCE",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_VISITORS: {
+    value: "sidebar_visitors",
+    title: "VISITORS",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_CALENDAR: {
+    value: "sidebar_calendar",
+    title: "CALENDAR",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_ACCESS: {
+    value: "sidebar_access",
+    title: "ACCESS",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_NOTIFICATIONS: {
+    value: "sidebar_notifications",
+    title: "NOTIFICATIONS",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_PROFILE: {
+    value: "sidebar_profile",
+    title: "PROFILE",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_REPORTS: {
+    value: "sidebar_reports",
+    title: "REPORTS",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_ASSETS: {
+    value: "sidebar_assets",
+    title: "ASSETS",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_CHAT: {
+    value: "sidebar_chat",
+    title: "CHAT",
+    type: "read",
+    access: "page",
+  },
+
   ACCESS_PERMISSIONS: {
     value: "access_permissions",
     title: "ACCESS PERMISSIONS",
