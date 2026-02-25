@@ -1,25 +1,29 @@
 import { Tabs } from "@mui/material";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import TabLayout from "../../../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../../../constants/permissions";
+import TabLayout from "../../../../components/Tabs/TabLayout";
 
-const AttendanceLayout = () => {
+const LeavesLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   // Map routes to tabs
   const tabs = [
-    { label: "Pending Approvals Attendance", path: "pending-approvals", permission: PERMISSIONS.HR_PENDING_APPROVALS_ATTENDANCE.value },
-    { label: "Completed Attendance", path: "completed", permission: PERMISSIONS.HR_COMPLETED_ATTENDANCE.value },
+    { label: "Pending Approvals Leaves", path: "pending-approvals", permission: PERMISSIONS.HR_PENDING_APPROVALS_LEAVES.value },
+    { label: "Completed Leaves", path: "completed-approvals", permission: PERMISSIONS.HR_COMPLETED_LEAVES.value },
   ];
 
-  // Redirect to "first tab" if the current path is "/module/first-page"
   useEffect(() => {
-    if (location.pathname === "/app/dashboard/HR-dashboard/mix-bag/attendance") {
-      navigate("/app/dashboard/HR-dashboard/mix-bag/attendance/pending-approvals", {
-        replace: true,
-      });
+    if (
+      location.pathname === "/app/dashboard/HR-dashboard/mix-bag/leaves"
+    ) {
+      navigate(
+        "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
+        {
+          replace: true,
+        }
+      );
     }
   }, [location, navigate]);
 
@@ -81,12 +85,14 @@ const AttendanceLayout = () => {
     //   </div>
     // </div>
     <TabLayout
-      basePath="/app/dashboard/HR-dashboard/mix-bag/attendance/"
+      basePath="/app/dashboard/HR-dashboard/mix-bag/leaves/"
       defaultTabPath="pending-approvals"
       tabs={tabs}
       hideTabsCondition={(pathname) => pathname.includes("pending-approvals/")}
-    />
+    >
+      <Outlet />
+    </TabLayout>
   );
 };
 
-export default AttendanceLayout;
+export default LeavesLayout;

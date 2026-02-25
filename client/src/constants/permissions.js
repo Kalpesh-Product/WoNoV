@@ -491,6 +491,37 @@ export const PERMISSIONS = {
     title: "FINANCE MIX BAG",
     type: "read",
   },
+
+  FINANCE_DIRECTORS_COMPANY_KYC_MIX_BAG: {
+    value: "finance_directors_company_kyc",
+    title: "FINANCE DIRECTORS COMPANY KYC",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC",
+  },
+  FINANCE_COMPLIANCE_DOCUMENTS_MIX_BAG: {
+    value: "finance_compliance_documents",
+    title: "FINANCE COMPLIANCE DOCUMENTS",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/compliance-documents",
+  },
+  FINANCE_LANDLORD_AGREEMENTS_MIX_BAG: {
+    value: "finance_landlord_agreements",
+    title: "FINANCE LANDLORD AGREEMENTS",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/landlord-agreements",
+  },
+  FINANCE_CLIENT_AGREEMENTS_MIX_BAG: {
+    value: "finance_client_agreements",
+    title: "FINANCE CLIENT AGREEMENTS",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/client-agreements",
+  },
+  FINANCE_MANAGE_MEETINGS_MIX_BAG: {
+    value: "finance_manage_meetings",
+    title: "FINANCE MANAGE MEETINGS",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings",
+  },
   FINANCE_DATA: { value: "finance_data", title: "FINANCE DATA", type: "read" },
   FINANCE_SETTINGS: {
     value: "finance_settings",
@@ -704,6 +735,13 @@ export const PERMISSIONS = {
   SALES_TURNOVER: { value: "turnover", title: "TURNOVER", type: "read" },
   SALES_FINANCE: { value: "finance", title: "FINANCE", type: "read" },
   SALES_MIX_BAG: { value: "mix_bag", title: "MIX BAG", type: "read" },
+
+  SALES_INVENTORY_MIX_BAG: { value: "inventory", title: "INVENTORY", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/inventory" },
+  SALES_REVENUE_MIX_BAG: { value: "revenue", title: "REVENUE", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/revenue" },
+  SALES_CLIENTS_MIX_BAG: { value: "clients", title: "CLIENTS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/clients" },
+  SALES_DESKS_MIX_BAG: { value: "desks", title: "DESKS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/desks" },
+  SALES_MANAGE_UNITS_MIX_BAG: { value: "manage_units", title: "MANAGE UNITS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/manage-units" },
+
   SALES_DATA: { value: "data", title: "DATA", type: "read" },
   SALES_SETTINGS: { value: "settings", title: "SETTINGS", type: "read" },
 
@@ -870,6 +908,46 @@ export const PERMISSIONS = {
   HR_COMPANY: { value: "company", title: "COMPANY", type: "read" },
   HR_FINANCE: { value: "hr_finance", title: "HR FINANCE", type: "read" },
   HR_MIX_BAG: { value: "hr_mix_bag", title: "HR MIX BAG", type: "read" },
+  HR_ATTENDANCE_REQUESTS_MIX_BAG: {
+    value: "attendance_requests",
+    title: "Attendance Requests",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/attendance/pending-approvals",
+  },
+  HR_LEAVE_REQUESTS_MIX_BAG: {
+    value: "leave_requests",
+    title: "Leave Requests",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
+  },
+
+
+  //inside dashboard of mix bag
+  HR_PENDING_APPROVALS_LEAVES: {
+    value: "pending_approvals_leaves",
+    title: "Pending Approvals Leaves",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
+  },
+  HR_COMPLETED_LEAVES: {
+    value: "completed_leaves",
+    title: "Completed Leaves",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/leaves/completed",
+  },
+  HR_PENDING_APPROVALS_ATTENDANCE: {
+    value: "pending_approvals_attendance",
+    title: "Pending Approvals Attendance",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/attendance/pending-approvals",
+  },
+  HR_COMPLETED_ATTENDANCE: {
+    value: "completed_attendance",
+    title: "Completed Attendance",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/attendance/completed",
+  },
+
   HR_DATA: { value: "hr_data", title: "HR DATA", type: "read" },
   HR_SETTINGS: { value: "hr_settings", title: "HR SETTINGS", type: "read" },
 
@@ -960,13 +1038,13 @@ export const PERMISSIONS = {
     value: "company_logo",
     title: "COMPANY LOGO",
     type: "read",
-    // route: "/app/dashboard/HR-dashboard/company/company-logo",
+    route: "/app/dashboard/HR-dashboard/company/company-logo",
   },
   HR_COMPANY_HANDBOOK: {
     value: "company_handbook",
     title: "COMPANY HANDBOOK",
     type: "read",
-    // route: "/app/dashboard/HR-dashboard/company/company-handbook",
+    route: "/app/dashboard/HR-dashboard/company/company-handbook",
   },
   HR_DEPARTMENTS: {
     value: "departments",
@@ -1116,6 +1194,30 @@ export const PERMISSIONS = {
   ADMIN_INVENTORY: { value: "inventory", title: "INVENTORY", type: "read" },
   ADMIN_FINANCE: { value: "finance", title: "FINANCE", type: "read" },
   ADMIN_MIX_BAG: { value: "mix_bag", title: "MIX BAG", type: "read" },
+  ADMIN_TEAM_MEMBERS_SCHEDULE_MIX_BAG: {
+    value: "team_members_schedule",
+    title: "TEAM MEMBERS SCHEDULE",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/mix-bag/team-members-schedule",
+  },
+  ADMIN_HOUSEKEEPING_MEMBERS_MIX_BAG: {
+    value: "housekeeping_members",
+    title: "HOUSEKEEPING MEMBERS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members",
+  },
+  ADMIN_HOLIDAYS_EVENTS_MIX_BAG: {
+    value: "holidays_events",
+    title: "HOLIDAYS & EVENTS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/mix-bag/holidays-events",
+  },
+  ADMIN_CLIENT_MEMBERS_MIX_BAG: {
+    value: "client_members",
+    title: "CLIENT MEMBERS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/mix-bag/client-members",
+  },
   ADMIN_DATA: { value: "data", title: "DATA", type: "read" },
   ADMIN_SETTINGS: { value: "settings", title: "SETTINGS", type: "read" },
   // 🟡 Admin Graphs
@@ -1519,6 +1621,13 @@ export const PERMISSIONS = {
     title: "IT MIX BAG",
     type: "read",
     access: "page",
+  },
+
+  IT_TEAM_MEMBERS_SCHEDULE_MIX_BAG: {
+    value: "it_team_members_schedule_mix_bag",
+    title: "IT TEAM MEMBERS SCHEDULE MIX BAG",
+    type: "read",
+    route: "/app/dashboard/it-dashboard/mix-bag/team-members-schedule",
   },
   IT_DATA: { value: "it_data", title: "IT DATA", type: "read", access: "page" },
   IT_SETTINGS: {
