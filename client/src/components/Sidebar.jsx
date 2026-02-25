@@ -228,16 +228,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
     },
   ];
 
-  const userDepartments =
-    auth?.user?.departments?.map((item) => item.name) || [];
-
   const filteredModules = defaultModules
     .filter((module) => canAccessSidebarItem(module.permission))
     .map((module) => {
-      const filteredSubmenus = module.submenus.filter(
-        (submenu) =>
-          userDepartments.includes(submenu.codeName) &&
-          canAccessSidebarItem(submenu.permission),
+      const filteredSubmenus = module.submenus.filter((submenu) =>
+        canAccessSidebarItem(submenu.permission),
       );
 
       return {
