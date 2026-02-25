@@ -51,14 +51,8 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   }, [drawerOpen]);
 
   const userPermissions = auth?.user?.permissions?.permissions || [];
-  const hasSidebarPermissionConfig = userPermissions.some((permission) =>
-    permission.startsWith("sidebar_"),
-  );
-
   const canAccessSidebarItem = (permission) =>
-    !hasSidebarPermissionConfig ||
-    !permission ||
-    userPermissions.includes(permission);
+    !permission || userPermissions.includes(permission);
 
   const userDeptIds = auth?.user?.departments?.map((d) => d._id) || [];
 
