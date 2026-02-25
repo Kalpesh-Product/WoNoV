@@ -635,7 +635,7 @@ const ExternalMeetingCLients = () => {
       cellRenderer: (params) => {
         const status = params.data.meetingStatus;
         const housekeepingStatus = params.data.housekeepingStatus;
-        const isPaid = params.data.paymentStatus === true;
+        const isPaid = params.data.paymentStatus === "Paid";
         const isUpcoming = status === "Upcoming";
         const isCancelled = status === "Cancelled";
         const isOngoing = status === "Ongoing";
@@ -643,6 +643,10 @@ const ExternalMeetingCLients = () => {
         const isHousekeepingPending = housekeepingStatus === "Pending";
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
         const isVerified = params.data.paymentVerification === "Verified";
+        const paymentVerificationStatus = params.data.paymentVerification;
+
+        const shouldHideMenu =
+          isCancelled || paymentVerificationStatus === "Verified" || !isPaid;
 
         const menuItems = [
           // {
@@ -651,13 +655,14 @@ const ExternalMeetingCLients = () => {
           // },
           isPaid &&
             isFinance &&
-            !isVerified && {
+            paymentVerificationStatus === "Under Review" && {
               label: "Verify Payment",
               onClick: () => handleVerifyPayment(params.data, "Verified"),
             },
+
           isPaid &&
             isFinance &&
-            isVerified && {
+            paymentVerificationStatus === "Pending" && {
               label: "Review Payment",
               onClick: () => handleVerifyPayment(params.data, "Under Review"),
             },
@@ -707,7 +712,10 @@ const ExternalMeetingCLients = () => {
               </span>
             </div>
 
-            {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
+            {/* {!isCancelled && <ThreeDotMenu menuItems={menuItems} />} */}
+            {!shouldHideMenu && menuItems.length > 0 && (
+              <ThreeDotMenu menuItems={menuItems} />
+            )}
           </div>
         );
       },

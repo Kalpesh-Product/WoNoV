@@ -65,8 +65,8 @@ coworkingMemberSchema.index(
   { unique: true, sparse: true },
 );
 
-const CoworkingMember = mongoose.model(
-  "CoworkingMember",
+const TestCoworkingMember = mongoose.model(
+  "TestCoworkingMember",
   coworkingMemberSchema,
 );
-module.exports = CoworkingMember;
+module.exports = TestCoworkingMember;
