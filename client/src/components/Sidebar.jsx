@@ -229,18 +229,24 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   ];
 
   const filteredModules = defaultModules
-    .filter((module) => canAccessSidebarItem(module.permission))
     .map((module) => {
       const filteredSubmenus = module.submenus.filter((submenu) =>
         canAccessSidebarItem(submenu.permission),
       );
 
+      const hasModulePermission = canAccessSidebarItem(module.permission);
+
+      if (!hasModulePermission && filteredSubmenus.length === 0) {
+        return null;
+      }
+
       return {
         ...module,
+        hasModulePermission,
         submenus: filteredSubmenus,
       };
     })
-    .filter((module) => module.submenus.length > 0);
+    .filter(Boolean);
 
   const handleMenuOpen = (item) => {
     navigate(item.route);
@@ -286,7 +292,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                         : ""
                     }`}
                     onClick={() => {
-                      navigate(module.route);
+                      if (module.hasModulePermission) {
+                        navigate(module.route);
+                      } else if (module.submenus?.length) {
+                        toggleModule(index);
+                      }
                     }}
                   >
                     <div className="flex justify-start items-center">
