@@ -193,7 +193,7 @@ const TasksViewDepartment = () => {
       ),
     },
     { headerName: "Added By", field: "assignedBy", width: 300 },
-    { headerName: "Added Date", field: "assignedDate" },
+    { headerName: "Start Date", field: "assignedDate" },
     // { headerName: "Assigned Time", field: "createdAt" },
     {
       headerName: "Due Date",
@@ -370,27 +370,26 @@ const TasksViewDepartment = () => {
                     completedTasksFetchPending
                       ? []
                       : completedTasks
-                          .filter((item) => item.taskType === "Department")
-                          .map((item, index) => ({
-                            id: item._id,
-                            taskName: item.taskName,
-                            completedBy: item.completedBy,
-                            assignedDate: item.assignedDate,
-                            description: item.description,
-                            dueDate: item.dueDate,
-                            dueTime: item.dueTime,
-                            completedDate: item.completedDate,
-                            completedDateLabel: humanDate(item.completedDate),
-                            completedTime: item.completedDate,
-                            assignedBy:
-                              item.assignedBy?.firstName ||
+                        .filter((item) => item.taskType === "Department")
+                        .map((item, index) => ({
+                          id: item._id,
+                          taskName: item.taskName,
+                          completedBy: item.completedBy,
+                          assignedDate: item.assignedDate,
+                          description: item.description,
+                          dueDate: item.dueDate,
+                          dueTime: item.dueTime,
+                          completedDate: item.completedDate,
+                          completedDateLabel: humanDate(item.completedDate),
+                          completedTime: item.completedDate,
+                          assignedBy:
+                            item.assignedBy?.firstName ||
                               item.assignedBy?.lastName
-                                ? `${item.assignedBy?.firstName || ""} ${
-                                    item.assignedBy?.lastName || ""
-                                  }`.trim()
-                                : item.assignedBy || "-",
-                            status: item.status,
-                          }))
+                              ? `${item.assignedBy?.firstName || ""} ${item.assignedBy?.lastName || ""
+                                }`.trim()
+                              : item.assignedBy || "-",
+                          status: item.status,
+                        }))
                   }
                   dateColumn={"completedDate"}
                   columns={completedColumns}
@@ -579,8 +578,8 @@ const TasksViewDepartment = () => {
           modalMode === "view"
             ? "View Task"
             : modalMode === "completed"
-            ? "Completed Tasks"
-            : ""
+              ? "Completed Tasks"
+              : ""
         }
       >
         {modalMode === "view" && selectedTask && (
@@ -598,7 +597,7 @@ const TasksViewDepartment = () => {
               />
             </div>
             <DetalisFormatted
-              title={"Added Date"}
+              title={"Start Date"}
               detail={selectedTask?.assignedDate}
             />
             <DetalisFormatted
@@ -621,7 +620,7 @@ const TasksViewDepartment = () => {
               detail={selectedTask?.description}
             />
             <DetalisFormatted
-              title={"Added Date"}
+              title={"Start Date"}
               detail={selectedTask?.assignedDate}
             />
             <DetalisFormatted
