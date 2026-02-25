@@ -21,14 +21,12 @@ const toDateOrNull = (v) => {
 const createVirtualOfficeClient = async (req, res) => {
   try {
     const data = req.body;
-
+    const { company } = req;
     // Required core fields
     const requiredFields = [
-      "company",
       "clientName",
       "email",
       "phone",
-      "service",
       "sector",
       "state",
       "city",
@@ -47,6 +45,24 @@ const createVirtualOfficeClient = async (req, res) => {
       ) {
         return res.status(400).json({ message: `${f} is required` });
       }
+    }
+
+    const clientExists = await VirtualOfficeClient.findOne({
+      clientName: data.clientName,
+    });
+
+    if (clientExists) {
+      return res.status(400).json({ message: "Client already exists" });
+    }
+
+    const service = await ClientService.findOne({
+      serviceName: "Virtual Office",
+    });
+
+    if (!service) {
+      return res
+        .status(404)
+        .json({ message: "Virtual office service doesn't exists" });
     }
 
     // Client email/phone validation
@@ -189,6 +205,8 @@ const createVirtualOfficeClient = async (req, res) => {
       nextIncrementDate,
       localPoc: localProvided ? localPoc : undefined,
       hoPoc: hoProvided ? hoPoc : undefined,
+      service: service._id,
+      company,
     });
 
     return res.status(201).json({
@@ -299,11 +317,13 @@ const updateVirtualOfficeClient = async (req, res) => {
         .json({ message: "Virtual Office client not found" });
     }
 
-    if (typeof updates.rentStatus !== "undefined") {
-      return res.status(400).json({
-        message:
-          "rentStatus cannot be updated from edit. Use the dedicated status endpoint.",
-      });
+    const clientExists = await VirtualOfficeClient.findOne({
+      clientName: updates.clientName,
+      _id: { $ne: id },
+    });
+
+    if (clientExists) {
+      return res.status(400).json({ message: "Client already exists" });
     }
 
     // ✅ Basic validations if provided

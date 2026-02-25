@@ -7,6 +7,7 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const mongoose = require("mongoose");
 const Unit = require("../../models/locations/Unit");
+const TestCoworkingMember = require("../../models/sales/CoworkingMembers");
 
 const createMember = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -447,105 +448,302 @@ const updateMemberStatus = async (req, res) => {
   }
 };
 
+// const bulkInsertCoworkingMembers = async (req, res, next) => {
+//   try {
+//     const file = req.file;
+//     const company = req.company;
+
+//     const coworkingClients = await CoworkingClient.find().lean().exec();
+//     const coworkingClientsMap = new Map(
+//       coworkingClients.map((client) => [client.clientName.trim(), client._id]),
+//     );
+
+//     const units = await Unit.find().lean().exec();
+//     const unitMap = new Map(
+//       units.map((unit) => [`${unit.unitNo}`.trim(), unit._id]),
+//     );
+
+//     const stream = Readable.from(file.buffer.toString("utf-8").trim());
+//     const members = [];
+
+//     let hasError = false;
+//     let errorMessage = "";
+
+//     stream
+//       .pipe(csvParser())
+//       .on("data", (row) => {
+//         if (hasError) return;
+
+//         try {
+//           const {
+//             "Company Name": companyName,
+//             "Employee Name": employeeName,
+//             Designation: designation,
+//             "Mobile No": mobileNo,
+//             Email: email,
+//             "Blood Group": bloodGroup,
+//             DOB: dob,
+//             "Emergency Name": emergencyName,
+//             "Emergency No.": emergencyNo,
+//             "BIZ Nest DOJ": dateOfJoining,
+//             // Building: building,
+//             "Unit No": unitNumber,
+//             "Biometric Status (Yes/No)": biometricStatus,
+//           } = row;
+
+//           const clientId = coworkingClientsMap.get(companyName?.trim());
+//           const unitId = unitMap.get(`${unitNumber?.trim()}`);
+
+//           if (!clientId) {
+//             hasError = true;
+//             errorMessage = `Unknown client: ${companyName}`;
+//             return;
+//           }
+
+//           const status =
+//             biometricStatus?.toLowerCase() === "yes"
+//               ? "Active"
+//               : biometricStatus?.toLowerCase() === "no"
+//                 ? "Inactive"
+//                 : "Pending";
+
+//           members.push({
+//             company: company._id,
+//             client: clientId,
+//             employeeName: employeeName?.trim(),
+//             designation: designation?.trim() || undefined,
+//             mobileNo: mobileNo?.trim(),
+//             email: email?.trim() || undefined,
+//             bloodGroup: bloodGroup?.trim() || undefined,
+//             dob: dob ? new Date(dob) : undefined,
+//             emergencyName: emergencyName?.trim() || undefined,
+//             emergencyNo: emergencyNo?.trim() || undefined,
+//             dateOfJoining: dateOfJoining ? new Date(dateOfJoining) : undefined,
+//             unit: unitId,
+//             biometricStatus: status,
+//           });
+//         } catch (innerErr) {
+//           hasError = true;
+//           errorMessage = `Error parsing row: ${innerErr.message}`;
+//         }
+//       })
+//       .on("end", async () => {
+//         if (hasError) {
+//           return res.status(400).json({ message: errorMessage });
+//         }
+
+//         if (!members.length) {
+//           return res
+//             .status(400)
+//             .json({ message: "No valid member records found." });
+//         }
+
+//         await CoworkingMembers.insertMany(members);
+//         res
+//           .status(200)
+//           .json({ message: "Coworking members uploaded successfully." });
+//       })
+//       .on("error", (err) => {
+//         res
+//           .status(400)
+//           .json({ message: `CSV processing error: ${err.message}` });
+//       });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const bulkInsertCoworkingMembers = async (req, res, next) => {
   try {
     const file = req.file;
     const company = req.company;
 
-    const coworkingClients = await CoworkingClient.find().lean().exec();
+    if (!file) {
+      return res.status(400).json({ message: "Please provide a CSV file" });
+    }
+
+    const coworkingClients = await CoworkingClient.find({ company })
+      .lean()
+      .exec();
+
     const coworkingClientsMap = new Map(
       coworkingClients.map((client) => [client.clientName.trim(), client._id]),
     );
 
-    const units = await Unit.find().lean().exec();
+    const units = await Unit.find({ company }).lean().exec();
     const unitMap = new Map(
       units.map((unit) => [`${unit.unitNo}`.trim(), unit._id]),
     );
 
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
-    const members = [];
 
-    let hasError = false;
-    let errorMessage = "";
+    let members = [];
+    let unknownClients = [];
+    let unknownUnits = [];
 
     stream
       .pipe(csvParser())
       .on("data", (row) => {
-        if (hasError) return;
+        const {
+          "Company Name": companyName,
+          "Employee Name": employeeName,
+          Designation: designation,
+          "Mobile No": mobileNo,
+          Email: email,
+          "Blood Group": bloodGroup,
+          DOB: dob,
+          "Emergency Name": emergencyName,
+          "Emergency No.": emergencyNo,
+          "BIZ Nest DOJ": dateOfJoining,
+          "Unit No": unitNumber,
+          "Biometric Status (Yes/No)": biometricStatus,
+        } = row;
 
-        try {
-          const {
-            "Company Name": companyName,
-            "Employee Name": employeeName,
-            Designation: designation,
-            "Mobile No": mobileNo,
-            Email: email,
-            "Blood Group": bloodGroup,
-            DOB: dob,
-            "Emergency Name": emergencyName,
-            "Emergency No.": emergencyNo,
-            "BIZ Nest DOJ": dateOfJoining,
-            Building: building,
-            "Unit No": unitNumber,
-            "Biometric Status (Yes/No)": biometricStatus,
-          } = row;
+        if (!employeeName || !companyName) return;
 
-          const clientId = coworkingClientsMap.get(companyName?.trim());
-          const unitId = unitMap.get(`${unitNumber?.trim()}`);
+        const clientId = coworkingClientsMap.get(companyName?.trim());
 
-          if (!clientId) {
-            hasError = true;
-            errorMessage = `Unknown client: ${companyName}`;
+        if (!clientId) {
+          unknownClients.push({
+            employeeName,
+            companyName,
+            reason: "Client not found",
+          });
+          return;
+        }
+
+        let unitId = null;
+
+        if (unitNumber) {
+          unitId = unitMap.get(`${unitNumber?.trim()}`);
+          if (!unitId) {
+            unknownUnits.push({
+              employeeName,
+              unitNumber,
+              reason: "Unit not found",
+            });
             return;
           }
-
-          const status =
-            biometricStatus?.toLowerCase() === "yes"
-              ? "Active"
-              : biometricStatus?.toLowerCase() === "no"
-                ? "Inactive"
-                : "Pending";
-
-          members.push({
-            company: company._id,
-            client: clientId,
-            employeeName: employeeName?.trim(),
-            designation: designation?.trim() || undefined,
-            mobileNo: mobileNo?.trim(),
-            email: email?.trim() || undefined,
-            bloodGroup: bloodGroup?.trim() || undefined,
-            dob: dob ? new Date(dob) : undefined,
-            emergencyName: emergencyName?.trim() || undefined,
-            emergencyNo: emergencyNo?.trim() || undefined,
-            dateOfJoining: dateOfJoining ? new Date(dateOfJoining) : undefined,
-            unit: unitId,
-            biometricStatus: status,
-          });
-        } catch (innerErr) {
-          hasError = true;
-          errorMessage = `Error parsing row: ${innerErr.message}`;
         }
+
+        const status =
+          biometricStatus?.toLowerCase() === "yes"
+            ? "Active"
+            : biometricStatus?.toLowerCase() === "no"
+              ? "Inactive"
+              : "Pending";
+
+        members.push({
+          company: company,
+          client: clientId,
+          employeeName: employeeName?.trim(),
+          designation: designation?.trim() || undefined,
+          mobileNo: mobileNo?.trim(),
+          email: email?.trim() || undefined,
+          bloodGroup: bloodGroup?.trim() || undefined,
+          dob: dob ? new Date(dob) : undefined,
+          emergencyName: emergencyName?.trim() || undefined,
+          emergencyNo: emergencyNo?.trim() || undefined,
+          dateOfJoining: dateOfJoining ? new Date(dateOfJoining) : undefined,
+          unit: unitId,
+          biometricStatus: status,
+        });
       })
+
       .on("end", async () => {
-        if (hasError) {
-          return res.status(400).json({ message: errorMessage });
-        }
+        try {
+          if (!members.length) {
+            return res.status(400).json({
+              message: "No valid member records found.",
+              unknownClients,
+              unknownUnits,
+            });
+          }
 
-        if (!members.length) {
-          return res
-            .status(400)
-            .json({ message: "No valid member records found." });
-        }
+          // ----------------------------
+          // 1️⃣ Remove CSV duplicates
+          // ----------------------------
+          const uniqueMap = new Map();
+          const csvDuplicates = [];
 
-        await CoworkingMembers.insertMany(members);
-        res
-          .status(200)
-          .json({ message: "Coworking members uploaded successfully." });
+          members.forEach((member) => {
+            const key = `${member.client}_${member.email || member.mobileNo}`;
+
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, member);
+            } else {
+              csvDuplicates.push({
+                employeeName: member.employeeName,
+                email: member.email,
+                mobileNo: member.mobileNo,
+                reason: "Duplicate in CSV",
+              });
+            }
+          });
+
+          const uniqueMembers = Array.from(uniqueMap.values());
+
+          // ----------------------------
+          // 2️⃣ Fetch DB duplicates
+          // ----------------------------
+          const existingMembers = await CoworkingMembers.find({
+            company: company._id,
+            $or: uniqueMembers.map((m) => ({
+              client: m.client,
+              email: m.email,
+            })),
+          })
+            .select("client email")
+            .lean();
+
+          const existingSet = new Set(
+            existingMembers.map((m) => `${m.client}_${m.email}`),
+          );
+
+          const dbDuplicates = [];
+
+          const finalMembers = uniqueMembers.filter((member) => {
+            const key = `${member.client}_${member.email}`;
+
+            if (existingSet.has(key)) {
+              dbDuplicates.push({
+                employeeName: member.employeeName,
+                email: member.email,
+                reason: "Already exists in database",
+              });
+              return false;
+            }
+
+            return true;
+          });
+
+          // ----------------------------
+          // 3️⃣ Insert remaining
+          // ----------------------------
+          if (finalMembers.length > 0) {
+            await TestCoworkingMember.insertMany(finalMembers);
+          }
+
+          return res.status(201).json({
+            message: `${finalMembers.length} members inserted successfully`,
+            insertedCount: finalMembers.length,
+            skippedCount:
+              unknownClients.length +
+              unknownUnits.length +
+              csvDuplicates.length +
+              dbDuplicates.length,
+            unknownClients,
+            unknownUnits,
+            csvDuplicates,
+            dbDuplicates,
+          });
+        } catch (err) {
+          next(err);
+        }
       })
+
       .on("error", (err) => {
-        res
-          .status(400)
-          .json({ message: `CSV processing error: ${err.message}` });
+        next(err);
       });
   } catch (error) {
     next(error);
