@@ -92,10 +92,10 @@ const ManageVisitors = () => {
     const combinedCheckout =
       checkInDate && checkOutRaw
         ? checkInDate
-            .hour(checkOutRaw.hour())
-            .minute(checkOutRaw.minute())
-            .second(checkOutRaw.second())
-            .millisecond(checkOutRaw.millisecond())
+          .hour(checkOutRaw.hour())
+          .minute(checkOutRaw.minute())
+          .second(checkOutRaw.second())
+          .millisecond(checkOutRaw.millisecond())
         : checkOutRaw;
 
     mutate({
@@ -106,12 +106,14 @@ const ManageVisitors = () => {
 
   const visitorsColumns = [
     { field: "srNo", headerName: "Sr No" },
-    { field: "firstName", headerName: "First Name" },
-    { field: "lastName", headerName: "Last Name" },
-    { field: "email", headerName: "Email" },
-    { field: "phoneNumber", headerName: "Phone No" },
+    // { field: "firstName", headerName: "First Name" },
+    // { field: "lastName", headerName: "Last Name" },
+    { field: "name", headerName: "Name" },
+    // { field: "email", headerName: "Email" },
+    // { field: "phoneNumber", headerName: "Phone No" },
     { field: "purposeOfVisit", headerName: "Purpose" },
     { field: "toMeet", headerName: "To Meet" },
+    { field: "date", headerName: "Date of Visit" },
     {
       field: "checkIn",
       headerName: "Check In",
@@ -159,7 +161,11 @@ const ManageVisitors = () => {
               mongoId: item._id,
               firstName: item.firstName,
               lastName: item.lastName,
+              name: `${item.firstName} ${item.lastName}`,
               email: item.email,
+              visitorType: item.visitorType,
+              visitorCompany: item.visitorCompany,
+              date: item.date,
               phoneNumber: item.phoneNumber,
               purposeOfVisit: item.purposeOfVisit,
               toMeet: item.toMeet
@@ -194,14 +200,35 @@ const ManageVisitors = () => {
                 title="Last Name"
                 detail={selectedVisitor?.lastName}
               />
+              <DetalisFormatted title="Email" detail={selectedVisitor?.email} />
               <DetalisFormatted
                 title="Phone Number"
                 detail={selectedVisitor?.phoneNumber}
               />
-              <DetalisFormatted title="Email" detail={selectedVisitor?.email} />
+
               <DetalisFormatted
                 title="Purpose"
                 detail={selectedVisitor?.purposeOfVisit}
+              />
+              <DetalisFormatted
+                title="Visitor Type"
+                detail={selectedVisitor?.visitorType}
+              />
+              <DetalisFormatted
+                title="Visitor Company"
+                detail={selectedVisitor?.visitorCompany}
+              />
+              <DetalisFormatted
+                title="To Meet"
+                detail={selectedVisitor?.toMeet}
+              />
+              <DetalisFormatted
+                title="Date of Visit"
+                detail={selectedVisitor?.date}
+              />
+              <DetalisFormatted
+                title="Check In"
+                detail={humanTime(selectedVisitor?.checkIn)}
               />
               <DetalisFormatted
                 title="Checkout"
@@ -239,6 +266,13 @@ const ManageVisitors = () => {
                 )}
               />
               <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} label="Email" size="small" fullWidth />
+                )}
+              />
+              <Controller
                 name="phoneNumber"
                 control={control}
                 render={({ field }) => (
@@ -250,13 +284,7 @@ const ManageVisitors = () => {
                   />
                 )}
               />
-              <Controller
-                name="email"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} label="Email" size="small" fullWidth />
-                )}
-              />
+
               <Controller
                 name="purposeOfVisit"
                 control={control}

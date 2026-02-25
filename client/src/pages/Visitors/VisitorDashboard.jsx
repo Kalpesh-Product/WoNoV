@@ -187,10 +187,11 @@ const VisitorDashboard = () => {
 
   const visitorsColumns = [
     { id: "id", label: "Sr No", minWidth: 100 }, // Fixed width
-    { id: "firstName", label: "First Name", minWidth: 80 }, // Minimum width
-    { id: "lastName", label: "Last Name", minWidth: 120 },
-    { id: "email", label: "Email", minWidth: 80 },
-    { id: "phoneNumber", label: "Phone No", minWidth: 100 },
+    // { id: "firstName", label: "First Name", minWidth: 80 }, // Minimum width
+    // { id: "lastName", label: "Last Name", minWidth: 120 },
+    { id: "name", label: "Name", minWidth: 120 },
+    { id: "registeredClientCompany", label: "Company", minWidth: 120 },
+
     {
       id: "purposeOfVisit",
       label: "Purpose",
@@ -198,6 +199,9 @@ const VisitorDashboard = () => {
       minWidth: 300,
     },
     { id: "toMeet", label: "To Meet", align: "left", minWidth: 150 },
+    { id: "email", label: "Email", minWidth: 80 },
+    { id: "phoneNumber", label: "Phone No", minWidth: 100 },
+    { id: "dateOfVisit", label: "Date of Visit", minWidth: 120 },
     { id: "checkIn", label: "Check In", minWidth: 120 },
     { id: "checkOut", label: "Checkout", width: 80 },
   ];
@@ -677,6 +681,8 @@ const VisitorDashboard = () => {
         id: index + 1,
         firstName: item.firstName,
         lastName: item.lastName,
+        name: `${item.firstName} ${item.lastName}`,
+        registeredClientCompany: item.registeredClientCompany,
         address: item.address,
         phoneNumber: item.phoneNumber,
         email: item.email,
@@ -684,8 +690,9 @@ const VisitorDashboard = () => {
         toMeet: item.toMeet
           ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
           : item.clientToMeet
-          ? item?.clientToMeet?.employeeName
-          : "",
+            ? item?.clientToMeet?.employeeName
+            : "",
+        dateOfVisit: item.dateOfVisit,
         checkIn: humanTime(item.checkIn),
         checkOut: humanTime(item.checkOut),
       })),
