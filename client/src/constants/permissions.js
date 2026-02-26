@@ -1434,6 +1434,12 @@ export const PERMISSIONS = {
   },
   MAINTENANCE_FINANCE: { value: "finance", title: "FINANCE", type: "read" },
   MAINTENANCE_MIX_BAG: { value: "mix_bag", title: "MIX BAG", type: "read" },
+  MAINTENANCE_TEAM_MEMBERS_SCHEDULE: {
+    value: "team_members_schedule",
+    title: "TEAM MEMBERS SCHEDULE",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/mix-bag/team-members-schedule",
+  },
   MAINTENANCE_DATA: { value: "data", title: "DATA", type: "read" },
   MAINTENANCE_SETTINGS: { value: "settings", title: "SETTINGS", type: "read" },
   // 🟢 Maintenance Data Cards

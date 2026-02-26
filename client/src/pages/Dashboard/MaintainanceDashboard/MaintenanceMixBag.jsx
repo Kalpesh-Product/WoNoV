@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { IoIosSearch } from "react-icons/io";
 import { TextField } from "@mui/material";
 import Card from "../../../components/Card";
+import { PERMISSIONS } from "../../../constants/permissions";
 
 const MaintenanceMixBag = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const MaintenanceMixBag = () => {
     {
       title: "Team Members Schedule",
       route: "/app/dashboard/maintenance-dashboard/mix-bag/team-members-schedule",
+      permission: PERMISSIONS.MAINTENANCE_TEAM_MEMBERS_SCHEDULE,
     },
   ];
 
