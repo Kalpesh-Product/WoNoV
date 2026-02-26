@@ -49,6 +49,23 @@ const TicketReports = () => {
     time: value ? humanTime(value) : "",
   });
 
+  const getFromDepartment = (ticket) => {
+    const departments = [
+      ...(Array.isArray(ticket?.raisedBy?.departments)
+        ? ticket.raisedBy.departments
+        : []),
+      ...(Array.isArray(ticket?.ticket?.raisedBy?.departments)
+        ? ticket.ticket.raisedBy.departments
+        : []),
+    ];
+
+    const departmentNames = departments
+      .map((department) => department?.name)
+      .filter(Boolean);
+
+    return departmentNames.length ? departmentNames.join(", ") : "N/A";
+  };
+
   const kraColumn = [
     { field: "srNo", headerName: "Sr No" },
     { field: "ticket", headerName: "Ticket Title" },
@@ -201,10 +218,7 @@ const TicketReports = () => {
                 ...ticketsData.map((item) => ({
                   ...item,
                   ticket: item.ticket || "",
-                  fromDepartment:
-                    item.raisedBy?.departments
-                      ?.map((department) => department?.name || "N/A")
-                      .join(", ") || "N/A",
+                  fromDepartment: getFromDepartment(item),
                   raisedToDepartment: item.raisedToDepartment?.name || "",
                   raisedBy: `${item.raisedBy?.firstName || ""} ${
                     item.raisedBy?.lastName || ""
