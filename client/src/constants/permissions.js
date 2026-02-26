@@ -1817,6 +1817,18 @@ export const PERMISSIONS = {
     type: "read",
     access: "page",
   },
+  FRONTEND_ACTIVE_WEBSITES: {
+    value: "active_websites",
+    title: "ACTIVE WEBSITES",
+    type: "read",
+    route: "/app/dashboard/frontend-dashboard/websites/active",
+  },
+  FRONTEND_INACTIVE_WEBSITES: {
+    value: "inactive_websites",
+    title: "INACTIVE WEBSITES",
+    type: "read",
+    route: "/app/dashboard/frontend-dashboard/websites/inactive",
+  },
   FRONTEND_NEW_THEMES: {
     value: "new_themes",
     title: "NEW THEMES",
@@ -2058,5 +2070,53 @@ export const PERMISSIONS = {
     title: "ACCESS PERMISSIONS",
     access: "page",
     type: "write",
+  },
+
+  //PROFILE
+  PROFILE_MY_PROFILE: {
+    value: "my_profile",
+    title: "MY PROFILE",
+    route: "/app/profile/my-profile",
+    type: "read",
+  },
+
+  PROFILE_CHANGE_PASSWORD: {
+    value: "change_password",
+    title: "CHANGE PASSWORD",
+    route: "/app/profile/change-password",
+    type: "read",
+  },
+
+  PROFILE_PERMISSIONS: {
+    value: "permissions",
+    title: "PERMISSIONS",
+    route: "/app/profile/permissions",
+    type: "read",
+  },
+  PROFILE_HR: {
+    value: "hr",
+    title: "HR",
+    route: "/app/profile/hr",
+    type: "read",
+  },
+  PROFILE_ASSETS: {
+    value: "assets",
+    title: "ASSETS",
+    route: "/app/profile/assets",
+    type: "read",
+  },
+
+  PROFILE_MY_MEETINGS: {
+    value: "my_meetings",
+    title: "MY MEETINGS",
+    route: "/app/profile/my-meetings",
+    type: "read",
+  },
+
+  PROFILE_TICKETS_HISTORY: {
+    value: "tickets_history",
+    title: "TICKETS HISTORY",
+    route: "/app/profile/tickets-history",
+    type: "read",
   },
 };
