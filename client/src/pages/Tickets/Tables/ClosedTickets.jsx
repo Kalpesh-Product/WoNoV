@@ -82,6 +82,7 @@ const ClosedTickets = ({ title, departmentId }) => {
           fromDepartment: ticket.raisedBy?.departments?.map(
             (item) => item.name || "N/A",
           ),
+          raisedToDepartment: ticket?.raisedToDepartment?.name || "N/A",
           ticketTitle: ticket?.ticket || "No Title",
           status: ticket.status || "Pending",
           description: ticket.description || "-",
@@ -131,8 +132,8 @@ const ClosedTickets = ({ title, departmentId }) => {
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     { field: "fromDepartment", headerName: "From Department" },
     { field: "raisedBy", headerName: "Raised By" },
-    { field: "", headerName: "Raised To Department" },
-    { field: "", headerName: "Accepted By" },
+    { field: "raisedToDepartment", headerName: "Raised To Department" },
+    { field: "acceptedBy", headerName: "Accepted By" },
     {
       field: "status",
       headerName: "Status",
@@ -140,7 +141,7 @@ const ClosedTickets = ({ title, departmentId }) => {
         return <StatusChip status={params.value} />;
       },
     },
-    { field: "", headerName: "Closed By" },
+    { field: "closedBy", headerName: "Closed By" },
     { field: "closedAt", headerName: "Closed At" },
     {
       field: "actions",
