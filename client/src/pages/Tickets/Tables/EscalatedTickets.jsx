@@ -153,7 +153,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
       headerName: "From Department",
     },
     { field: "raisedBy", headerName: "Raised By" },
-    { field: "", headerName: "Raised To Department" },
+    { field: "raisedToDepartment", headerName: "Raised To Department" },
     // {
     //   field: "tickets",
     //   headerName: "Tickets",
