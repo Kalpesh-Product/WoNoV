@@ -52,18 +52,14 @@ const TicketReports = () => {
   const kraColumn = [
     { field: "srNo", headerName: "Sr No" },
     { field: "ticket", headerName: "Ticket Title" },
-    { field: "", headerName: "From Department" },
+    { field: "fromDepartment", headerName: "From Department" },
     { field: "raisedBy", headerName: "Raised By" },
     {
-      field: "createdAtDate",
-      headerName: "Raised Date",
-    },
-    {
-      field: "createdAtTime",
-      headerName: "Raised Time",
+      field: "raisedAt",
+      headerName: "Raised At",
     },
     { field: "raisedToDepartment", headerName: "Raised To Department" },
-    { field: "", headerName: "Accepted By" },
+    { field: "acceptedBy", headerName: "Accepted By" },
     {
       field: "status",
       headerName: "Status",
@@ -205,6 +201,10 @@ const TicketReports = () => {
                 ...ticketsData.map((item) => ({
                   ...item,
                   ticket: item.ticket || "",
+                  fromDepartment:
+                    item.raisedBy?.departments
+                      ?.map((department) => department?.name || "N/A")
+                      .join(", ") || "N/A",
                   raisedToDepartment: item.raisedToDepartment?.name || "",
                   raisedBy: `${item.raisedBy?.firstName || ""} ${
                     item.raisedBy?.lastName || ""
@@ -217,8 +217,7 @@ const TicketReports = () => {
                         `${assignee.firstName} ${assignee.lastName}`,
                     ) || "",
                   company: item.company?.companyName,
-                  createdAtDate: item.createdAt || "",
-                  createdAtTime: item.createdAt || "",
+                  raisedAt: formatDateTime(item.createdAt) || "N/A",
                   updatedAt: item.updatedAt || "",
                   acceptedBy: `${item.acceptedBy?.firstName || ""} ${
                     item.acceptedBy?.lastName || ""
@@ -309,7 +308,10 @@ const TicketReports = () => {
               title={"Description"}
               detail={selectedMeeting?.description || ""}
             />
-            <DetalisFormatted title={"From Department"} />{" "}
+            <DetalisFormatted
+              title={"From Department"}
+              detail={selectedMeeting?.fromDepartment || "N/A"}
+            />
             <DetalisFormatted
               title={"Raised By"}
               detail={`${selectedMeeting?.raisedBy}`}
