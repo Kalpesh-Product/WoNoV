@@ -114,6 +114,21 @@ const SupportTickets = ({ title, departmentId }) => {
             )
             .join(", ");
 
+          const latestAssignment = Array.isArray(ticket.ticket?.assignedTo)
+            ? [...ticket.ticket.assignedTo]
+                .filter((assignment) => assignment?.assignee)
+                .sort(
+                  (a, b) =>
+                    new Date(b?.assignedAt || 0) - new Date(a?.assignedAt || 0),
+                )[0]
+            : null;
+
+          const latestAssignee = latestAssignment?.assignee;
+          const latestAssignedTo =
+            latestAssignee?.firstName && latestAssignee?.lastName
+              ? `${latestAssignee.firstName} ${latestAssignee.lastName}`
+              : "N/A";
+
           const assignedAtDisplay = assignmentDetails
             .map(({ assignedAtFormatted }) => assignedAtFormatted)
             .filter(Boolean)
@@ -140,7 +155,8 @@ const SupportTickets = ({ title, departmentId }) => {
                 ? ticket.ticket.raisedBy.departments.map((dept) => dept.name)
                 : ["N/A"],
 
-            ticketTitle: ticket.reason || "No Title",
+            ticketTitle: ticket.ticket?.ticket || "No Title",
+            reasonForSupport: ticket.reason || "No Reason",
             acceptedBy: `${ticket.ticket?.acceptedBy?.firstName ?? ""} ${
               ticket.ticket.acceptedBy?.lastName ?? ""
             }`,
@@ -167,7 +183,8 @@ const SupportTickets = ({ title, departmentId }) => {
                   ticket?.createdAt,
                 )}`
               : "",
-            assignedTo: assignedToDisplay,
+            assignedTo: latestAssignedTo,
+            assignedToDisplay,
             assignedToDetails: assignmentDetails,
             tickets:
               ticket.ticket?.assignees.length > 0
@@ -368,14 +385,18 @@ const SupportTickets = ({ title, departmentId }) => {
 
   const recievedTicketsColumns = [
     { field: "srno", headerName: "Sr No" },
-    { field: "", headerName: "Ticket Title" },
+    { field: "ticketTitle", headerName: "Ticket Title" },
     {
       field: "selectedDepartment",
       headerName: "From Department",
     },
     { field: "raisedBy", headerName: "Raised By" },
-    { field: "ticketTitle", headerName: "Reason For Support", width: 250 },
-    { field: "", headerName: "Assigned To" },
+    {
+      field: "reasonForSupport",
+      headerName: "Reason For Support",
+      width: 250,
+    },
+    { field: "assignedTo", headerName: "Assigned To" },
     // {
     //   field: "tickets",
     //   headerName: "Ticket Type",

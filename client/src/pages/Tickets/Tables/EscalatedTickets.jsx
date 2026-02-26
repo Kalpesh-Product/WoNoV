@@ -147,12 +147,13 @@ const EscalatedTickets = ({ title, departmentId }) => {
 
   const recievedTicketsColumns = [
     { field: "srno", headerName: "Sr No", width: 100 },
-    { field: "raisedBy", headerName: "Raised By" },
+    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     {
       field: "selectedDepartment",
       headerName: "From Department",
     },
-    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
+    { field: "raisedBy", headerName: "Raised By" },
+    { field: "", headerName: "Raised To Department" },
     // {
     //   field: "tickets",
     //   headerName: "Tickets",
@@ -182,6 +183,10 @@ const EscalatedTickets = ({ title, departmentId }) => {
     //     );
     //   },
     // },
+    {
+      field: "escalatedTo",
+      headerName: "Escalated To",
+    },
     {
       field: "status",
       headerName: "Status",
@@ -240,10 +245,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
         );
       },
     },
-    {
-      field: "escalatedTo",
-      headerName: "Escalated To",
-    },
+
     {
       field: "action",
       headerName: "Action",
@@ -296,20 +298,12 @@ const EscalatedTickets = ({ title, departmentId }) => {
           {selectedTicket && (
             <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
               <DetalisFormatted
-                title="Ticket"
+                title="Ticket Title"
                 detail={selectedTicket.ticketTitle || "N/A"}
               />
               <DetalisFormatted
                 title="Description"
                 detail={selectedTicket.description || "N/A"}
-              />
-              <DetalisFormatted
-                title="Raised By"
-                detail={selectedTicket.raisedBy || "Unknown"}
-              />
-              <DetalisFormatted
-                title="Raised At"
-                detail={formatDateTime(selectedTicket.raisedAt)}
               />
               <DetalisFormatted
                 title="From Department"
@@ -318,6 +312,14 @@ const EscalatedTickets = ({ title, departmentId }) => {
                     .map((item) => item)
                     .join(", ") || "N/A"
                 }
+              />
+              <DetalisFormatted
+                title="Raised By"
+                detail={selectedTicket.raisedBy || "Unknown"}
+              />
+              <DetalisFormatted
+                title="Raised At"
+                detail={formatDateTime(selectedTicket.raisedAt)}
               />
               <DetalisFormatted
                 title="Raised To Department"
