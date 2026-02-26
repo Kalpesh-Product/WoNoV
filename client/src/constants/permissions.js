@@ -479,15 +479,15 @@ export const PERMISSIONS = {
   },
 
   // Finance Module
-  FINANCE_CASHFLOW: { value: "cashflow", title: "CASHFLOW", type: "read" },
+  FINANCE_CASHFLOW: { value: "finance_cashflow_card", title: "CASHFLOW", type: "read" },
   FINANCE_FINANCE: {
-    value: "finance_finance",
+    value: "finance_finance_card",
     title: "FINANCE FINANCE",
     type: "read",
   },
-  FINANCE_BILLING: { value: "billing", title: "BILLING", type: "read" },
+  FINANCE_BILLING: { value: "finance_billing_card", title: "BILLING", type: "read" },
   FINANCE_MIX_BAG: {
-    value: "finance_mix_bag",
+    value: "finance_mix_bag_card",
     title: "FINANCE MIX BAG",
     type: "read",
   },
@@ -522,9 +522,9 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings",
   },
-  FINANCE_DATA: { value: "finance_data", title: "FINANCE DATA", type: "read" },
+  FINANCE_DATA: { value: "finance_data_card", title: "FINANCE DATA", type: "read" },
   FINANCE_SETTINGS: {
-    value: "finance_settings",
+    value: "finance_settings_card",
     title: "FINANCE SETTINGS",
     type: "read",
   },
@@ -577,14 +577,14 @@ export const PERMISSIONS = {
 
   // Finance Tabs
   FINANCE_CASHFLOW_PROJECTIONS: {
-    value: "cashflow_projections",
+    value: "finance_cashflow_projections_tab",
     title: "CASHFLOW PROJECTIONS",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/cashflow/projections",
   },
   FINANCE_CASHFLOW_HISTORICAL: {
-    value: "historical_pnl",
+    value: "finance_historical_pnl_tab",
     title: "HISTORICAL PNL",
     type: "read",
     access: "page",
@@ -592,56 +592,56 @@ export const PERMISSIONS = {
   },
 
   FINANCE_BUDGET: {
-    value: "finance_budget",
+    value: "finance_budget_tab",
     title: "FINANCE BUDGET",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/budget",
   },
   FINANCE_PAYMENT_SCHEDULE: {
-    value: "finance_payment_schedule",
+    value: "finance_payment_schedule_tab",
     title: "FINANCE PAYMENT SCHEDULE",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/payment-schedule",
   },
   FINANCE_VOUCHER: {
-    value: "finance_voucher",
+    value: "finance_voucher_tab",
     title: "FINANCE VOUCHER",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/voucher",
   },
   FINANCE_DEPT_WISE_BUDGET: {
-    value: "dept_wise_budget",
+    value: "finance_dept_wise_budget_tab",
     title: "DEPT WISE BUDGET",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/dept-wise-budget",
   },
   FINANCE_COLLECTIONS: {
-    value: "collections",
+    value: "finance_collections_tab",
     title: "COLLECTIONS",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/collections",
   },
   FINANCE_STATUTORY_PAYMENTS: {
-    value: "finance_statutory_payments",
+    value: "finance_statutory_payments_tab",
     title: "FINANCE STATUTORY PAYMENTS",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/statutory-payments",
   },
   FINANCE_LANDLORD_PAYMENTS: {
-    value: "finance_landlord_payments",
+    value: "finance_landlord_payments_tab",
     title: "FINANCE LANDLORD PAYMENTS",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/landlord-payments",
   },
   FINANCE_MEETINGS_EXTERNAL: {
-    value: "finance_meetings_external",
+    value: "finance_meetings_external_tab",
     title: "FINANCE MEETINGS EXTERNAL",
     type: "read",
     access: "page",
@@ -649,7 +649,7 @@ export const PERMISSIONS = {
       "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-meetings",
   },
   FINANCE_MEETINGS_INTERNAL: {
-    value: "finance_meetings_internal",
+    value: "finance_meetings_internal_tab",
     title: "FINANCE MEETINGS INTERNAL",
     type: "read",
     access: "page",
@@ -658,28 +658,28 @@ export const PERMISSIONS = {
   },
 
   FINANCE_BILLING_CLIENT_INVOICE: {
-    value: "client_invoice",
+    value: "finance_client_invoice_tab",
     title: "CLIENT INVOICE",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/billing/client-invoice",
   },
   FINANCE_BILLING_DEPARTMENT_INVOICE: {
-    value: "department_invoice",
+    value: "finance_department_invoice_tab",
     title: "DEPARTMENT INVOICE",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/billing/department-invoice",
   },
   FINANCE_BILLING_PENDING_APPROVALS: {
-    value: "finance_pending_approvals",
+    value: "finance_pending_approvals_tab",
     title: "FINANCE PENDING APPROVALS",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/billing/pending-approvals",
   },
   FINANCE_BILLING_VOUCHER_HISTORY: {
-    value: "finance_voucher_history",
+    value: "finance_voucher_history_tab",
     title: "FINANCE VOUCHER HISTORY",
     type: "read",
     access: "page",
@@ -687,21 +687,21 @@ export const PERMISSIONS = {
   },
 
   FINANCE_DATA_ASSET_LIST: {
-    value: "finance_asset_list",
+    value: "finance_asset_list_tab",
     title: "FINANCE ASSET LIST",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/data/asset-list",
   },
   FINANCE_DATA_MONTHLY_INVOICE_REPORTS: {
-    value: "finance_monthly_invoice_reports",
+    value: "finance_monthly_invoice_reports_tab",
     title: "FINANCE MONTHLY INVOICE REPORTS",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/data/monthly-invoice-reports",
   },
   FINANCE_DATA_VENDORS: {
-    value: "finance_data_vendors",
+    value: "finance_data_vendors_tab",
     title: "FINANCE DATA VENDORS",
     type: "read",
     access: "page",
@@ -709,21 +709,21 @@ export const PERMISSIONS = {
   },
 
   FINANCE_SETTINGS_BULK_UPLOAD: {
-    value: "finance_bulk_upload",
+    value: "finance_bulk_upload_tab",
     title: "FINANCE BULK UPLOAD",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/settings/bulk-upload",
   },
   FINANCE_SETTINGS_SOPS: {
-    value: "finance_sops",
+    value: "finance_sops_tab",
     title: "FINANCE SOPS",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/settings/sops",
   },
   FINANCE_SETTINGS_POLICIES: {
-    value: "finance_policies",
+    value: "finance_policies_tab",
     title: "FINANCE POLICIES",
     type: "read",
     access: "page",
@@ -732,125 +732,125 @@ export const PERMISSIONS = {
 
   // 🔷 Sales Dashboard
 
-  SALES_TURNOVER: { value: "turnover", title: "TURNOVER", type: "read" },
-  SALES_FINANCE: { value: "finance", title: "FINANCE", type: "read" },
-  SALES_MIX_BAG: { value: "mix_bag", title: "MIX BAG", type: "read" },
+  SALES_TURNOVER: { value: "sales_turnover_card", title: "TURNOVER", type: "read" },
+  SALES_FINANCE: { value: "sales_finance_card", title: "FINANCE", type: "read" },
+  SALES_MIX_BAG: { value: "sales_mix_bag_card", title: "MIX BAG", type: "read" },
 
-  SALES_INVENTORY_MIX_BAG: { value: "inventory", title: "INVENTORY", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/inventory" },
-  SALES_REVENUE_MIX_BAG: { value: "revenue", title: "REVENUE", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/revenue" },
-  SALES_CLIENTS_MIX_BAG: { value: "clients", title: "CLIENTS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/clients" },
-  SALES_DESKS_MIX_BAG: { value: "desks", title: "DESKS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/desks" },
-  SALES_MANAGE_UNITS_MIX_BAG: { value: "manage_units", title: "MANAGE UNITS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/manage-units" },
+  SALES_INVENTORY_MIX_BAG: { value: "sales_inventory_mix_bag_card", title: "INVENTORY", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/inventory" },
+  SALES_REVENUE_MIX_BAG: { value: "sales_revenue_mix_bag_card", title: "REVENUE", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/revenue" },
+  SALES_CLIENTS_MIX_BAG: { value: "sales_clients_mix_bag_card", title: "CLIENTS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/clients" },
+  SALES_DESKS_MIX_BAG: { value: "sales_desks_mix_bag_card", title: "DESKS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/desks" },
+  SALES_MANAGE_UNITS_MIX_BAG: { value: "sales_manage_units_mix_bag_card", title: "MANAGE UNITS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/manage-units" },
 
-  SALES_DATA: { value: "data", title: "DATA", type: "read" },
-  SALES_SETTINGS: { value: "settings", title: "SETTINGS", type: "read" },
+  SALES_DATA: { value: "sales_data_card", title: "DATA", type: "read" },
+  SALES_SETTINGS: { value: "sales_settings_card", title: "SETTINGS", type: "read" },
 
   // 🔷 Sales Nav Cards
-  SALES_REVENUE: { value: "revenue", title: "REVENUE", type: "read" },
-  SALES_KEY_STATS: { value: "key_stats", title: "KEY STATS", type: "read" },
-  SALES_AVERAGE: { value: "average", title: "AVERAGE", type: "read" },
+  SALES_REVENUE: { value: "sales_revenue_card", title: "REVENUE", type: "read" },
+  SALES_KEY_STATS: { value: "sales_key_stats_card", title: "KEY STATS", type: "read" },
+  SALES_AVERAGE: { value: "sales_average_card", title: "AVERAGE", type: "read" },
 
   // 🔷 Sales graphs
   SALES_DEPARTMENT_REVENUES: {
-    value: "department_revenues",
+    value: "sales_department_revenues_card",
     title: "DEPARTMENT REVENUES",
     type: "read",
   },
   SALES_MONTHLY_UNIQUE_LEADS: {
-    value: "monthly_unique_leads",
+    value: "sales_monthly_unique_leads_chart",
     title: "MONTHLY UNIQUE LEADS",
     type: "read",
   },
   SALES_SOURCING_CHANNELS: {
-    value: "sourcing_channels",
+    value: "sales_sourcing_channels_chart",
     title: "SOURCING CHANNELS",
     type: "read",
   },
 
   // 🔷 Sales Chart Permissions
   SALES_SECTOR_WISE_OCCUPANCY: {
-    value: "sector_wise_occupancy",
+    value: "sales_sector_wise_occupancy_card",
     title: "SECTOR WISE OCCUPANCY",
     type: "read",
   },
   SALES_CLIENT_WISE_OCCUPANCY: {
-    value: "client_wise_occupancy",
+    value: "sales_client_wise_occupancy_card",
     title: "CLIENT WISE OCCUPANCY",
     type: "read",
   },
   SALES_CLIENT_GENDER_WISE_DATA: {
-    value: "client_gender_wise_data",
+    value: "sales_client_gender_wise_data_card",
     title: "CLIENT GENDER WISE DATA",
     type: "read",
   },
   SALES_INDIA_WISE_MEMBERS: {
-    value: "india_wise_members",
+    value: "sales_india_wise_members_card",
     title: "INDIA WISE MEMBERS",
     type: "read",
   },
   SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY: {
-    value: "current_month_client_anniversary",
+    value: "sales_current_month_client_anniversary_card",
     title: "CURRENT MONTH CLIENT ANNIVERSARY",
     type: "read",
   },
   SALES_CLIENT_MEMBER_BIRTHDAY: {
-    value: "client_member_birthday",
+    value: "sales_client_member_birthday_card",
     title: "CLIENT MEMBER BIRTHDAY",
     type: "read",
   },
 
   //Finance
   SALES_BUDGET: {
-    value: "budget",
+    value: "sales_budget_finance_tab",
     title: "BUDGET",
     type: "read",
     route: "/app/dashboard/sales-dashboard/finance/budget",
   },
   SALES_PAYMENT_SCHEDULE: {
-    value: "payment_schedule",
+    value: "sales_payment_schedule_finance_tab",
     title: "PAYMENT SCHEDULE",
     type: "read",
     route: "/app/dashboard/sales-dashboard/finance/payment-schedule",
   },
   SALES_VOUCHER: {
-    value: "voucher",
+    value: "sales_voucher_finance_tab",
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/sales-dashboard/finance/voucher",
   },
   // Revenue
   SALES_TOTAL_REVENUE: {
-    value: "total_revenue",
+    value: "sales_mix_bag_revenue_total_revenue_tab",
     title: "TOTAL REVENUE",
     type: "read",
     route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
   },
   SALES_COWORKING: {
-    value: "coworking",
+    value: "sales_mix_bag_revenue_coworking_tab",
     title: "COWORKING",
     type: "read",
     route: "/app/dashboard/sales-dashboard/revenue/co-working",
   },
   SALES_MEETINGS: {
-    value: "meetings",
+    value: "sales_mix_bag_revenue_meetings_tab",
     title: "MEETINGS",
     type: "read",
     route: "/app/dashboard/sales-dashboard/revenue/meetings",
   },
   SALES_VIRTUAL_OFFICE: {
-    value: "virtual_office",
+    value: "sales_mix_bag_revenue_virtual_office_tab",
     title: "VIRTUAL OFFICE",
     type: "read",
     route: "/app/dashboard/sales-dashboard/revenue/virtual-office",
   },
   SALES_WORKATIONS: {
-    value: "workations",
+    value: "sales_mix_bag_revenue_workations_tab",
     title: "WORKATIONS",
     type: "read",
     route: "/app/dashboard/sales-dashboard/revenue/workation",
   },
   SALES_ALT_REVENUE: {
-    value: "alt_revenue",
+    value: "sales_mix_bag_revenue_alt_revenue_tab",
     title: "ALT REVENUE",
     type: "read",
     route: "/app/dashboard/sales-dashboard/revenue/alt-revenue",
@@ -858,38 +858,38 @@ export const PERMISSIONS = {
 
   //Data
   SALES_ASSET_LIST: {
-    value: "asset_list",
+    value: "sales_asset_list_data_tab",
     title: "ASSET LIST",
     type: "read",
     route: "/app/dashboard/sales-dashboard/data/asset-list",
   },
   SALES_MONTHLY_INVOICE_REPORTS: {
-    value: "monthly_invoice_reports",
+    value: "sales_monthly_invoice_reports_data_tab",
     title: "MONTHLY INVOICE REPORTS",
     type: "read",
     route: "/app/dashboard/sales-dashboard/data/monthly-invoice-reports",
   },
   SALES_VENDOR: {
-    value: "vendor",
+    value: "sales_vendor_data_tab",
     title: "VENDOR",
     type: "read",
     route: "/app/dashboard/sales-dashboard/data/vendor",
   },
   //Settings
   SALES_BULK_UPLOAD: {
-    value: "bulk_upload",
+    value: "sales_bulk_upload_settings_tab",
     title: "BULK UPLOAD",
     type: "read",
     route: "/app/dashboard/sales-dashboard/settings/bulk-upload",
   },
   SALES_SOPS: {
-    value: "sops",
+    value: "sales_sops_settings_tab",
     title: "SOPS",
     type: "read",
     route: "/app/dashboard/sales-dashboard/settings/sops",
   },
   SALES_POLICIES: {
-    value: "policies",
+    value: "sales_policies_settings_tab",
     title: "POLICIES",
     type: "read",
     route: "/app/dashboard/sales-dashboard/settings/policies",
@@ -899,23 +899,23 @@ export const PERMISSIONS = {
 
   //Graphs
   HR_DEPARTMENT_EXPENSE: {
-    value: "hr_department_expense",
+    value: "hr_department_expense_chart",
     title: "HR DEPARTMENT EXPENSE",
     type: "read",
   },
   // cards
-  HR_EMPLOYEE: { value: "employee", title: "EMPLOYEE", type: "read" },
-  HR_COMPANY: { value: "company", title: "COMPANY", type: "read" },
-  HR_FINANCE: { value: "hr_finance", title: "HR FINANCE", type: "read" },
-  HR_MIX_BAG: { value: "hr_mix_bag", title: "HR MIX BAG", type: "read" },
+  HR_EMPLOYEE: { value: "hr_employee_card", title: "EMPLOYEE", type: "read" },
+  HR_COMPANY: { value: "hr_company_card", title: "COMPANY", type: "read" },
+  HR_FINANCE: { value: "hr_finance_card", title: "HR FINANCE", type: "read" },
+  HR_MIX_BAG: { value: "hr_mix_bag_card", title: "HR MIX BAG", type: "read" },
   HR_ATTENDANCE_REQUESTS_MIX_BAG: {
-    value: "attendance_requests",
+    value: "hr_attendance_requests_tab",
     title: "Attendance Requests",
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/attendance/pending-approvals",
   },
   HR_LEAVE_REQUESTS_MIX_BAG: {
-    value: "leave_requests",
+    value: "hr_leave_requests_tab",
     title: "Leave Requests",
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
@@ -924,62 +924,62 @@ export const PERMISSIONS = {
 
   //inside dashboard of mix bag
   HR_PENDING_APPROVALS_LEAVES: {
-    value: "pending_approvals_leaves",
+    value: "hr_pending_approvals_leaves_tab",
     title: "Pending Approvals Leaves",
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
   },
   HR_COMPLETED_LEAVES: {
-    value: "completed_leaves",
+    value: "hr_completed_leaves_tab",
     title: "Completed Leaves",
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/leaves/completed",
   },
   HR_PENDING_APPROVALS_ATTENDANCE: {
-    value: "pending_approvals_attendance",
+    value: "hr_pending_approvals_attendance_tab",
     title: "Pending Approvals Attendance",
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/attendance/pending-approvals",
   },
   HR_COMPLETED_ATTENDANCE: {
-    value: "completed_attendance",
+    value: "hr_completed_attendance_tab",
     title: "Completed Attendance",
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/attendance/completed",
   },
 
-  HR_DATA: { value: "hr_data", title: "HR DATA", type: "read" },
-  HR_SETTINGS: { value: "hr_settings", title: "HR SETTINGS", type: "read" },
+  HR_DATA: { value: "hr_data_card", title: "HR DATA", type: "read" },
+  HR_SETTINGS: { value: "hr_settings_card", title: "HR SETTINGS", type: "read" },
 
   //Data Card
-  HR_EXPENSES: { value: "expenses", title: "EXPENSES", type: "read" },
-  HR_AVERAGES: { value: "averages", title: "AVERAGES", type: "read" },
+  HR_EXPENSES: { value: "hr_expenses_chart", title: "EXPENSES", type: "read" },
+  HR_AVERAGES: { value: "hr_averages_chart", title: "AVERAGES", type: "read" },
 
   //Tables
   HR_ANNUAL_KPA_VS_ACHIEVEMENTS: {
-    value: "annual_kpa_vs_achievements",
+    value: "hr_annual_kpa_vs_achievements_chart",
     title: "ANNUAL KPA VS ACHIEVEMENTS",
     type: "read",
   },
   HR_ANNUAL_TASKS_VS_ACHIEVEMENTS: {
-    value: "annual_tasks_vs_achievements",
+    value: "hr_annual_tasks_vs_achievements_chart",
     title: "ANNUAL TASKS VS ACHIEVEMENTS",
     type: "read",
   },
   HR_CURRENT_MONTH_BIRTHDAY_LIST: {
-    value: "current_month_birthday_list",
+    value: "hr_current_month_birthday_list_chart",
     title: "CURRENT MONTH BIRTHDAY LIST",
     type: "read",
   },
   HR_CURRENT_MONTH_HOLIDAY_LIST: {
-    value: "current_month_holiday_list",
+    value: "hr_current_month_holiday_list_chart",
     title: "CURRENT MONTH HOLIDAY LIST",
     type: "read",
   },
 
   // edit button
   HR_EMPLOYEE_EDIT: {
-    value: "hr_employee_edit",
+    value: "hr_employee_edit_button",
     title: "HR EMPLOYEE EDIT",
     type: "write",
     access: "button",
@@ -987,47 +987,47 @@ export const PERMISSIONS = {
 
   // Pie charts
   HR_EMPLOYEE_GENDER_DISTRIBUTION_PIE: {
-    value: "gender_distribution_pie_chart",
+    value: "hr_gender_distribution_pie_chart",
     title: "GENDER DISTRIBUTION PIE CHART",
     type: "read",
   },
   HR_CITY_WISE_EMPLOYEES_PIE: {
-    value: "city_wise_employees_pie_chart",
+    value: "hr_city_wise_employees_pie_chart",
     title: "CITY WISE EMPLOYEES PIE CHART",
     type: "read",
   },
 
   //Employee
   HR_EMPLOYEE_LIST: {
-    value: "employee_list",
+    value: "hr_employee_list_tab",
     title: "EMPLOYEE LIST",
     type: "read",
     route: "/app/dashboard/HR-dashboard/employee/employee-list",
   },
 
   HR_PAST_EMPLOYEES: {
-    value: "past_employees",
+    value: "hr_past_employees_tab",
     title: "PAST EMPLOYEES",
     type: "read",
     route: "/app/dashboard/HR-dashboard/employees/past-employees",
   },
 
   HR_ATTENDANCE: {
-    value: "attendance",
+    value: "hr_attendance_tab",
     title: "ATTENDANCE",
     type: "read",
     route: "/app/dashboard/HR-dashboard/attendance",
   },
 
   HR_LEAVES: {
-    value: "leaves",
+    value: "hr_leaves_tab",
     title: "LEAVES",
     type: "read",
     route: "/app/dashboard/HR-dashboard/leaves",
   },
 
   HR_EMPLOYEE_ONBOARDING: {
-    value: "employee_onboarding",
+    value: "hr_employee_onboarding_tab",
     title: "EMPLOYEE ONBOARDING",
     type: "read",
     route: "/app/dashboard/HR-dashboard/employees/employee-onboarding",
@@ -1035,67 +1035,67 @@ export const PERMISSIONS = {
 
   //Company
   HR_COMPANY_LOGO: {
-    value: "company_logo",
+    value: "hr_company_logo_tab",
     title: "COMPANY LOGO",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/company-logo",
   },
   HR_COMPANY_HANDBOOK: {
-    value: "company_handbook",
+    value: "hr_company_handbook_tab",
     title: "COMPANY HANDBOOK",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/company-handbook",
   },
   HR_DEPARTMENTS: {
-    value: "departments",
+    value: "hr_departments_tab",
     title: "DEPARTMENTS",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/departments",
   },
   HR_WORK_LOCATIONS: {
-    value: "work_locations",
+    value: "hr_work_locations_tab",
     title: "WORK LOCATIONS",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/work-locations",
   },
   HR_HOLIDAYS: {
-    value: "holidays",
+    value: "hr_holidays_tab",
     title: "HOLIDAYS",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/holidays",
   },
   HR_EVENTS: {
-    value: "events",
+    value: "hr_events_tab",
     title: "EVENTS",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/events",
   },
   HR_COMPANY_POLICIES: {
-    value: "company_policies",
+    value: "hr_company_policies_tab",
     title: "COMPANY POLICIES",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/policies",
   },
   HR_COMPANY_SOPS: {
-    value: "company_sops",
+    value: "hr_company_sops_tab",
     title: "COMPANY SOPS",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/sops",
   },
   HR_EMPLOYEE_TYPES: {
-    value: "employee_types",
+    value: "hr_employee_types_tab",
     title: "EMPLOYEE TYPES",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/employee-type",
   },
   HR_SHIFTS: {
-    value: "shifts",
+    value: "hr_shifts_tab",
     title: "SHIFTS",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/shifts",
   },
   HR_TEMPLATES: {
-    value: "templates",
+    value: "hr_templates_tab",
     title: "TEMPLATES",
     type: "read",
     route: "/app/dashboard/HR-dashboard/company/templates",
@@ -1103,28 +1103,28 @@ export const PERMISSIONS = {
 
   //Finance
   HR_BUDGET: {
-    value: "budget",
+    value: "hr_budget_tab",
     title: "BUDGET",
     type: "read",
     route: "/app/dashboard/HR-dashboard/finance/budget",
   },
 
   HR_PAYMENT_SCHEDULE: {
-    value: "payment_schedule",
+    value: "hr_payment_schedule_tab",
     title: "PAYMENT SCHEDULE",
     type: "read",
     route: "/app/dashboard/HR-dashboard/finance/payment-schedule",
   },
 
   HR_VOUCHER: {
-    value: "voucher",
+    value: "hr_voucher_tab",
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/HR-dashboard/finance/voucher",
   },
 
   HR_PAYROLL: {
-    value: "payroll",
+    value: "hr_payroll_tab",
     title: "PAYROLL",
     type: "read",
     route: "/app/dashboard/HR-dashboard/finance/payroll",
@@ -1132,54 +1132,54 @@ export const PERMISSIONS = {
 
   //Data
   HR_JOB_APPLICATION_LIST: {
-    value: "job_application_list",
+    value: "hr_job_application_list_tab",
     title: "JOB APPLICATION LIST",
     type: "read",
     route: "/app/dashboard/HR-dashboard/data/job-application-list",
   },
 
   HR_PAYROLL_REPORTS: {
-    value: "payroll_reports",
+    value: "hr_payroll_reports_tab",
     title: "PAYROLL REPORTS",
     type: "read",
     route: "/app/dashboard/HR-dashboard/data/payroll-reports",
   },
 
   HR_ASSET_LIST: {
-    value: "asset_list",
+    value: "hr_asset_list_tab",
     title: "ASSET LIST",
     type: "read",
     route: "/app/dashboard/HR-dashboard/data/asset-list",
   },
 
   HR_MONTHLY_INVOICE_REPORTS: {
-    value: "monthly_invoice_reports",
+    value: "hr_monthly_invoice_reports_tab",
     title: "MONTHLY INVOICE REPORTS",
     type: "read",
     route: "/app/dashboard/HR-dashboard/data/monthly-invoice-reports",
   },
 
   HR_VENDOR: {
-    value: "vendor",
+    value: "hr_vendor_tab",
     title: "VENDOR",
     type: "read",
     route: "/app/dashboard/HR-dashboard/data/vendor",
   },
   //Settings
   HR_BULK_UPLOAD: {
-    value: "bulk_upload",
+    value: "hr_bulk_upload_tab",
     title: "BULK UPLOAD",
     type: "read",
     route: "/app/dashboard/hr-dashboard/settings/bulk-upload",
   },
   HR_SOPS: {
-    value: "sops",
+    value: "hr_sops_tab",
     title: "SOPS",
     type: "read",
     route: "/app/dashboard/hr-dashboard/settings/sops",
   },
   HR_POLICIES: {
-    value: "policies",
+    value: "hr_policies_tab",
     title: "POLICIES",
     type: "read",
     route: "/app/dashboard/hr-dashboard/settings/policies",
@@ -1187,140 +1187,140 @@ export const PERMISSIONS = {
 
   // 🟡 Admin Dashboard
   ADMIN_ANNUAL_EXPENSES: {
-    value: "annual_expenses",
+    value: "admin_annual_expenses_page",
     title: "ANNUAL EXPENSES",
     type: "read",
   },
-  ADMIN_INVENTORY: { value: "inventory", title: "INVENTORY", type: "read" },
-  ADMIN_FINANCE: { value: "finance", title: "FINANCE", type: "read" },
-  ADMIN_MIX_BAG: { value: "mix_bag", title: "MIX BAG", type: "read" },
+  ADMIN_INVENTORY: { value: "admin_inventory_page", title: "INVENTORY", type: "read" },
+  ADMIN_FINANCE: { value: "admin_finance_card", title: "FINANCE", type: "read" },
+  ADMIN_MIX_BAG: { value: "admin_mix_bag_card", title: "MIX BAG", type: "read" },
   ADMIN_TEAM_MEMBERS_SCHEDULE_MIX_BAG: {
-    value: "team_members_schedule",
+    value: "admin_team_members_schedule_card",
     title: "TEAM MEMBERS SCHEDULE",
     type: "read",
     route: "/app/dashboard/admin-dashboard/mix-bag/team-members-schedule",
   },
   ADMIN_HOUSEKEEPING_MEMBERS_MIX_BAG: {
-    value: "housekeeping_members",
+    value: "admin_housekeeping_members_card",
     title: "HOUSEKEEPING MEMBERS",
     type: "read",
     route: "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members",
   },
   ADMIN_HOLIDAYS_EVENTS_MIX_BAG: {
-    value: "holidays_events",
+    value: "admin_holidays_events_card",
     title: "HOLIDAYS & EVENTS",
     type: "read",
     route: "/app/dashboard/admin-dashboard/mix-bag/holidays-events",
   },
   ADMIN_CLIENT_MEMBERS_MIX_BAG: {
-    value: "client_members",
+    value: "admin_client_members_card",
     title: "CLIENT MEMBERS",
     type: "read",
     route: "/app/dashboard/admin-dashboard/mix-bag/client-members",
   },
-  ADMIN_DATA: { value: "data", title: "DATA", type: "read" },
-  ADMIN_SETTINGS: { value: "settings", title: "SETTINGS", type: "read" },
+  ADMIN_DATA: { value: "admin_data_card", title: "DATA", type: "read" },
+  ADMIN_SETTINGS: { value: "admin_settings_card", title: "SETTINGS", type: "read" },
   // 🟡 Admin Graphs
   ADMIN_DEPARTMENT_EXPENSE: {
-    value: "department_expense",
+    value: "admin_department_expense_chart",
     title: "DEPARTMENT EXPENSE",
     type: "read",
   },
   // 🟡 Admin Data Cards
   ADMIN_TOTAL_ADMIN_OFFICES: {
-    value: "total_admin_offices",
+    value: "admin_total_admin_offices_card",
     title: "TOTAL ADMIN OFFICES",
     type: "read",
   },
   ADMIN_MONTHLY_DUE_TASKS: {
-    value: "monthly_due_tasks",
+    value: "admin_monthly_due_tasks_card",
     title: "MONTHLY DUE TASKS",
     type: "read",
   },
   ADMIN_MONTHLY_EXPENSE: {
-    value: "monthly_expense",
+    value: "admin_monthly_expense_card",
     title: "MONTHLY EXPENSE",
     type: "read",
   },
   ADMIN_TOP_EXECUTIVE: {
-    value: "top_executive",
+    value: "admin_top_executive_card",
     title: "TOP EXECUTIVE",
     type: "read",
   },
   ADMIN_EXPENSE_PER_SQFT: {
-    value: "expense_per_sqft",
+    value: "admin_expense_per_sqft_card",
     title: "EXPENSE PER SQFT",
     type: "read",
   },
   ADMIN_ELECTRICITY_EXPENSE_PER_SQFT: {
-    value: "electricity_expense_per_sqft",
+    value: "admin_electricity_expense_per_sqft_card",
     title: "ELECTRICITY EXPENSE PER SQFT",
     type: "read",
   },
   // 🟡 Admin Tables
   ADMIN_WEEKLY_EXECUTIVE_SHIFT_TIMING: {
-    value: "weekly_executive_shift_timing",
+    value: "admin_weekly_executive_shift_timing_chart",
     title: "WEEKLY EXECUTIVE SHIFT TIMING",
     type: "read",
   },
   ADMIN_UPCOMING_EVENTS_LIST: {
-    value: "upcoming_events_list",
+    value: "admin_upcoming_events_list_chart",
     title: "UPCOMING EVENTS LIST",
     type: "read",
   },
   ADMIN_UPCOMING_CLIENT_MEMBER_BIRTHDAYS: {
-    value: "upcoming_client_member_birthdays",
+    value: "admin_upcoming_client_member_birthdays_chart",
     title: "UPCOMING CLIENT MEMBER BIRTHDAYS",
     type: "read",
   },
   ADMIN_UPCOMING_CLIENT_ANNIVERSARIES: {
-    value: "upcoming_client_anniversaries",
+    value: "admin_upcoming_client_anniversaries_chart",
     title: "UPCOMING CLIENT ANNIVERSARIES",
     type: "read",
   },
   ADMIN_NEWLY_JOINED_HOUSE_KEEPING_MEMBERS: {
-    value: "newly_joined_house_keeping_members",
+    value: "admin_newly_joined_house_keeping_members_chart",
     title: "NEWLY JOINED HOUSE KEEPING MEMBERS",
     type: "read",
   },
   // 🟡 Admin Pie Charts
   ADMIN_UNIT_WISE_DUE_TASKS: {
-    value: "unit_wise_due_tasks",
+    value: "admin_unit_wise_due_tasks_chart",
     title: "UNIT WISE DUE TASKS",
     type: "read",
   },
   ADMIN_EXECUTIVE_WISE_DUE_TASKS: {
-    value: "executive_wise_due_tasks",
+    value: "admin_executive_wise_due_tasks_chart",
     title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
   ADMIN_TOTAL_DESKS_COMPANY_WISE: {
-    value: "total_desks_company_wise",
+    value: "admin_total_desks_company_wise_chart",
     title: "TOTAL DESKS COMPANY WISE",
     type: "read",
   },
   ADMIN_BIOMETRICS_GENDER_DATA: {
-    value: "biometrics_gender_data",
+    value: "admin_biometrics_gender_data_chart",
     title: "BIOMETRICS GENDER DATA",
     type: "read",
   },
   // Finance
   ADMIN_BUDGET: {
-    value: "budget",
+    value: "admin_budget_tab",
     title: "BUDGET",
     type: "read",
     route: "/app/dashboard/admin-dashboard/finance/budget",
   },
 
   ADMIN_PAYMENT_SCHEDULE: {
-    value: "payment_schedule",
+    value: "admin_payment_schedule_tab",
     title: "PAYMENT SCHEDULE",
     type: "read",
     route: "/app/dashboard/admin-dashboard/finance/payment-schedule",
   },
 
   ADMIN_VOUCHER: {
-    value: "voucher",
+    value: "admin_voucher_tab",
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/admin-dashboard/finance/voucher",
@@ -1328,21 +1328,21 @@ export const PERMISSIONS = {
 
   // Housekeeping Members
   ADMIN_HOUSEKEEPING_MEMBERS_LIST: {
-    value: "housekeeping_members_list",
+    value: "admin_housekeeping_members_list_tab",
     title: "HOUSEKEEPING MEMBERS LIST",
     type: "read",
     route:
       "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/members-list",
   },
   ADMIN_HOUSEKEEPING_MEMBER_ONBOARD: {
-    value: "housekeeping_member_onboard",
+    value: "admin_housekeeping_member_onboard_tab",
     title: "HOUSEKEEPING MEMBER ONBOARD",
     type: "read",
     route:
       "/app/dashboard/admin-dashboard/mix-bag/housekeeping-members/member-onboard",
   },
   ADMIN_HOUSEKEEPING_ASSIGN_ROTATION: {
-    value: "housekeeping_assign_rotation",
+    value: "admin_housekeeping_assign_rotation_tab",
     title: "HOUSEKEEPING ASSIGN ROTATION",
     type: "read",
     route:
@@ -1351,14 +1351,14 @@ export const PERMISSIONS = {
 
   // Clients Members Data
   ADMIN_CLIENT_MEMBERS_DATA: {
-    value: "client_members_data",
+    value: "admin_client_members_data_tab",
     title: "CLIENT MEMBERS DATA",
     type: "read",
     route:
       "/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data",
   },
   ADMIN_CLIENT_MEMBERS_ONBOARD: {
-    value: "client_members_onboard",
+    value: "admin_client_members_onboard_tab",
     title: "CLIENT MEMBERS ONBOARD",
     type: "read",
     route:
@@ -1367,46 +1367,46 @@ export const PERMISSIONS = {
 
   // Data
   ADMIN_ELECTRICITY_EXPENSES: {
-    value: "electricity_expenses",
+    value: "admin_electricity_expenses_tab",
     title: "ELECTRICITY EXPENSES",
     type: "read",
     route:
       "/app/dashboard/admin-dashboard/mix-bag/infra-expenses/electricity-expenses",
   },
   ADMIN_ASSET_LIST: {
-    value: "asset_list",
+    value: "admin_asset_list_tab",
     title: "ASSET LIST",
     type: "read",
     route: "/app/dashboard/admin-dashboard/mix-bag/infra-expenses/asset-list",
   },
   ADMIN_MONTHLY_INVOICE_REPORTS: {
-    value: "monthly_invoice_reports",
+    value: "admin_monthly_invoice_reports_tab",
     title: "MONTHLY INVOICE REPORTS",
     type: "read",
     route:
       "/app/dashboard/admin-dashboard/mix-bag/infra-expenses/monthly-invoice-reports",
   },
   ADMIN_VENDOR: {
-    value: "vendor",
+    value: "admin_vendor_tab",
     title: "VENDOR",
     type: "read",
     route: "/app/dashboard/admin-dashboard/mix-bag/infra-expenses/vendor",
   },
   //Settings
   ADMIN_MODULE_BULK_UPLOAD: {
-    value: "bulk_upload",
+    value: "admin_bulk_upload_tab",
     title: "BULK UPLOAD",
     type: "read",
     route: "/app/dashboard/admin-dashboard/settings/bulk-upload",
   },
   ADMIN_MODULE_SOPS: {
-    value: "sops",
+    value: "admin_sops_tab",
     title: "SOPS",
     type: "read",
     route: "/app/dashboard/admin-dashboard/settings/sops",
   },
   ADMIN_MODULE_POLICIES: {
-    value: "policies",
+    value: "admin_policies_tab",
     title: "POLICIES",
     type: "read",
     route: "/app/dashboard/admin-dashboard/settings/policies",
@@ -1416,125 +1416,125 @@ export const PERMISSIONS = {
 
   // 🟢 Maintenance Graphs
   MAINTENANCE_DEPARTMENT_EXPENSES: {
-    value: "department_expenses",
+    value: "maintenance_department_expenses_chart",
     title: "DEPARTMENT EXPENSES",
     type: "read",
   },
 
   // 🟢 Maintenance Nav Cards
   MAINTENANCE_ANNUAL_EXPENSES: {
-    value: "annual_expenses",
+    value: "maintenance_annual_expenses_card",
     title: "ANNUAL EXPENSES",
     type: "read",
   },
   MAINTENANCE_INVENTORY: {
-    value: "inventory",
+    value: "maintenance_inventory_card",
     title: "INVENTORY",
     type: "read",
   },
-  MAINTENANCE_FINANCE: { value: "finance", title: "FINANCE", type: "read" },
-  MAINTENANCE_MIX_BAG: { value: "mix_bag", title: "MIX BAG", type: "read" },
+  MAINTENANCE_FINANCE: { value: "maintenance_finance_card", title: "FINANCE", type: "read" },
+  MAINTENANCE_MIX_BAG: { value: "maintenance_mix_bag_card", title: "MIX BAG", type: "read" },
   MAINTENANCE_TEAM_MEMBERS_SCHEDULE: {
-    value: "team_members_schedule",
+    value: "maintenance_team_members_schedule_card",
     title: "TEAM MEMBERS SCHEDULE",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/mix-bag/team-members-schedule",
   },
-  MAINTENANCE_DATA: { value: "data", title: "DATA", type: "read" },
-  MAINTENANCE_SETTINGS: { value: "settings", title: "SETTINGS", type: "read" },
+  MAINTENANCE_DATA: { value: "maintenance_data_card", title: "DATA", type: "read" },
+  MAINTENANCE_SETTINGS: { value: "maintenance_settings_card", title: "SETTINGS", type: "read" },
   // 🟢 Maintenance Data Cards
   MAINTENANCE_OFFICES_UNDER_MANAGEMENT: {
-    value: "offices_under_management",
+    value: "maintenance_offices_under_management_card",
     title: "OFFICES UNDER MANAGEMENT",
     type: "read",
   },
   MAINTENANCE_MONTHLY_DUE_TASKS: {
-    value: "monthly_due_tasks",
+    value: "maintenance_monthly_due_tasks_card",
     title: "MONTHLY DUE TASKS",
     type: "read",
   },
   MAINTENANCE_MONTHLY_EXPENSE: {
-    value: "monthly_expense",
+    value: "maintenance_monthly_expense_card",
     title: "MONTHLY EXPENSE",
     type: "read",
   },
   MAINTENANCE_EXPENSE_PER_SQFT: {
-    value: "expense_per_sqft",
+    value: "maintenance_expense_per_sqft_card",
     title: "EXPENSE PER SQFT",
     type: "read",
   },
   MAINTENANCE_ASSETS_UNDER_MANAGEMENT: {
-    value: "assets_under_management",
+    value: "maintenance_assets_under_management_card",
     title: "ASSETS UNDER MANAGEMENT",
     type: "read",
   },
   MAINTENANCE_MONTHLY_KPA: {
-    value: "monthly_kpa",
+    value: "maintenance_monthly_kpa_card",
     title: "MONTHLY KPA",
     type: "read",
   },
 
   //Tables
   MAINTENANCE_TOP_HIGH_PRIORITY_TASKS: {
-    value: "top_high_priority_tasks",
+    value: "maintenance_top_high_priority_tasks_chart",
     title: "TOP HIGH PRIORITY TASKS",
     type: "read",
   },
   MAINTENANCE_WEEKLY_EXECUTIVE_SHIFT_TIMING: {
-    value: "weekly_executive_shift_timing",
+    value: "maintenance_weekly_executive_shift_timing_chart",
     title: "WEEKLY EXECUTIVE SHIFT TIMING",
     type: "read",
   },
 
   //Pie Charts
   MAINTENANCE_CATEGORY_WISE_MAINTENANCE: {
-    value: "category_wise_maintenance",
+    value: "maintenance_category_wise_maintenance_chart",
     title: "CATEGORY WISE MAINTENANCE",
     type: "read",
   },
   MAINTENANCE_DUE_MAINTENANCE: {
-    value: "due_maintenance",
+    value: "maintenance_due_maintenance_chart",
     title: "DUE MAINTENANCE",
     type: "read",
   },
   MAINTENANCE_UNIT_WISE_MAINTENANCE: {
-    value: "unit_wise_maintenance",
+    value: "maintenance_unit_wise_maintenance_chart",
     title: "UNIT WISE MAINTENANCE",
     type: "read",
   },
   MAINTENANCE_EXECUTION_CHANNEL: {
-    value: "execution_channel",
+    value: "maintenance_execution_channel_chart",
     title: "EXECUTION CHANNEL",
     type: "read",
   },
   MAINTENANCE_AVERAGE_MONTHLY_DUE: {
-    value: "average_monthly_due",
+    value: "maintenance_average_monthly_due_chart",
     title: "AVERAGE MONTHLY DUE",
     type: "read",
   },
   MAINTENANCE_AVERAGE_YEARLY_DUE: {
-    value: "average_yearly_due",
+    value: "maintenance_average_yearly_due_chart",
     title: "AVERAGE YEARLY DUE",
     type: "read",
   },
 
   //Finance
   MAINTENANCE_BUDGET: {
-    value: "budget",
+    value: "maintenance_budget_tab",
     title: "BUDGET",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/finance/budget",
   },
 
   MAINTENANCE_PAYMENT_SCHEDULE: {
-    value: "payment_schedule",
+    value: "maintenance_payment_schedule_tab",
     title: "PAYMENT SCHEDULE",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/finance/payment-schedule",
   },
 
   MAINTENANCE_VOUCHER: {
-    value: "voucher",
+    value: "maintenance_voucher_tab",
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/finance/voucher",
@@ -1542,28 +1542,28 @@ export const PERMISSIONS = {
 
   //Data
   MAINTENANCE_AMC_RECORDS: {
-    value: "amc_records",
+    value: "maintenance_amc_records_tab",
     title: "AMC RECORDS",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/data/amc-records",
   },
 
   MAINTENANCE_ASSET_LIST: {
-    value: "asset_list",
+    value: "maintenance_asset_list_tab",
     title: "ASSET LIST",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/data/asset-list",
   },
 
   MAINTENANCE_MONTHLY_INVOICE_REPORTS: {
-    value: "monthly_invoice_reports",
+    value: "maintenance_monthly_invoice_reports_tab",
     title: "MONTHLY INVOICE REPORTS",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/data/monthly-invoice-reports",
   },
 
   MAINTENANCE_VENDOR: {
-    value: "vendor",
+    value: "maintenance_vendor_tab",
     title: "VENDOR",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/data/vendor",
@@ -1571,21 +1571,21 @@ export const PERMISSIONS = {
 
   //Settings
   MAINTENANCE_BULK_UPLOAD: {
-    value: "bulk_upload",
+    value: "maintenance_bulk_upload_tab",
     title: "BULK UPLOAD",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/settings/bulk-upload",
   },
 
   MAINTENANCE_SOPS: {
-    value: "sops",
+    value: "maintenance_sops_tab",
     title: "SOPS",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/settings/sops",
   },
 
   MAINTENANCE_POLICIES: {
-    value: "policies",
+    value: "maintenance_policies_tab",
     title: "POLICIES",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/settings/policies",
@@ -1595,7 +1595,7 @@ export const PERMISSIONS = {
 
   // 🔵 IT Graphs
   IT_DEPARTMENT_EXPENSES: {
-    value: "it_department_expenses",
+    value: "it_department_expenses_chart",
     title: "IT DEPARTMENT EXPENSES",
 
     type: "read",
@@ -1604,40 +1604,40 @@ export const PERMISSIONS = {
 
   // 🔵 IT Nav Cards
   IT_ANNUAL_EXPENSES: {
-    value: "it_annual_expenses",
+    value: "it_annual_expenses_card",
     title: "IT ANNUAL EXPENSES",
 
     type: "read",
     access: "page",
   },
   IT_INVENTORY: {
-    value: "it_inventory",
+    value: "it_inventory_card",
     title: "IT INVENTORY",
     type: "read",
     access: "page",
   },
   IT_FINANCE: {
-    value: "it_finance",
+    value: "it_finance_card",
     title: "IT FINANCE",
     type: "read",
     access: "page",
   },
   IT_MIX_BAG: {
-    value: "it_mix_bag",
+    value: "it_mix_bag_card",
     title: "IT MIX BAG",
     type: "read",
     access: "page",
   },
 
   IT_TEAM_MEMBERS_SCHEDULE_MIX_BAG: {
-    value: "it_team_members_schedule_mix_bag",
+    value: "it_team_members_schedule_mix_bag_card",
     title: "IT TEAM MEMBERS SCHEDULE MIX BAG",
     type: "read",
     route: "/app/dashboard/it-dashboard/mix-bag/team-members-schedule",
   },
-  IT_DATA: { value: "it_data", title: "IT DATA", type: "read", access: "page" },
+  IT_DATA: { value: "it_data_card", title: "IT DATA", type: "read", access: "page" },
   IT_SETTINGS: {
-    value: "it_settings",
+    value: "it_settings_card",
     title: "IT SETTINGS",
     type: "write",
     access: "page",
@@ -1645,40 +1645,40 @@ export const PERMISSIONS = {
 
   // 🔵 IT Data Cards
   IT_OFFICES_UNDER_MANAGEMENT: {
-    value: "offices_under_management",
+    value: "it_offices_under_management_card",
     title: "OFFICES UNDER MANAGEMENT",
     type: "read",
   },
   IT_DUE_TASKS_THIS_MONTH: {
-    value: "due_tasks_this_month",
+    value: "it_due_tasks_this_month_card",
     title: "DUE TASKS THIS MONTH",
     type: "read",
   },
   IT_INTERNET_EXPENSE_PER_SQFT: {
-    value: "internet_expense_per_sqft",
+    value: "it_internet_expense_per_sqft_card",
     title: "INTERNET EXPENSE PER SQFT",
     type: "read",
   },
   IT_EXPENSE_PER_SQFT: {
-    value: "expense_per_sqft",
+    value: "it_expense_per_sqft_card",
     title: "EXPENSE PER SQFT",
     type: "read",
   },
   IT_MONTHLY_EXPENSE: {
-    value: "monthly_expense",
+    value: "it_monthly_expense_card",
     title: "MONTHLY EXPENSE",
     type: "read",
   },
-  IT_MONTHLY_KPA: { value: "monthly_kpa", title: "MONTHLY KPA", type: "read" },
+  IT_MONTHLY_KPA: { value: "it_monthly_kpa_card", title: "MONTHLY KPA", type: "read" },
 
   // 🔵 IT Tables
   IT_TOP_10_HIGH_PRIORITY_DUE_TASKS: {
-    value: "top_10_high_priority_due_tasks",
+    value: "it_top_10_high_priority_due_tasks_chart",
     title: "TOP 10 HIGH PRIORITY DUE TASKS",
     type: "read",
   },
   IT_WEEKLY_EXECUTIVE_SHIFT_TIMING: {
-    value: "weekly_executive_shift_timing",
+    value: "it_weekly_executive_shift_timing_chart",
     title: "WEEKLY EXECUTIVE SHIFT TIMING",
     type: "read",
   },
@@ -1686,53 +1686,53 @@ export const PERMISSIONS = {
   // 🔵 IT Pie Charts
 
   IT_UNIT_WISE_DUE_TASKS: {
-    value: "unit_wise_due_tasks",
+    value: "it_unit_wise_due_tasks_chart",
     title: "UNIT WISE DUE TASKS",
     type: "read",
   },
   IT_EXECUTIVE_WISE_DUE_TASKS: {
-    value: "executive_wise_due_tasks",
+    value: "it_executive_wise_due_tasks_chart",
     title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
   IT_UNIT_WISE_IT_EXPENSES: {
-    value: "unit_wise_it_expenses",
+    value: "it_unit_wise_it_expenses_chart",
     title: "UNIT WISE IT EXPENSES",
     type: "read",
   },
   IT_BIOMETRICS_GENDER_DATA: {
-    value: "biometrics_gender_data",
+    value: "it_biometrics_gender_data_chart",
     title: "BIOMETRICS GENDER DATA",
     type: "read",
   },
   IT_CLIENT_WISE_COMPLAINTS: {
-    value: "client_wise_complaints",
+    value: "it_client_wise_complaints_chart",
     title: "CLIENT WISE COMPLAINTS",
     type: "read",
   },
   IT_TYPE_OF_IT_COMPLAINTS: {
-    value: "type_of_it_complaints",
+    value: "it_type_of_it_complaints_chart",
     title: "TYPE OF IT COMPLAINTS",
     type: "read",
   },
 
   //Finance
   IT_BUDGET: {
-    value: "budget",
+    value: "it_budget_tab",
     title: "BUDGET",
     type: "read",
     route: "/app/dashboard/IT-dashboard/finance/budget",
   },
 
   IT_PAYMENT_SCHEDULE: {
-    value: "payment_schedule",
+    value: "it_payment_schedule_tab",
     title: "PAYMENT SCHEDULE",
     type: "read",
     route: "/app/dashboard/IT-dashboard/finance/payment-schedule",
   },
 
   IT_VOUCHER: {
-    value: "voucher",
+    value: "it_voucher_tab",
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/IT-dashboard/finance/voucher",
@@ -1740,46 +1740,46 @@ export const PERMISSIONS = {
 
   //Data
   IT_AMC_RECORDS: {
-    value: "amc_records",
+    value: "it_amc_records_tab",
     title: "AMC RECORDS",
     type: "read",
     route: "/app/dashboard/IT-dashboard/data/amc-records",
   },
   IT_ASSET_LIST: {
-    value: "asset_list",
+    value: "it_asset_list_tab",
     title: "ASSET LIST",
     type: "read",
     route: "/app/dashboard/IT-dashboard/data/asset-list",
   },
   IT_MONTHLY_INVOICE_REPORTS: {
-    value: "monthly_invoice_reports",
+    value: "it_monthly_invoice_reports_tab",
     title: "MONTHLY INVOICE REPORTS",
     type: "read",
     route: "/app/dashboard/IT-dashboard/data/monthly-invoice-reports",
   },
   IT_VENDOR: {
-    value: "vendor",
+    value: "it_vendor_tab",
     title: "VENDOR",
     type: "read",
     route: "/app/dashboard/IT-dashboard/data/vendor",
   },
   //Settings
   IT_BULK_UPLOAD: {
-    value: "bulk_upload",
+    value: "it_bulk_upload_tab",
     title: "BULK UPLOAD",
     type: "read",
     route: "/app/dashboard/IT-dashboard/settings/bulk-upload",
   },
 
   IT_SOPS: {
-    value: "sops",
+    value: "it_sops_tab",
     title: "SOPS",
     type: "read",
     route: "/app/dashboard/IT-dashboard/settings/sops",
   },
 
   IT_POLICIES: {
-    value: "policies",
+    value: "it_policies_tab",
     title: "POLICIES",
     type: "read",
     route: "/app/dashboard/IT-dashboard/settings/policies",
@@ -1789,61 +1789,61 @@ export const PERMISSIONS = {
 
   //Graphs
   FRONTEND_SITE_VISITORS: {
-    value: "site_visitors",
+    value: "frontend_site_visitors_chart",
     title: "SITE VISITORS",
     type: "read",
   },
   FRONTEND_DEPARTMENT_EXPENSE: {
-    value: "department_expense",
+    value: "frontend_department_expense_chart",
     title: "DEPARTMENT EXPENSE",
     type: "read",
   },
   FRONTEND_WEBSITE_ISSUES_RAISED: {
-    value: "website_issues_raised",
+    value: "frontend_website_issues_raised_chart",
     title: "WEBSITE ISSUES RAISED",
     type: "read",
   },
 
   //Nav cards
   FRONTEND_CREATE_WEBSITE: {
-    value: "create_website",
+    value: "frontend_create_website_card",
     title: "CREATE WEBSITE",
     type: "read",
     access: "page",
   },
   FRONTEND_EDIT_WEBSITE: {
-    value: "edit_website",
+    value: "frontend_edit_website_card",
     title: "EDIT WEBSITE",
     type: "read",
     access: "page",
   },
   FRONTEND_ACTIVE_WEBSITES: {
-    value: "active_websites",
+    value: "frontend_active_websites_tab",
     title: "ACTIVE WEBSITES",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/websites/active",
   },
   FRONTEND_INACTIVE_WEBSITES: {
-    value: "inactive_websites",
+    value: "frontend_inactive_websites_tab",
     title: "INACTIVE WEBSITES",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/websites/inactive",
   },
   FRONTEND_NEW_THEMES: {
-    value: "new_themes",
+    value: "frontend_new_themes_card",
     title: "NEW THEMES",
     type: "read",
     access: "page",
   },
   FRONTEND_FINANCE: {
-    value: "finance",
+    value: "frontend_finance_card",
     title: "FINANCE",
     type: "read",
     access: "page",
   },
-  FRONTEND_DATA: { value: "data", title: "DATA", type: "read", access: "page" },
+  FRONTEND_DATA: { value: "frontend_data_card", title: "DATA", type: "read", access: "page" },
   FRONTEND_SETTINGS: {
-    value: "settings",
+    value: "frontend_settings_card",
     title: "SETTINGS",
     type: "write",
     access: "page",
@@ -1851,32 +1851,32 @@ export const PERMISSIONS = {
 
   //Pie charts
   FRONTEND_NATION_WISE_SITE_VISITORS: {
-    value: "nation_wise_site_visitors",
+    value: "frontend_nation_wise_site_visitors_chart",
     title: "NATION WISE SITE VISITORS",
     type: "read",
   },
   FRONTEND_STATE_WISE_SITE_VISITORS: {
-    value: "state_wise_site_visitors",
+    value: "frontend_state_wise_site_visitors_chart",
     title: "STATE WISE SITE VISITORS",
     type: "read",
   },
   //finance
   FRONTEND_BUDGET: {
-    value: "budget",
+    value: "frontend_budget_tab",
     title: "BUDGET",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/finance/budget",
   },
 
   FRONTEND_PAYMENT_SCHEDULE: {
-    value: "payment_schedule",
+    value: "frontend_payment_schedule_tab",
     title: "PAYMENT SCHEDULE",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/finance/payment-schedule",
   },
 
   FRONTEND_VOUCHER: {
-    value: "voucher",
+    value: "frontend_voucher_tab",
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/finance/voucher",
@@ -1884,31 +1884,31 @@ export const PERMISSIONS = {
 
   //Data
   FRONTEND_LEADS: {
-    value: "leads",
+    value: "frontend_leads_tab",
     title: "LEADS",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/data/leads",
   },
   FRONTEND_WEBSITE_ISSUE_REPORTS: {
-    value: "website_issue_reports",
+    value: "frontend_website_issue_reports_tab",
     title: "WEBSITE ISSUE REPORTS",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/data/website-issue-reports",
   },
   FRONTEND_ASSET_LIST: {
-    value: "asset_list",
+    value: "frontend_asset_list_tab",
     title: "ASSET LIST",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/data/asset-list",
   },
   FRONTEND_MONTHLY_INVOICE_REPORTS: {
-    value: "monthly_invoice_reports",
+    value: "frontend_monthly_invoice_reports_tab",
     title: "MONTHLY INVOICE REPORTS",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/data/monthly-invoice-reports",
   },
   FRONTEND_VENDOR: {
-    value: "vendor",
+    value: "frontend_vendor_tab",
     title: "VENDOR",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/data/vendor",
@@ -1916,21 +1916,21 @@ export const PERMISSIONS = {
 
   //Settings
   FRONTEND_BULK_UPLOAD: {
-    value: "bulk_upload",
+    value: "frontend_bulk_upload_tab",
     title: "BULK UPLOAD",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/settings/bulk-upload",
   },
 
   FRONTEND_SOPS: {
-    value: "sops",
+    value: "frontend_sops_tab",
     title: "SOPS",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/settings/sops",
   },
 
   FRONTEND_POLICIES: {
-    value: "policies",
+    value: "frontend_policies_tab",
     title: "POLICIES",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/settings/policies",
