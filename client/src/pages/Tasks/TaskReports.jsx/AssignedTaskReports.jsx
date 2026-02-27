@@ -58,6 +58,7 @@ const AssignedTaskReports = () => {
       ),
     },
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
+    { field: "completedBy", headerName: "Completed By", width: 300 },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
     {
@@ -102,27 +103,28 @@ const AssignedTaskReports = () => {
             isLoading
               ? []
               : taskList.map((task, index) => ({
-                  srNo: index + 1,
-                  ...task,
-                  taskName: task.taskName,
-                  assignedDate: task.assignedDate,
-                  dueDate: task.dueDate,
-                  dueTime: task.dueTime,
-                  completedDate: task.completedDate,
-                  completedTime: task.completedDate,
-                  assignedBy: task.assignedBy
-                    ? [
-                        task.assignedBy.firstName,
-                        task.assignedBy.middleName,
-                        task.assignedBy.lastName,
-                      ]
-                        .filter(Boolean)
-                        .join(" ")
-                    : "",
-                  department: task.department?.name || task.department,
-                  description: task.description,
-                  status: task.status,
-                }))
+                srNo: index + 1,
+                ...task,
+                taskName: task.taskName,
+                assignedDate: task.assignedDate,
+                dueDate: task.dueDate,
+                dueTime: task.dueTime,
+                completedDate: task.completedDate,
+                completedTime: task.completedDate,
+                assignedBy: task.assignedBy
+                  ? [
+                    task.assignedBy.firstName,
+                    task.assignedBy.middleName,
+                    task.assignedBy.lastName,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")
+                  : "",
+                completedBy: task.completedBy,
+                department: task.department?.name || task.department,
+                description: task.description,
+                status: task.status,
+              }))
           }
           columns={myTaskReportsColumns}
         />
@@ -147,6 +149,10 @@ const AssignedTaskReports = () => {
             <DetalisFormatted
               title="Assigned By"
               detail={selectedTask.assignedBy}
+            />
+            <DetalisFormatted
+              title="Completed By"
+              detail={selectedTask.completedBy}
             />
             <DetalisFormatted
               title="Assigned Date"

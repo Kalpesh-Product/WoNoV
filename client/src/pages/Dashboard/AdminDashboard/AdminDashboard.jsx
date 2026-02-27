@@ -44,7 +44,7 @@ const AdminDashboard = () => {
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
-    const userDepartments = auth?.user?.departments || [];
+  const userDepartments = auth?.user?.departments || [];
   const departmentIds = useMemo(
     () => userDepartments.map((dept) => dept?._id).filter(Boolean),
     [userDepartments]
@@ -174,8 +174,8 @@ const AdminDashboard = () => {
   const electrictyExpense = isHrFinanceLoading
     ? 0
     : hrFinance
-        .filter((item) => item.expanseType === "ELECTRICITY")
-        .reduce((sum, item) => sum + item.actualAmount || 0, 0);
+      .filter((item) => item.expanseType === "ELECTRICITY")
+      .reduce((sum, item) => sum + item.actualAmount || 0, 0);
   console.log("electric : ", electrictyExpense);
   //----------------------Electricity expense-----------------------//
   //----------------------Monthly average-----------------------//
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
     ? 0
     : hrFinance.reduce((sum, item) => sum + item.actualAmount || 0, 0);
 
-    const expensePerSqFtTotals = useMemo(() => {
+  const expensePerSqFtTotals = useMemo(() => {
     if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
       return { totalSqFt: 0, totalExpense: 0, perSqFtExpense: 0 };
     }
@@ -294,7 +294,7 @@ const AdminDashboard = () => {
     },
   });
 
-    const { data: tasksSummary = [], isLoading: isTasksSummaryLoading } =
+  const { data: tasksSummary = [], isLoading: isTasksSummaryLoading } =
     useQuery({
       queryKey: ["tasks-summary"],
       queryFn: async () => {
@@ -441,8 +441,8 @@ const AdminDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData
-               ).toLocaleString("en-IN")}</div>
+          rawData
+        ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -697,8 +697,8 @@ const AdminDashboard = () => {
           upComingInDays === 0
             ? "Today"
             : upComingInDays === 1
-            ? "Tomorrow"
-            : `${upComingInDays} days`,
+              ? "Tomorrow"
+              : `${upComingInDays} days`,
         isUpcoming:
           anniversary.isBefore(cutOff) &&
           anniversary.isAfter(today.subtract(1, "day")),
@@ -748,7 +748,7 @@ const AdminDashboard = () => {
 
   let simplifiedClientsPie = [];
 
-   const totalDueTasks = useMemo(() => {
+  const totalDueTasks = useMemo(() => {
     if (hasMultipleDepartments) {
       if (isTasksSummaryLoading) return 0;
 

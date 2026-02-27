@@ -77,24 +77,24 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   };
 
   const navigationCards = [
-    {
-      cardTitle: "Total Credits",
-      quantity: totalCredits,
-      bgcolor: "#0099FF",
-      quantityColor: "#000033",
-    },
-    {
-      cardTitle: "Remaining Credits",
-      quantity: creditsBalance,
-      bgcolor: "#66FFCC",
-      quantityColor: "#006600",
-    },
-    {
-      cardTitle: "Meetings Booked",
-      quantity: `${myMeetings.length || 0}`,
-      bgcolor: "#FFFFCC",
-      quantityColor: "#FF9900",
-    },
+    // {
+    //   cardTitle: "Total Credits",
+    //   quantity: totalCredits,
+    //   bgcolor: "#0099FF",
+    //   quantityColor: "#000033",
+    // },
+    // {
+    //   cardTitle: "Remaining Credits",
+    //   quantity: creditsBalance,
+    //   bgcolor: "#66FFCC",
+    //   quantityColor: "#006600",
+    // },
+    // {
+    //   cardTitle: "Meetings Booked",
+    //   quantity: `${myMeetings.length || 0}`,
+    //   bgcolor: "#FFFFCC",
+    //   quantityColor: "#FF9900",
+    // },
   ];
 
   const handleAddReview = (data) => {
@@ -125,8 +125,8 @@ const MeetingRoomCredits = ({ pageTitle }) => {
         const meetingReviews = Array.isArray(rawReview)
           ? rawReview
           : rawReview
-          ? [rawReview]
-          : [];
+            ? [rawReview]
+            : [];
 
         return (
           <div className="p-2 flex items-center gap-2">
@@ -154,11 +154,11 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   return (
     <div>
       <div className="flex flex-col gap-4">
-         <div>
-        <span className="text-title font-pmedium text-primary uppercase">
-          Company Credit Details
-        </span>
-      </div>
+        <div>
+          <span className="text-title font-pmedium text-primary uppercase">
+            Company Credit Details
+          </span>
+        </div>
         <div>
           <WidgetSection padding layout={navigationCards.length}>
             {navigationCards.map((card, index) => (
@@ -185,7 +185,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
                   tableTitle={"My Meetings"}
                   data={[
                     ...myMeetings.map((meeting, index) => {
-                      
+
                       return {
                         srNo: index + 1,
                         meetingId: meeting._id,
@@ -209,8 +209,8 @@ const MeetingRoomCredits = ({ pageTitle }) => {
                               return p.employeeName
                                 ? p.employeeName
                                 : p.firstName
-                                ? `${p.firstName} ${p.lastName}`
-                                : "N/A";
+                                  ? `${p.firstName} ${p.lastName}`
+                                  : "N/A";
                             })
                             .join(", ") || "N/A",
                       };
