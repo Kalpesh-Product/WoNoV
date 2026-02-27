@@ -14,13 +14,12 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 const VirtualOfficeClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   const { clientId } = useParams();
-  const [searchParams] = useSearchParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
   const { control, handleSubmit, reset } = useForm({
@@ -101,9 +100,9 @@ const VirtualOfficeClientDetails = () => {
     }
   }, [selectedClient, reset]);
 
-  const virtualOfficeClientId =
-    searchParams.get("virtualofficeclientid") ||
-    (/^[a-fA-F0-9]{24}$/.test(clientId) ? clientId : selectedClient?._id);
+  const virtualOfficeClientId = /^[a-fA-F0-9]{24}$/.test(clientId)
+    ? clientId
+    : selectedClient?._id;
 
   const { isLoading: isClientLoading } = useQuery({
     queryKey: ["virtualOfficeClient", virtualOfficeClientId],

@@ -41,8 +41,8 @@ const VirtualOfficeClients = () => {
 
     navigate(
       isMixBag
-        ? `/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/${encodeURIComponent(clientData.clientName)}?virtualofficeclientid=${clientData._id}`
-        : `/app/dashboard/sales-dashboard/clients/virtual-office/${encodeURIComponent(clientData.clientName)}?virtualofficeclientid=${clientData._id}`,
+        ? `/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`
+        : `/app/dashboard/sales-dashboard/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`,
     );
   };
 
