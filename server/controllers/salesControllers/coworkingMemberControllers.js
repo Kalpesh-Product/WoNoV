@@ -1097,6 +1097,248 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
   }
 };
 
+const bulkUpdateCoworkingMembers = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const company = req.company; // keep if your CoworkingMembers has company field
+
+    if (!file) {
+      return res.status(400).json({ message: "Please provide a CSV file" });
+    }
+
+    // ----------------------------
+    // Fetch Clients
+    // ----------------------------
+    const coworkingClients = await CoworkingClient.find({ company })
+      .lean()
+      .exec();
+
+    const coworkingClientsMap = new Map(
+      coworkingClients.map((client) => [
+        normalizeClientName(client.clientName),
+        client._id,
+      ]),
+    );
+
+    // ----------------------------
+    // Fetch Units
+    // ----------------------------
+    const units = await Unit.find({ company }).lean().exec();
+
+    const unitMap = new Map(
+      units.map((unit) => [`${unit.unitNo}`.trim(), unit._id]),
+    );
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    let updates = [];
+    let unknownClients = [];
+    let unknownUnits = [];
+
+    stream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        const {
+          "Company Name": companyName,
+          "Employee Name": employeeName,
+          Designation: designation,
+          "Mobile No": mobileNo,
+          Email: email,
+          "Blood Group": bloodGroup,
+          DOB: dob,
+          "Emergency Name": emergencyName,
+          "Emergency No.": emergencyNo,
+          "BIZ Nest DOJ": dateOfJoining,
+          "Unit No": unitNumber,
+          "Biometric Status (Yes/No)": biometricStatus,
+        } = row;
+
+        if (!employeeName || !companyName) return;
+
+        const clientId = coworkingClientsMap.get(
+          normalizeClientName(companyName),
+        );
+
+        if (!clientId) {
+          unknownClients.push({
+            employeeName,
+            companyName,
+            reason: "Client not found",
+          });
+          return;
+        }
+
+        let unitId = undefined;
+        if (unitNumber) {
+          unitId = unitMap.get(`${unitNumber}`.trim());
+          if (!unitId) {
+            unknownUnits.push({
+              employeeName,
+              unitNumber,
+              reason: "Unit not found",
+            });
+            return;
+          }
+        }
+
+        const status =
+          biometricStatus?.toLowerCase() === "yes"
+            ? "Active"
+            : biometricStatus?.toLowerCase() === "no"
+              ? "Inactive"
+              : biometricStatus
+                ? "Pending"
+                : undefined; // if column missing, don't overwrite
+
+        // Build $set only for provided fields (so empty CSV cells won't wipe data)
+        const $set = {};
+
+        if (designation?.trim()) $set.designation = designation.trim();
+        if (mobileNo?.trim()) $set.mobileNo = mobileNo.trim();
+        if (email?.trim()) $set.email = email.trim().toLowerCase();
+        if (bloodGroup?.trim()) $set.bloodGroup = bloodGroup.trim();
+        if (emergencyName?.trim()) $set.emergencyName = emergencyName.trim();
+        if (emergencyNo?.trim()) $set.emergencyNo = emergencyNo.trim();
+
+        if (dob) {
+          const d = new Date(dob);
+          if (!Number.isNaN(d.getTime())) $set.dob = d;
+        }
+
+        if (dateOfJoining) {
+          const d = new Date(dateOfJoining);
+          if (!Number.isNaN(d.getTime())) $set.dateOfJoining = d;
+        }
+
+        if (unitNumber) $set.unit = unitId; // only if unitNumber provided
+        if (status) $set.biometricStatus = status;
+
+        updates.push({
+          company, // keep if your model has company. If not, remove it everywhere.
+          client: clientId,
+          employeeName: employeeName.trim(),
+          employeeKey: `name_${clientId}_${normalizeName(employeeName)}`,
+          $set,
+        });
+      })
+      .on("end", async () => {
+        try {
+          if (!updates.length) {
+            return res.status(400).json({
+              message: "No valid member records found.",
+              unknownClients,
+              unknownUnits,
+            });
+          }
+
+          // ----------------------------
+          // 1) Remove CSV duplicates (by client + employeeName)
+          // ----------------------------
+          const uniqueMap = new Map();
+          const csvDuplicates = [];
+
+          for (const u of updates) {
+            if (!uniqueMap.has(u.employeeKey)) {
+              uniqueMap.set(u.employeeKey, u);
+            } else {
+              csvDuplicates.push({
+                employeeName: u.employeeName,
+                reason: "Duplicate name in CSV",
+              });
+            }
+          }
+
+          const uniqueUpdates = Array.from(uniqueMap.values());
+
+          // ----------------------------
+          // 2) Fetch existing members for these clients (and company, if applicable)
+          // ----------------------------
+          // If your CoworkingMembers collection DOES NOT have `company`,
+          // remove company from this query and from update filters below.
+          const existingMembers = await TestCoworkingMember.find({
+            company,
+            client: { $in: uniqueUpdates.map((u) => u.client) },
+          })
+            .select("client employeeName")
+            .lean();
+
+          const existingNameSet = new Set(
+            existingMembers.map(
+              (m) => `name_${m.client}_${normalizeName(m.employeeName)}`,
+            ),
+          );
+
+          // ----------------------------
+          // 3) Prepare bulk updates
+          // ----------------------------
+          const bulkOps = [];
+          const notFoundInDb = [];
+
+          for (const u of uniqueUpdates) {
+            const key = `name_${u.client}_${normalizeName(u.employeeName)}`;
+
+            if (!existingNameSet.has(key)) {
+              notFoundInDb.push({
+                employeeName: u.employeeName,
+                reason: "Member not found in database (same name + client)",
+              });
+              continue;
+            }
+
+            // If nothing to update (empty row except identifiers), skip
+            if (!u.$set || Object.keys(u.$set).length === 0) {
+              continue;
+            }
+
+            bulkOps.push({
+              updateOne: {
+                filter: {
+                  company,
+                  client: u.client,
+                  employeeName: u.employeeName,
+                },
+                update: { $set: u.$set },
+              },
+            });
+          }
+
+          // ----------------------------
+          // 4) Execute bulkWrite
+          // ----------------------------
+          let bulkResult = null;
+          if (bulkOps.length > 0) {
+            bulkResult = await TestCoworkingMember.bulkWrite(bulkOps, {
+              ordered: false,
+            });
+          }
+
+          const updatedCount =
+            bulkResult?.modifiedCount ?? bulkResult?.nModified ?? 0;
+
+          return res.status(200).json({
+            message: `${updatedCount} members updated successfully`,
+            updatedCount,
+            attemptedUpdates: bulkOps.length,
+            skippedCount:
+              unknownClients.length +
+              unknownUnits.length +
+              csvDuplicates.length +
+              notFoundInDb.length,
+            unknownClients,
+            unknownUnits,
+            csvDuplicates,
+            notFoundInDb,
+          });
+        } catch (err) {
+          next(err);
+        }
+      })
+      .on("error", (err) => next(err));
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createMember,
   getAllMembers,
@@ -1105,5 +1347,6 @@ module.exports = {
   updateCoworkingMember,
   getMembersByUnit,
   bulkInsertCoworkingMembers,
+  bulkUpdateCoworkingMembers,
   updateMemberStatus,
 };

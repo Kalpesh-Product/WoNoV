@@ -5,6 +5,7 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const Unit = require("../../models/locations/Unit");
 const ClientService = require("../../models/sales/ClientService");
+const { default: mongoose } = require("mongoose");
 
 const isValidEmail = (email = "") => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const isValidPhone = (phone = "") => {
@@ -222,6 +223,77 @@ const createVirtualOfficeClient = async (req, res) => {
 };
 
 const getVirtualOfficeClients = async (req, res, next) => {
+  try {
+    const { company } = req;
+    const { virtualofficeclientid, unitId, active, rentStatus } = req.query;
+
+    // Validate IDs
+    if (
+      virtualofficeclientid &&
+      !mongoose.Types.ObjectId.isValid(virtualofficeclientid)
+    ) {
+      return res.status(400).json({ message: "Invalid client ID format" });
+    }
+
+    if (unitId && !mongoose.Types.ObjectId.isValid(unitId)) {
+      return res.status(400).json({ message: "Invalid unit ID format" });
+    }
+
+    // Optional: if you still want to ensure units exist like coworking controller
+    const units = await Unit.find({ company }).populate({
+      path: "building",
+      select: "buildingName",
+    });
+
+    if (!units?.length) {
+      return res.status(400).json({ message: "No unit found" });
+    }
+
+    // Base query must always include company (multi-tenant sanity)
+    let query = { company };
+
+    if (virtualofficeclientid) {
+      query._id = virtualofficeclientid;
+    } else {
+      if (unitId) query.unit = unitId;
+
+      if (active !== undefined) {
+        // active=true/false maps to clientStatus boolean
+        query.clientStatus = active === "true";
+      }
+
+      if (rentStatus) {
+        query.rentStatus = rentStatus; // "Active" | "Expired" | "Terminated" | "Not Active"
+      }
+    }
+
+    const populateOptions = [
+      {
+        path: "unit",
+        select: "_id unitName unitNo cabinDesks openDesks",
+        populate: {
+          path: "building",
+          select: "_id buildingName fullAddress",
+        },
+      },
+    ];
+
+    const clients = await VirtualOfficeClient.find(query)
+      .populate(populateOptions)
+      .lean()
+      .exec();
+
+    if (!clients?.length) {
+      return res.status(404).json({ message: "No clients found" });
+    }
+
+    return res.status(200).json(clients);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getVirtualOfficeClientsByMonth = async (req, res, next) => {
   try {
     const { company } = req;
     const { virtualOfficeClientId, unitId } = req.query;
@@ -678,6 +750,7 @@ const bulkInsertVirtualOfficeClients = async (req, res, next) => {
 module.exports = {
   createVirtualOfficeClient,
   getVirtualOfficeClients,
+  getVirtualOfficeClientsByMonth,
   updateVirtualOfficeClient,
   updateVirtualOfficeStatus,
   bulkInsertVirtualOfficeClients,
