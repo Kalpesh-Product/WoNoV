@@ -2,20 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import AgTable from "../../../../components/AgTable";
-import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import StatusChip from "../../../../components/StatusChip";
-import MuiModal from "../../../../components/MuiModal";
-import { useState } from "react";
-import DetalisFormatted from "../../../../components/DetalisFormatted";
-import humanDate from "../../../../utils/humanDateForamt";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 
 const VirtualOfficeClients = () => {
   const axios = useAxiosPrivate();
-  const navigate = useNavigate()
-  const [openModal, setOpenModal] = useState(false);
-  const [selectedClient, setSelectedClient] = useState([]);
-  const [modalMode, setModalMode] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
 
   //-------------------------API-----------------------------//
   const { data = [], isLoading } = useQuery({
@@ -39,10 +35,15 @@ const VirtualOfficeClients = () => {
 
   //-------------------------API-----------------------------//
   //-------------------------Event Handlers-----------------------------//
-  const handleViewClient = (data) => {
-    setModalMode("view");
-    setSelectedClient(data);
-    setOpenModal(true);
+  const handleViewClient = (clientData) => {
+    const isMixBag = location.pathname.includes("mix-bag");
+    dispatch(setSelectedClient(clientData));
+
+    navigate(
+      isMixBag
+        ? `/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`
+        : `/app/dashboard/sales-dashboard/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`,
+    );
   };
 
   //-------------------------Event Handlers-----------------------------//
@@ -82,40 +83,14 @@ const VirtualOfficeClients = () => {
           columns={columns}
           tableTitle={"Virtual Office Clients"}
           buttonTitle="Add Client"
-          handleClick={()=>navigate("/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/client-onboarding")}
+          handleClick={() =>
+            navigate(
+              "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/client-onboarding",
+            )
+          }
           search
         />
       </PageFrame>
-      <MuiModal
-        title={modalMode === "view" ? "View Client" : ""}
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-      >
-        {modalMode === "view" && (
-          <div className="grid grid-cols-1 gap-4">
-            <DetalisFormatted
-              title={"Client Name"}
-              detail={selectedClient?.clientName}
-            />
-            <DetalisFormatted
-              title={"Rent Date"}
-              detail={humanDate(selectedClient?.rentDate)}
-            />
-            <DetalisFormatted
-              title={"Term End"}
-              detail={humanDate(selectedClient?.termEnd)}
-            />
-            <DetalisFormatted
-              title={"Next Increment Date"}
-              detail={humanDate(selectedClient?.nextIncrementDate)}
-            />
-             <DetalisFormatted
-              title={"Rent Status"}
-              detail={selectedClient?.rentStatus}
-            />
-          </div>
-        )}
-      </MuiModal>
     </div>
   );
 };

@@ -393,6 +393,7 @@ import ViewClientInfo from "../pages/Dashboard/SalesDashboard/ViewClientInfo";
 import CoWorkingClients from "../pages/Dashboard/SalesDashboard/ViewClients/CoWorkingClients";
 import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/WorkationClients";
 import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
+import VirtualOfficeClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDetails";
 import LogPage from "../pages/LogPage";
 import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
 import AccessPages from "../pages/Access/AccessPages";
@@ -1506,6 +1507,14 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag/clients/virtual-office",
                         element: <VirtualOfficeClients />,
+                      },
+                      {
+                        path: "mix-bag/clients/virtual-office/:clientId",
+                        element: <VirtualOfficeClientDetails />,
+                      },
+                      {
+                        path: "clients/virtual-office/:clientId",
+                        element: <VirtualOfficeClientDetails />,
                       },
                       {
                         path: "mix-bag/clients/co-working/:clientName",
