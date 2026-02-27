@@ -30,6 +30,7 @@ import {
   isAlphanumeric,
 } from "../../../../../utils/validators";
 import YearWiseTable from "../../../../../components/Tables/YearWiseTable";
+import { PERMISSIONS } from "../../../../../constants/permissions";
 
 const Leaves = () => {
   const axios = useAxiosPrivate();
@@ -54,6 +55,12 @@ const Leaves = () => {
   const [openModal, setOpenModal] = useState(false);
   const name = localStorage.getItem("employeeName") || "Employee";
   const { auth } = useAuth();
+
+  const hasCorrectionRequestAccess = useMemo(() => {
+    return auth?.permissions?.some(
+      (permission) => permission.value === PERMISSIONS.HR_LEAVE_REQUEST.value
+    );
+  }, [auth?.permissions]);
 
   const { data: leaves = [], isLoading } = useQuery({
     queryKey: ["leaves"],
@@ -149,36 +156,36 @@ const Leaves = () => {
               menuItems={[
                 ...(params.data.status === "Rejected"
                   ? [
-                      {
-                        label: "Approve",
-                        onClick: () => approveLeave(params.data._id),
-                        isLoading: isApproving,
-                      },
-                    ]
+                    {
+                      label: "Approve",
+                      onClick: () => approveLeave(params.data._id),
+                      isLoading: isApproving,
+                    },
+                  ]
                   : []),
                 ...(params.data.status === "Approved"
                   ? [
-                      {
-                        label: "Reject",
-                        onClick: () => rejectLeave(params.data._id),
-                        isLoading: isRejecting,
-                      },
-                    ]
+                    {
+                      label: "Reject",
+                      onClick: () => rejectLeave(params.data._id),
+                      isLoading: isRejecting,
+                    },
+                  ]
                   : []),
                 ...(params.data.status !== "Approved" &&
-                params.data.status !== "Rejected"
+                  params.data.status !== "Rejected"
                   ? [
-                      {
-                        label: "Approve",
-                        onClick: () => approveLeave(params.data._id),
-                        isLoading: isApproving,
-                      },
-                      {
-                        label: "Reject",
-                        onClick: () => rejectLeave(params.data._id),
-                        isLoading: isRejecting,
-                      },
-                    ]
+                    {
+                      label: "Approve",
+                      onClick: () => approveLeave(params.data._id),
+                      isLoading: isApproving,
+                    },
+                    {
+                      label: "Reject",
+                      onClick: () => rejectLeave(params.data._id),
+                      isLoading: isRejecting,
+                    },
+                  ]
                   : []),
               ]}
             />
@@ -344,6 +351,7 @@ const Leaves = () => {
             tableTitle={`${name}'s Leaves`}
             dateColumn={"fromDate"}
             buttonTitle={"Add Requested Leave"}
+            buttonDisabled={!hasCorrectionRequestAccess}
             handleSubmit={() => {
               setOpenModal(true);
             }}
@@ -441,7 +449,7 @@ const Leaves = () => {
                   {...field}
                   label="Hours"
                   type="number"
-                  // helperText={errors.quantity?.message}
+                // helperText={errors.quantity?.message}
                 />
               )}
             />

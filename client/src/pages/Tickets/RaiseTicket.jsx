@@ -126,15 +126,15 @@ const RaiseTicket = () => {
   const formatAssignments = (assignments = []) => {
     const assignmentDetails = Array.isArray(assignments)
       ? assignments.map((assignment) => {
-          const assignee = assignment?.assignee;
-          const assigneeName =
-            assignee?.firstName && assignee?.lastName
-              ? `${assignee.firstName} ${assignee.lastName}`
-              : "Unknown";
-          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+        const assignee = assignment?.assignee;
+        const assigneeName =
+          assignee?.firstName && assignee?.lastName
+            ? `${assignee.firstName} ${assignee.lastName}`
+            : "Unknown";
+        const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
 
-          return { assigneeName, assignedAtFormatted };
-        })
+        return { assigneeName, assignedAtFormatted };
+      })
       : [];
 
     const assignedToDisplay = assignmentDetails
@@ -325,6 +325,13 @@ const RaiseTicket = () => {
                             fetchedDepartments
                               ?.filter(
                                 (dept) =>
+                                  dept.department.name !== "Sales" &&
+                                  dept.department.name !== "HR" &&
+                                  dept.department.name !== "Finance" &&
+                                  dept.department.name !== "IT" &&
+                                  dept.department.name !== "Maintainance" &&
+                                  dept.department.name !== "Top Management" &&
+                                  dept.department.name !== "Test Dept 1" &&
                                   dept.department.name !== "Cafe" &&
                                   dept.department.name !== "Marketing" &&
                                   dept.department.name !== "Expansion" &&
@@ -340,6 +347,27 @@ const RaiseTicket = () => {
                                 </MenuItem>
                               ))
                           )}
+                          <MenuItem value="Sales" disabled>
+                            Sales
+                          </MenuItem>
+                          <MenuItem value="HR" disabled>
+                            HR
+                          </MenuItem>
+                          <MenuItem value="Finance" disabled>
+                            Finance
+                          </MenuItem>
+                          <MenuItem value="IT" disabled>
+                            IT
+                          </MenuItem>
+                          <MenuItem value="Maintainance" disabled>
+                            Maintainance
+                          </MenuItem>
+                          <MenuItem value="Top Management" disabled>
+                            Top Management
+                          </MenuItem>
+                          <MenuItem value="Test Dept 1" disabled>
+                            Test Dept 1
+                          </MenuItem>
                           <MenuItem value="Cafe" disabled>
                             Cafe
                           </MenuItem>

@@ -30,9 +30,18 @@ import {
 } from "../../../../../utils/validators";
 import YearWiseTable from "../../../../../components/Tables/YearWiseTable";
 import PageFrame from "../../../../../components/Pages/PageFrame";
+import useAuth from "../../../../../hooks/useAuth";
+import { PERMISSIONS } from "../../../../../constants/permissions";
 
 const Attendance = () => {
   const axios = useAxiosPrivate();
+
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  const hasCorrectionRequestAccess = userPermissions.includes(
+    PERMISSIONS.HR_CORRECTION_REQUEST.value
+  );
+
   const queryClient = useQueryClient();
   const {
     control,
@@ -258,9 +267,8 @@ const Attendance = () => {
           <div style="padding: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
             <div style="display: flex; justify-content: space-between; gap: 2rem;">
               <div style="text-align: start;"><strong>Date</strong></div>
-              <div style="text-align: end;">${
-                attendanceData[dataPointIndex].date
-              }</div>
+              <div style="text-align: end;">${attendanceData[dataPointIndex].date
+          }</div>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 2rem;">
               <div style="text-align: start;"><strong>Late Check-In</strong></div>
@@ -357,6 +365,7 @@ const Attendance = () => {
           <PageFrame>
             <YearWiseTable
               buttonTitle={"Correction Request"}
+              buttonDisabled={!hasCorrectionRequestAccess}
               handleSubmit={() => {
                 setOpenModal(true);
               }}
@@ -384,33 +393,33 @@ const Attendance = () => {
               data={
                 !isLoading && attendance.length > 0
                   ? attendance.map((record, index) => ({
-                      id: index + 1,
-                      date: record?.inTime ? record?.inTime : "N/A",
-                      inTime: record?.inTime ? humanTime(record.inTime) : "N/A",
-                      outTime: record?.outTime
-                        ? humanTime(record.outTime)
+                    id: index + 1,
+                    date: record?.inTime ? record?.inTime : "N/A",
+                    inTime: record?.inTime ? humanTime(record.inTime) : "N/A",
+                    outTime: record?.outTime
+                      ? humanTime(record.outTime)
+                      : "N/A",
+                    workHours:
+                      record?.inTime && record?.outTime
+                        ? formatDuration(record.inTime, record.outTime)
                         : "N/A",
-                      workHours:
-                        record?.inTime && record?.outTime
-                          ? formatDuration(record.inTime, record.outTime)
-                          : "N/A",
-                      breakHours: record?.breakDuration ?? "N/A",
-                      totalHours:
-                        record?.inTime && record?.outTime
-                          ? formatDuration(record.inTime, record.outTime)
-                          : "N/A",
-                    }))
+                    breakHours: record?.breakDuration ?? "N/A",
+                    totalHours:
+                      record?.inTime && record?.outTime
+                        ? formatDuration(record.inTime, record.outTime)
+                        : "N/A",
+                  }))
                   : [
-                      {
-                        id: 1,
-                        date: "No Data",
-                        inTime: "-",
-                        outTime: "-",
-                        workHours: "-",
-                        breakHours: "-",
-                        totalHours: "-",
-                      },
-                    ]
+                    {
+                      id: 1,
+                      date: "No Data",
+                      inTime: "-",
+                      outTime: "-",
+                      workHours: "-",
+                      breakHours: "-",
+                      totalHours: "-",
+                    },
+                  ]
               }
               columns={attendanceColumns}
               dateColumn="date"
