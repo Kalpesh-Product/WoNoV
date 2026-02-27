@@ -1,5 +1,6 @@
 import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -13,10 +14,13 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
+import { useParams, useSearchParams } from "react-router-dom";
 
 const VirtualOfficeClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
+  const { clientId } = useParams();
+  const [searchParams] = useSearchParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
   const { control, handleSubmit, reset } = useForm({
@@ -96,6 +100,35 @@ const VirtualOfficeClientDetails = () => {
       });
     }
   }, [selectedClient, reset]);
+
+  const virtualOfficeClientId =
+    searchParams.get("virtualofficeclientid") ||
+    (/^[a-fA-F0-9]{24}$/.test(clientId) ? clientId : selectedClient?._id);
+
+  const { isLoading: isClientLoading } = useQuery({
+    queryKey: ["virtualOfficeClient", virtualOfficeClientId],
+    enabled: Boolean(virtualOfficeClientId),
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/sales/virtual-office/clients?virtualofficeclientid=${virtualOfficeClientId}`,
+        );
+        const clientData =
+          response?.data?.client || response?.data?.data || response?.data;
+
+        if (clientData?._id) {
+          dispatch(setSelectedClient(clientData));
+        }
+
+        return clientData;
+      } catch (error) {
+        toast.error(
+          error?.response?.data?.message || "Unable to fetch client details",
+        );
+        throw error;
+      }
+    },
+  });
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -274,6 +307,7 @@ const VirtualOfficeClientDetails = () => {
           <PrimaryButton
             handleSubmit={handleEditToggle}
             title={isEditing ? "Cancel" : "Edit"}
+            disabled={isClientLoading}
           />
         </div>
       </div>

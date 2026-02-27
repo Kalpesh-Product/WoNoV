@@ -4,11 +4,14 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import AgTable from "../../../../components/AgTable";
 import StatusChip from "../../../../components/StatusChip";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 
 const VirtualOfficeClients = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
 
   //-------------------------API-----------------------------//
   const { data = [], isLoading } = useQuery({
@@ -32,13 +35,14 @@ const VirtualOfficeClients = () => {
 
   //-------------------------API-----------------------------//
   //-------------------------Event Handlers-----------------------------//
-  const handleViewClient = (clientId) => {
+  const handleViewClient = (clientData) => {
     const isMixBag = location.pathname.includes("mix-bag");
+    dispatch(setSelectedClient(clientData));
 
     navigate(
       isMixBag
-        ? `/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/${clientId}`
-        : `/app/dashboard/sales-dashboard/clients/virtual-office/${clientId}`,
+        ? `/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/${encodeURIComponent(clientData.clientName)}?virtualofficeclientid=${clientData._id}`
+        : `/app/dashboard/sales-dashboard/clients/virtual-office/${encodeURIComponent(clientData.clientName)}?virtualofficeclientid=${clientData._id}`,
     );
   };
 
@@ -52,7 +56,7 @@ const VirtualOfficeClients = () => {
       flex: 1,
       cellRenderer: (params) => (
         <span
-          onClick={() => handleViewClient(params.data._id)}
+          onClick={() => handleViewClient(params.data)}
           className="text-primary underline cursor-pointer"
         >
           {params.value}
