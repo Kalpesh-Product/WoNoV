@@ -9,33 +9,33 @@ const ItSettings = () => {
   const navigate = useNavigate();
 
   // Map routes to tabs
- const tabs = [
-  {
-    label: "Bulk Upload",
-    path: "bulk-upload",
-    permission: PERMISSIONS.IT_BULK_UPLOAD.value,
-  },
-  {
-    label: "SOPs",
-    path: "sops",
-    permission: PERMISSIONS.IT_SOPS.value,
-  },
-  {
-    label: "Policies",
-    path: "policies",
-    permission: PERMISSIONS.IT_POLICIES.value,
-  },
-];
+  const tabs = [
+    {
+      label: "Bulk Upload",
+      path: "bulk-upload",
+      permission: PERMISSIONS.IT_BULK_UPLOAD.value,
+    },
+    {
+      label: "SOPs",
+      path: "sops",
+      permission: PERMISSIONS.IT_SOPS.value,
+    },
+    {
+      label: "Policies",
+      path: "policies",
+      permission: PERMISSIONS.IT_POLICIES.value,
+    },
+  ];
 
 
   // Redirect to "bulk-upload" if the current path is "/maintenance-dashboard/settings"
-  useEffect(() => {
-    if (location.pathname === "/app/dashboard/IT-dashboard/settings") {
-      navigate("/app/dashboard/IT-dashboard/settings/bulk-upload", {
-        replace: true,
-      });
-    }
-  }, [location, navigate]);
+  // useEffect(() => {
+  //   if (location.pathname === "/app/dashboard/IT-dashboard/settings") {
+  //     navigate("/app/dashboard/IT-dashboard/settings/bulk-upload", {
+  //       replace: true,
+  //     });
+  //   }
+  // }, [location, navigate]);
 
   // Determine whether to show the tabs
   const showTabs = !location.pathname.includes("bulk-upload/");
@@ -46,7 +46,7 @@ const ItSettings = () => {
   );
 
   return (
-       <TabLayout
+    <TabLayout
       basePath="/app/dashboard/IT-dashboard/settings"
       defaultTabPath="bulk-upload"
       tabs={tabs}
