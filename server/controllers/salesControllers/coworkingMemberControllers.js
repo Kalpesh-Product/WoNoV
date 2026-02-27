@@ -7,7 +7,11 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const mongoose = require("mongoose");
 const Unit = require("../../models/locations/Unit");
-const TestCoworkingMember = require("../../models/sales/CoworkingMembers");
+const TestCoworkingMember = require("../../models/sales/TestCoworkingMembers");
+const {
+  normalizeClientName,
+  normalizeName,
+} = require("../../utils/dataSheetFormatters");
 
 const createMember = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -243,7 +247,6 @@ const getMembersByUnit = async (req, res, next) => {
     if (active) {
       query.isActive = active === "true" ? true : false;
     }
-    console.log("query client member unint (client)", query);
     const clients = await CoworkingClient.find(query).populate({
       path: "unit",
       select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
@@ -253,7 +256,6 @@ const getMembersByUnit = async (req, res, next) => {
       (acc, client) => acc + (client.openDesks + client.cabinDesks),
       0,
     );
-    console.log("query client member unint (member)", query);
 
     const members = await CoworkingMembers.find(query)
       .populate([
@@ -397,7 +399,7 @@ const getMemberByClient = async (req, res) => {
     if (active) {
       query.isActive = active === "true" ? true : false;
     }
-    console.log("query client member", query);
+
     const member = await CoworkingMembers.find(query)
       .populate("client", "clientName service")
       .select("employeeName email");
@@ -553,6 +555,337 @@ const updateMemberStatus = async (req, res) => {
 //   }
 // };
 
+// const bulkInsertCoworkingMembers = async (req, res, next) => {
+//   try {
+//     const file = req.file;
+//     const company = req.company;
+
+//     if (!file) {
+//       return res.status(400).json({ message: "Please provide a CSV file" });
+//     }
+
+//     const coworkingClients = await CoworkingClient.find({ company })
+//       .lean()
+//       .exec();
+
+//     const normalizeClientName = (name) =>
+//       name?.toLowerCase().replace(/\s+/g, "");
+
+//     const coworkingClientsMap = new Map(
+//       coworkingClients.map((client) => [
+//         normalizeClientName(client.clientName),
+//         client._id,
+//       ]),
+//     );
+
+//     // const coworkingClientsMap = new Map(
+//     //   coworkingClients.map((client) => [
+//     //     client.clientName.trim().toLowerCase(),
+//     //     client._id,
+//     //   ]),
+//     // );
+
+//     const units = await Unit.find({ company }).lean().exec();
+//     const unitMap = new Map(
+//       units.map((unit) => [`${unit.unitNo}`.trim(), unit._id]),
+//     );
+
+//     const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+//     let members = [];
+//     let unknownClients = [];
+//     let unknownUnits = [];
+
+//     stream
+//       .pipe(csvParser())
+//       .on("data", (row) => {
+//         const {
+//           "Company Name": companyName,
+//           "Employee Name": employeeName,
+//           Designation: designation,
+//           "Mobile No": mobileNo,
+//           Email: email,
+//           "Blood Group": bloodGroup,
+//           DOB: dob,
+//           "Emergency Name": emergencyName,
+//           "Emergency No.": emergencyNo,
+//           "BIZ Nest DOJ": dateOfJoining,
+//           "Unit No": unitNumber,
+//           "Biometric Status (Yes/No)": biometricStatus,
+//         } = row;
+
+//         if (!employeeName || !companyName) return;
+
+//         // const clientId = coworkingClientsMap.get(
+//         //   companyName?.trim().toLowerCase(),
+//         // );
+
+//         const clientId = coworkingClientsMap.get(
+//           normalizeClientName(companyName),
+//         );
+
+//         if (!clientId) {
+//           unknownClients.push({
+//             employeeName,
+//             companyName,
+//             reason: "Client not found",
+//           });
+//           return;
+//         }
+
+//         let unitId = null;
+
+//         if (unitNumber) {
+//           unitId = unitMap.get(`${unitNumber?.trim()}`);
+//           if (!unitId) {
+//             unknownUnits.push({
+//               employeeName,
+//               unitNumber,
+//               reason: "Unit not found",
+//             });
+//             return;
+//           }
+//         }
+
+//         const status =
+//           biometricStatus?.toLowerCase() === "yes"
+//             ? "Active"
+//             : biometricStatus?.toLowerCase() === "no"
+//               ? "Inactive"
+//               : "Pending";
+
+//         members.push({
+//           company: company,
+//           client: clientId,
+//           employeeName: employeeName?.trim(),
+//           designation: designation?.trim() || undefined,
+//           mobileNo: mobileNo?.trim() ? mobileNo.trim() : undefined,
+//           email: email?.trim() ? email.trim().toLowerCase() : undefined,
+//           bloodGroup: bloodGroup?.trim() || undefined,
+//           dob: dob ? new Date(dob) : undefined,
+//           emergencyName: emergencyName?.trim() || undefined,
+//           emergencyNo: emergencyNo?.trim() || undefined,
+//           dateOfJoining: dateOfJoining ? new Date(dateOfJoining) : undefined,
+//           unit: unitId,
+//           biometricStatus: status,
+//         });
+//       })
+
+//       .on("end", async () => {
+//         try {
+//           if (!members.length) {
+//             return res.status(400).json({
+//               message: "No valid member records found.",
+//               unknownClients,
+//               unknownUnits,
+//             });
+//           }
+
+//           // if (unknownClients.length > 0) {
+//           //   return res.status(400).json({
+//           //     message: "Some clients do not exist in database",
+//           //     unknownClients,
+//           //   });
+//           // }
+
+//           let nonExistingClientNames = [];
+
+//           if (unknownClients.length > 0) {
+//             nonExistingClientNames = [
+//               ...new Set(unknownClients.map((c) => c.companyName)),
+//             ];
+
+//             // return res.status(400).json({
+//             //   message: "Some clients do not exist in database",
+//             //   nonExistingClientNames,
+//             // });
+//           }
+
+//           // return res.status(200).json({ message: "All companies exist" });
+//           // ----------------------------
+//           // 1️⃣ Remove CSV duplicates
+//           // ----------------------------
+//           const uniqueMap = new Map();
+//           const csvDuplicates = [];
+
+//           members.forEach((member) => {
+//             // If no email & no mobile → allow all
+//             // if (!member.email && !member.mobileNo) {
+//             //   uniqueMap.set(Symbol(), member);
+//             //   return;
+//             // }
+
+//             // const key = member.email
+//             //   ? `email_${member.client}_${member.email}`
+//             //   : `mobile_${member.client}_${member.mobileNo}`;
+
+//             const key = `name_${member.client}_${member.employeeName
+//   .toLowerCase()
+//   .trim()}`;
+
+// if (!uniqueMap.has(key)) {
+//   uniqueMap.set(key, member);
+// } else {
+//   csvDuplicates.push({
+//     employeeName: member.employeeName,
+//     reason: "Duplicate name in CSV",
+//   });
+// }
+
+//             if (!uniqueMap.has(key)) {
+//               uniqueMap.set(key, member);
+//             } else {
+//               csvDuplicates.push({
+//                 employeeName: member.employeeName,
+//                 email: member.email,
+//                 mobileNo: member.mobileNo,
+//                 reason: "Duplicate in CSV",
+//               });
+//             }
+//           });
+
+//           const uniqueMembers = Array.from(uniqueMap.values());
+
+//           // ----------------------------
+//           // 2️⃣ Fetch DB duplicates
+//           // ----------------------------
+
+//           // const existingMembers = await TestCoworkingMember.find({
+//           //   company: company,
+//           //   $or: [
+//           //     ...uniqueMembers
+//           //       .filter((m) => m.email)
+//           //       .map((m) => ({ client: m.client, email: m.email })),
+//           //     ...uniqueMembers
+//           //       .filter((m) => m.mobileNo)
+//           //       .map((m) => ({ client: m.client, mobileNo: m.mobileNo })),
+//           //   ],
+//           // })
+//           //   .select("client email mobileNo")
+//           //   .lean();
+
+//           // const existingSet = new Set(
+//           //   existingMembers.map((m) => `${m.client}_${m.email}`),
+//           // );
+
+//           const existingMembers = await TestCoworkingMember.find({
+//             company,
+//             client: { $in: uniqueMembers.map((m) => m.client) },
+//           })
+//             .select("client employeeName")
+//             .lean();
+
+//           const existingNameSet = new Set(
+//             existingMembers.map(
+//               (m) => `${m.client}_${m.employeeName.toLowerCase().trim()}`,
+//             ),
+//           );
+
+//           const existingEmailSet = new Set(
+//             existingMembers
+//               .filter((m) => m.email)
+//               .map((m) => `${m.client}_${m.email}`),
+//           );
+
+//           const existingMobileSet = new Set(
+//             existingMembers
+//               .filter((m) => m.mobileNo)
+//               .map((m) => `${m.client}_${m.mobileNo}`),
+//           );
+
+//           // const finalMembers = [];
+//           // const dbDuplicates = [];
+
+//           // for (const member of uniqueMembers) {
+//           //   const query = {
+//           //     company: company,
+//           //     client: member.client,
+//           //     $or: [],
+//           //   };
+
+//             // if (member.email) {
+//             //   query.$or.push({ email: member.email });
+//             // }
+
+//             // if (member.mobileNo) {
+//             //   query.$or.push({ mobileNo: member.mobileNo });
+//             // }
+
+//             // // Always check duplicate name
+//             // query.$or.push({ employeeName: member.employeeName });
+
+//              // If no email and no mobile → allow directly
+//             // if (query.$or.length === 0) {
+//             //   finalMembers.push(member);
+//             //   continue;
+//             // }
+
+//           const finalMembers = [];
+// const dbDuplicates = [];
+
+// for (const member of uniqueMembers) {
+//   const key = `${member.client}_${member.employeeName
+//     .toLowerCase()
+//     .trim()}`;
+
+//   if (existingNameSet.has(key)) {
+//     dbDuplicates.push({
+//       employeeName: member.employeeName,
+//       reason: "Already exists in database (same name)",
+//     });
+//   } else {
+//     finalMembers.push(member);
+//   }
+// }
+
+//             const exists = await TestCoworkingMember.findOne(query).lean();
+
+//             if (exists) {
+//               dbDuplicates.push({
+//                 employeeName: member.employeeName,
+//                 email: member.email,
+//                 mobileNo: member.mobileNo,
+//                 reason: "Already exists in database",
+//               });
+//             } else {
+//               finalMembers.push(member);
+//             }
+//           }
+
+//           // ----------------------------
+//           // 3️⃣ Insert remaining
+//           // ----------------------------
+//           if (finalMembers.length > 0) {
+//             await TestCoworkingMember.insertMany(finalMembers);
+//           }
+
+//           return res.status(201).json({
+//             message: `${finalMembers.length} members inserted successfully`,
+//             insertedCount: finalMembers.length,
+//             skippedCount:
+//               unknownClients.length +
+//               unknownUnits.length +
+//               csvDuplicates.length +
+//               dbDuplicates.length,
+//             unknownClients,
+//             unknownUnits,
+//             csvDuplicates,
+//             dbDuplicates,
+//             nonExistingClientNames,
+//           });
+//         } catch (err) {
+//           next(err);
+//         }
+//       })
+
+//       .on("error", (err) => {
+//         next(err);
+//       });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const bulkInsertCoworkingMembers = async (req, res, next) => {
   try {
     const file = req.file;
@@ -562,15 +895,25 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
       return res.status(400).json({ message: "Please provide a CSV file" });
     }
 
+    // ----------------------------
+    // Fetch Clients
+    // ----------------------------
     const coworkingClients = await CoworkingClient.find({ company })
       .lean()
       .exec();
 
     const coworkingClientsMap = new Map(
-      coworkingClients.map((client) => [client.clientName.trim(), client._id]),
+      coworkingClients.map((client) => [
+        normalizeClientName(client.clientName),
+        client._id,
+      ]),
     );
 
+    // ----------------------------
+    // Fetch Units
+    // ----------------------------
     const units = await Unit.find({ company }).lean().exec();
+
     const unitMap = new Map(
       units.map((unit) => [`${unit.unitNo}`.trim(), unit._id]),
     );
@@ -601,7 +944,9 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
 
         if (!employeeName || !companyName) return;
 
-        const clientId = coworkingClientsMap.get(companyName?.trim());
+        const clientId = coworkingClientsMap.get(
+          normalizeClientName(companyName),
+        );
 
         if (!clientId) {
           unknownClients.push({
@@ -634,12 +979,11 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
               : "Pending";
 
         members.push({
-          company: company,
           client: clientId,
-          employeeName: employeeName?.trim(),
+          employeeName: employeeName.trim(),
           designation: designation?.trim() || undefined,
-          mobileNo: mobileNo?.trim(),
-          email: email?.trim() || undefined,
+          mobileNo: mobileNo?.trim() || undefined,
+          email: email?.trim()?.toLowerCase() || undefined,
           bloodGroup: bloodGroup?.trim() || undefined,
           dob: dob ? new Date(dob) : undefined,
           emergencyName: emergencyName?.trim() || undefined,
@@ -661,22 +1005,26 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
           }
 
           // ----------------------------
-          // 1️⃣ Remove CSV duplicates
+          // 1️⃣ Remove CSV duplicates (by name)
           // ----------------------------
           const uniqueMap = new Map();
           const csvDuplicates = [];
 
           members.forEach((member) => {
-            const key = `${member.client}_${member.email || member.mobileNo}`;
+            // const key = `name_${member.client}_${member.employeeName
+            //   .toLowerCase()
+            //   .trim()}`;
+
+            const key = `name_${member.client}_${normalizeName(
+              member.employeeName,
+            )}`;
 
             if (!uniqueMap.has(key)) {
               uniqueMap.set(key, member);
             } else {
               csvDuplicates.push({
                 employeeName: member.employeeName,
-                email: member.email,
-                mobileNo: member.mobileNo,
-                reason: "Duplicate in CSV",
+                reason: "Duplicate name in CSV",
               });
             }
           });
@@ -684,44 +1032,43 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
           const uniqueMembers = Array.from(uniqueMap.values());
 
           // ----------------------------
-          // 2️⃣ Fetch DB duplicates
+          // 2️⃣ Fetch DB duplicates (by name)
           // ----------------------------
           const existingMembers = await CoworkingMembers.find({
-            company: company._id,
-            $or: uniqueMembers.map((m) => ({
-              client: m.client,
-              email: m.email,
-            })),
+            client: { $in: uniqueMembers.map((m) => m.client.toString()) },
           })
-            .select("client email")
+            .select("client employeeName")
             .lean();
 
-          const existingSet = new Set(
-            existingMembers.map((m) => `${m.client}_${m.email}`),
+          const existingNameSet = new Set(
+            existingMembers.map(
+              (m) => `name_${m.client}_${normalizeName(m.employeeName)}`,
+            ),
           );
 
+          const finalMembers = [];
           const dbDuplicates = [];
 
-          const finalMembers = uniqueMembers.filter((member) => {
-            const key = `${member.client}_${member.email}`;
+          for (const member of uniqueMembers) {
+            const key = `name_${member.client}_${normalizeName(
+              member.employeeName,
+            )}`;
 
-            if (existingSet.has(key)) {
+            if (existingNameSet.has(key)) {
               dbDuplicates.push({
                 employeeName: member.employeeName,
-                email: member.email,
-                reason: "Already exists in database",
+                reason: "Already exists in database (same name)",
               });
-              return false;
+            } else {
+              finalMembers.push(member);
             }
-
-            return true;
-          });
+          }
 
           // ----------------------------
-          // 3️⃣ Insert remaining
+          // 3️⃣ Insert Remaining
           // ----------------------------
           if (finalMembers.length > 0) {
-            await TestCoworkingMember.insertMany(finalMembers);
+            await CoworkingMembers.insertMany(finalMembers);
           }
 
           return res.status(201).json({

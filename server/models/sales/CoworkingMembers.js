@@ -12,6 +12,7 @@ const coworkingMemberSchema = new mongoose.Schema(
     },
     employeeName: {
       type: String,
+      required: true,
     },
     designation: {
       type: String,
@@ -58,11 +59,6 @@ const coworkingMemberSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
-);
-
-coworkingMemberSchema.index(
-  { company: 1, client: 1, mobileNo: 1 },
-  { unique: true, sparse: true },
 );
 
 const CoworkingMember = mongoose.model(
