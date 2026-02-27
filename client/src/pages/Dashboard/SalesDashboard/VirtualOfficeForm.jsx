@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { TextField, Select, MenuItem, CircularProgress } from "@mui/material";
+import { TextField, MenuItem, CircularProgress } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import { State, City } from "country-state-city";
@@ -9,8 +9,6 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import DetalisFormatted from "../../../components/DetalisFormatted";
-import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import PageFrame from "../../../components/Pages/PageFrame";
 
@@ -51,8 +49,8 @@ const VirtualOfficeForm = () => {
       hOPocPhone: "",
     },
   });
-  const clientsData = useSelector((state) => state.sales.clientsData);
-  const [selectedUnit, setSelectedUnit] = useState("");
+  // const clientsData = useSelector((state) => state.sales.clientsData);
+  // const [selectedUnit, setSelectedUnit] = useState("");
 
   //-----------------------------------------------------Calculation------------------------------------------------//
   const cabinDesks = useWatch({ control, name: "cabinDesks" });
@@ -93,27 +91,19 @@ const VirtualOfficeForm = () => {
   const {
     data: units = [],
     isLoading: isUnitsPending,
-    error: isUnitsError,
+    // error: isUnitsError,
     refetch: fetchUnits,
   } = useQuery({
     queryKey: ["units"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/company/fetch-units?deskCalculated=true`
+        `/api/company/fetch-units?deskCalculated=true`,
       );
       return response.data;
     },
   });
 
-  const availableCabinDesks = units.filter(
-    (item) => item._id?.trim() === selectedUnit.trim()
-  );
-  const {
-    data: services = [],
-    isLoading: isServicesPending,
-    error: isServicesError,
-    refetch: fetchServices,
-  } = useQuery({
+  const { data: services = [], isLoading: isServicesPending } = useQuery({
     queryKey: ["services"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/services");
@@ -127,8 +117,8 @@ const VirtualOfficeForm = () => {
       mutationKey: "clientData",
       mutationFn: async (data) => {
         const response = await axios.post(
-          `/api/sales/onboard-co-working-client`,
-          data
+          "/api/sales/onboard-virtual-office-client",
+          data,
         );
         return response.data;
       },
@@ -142,18 +132,54 @@ const VirtualOfficeForm = () => {
     });
 
   const onSubmit = (data) => {
-    mutateClientData(data);
+    const payload = {
+      clientName: data.clientName,
+      email: data.email,
+      phone: data.phone,
+      sector: data.sector,
+      state:
+        states.find((item) => item.isoCode === data.hoState)?.name ||
+        data.hoState,
+      city: data.hoCity,
+      unit: data.unit,
+      termStartDate: data.startDate
+        ? dayjs(data.startDate).format("YYYY-MM-DD")
+        : null,
+      termEnd: data.endDate ? dayjs(data.endDate).format("YYYY-MM-DD") : null,
+      lockInPeriodMonths: Number(data.lockinPeriod),
+      rentDate: data.rentDate
+        ? dayjs(data.rentDate).format("YYYY-MM-DD")
+        : null,
+      cabinDesks: Number(data.cabinDesks) || 0,
+      cabinDeskRate: Number(data.ratePerCabinDesk) || 0,
+      openDesks: Number(data.openDesks) || 0,
+      openDeskRate: Number(data.ratePerOpenDesk) || 0,
+      perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
+      annualIncrement: Number(data.annualIncrement) || 0,
+      localPoc: {
+        name: data.localPocName,
+        email: data.localPocEmail,
+        phone: data.localPocPhone,
+      },
+      hoPoc: {
+        name: data.hOPocName,
+        email: data.hOPocEmail,
+        phone: data.hOPocPhone,
+      },
+    };
+
+    mutateClientData(payload);
   };
 
   const handleReset = () => {
     reset();
   };
 
-  const [selectedValue, setSelectedValue] = useState("Coworking");
+  // const [selectedValue, setSelectedValue] = useState("Coworking");
 
-  const handleChange = (event) => {
-    setSelectedValue(event.target.value);
-  };
+  // const handleChange = (event) => {
+  //   setSelectedValue(event.target.value);
+  // };
 
   return (
     <div className="p-4">
@@ -283,7 +309,7 @@ const VirtualOfficeForm = () => {
                           select
                           label="State"
                           onChange={(e) => {
-                            field.onChange(e);
+                            field.onChange(e.target.value);
                             handleStateSelect(e.target.value);
                           }}
                           fullWidth
@@ -340,8 +366,7 @@ const VirtualOfficeForm = () => {
                         {...field}
                         onClick={fetchUnits}
                         onChange={(e) => {
-                          field.onChange(e);
-                          setSelectedUnit(e.target.value);
+                          field.onChange(e.target.value);
                           fetchUnits();
                         }}
                         size="small"
@@ -670,7 +695,7 @@ const VirtualOfficeForm = () => {
                       <TextField
                         {...field}
                         size="small"
-                        type="number"
+                        type="text"
                         label="Local POC Phone"
                         error={!!errors.localPocPhone}
                         helperText={errors.localPocPhone?.message}
@@ -719,7 +744,7 @@ const VirtualOfficeForm = () => {
                           {...field}
                           size="small"
                           label="HO POC Phone"
-                          type="number"
+                          type="text"
                           error={!!errors.hOPocPhone}
                           helperText={errors.hOPocPhone?.message}
                           fullWidth
@@ -732,7 +757,7 @@ const VirtualOfficeForm = () => {
             </div>
 
             {/* Submit Button */}
-            {/* <div className="flex items-center justify-center gap-4 mt-4">
+            <div className="flex items-center justify-center gap-4 mt-4">
               <PrimaryButton
                 type="submit"
                 title={"Submit"}
@@ -740,7 +765,7 @@ const VirtualOfficeForm = () => {
                 disabled={isMutateClientPending}
               />
               <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
-            </div> */}
+            </div>
           </form>
         </div>
       </PageFrame>
