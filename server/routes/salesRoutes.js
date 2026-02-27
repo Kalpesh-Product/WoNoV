@@ -23,6 +23,7 @@ const {
   createVirtualOfficeClient,
   getVirtualOfficeClients,
   updateVirtualOfficeStatus,
+  getVirtualOfficeClientsByMonth,
 } = require("../controllers/salesControllers/virtualOfficeClientControllers");
 const {
   createLead,
@@ -71,6 +72,7 @@ const {
   bulkInsertCoworkingMembers,
   updateCoworkingMember,
   updateMemberStatus,
+  bulkUpdateCoworkingMembers,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
 const {
   getVirtualOfficeRevenue,
@@ -100,6 +102,11 @@ router.post(
   upload.single("members"),
   bulkInsertCoworkingMembers,
 );
+router.post(
+  "/bulk-insert-co-working-client-members",
+  upload.single("edit-members"),
+  bulkUpdateCoworkingMembers,
+);
 router.post("/onboard-co-working-member", createMember);
 router.patch("/co-working-member/:memberId", updateCoworkingMember);
 router.patch("/co-working-member/:memberId/status", updateMemberStatus);
@@ -113,7 +120,8 @@ router.post(
 
 //Virtual Office routes
 router.post("/onboard-virtual-office-client", createVirtualOfficeClient);
-router.get("/virtual-office-clients", getVirtualOfficeClients);
+router.get("/virtual-office/clients", getVirtualOfficeClients);
+router.get("/virtual-office-clients", getVirtualOfficeClientsByMonth);
 router.patch("/virtual-office/:id", updateVirtualOfficeClient);
 router.patch("/virtual-office/:id/status", updateVirtualOfficeStatus);
 router.post(
