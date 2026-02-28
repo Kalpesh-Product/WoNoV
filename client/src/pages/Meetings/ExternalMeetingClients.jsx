@@ -49,6 +49,7 @@ const ExternalMeetingCLients = () => {
   const isFinance = department?.name === "Finance";
 
   const paymentModes = [
+    "UPI",
     "Cash",
     "Cheque",
     "NEFT",
@@ -188,6 +189,7 @@ const ExternalMeetingCLients = () => {
       };
     });
 
+
   //Fetch Single Room
   const { data: room = {}, isLoading: isRoomLoading } = useQuery({
     queryKey: ["room"],
@@ -232,7 +234,7 @@ const ExternalMeetingCLients = () => {
     onSuccess: (data) => {
       toast.success(data.message);
     },
-    onError: (error) => {},
+    onError: (error) => { },
   });
 
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
@@ -592,10 +594,10 @@ const ExternalMeetingCLients = () => {
       headerName: "Status",
       cellRenderer: (params) => (
         <Chip
-          label={params.value ? "Paid" : "Unpaid"}
+          label={params.value === "Paid" ? "Paid" : "Unpaid"}
           sx={{
-            backgroundColor: params.value ? "#D1FAE5" : "#FECACA", // Tailwind: green-100 / red-100
-            color: params.value ? "#047857" : "#B91C1C", // Tailwind: green-700 / red-700
+            backgroundColor: params.value === "Paid" ? "#D1FAE5" : "#FECACA", // Tailwind: green-100 / red-100
+            color: params.value === "Paid" ? "#047857" : "#B91C1C", // Tailwind: green-700 / red-700
             fontWeight: "bold",
           }}
         />
@@ -659,50 +661,50 @@ const ExternalMeetingCLients = () => {
           //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
           // },
           isPaid &&
-            isFinance &&
-            paymentVerificationStatus === "Under Review" && {
-              label: "Verify Payment",
-              onClick: () => handleVerifyPayment(params.data, "Verified"),
-            },
+          isFinance &&
+          paymentVerificationStatus === "Under Review" && {
+            label: "Verify Payment",
+            onClick: () => handleVerifyPayment(params.data, "Verified"),
+          },
 
           isPaid &&
-            isFinance &&
-            paymentVerificationStatus === "Pending" && {
-              label: "Review Payment",
-              onClick: () => handleVerifyPayment(params.data, "Under Review"),
-            },
+          isFinance &&
+          paymentVerificationStatus === "Pending" && {
+            label: "Review Payment",
+            onClick: () => handleVerifyPayment(params.data, "Under Review"),
+          },
 
           // Show the following only when NOT finance
           ...(!isFinance
             ? [
-                !isPaid && {
-                  label: "Update Payment Details",
-                  onClick: () => handleOpenPaymentModal(params.data),
-                },
-                !isOngoing &&
-                  !isHousekeepingCompleted && {
-                    label: "Update Checklist",
-                    onClick: () =>
-                      handleOpenChecklistModal("update", params.data._id),
-                  },
-                isUpcoming && {
-                  label: "Edit",
-                  onClick: () => handleEditMeeting("edit", params.data),
-                },
-                !isOngoing &&
-                  !isHousekeepingPending && {
-                    label: "Mark As Ongoing",
-                    onClick: () => handleOngoing("ongoing", params.data._id),
-                  },
-                !isUpcoming && {
-                  label: "Mark As Completed",
-                  onClick: () => handleCompleted("complete", params.data._id),
-                },
-                !isCancelled && {
-                  label: "Cancel",
-                  onClick: () => handleSelectedMeeting("cancel", params.data),
-                },
-              ]
+              !isPaid && {
+                label: "Update Payment Details",
+                onClick: () => handleOpenPaymentModal(params.data),
+              },
+              !isOngoing &&
+              !isHousekeepingCompleted && {
+                label: "Update Checklist",
+                onClick: () =>
+                  handleOpenChecklistModal("update", params.data._id),
+              },
+              isUpcoming && {
+                label: "Edit",
+                onClick: () => handleEditMeeting("edit", params.data),
+              },
+              !isOngoing &&
+              !isHousekeepingPending && {
+                label: "Mark As Ongoing",
+                onClick: () => handleOngoing("ongoing", params.data._id),
+              },
+              !isUpcoming && {
+                label: "Mark As Completed",
+                onClick: () => handleCompleted("complete", params.data._id),
+              },
+              !isCancelled && {
+                label: "Cancel",
+                onClick: () => handleSelectedMeeting("cancel", params.data),
+              },
+            ]
             : []),
         ].filter(Boolean);
 
@@ -717,10 +719,10 @@ const ExternalMeetingCLients = () => {
               </span>
             </div>
 
-            {/* {!isCancelled && <ThreeDotMenu menuItems={menuItems} />} */}
-            {!shouldHideMenu && menuItems.length > 0 && (
+            {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
+            {/* {shouldHideMenu && menuItems.length > 0 && (
               <ThreeDotMenu menuItems={menuItems} />
-            )}
+            )} */}
           </div>
         );
       },
@@ -977,7 +979,7 @@ const ExternalMeetingCLients = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-              // detail={`N/A`}
+            // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"
@@ -1402,14 +1404,14 @@ const ExternalMeetingCLients = () => {
                 value={field.value}
                 label="Add Payment Proof"
                 onChange={field.onChange}
-                allowedExtensions={["pdf"]}
+                allowedExtensions={["pdf", "jpg", "jpeg", "png"]}
                 previewType="pdf"
               />
             )}
           />
           <div>
             <p className="text-xs">
-              Add payment proof as : ( "Add Payment Proof in PDF format & Name
+              Add payment proof as : ( "Add Payment Proof in PDF, jpg, jpeg, png format & Name
               as : DD-MM-YYYY_(Customer Name)" )
             </p>
           </div>

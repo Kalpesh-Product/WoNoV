@@ -359,15 +359,15 @@ const RaiseTicket = () => {
                           <MenuItem value="IT" disabled>
                             IT
                           </MenuItem>
-                          <MenuItem value="Maintainance" disabled>
+                          {/* <MenuItem value="Maintainance" disabled>
                             Maintainance
-                          </MenuItem>
+                          </MenuItem> */}
                           <MenuItem value="Top Management" disabled>
                             Top Management
                           </MenuItem>
-                          <MenuItem value="Test Dept 1" disabled>
+                          {/* <MenuItem value="Test Dept 1" disabled>
                             Test Dept 1
-                          </MenuItem>
+                          </MenuItem> */}
                           <MenuItem value="Cafe" disabled>
                             Cafe
                           </MenuItem>

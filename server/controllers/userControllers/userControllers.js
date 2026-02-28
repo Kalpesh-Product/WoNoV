@@ -653,11 +653,11 @@ const updatePassword = async (req, res, next) => {
 };
 
 const updateProfile = async (req, res, next) => {
+  const logPath = "hr/HrLog";
+  const logAction = "Update User";
+  const logSourceKey = "user";
   try {
     const { user, ip, company } = req;
-    const logPath = "hr/HrLog";
-    const logAction = "Update User";
-    const logSourceKey = "user";
 
     const userId = req.user;
     const updateData = req.body;
@@ -811,12 +811,20 @@ const updateProfile = async (req, res, next) => {
     });
   } catch (error) {
     if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-      );
+      next(error);               // ← already has correct log values inside
+      return;                    // optional: prevents falling through
     }
+
+    // Generic error → wrap it with our logging context
+    next(
+      new CustomError(
+        error.message || "Failed to update user profile",
+        logPath,
+        logAction,
+        logSourceKey,
+        500
+      )
+    );
   }
 };
 
@@ -949,7 +957,7 @@ const bulkInsertUsers = async (req, res, next) => {
                   // dateOfExit: new Date(row["Date of Exit"]) || null,
                   dateOfExit:
                     row["Date of Exit"] &&
-                    !isNaN(Date.parse(row["Date of Exit"]))
+                      !isNaN(Date.parse(row["Date of Exit"]))
                       ? new Date(row["Date of Exit"])
                       : null,
 
@@ -1014,7 +1022,7 @@ const bulkInsertUsers = async (req, res, next) => {
                       url: row[p].startsWith("https") ? row[p] : undefined,
                       type:
                         p === "Work Schedule Policy" &&
-                        !row[p].startsWith("https")
+                          !row[p].startsWith("https")
                           ? row[p]
                           : undefined,
                       isActive: row["Date of Exit"] ? false : true,
