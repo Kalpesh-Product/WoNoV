@@ -141,7 +141,7 @@ const ManageMeetings = () => {
       const response = await axios.patch(
         "/api/meetings/update-meeting-details",
         // { ...data, meetingId: selectedMeetingId, internalParticipants: [] }
-        { ...data, meetingId: selectedMeetingId }
+        { ...data, meetingId: selectedMeetingId },
       );
       return response.data;
     },
@@ -203,7 +203,7 @@ const ManageMeetings = () => {
   });
   const filteredMeetings = meetings.filter(
     (item) =>
-      item.meetingStatus !== "Completed" && item.meetingType === "Internal"
+      item.meetingStatus !== "Completed" && item.meetingType === "Internal",
   );
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
@@ -214,7 +214,10 @@ const ManageMeetings = () => {
       : meeting.clientBookedBy?.employeeName || "Unknown",
     bookedById: meeting.bookedBy ? meeting.bookedBy._id : "",
     startTime: meeting.startTime,
-    endTime: meeting.extendTime > meeting.endTime ? meeting.extendTime : meeting.endTime,
+    endTime:
+      meeting.extendTime > meeting.endTime
+        ? meeting.extendTime
+        : meeting.endTime,
     extendTime: meeting.extendTime,
     srNo: index + 1,
     company: meeting.client || "",
@@ -224,6 +227,21 @@ const ManageMeetings = () => {
       meeting.bookedBy &&
       [...meeting.bookedBy.departments.map((dept) => dept.name)].join(","),
   }));
+
+  const getDisplayDuration = (meeting) => {
+    const startTime = meeting?.startTime;
+    const endTime = meeting?.endTime;
+
+    if (!startTime || !endTime) return meeting?.duration || "N/A";
+
+    const durationInMinutes = dayjs(endTime).diff(dayjs(startTime), "minute");
+
+    if (!Number.isFinite(durationInMinutes) || durationInMinutes < 0) {
+      return meeting?.duration || "N/A";
+    }
+
+    return `${durationInMinutes}min`;
+  };
 
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
@@ -249,7 +267,7 @@ const ManageMeetings = () => {
     mutationFn: async (data) => {
       const respone = await axios.patch(
         `/api/meetings/cancel-meeting/${selectedMeetingId}`,
-        data
+        data,
       );
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       return respone.data;
@@ -282,7 +300,7 @@ const ManageMeetings = () => {
       mutationFn: async (data) => {
         const respone = await axios.patch(
           `/api/meetings/update-meeting-status`,
-          data
+          data,
         );
         queryClient.invalidateQueries({ queryKey: ["meetings"] });
         return respone.data;
@@ -293,7 +311,7 @@ const ManageMeetings = () => {
       onError: (error) => {
         toast.error(error.response.data.message);
       },
-    }
+    },
   );
   //------------------------------API--------------------------------//
 
@@ -379,7 +397,7 @@ const ManageMeetings = () => {
     if (!selectedMeetingId) return;
     setChecklists((prev) => {
       const updatedItems = prev[selectedMeetingId][type].map((item, i) =>
-        i === index ? { ...item, checked: !item.checked } : item
+        i === index ? { ...item, checked: !item.checked } : item,
       );
       return {
         ...prev,
@@ -395,7 +413,7 @@ const ManageMeetings = () => {
     if (!selectedMeetingId) return;
     setChecklists((prev) => {
       const updatedCustomItems = prev[selectedMeetingId].customItems.filter(
-        (_, i) => i !== index
+        (_, i) => i !== index,
       );
       return {
         ...prev,
@@ -420,7 +438,7 @@ const ManageMeetings = () => {
     if (!selectedMeetingId) return;
 
     const selectedMeeting = meetings.find(
-      (meeting) => meeting._id === selectedMeetingId
+      (meeting) => meeting._id === selectedMeetingId,
     );
     if (!selectedMeeting) return;
 
@@ -428,7 +446,7 @@ const ManageMeetings = () => {
       checklists[selectedMeetingId] || {};
 
     const allCheckedItems = [...defaultItems, ...customItems].filter(
-      (item) => item.checked
+      (item) => item.checked,
     );
 
     const housekeepingTasks = allCheckedItems.map((item) => ({
@@ -536,7 +554,7 @@ const ManageMeetings = () => {
                     // src={participant.avatar}
                     // src="https://ui-avatars.com/api/?name=Alice+Johnson&background=random"
                     src={`https://ui-avatars.com/api/?name=${getAvatarName(
-                      participant
+                      participant,
                     )}&background=random`}
                     sx={{ width: 23, height: 23 }}
                   />
@@ -564,20 +582,20 @@ const ManageMeetings = () => {
 
         const menuItems = [
           !isOngoing &&
-          !isHousekeepingCompleted && {
-            label: "Update Checklist",
-            onClick: () =>
-              handleOpenChecklistModal("update", params.data._id),
-          },
+            !isHousekeepingCompleted && {
+              label: "Update Checklist",
+              onClick: () =>
+                handleOpenChecklistModal("update", params.data._id),
+            },
           isUpcoming && {
             label: "Edit",
             onClick: () => handleEditMeeting("edit", params.data),
           },
           !isOngoing &&
-          !isHousekeepingPending && {
-            label: "Mark As Ongoing",
-            onClick: () => handleOngoing("ongoing", params.data._id),
-          },
+            !isHousekeepingPending && {
+              label: "Mark As Ongoing",
+              onClick: () => handleOngoing("ongoing", params.data._id),
+            },
           !isUpcoming && {
             label: "Mark As Completed",
             onClick: () => handleCompleted("complete", params.data._id),
@@ -662,7 +680,7 @@ const ManageMeetings = () => {
                     />
                     {item.name}
                   </ListItem>
-                )
+                ),
               )}
             </List>
 
@@ -698,7 +716,7 @@ const ManageMeetings = () => {
                           </div>
                         </div>
                       </ListItem>
-                    )
+                    ),
                   )}
                 </List>
               </>
@@ -769,12 +787,12 @@ const ManageMeetings = () => {
             <DetalisFormatted
               title="Time"
               detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
-                selectedMeeting.endTime
+                selectedMeeting.endTime,
               )}`}
             />
             <DetalisFormatted
               title="Duration"
-              detail={selectedMeeting.duration || "N/A"}
+              detail={getDisplayDuration(selectedMeeting)}
             />
             <DetalisFormatted
               title="Status"
@@ -814,7 +832,7 @@ const ManageMeetings = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-            // detail={`N/A`}
+              // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"
@@ -1138,7 +1156,7 @@ const ManageMeetings = () => {
                       const availableOptions = employees.filter(
                         (emp) =>
                           !selectedParticipantIds.includes(emp._id) &&
-                          emp._id !== bookedById
+                          emp._id !== bookedById,
                       );
 
                       const mergedOptions = [
@@ -1193,7 +1211,7 @@ const ManageMeetings = () => {
 
                       // Find the booking employee from clientEmployees
                       const bookedByEmployee = clientEmployees.find(
-                        (emp) => emp.employeeName === bookedByEmployeeName
+                        (emp) => emp.employeeName === bookedByEmployeeName,
                       );
                       const bookedByCompanyId = bookedByEmployee?.client?._id;
 
@@ -1202,7 +1220,7 @@ const ManageMeetings = () => {
                         (emp) =>
                           emp.client?._id === bookedByCompanyId &&
                           emp.employeeName !== bookedByEmployeeName &&
-                          !selectedExternalIds.includes(emp._id)
+                          !selectedExternalIds.includes(emp._id),
                       );
                       const mergedExternalOptions = [
                         ...field.value,
