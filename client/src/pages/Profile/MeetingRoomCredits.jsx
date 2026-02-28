@@ -155,9 +155,9 @@ const MeetingRoomCredits = ({ pageTitle }) => {
     <div>
       <div className="flex flex-col gap-4">
         <div>
-          <span className="text-title font-pmedium text-primary uppercase">
+          {/* <span className="text-title font-pmedium text-primary uppercase">
             Company Credit Details
-          </span>
+          </span> */}
         </div>
         <div>
           <WidgetSection padding layout={navigationCards.length}>

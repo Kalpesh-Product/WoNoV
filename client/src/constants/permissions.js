@@ -985,6 +985,91 @@ export const PERMISSIONS = {
     access: "button",
   },
 
+  // correction request
+  HR_CORRECTION_REQUEST: {
+    value: "hr_correction_request_button",
+    title: "HR CORRECTION REQUEST",
+    type: "write",
+    access: "button",
+  },
+
+  HR_LEAVE_REQUEST: {
+    value: "hr_leave_request_button",
+    title: "HR LEAVE REQUEST",
+    type: "write",
+    access: "button",
+  },
+
+  HR_AGREEMENT_REQUEST: {
+    value: "hr_agreement_request_button",
+    title: "HR AGREEMENT REQUEST",
+    type: "write",
+    access: "button",
+  },
+
+  HR_ADD_DEPARTMENT: {
+    value: "hr_add_department_button",
+    title: "HR ADD DEPARTMENT",
+    type: "write",
+    access: "button",
+  },
+
+  HR_ADD_WORK_LOCATION: {
+    value: "hr_add_work_location_button",
+    title: "HR ADD WORK LOCATION",
+    type: "write",
+    access: "button",
+  },
+
+  HR_ADD_HOLIDAY: {
+    value: "hr_add_holiday_button",
+    title: "HR ADD HOLIDAY",
+    type: "write",
+    access: "button",
+  },
+
+  HR_ADD_EVENT: {
+    value: "hr_add_event_button",
+    title: "HR ADD EVENT",
+    type: "write",
+    access: "button",
+  },
+
+  HR_ADD_POLICY: {
+    value: "hr_add_policy_button",
+    title: "HR ADD POLICY",
+    type: "write",
+    access: "button",
+  },
+
+  HR_ADD_SOP: {
+    value: "hr_add_sop_button",
+    title: "HR ADD SOP",
+    type: "write",
+    access: "button",
+  },
+
+  HR_ADD_EMPLOYEE_TYPE: {
+    value: "hr_add_employee_type_button",
+    title: "HR ADD EMPLOYEE TYPE",
+    type: "write",
+    access: "button",
+  },
+
+  HR_ADD_SHIFT: {
+    value: "hr_add_shift_button",
+    title: "HR ADD SHIFT",
+    type: "write",
+    access: "button",
+  },
+
+  HR_ADD_TEMPLATE: {
+    value: "hr_add_template_button",
+    title: "HR ADD TEMPLATE",
+    type: "write",
+    access: "button",
+  },
+
   // Pie charts
   HR_EMPLOYEE_GENDER_DISTRIBUTION_PIE: {
     value: "hr_gender_distribution_pie_chart",
@@ -1217,6 +1302,18 @@ export const PERMISSIONS = {
     title: "CLIENT MEMBERS",
     type: "read",
     route: "/app/dashboard/admin-dashboard/mix-bag/client-members",
+  },
+  ADMIN_CLIENT_DETAILS: {
+    value: "admin_client_details_tab",
+    title: "CLIENT DETAILS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data/client-details",
+  },
+  ADMIN_MEMBERS: {
+    value: "admin_members_tab",
+    title: "MEMBERS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data/members",
   },
   ADMIN_DATA: { value: "admin_data_card", title: "DATA", type: "read" },
   ADMIN_SETTINGS: { value: "admin_settings_card", title: "SETTINGS", type: "read" },
