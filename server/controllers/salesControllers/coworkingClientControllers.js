@@ -850,6 +850,247 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
   }
 };
 
+const bulkUpdateCoworkingClients = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const company = req.company;
+
+    if (!file) {
+      return res.status(400).json({ message: "Please provide a CSV file" });
+    }
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    // ---- 1) Load existing clients (to match and update) ----
+    const existingClients = await CoworkingClient.find({ company })
+      .select("_id clientName")
+      .lean()
+      .exec();
+
+    const existingClientMap = new Map(
+      existingClients.map((c) => [normalizeClientName(c.clientName), c._id]),
+    );
+
+    // ---- 2) Units map (Unit No -> ObjectId) ----
+    const units = await Unit.find({ company })
+      .select("_id unitNo")
+      .lean()
+      .exec();
+    const unitMap = new Map(units.map((u) => [`${u.unitNo}`.trim(), u._id]));
+
+    const updates = [];
+    const notFoundClients = [];
+    const unknownUnits = [];
+
+    stream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        // Adjust these headers to exactly match your CSV template
+        const {
+          "Client Name": clientName,
+          "Invoice Name": clientInvoiceName,
+          Email: email,
+          Phone: phone,
+          "Booking Type": bookingType,
+          Sector: sector,
+          "HO City": hoCity,
+          "HO State": hoState,
+          "Unit No": unitNo,
+          "Cabin Desks": cabinDesks,
+          "Open Desks": openDesks,
+          "Rate Per Cabin Desk": ratePerCabinDesk,
+          "Rate Per Open Desk": ratePerOpenDesk,
+          "Annual Increment": annualIncrement,
+          "Per Desk Meeting Credits": perDeskMeetingCredits,
+          "Start Date": startDate,
+          "End Date": endDate,
+          "Lockin Period": lockinPeriod,
+          "Rent Date": rentDate,
+          "Next Increment": nextIncrement,
+          Active: isActive,
+        } = row;
+
+        if (!clientName || String(clientName).trim() === "") return;
+
+        const key = normalizeClientName(clientName);
+        const clientId = existingClientMap.get(key);
+
+        if (!clientId) {
+          notFoundClients.push({
+            clientName,
+            reason: "Client not found in DB",
+          });
+          return;
+        }
+
+        // Unit mapping if provided
+        let unitId;
+        if (unitNo && String(unitNo).trim() !== "") {
+          unitId = unitMap.get(String(unitNo).trim());
+          if (!unitId) {
+            unknownUnits.push({ clientName, unitNo, reason: "Unit not found" });
+            return;
+          }
+        }
+
+        // Helper parsers
+        const toNum = (v) => {
+          if (v === undefined || v === null) return undefined;
+          const s = String(v).trim();
+          if (!s) return undefined;
+          // removes commas/currency/etc, keeps digits, dot, minus
+          const cleaned = s.replace(/[^0-9.-]/g, "");
+          if (!cleaned) return undefined;
+          const n = Number(cleaned);
+          return Number.isFinite(n) ? n : undefined;
+        };
+
+        const toDate = (v) => {
+          if (!v) return undefined;
+          const d = new Date(v);
+          return Number.isNaN(d.getTime()) ? undefined : d;
+        };
+
+        const toBool = (v) => {
+          if (v === undefined || v === null) return undefined;
+          const s = String(v).trim().toLowerCase();
+          if (s === "true" || s === "yes" || s === "1") return true;
+          if (s === "false" || s === "no" || s === "0") return false;
+          return undefined;
+        };
+
+        // Build $set only for provided fields
+        const $set = {};
+
+        if (clientInvoiceName?.trim())
+          $set.clientInvoiceName = clientInvoiceName.trim();
+        if (email?.trim()) $set.email = email.trim().toLowerCase();
+        if (phone?.trim()) $set.phone = phone.trim();
+        if (bookingType?.trim()) $set.bookingType = bookingType.trim();
+        if (sector?.trim()) $set.sector = sector.trim();
+        if (hoCity?.trim()) $set.hoCity = hoCity.trim();
+        if (hoState?.trim()) $set.hoState = hoState.trim();
+        if (unitId) $set.unit = unitId;
+
+        const cabinDesksN = toNum(cabinDesks);
+        const openDesksN = toNum(openDesks);
+        const rateCabinN = toNum(ratePerCabinDesk);
+        const rateOpenN = toNum(ratePerOpenDesk);
+        const annualIncN = toNum(annualIncrement);
+        const perDeskCreditsN = toNum(perDeskMeetingCredits);
+        const lockinN = toNum(lockinPeriod);
+
+        if (cabinDesksN !== undefined) $set.cabinDesks = cabinDesksN;
+        if (openDesksN !== undefined) $set.openDesks = openDesksN;
+        if (rateCabinN !== undefined) $set.ratePerCabinDesk = rateCabinN;
+        if (rateOpenN !== undefined) $set.ratePerOpenDesk = rateOpenN;
+        if (annualIncN !== undefined) $set.annualIncrement = annualIncN;
+        if (perDeskCreditsN !== undefined)
+          $set.perDeskMeetingCredits = perDeskCreditsN;
+        if (lockinN !== undefined) $set.lockinPeriod = lockinN;
+
+        // Dates
+        const startD = toDate(startDate);
+        const endD = toDate(endDate);
+        const rentD = toDate(rentDate);
+        const nextIncD = toDate(nextIncrement);
+
+        if (startD) $set.startDate = startD;
+        if (endD) $set.endDate = endD;
+        if (rentD) $set.rentDate = rentD; // your schema uses Mixed; still ok
+        if (nextIncD) $set.nextIncrement = nextIncD;
+
+        const activeBool = toBool(isActive);
+        if (activeBool !== undefined) $set.isActive = activeBool;
+
+        // Derived fields (only when inputs present)
+        // totalDesks
+        if (cabinDesksN !== undefined || openDesksN !== undefined) {
+          const cd = cabinDesksN ?? 0;
+          const od = openDesksN ?? 0;
+          $set.totalDesks = cd + od;
+
+          // totalMeetingCredits
+          if (perDeskCreditsN !== undefined) {
+            $set.totalMeetingCredits = (cd + od) * perDeskCreditsN;
+          }
+        }
+
+        // nothing to update
+        if (Object.keys($set).length === 0) return;
+
+        updates.push({
+          key, // CSV duplicate detection
+          clientId,
+          $set,
+        });
+      })
+      .on("end", async () => {
+        try {
+          if (!updates.length) {
+            return res.status(400).json({
+              message: "No valid update records found",
+              notFoundClients,
+              unknownUnits,
+            });
+          }
+
+          // ---- 3) Remove CSV duplicates (same client repeated) ----
+          const uniqueMap = new Map();
+          const csvDuplicates = [];
+
+          for (const u of updates) {
+            if (!uniqueMap.has(u.key)) uniqueMap.set(u.key, u);
+            else {
+              csvDuplicates.push({
+                clientName: u.key,
+                reason: "Duplicate client in CSV",
+              });
+            }
+          }
+
+          const uniqueUpdates = Array.from(uniqueMap.values());
+
+          // ---- 4) bulkWrite updates ----
+          const bulkOps = uniqueUpdates.map((u) => ({
+            updateOne: {
+              filter: { _id: u.clientId, company },
+              update: { $set: u.$set },
+            },
+          }));
+
+          let bulkResult = null;
+          if (bulkOps.length > 0) {
+            bulkResult = await CoworkingClient.bulkWrite(bulkOps, {
+              ordered: false,
+            });
+          }
+
+          const updatedCount =
+            bulkResult?.modifiedCount ?? bulkResult?.nModified ?? 0;
+
+          return res.status(200).json({
+            message: `${updatedCount} co-working clients updated successfully`,
+            updatedCount,
+            attemptedUpdates: bulkOps.length,
+            skippedCount:
+              notFoundClients.length +
+              unknownUnits.length +
+              csvDuplicates.length,
+            notFoundClients,
+            unknownUnits,
+            csvDuplicates,
+          });
+        } catch (err) {
+          next(err);
+        }
+      })
+      .on("error", (err) => next(err));
+  } catch (error) {
+    next(error);
+  }
+};
+
 const uploadClientOccupancyImage = async (req, res, next) => {
   const logPath = "sales/salesLog";
   const logAction = "Upload Unit Image";
@@ -1067,6 +1308,7 @@ module.exports = {
   deleteCoworkingClient,
   getCoworkingClients,
   bulkInsertCoworkingClients,
+  bulkUpdateCoworkingClients,
   uploadClientOccupancyImage,
   getCoworkingClientRevenues,
 };
