@@ -747,6 +747,293 @@ const bulkInsertVirtualOfficeClients = async (req, res, next) => {
   }
 };
 
+const bulkUpdateVirtualOfficeClients = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const company = req.company;
+
+    if (!file) {
+      return res.status(400).json({ message: "Please provide a CSV file" });
+    }
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    // Fetch units for unit mapping (optional, but usually required)
+    const units = await Unit.find({ company })
+      .select("_id unitNo unitName")
+      .lean();
+    const unitMap = new Map(units.map((u) => [`${u.unitNo}`.trim(), u._id]));
+
+    // Fetch existing VO clients for matching (by clientName)
+    const existingClients = await VirtualOfficeClient.find({ company })
+      .select("_id clientName")
+      .lean();
+
+    const normalizeClient = (name) =>
+      name?.toLowerCase().replace(/\s+/g, "").trim();
+
+    const existingClientMap = new Map(
+      existingClients.map((c) => [normalizeClient(c.clientName), c._id]),
+    );
+
+    const updates = [];
+    const notFoundClients = [];
+    const unknownUnits = [];
+    const csvDuplicates = [];
+
+    stream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        // Adjust column headers to match your CSV
+        const {
+          "Client Name": clientName,
+          Email: email,
+          Phone: phone,
+          Sector: sector,
+          State: state,
+          City: city,
+          "Unit No": unitNo,
+
+          "Cabin Desks": cabinDesks,
+          "Cabin Desk Rate": cabinDeskRate,
+          "Open Desks": openDesks,
+          "Open Desk Rate": openDeskRate,
+
+          "Per Desk Meeting Credits": perDeskMeetingCredits,
+          "Annual Increment": annualIncrement,
+
+          "Term Start Date": termStartDate,
+          "Term End": termEnd,
+          "Lock In Period Months": lockInPeriodMonths,
+
+          "Rent Date": rentDate,
+          "Next Increment Date": nextIncrementDate,
+
+          "Rent Status": rentStatus,
+          "Client Status": clientStatus,
+
+          "Local POC Name": localPocName,
+          "Local POC Email": localPocEmail,
+          "Local POC Phone": localPocPhone,
+
+          "HO POC Name": hoPocName,
+          "HO POC Email": hoPocEmail,
+          "HO POC Phone": hoPocPhone,
+        } = row;
+
+        if (!clientName || String(clientName).trim() === "") return;
+
+        const normalized = normalizeClient(clientName);
+        const clientId = existingClientMap.get(normalized);
+
+        if (!clientId) {
+          notFoundClients.push({
+            clientName,
+            reason: "Client not found in database",
+          });
+          return;
+        }
+
+        // Unit mapping (optional)
+        let unitId;
+        if (unitNo && String(unitNo).trim() !== "") {
+          unitId = unitMap.get(String(unitNo).trim());
+          if (!unitId) {
+            unknownUnits.push({
+              clientName,
+              unitNo,
+              reason: "Unit not found",
+            });
+            return;
+          }
+        }
+
+        // Build $set only with provided values
+        const $set = {};
+
+        // Basic fields
+        if (email?.trim()) $set.email = email.trim().toLowerCase();
+        if (phone?.trim()) $set.phone = phone.trim();
+        if (sector?.trim()) $set.sector = sector.trim();
+        if (state?.trim()) $set.state = state.trim();
+        if (city?.trim()) $set.city = city.trim();
+        if (unitId) $set.unit = unitId;
+
+        // Numbers (only if present)
+        const toNum = (v) => {
+          if (v === undefined || v === null) return undefined;
+          const s = String(v).trim();
+          if (!s) return undefined;
+          // remove commas and non-numeric except dot/minus
+          const cleaned = s.replace(/[^0-9.-]/g, "");
+          if (!cleaned) return undefined;
+          const n = Number(cleaned);
+          return Number.isFinite(n) ? n : undefined;
+        };
+
+        const cabinDesksN = toNum(cabinDesks);
+        const cabinDeskRateN = toNum(cabinDeskRate);
+        const openDesksN = toNum(openDesks);
+        const openDeskRateN = toNum(openDeskRate);
+        const perDeskCreditsN = toNum(perDeskMeetingCredits);
+        const annualIncrementN = toNum(annualIncrement);
+        const lockInN = toNum(lockInPeriodMonths);
+
+        if (cabinDesksN !== undefined) $set.cabinDesks = cabinDesksN;
+        if (cabinDeskRateN !== undefined) $set.cabinDeskRate = cabinDeskRateN;
+        if (openDesksN !== undefined) $set.openDesks = openDesksN;
+        if (openDeskRateN !== undefined) $set.openDeskRate = openDeskRateN;
+        if (perDeskCreditsN !== undefined)
+          $set.perDeskMeetingCredits = perDeskCreditsN;
+        if (annualIncrementN !== undefined)
+          $set.annualIncrement = annualIncrementN;
+        if (lockInN !== undefined) $set.lockInPeriodMonths = lockInN;
+
+        // Totals (only if we have enough inputs)
+        const nextCabinDesks =
+          cabinDesksN !== undefined ? cabinDesksN : undefined;
+        const nextCabinRate =
+          cabinDeskRateN !== undefined ? cabinDeskRateN : undefined;
+        const nextOpenDesks = openDesksN !== undefined ? openDesksN : undefined;
+        const nextOpenRate =
+          openDeskRateN !== undefined ? openDeskRateN : undefined;
+
+        if (nextCabinDesks !== undefined && nextCabinRate !== undefined) {
+          $set.cabinTotal = nextCabinDesks * nextCabinRate;
+        }
+        if (nextOpenDesks !== undefined && nextOpenRate !== undefined) {
+          $set.openTotal = nextOpenDesks * nextOpenRate;
+        }
+        // totalMeetingCredits if both desk counts + perDesk credits are present
+        if (
+          (nextCabinDesks !== undefined || nextOpenDesks !== undefined) &&
+          perDeskCreditsN !== undefined
+        ) {
+          const cd = nextCabinDesks ?? 0;
+          const od = nextOpenDesks ?? 0;
+          $set.totalMeetingCredits = (cd + od) * perDeskCreditsN;
+        }
+
+        // Dates (only if present and valid)
+        const toDate = (v) => {
+          if (!v) return undefined;
+          const d = new Date(v);
+          return Number.isNaN(d.getTime()) ? undefined : d;
+        };
+
+        const termStartD = toDate(termStartDate);
+        const termEndD = toDate(termEnd);
+        const rentDateD = toDate(rentDate);
+        const nextIncD = toDate(nextIncrementDate);
+
+        if (termStartD) $set.termStartDate = termStartD;
+        if (termEndD) $set.termEnd = termEndD;
+        if (rentDateD) $set.rentDate = rentDateD;
+        if (nextIncD) $set.nextIncrementDate = nextIncD;
+
+        // Rent status
+        if (rentStatus?.trim()) $set.rentStatus = rentStatus.trim();
+
+        // Client status (boolean in schema)
+        if (clientStatus !== undefined && clientStatus !== null) {
+          const s = String(clientStatus).trim().toLowerCase();
+          if (s === "true" || s === "false") {
+            $set.clientStatus = s === "true";
+          }
+        }
+
+        // POCs (only set if at least one field present)
+        const localAny = localPocName || localPocEmail || localPocPhone;
+        if (localAny) {
+          $set.localPoc = {
+            name: localPocName ? String(localPocName).trim() : "",
+            email: localPocEmail
+              ? String(localPocEmail).trim().toLowerCase()
+              : "",
+            phone: localPocPhone ? String(localPocPhone).trim() : "",
+          };
+        }
+
+        const hoAny = hoPocName || hoPocEmail || hoPocPhone;
+        if (hoAny) {
+          $set.hoPoc = {
+            name: hoPocName ? String(hoPocName).trim() : "",
+            email: hoPocEmail ? String(hoPocEmail).trim().toLowerCase() : "",
+            phone: hoPocPhone ? String(hoPocPhone).trim() : "",
+          };
+        }
+
+        // If nothing to update, skip
+        if (Object.keys($set).length === 0) return;
+
+        updates.push({
+          key: normalized, // for CSV duplicate detection
+          clientId,
+          $set,
+        });
+      })
+      .on("end", async () => {
+        try {
+          if (!updates.length) {
+            return res.status(400).json({
+              message: "No valid update records found",
+              notFoundClients,
+              unknownUnits,
+            });
+          }
+
+          // 1) Remove CSV duplicates (same clientName repeated)
+          const uniqueMap = new Map();
+          for (const u of updates) {
+            if (!uniqueMap.has(u.key)) uniqueMap.set(u.key, u);
+            else {
+              csvDuplicates.push({
+                clientName: u.key,
+                reason: "Duplicate client in CSV",
+              });
+            }
+          }
+          const uniqueUpdates = Array.from(uniqueMap.values());
+
+          // 2) Prepare bulkWrite operations
+          const bulkOps = uniqueUpdates.map((u) => ({
+            updateOne: {
+              filter: { _id: u.clientId, company },
+              update: { $set: u.$set },
+            },
+          }));
+
+          let bulkResult = null;
+          if (bulkOps.length > 0) {
+            bulkResult = await VirtualOfficeClient.bulkWrite(bulkOps, {
+              ordered: false,
+            });
+          }
+
+          const updatedCount =
+            bulkResult?.modifiedCount ?? bulkResult?.nModified ?? 0;
+
+          return res.status(200).json({
+            message: `${updatedCount} virtual office clients updated successfully`,
+            updatedCount,
+            attemptedUpdates: bulkOps.length,
+            skippedCount:
+              notFoundClients.length +
+              unknownUnits.length +
+              csvDuplicates.length,
+            notFoundClients,
+            unknownUnits,
+            csvDuplicates,
+          });
+        } catch (err) {
+          next(err);
+        }
+      })
+      .on("error", (err) => next(err));
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   createVirtualOfficeClient,
   getVirtualOfficeClients,
@@ -754,4 +1041,5 @@ module.exports = {
   updateVirtualOfficeClient,
   updateVirtualOfficeStatus,
   bulkInsertVirtualOfficeClients,
+  bulkUpdateVirtualOfficeClients,
 };
