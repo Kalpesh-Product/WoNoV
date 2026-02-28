@@ -283,17 +283,17 @@ const addMeetings = async (req, res, next) => {
     isClient
       ? null
       : emitter.emit("notification", {
-          initiatorData: bookingUser._id,
-          users: internalParticipants.map((userId) => ({
-            userActions: {
-              whichUser: userId,
-              hasRead: false,
-            },
-          })),
-          type: "book meeting",
-          module: "Meetings",
-          message: `You have been added to a meeting by ${bookingUser.firstName} ${bookingUser.lastName}`,
-        });
+        initiatorData: bookingUser._id,
+        users: internalParticipants.map((userId) => ({
+          userActions: {
+            whichUser: userId,
+            hasRead: false,
+          },
+        })),
+        type: "book meeting",
+        module: "Meetings",
+        message: `You have been added to a meeting by ${bookingUser.firstName} ${bookingUser.lastName}`,
+      });
 
     await createLog({
       path: logPath,
@@ -524,12 +524,12 @@ const getMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-              meeting.receptionist.firstName,
-              meeting.receptionist.middleName,
-              meeting.receptionist.lastName,
-            ]
-              .filter(Boolean)
-              .join(" ")
+            meeting.receptionist.firstName,
+            meeting.receptionist.middleName,
+            meeting.receptionist.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
           : "";
       }
 
@@ -680,12 +680,12 @@ const getMyMeetings = async (req, res, next) => {
 
       const bookedBy = meeting.bookedBy
         ? [
-            meeting.bookedBy.firstName,
-            meeting.bookedBy.middleName,
-            meeting.bookedBy.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
+          meeting.bookedBy.firstName,
+          meeting.bookedBy.middleName,
+          meeting.bookedBy.lastName,
+        ]
+          .filter(Boolean)
+          .join(" ")
         : "";
 
       const isReceptionist = meeting.receptionist.departments.some(
@@ -696,12 +696,12 @@ const getMyMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-              meeting.receptionist.firstName,
-              meeting.receptionist.middleName,
-              meeting.receptionist.lastName,
-            ]
-              .filter(Boolean)
-              .join(" ")
+            meeting.receptionist.firstName,
+            meeting.receptionist.middleName,
+            meeting.receptionist.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
           : "";
       }
 
@@ -1337,6 +1337,9 @@ const updateMeeting = async (req, res, next) => {
         "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
       ];
 
       if (!allowedMimeTypes.includes(paymentProofFile.mimetype)) {
@@ -1352,9 +1355,16 @@ const updateMeeting = async (req, res, next) => {
       const originalFilename = paymentProofFile.originalname;
 
       if (paymentProofFile.mimetype === "application/pdf") {
-        const pdfDoc = await PDFDocument.load(paymentProofFile.buffer);
-        pdfDoc.setTitle(originalFilename.split(".")[0] || "Untitled");
-        processedBuffer = await pdfDoc.save();
+        try {
+          const pdfDoc = await PDFDocument.load(paymentProofFile.buffer);
+          pdfDoc.setTitle(originalFilename.split(".")[0] || "Payment Proof");
+          processedBuffer = await pdfDoc.save();
+        } catch (pdfErr) {
+          console.error("PDF processing failed:", pdfErr);
+          // Decide: fail or fallback to original buffer?
+          // Most secure: fail the request
+          throw new CustomError("Invalid or corrupted PDF file");
+        }
       }
 
       const response = await handleDocumentUpload(
@@ -1377,6 +1387,7 @@ const updateMeeting = async (req, res, next) => {
         link: response.secure_url,
         id: response.public_id,
         date: new Date(),
+        mimeType: paymentProofFile.mimetype,
       };
     }
 
