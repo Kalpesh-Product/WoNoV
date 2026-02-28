@@ -54,7 +54,7 @@ const meetingSchema = new mongoose.Schema(
     },
     paymentMode: {
       type: String,
-      enum: ["Cash", "Cheque", "NEFT", "RTGS", "IMPS", "Credit Card", "ETC"],
+      enum: ["UPI", "Cash", "Cheque", "NEFT", "RTGS", "IMPS", "Credit Card", "ETC"],
     },
     paymentProof: {
       link: {
