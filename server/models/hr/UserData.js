@@ -162,59 +162,111 @@ const userDataSchema = new mongoose.Schema(
     dateOfExit: { type: Date, default: null },
     shift: { type: String },
 
+    // homeAddress: {
+    //   addressLine1: { type: String, required: true },
+    //   addressLine2: { type: String },
+    //   city: { type: String, required: true },
+    //   country: { type: String, required: true },
+    //   state: { type: String, required: true },
+    //   pinCode: { type: String, required: true },
+    //   notes: { type: String },
+    // },
+    // bankInformation: {
+    //   bankIFSC: { type: String, required: true },
+    //   bankName: { type: String, required: true },
+    //   branchName: { type: String, required: true },
+    //   nameOnAccount: { type: String, required: true },
+    //   accountNumber: {
+    //     type: String,
+    //     required: true,
+    //   },
+    // },
+    // panAadhaarDetails: {
+    //   aadhaarId: {
+    //     type: String,
+    //     required: true,
+    //   },
+    //   pan: {
+    //     type: String,
+    //     required: true,
+    //   },
+    //   pfAccountNumber: { type: String, required: true },
+    //   pfUAN: { type: String, required: true },
+    //   esiAccountNumber: { type: String, required: true },
+    // },
+    // payrollInformation: {
+    //   includeInPayroll: { type: Boolean, required: true },
+    //   payrollBatch: { type: String, required: true },
+    //   professionTaxExemption: { type: Boolean, required: true },
+    //   includePF: { type: Boolean, required: true },
+    //   pfContributionRate: { type: String, required: true },
+    //   employeePF: { type: String, required: true },
+    //   employerPf: { type: String, required: true },
+    //   includeEsi: { type: Boolean, required: true },
+    //   esiContribution: { type: String, required: true },
+    //   hraType: { type: String, required: true },
+    //   tdsCalculationBasedOn: { type: String, required: true },
+    //   incomeTaxRegime: { type: String, required: true },
+    // },
+    // familyInformation: {
+    //   fatherName: { type: String, required: true },
+    //   motherName: { type: String, required: true },
+    //   maritalStatus: {
+    //     type: String,
+    //     required: true,
+    //   },
+    //   emergencyPhone: {
+    //     type: String,
+    //     minlength: 7,
+    //     maxlength: 20,
+    //   },
+    // },
+
     homeAddress: {
-      addressLine1: { type: String, required: true },
+      addressLine1: { type: String },
       addressLine2: { type: String },
-      city: { type: String, required: true },
-      country: { type: String, required: true },
-      state: { type: String, required: true },
-      pinCode: { type: String, required: true },
+      city: { type: String },
+      country: { type: String },
+      state: { type: String },
+      pinCode: { type: String },
       notes: { type: String },
     },
+
     bankInformation: {
-      bankIFSC: { type: String, required: true },
-      bankName: { type: String, required: true },
-      branchName: { type: String, required: true },
-      nameOnAccount: { type: String, required: true },
-      accountNumber: {
-        type: String,
-        required: true,
-      },
+      bankIFSC: { type: String },
+      bankName: { type: String },
+      branchName: { type: String },
+      nameOnAccount: { type: String },
+      accountNumber: { type: String },
     },
+
     panAadhaarDetails: {
-      aadhaarId: {
-        type: String,
-        required: true,
-      },
-      pan: {
-        type: String,
-        required: true,
-      },
-      pfAccountNumber: { type: String, required: true },
-      pfUAN: { type: String, required: true },
-      esiAccountNumber: { type: String, required: true },
+      aadhaarId: { type: String },
+      pan: { type: String },
+      pfAccountNumber: { type: String },
+      pfUAN: { type: String },
+      esiAccountNumber: { type: String },
     },
+
     payrollInformation: {
-      includeInPayroll: { type: Boolean, required: true },
-      payrollBatch: { type: String, required: true },
-      professionTaxExemption: { type: Boolean, required: true },
-      includePF: { type: Boolean, required: true },
-      pfContributionRate: { type: String, required: true },
-      employeePF: { type: String, required: true },
-      employerPf: { type: String, required: true },
-      includeEsi: { type: Boolean, required: true },
-      esiContribution: { type: String, required: true },
-      hraType: { type: String, required: true },
-      tdsCalculationBasedOn: { type: String, required: true },
-      incomeTaxRegime: { type: String, required: true },
+      includeInPayroll: { type: Boolean },
+      payrollBatch: { type: String },
+      professionTaxExemption: { type: Boolean },
+      includePF: { type: Boolean },
+      pfContributionRate: { type: String },
+      employeePF: { type: String },
+      employerPf: { type: String },
+      includeEsi: { type: Boolean },
+      esiContribution: { type: String },
+      hraType: { type: String },
+      tdsCalculationBasedOn: { type: String },
+      incomeTaxRegime: { type: String },
     },
+
     familyInformation: {
-      fatherName: { type: String, required: true },
-      motherName: { type: String, required: true },
-      maritalStatus: {
-        type: String,
-        required: true,
-      },
+      fatherName: { type: String },
+      motherName: { type: String },
+      maritalStatus: { type: String },
       emergencyPhone: {
         type: String,
         minlength: 7,
@@ -232,7 +284,7 @@ const userDataSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const UserData = mongoose.model("UserData", userDataSchema);

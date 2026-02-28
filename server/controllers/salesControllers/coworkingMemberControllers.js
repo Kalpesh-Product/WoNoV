@@ -12,6 +12,7 @@ const {
   normalizeClientName,
   normalizeName,
 } = require("../../utils/dataSheetFormatters");
+const CoworkingMember = require("../../models/sales/CoworkingMembers");
 
 const createMember = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -83,21 +84,6 @@ const createMember = async (req, res, next) => {
     });
 
     const savedMember = await newMember.save();
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Coworking Client Member onboarded successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: savedMember._id,
-      changes: {
-        member: savedMember,
-      },
-    });
 
     return res
       .status(201)
@@ -923,6 +909,7 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
     let members = [];
     let unknownClients = [];
     let unknownUnits = [];
+    const uniqueClientNamesSet = new Set();
 
     stream
       .pipe(csvParser())
@@ -949,6 +936,7 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
         );
 
         if (!clientId) {
+          uniqueClientNamesSet.add(companyName.trim());
           unknownClients.push({
             employeeName,
             companyName,
@@ -1034,7 +1022,7 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
           // ----------------------------
           // 2️⃣ Fetch DB duplicates (by name)
           // ----------------------------
-          const existingMembers = await CoworkingMembers.find({
+          const existingMembers = await CoworkingMember.find({
             client: { $in: uniqueMembers.map((m) => m.client.toString()) },
           })
             .select("client employeeName")
@@ -1068,9 +1056,10 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
           // 3️⃣ Insert Remaining
           // ----------------------------
           if (finalMembers.length > 0) {
-            await CoworkingMembers.insertMany(finalMembers);
+            await CoworkingMember.insertMany(finalMembers);
           }
 
+          const uniqueClientNames = Array.from(uniqueClientNamesSet);
           return res.status(201).json({
             message: `${finalMembers.length} members inserted successfully`,
             insertedCount: finalMembers.length,
@@ -1083,6 +1072,7 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
             unknownUnits,
             csvDuplicates,
             dbDuplicates,
+            uniqueClientNames,
           });
         } catch (err) {
           next(err);

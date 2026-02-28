@@ -995,6 +995,14 @@ const bulkInsertUsers = async (req, res, next) => {
                   },
                 };
 
+                if (isNaN(userObj.dateOfBirth?.getTime())) {
+                  console.log("Invalid DOB Row:", row);
+                }
+
+                if (isNaN(userObj.startDate?.getTime())) {
+                  console.log("Invalid DOJ Row:", row);
+                }
+                console.log("New User", userObj);
                 newUsers.push(userObj);
 
                 //Agreements Bulk Insertion
