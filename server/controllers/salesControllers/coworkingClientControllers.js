@@ -298,10 +298,7 @@ const getCoworkingClients = async (req, res, next) => {
     if (!clients?.length) {
       return res.status(404).json({ message: "No clients found" });
     }
-    const members = await CoworkingMembers.find({
-      company,
-      client: { $ne: null },
-    })
+    const members = await CoworkingMembers.find()
       .populate([
         { path: "client", select: "clientName email" },
         { path: "unit", select: "unitName unitNo" },
@@ -313,8 +310,7 @@ const getCoworkingClients = async (req, res, next) => {
       return {
         ...client,
         members: members.filter(
-          (member) =>
-            member?.client?._id?.toString() === client?._id?.toString(),
+          (member) => member?.client._id.toString() === client?._id.toString(),
         ),
       };
     });
