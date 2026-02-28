@@ -1303,6 +1303,18 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/admin-dashboard/mix-bag/client-members",
   },
+  ADMIN_CLIENT_DETAILS: {
+    value: "admin_client_details_tab",
+    title: "CLIENT DETAILS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data/client-details",
+  },
+  ADMIN_MEMBERS: {
+    value: "admin_members_tab",
+    title: "MEMBERS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data/members",
+  },
   ADMIN_DATA: { value: "admin_data_card", title: "DATA", type: "read" },
   ADMIN_SETTINGS: { value: "admin_settings_card", title: "SETTINGS", type: "read" },
   // 🟡 Admin Graphs
