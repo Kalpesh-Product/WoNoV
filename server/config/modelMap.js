@@ -31,14 +31,16 @@ const modelKeyGroups = {
   ],
   Unit: ["locationId", "location", "unitId", "unit"],
 
-  //Agreement Ids
+  //Agreement IDs
   agreements: ["agreementId"],
+
+  //Category IDs
+  Category: ["categoryId"],
+  SubCategory: ["subCategoryId"],
 
   //Asset IDs
   Asset: ["assetId"],
   AssignAsset: ["assigneddAssetId"],
-  AssetCategory: ["categoryId"],
-  SubCategory: ["subCategoryId"],
 
   //Attendance IDs
   Attendance: ["attendanceId"],
