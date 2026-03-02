@@ -244,18 +244,18 @@ const RecievedTickets = ({ title, departmentId }) => {
             menuItems={[
               // Conditionally add "Accept"
               ...(auth.user.role.length > 0 &&
-              // Case 1: If user is in Top Management & ticket is for Top Management
-              ((auth.user.role[0].roleTitle === "Top Management" &&
-                params.data.raisedToDepartment === "Top Management") ||
-                // Case 2: If user is not Top Management
-                auth.user.role[0].roleTitle !== "Top Management")
+                // Case 1: If user is in Top Management & ticket is for Top Management
+                ((auth.user.role[0].roleTitle === "Top Management" &&
+                  params.data.raisedToDepartment === "Top Management") ||
+                  // Case 2: If user is not Top Management
+                  auth.user.role[0].roleTitle !== "Top Management")
                 ? [
-                    {
-                      label: "Accept",
-                      onClick: () => acceptMutate(params.data),
-                      isLoading: isLoading,
-                    },
-                  ]
+                  {
+                    label: "Accept",
+                    onClick: () => acceptMutate(params.data),
+                    isLoading: isLoading,
+                  },
+                ]
                 : []),
 
               // {
@@ -265,19 +265,19 @@ const RecievedTickets = ({ title, departmentId }) => {
               // },
               // Conditionally add "Assign"
               ...(auth.user.role.length > 0 &&
-              (auth.user.role[0].roleTitle === "Master Admin" ||
-                auth.user.role[0].roleTitle === "Super Admin" ||
-                auth.user.role[0].roleTitle.endsWith("Admin"))
+                (auth.user.role[0].roleTitle === "Master Admin" ||
+                  auth.user.role[0].roleTitle === "Super Admin" ||
+                  auth.user.role[0].roleTitle.endsWith("Admin"))
                 ? [
-                    {
-                      label: "Assign",
-                      onClick: () => handleOpenAssignModal(params.data.id),
-                    },
-                    {
-                      label: "Reject",
-                      onClick: () => handleRejectClick(params.data), // ✅ open modal
-                    },
-                  ]
+                  {
+                    label: "Assign",
+                    onClick: () => handleOpenAssignModal(params.data.id),
+                  },
+                  {
+                    label: "Reject",
+                    onClick: () => handleRejectClick(params.data), // ✅ open modal
+                  },
+                ]
                 : []),
             ]}
           />
@@ -345,7 +345,7 @@ const RecievedTickets = ({ title, departmentId }) => {
             <DetalisFormatted title="Status" detail={selectedTicket.status} />
 
             {selectedTicket.image && (
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-1">
                 <img
                   src={selectedTicket.image}
                   alt="Ticket Attachment"
@@ -404,11 +404,10 @@ const RecievedTickets = ({ title, departmentId }) => {
           <button
             disabled={!rejectionReason.trim() || rejectPending}
             onClick={handleRejectSubmit}
-            className={`${
-              !rejectionReason.trim() || rejectPending
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-red-600 hover:bg-red-700"
-            } text-white px-4 py-2 rounded transition`}
+            className={`${!rejectionReason.trim() || rejectPending
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-red-600 hover:bg-red-700"
+              } text-white px-4 py-2 rounded transition`}
           >
             {rejectPending ? "Submitting..." : "Submit Rejection"}
           </button>
