@@ -76,8 +76,16 @@ const ManageTickets = () => {
     inProgressTickets: ticketsData.filter(
       (item) => item.status === "In Progress" || item.status === "Escalated",
     ).length,
-    assignedTickets: ticketsData.filter((item) => item.assignees?.length > 0)
-      .length,
+    assignedTickets: ticketsData
+      .filter((item) => item.assignees?.length > 0)
+      .filter((item) => item.status === "In Progress")
+      .filter((item) => {
+        if (isAdmin) return true;
+
+        return item.assignees.some(
+          (assignee) => assignee?._id === auth.user?._id,
+        );
+      }).length,
     escalatedTickets: ticketsData.filter((item) => item.status === "Escalated")
       .length,
     supportTickets: supportTicketsData.length,
