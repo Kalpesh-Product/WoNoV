@@ -42,10 +42,10 @@ const raiseTicket = async (req, res, next) => {
     if (
       typeof description !== "string" ||
       !description.length ||
-      description.replace(/\s/g, "").length > 100
+      description.replace(/\s/g, "").length > 500
     ) {
       throw new CustomError(
-        "Description should not exceed 100 characters.",
+        "Description should not exceed 500 characters.",
         logPath,
         logAction,
         logSourceKey,
@@ -173,9 +173,9 @@ const raiseTicket = async (req, res, next) => {
       company: company,
       image: imageDetails
         ? {
-            id: imageDetails.id,
-            url: imageDetails.url,
-          }
+          id: imageDetails.id,
+          url: imageDetails.url,
+        }
         : null, // Store image only if uploaded
     });
 
@@ -301,8 +301,8 @@ const updateOtherTicket = async (req, res, next) => {
     error instanceof CustomError
       ? next(error)
       : next(
-          new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-        );
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+      );
   }
 };
 
@@ -544,9 +544,8 @@ const getTeamMemberTickets = async (req, res, next) => {
       }).length;
 
       return {
-        name: `${member.firstName} ${member.middleName || ""} ${
-          member.lastName
-        }`.trim(),
+        name: `${member.firstName} ${member.middleName || ""} ${member.lastName
+          }`.trim(),
         _id: member._id,
         department: member.departments.map((dept) => dept.name),
         role: member.role.map((r) => r.roleTitle),

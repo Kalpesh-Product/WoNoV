@@ -92,10 +92,10 @@ const ManageVisitors = () => {
     const combinedCheckout =
       checkInDate && checkOutRaw
         ? checkInDate
-          .hour(checkOutRaw.hour())
-          .minute(checkOutRaw.minute())
-          .second(checkOutRaw.second())
-          .millisecond(checkOutRaw.millisecond())
+            .hour(checkOutRaw.hour())
+            .minute(checkOutRaw.minute())
+            .second(checkOutRaw.second())
+            .millisecond(checkOutRaw.millisecond())
         : checkOutRaw;
 
     mutate({
@@ -123,6 +123,7 @@ const ManageVisitors = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: ({ data }) => {
         return (
           <div className="flex items-center gap-2">
