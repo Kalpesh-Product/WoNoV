@@ -977,7 +977,7 @@ const MeetingDashboard = () => {
       key: "bizNestBookings",
       title: "Total",
       data:
-        meetingsData.filter((item) => item.meetingType === "Internal").length ||
+        meetingsData.filter((item) => item.meetingType === "Internal" && item.client === "BIZ Nest").length ||
         0,
       description: "BIZ Nest Bookings",
       route: "reports",
@@ -998,13 +998,13 @@ const MeetingDashboard = () => {
       data:
         meetingsData.length > 0
           ? (
-              meetingsData.reduce((sum, item) => {
-                const duration = parseInt(item.duration?.replace("m", ""));
-                return isNaN(duration) ? sum : sum + duration;
-              }, 0) /
-              60 /
-              meetingsData.length
-            ).toFixed(2)
+            meetingsData.reduce((sum, item) => {
+              const duration = parseInt(item.duration?.replace("m", ""));
+              return isNaN(duration) ? sum : sum + duration;
+            }, 0) /
+            60 /
+            meetingsData.length
+          ).toFixed(2)
           : 0,
       description: "Hours Booked",
       route: "reports",
