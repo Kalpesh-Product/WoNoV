@@ -355,6 +355,8 @@ const addVisitor = async (req, res, next) => {
       dateOfVisit: visitDate,
       checkIn: clockIn,
       checkOut: clockOut,
+      checkInBy: req.body.checkInBy || user?.name || user?.email || "-",
+      checkOutBy: req.body.checkOutBy || user?.name || user?.email || "-",
       scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
       toMeet: isDepartmentEmpty ? null : toMeet,
       toMeetCompany: companyToMeet || null,
@@ -371,7 +373,12 @@ const addVisitor = async (req, res, next) => {
       brandName,
       gstNumber,
       panNumber,
+      checkedInBy: user,
     });
+
+    if (clockOut) {
+      visitorData.checkedOutBy = user;
+    }
 
     if (visitorFlag === "Client") {
       visitorData.idProof = {
@@ -522,6 +529,10 @@ const updateVisitor = async (req, res, next) => {
       });
     }
 
+    if (parsedCheckout) {
+      updateData.checkedOutBy = user;
+    }
+
     const updatedVisitor = await Visitor.findByIdAndUpdate(
       visitorId,
       updateData,
@@ -617,9 +628,8 @@ const fetchTeamMembers = async (req, res, next) => {
 
     const transformedVisitors = teamMembers.map((member) => {
       return {
-        name: `${member.firstName} ${member.middleName || ""} ${
-          member.lastName
-        }`.trim(),
+        name: `${member.firstName} ${member.middleName || ""} ${member.lastName
+          }`.trim(),
         email: member.email,
         department: member.departments.map((dept) => dept.name),
         role: member.role.map((r) => r.roleTitle),

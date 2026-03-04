@@ -60,7 +60,15 @@ const LogPage = () => {
       headerName: "Date",
       field: "createdAt",
       flex: 1,
-      cellRenderer: (params) => humanDate(params.value),
+      // cellRenderer: (params) => humanDate(params.value),
+      valueFormatter: (params) => {
+        if (!params.value) return "-";
+        return `${humanDate(params.value)}, ${humanTime(params.value)}`;
+      },
+      cellRenderer: (params) => {
+        if (!params.value) return "-";
+        return `${humanDate(params.value)}, ${humanTime(params.value)}`;
+      },
     },
   ];
   const tableData = isLoading
@@ -115,15 +123,15 @@ const LogPage = () => {
     // Arrays
     if (Array.isArray(value)) {
       const cleanList = value.filter(
-        (item) => !isMongoId(item) && typeof item !== "object"
+        (item) => !isMongoId(item) && typeof item !== "object",
       );
 
       const cleanedObjects = value
         .filter((item) => typeof item === "object" && item !== null)
         .map((obj) =>
           Object.fromEntries(
-            Object.entries(obj).filter(([k, v]) => !shouldSkipField(k, v))
-          )
+            Object.entries(obj).filter(([k, v]) => !shouldSkipField(k, v)),
+          ),
         );
 
       const finalList = [...cleanList, ...cleanedObjects].filter(Boolean);
@@ -144,11 +152,11 @@ const LogPage = () => {
     // Objects
     if (typeof value === "object" && value !== null) {
       const entries = Object.entries(value).filter(
-        ([subKey, subVal]) => !shouldSkipField(subKey, subVal)
+        ([subKey, subVal]) => !shouldSkipField(subKey, subVal),
       );
 
       const hasImage = Object.keys(value).some((k) =>
-        k.toLowerCase().includes("image")
+        k.toLowerCase().includes("image"),
       );
 
       if (entries.length === 0 && !hasImage) return null;

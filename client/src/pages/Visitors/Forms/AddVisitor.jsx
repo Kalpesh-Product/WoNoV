@@ -14,6 +14,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
+import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
 import {
   isAlphanumeric,
@@ -49,7 +50,9 @@ const AddVisitor = () => {
 
       dateOfVisit: null,
       checkIn: null,
+      checkInBy: "",
       checkOut: null,
+      checkOutBy: "",
       toMeet: "",
       department: "",
       clientToMeet: "",
@@ -61,6 +64,8 @@ const AddVisitor = () => {
       scheduledDate: null,
     },
   });
+
+  const { auth } = useAuth();
 
   const selectedCompany = watch("toMeetCompany");
   const selectedIdType = watch("idProof.idType");
@@ -167,7 +172,14 @@ const AddVisitor = () => {
           ? null
           : data.toMeet
         : data.toMeet || null, // allow client member ID
+      checkInBy: auth?.user
+        ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim() ||
+        auth.user.name ||
+        auth.user.email ||
+        "Unknown User"
+        : "-",
     };
+    console.log("PAYLOAD BEING SENT:", JSON.stringify(payload, null, 2));
 
     addVisitor(payload);
   };

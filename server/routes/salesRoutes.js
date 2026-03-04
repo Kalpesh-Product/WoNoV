@@ -110,7 +110,7 @@ router.post(
   bulkInsertCoworkingMembers,
 );
 router.post(
-  "/bulk-insert-co-working-client-members",
+  "/bulk-edit-co-working-client-members",
   upload.single("members"),
   bulkUpdateCoworkingMembers,
 );
@@ -137,7 +137,7 @@ router.post(
   bulkInsertVirtualOfficeClients,
 );
 router.post(
-  "/bulk-insert-virtual-office-clients",
+  "/bulk-edit-virtual-office-clients",
   upload.single("virtualoffice"),
   bulkUpdateVirtualOfficeClients,
 );

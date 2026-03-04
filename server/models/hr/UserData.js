@@ -269,8 +269,8 @@ const userDataSchema = new mongoose.Schema(
       maritalStatus: { type: String },
       emergencyPhone: {
         type: String,
-        minlength: 7,
-        maxlength: 20,
+        // minlength: 7,
+        // maxlength: 20,
       },
     },
     isActive: {

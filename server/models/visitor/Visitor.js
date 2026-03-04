@@ -88,8 +88,19 @@ const visitorSchema = new mongoose.Schema(
     checkIn: {
       type: Date,
     },
+    checkInBy: {
+      type: String,
+    },
     checkOut: {
       type: Date,
+    },
+    checkedInBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
+    checkedOutBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
     },
     scheduledDate: {
       type: Date,
