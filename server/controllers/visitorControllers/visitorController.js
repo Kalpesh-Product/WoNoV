@@ -371,7 +371,12 @@ const addVisitor = async (req, res, next) => {
       brandName,
       gstNumber,
       panNumber,
+      checkedInBy: user,
     });
+
+    if (clockOut) {
+      visitorData.checkedOutBy = user;
+    }
 
     if (visitorFlag === "Client") {
       visitorData.idProof = {
@@ -520,6 +525,10 @@ const updateVisitor = async (req, res, next) => {
       return res.status(400).json({
         message: "Check-out time should be after Check-in time",
       });
+    }
+
+    if (parsedCheckout) {
+      updateData.checkedOutBy = user;
     }
 
     const updatedVisitor = await Visitor.findByIdAndUpdate(
