@@ -94,8 +94,13 @@ const visitorSchema = new mongoose.Schema(
     checkOut: {
       type: Date,
     },
-    checkOutBy: {
-      type: String,
+    checkedInBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
+    checkedOutBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
     },
     scheduledDate: {
       type: Date,
