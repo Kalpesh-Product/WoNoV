@@ -102,10 +102,14 @@ const fetchVisitors = async (req, res, next) => {
             path: "clientToMeet",
             select: "employeeName email",
           },
-          // {
-          //   path: "clientCompany",
-          //   select: "clientName email",
-          // },
+          {
+            path: "checkedInBy",
+            select: "firstName lastName",
+          },
+          {
+            path: "checkedOutBy",
+            select: "firstName lastName",
+          },
           {
             path: "meeting",
           },
@@ -628,8 +632,9 @@ const fetchTeamMembers = async (req, res, next) => {
 
     const transformedVisitors = teamMembers.map((member) => {
       return {
-        name: `${member.firstName} ${member.middleName || ""} ${member.lastName
-          }`.trim(),
+        name: `${member.firstName} ${member.middleName || ""} ${
+          member.lastName
+        }`.trim(),
         email: member.email,
         department: member.departments.map((dept) => dept.name),
         role: member.role.map((r) => r.roleTitle),
