@@ -6,8 +6,6 @@ import humanDate from "../utils/humanDateForamt";
 import humanTime from "../utils/humanTime";
 import DetalisFormatted from "../components/DetalisFormatted";
 import MuiModal from "../components/MuiModal";
-import { useCallback } from "react";
-import { useMemo } from "react";
 
 const LogPage = () => {
   const axios = useAxiosPrivate();
@@ -25,162 +23,63 @@ const LogPage = () => {
     },
   });
 
-  const handleViewlog = useCallback((data) => {
+  const handleViewlog = (data) => {
     setselectedLog(data);
     setOpenModal(true);
-  }, []);
+  };
 
-  const columns = useMemo(
-    () => [
-      {
-        headerName: "Sr No",
-        field: "srNo",
-        width: 80,
-      },
-      {
-        headerName: "Action",
-        field: "action",
-        flex: 1,
-        cellRenderer: (params) => (
-          <div role="button" onClick={() => handleViewlog(params.data.payload)}>
-            <span className="underline text-primary cursor-pointer">
-              {params.value}
-            </span>
-          </div>
-        ),
-      },
-      {
-        headerName: "User",
-        field: "user",
-        flex: 1,
-      },
-      {
-        headerName: "Path",
-        field: "path",
-        flex: 1,
-      },
-      {
-        headerName: "Date",
-        field: "createdAt",
-        flex: 1,
-        includeTime: true,
-        cellRenderer: (params) => params.value,
-      },
-    ],
-    [handleViewlog],
-  );
-
-  const formatPayloadValue = useCallback((key, value) => {
-    if (value === null || value === undefined || value === "") return "-";
-
-    if (Array.isArray(value)) {
-      if (value.length === 0) return "-";
-
-      return value
-        .map((item) => {
-          if (item === null || item === undefined) return "-";
-          return typeof item === "object" ? JSON.stringify(item) : item;
-        })
-        .join(", ");
-    }
-
-    if (typeof value === "object") {
-      return Object.keys(value).length ? JSON.stringify(value) : "-";
-    }
-
-    if (
-      key.toLowerCase().includes("date") ||
-      key.toLowerCase().includes("time")
-    ) {
-      const dateValue = new Date(value);
-      if (!Number.isNaN(dateValue.getTime())) {
-        return `${humanDate(value)} ${humanTime(value)}`;
-      }
-    }
-
-    return value;
-  }, []);
-
-  const flattenPayload = useCallback(
-    (payload, prefix = "") => {
-      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-        return {};
-      }
-
-      return Object.entries(payload).reduce((acc, [key, value]) => {
-        const exportKey = prefix ? `${prefix}_${key}` : key;
-
-        if (value && typeof value === "object" && !Array.isArray(value)) {
-          return { ...acc, ...flattenPayload(value, exportKey) };
-        }
-
-        return {
-          ...acc,
-          [exportKey]: formatPayloadValue(exportKey, value),
-        };
-      }, {});
+  const columns = [
+    {
+      headerName: "Sr No",
+      field: "srNo",
+      width: 80,
     },
-    [formatPayloadValue],
-  );
-
-  const tableData = useMemo(
-    () =>
-      isLoading
-        ? []
-        : data.map((item) => ({
-            ...item,
-            user: `${item.performedBy?.firstName} ${item.performedBy?.lastName}`,
-            path: item.path.split("/").splice(2).join(" > "),
-            createdAt: item.createdAt,
-            payload: item.payload,
-            ...flattenPayload(item.payload),
-          })),
-    [data, flattenPayload, isLoading],
-  );
-
-  const payloadColumns = useMemo(() => {
-    const payloadKeys = new Set();
-    tableData.forEach((row) => {
-      Object.keys(row).forEach((key) => {
-        if (
-          ![
-            "srNo",
-            "action",
-            "user",
-            "path",
-            "createdAt",
-            "payload",
-            "performedBy",
-          ].includes(key)
-        ) {
-          payloadKeys.add(key);
-        }
-      });
-    });
-
-    return Array.from(payloadKeys).map((key) => ({
-      headerName: key
-        .replace(/_/g, " ")
-        .replace(/([A-Z])/g, " $1")
-        .replace(/^./, (str) => str.toUpperCase()),
-      field: key,
-      hide: true,
-    }));
-  }, [tableData]);
-
-  const finalColumns = useMemo(
-    () => [...columns, ...payloadColumns],
-    [columns, payloadColumns],
-  );
-  // const tableData = isLoading
-  //   ? []
-  //   : data.map((item) => ({
-  //       ...item,
-  //       user: `${item.performedBy?.firstName} ${item.performedBy?.lastName}`,
-  //       path: item.path.split("/").splice(2).join(" > "),
-  //       createdAt: item.createdAt,
-  //       payload: item.payload,
-  //     }));
+    {
+      headerName: "Action",
+      field: "action",
+      flex: 1,
+      cellRenderer: (params) => (
+        <div role="button" onClick={() => handleViewlog(params.data.payload)}>
+          <span className="underline text-primary cursor-pointer">
+            {params.value}
+          </span>
+        </div>
+      ),
+    },
+    {
+      headerName: "User",
+      field: "user",
+      flex: 1,
+    },
+    {
+      headerName: "Path",
+      field: "path",
+      flex: 1,
+    },
+    {
+      headerName: "Date",
+      field: "createdAt",
+      flex: 1,
+      // cellRenderer: (params) => humanDate(params.value),
+      valueFormatter: (params) => {
+        if (!params.value) return "-";
+        return `${humanDate(params.value)}, ${humanTime(params.value)}`;
+      },
+      cellRenderer: (params) => {
+        if (!params.value) return "-";
+        return `${humanDate(params.value)}, ${humanTime(params.value)}`;
+      },
+    },
+  ];
+  const tableData = isLoading
+    ? []
+    : data.map((item) => ({
+        ...item,
+        user: `${item.performedBy?.firstName} ${item.performedBy?.lastName}`,
+        path: item.path.split("/").splice(2).join(" > "),
+        createdAt: item.createdAt,
+        payload: item.payload,
+      }));
 
   //////////////////////Format data for view modal/////////////////////////
 
@@ -328,12 +227,11 @@ const LogPage = () => {
     <div className="p-4">
       <YearWiseTable
         data={tableData || []}
-        columns={finalColumns}
+        columns={columns}
         dateColumn="createdAt"
         tableHeight={400}
         tableTitle="Logs Table"
         exportData={true}
-        exportAllColumns={true}
         search={true}
       />
       <MuiModal
