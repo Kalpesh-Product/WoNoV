@@ -18,8 +18,11 @@ import ThreeDotMenu from "../../components/ThreeDotMenu";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import useAuth from "../../hooks/useAuth";
 
 const ManageVisitors = () => {
+
+  const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("view");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -92,15 +95,23 @@ const ManageVisitors = () => {
     const combinedCheckout =
       checkInDate && checkOutRaw
         ? checkInDate
-            .hour(checkOutRaw.hour())
-            .minute(checkOutRaw.minute())
-            .second(checkOutRaw.second())
-            .millisecond(checkOutRaw.millisecond())
+          .hour(checkOutRaw.hour())
+          .minute(checkOutRaw.minute())
+          .second(checkOutRaw.second())
+          .millisecond(checkOutRaw.millisecond())
         : checkOutRaw;
+
+    const checkOutByName = auth?.user
+      ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim() ||
+      auth.user.name ||
+      auth.user.email ||
+      "Unknown User"
+      : "-";
 
     mutate({
       ...data,
       checkOut: combinedCheckout ? combinedCheckout.toISOString() : null,
+      checkOutBy: checkOutByName,
     });
   };
 
@@ -119,7 +130,9 @@ const ManageVisitors = () => {
       headerName: "Check In",
       cellRenderer: (params) => humanTime(params.value),
     },
-    { field: "checkOut", headerName: "Checkout" },
+    { field: "checkInBy", headerName: "Check In By" },
+    { field: "checkOut", headerName: "Check Out" },
+    { field: "checkOutBy", headerName: "Check Out By" },
     {
       field: "actions",
       headerName: "Actions",
@@ -175,8 +188,10 @@ const ManageVisitors = () => {
                   ? item?.clientToMeet?.employeeName
                   : "",
               checkIn: item.checkIn,
+              checkInBy: item.checkInBy,
               checkOut: item.checkOut ? humanTime(item.checkOut) : "",
               checkOutRaw: item.checkOut,
+              checkOutBy: item.checkOutBy,
             }))}
           columns={visitorsColumns}
         />
@@ -232,12 +247,20 @@ const ManageVisitors = () => {
                 detail={humanTime(selectedVisitor?.checkIn)}
               />
               <DetalisFormatted
-                title="Checkout"
+                title="Check In By"
+                detail={selectedVisitor?.checkInBy}
+              />
+              <DetalisFormatted
+                title="Check Out"
                 detail={
                   selectedVisitor?.checkOutRaw
                     ? humanTime(selectedVisitor.checkOutRaw)
                     : ""
                 }
+              />
+              <DetalisFormatted
+                title="Check Out By"
+                detail={selectedVisitor?.checkOutBy}
               />
             </>
           ) : (

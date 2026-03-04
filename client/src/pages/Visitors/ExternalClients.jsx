@@ -19,9 +19,11 @@ import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { inrFormat } from "../../utils/currencyFormat";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import useAuth from "../../hooks/useAuth";
 
 const ExternalClients = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState([]);
@@ -50,7 +52,9 @@ const ExternalClients = () => {
       toMeet: "",
       date: "",
       checkIn: "",
+      checkInBy: "",
       checkOut: "",
+      checkOutBy: "",
       checkOutRaw: null,
       paymentStatus: "",
       paymentAmount: 0,
@@ -72,6 +76,9 @@ const ExternalClients = () => {
         purposeOfVisit: selectedVisitor.purposeOfVisit || "",
         toMeet: selectedVisitor.toMeet || "",
         checkIn: selectedVisitor.checkIn ? selectedVisitor.checkIn : "",
+        checkInBy: selectedVisitor.checkInBy || "",
+        checkOut: selectedVisitor.checkOut ? selectedVisitor.checkOut : "",
+        checkOutBy: selectedVisitor.checkOutBy || "",
         checkOutRaw: selectedVisitor?.checkOutRaw
           ? dayjs(selectedVisitor.checkOutRaw)
           : null,
@@ -125,7 +132,9 @@ const ExternalClients = () => {
       headerName: "Check In",
       cellRenderer: (params) => humanTime(params.value),
     },
+    { field: "checkInBy", headerName: "Check In By" },
     { field: "checkOut", headerName: "Checkout" },
+    { field: "checkOutBy", headerName: "Check Out By" },
     // {
     //   field: "paymentStatus",
     //   headerName: "Payment Status",
@@ -198,6 +207,9 @@ const ExternalClients = () => {
       setValue("purposeOfVisit", selectedVisitor.purposeOfVisit || "");
       setValue("dateOfVisit", selectedVisitor.dateOfVisit || "");
       setValue("checkInRaw", selectedVisitor.checkInRaw || "");
+      setValue("checkInBy", selectedVisitor.checkInBy || "");
+
+      setValue("checkOutBy", selectedVisitor.checkOutBy || "");
       setValue(
         "checkOutRaw",
         selectedVisitor.checkOutRaw ? dayjs(selectedVisitor.checkOutRaw) : null,
@@ -239,6 +251,13 @@ const ExternalClients = () => {
             .millisecond(checkOutRaw.millisecond())
           : checkOutRaw;
 
+      const checkOutByName = auth?.user
+        ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim() ||
+        auth.user.name ||
+        auth.user.email ||
+        "-"
+        : "-";
+
       const updatePayload = {
         firstName: data.firstName,
         lastName: data.lastName,
@@ -256,6 +275,7 @@ const ExternalClients = () => {
         paymentMode: data.paymentMode,
         brandName: data.brandName,
         registeredClientCompany: data.registeredClientCompany,
+        checkOutBy: checkOutByName,
       };
 
       mutate(updatePayload);
@@ -292,7 +312,9 @@ const ExternalClients = () => {
                   ? null
                   : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
                 checkInRaw: item.checkIn,
+                checkInBy: item.checkInBy,
                 checkOutRaw: item.checkOut,
+                checkOutBy: item.checkOutBy,
                 checkIn: item.checkIn,
                 checkOut: item.checkOut ? humanTime(item.checkOut) : "",
                 paymentStatus:
@@ -471,7 +493,7 @@ const ExternalClients = () => {
                 {/* date of visit */}
                 {isEditing ? (
                   <Controller
-                    name="date"
+                    name="dateOfVisit"
                     control={control}
                     render={({ field }) => (
                       <TextField
@@ -541,6 +563,27 @@ const ExternalClients = () => {
                     />
                   )}
                 </LocalizationProvider>
+
+                {/* checkinby */}
+                {isEditing ? (
+                  <Controller
+                    name="checkInBy"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Checkin By"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Checkin By"
+                    detail={selectedVisitor?.checkInBy}
+                  />
+                )}
 
                 {/* Checkout time */}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -618,6 +661,26 @@ const ExternalClients = () => {
                     />
                   )}
                 </LocalizationProvider>
+                {/* checkoutby */}
+                {isEditing ? (
+                  <Controller
+                    name="checkOutBy"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Checkout By"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Checkout By"
+                    detail={selectedVisitor?.checkOutBy}
+                  />
+                )}
               </div>
             ) : (
               []

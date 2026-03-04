@@ -19,6 +19,7 @@ import {
 } from "../../../utils/validators";
 import dayjs from "dayjs";
 import UploadFileInput from "../../../components/UploadFileInput";
+import useAuth from "../../../hooks/useAuth";
 
 const AddClient = () => {
   const {
@@ -41,7 +42,9 @@ const AddClient = () => {
       idProof: { idType: "", idNumber: "" },
       dateOfVisit: null,
       checkIn: null,
+      checkInBy: "",
       checkOut: null,
+      checkOutBy: "",
       toMeet: "",
       department: "",
       clientToMeet: "",
@@ -62,6 +65,8 @@ const AddClient = () => {
       otherFile: "",
     },
   });
+
+  const { auth } = useAuth();
 
   const selectedCompany = watch("clientCompany");
   const selectedIdType = watch("idProof.idType");
@@ -163,6 +168,12 @@ const AddClient = () => {
       checkIn: data.checkIn?.toISOString() || null,
       checkOut: data.checkOut?.toISOString() || null,
       dateOfVisit: data.dateOfVisit?.toISOString() || null,
+      checkInBy: auth?.user
+        ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim() ||
+        auth.user.name ||
+        auth.user.email ||
+        "Unknown User"
+        : "-",
     };
 
     const formData = new FormData();
