@@ -359,8 +359,6 @@ const addVisitor = async (req, res, next) => {
       dateOfVisit: visitDate,
       checkIn: clockIn,
       checkOut: clockOut,
-      checkInBy: req.body.checkInBy || user?.name || user?.email || "-",
-      checkOutBy: req.body.checkOutBy || user?.name || user?.email || "-",
       scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
       toMeet: isDepartmentEmpty ? null : toMeet,
       toMeetCompany: companyToMeet || null,

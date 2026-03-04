@@ -88,9 +88,6 @@ const visitorSchema = new mongoose.Schema(
     checkIn: {
       type: Date,
     },
-    checkInBy: {
-      type: String,
-    },
     checkOut: {
       type: Date,
     },
