@@ -181,6 +181,7 @@ const AdminClientMembers = () => {
         ...item,
         srNo: index + 1,
         email: item.email || "-",
+        phone: item.mobileNo || item.phone || "-",
         status:
           typeof item?.isActive === "boolean"
             ? item.isActive
@@ -197,6 +198,7 @@ const AdminClientMembers = () => {
       cellRenderer: (params) => <span>{params.value}</span>,
     },
     { field: "email", headerName: "Email", flex: 1 },
+    { field: "phone", headerName: "Phone No", flex: 1 },
     {
       field: "status",
       headerName: "Status",
