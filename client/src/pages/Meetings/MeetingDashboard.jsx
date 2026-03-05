@@ -977,10 +977,12 @@ const MeetingDashboard = () => {
       key: "bizNestBookings",
       title: "Total",
       data:
-        meetingsData.filter((item) => item.meetingType === "Internal" && item.client === "BIZ Nest").length ||
-        0,
+        meetingsData.filter(
+          (item) => item.meetingType === "Internal" && item.client === "BIZ Nest"
+        ).length || 0,
       description: "BIZ Nest Bookings",
       route: "reports",
+      onClick: () => navigate("reports?source=biz-nest"),
       permission: PERMISSIONS.MEETINGS_BIZ_NEST_BOOKINGS.value,
     },
     {
@@ -1197,6 +1199,7 @@ const MeetingDashboard = () => {
           data={card.data}
           description={card.description}
           route={card.route}
+          onClick={card.onClick}
         />
       )),
     },

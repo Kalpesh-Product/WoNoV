@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import MuiModal from "../../components/MuiModal";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -17,10 +17,13 @@ import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import StatusChip from "../../components/StatusChip";
 import { inrFormat } from "../../utils/currencyFormat";
+import { useSearchParams } from "react-router-dom";
 
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const [searchParams] = useSearchParams();
+  const sourceFilter = searchParams.get("source");
   const [openModal, setOpenModal] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const { isTop } = useTopDepartment({
@@ -88,6 +91,18 @@ const MeetingReports = () => {
   };
 
   const meetingReportsData = isTop ? meetings : filteredMeetings;
+
+  const displayMeetings = useMemo(() => {
+    if (sourceFilter === "biz-nest") {
+      return meetingReportsData.filter(
+        (meeting) =>
+          meeting?.meetingType === "Internal" && meeting?.client === "BIZ Nest"
+      );
+    }
+
+    return meetingReportsData;
+  }, [meetingReportsData, sourceFilter]);
+
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
@@ -171,7 +186,7 @@ const MeetingReports = () => {
               dateColumn={"date"}
               tableTitle={"Meetings Reports"}
               data={[
-                ...meetingReportsData.map((item, index) => {
+                ...displayMeetings.map((item, index) => {
                   return {
                     srNo: index + 1,
                     id: index + 1,
