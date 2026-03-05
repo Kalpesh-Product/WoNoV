@@ -756,12 +756,13 @@ const updateVisitorPayment = async (req, res, next) => {
       return res.status(400).json({ message: "Discount cannot exceed amount" });
     }
 
-    // amount after discount
+    // amount after discount 850 - 50
     const taxableAmount = baseAmount - discountValue;
 
     // GST 18%
+    // 800 - gst 144 | 850- gst 153
     const gstAmount = Number((taxableAmount * 0.18).toFixed(2));
-
+    //taxable 944  // no tax - 953
     // final payable amount
     const finalAmount = Number((taxableAmount + gstAmount).toFixed(2));
 
