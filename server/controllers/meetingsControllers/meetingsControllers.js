@@ -209,11 +209,30 @@ const addMeetings = async (req, res, next) => {
     }
 
     // Calculate meeting duration and credit deduction
-    const durationInMs = endTimeObj - startTimeObj;
-    const durationInHours = durationInMs / (1000 * 60 * 60);
+
+    const durationInMinutes = (endTimeObj - startTimeObj) / (1000 * 60);
+
+    if (durationInMinutes <= 0) {
+      throw new CustomError(
+        "End time must be greater than start time",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
     const creditPerHour = roomAvailable.perHourCredit || 0;
+
     const totalCreditsUsed =
-      meetingType === "Internal" ? durationInHours * creditPerHour : 0;
+      meetingType === "Internal"
+        ? Number(((durationInMinutes / 60) * creditPerHour).toFixed(2))
+        : 0;
+
+    // const durationInMs = endTimeObj - startTimeObj;
+    // const durationInHours = durationInMs / (1000 * 60 * 60);
+    // const creditPerHour = roomAvailable.perHourCredit || 0;
+    // const totalCreditsUsed =
+    //   meetingType === "Internal" ? durationInHours * creditPerHour : 0;
 
     // Atomically deduct credits using findOneAndUpdate with credit check
 
@@ -223,23 +242,39 @@ const addMeetings = async (req, res, next) => {
       const updateQuery = { _id: client };
       const BookingModel = isClient ? CoworkingClient : Company;
 
-      const updatedUser = await BookingModel.findOneAndUpdate(
-        {
-          ...updateQuery,
-          meetingCreditBalance: { $gte: totalCreditsUsed },
-        },
-        { $inc: { meetingCreditBalance: -totalCreditsUsed } },
-        { new: true },
-      );
+      const creditOwner = await BookingModel.findById(client);
 
-      if (!updatedUser) {
+      if (!creditOwner) {
         throw new CustomError(
-          "Insufficient credits or booking user not found",
+          "Booking client/company not found",
           logPath,
           logAction,
           logSourceKey,
         );
       }
+
+      if (creditOwner.meetingCreditBalance < totalCreditsUsed) {
+        throw new CustomError(
+          "Insufficient meeting credits",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      const creditRecord = await resetMeetingCreditsIfNeeded(
+        BookingModel,
+        client,
+      );
+
+      // const updatedUser = await BookingModel.findOneAndUpdate(
+      //   {
+      //     ...updateQuery,
+      //     meetingCreditBalance: { $gte: totalCreditsUsed },
+      //   },
+      //   { $inc: { meetingCreditBalance: -totalCreditsUsed } },
+      //   { new: true },
+      // );
     }
 
     const meeting = new Meeting({
@@ -283,17 +318,17 @@ const addMeetings = async (req, res, next) => {
     isClient
       ? null
       : emitter.emit("notification", {
-        initiatorData: bookingUser._id,
-        users: internalParticipants.map((userId) => ({
-          userActions: {
-            whichUser: userId,
-            hasRead: false,
-          },
-        })),
-        type: "book meeting",
-        module: "Meetings",
-        message: `You have been added to a meeting by ${bookingUser.firstName} ${bookingUser.lastName}`,
-      });
+          initiatorData: bookingUser._id,
+          users: internalParticipants.map((userId) => ({
+            userActions: {
+              whichUser: userId,
+              hasRead: false,
+            },
+          })),
+          type: "book meeting",
+          module: "Meetings",
+          message: `You have been added to a meeting by ${bookingUser.firstName} ${bookingUser.lastName}`,
+        });
 
     await createLog({
       path: logPath,
@@ -524,12 +559,12 @@ const getMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
           : "";
       }
 
@@ -680,12 +715,12 @@ const getMyMeetings = async (req, res, next) => {
 
       const bookedBy = meeting.bookedBy
         ? [
-          meeting.bookedBy.firstName,
-          meeting.bookedBy.middleName,
-          meeting.bookedBy.lastName,
-        ]
-          .filter(Boolean)
-          .join(" ")
+            meeting.bookedBy.firstName,
+            meeting.bookedBy.middleName,
+            meeting.bookedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
         : "";
 
       const isReceptionist = meeting.receptionist.departments.some(
@@ -696,12 +731,12 @@ const getMyMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
           : "";
       }
 
@@ -1719,12 +1754,33 @@ const updateMeetingDetails = async (req, res, next) => {
       internalUsers = users.map((u) => u._id);
     }
 
-    const oldCreditsUsed = meeting.creditsUsed || 0;
-    const durationInMs = endTimeObj - startTimeObj;
-    const durationInHours = durationInMs / (1000 * 60 * 60);
+    // const oldCreditsUsed = meeting.creditsUsed || 0;
+    // const durationInMs = endTimeObj - startTimeObj;
+    // const durationInHours = durationInMs / (1000 * 60 * 60);
+    // const creditPerHour = meeting.bookedRoom.perHourCredit || 0;
+    // const newCreditsUsed = durationInHours * creditPerHour;
+    // const creditDifference = newCreditsUsed - oldCreditsUsed;
+
+    //Credits calculation
+    const durationInMinutes = (endTimeObj - startTimeObj) / (1000 * 60);
+
+    if (durationInMinutes <= 0) {
+      return res
+        .status(400)
+        .json({ message: "End time must be greater than start time" });
+    }
+
     const creditPerHour = meeting.bookedRoom.perHourCredit || 0;
-    const newCreditsUsed = durationInHours * creditPerHour;
-    const creditDifference = newCreditsUsed - oldCreditsUsed;
+
+    //deduction based on minutes
+    const newCreditsUsed = Number(
+      ((durationInMinutes / 60) * creditPerHour).toFixed(2),
+    );
+
+    const oldCreditsUsed = meeting.creditsUsed || 0;
+    const creditDifference = Number(
+      (newCreditsUsed - oldCreditsUsed).toFixed(2),
+    );
 
     if (creditDifference > 0) {
       // Deduct extra credits

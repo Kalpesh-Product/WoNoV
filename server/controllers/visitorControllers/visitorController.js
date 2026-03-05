@@ -312,10 +312,6 @@ const addVisitor = async (req, res, next) => {
     let companyToMeet = null;
     const isClient = toMeetCompany && company !== toMeetCompany;
 
-    console.log("isClient", isClient);
-    console.log("company", company);
-    console.log("toMeetCompany", toMeetCompany);
-
     if (visitorFlag === "Client" && !idProof) {
       return res.status(400).json({
         message: "ID proof is required for client visitors",
@@ -348,6 +344,16 @@ const addVisitor = async (req, res, next) => {
       !department ||
       (typeof department === "string" && department.trim() === "");
 
+    const fullDayPassAmount = 850;
+    const halfDayPassAmount = 500;
+
+    const amount =
+      visitorType === "Full-Day Pass"
+        ? fullDayPassAmount
+        : visitorType === "Half-Day Pass"
+          ? halfDayPassAmount
+          : 0;
+
     const visitorData = new Visitor({
       firstName,
       middleName,
@@ -376,6 +382,8 @@ const addVisitor = async (req, res, next) => {
       gstNumber,
       panNumber,
       checkedInBy: user,
+      amount,
+      gstAmount: amount * (18 / 100),
     });
 
     if (clockOut) {
@@ -645,6 +653,139 @@ const fetchTeamMembers = async (req, res, next) => {
   }
 };
 
+const updateVisitorPayment = async (req, res, next) => {
+  const logPath = "visitors/VisitorLog";
+  const logAction = "Visitor Payment";
+  const logSourceKey = "visitor";
+
+  try {
+    const { visitorId } = req.params;
+    const { paymentMode, paymentStatus, discount, amount } = req.body;
+    const paymentProofFile = req.file;
+
+    if (!mongoose.Types.ObjectId.isValid(visitorId)) {
+      return res.status(400).json({ message: "Invalid visitor Id provided" });
+    }
+
+    if (!paymentMode || !paymentStatus || !amount || !paymentProofFile) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const visitor = await Visitor.findById(visitorId);
+
+    if (!visitor) {
+      throw new CustomError(
+        "Visitor not found",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    // Only Full-Day / Half-Day pass allowed
+    if (
+      visitor.visitorType !== "Full-Day Pass" &&
+      visitor.visitorType !== "Half-Day Pass"
+    ) {
+      throw new CustomError(
+        "Payments allowed only for Full-Day or Half-Day pass visitors",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    /*
+    -------------------------
+    Image validation
+    -------------------------
+    */
+
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "image/webp",
+    ];
+
+    if (!allowedMimeTypes.includes(paymentProofFile.mimetype)) {
+      throw new CustomError(
+        "Invalid image format for payment proof",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    /*
+    -------------------------
+    Upload image
+    -------------------------
+    */
+
+    const uploadResponse = await handleDocumentUpload(
+      paymentProofFile.buffer,
+      `${visitor.company}/visitors/${visitor._id}/payment-proof`,
+      paymentProofFile.originalname,
+    );
+
+    if (!uploadResponse.public_id) {
+      throw new CustomError(
+        "Failed to upload payment proof",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    visitor.paymentProof = {
+      url: uploadResponse.secure_url,
+      id: uploadResponse.public_id,
+    };
+
+    /*
+    -------------------------
+    Payment fields
+    -------------------------
+    */
+
+    const baseAmount = Number(amount);
+    const discountValue = Number(discount ?? 0);
+
+    if (discountValue > baseAmount) {
+      return res.status(400).json({ message: "Discount cannot exceed amount" });
+    }
+
+    // amount after discount
+    const taxableAmount = baseAmount - discountValue;
+
+    // GST 18%
+    const gstAmount = Number((taxableAmount * 0.18).toFixed(2));
+
+    // final payable amount
+    const finalAmount = Number((taxableAmount + gstAmount).toFixed(2));
+
+    visitor.amount = baseAmount;
+    visitor.totalAmount = finalAmount;
+    visitor.discount = discountValue;
+    visitor.gstAmount = gstAmount;
+    visitor.paymentMode = paymentMode;
+    visitor.paymentStatus = paymentStatus === "Paid";
+
+    await visitor.save();
+
+    return res.status(200).json({
+      message: "Visitor payment updated successfully",
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
+  }
+};
+
 const bulkInsertExternalClients = async (req, res, next) => {
   try {
     const file = req.file;
@@ -837,6 +978,7 @@ module.exports = {
   fetchVisitors,
   addVisitor,
   updateVisitor,
+  updateVisitorPayment,
   fetchExternalCompanies,
   fetchTeamMembers,
   bulkInsertExternalClients,
