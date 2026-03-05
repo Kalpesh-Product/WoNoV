@@ -132,9 +132,9 @@ const ExternalClients = () => {
       headerName: "Check In",
       cellRenderer: (params) => humanTime(params.value),
     },
-    { field: "checkInBy", headerName: "Check In By" },
+    // { field: "checkInBy", headerName: "Check In By" },
     { field: "checkOut", headerName: "Checkout" },
-    { field: "checkOutBy", headerName: "Check Out By" },
+    // { field: "checkOutBy", headerName: "Check Out By" },
     // {
     //   field: "paymentStatus",
     //   headerName: "Payment Status",
@@ -312,9 +312,13 @@ const ExternalClients = () => {
                   ? null
                   : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
                 checkInRaw: item.checkIn,
-                checkInBy: item.checkInBy,
+                checkInBy: item.checkedInBy
+                  ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
+                  : "-",
                 checkOutRaw: item.checkOut,
-                checkOutBy: item.checkOutBy,
+                checkOutBy: item.checkedOutBy
+                  ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
+                  : "-",
                 checkIn: item.checkIn,
                 checkOut: item.checkOut ? humanTime(item.checkOut) : "",
                 paymentStatus:
@@ -569,6 +573,7 @@ const ExternalClients = () => {
                   <Controller
                     name="checkInBy"
                     control={control}
+                    disabled
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -666,6 +671,7 @@ const ExternalClients = () => {
                   <Controller
                     name="checkOutBy"
                     control={control}
+                    disabled
                     render={({ field }) => (
                       <TextField
                         {...field}
