@@ -638,9 +638,8 @@ const fetchTeamMembers = async (req, res, next) => {
 
     const transformedVisitors = teamMembers.map((member) => {
       return {
-        name: `${member.firstName} ${member.middleName || ""} ${
-          member.lastName
-        }`.trim(),
+        name: `${member.firstName} ${member.middleName || ""} ${member.lastName
+          }`.trim(),
         email: member.email,
         department: member.departments.map((dept) => dept.name),
         role: member.role.map((r) => r.roleTitle),

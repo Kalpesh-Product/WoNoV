@@ -28,8 +28,6 @@ const ExternalClients = () => {
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Added local state to hold visitor data for UI manipulation
-  const [localVisitorsData, setLocalVisitorsData] = useState([]);
 
   const [selectedVisitor, setSelectedVisitor] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -48,12 +46,6 @@ const ExternalClients = () => {
     },
   });
 
-  // Sync server data with local state for UI-only updates
-  useEffect(() => {
-    if (visitorsData.length > 0) {
-      setLocalVisitorsData(visitorsData);
-    }
-  }, [visitorsData]);
 
   const { handleSubmit, reset, control, setValue } = useForm({
     defaultValues: {
@@ -124,43 +116,51 @@ const ExternalClients = () => {
     control: paymentControl,
     reset: resetPaymentForm,
     formState: { errors: paymentErrors },
+    watch: paymentWatch,
+    setValue: setPaymentValue,
   } = useForm({
     defaultValues: {
       paymentAmount: "",
+      gstAmount: "",
+      discountAmount: "",
+      discountPercentage: "",
+      finalAmount: "",
       paymentType: "",
       paymentStatus: "",
       paymentProof: "",
     },
   });
 
-  // Removed the useMutation hook for payment
-  // UI-Only Submit Handler
-  const handlePaymentSubmitUI = (data) => {
-    if (!paymentVisitor) return;
+  const watchedPaymentAmount = Number(paymentWatch("paymentAmount") || 0);
+  const watchedGstAmount = Number(paymentWatch("gstAmount") || 0);
+  const watchedDiscountAmount = Number(paymentWatch("discountAmount") || 0);
 
-    // Simulating an update by modifying the local state
-    setLocalVisitorsData((prev) =>
-      prev.map((item) => {
-        if (item._id === paymentVisitor.mongoId) {
-          return {
-            ...item,
-            meeting: {
-              ...item.meeting,
-              paymentStatus: data.paymentStatus === "Paid",
-              paymentAmount: Number(data.paymentAmount),
-              paymentMode: data.paymentType,
-            }
-          };
-        }
-        return item;
-      })
-    );
-
-    toast.success("Payment details updated (UI Only)");
-    handleClosePaymentModal();
-  };
+  const { isPending: isPaymentPending, mutate: updatePayment } = useMutation({
+    mutationKey: ["visitor-payment"],
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/visitors/payment/${data.get("visitorId")}`,
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Payment details updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      handleClosePaymentModal();
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Payment update failed");
+    },
+  });
 
   const paymentModes = [
+    "UPI",
     "Cash",
     "Cheque",
     "NEFT",
@@ -347,17 +347,16 @@ const ExternalClients = () => {
   };
 
   const handleOpenPaymentModal = (visitor) => {
-    // Removed check for meetingId to allow opening the modal purely for UI
     setPaymentVisitor(visitor);
     resetPaymentForm({
       paymentAmount:
         typeof visitor.rawPaymentAmount === "number"
           ? visitor.rawPaymentAmount
           : "",
-      gstAmount: visitor.gstAmount || "",
-      discountAmount: visitor.discountAmount || "",
-      discountPercentage: visitor.discountPercentage || "",
-      finalAmount: visitor.finalAmount || "",
+      gstAmount: visitor.gstAmount ?? "",
+      discountAmount: visitor.discountAmount ?? "",
+      discountPercentage: visitor.discountPercentage ?? "",
+      finalAmount: visitor.finalAmount ?? "",
       paymentType: visitor.paymentMode && visitor.paymentMode !== "N/A"
         ? visitor.paymentMode
         : "",
@@ -372,6 +371,22 @@ const ExternalClients = () => {
     setPaymentVisitor(null);
     resetPaymentForm();
   };
+
+  useEffect(() => {
+    const totalAmount = watchedPaymentAmount + watchedGstAmount;
+    const discountPercentage =
+      totalAmount > 0 ? ((watchedDiscountAmount / totalAmount) * 100).toFixed(2) : 0;
+    const finalAmount = totalAmount - watchedDiscountAmount;
+
+    setPaymentValue("discountPercentage", discountPercentage);
+    setPaymentValue("finalAmount", finalAmount);
+  }, [
+    watchedPaymentAmount,
+    watchedGstAmount,
+    watchedDiscountAmount,
+    setPaymentValue,
+  ]);
+
 
   return (
     <div>
@@ -413,11 +428,11 @@ const ExternalClients = () => {
                 paymentAmount: item?.meeting?.paymentAmount
                   ? inrFormat(item?.meeting?.paymentAmount)
                   : 0,
-                rawPaymentAmount: item?.meeting?.paymentAmount || 580,
-                gstAmount: item?.meeting?.gstAmount || 20,
-                discountAmount: item?.meeting?.discountAmount || 120,
-                discountPercentage: item?.meeting?.discountPercentage || 20,
-                finalAmount: item?.meeting?.finalAmount || 580 - 120 + 20,
+                rawPaymentAmount: item?.meeting?.paymentAmount ?? 0,
+                gstAmount: item?.meeting?.gstAmount ?? 0,
+                discountAmount: item?.meeting?.discountAmount ?? 0,
+                discountPercentage: item?.meeting?.discountPercentage ?? 0,
+                finalAmount: item?.meeting?.finalAmount ?? 0,
                 paymentMode: item?.meeting?.paymentMode || "N/A",
                 paymentDate: item?.meeting?.paymentDate || null,
                 meetingId: item?.meeting?._id || null,
@@ -803,7 +818,26 @@ const ExternalClients = () => {
       >
         <form
           className="flex flex-col gap-4"
-          onSubmit={handlePaymentSubmit(handlePaymentSubmitUI)}
+          onSubmit={handlePaymentSubmit((data) => {
+            if (!paymentVisitor?.mongoId) {
+              toast.error("Payment details are not linked with this visitor");
+              return;
+            }
+
+            const formData = new FormData();
+            formData.append("paymentAmount", data?.finalAmount || 0);
+            formData.append("paymentMode", data?.paymentType || "");
+            formData.append("paymentStatus", data?.paymentStatus || "");
+            formData.append("gstAmount", data?.gstAmount || 0);
+            formData.append("visitorId", paymentVisitor?.mongoId);
+            formData.append("discountAmount", data?.discountAmount || 0);
+
+            if (data?.paymentProof) {
+              formData.append("paymentProof", data.paymentProof);
+            }
+
+            updatePayment(formData);
+          })}
         >
           <div className="flex gap-4 items-center">
             <Controller
@@ -860,6 +894,7 @@ const ExternalClients = () => {
               render={({ field }) => (
                 <TextField
                   {...field}
+                  disabled
                   label="Discount %"
                   type="number"
                   size="small"
@@ -876,6 +911,7 @@ const ExternalClients = () => {
             render={({ field }) => (
               <TextField
                 {...field}
+                disabled
                 label="Final Amount"
                 type="number"
                 size="small"
@@ -943,6 +979,7 @@ const ExternalClients = () => {
           />
           <div className="flex justify-center">
             <PrimaryButton
+              disabled={isPaymentPending}
               className="w-full"
               title={"Save Payment Details"}
               type={"submit"}
