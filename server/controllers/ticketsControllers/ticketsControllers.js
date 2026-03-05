@@ -1512,7 +1512,7 @@ const filterMyTickets = async (req, res, next) => {
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
       .select(
-        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedAt image createdAt closingReason",
+        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image createdAt closedBy closedAt closingReason",
       )
       .populate([
         {
