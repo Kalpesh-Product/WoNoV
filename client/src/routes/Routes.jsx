@@ -319,6 +319,10 @@ import PerformanceLayout from "../pages/Performance/PerformanceLayout";
 import PerformanceHome from "../pages/Performance/PerformanceHome";
 import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerformanceLayout";
 import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKra";
+import PerformanceIndividualKra from "../pages/Performance/DepartmentDetails/PerformanceIndividualKra";
+import PerformanceIndividualKpa from "../pages/Performance/DepartmentDetails/PerformanceIndividualKpa";
+import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
+import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
 import PerformanceAnnual from "../pages/Performance/DepartmentDetails/PerformanceAnnual";
 import PerformanceMonthly from "../pages/Performance/DepartmentDetails/PerformanceMonthly";
 import DepartmentTasksLayout from "../pages/Tasks/DepartmentTasks/DepartmentTasksLayout";
@@ -2208,6 +2212,22 @@ export const routes = createBrowserRouter([
                       {
                         path: "monthly-KPA",
                         element: <PerformanceMonthly />,
+                      },
+                      {
+                        path: "individual-Daily-KRA",
+                        element: <PerformanceIndividualKra />,
+                      },
+                      {
+                        path: "individual-Monthly-KPA",
+                        element: <PerformanceIndividualKpa />,
+                      },
+                      {
+                        path: "team-Daily-KRA",
+                        element: <PerformanceTeamKra />,
+                      },
+                      {
+                        path: "team-Monthly-KPA",
+                        element: <PerformanceTeamKpa />,
                       },
                       {
                         path: "annual-KPA",

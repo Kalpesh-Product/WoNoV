@@ -14,6 +14,10 @@ const kraKpaRolesSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
+    assignTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
     role: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
@@ -24,7 +28,7 @@ const kraKpaRolesSchema = new mongoose.Schema(
     },
     taskType: {
       type: String,
-      enum: ["KPA", "KRA"],
+      enum: ["KPA", "KRA", "INDIVIDUALKPA", "INDIVIDUALKRA", "TEAMKPA", "TEAMKRA"],
       required: true,
     },
     completedDate: [{ type: Date }],

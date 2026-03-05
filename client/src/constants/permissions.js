@@ -134,6 +134,30 @@ export const PERMISSIONS = {
     type: "read",
     route: "monthly-KPA",
   },
+  PERFORMANCE_INDIVIDUAL_KRA: {
+    value: "individual_kra",
+    title: "INDIVIDUAL KRA",
+    type: "read",
+    route: "individual-Daily-KRA",
+  },
+  PERFORMANCE_INDIVIDUAL_KPA: {
+    value: "individual_kpa",
+    title: "INDIVIDUAL KPA",
+    type: "read",
+    route: "individual-Monthly-KPA",
+  },
+  PERFORMANCE_TEAM_KRA: {
+    value: "team_kra",
+    title: "TEAM KRA",
+    type: "read",
+    route: "team-Daily-KRA",
+  },
+  PERFORMANCE_TEAM_KPA: {
+    value: "team_kpa",
+    title: "TEAM KPA",
+    type: "read",
+    route: "team-Monthly-KPA",
+  },
 
   //Tasks Module
   TASKS_OVERALL_AVERAGE_COMPLETION: {

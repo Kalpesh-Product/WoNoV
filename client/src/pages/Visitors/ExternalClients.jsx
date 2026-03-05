@@ -20,14 +20,21 @@ import { inrFormat } from "../../utils/currencyFormat";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import useAuth from "../../hooks/useAuth";
+import UploadFileInput from "../../components/UploadFileInput";
 
 const ExternalClients = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Added local state to hold visitor data for UI manipulation
+  const [localVisitorsData, setLocalVisitorsData] = useState([]);
+
   const [selectedVisitor, setSelectedVisitor] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [openPaymentModal, setOpenPaymentModal] = useState(false);
+  const [paymentVisitor, setPaymentVisitor] = useState(null);
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["clients"],
@@ -40,6 +47,13 @@ const ExternalClients = () => {
       }
     },
   });
+
+  // Sync server data with local state for UI-only updates
+  useEffect(() => {
+    if (visitorsData.length > 0) {
+      setLocalVisitorsData(visitorsData);
+    }
+  }, [visitorsData]);
 
   const { handleSubmit, reset, control, setValue } = useForm({
     defaultValues: {
@@ -105,6 +119,47 @@ const ExternalClients = () => {
     },
   });
 
+  const {
+    handleSubmit: handlePaymentSubmit,
+    control: paymentControl,
+    reset: resetPaymentForm,
+    formState: { errors: paymentErrors },
+  } = useForm({
+    defaultValues: {
+      paymentAmount: "",
+      paymentType: "",
+      paymentStatus: "",
+      paymentProof: "",
+    },
+  });
+
+  // Removed the useMutation hook for payment
+  // UI-Only Submit Handler
+  const handlePaymentSubmitUI = (data) => {
+    if (!paymentVisitor) return;
+
+    // Simulating an update by modifying the local state
+    setLocalVisitorsData((prev) =>
+      prev.map((item) => {
+        if (item._id === paymentVisitor.mongoId) {
+          return {
+            ...item,
+            meeting: {
+              ...item.meeting,
+              paymentStatus: data.paymentStatus === "Paid",
+              paymentAmount: Number(data.paymentAmount),
+              paymentMode: data.paymentType,
+            }
+          };
+        }
+        return item;
+      })
+    );
+
+    toast.success("Payment details updated (UI Only)");
+    handleClosePaymentModal();
+  };
+
   const paymentModes = [
     "Cash",
     "Cheque",
@@ -169,6 +224,10 @@ const ExternalClients = () => {
               setIsEditing(true);
               setIsModalOpen(true);
             },
+          },
+          {
+            label: "Update Payment Details",
+            onClick: () => handleOpenPaymentModal(params.data),
           },
         ];
 
@@ -287,6 +346,33 @@ const ExternalClients = () => {
     setIsEditing(false);
   };
 
+  const handleOpenPaymentModal = (visitor) => {
+    // Removed check for meetingId to allow opening the modal purely for UI
+    setPaymentVisitor(visitor);
+    resetPaymentForm({
+      paymentAmount:
+        typeof visitor.rawPaymentAmount === "number"
+          ? visitor.rawPaymentAmount
+          : "",
+      gstAmount: visitor.gstAmount || "",
+      discountAmount: visitor.discountAmount || "",
+      discountPercentage: visitor.discountPercentage || "",
+      finalAmount: visitor.finalAmount || "",
+      paymentType: visitor.paymentMode && visitor.paymentMode !== "N/A"
+        ? visitor.paymentMode
+        : "",
+      paymentStatus: visitor.paymentStatus || "",
+      paymentProof: "",
+    });
+    setOpenPaymentModal(true);
+  };
+
+  const handleClosePaymentModal = () => {
+    setOpenPaymentModal(false);
+    setPaymentVisitor(null);
+    resetPaymentForm();
+  };
+
   return (
     <div>
       <PageFrame>
@@ -296,6 +382,7 @@ const ExternalClients = () => {
           dateColumn={"checkIn"}
           data={[
             ...visitorsData
+
               .filter((m) => m.visitorFlag === "Client")
               .map((item, index) => ({
                 srNo: index + 1,
@@ -326,8 +413,14 @@ const ExternalClients = () => {
                 paymentAmount: item?.meeting?.paymentAmount
                   ? inrFormat(item?.meeting?.paymentAmount)
                   : 0,
+                rawPaymentAmount: item?.meeting?.paymentAmount || 580,
+                gstAmount: item?.meeting?.gstAmount || 20,
+                discountAmount: item?.meeting?.discountAmount || 120,
+                discountPercentage: item?.meeting?.discountPercentage || 20,
+                finalAmount: item?.meeting?.finalAmount || 580 - 120 + 20,
                 paymentMode: item?.meeting?.paymentMode || "N/A",
                 paymentDate: item?.meeting?.paymentDate || null,
+                meetingId: item?.meeting?._id || null,
                 registeredClientCompany: item?.registeredClientCompany || "N/A",
                 brandName: item?.brandName || "N/A",
                 visitorCompany: item.visitorCompany || "N/A",
@@ -702,6 +795,160 @@ const ExternalClients = () => {
             )}
           </form>
         </div>
+      </MuiModal>
+      <MuiModal
+        open={openPaymentModal}
+        onClose={handleClosePaymentModal}
+        title={"Update Payment Details"}
+      >
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={handlePaymentSubmit(handlePaymentSubmitUI)}
+        >
+          <div className="flex gap-4 items-center">
+            <Controller
+              name="paymentAmount"
+              control={paymentControl}
+              rules={{ required: "Amount is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.paymentAmount}
+                  helperText={paymentErrors.paymentAmount?.message}
+                />
+              )}
+            />
+            <Controller
+              name="gstAmount"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="GST Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.gstAmount}
+                  helperText={paymentErrors.gstAmount?.message}
+                />
+              )}
+            />
+          </div>
+          <div className="flex gap-4 items-center">
+            <Controller
+              name="discountAmount"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Discount Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.discountAmount}
+                  helperText={paymentErrors.discountAmount?.message}
+                />
+              )}
+            />
+            <Controller
+              name="discountPercentage"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Discount %"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.discountPercentage}
+                  helperText={paymentErrors.discountPercentage?.message}
+                />
+              )}
+            />
+          </div>
+          <Controller
+            name="finalAmount"
+            control={paymentControl}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Final Amount"
+                type="number"
+                size="small"
+                fullWidth
+                error={!!paymentErrors.finalAmount}
+                helperText={paymentErrors.finalAmount?.message}
+              />
+            )}
+          />
+          <div className="flex gap-4 items-center">
+            <Controller
+              name="paymentType"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Payment Type"
+                  select
+                  fullWidth
+                >
+                  <MenuItem value="" disabled>
+                    Select Payment Type
+                  </MenuItem>
+                  {paymentModes.map((p) => (
+                    <MenuItem key={p} value={p}>
+                      {p}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="paymentStatus"
+              control={paymentControl}
+              rules={{ required: "Payment status is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Payment Status"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.paymentStatus}
+                  helperText={paymentErrors.paymentStatus?.message}
+                >
+                  <MenuItem value="Paid">Paid</MenuItem>
+                  <MenuItem value="Unpaid">Unpaid</MenuItem>
+                </TextField>
+              )}
+            />
+          </div>
+          <Controller
+            name="paymentProof"
+            control={paymentControl}
+            render={({ field }) => (
+              <UploadFileInput
+                value={field.value}
+                label="Add Payment Proof"
+                onChange={field.onChange}
+                allowedExtensions={["pdf", "jpg", "jpeg", "png"]}
+                previewType="pdf"
+              />
+            )}
+          />
+          <div className="flex justify-center">
+            <PrimaryButton
+              className="w-full"
+              title={"Save Payment Details"}
+              type={"submit"}
+            />
+          </div>
+        </form>
       </MuiModal>
     </div>
   );

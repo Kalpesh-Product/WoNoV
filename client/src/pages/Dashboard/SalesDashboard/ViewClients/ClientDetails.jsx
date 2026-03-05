@@ -409,8 +409,8 @@ const ClientDetails = () => {
                               {fieldKey === "isActive"
                                 ? "Status"
                                 : fieldKey
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
                             </span>{" "}
                           </div>
                           <div className="">

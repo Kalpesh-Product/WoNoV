@@ -15,21 +15,42 @@ import { useSelector } from "react-redux";
 const DepartmentPerformanceLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-   const departmentName = useSelector((state) => state.performance.selectedDepartmentName);
-   console.log("dep : ", departmentName);
+  const departmentName = useSelector((state) => state.performance.selectedDepartmentName);
+  console.log("dep : ", departmentName);
 
   // Map routes to tabs
   const tabs = [
     {
-      label: "Daily KRA",
+      label: "Department Daily KRA",
       path: "daily-KRA",
       permission: PERMISSIONS.PERFORMANCE_DAILY_KRA.value,
     },
     {
-      label: "Monthly KPA",
+      label: "Department Monthly KPA",
       path: "monthly-KPA",
       permission: PERMISSIONS.PERFORMANCE_MONTHLY_KPA.value,
     },
+    {
+      label: "Individual Daily KRA",
+      path: "individual-Daily-KRA",
+      permission: PERMISSIONS.PERFORMANCE_INDIVIDUAL_KRA.value,
+    },
+    {
+      label: "Individual Monthly KPA",
+      path: "individual-Monthly-KPA",
+      permission: PERMISSIONS.PERFORMANCE_INDIVIDUAL_KPA.value,
+    },
+    {
+      label: "Team Daily KRA",
+      path: "team-Daily-KRA",
+      permission: PERMISSIONS.PERFORMANCE_TEAM_KRA.value,
+    },
+    {
+      label: "Team Monthly KPA",
+      path: "team-Monthly-KPA",
+      permission: PERMISSIONS.PERFORMANCE_TEAM_KPA.value,
+    },
+
     // { label: "Annual KPA", path: "annual-KPA" },
   ];
 
