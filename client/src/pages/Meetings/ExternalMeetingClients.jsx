@@ -673,11 +673,11 @@ const ExternalMeetingCLients = () => {
           //   label: "View",
           //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
           // },
-          // !isPaid &&
-          // isFinance &&
-          // {
-          //   label: "wait for payment",
-          // },
+          !isPaid &&
+          isFinance &&
+          {
+            label: "wait for payment",
+          },
 
           isPaid &&
           isFinance &&
@@ -693,11 +693,11 @@ const ExternalMeetingCLients = () => {
             onClick: () => handleVerifyPayment(params.data, "Under Review"),
           },
 
-          // isPaid &&
-          // isFinance &&
-          // paymentVerificationStatus === "Verified" && {
-          //   label: "Completed",
-          // },
+          isPaid &&
+          isFinance &&
+          paymentVerificationStatus === "Verified" && {
+            label: "Completed",
+          },
 
           // Show the following only when NOT finance
           ...(!isFinance
@@ -744,11 +744,10 @@ const ExternalMeetingCLients = () => {
               </span>
             </div>
 
-            {/* {!isCancelled && <ThreeDotMenu menuItems={menuItems} />} */}
-            {((!isPaid && !isFinance && housekeepingStatus === "Pending") ||
-              paymentVerificationStatus !== "Verified") && (
-                <ThreeDotMenu menuItems={menuItems} />
-              )}
+            {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
+            {/* {shouldHideMenu && menuItems.length > 0 && (
+              <ThreeDotMenu menuItems={menuItems} />
+            )} */}
           </div>
         );
       },
