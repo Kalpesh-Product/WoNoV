@@ -662,7 +662,7 @@ const ExternalMeetingCLients = () => {
         const isCompleted = status === "Completed";
         const isHousekeepingPending = housekeepingStatus === "Pending";
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
-        // const isVerified = params.data.paymentVerification === "Verified";
+        const isVerified = params.data.paymentVerification === "Verified";
         const paymentVerificationStatus = params.data.paymentVerification;
 
         const shouldHideMenu =
@@ -673,7 +673,6 @@ const ExternalMeetingCLients = () => {
           //   label: "View",
           //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
           // },
-
           // !isPaid &&
           // isFinance &&
           // {
@@ -745,9 +744,13 @@ const ExternalMeetingCLients = () => {
               </span>
             </div>
 
-            {!shouldHideMenu && menuItems.length > 0 && (
-              <ThreeDotMenu menuItems={menuItems} />
-            )}
+            {/* {!isCancelled && <ThreeDotMenu menuItems={menuItems} />} */}
+            {(isPaid &&
+              isFinance &&
+              paymentVerificationStatus !== "Verified") ||
+              !isFinance && (
+                <ThreeDotMenu menuItems={menuItems} />
+              )}
           </div>
         );
       },
