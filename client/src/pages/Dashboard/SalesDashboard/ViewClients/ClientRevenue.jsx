@@ -98,11 +98,11 @@ const ClientRevenue = () => {
   const tableData = isRevenuePending
     ? []
     : Array.isArray(revenueDetails)
-    ? revenueDetails.map((item, index) => ({
+      ? revenueDetails.map((item, index) => ({
         ...item,
         srNo: index + 1,
       }))
-    : [];
+      : [];
 
   return (
     <div className="w-full">
