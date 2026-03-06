@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Delete } from "@mui/icons-material";
@@ -45,8 +46,11 @@ const ExternalMeetingCLients = () => {
   const [selectedMeeting, setSelectedMeeting] = useState([]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
+  const location = useLocation();
   const department = usePageDepartment();
-  const isFinance = department?.name === "Finance";
+  const isFinance =
+    department?.name?.toLowerCase().includes("finance") ||
+    location.pathname.includes("finance-dashboard");
 
   const paymentModes = [
     "UPI",

@@ -139,6 +139,9 @@ import SalesPayment from "../pages/Dashboard/SalesDashboard/SalesFinance/SalesPa
 import UniqueClients from "../pages/Dashboard/SalesDashboard/UniqueClients";
 import MemberDetails from "../pages/Dashboard/SalesDashboard/ViewClients/MemberDetails";
 import SalesMixBag from "../pages/Dashboard/SalesDashboard/SalesMixBag";
+import ExternalClient from "../pages/Dashboard/SalesDashboard/ExternalClient";
+import ExternalClientCompanies from "../pages/Dashboard/SalesDashboard/ExternalClientCompanies";
+import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClientLayout";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
@@ -1565,6 +1568,36 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag/manage-units",
                         element: <ManageUnit />,
+                      },
+                      {
+                        path: "mix-bag/external-client",
+                        element: <ExternalClient />,
+                      },
+                      {
+                        path: "mix-bag/external-client/meetings/external-companies",
+                        element: <ExternalClientCompanies />,
+                      },
+                      {
+                        path: "mix-bag/external-client/meetings/external-companies/:clientName",
+                        element: <ExternalClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <ClientDetails />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <ClientDetails />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <ClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ClientMembers />,
+                          },
+                        ],
                       },
                       {
                         path: "data",
