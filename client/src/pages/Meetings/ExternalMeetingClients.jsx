@@ -745,10 +745,8 @@ const ExternalMeetingCLients = () => {
             </div>
 
             {/* {!isCancelled && <ThreeDotMenu menuItems={menuItems} />} */}
-            {(isPaid &&
-              isFinance &&
-              paymentVerificationStatus !== "Verified") ||
-              !isFinance && (
+            {((!isPaid && !isFinance && housekeepingStatus === "Pending") ||
+              paymentVerificationStatus !== "Verified") && (
                 <ThreeDotMenu menuItems={menuItems} />
               )}
           </div>
