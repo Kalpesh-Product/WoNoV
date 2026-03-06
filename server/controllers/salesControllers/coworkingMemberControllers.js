@@ -33,7 +33,13 @@ const createMember = async (req, res, next) => {
       biometricStatus,
       client,
       dateOfJoining,
+      isActive,
     } = req.body;
+
+    if (isActive !== undefined && typeof isActive !== "boolean") {
+      return res.status(400).json({ message: "isActive must be true or false" });
+    }
+
 
     if (!name || !client) {
       throw new CustomError(
@@ -81,6 +87,7 @@ const createMember = async (req, res, next) => {
       biometricStatus,
       client,
       company,
+      isActive: typeof isActive === "boolean" ? isActive : undefined,
     });
 
     const savedMember = await newMember.save();
@@ -125,7 +132,13 @@ const updateCoworkingMember = async (req, res, next) => {
       biometricStatus,
       client,
       dateOfJoining,
+      isActive,
     } = req.body;
+
+    if (isActive !== undefined && typeof isActive !== "boolean") {
+      return res.status(400).json({ message: "isActive must be true or false" });
+    }
+
 
     // Validate client if provided
     if (client) {
@@ -168,6 +181,8 @@ const updateCoworkingMember = async (req, res, next) => {
     existingMember.client = client ?? existingMember.client;
     existingMember.dateOfJoining =
       dateOfJoining ?? existingMember.dateOfJoining;
+    existingMember.isActive =
+      typeof isActive === "boolean" ? isActive : existingMember.isActive;
 
     await existingMember.save();
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Outlet } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
-import { Chip, TextField } from "@mui/material";
+import { Chip, MenuItem, TextField } from "@mui/material";
 import { useSelector } from "react-redux";
 import humanDate from "../../../../utils/humanDateForamt";
 import PageFrame from "../../../../components/Pages/PageFrame";
@@ -38,6 +38,7 @@ const ClientMembers = () => {
       email: "",
       phone: "",
       dob: null,
+      isActive: true,
     },
   });
 
@@ -48,6 +49,10 @@ const ClientMembers = () => {
       email: member.email || "",
       phone: member.mobileNo || member.phone || "",
       dob: member.rawDob && dayjs(member.rawDob).isValid() ? dayjs(member.rawDob) : null,
+      isActive:
+        typeof member?.isActive === "boolean"
+          ? member.isActive
+          : member?.status === "Active",
     });
     setOpenEditModal(true);
   };
@@ -152,6 +157,7 @@ const ClientMembers = () => {
       dateOfJoining: selectedMember.dateOfJoining
         ? dayjs(selectedMember.dateOfJoining).format("YYYY-MM-DD")
         : undefined,
+      isActive: data.isActive,
     };
 
     updateMember({ memberId: selectedMemberId, payload });
@@ -308,6 +314,28 @@ const ClientMembers = () => {
             control={control}
             render={({ field }) => (
               <TextField {...field} label="Phone" size="small" fullWidth />
+            )}
+          />
+
+
+          <Controller
+            name="isActive"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label="Status"
+                size="small"
+                fullWidth
+                value={field.value ? "active" : "inactive"}
+                onChange={(event) =>
+                  field.onChange(event.target.value === "active")
+                }
+              >
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </TextField>
             )}
           />
 
