@@ -113,6 +113,30 @@ const ExternalMeetingCLients = () => {
 
   const watchedDiscountAmount = paymentWatch("discountAmount");
 
+  const calculatePaymentDetails = (meeting, meetingRoom, discount = 0) => {
+    if (!meeting || !meetingRoom?.perHourPrice) return null;
+
+    const start = new Date(meeting.startTime);
+    const end = new Date(meeting.endTime);
+    const durationInHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+    const amount = meetingRoom.perHourPrice * durationInHours;
+    const safeDiscount = Number.isFinite(discount) ? discount : 0;
+    const discountedAmount = Math.max(amount - safeDiscount, 0);
+    const gstAmount = discountedAmount * 0.18;
+    const finalAmount = discountedAmount + gstAmount;
+    const discountPercentage = amount
+      ? ((safeDiscount / amount) * 100).toFixed(2)
+      : "0.00";
+
+    return {
+      amount,
+      gstAmount,
+      finalAmount,
+      discountPercentage,
+    };
+  };
+
   const {
     handleSubmit: cancelMeetingSubmit,
     control: cancelMeetingControl,
@@ -506,47 +530,32 @@ const ExternalMeetingCLients = () => {
   };
   useEffect(() => {
     if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
-      // Calculate actual duration
+      const paymentDetails = calculatePaymentDetails(paymentMeeting, room);
 
-      const start = new Date(paymentMeeting.startTime);
-      const end = new Date(paymentMeeting.endTime);
-      console.log("meeting info", start.getTime());
-      console.log("meeting info", end.getTime());
 
-      const durationInHours =
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      if (!paymentDetails) return;
 
-      console.log("duration", durationInHours);
-
-      // Multiply rates by duration
-      const baseAmount = room.perHourPrice * durationInHours;
-      const gstAmount = room.perHourGstPrice * durationInHours;
-      const finalAmount = gstAmount;
-      setPaymentValue("amount", baseAmount);
-      setPaymentValue("gstAmount", gstAmount);
-      setPaymentValue("finalAmount", finalAmount);
+      setPaymentValue("amount", paymentDetails.amount);
+      setPaymentValue("gstAmount", paymentDetails.gstAmount);
+      setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
+
   }, [room, isRoomLoading, setPaymentValue]);
 
   useEffect(() => {
-    if (!isRoomLoading && paymentMeeting && room?.perHourGstPrice) {
-      const start = new Date(paymentMeeting.startTime);
-      const end = new Date(paymentMeeting.endTime);
-      const durationInHours =
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
+      const discountAmount = parseFloat(watchedDiscountAmount) || 0;
+      const paymentDetails = calculatePaymentDetails(
+        paymentMeeting,
+        room,
+        discountAmount,
+      );
 
-      // Multiply rates by duration
-      const baseAmount = room.perHourPrice * durationInHours;
-      const gstAmount = room.perHourGstPrice * durationInHours;
-      const calculatedAmount = gstAmount;
-      const discountPercentage = (
-        (watchedDiscountAmount / calculatedAmount) *
-        100
-      ).toFixed(2);
-      const finalAmount = calculatedAmount - watchedDiscountAmount;
+      if (!paymentDetails) return;
 
-      setPaymentValue("discountPercentage", discountPercentage);
-      setPaymentValue("finalAmount", finalAmount);
+      setPaymentValue("discountPercentage", paymentDetails.discountPercentage);
+      setPaymentValue("gstAmount", paymentDetails.gstAmount);
+      setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
   }, [watchedDiscountAmount, room, isRoomLoading]);
 
