@@ -77,7 +77,19 @@ const PerformanceTeamKpa = () => {
     });
 
     const handleFormSubmit = (data) => {
-        addMonthlyKpa(data);
+        const normalizedAssignees = Array.isArray(data.assignTo)
+            ? data.assignTo
+            : typeof data.assignTo === "string"
+                ? data.assignTo
+                    .split(",")
+                    .map((id) => id.trim())
+                    .filter(Boolean)
+                : [];
+
+        addMonthlyKpa({
+            ...data,
+            assignTo: normalizedAssignees,
+        });
     };
 
     const fetchTasks = async () => {
@@ -281,6 +293,20 @@ const PerformanceTeamKpa = () => {
                                 size="small"
                                 label="Assign To"
                                 fullWidth
+                                value={field.value || []}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+                                    field.onChange(
+                                        Array.isArray(value)
+                                            ? value
+                                            : typeof value === "string"
+                                                ? value
+                                                    .split(",")
+                                                    .map((id) => id.trim())
+                                                    .filter(Boolean)
+                                                : []
+                                    );
+                                }}
                                 error={!!error}
                                 helperText={error?.message}
                                 SelectProps={{
