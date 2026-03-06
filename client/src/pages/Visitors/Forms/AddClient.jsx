@@ -151,7 +151,11 @@ const AddClient = () => {
     const payload = {
       ...data,
       visitorFlag: "Client", // Identify this as a client visitor
-      visitorType: "Meeting",
+      visitorType:
+        data.purposeOfVisit === "Full-Day Pass" ||
+          data.purposeOfVisit === "Half-Day Pass"
+          ? data.purposeOfVisit
+          : "Meeting",
       sector: data.sector,
       hoState: data.hoState,
       hoCity: data.hoCity,
@@ -359,6 +363,8 @@ const AddClient = () => {
                       <MenuItem value="Meeting Room Booking">
                         Meeting Room Booking
                       </MenuItem>
+                      <MenuItem value="Full-Day Pass">Full Day Pass</MenuItem>
+                      <MenuItem value="Half-Day Pass">Half Day Pass</MenuItem>
                     </TextField>
                   )}
                 />

@@ -210,6 +210,7 @@ const ExternalClients = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => {
         const menuItems = [
           // {
@@ -225,10 +226,14 @@ const ExternalClients = () => {
               setIsModalOpen(true);
             },
           },
-          {
-            label: "Update Payment Details",
-            onClick: () => handleOpenPaymentModal(params.data),
-          },
+          ...(params.data.visitorType !== "Meeting"
+            ? [
+              {
+                label: "Update Payment Details",
+                onClick: () => handleOpenPaymentModal(params.data),
+              },
+            ]
+            : []),
         ];
 
         return (
@@ -348,11 +353,15 @@ const ExternalClients = () => {
 
   const handleOpenPaymentModal = (visitor) => {
     setPaymentVisitor(visitor);
+
+    let defaultAmount = visitor.rawPaymentAmount;
+    if (!defaultAmount || defaultAmount === 0) {
+      if (visitor.visitorType === "Full-Day Pass") defaultAmount = 850;
+      else if (visitor.visitorType === "Half-Day Pass") defaultAmount = 500;
+    }
+
     resetPaymentForm({
-      paymentAmount:
-        typeof visitor.rawPaymentAmount === "number"
-          ? visitor.rawPaymentAmount
-          : "",
+      paymentAmount: defaultAmount || "",
       gstAmount: visitor.gstAmount ?? "",
       discountAmount: visitor.discountAmount ?? "",
       discountPercentage: visitor.discountPercentage ?? "",
@@ -373,16 +382,21 @@ const ExternalClients = () => {
   };
 
   useEffect(() => {
-    const totalAmount = watchedPaymentAmount + watchedGstAmount;
-    const discountPercentage =
-      totalAmount > 0 ? ((watchedDiscountAmount / totalAmount) * 100).toFixed(2) : 0;
-    const finalAmount = totalAmount - watchedDiscountAmount;
+    const taxableAmount = watchedPaymentAmount - watchedDiscountAmount;
+    const gstAmount = Number((taxableAmount * 0.18).toFixed(2));
+    const finalAmount = taxableAmount + gstAmount;
 
-    setPaymentValue("discountPercentage", discountPercentage);
-    setPaymentValue("finalAmount", finalAmount);
+    setPaymentValue("gstAmount", gstAmount > 0 ? gstAmount : 0);
+    setPaymentValue("finalAmount", finalAmount > 0 ? finalAmount : 0);
+
+    if (watchedPaymentAmount > 0) {
+      const discountPercentage = ((watchedDiscountAmount / watchedPaymentAmount) * 100).toFixed(2);
+      setPaymentValue("discountPercentage", discountPercentage);
+    } else {
+      setPaymentValue("discountPercentage", 0);
+    }
   }, [
     watchedPaymentAmount,
-    watchedGstAmount,
     watchedDiscountAmount,
     setPaymentValue,
   ]);
@@ -424,21 +438,22 @@ const ExternalClients = () => {
                 checkIn: item.checkIn,
                 checkOut: item.checkOut ? humanTime(item.checkOut) : "",
                 paymentStatus:
-                  item?.meeting?.paymentStatus === true ? "Paid" : "Unpaid",
-                paymentAmount: item?.meeting?.paymentAmount
-                  ? inrFormat(item?.meeting?.paymentAmount)
+                  item.paymentStatus === true ? "Paid" : "Unpaid",
+                paymentAmount: item.totalAmount
+                  ? inrFormat(item.totalAmount)
                   : 0,
-                rawPaymentAmount: item?.meeting?.paymentAmount ?? 0,
-                gstAmount: item?.meeting?.gstAmount ?? 0,
-                discountAmount: item?.meeting?.discountAmount ?? 0,
-                discountPercentage: item?.meeting?.discountPercentage ?? 0,
-                finalAmount: item?.meeting?.finalAmount ?? 0,
-                paymentMode: item?.meeting?.paymentMode || "N/A",
-                paymentDate: item?.meeting?.paymentDate || null,
+                rawPaymentAmount: item.amount ?? 0,
+                gstAmount: item.gstAmount ?? 0,
+                discountAmount: item.discount ?? 0,
+                discountPercentage: item.discountPercentage ?? 0,
+                finalAmount: item.totalAmount ?? 0,
+                paymentMode: item.paymentMode || "N/A",
+                paymentDate: item.updatedAt || null,
                 meetingId: item?.meeting?._id || null,
                 registeredClientCompany: item?.registeredClientCompany || "N/A",
                 brandName: item?.brandName || "N/A",
                 visitorCompany: item.visitorCompany || "N/A",
+                visitorType: item.visitorType,
               })),
           ]}
           columns={visitorsColumns}
@@ -697,6 +712,46 @@ const ExternalClients = () => {
                     detail={selectedVisitor?.checkInBy}
                   />
                 )}
+                {/* payment status */}
+                {isEditing ? (
+                  <Controller
+                    name="paymentStatus"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Payment Status"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Payment Status"
+                    detail={selectedVisitor?.paymentStatus}
+                  />
+                )}
+                {/* payment mode */}
+                {isEditing ? (
+                  <Controller
+                    name="paymentMode"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Payment Mode"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Payment Mode"
+                    detail={selectedVisitor?.paymentMode}
+                  />
+                )}
 
                 {/* Checkout time */}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -825,12 +880,12 @@ const ExternalClients = () => {
             }
 
             const formData = new FormData();
-            formData.append("paymentAmount", data?.finalAmount || 0);
+            formData.append("amount", data?.paymentAmount || 0);
             formData.append("paymentMode", data?.paymentType || "");
             formData.append("paymentStatus", data?.paymentStatus || "");
             formData.append("gstAmount", data?.gstAmount || 0);
             formData.append("visitorId", paymentVisitor?.mongoId);
-            formData.append("discountAmount", data?.discountAmount || 0);
+            formData.append("discount", data?.discountAmount || 0);
 
             if (data?.paymentProof) {
               formData.append("paymentProof", data.paymentProof);
@@ -862,7 +917,8 @@ const ExternalClients = () => {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="GST Amount"
+                  disabled
+                  label="GST Amount (18%)"
                   type="number"
                   size="small"
                   fullWidth
