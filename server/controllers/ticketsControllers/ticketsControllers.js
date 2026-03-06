@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const Department = require("../../models/Departments");
 const NewTicketIssue = require("../../models/tickets/NewTicketIssue");
 const { handleFileUpload } = require("../../config/cloudinaryConfig");
-const sharp = require("sharp");
+// const sharp = require("sharp");
 const {
   filterCloseTickets,
   filterAcceptedTickets,
@@ -87,16 +87,20 @@ const raiseTicket = async (req, res, next) => {
     let imageDetails = null;
     if (image) {
       try {
-        const buffer = await sharp(image.buffer)
-          .resize(1200, 800, { fit: "cover" })
-          .webp({ quality: 80 })
-          .toBuffer();
-        const base64Image = `data:image/webp;base64,${buffer.toString(
+        // const buffer = await sharp(image.buffer)
+        //   .resize(1200, 800, { fit: "cover" })
+        //   .webp({ quality: 80 })
+        //   .toBuffer();
+        // const base64Image = `data:image/webp;base64,${buffer.toString(
+        //   "base64",
+        // )}`;
+        const base64Image = `data:${image.mimetype};base64,${image.buffer.toString(
           "base64",
         )}`;
         const uploadedImage = await handleFileUpload(
           base64Image,
           `${foundCompany.companyName}/tickets/${foundDepartment.name}`,
+          { preserveOriginal: true },
         );
 
         imageDetails = {
@@ -1508,7 +1512,7 @@ const filterMyTickets = async (req, res, next) => {
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
       .select(
-        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedAt image createdAt closingReason",
+        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image createdAt closedBy closedAt closingReason",
       )
       .populate([
         {

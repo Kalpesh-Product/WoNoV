@@ -1,0 +1,348 @@
+import { useLocation, useParams } from "react-router-dom";
+import AgTable from "../../../components/AgTable";
+import WidgetSection from "../../../components/WidgetSection";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useDispatch, useSelector } from "react-redux";
+import humanTime from "../../../utils/humanTime";
+import humanDate from "../../../utils/humanDateForamt";
+import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
+import PrimaryButton from "../../../components/PrimaryButton";
+import { Controller, useForm } from "react-hook-form";
+import MuiModal from "../../../components/MuiModal";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import { useEffect, useState } from "react";
+import { FaCheck } from "react-icons/fa6";
+import { PERMISSIONS } from "../../../constants/permissions";
+import { queryClient } from "../../../main";
+import { toast } from "sonner";
+import useAuth from "../../../hooks/useAuth";
+import PageFrame from "../../../components/Pages/PageFrame";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+
+const PerformanceTeamKpa = () => {
+    const axios = useAxiosPrivate();
+    const { auth } = useAuth();
+    const { department } = useParams();
+    const [openModal, setOpenModal] = useState(false);
+    const deptId = useSelector((state) => state.performance.selectedDepartment);
+    const userId = auth.user._id;
+
+    const userPermissions = auth?.user?.permissions?.permissions || [];
+    const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value);
+
+    const {
+        handleSubmit: submitMonthlyKpa,
+        control,
+        formState: { errors },
+        watch,
+        reset,
+    } = useForm({
+        mode: "onChange",
+        defaultValues: {
+            teamKpaName: "",
+            startDate: null,
+            endDate: null,
+            assignTo: [], // Multi-select
+        },
+    });
+    const startDate = watch("startDate");
+
+    const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
+        mutationKey: ["addTeamMonthlyKpa"],
+        mutationFn: async (data) => {
+            const response = await axios.post("/api/performance/create-task", {
+                task: data.teamKpaName,
+                taskType: "TEAMKPA",
+                department: deptId,
+                assignedDate: data.startDate,
+                dueDate: data.endDate,
+                kpaDuration: "Monthly",
+                assignTo: data.assignTo,
+            });
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKPA"] });
+            toast.success(data.message || "Team KPA Added");
+            reset();
+            setOpenModal(false);
+        },
+        onError: (error) => {
+            toast.error("Adding failed");
+        },
+    });
+
+    const handleFormSubmit = (data) => {
+        const normalizedAssignees = Array.isArray(data.assignTo)
+            ? data.assignTo
+            : typeof data.assignTo === "string"
+                ? data.assignTo
+                    .split(",")
+                    .map((id) => id.trim())
+                    .filter(Boolean)
+                : [];
+
+        addMonthlyKpa({
+            ...data,
+            assignTo: normalizedAssignees,
+        });
+    };
+
+    const fetchTasks = async () => {
+        try {
+            const response = await axios.get(
+                `/api/performance/get-tasks?dept=${deptId}&type=TEAMKPA`
+            );
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    };
+
+    const { data: teamKpa = [], isPending: teamLoading } = useQuery({
+        queryKey: ["fetchedTeamKPA"],
+        queryFn: fetchTasks,
+    });
+
+    const { data: assignees = [] } = useQuery({
+        queryKey: ["fetchAssignees", deptId],
+        queryFn: async () => {
+            const response = await axios.get(`/api/users/assignees?deptId=${deptId}`);
+            return response.data;
+        },
+        enabled: !!deptId,
+    });
+
+    const formatDateTime = (value) =>
+        value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
+
+    const teamColumns = [
+        { headerName: "Sr no", field: "srNo", width: 100 },
+        { headerName: "KPA List", field: "taskName", flex: 1 },
+        { headerName: "Assigned To", field: "assignedTo", flex: 1 },
+        {
+            headerName: "Start Date",
+            field: "assignedDate",
+            cellRenderer: (params) => formatDateTime(params.value),
+        },
+        {
+            headerName: "End Date",
+            field: "dueDate",
+            cellRenderer: (params) => formatDateTime(params.value),
+        },
+        {
+            field: "status",
+            headerName: "Status",
+            cellRenderer: (params) => {
+                const statusColorMap = {
+                    Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
+                    Completed: { backgroundColor: "#16f8062c", color: "#00731b" },
+                };
+                const { backgroundColor, color } = statusColorMap[params.value] || {
+                    backgroundColor: "gray",
+                    color: "white",
+                };
+                return <Chip label={params.value} style={{ backgroundColor, color }} />;
+            },
+        },
+    ];
+
+    return (
+        <>
+            <div className="flex flex-col gap-4">
+                <PageFrame>
+                    {!teamLoading ? (
+                        <WidgetSection padding layout={1}>
+                            <YearWiseTable
+                                buttonTitle={"Add Team Monthly KPA"}
+                                handleSubmit={() => setOpenModal(true)}
+                                tableTitle={`${department} TEAM - MONTHLY KPA`}
+                                data={(teamKpa || [])
+                                    .filter((item) => item.status !== "Completed")
+                                    .map((item, index) => ({
+                                        srNo: index + 1,
+                                        id: item.id,
+                                        taskName: item.taskName,
+                                        assignedDate: item.assignedDate,
+                                        dueDate: item.dueDate,
+                                        status: item.status,
+                                        assignedTo: item.assignedTo,
+                                    }))}
+                                dateColumn={"dueDate"}
+                                columns={teamColumns}
+                            />
+                        </WidgetSection>
+                    ) : (
+                        <div className="h-72 flex items-center justify-center">
+                            <CircularProgress />
+                        </div>
+                    )}
+                </PageFrame>
+            </div>
+
+            <MuiModal
+                open={openModal}
+                onClose={() => setOpenModal(false)}
+                title={"Add Team Monthly KPA"}
+            >
+                <form
+                    onSubmit={submitMonthlyKpa(handleFormSubmit)}
+                    className="grid grid-cols-1 gap-4"
+                >
+                    <Controller
+                        name="teamKpaName"
+                        control={control}
+                        rules={{
+                            required: "Team KPA Name is required",
+                            validate: { noOnlyWhitespace, isAlphanumeric },
+                        }}
+                        render={({ field }) => (
+                            <TextField
+                                {...field}
+                                size="small"
+                                label={"Team KPA Name"}
+                                fullWidth
+                                error={!!errors?.teamKpaName?.message}
+                                helperText={errors?.teamKpaName?.message}
+                            />
+                        )}
+                    />
+
+                    <Controller
+                        name="startDate"
+                        control={control}
+                        rules={{
+                            required: "Start date is required",
+                            validate: (value) => {
+                                if (!value) return true;
+                                const today = dayjs().startOf("day");
+                                const selected = dayjs(value);
+                                if (selected.isBefore(today)) return "Start date cannot be in the past.";
+                                return true;
+                            },
+                        }}
+                        render={({ field, fieldState }) => (
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    {...field}
+                                    label="Start Date"
+                                    format="DD-MM-YYYY"
+                                    disablePast
+                                    value={field.value ? dayjs(field.value) : null}
+                                    onChange={(date) => field.onChange(date ? date.toISOString() : null)}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            size: "small",
+                                            error: !!fieldState.error,
+                                            helperText: fieldState.error?.message,
+                                        },
+                                    }}
+                                />
+                            </LocalizationProvider>
+                        )}
+                    />
+
+                    <Controller
+                        name="endDate"
+                        control={control}
+                        rules={{
+                            required: "End date is required",
+                            validate: (value) => {
+                                if (!value) return true;
+                                const selected = dayjs(value);
+                                if (startDate && selected.isBefore(dayjs(startDate))) return "End date cannot be before start date.";
+                                return true;
+                            },
+                        }}
+                        render={({ field, fieldState }) => (
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DatePicker
+                                    {...field}
+                                    label="End Date"
+                                    disablePast
+                                    format="DD-MM-YYYY"
+                                    disabled={!startDate}
+                                    value={field.value ? dayjs(field.value) : null}
+                                    onChange={(date) => field.onChange(date ? date.toISOString() : null)}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            size: "small",
+                                            error: !!fieldState.error,
+                                            helperText: fieldState.error?.message,
+                                        },
+                                    }}
+                                />
+                            </LocalizationProvider>
+                        )}
+                    />
+
+                    <Controller
+                        name="assignTo"
+                        control={control}
+                        rules={{ required: "Select at least one team member" }}
+                        render={({ field, fieldState: { error } }) => (
+                            <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label="Assign To"
+                                fullWidth
+                                value={field.value || []}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+                                    field.onChange(
+                                        Array.isArray(value)
+                                            ? value
+                                            : typeof value === "string"
+                                                ? value
+                                                    .split(",")
+                                                    .map((id) => id.trim())
+                                                    .filter(Boolean)
+                                                : []
+                                    );
+                                }}
+                                error={!!error}
+                                helperText={error?.message}
+                                SelectProps={{
+                                    multiple: true,
+                                    renderValue: (selected) => (
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                            {selected.map((value) => (
+                                                <Chip
+                                                    key={value}
+                                                    label={assignees.find(a => a.id === value)?.name || value}
+                                                    size="small"
+                                                />
+                                            ))}
+                                        </div>
+                                    ),
+                                }}
+                            >
+                                {assignees.map((emp) => (
+                                    <MenuItem key={emp.id} value={emp.id}>
+                                        {emp.name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        )}
+                    />
+
+                    <PrimaryButton
+                        type="submit"
+                        title={"Submit"}
+                        isLoading={isAddKpaPending}
+                        disabled={isAddKpaPending}
+                    />
+                </form>
+            </MuiModal>
+        </>
+    );
+};
+
+export default PerformanceTeamKpa;

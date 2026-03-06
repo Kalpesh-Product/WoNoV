@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Delete } from "@mui/icons-material";
@@ -45,8 +46,11 @@ const ExternalMeetingCLients = () => {
   const [selectedMeeting, setSelectedMeeting] = useState([]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
+  const location = useLocation();
   const department = usePageDepartment();
-  const isFinance = department?.name === "Finance";
+  const isFinance =
+    department?.name?.toLowerCase().includes("finance") ||
+    location.pathname.includes("finance-dashboard");
 
   const paymentModes = [
     "UPI",
@@ -112,6 +116,30 @@ const ExternalMeetingCLients = () => {
   });
 
   const watchedDiscountAmount = paymentWatch("discountAmount");
+
+  const calculatePaymentDetails = (meeting, meetingRoom, discount = 0) => {
+    if (!meeting || !meetingRoom?.perHourPrice) return null;
+
+    const start = new Date(meeting.startTime);
+    const end = new Date(meeting.endTime);
+    const durationInHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+    const amount = meetingRoom.perHourPrice * durationInHours;
+    const safeDiscount = Number.isFinite(discount) ? discount : 0;
+    const discountedAmount = Math.max(amount - safeDiscount, 0);
+    const gstAmount = discountedAmount * 0.18;
+    const finalAmount = discountedAmount + gstAmount;
+    const discountPercentage = amount
+      ? ((safeDiscount / amount) * 100).toFixed(2)
+      : "0.00";
+
+    return {
+      amount,
+      gstAmount,
+      finalAmount,
+      discountPercentage,
+    };
+  };
 
   const {
     handleSubmit: cancelMeetingSubmit,
@@ -506,47 +534,32 @@ const ExternalMeetingCLients = () => {
   };
   useEffect(() => {
     if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
-      // Calculate actual duration
+      const paymentDetails = calculatePaymentDetails(paymentMeeting, room);
 
-      const start = new Date(paymentMeeting.startTime);
-      const end = new Date(paymentMeeting.endTime);
-      console.log("meeting info", start.getTime());
-      console.log("meeting info", end.getTime());
 
-      const durationInHours =
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      if (!paymentDetails) return;
 
-      console.log("duration", durationInHours);
-
-      // Multiply rates by duration
-      const baseAmount = room.perHourPrice * durationInHours;
-      const gstAmount = room.perHourGstPrice * durationInHours;
-      const finalAmount = gstAmount;
-      setPaymentValue("amount", baseAmount);
-      setPaymentValue("gstAmount", gstAmount);
-      setPaymentValue("finalAmount", finalAmount);
+      setPaymentValue("amount", paymentDetails.amount);
+      setPaymentValue("gstAmount", paymentDetails.gstAmount);
+      setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
+
   }, [room, isRoomLoading, setPaymentValue]);
 
   useEffect(() => {
-    if (!isRoomLoading && paymentMeeting && room?.perHourGstPrice) {
-      const start = new Date(paymentMeeting.startTime);
-      const end = new Date(paymentMeeting.endTime);
-      const durationInHours =
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
+      const discountAmount = parseFloat(watchedDiscountAmount) || 0;
+      const paymentDetails = calculatePaymentDetails(
+        paymentMeeting,
+        room,
+        discountAmount,
+      );
 
-      // Multiply rates by duration
-      const baseAmount = room.perHourPrice * durationInHours;
-      const gstAmount = room.perHourGstPrice * durationInHours;
-      const calculatedAmount = gstAmount;
-      const discountPercentage = (
-        (watchedDiscountAmount / calculatedAmount) *
-        100
-      ).toFixed(2);
-      const finalAmount = calculatedAmount - watchedDiscountAmount;
+      if (!paymentDetails) return;
 
-      setPaymentValue("discountPercentage", discountPercentage);
-      setPaymentValue("finalAmount", finalAmount);
+      setPaymentValue("discountPercentage", paymentDetails.discountPercentage);
+      setPaymentValue("gstAmount", paymentDetails.gstAmount);
+      setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
   }, [watchedDiscountAmount, room, isRoomLoading]);
 
@@ -660,6 +673,12 @@ const ExternalMeetingCLients = () => {
           //   label: "View",
           //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
           // },
+          // !isPaid &&
+          // isFinance &&
+          // {
+          //   label: "wait for payment",
+          // },
+
           isPaid &&
           isFinance &&
           paymentVerificationStatus === "Under Review" && {
@@ -673,6 +692,12 @@ const ExternalMeetingCLients = () => {
             label: "Review Payment",
             onClick: () => handleVerifyPayment(params.data, "Under Review"),
           },
+
+          // isPaid &&
+          // isFinance &&
+          // paymentVerificationStatus === "Verified" && {
+          //   label: "Completed",
+          // },
 
           // Show the following only when NOT finance
           ...(!isFinance
@@ -719,10 +744,13 @@ const ExternalMeetingCLients = () => {
               </span>
             </div>
 
-            {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
-            {/* {shouldHideMenu && menuItems.length > 0 && (
-              <ThreeDotMenu menuItems={menuItems} />
-            )} */}
+            {/* {!isCancelled && <ThreeDotMenu menuItems={menuItems} />} */}
+            {(isPaid &&
+              isFinance &&
+              paymentVerificationStatus !== "Verified") ||
+              !isFinance && (
+                <ThreeDotMenu menuItems={menuItems} />
+              )}
           </div>
         );
       },

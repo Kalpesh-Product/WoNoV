@@ -88,9 +88,6 @@ const visitorSchema = new mongoose.Schema(
     checkIn: {
       type: Date,
     },
-    checkInBy: {
-      type: String,
-    },
     checkOut: {
       type: Date,
     },
@@ -142,7 +139,13 @@ const visitorSchema = new mongoose.Schema(
     },
     visitorType: {
       type: String,
-      enum: ["Walk In", "Scheduled", "Meeting"],
+      enum: [
+        "Walk In",
+        "Scheduled",
+        "Meeting",
+        "Full-Day Pass",
+        "Half-Day Pass",
+      ],
       default: "Walk In",
     },
     visitorCompany: {
@@ -159,6 +162,47 @@ const visitorSchema = new mongoose.Schema(
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
+    },
+    amount: {
+      type: Number,
+      default: 0,
+    },
+    totalAmount: {
+      type: Number,
+      default: 0,
+    },
+    gstAmount: {
+      type: Number,
+      default: 0,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    paymentStatus: {
+      type: Boolean,
+      default: false,
+    },
+    paymentMode: {
+      type: String,
+      enum: [
+        "UPI",
+        "Cash",
+        "Cheque",
+        "NEFT",
+        "RTGS",
+        "IMPS",
+        "Credit Card",
+        "ETC",
+      ],
+    },
+    paymentProof: {
+      url: {
+        type: String,
+      },
+      id: {
+        type: String,
+      },
     },
   },
   { timestamps: true },

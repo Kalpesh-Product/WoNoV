@@ -35,6 +35,10 @@ const SalesMixBag = () => {
       title: "Manage Units",
       route: "/app/dashboard/sales-dashboard/mix-bag/manage-units",
       permission: PERMISSIONS.SALES_MANAGE_UNITS_MIX_BAG.value,
+    },
+    {
+      title: "External Client",
+      route: "/app/dashboard/sales-dashboard/mix-bag/external-client",
     }
   ];
 

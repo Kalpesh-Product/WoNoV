@@ -544,8 +544,8 @@ const ClockInOutAttendance = () => {
   // const isBreakDisabled = isStartbreak || isEndBreak;
 
   //Temporarily disabled
-  const isPrimaryDisabled = true;
-  const isBreakDisabled = true;
+  const isPrimaryDisabled = false;
+  const isBreakDisabled = false;
 
   return (
     <div className="flex flex-col  gap-4 p-0 h-80">
@@ -568,43 +568,39 @@ const ClockInOutAttendance = () => {
                 }
                 // hasClockedIn ? handleStop() : handleStart()
               }}
-              className={`h-40 w-40 rounded-full ${
-                hasClockedIn && !correctionPending
-                  ? "bg-[#EB5C45]"
-                  : "bg-wonoGreen  transition-all"
-              } text-white flex justify-center items-center ${
-                isPrimaryDisabled
+              className={`h-40 w-40 rounded-full ${hasClockedIn && !correctionPending
+                ? "bg-[#EB5C45]"
+                : "bg-wonoGreen  transition-all"
+                } text-white flex justify-center items-center ${isPrimaryDisabled
                   ? "cursor-not-allowed opacity-60"
                   : "hover:scale-105"
-              }`}
-              disabled={isPrimaryDisabled}
+                }`}
+            // disabled={isPrimaryDisabled}
             >
               {hasClockedIn && !correctionPending
                 ? "Clock Out"
                 : isClockingIn
-                ? "Starting..."
-                : "Clock In"}
+                  ? "Starting..."
+                  : "Clock In"}
             </button>
 
             {hasClockedIn && (
               <button
                 onClick={hasTakenBreak ? handleEnBreak : handleStartBreak}
-                className={`h-40 w-40 rounded-full ${
-                  hasTakenBreak
-                    ? "bg-[#FB923C]"
-                    : "bg-[#FACC15]  transition-all"
-                }   text-white flex justify-center items-center ${
-                  isBreakDisabled
+                className={`h-40 w-40 rounded-full ${hasTakenBreak
+                  ? "bg-[#FB923C]"
+                  : "bg-[#FACC15]  transition-all"
+                  }   text-white flex justify-center items-center ${isBreakDisabled
                     ? "cursor-not-allowed opacity-60"
                     : "hover:scale-105"
-                }`}
-                disabled={isBreakDisabled}
+                  }`}
+              // disabled={isBreakDisabled}
               >
                 {hasTakenBreak
                   ? "End Break"
                   : isStartbreak
-                  ? "Starting..."
-                  : "Start Break"}
+                    ? "Starting..."
+                    : "Start Break"}
               </button>
             )}
           </div>
@@ -612,19 +608,18 @@ const ClockInOutAttendance = () => {
             {hasClockedIn && isToday
               ? `${formatElapsedTime(elapsedTime)}`
               : clockOutTime && isToday
-              ? "Clocked Out"
-              : "Not Clocked In"}
+                ? "Clocked Out"
+                : "Not Clocked In"}
           </div>
 
           <div className="flex gap-4">
             {timeStats.map((stat, index) => (
               <div
                 key={index}
-                className={`flex flex-col gap-2 justify-center text-center ${
-                  index !== timeStats.length - 1
-                    ? "border-r-[1px] border-borderGray pr-4"
-                    : ""
-                }`}
+                className={`flex flex-col gap-2 justify-center text-center ${index !== timeStats.length - 1
+                  ? "border-r-[1px] border-borderGray pr-4"
+                  : ""
+                  }`}
               >
                 <span className="text-muted">{stat.label}</span>
 
@@ -741,7 +736,7 @@ const ClockInOutAttendance = () => {
               title={"Submit"}
               type={"submit"}
               isLoading={correctionPending}
-              disabled={correctionPending}
+            // disabled={correctionPending}
             />
           </div>
           {/* {Object.keys(errors).length > 0 && (

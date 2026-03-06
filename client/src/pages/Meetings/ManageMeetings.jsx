@@ -86,6 +86,14 @@ const ManageMeetings = () => {
         .filter((u) => u.isActive === true);
     },
   });
+  const { data: clientDetails = [], isLoading: isClientDetailsLoading } = useQuery({
+    queryKey: ["clientsData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return response.data;
+    },
+  });
+  // console.log("clientDetails", clientDetails);
   const { data: clientEmployees = [], isLoading: isClientEmployeesLoading } =
     useQuery({
       queryKey: ["client-participants"],
@@ -226,6 +234,7 @@ const ManageMeetings = () => {
     department:
       meeting.bookedBy &&
       [...meeting.bookedBy.departments.map((dept) => dept.name)].join(","),
+    meetingCreditBalance: clientDetails.find((c) => c.clientName === meeting.client)?.meetingCreditBalance.toFixed(2) || "0.00",
   }));
 
   const getDisplayDuration = (meeting) => {
@@ -501,6 +510,11 @@ const ManageMeetings = () => {
       headerName: "End Time",
       cellRenderer: (params) => humanTime(params.value),
     },
+    {
+      field: "meetingCreditBalance",
+      headerName: "Credit Balance",
+      cellRenderer: (params) => params.value,
+    },
     // {
     //   field: "extendTime",
     //   headerName: "Extended Time",
@@ -582,20 +596,20 @@ const ManageMeetings = () => {
 
         const menuItems = [
           !isOngoing &&
-            !isHousekeepingCompleted && {
-              label: "Update Checklist",
-              onClick: () =>
-                handleOpenChecklistModal("update", params.data._id),
-            },
+          !isHousekeepingCompleted && {
+            label: "Update Checklist",
+            onClick: () =>
+              handleOpenChecklistModal("update", params.data._id),
+          },
           isUpcoming && {
             label: "Edit",
             onClick: () => handleEditMeeting("edit", params.data),
           },
           !isOngoing &&
-            !isHousekeepingPending && {
-              label: "Mark As Ongoing",
-              onClick: () => handleOngoing("ongoing", params.data._id),
-            },
+          !isHousekeepingPending && {
+            label: "Mark As Ongoing",
+            onClick: () => handleOngoing("ongoing", params.data._id),
+          },
           !isUpcoming && {
             label: "Mark As Completed",
             onClick: () => handleCompleted("complete", params.data._id),
@@ -832,7 +846,7 @@ const ManageMeetings = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-              // detail={`N/A`}
+            // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"

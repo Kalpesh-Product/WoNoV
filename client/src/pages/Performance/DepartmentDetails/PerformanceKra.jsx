@@ -138,7 +138,7 @@ const PerformanceKra = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}&type=KRA`
+        `/api/performance/get-tasks?dept=${deptId}&type=KRA`
       );
       return response.data;
     } catch (error) {
@@ -190,23 +190,23 @@ const PerformanceKra = () => {
     },
     ...(matchingDepartment
       ? [
-          {
-            headerName: "Actions",
-            field: "actions",
-            cellRenderer: (params) => (
-              <div
-                role="button"
-                onClick={() => updateDailyKra(params.data.id)}
-                className="p-2"
-              >
-                <PrimaryButton
-                  title={"Mark As Done"}
-                  disabled={!params.node.selected}
-                />
-              </div>
-            ),
-          },
-        ]
+        {
+          headerName: "Actions",
+          field: "actions",
+          cellRenderer: (params) => (
+            <div
+              role="button"
+              onClick={() => updateDailyKra(params.data.id)}
+              className="p-2"
+            >
+              <PrimaryButton
+                title={"Mark As Done"}
+                disabled={!params.node.selected}
+              />
+            </div>
+          ),
+        },
+      ]
       : []),
   ];
 
@@ -269,7 +269,7 @@ const PerformanceKra = () => {
                 formatTime
                 checkbox={showCheckBox}
                 buttonTitle={"Add Daily KRA"}
-                buttonDisabled={isAddKraDisabled}
+                // buttonDisabled={isAddKraDisabled}
                 handleSubmit={() => setOpenModal(true)}
                 tableTitle={`${department} DEPARTMENT - DAILY KRA`}
                 data={(departmentKra || [])

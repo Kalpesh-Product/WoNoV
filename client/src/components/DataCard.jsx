@@ -5,6 +5,16 @@ import { motion } from "motion/react";
 const DataCard = ({ title, description, data, route, onClick }) => {
   const navigate = useNavigate();
 
+  const handleCardAction = () => {
+    if (typeof onClick === "function") {
+      onClick();
+      return;
+    }
+
+    navigate(route);
+  };
+
+
   // const handleClick = () => {
   //   if (onClick) {
   //     onClick();
@@ -20,25 +30,25 @@ const DataCard = ({ title, description, data, route, onClick }) => {
         </div>
       </div>
       <hr className="border-gray-300 mb-4" />
- <div className="flex items-center justify-between">
-  <div className="text-sm text-gray-800 capitalize">{description}</div>
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-800 capitalize">{description}</div>
 
-  {typeof route === "string" &&
-    route.trim() !== "" &&
-    route !== "#" && (
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.8 }}
-        className="cursor-pointer p-2 rounded-full hover:bg-primary transition-colors duration-200 group"
-        onClick={() => navigate(route)}
-      >
-        <FaArrowRight
-          size={12}
-          className="text-black group-hover:text-white transition-colors"
-        />
-      </motion.div>
-    )}
-</div>
+        {typeof route === "string" &&
+          route.trim() !== "" &&
+          route !== "#" && (
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.8 }}
+              className="cursor-pointer p-2 rounded-full hover:bg-primary transition-colors duration-200 group"
+              onClick={handleCardAction}
+            >
+              <FaArrowRight
+                size={12}
+                className="text-black group-hover:text-white transition-colors"
+              />
+            </motion.div>
+          )}
+      </div>
 
     </div>
   );

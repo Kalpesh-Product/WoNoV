@@ -26,6 +26,7 @@ const RecievedTickets = ({ title, departmentId }) => {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [openView, setOpenView] = useState();
+  const [openFullImagePreview, setOpenFullImagePreview] = useState(false);
   const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
   const { isTop } = useTopDepartment();
 
@@ -37,6 +38,11 @@ const RecievedTickets = ({ title, departmentId }) => {
   const handleViewTicket = (ticket) => {
     setSelectedTicket(ticket);
     setOpenView(true);
+  };
+
+  const handleCloseTicketView = () => {
+    setOpenView(false);
+    setOpenFullImagePreview(false);
   };
 
   const { data: tickets = [], isLoading } = useQuery({
@@ -309,7 +315,7 @@ const RecievedTickets = ({ title, departmentId }) => {
       </div>
       <MuiModal
         open={openView}
-        onClose={() => setOpenView(false)}
+        onClose={handleCloseTicketView}
         title={"View Ticket"}
       >
         {selectedTicket && (
@@ -351,8 +357,41 @@ const RecievedTickets = ({ title, departmentId }) => {
                   alt="Ticket Attachment"
                   className="max-w-full max-h-96 rounded border"
                 />
+                <button
+                  type="button"
+                  className="mt-3 text-sm text-primary underline"
+                  onClick={() => setOpenFullImagePreview(true)}
+                >
+                  Show Full Image
+                </button>
               </div>
             )}
+          </div>
+        )}
+      </MuiModal>
+
+      <MuiModal
+        open={openFullImagePreview && !!selectedTicket?.image}
+        onClose={() => setOpenFullImagePreview(false)}
+        title={"Full Image Preview"}
+      >
+        {selectedTicket?.image && (
+          <div className="flex flex-col gap-4">
+            <div className="max-h-[75vh] overflow-auto border rounded p-2">
+              <img
+                src={selectedTicket.image}
+                alt="Full Ticket Attachment"
+                className="w-full h-auto rounded"
+              />
+            </div>
+            <a
+              href={selectedTicket.image}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary underline"
+            >
+              Open in New Tab
+            </a>
           </div>
         )}
       </MuiModal>

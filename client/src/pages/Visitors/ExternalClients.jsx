@@ -20,14 +20,19 @@ import { inrFormat } from "../../utils/currencyFormat";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import useAuth from "../../hooks/useAuth";
+import UploadFileInput from "../../components/UploadFileInput";
 
 const ExternalClients = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+
   const [selectedVisitor, setSelectedVisitor] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [openPaymentModal, setOpenPaymentModal] = useState(false);
+  const [paymentVisitor, setPaymentVisitor] = useState(null);
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["clients"],
@@ -40,6 +45,7 @@ const ExternalClients = () => {
       }
     },
   });
+
 
   const { handleSubmit, reset, control, setValue } = useForm({
     defaultValues: {
@@ -105,7 +111,56 @@ const ExternalClients = () => {
     },
   });
 
+  const {
+    handleSubmit: handlePaymentSubmit,
+    control: paymentControl,
+    reset: resetPaymentForm,
+    formState: { errors: paymentErrors },
+    watch: paymentWatch,
+    setValue: setPaymentValue,
+  } = useForm({
+    defaultValues: {
+      paymentAmount: "",
+      gstAmount: "",
+      discountAmount: "",
+      discountPercentage: "",
+      finalAmount: "",
+      paymentType: "",
+      paymentStatus: "",
+      paymentProof: "",
+    },
+  });
+
+  const watchedPaymentAmount = Number(paymentWatch("paymentAmount") || 0);
+  const watchedGstAmount = Number(paymentWatch("gstAmount") || 0);
+  const watchedDiscountAmount = Number(paymentWatch("discountAmount") || 0);
+
+  const { isPending: isPaymentPending, mutate: updatePayment } = useMutation({
+    mutationKey: ["visitor-payment"],
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/visitors/payment/${data.get("visitorId")}`,
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Payment details updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      handleClosePaymentModal();
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Payment update failed");
+    },
+  });
+
   const paymentModes = [
+    "UPI",
     "Cash",
     "Cheque",
     "NEFT",
@@ -132,9 +187,9 @@ const ExternalClients = () => {
       headerName: "Check In",
       cellRenderer: (params) => humanTime(params.value),
     },
-    { field: "checkInBy", headerName: "Check In By" },
+    // { field: "checkInBy", headerName: "Check In By" },
     { field: "checkOut", headerName: "Checkout" },
-    { field: "checkOutBy", headerName: "Check Out By" },
+    // { field: "checkOutBy", headerName: "Check Out By" },
     // {
     //   field: "paymentStatus",
     //   headerName: "Payment Status",
@@ -155,6 +210,7 @@ const ExternalClients = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => {
         const menuItems = [
           // {
@@ -170,6 +226,14 @@ const ExternalClients = () => {
               setIsModalOpen(true);
             },
           },
+          ...(params.data.visitorType !== "Meeting"
+            ? [
+              {
+                label: "Update Payment Details",
+                onClick: () => handleOpenPaymentModal(params.data),
+              },
+            ]
+            : []),
         ];
 
         return (
@@ -287,6 +351,57 @@ const ExternalClients = () => {
     setIsEditing(false);
   };
 
+  const handleOpenPaymentModal = (visitor) => {
+    setPaymentVisitor(visitor);
+
+    let defaultAmount = visitor.rawPaymentAmount;
+    if (!defaultAmount || defaultAmount === 0) {
+      if (visitor.visitorType === "Full-Day Pass") defaultAmount = 850;
+      else if (visitor.visitorType === "Half-Day Pass") defaultAmount = 500;
+    }
+
+    resetPaymentForm({
+      paymentAmount: defaultAmount || "",
+      gstAmount: visitor.gstAmount ?? "",
+      discountAmount: visitor.discountAmount ?? "",
+      discountPercentage: visitor.discountPercentage ?? "",
+      finalAmount: visitor.finalAmount ?? "",
+      paymentType: visitor.paymentMode && visitor.paymentMode !== "N/A"
+        ? visitor.paymentMode
+        : "",
+      paymentStatus: visitor.paymentStatus || "",
+      paymentProof: "",
+    });
+    setOpenPaymentModal(true);
+  };
+
+  const handleClosePaymentModal = () => {
+    setOpenPaymentModal(false);
+    setPaymentVisitor(null);
+    resetPaymentForm();
+  };
+
+  useEffect(() => {
+    const taxableAmount = watchedPaymentAmount - watchedDiscountAmount;
+    const gstAmount = Number((taxableAmount * 0.18).toFixed(2));
+    const finalAmount = taxableAmount + gstAmount;
+
+    setPaymentValue("gstAmount", gstAmount > 0 ? gstAmount : 0);
+    setPaymentValue("finalAmount", finalAmount > 0 ? finalAmount : 0);
+
+    if (watchedPaymentAmount > 0) {
+      const discountPercentage = ((watchedDiscountAmount / watchedPaymentAmount) * 100).toFixed(2);
+      setPaymentValue("discountPercentage", discountPercentage);
+    } else {
+      setPaymentValue("discountPercentage", 0);
+    }
+  }, [
+    watchedPaymentAmount,
+    watchedDiscountAmount,
+    setPaymentValue,
+  ]);
+
+
   return (
     <div>
       <PageFrame>
@@ -296,6 +411,7 @@ const ExternalClients = () => {
           dateColumn={"checkIn"}
           data={[
             ...visitorsData
+
               .filter((m) => m.visitorFlag === "Client")
               .map((item, index) => ({
                 srNo: index + 1,
@@ -312,21 +428,32 @@ const ExternalClients = () => {
                   ? null
                   : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
                 checkInRaw: item.checkIn,
-                checkInBy: item.checkInBy,
+                checkInBy: item.checkedInBy
+                  ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
+                  : "-",
                 checkOutRaw: item.checkOut,
-                checkOutBy: item.checkOutBy,
+                checkOutBy: item.checkedOutBy
+                  ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
+                  : "-",
                 checkIn: item.checkIn,
                 checkOut: item.checkOut ? humanTime(item.checkOut) : "",
                 paymentStatus:
-                  item?.meeting?.paymentStatus === true ? "Paid" : "Unpaid",
-                paymentAmount: item?.meeting?.paymentAmount
-                  ? inrFormat(item?.meeting?.paymentAmount)
+                  item.paymentStatus === true ? "Paid" : "Unpaid",
+                paymentAmount: item.totalAmount
+                  ? inrFormat(item.totalAmount)
                   : 0,
-                paymentMode: item?.meeting?.paymentMode || "N/A",
-                paymentDate: item?.meeting?.paymentDate || null,
+                rawPaymentAmount: item.amount ?? 0,
+                gstAmount: item.gstAmount ?? 0,
+                discountAmount: item.discount ?? 0,
+                discountPercentage: item.discountPercentage ?? 0,
+                finalAmount: item.totalAmount ?? 0,
+                paymentMode: item.paymentMode || "N/A",
+                paymentDate: item.updatedAt || null,
+                meetingId: item?.meeting?._id || null,
                 registeredClientCompany: item?.registeredClientCompany || "N/A",
                 brandName: item?.brandName || "N/A",
                 visitorCompany: item.visitorCompany || "N/A",
+                visitorType: item.visitorType,
               })),
           ]}
           columns={visitorsColumns}
@@ -569,6 +696,7 @@ const ExternalClients = () => {
                   <Controller
                     name="checkInBy"
                     control={control}
+                    disabled
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -582,6 +710,46 @@ const ExternalClients = () => {
                   <DetalisFormatted
                     title="Checkin By"
                     detail={selectedVisitor?.checkInBy}
+                  />
+                )}
+                {/* payment status */}
+                {isEditing ? (
+                  <Controller
+                    name="paymentStatus"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Payment Status"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Payment Status"
+                    detail={selectedVisitor?.paymentStatus}
+                  />
+                )}
+                {/* payment mode */}
+                {isEditing ? (
+                  <Controller
+                    name="paymentMode"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        label="Payment Mode"
+                        fullWidth
+                      />
+                    )}
+                  />
+                ) : (
+                  <DetalisFormatted
+                    title="Payment Mode"
+                    detail={selectedVisitor?.paymentMode}
                   />
                 )}
 
@@ -666,6 +834,7 @@ const ExternalClients = () => {
                   <Controller
                     name="checkOutBy"
                     control={control}
+                    disabled
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -696,6 +865,183 @@ const ExternalClients = () => {
             )}
           </form>
         </div>
+      </MuiModal>
+      <MuiModal
+        open={openPaymentModal}
+        onClose={handleClosePaymentModal}
+        title={"Update Payment Details"}
+      >
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={handlePaymentSubmit((data) => {
+            if (!paymentVisitor?.mongoId) {
+              toast.error("Payment details are not linked with this visitor");
+              return;
+            }
+
+            const formData = new FormData();
+            formData.append("amount", data?.paymentAmount || 0);
+            formData.append("paymentMode", data?.paymentType || "");
+            formData.append("paymentStatus", data?.paymentStatus || "");
+            formData.append("gstAmount", data?.gstAmount || 0);
+            formData.append("visitorId", paymentVisitor?.mongoId);
+            formData.append("discount", data?.discountAmount || 0);
+
+            if (data?.paymentProof) {
+              formData.append("paymentProof", data.paymentProof);
+            }
+
+            updatePayment(formData);
+          })}
+        >
+          <div className="flex gap-4 items-center">
+            <Controller
+              name="paymentAmount"
+              control={paymentControl}
+              rules={{ required: "Amount is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.paymentAmount}
+                  helperText={paymentErrors.paymentAmount?.message}
+                />
+              )}
+            />
+            <Controller
+              name="gstAmount"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  disabled
+                  label="GST Amount (18%)"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.gstAmount}
+                  helperText={paymentErrors.gstAmount?.message}
+                />
+              )}
+            />
+          </div>
+          <div className="flex gap-4 items-center">
+            <Controller
+              name="discountAmount"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Discount Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.discountAmount}
+                  helperText={paymentErrors.discountAmount?.message}
+                />
+              )}
+            />
+            <Controller
+              name="discountPercentage"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  disabled
+                  label="Discount %"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.discountPercentage}
+                  helperText={paymentErrors.discountPercentage?.message}
+                />
+              )}
+            />
+          </div>
+          <Controller
+            name="finalAmount"
+            control={paymentControl}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                disabled
+                label="Final Amount"
+                type="number"
+                size="small"
+                fullWidth
+                error={!!paymentErrors.finalAmount}
+                helperText={paymentErrors.finalAmount?.message}
+              />
+            )}
+          />
+          <div className="flex gap-4 items-center">
+            <Controller
+              name="paymentType"
+              control={paymentControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Payment Type"
+                  select
+                  fullWidth
+                >
+                  <MenuItem value="" disabled>
+                    Select Payment Type
+                  </MenuItem>
+                  {paymentModes.map((p) => (
+                    <MenuItem key={p} value={p}>
+                      {p}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="paymentStatus"
+              control={paymentControl}
+              rules={{ required: "Payment status is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Payment Status"
+                  size="small"
+                  fullWidth
+                  error={!!paymentErrors.paymentStatus}
+                  helperText={paymentErrors.paymentStatus?.message}
+                >
+                  <MenuItem value="Paid">Paid</MenuItem>
+                  <MenuItem value="Unpaid">Unpaid</MenuItem>
+                </TextField>
+              )}
+            />
+          </div>
+          <Controller
+            name="paymentProof"
+            control={paymentControl}
+            render={({ field }) => (
+              <UploadFileInput
+                value={field.value}
+                label="Add Payment Proof"
+                onChange={field.onChange}
+                allowedExtensions={["pdf", "jpg", "jpeg", "png"]}
+                previewType="pdf"
+              />
+            )}
+          />
+          <div className="flex justify-center">
+            <PrimaryButton
+              disabled={isPaymentPending}
+              className="w-full"
+              title={"Save Payment Details"}
+              type={"submit"}
+            />
+          </div>
+        </form>
       </MuiModal>
     </div>
   );

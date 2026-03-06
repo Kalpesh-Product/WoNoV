@@ -18,14 +18,25 @@ const addRoom = async (req, res, next) => {
   const logSourceKey = "room";
 
   try {
-    const { name, seats, description, location } = req.body;
+    const {
+      name,
+      seats,
+      description,
+      location,
+      perHourCredit,
+      perHourPrice,
+      dailyHours,
+      monthlyHours,
+      perSeatPrice,
+      perHourGstPrice,
+    } = req.body;
 
     if (!name || !seats || !description || !location) {
       throw new CustomError(
         "All required fields must be provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -43,7 +54,7 @@ const addRoom = async (req, res, next) => {
         "Unauthorized or company not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -56,7 +67,7 @@ const addRoom = async (req, res, next) => {
         "Invalid location. Must be a valid company work location.",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -70,11 +81,11 @@ const addRoom = async (req, res, next) => {
       const buffer = await sharp(file.buffer).webp({ quality: 80 }).toBuffer();
 
       const base64Image = `data:irmage/webp;base64,${buffer.toString(
-        "base64"
+        "base64",
       )}`;
       const uploadResult = await handleFileUpload(
         base64Image,
-        `${foundUser.company.companyName}/rooms`
+        `${foundUser.company.companyName}/rooms`,
       );
 
       imageId = uploadResult.public_id;
@@ -87,6 +98,12 @@ const addRoom = async (req, res, next) => {
       seats,
       description,
       location,
+      perHourCredit: Number(perHourCredit),
+      perHourPrice: Number(perHourPrice),
+      dailyHours: Number(dailyHours),
+      monthlyHours: Number(monthlyHours),
+      perSeatPrice: Number(perSeatPrice),
+      perHourGstPrice: Number(perHourGstPrice),
       assignedAssets: [],
       company: company._id,
       image: {
@@ -119,7 +136,7 @@ const addRoom = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -168,14 +185,26 @@ const updateRoom = async (req, res, next) => {
 
   try {
     const { id: roomId } = req.params;
-    const { name, description, seats, location, isActive } = req.body;
+    const {
+      name,
+      description,
+      seats,
+      location,
+      isActive,
+      perHourCredit,
+      perHourPrice,
+      dailyHours,
+      monthlyHours,
+      perSeatPrice,
+      perHourGstPrice,
+    } = req.body;
 
     if (!roomId || !mongoose.Types.ObjectId.isValid(roomId)) {
       throw new CustomError(
         "Invalid Room ID",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -191,7 +220,7 @@ const updateRoom = async (req, res, next) => {
           "Invalid location. Must be a valid company work location.",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
@@ -200,6 +229,16 @@ const updateRoom = async (req, res, next) => {
 
     // Handle individual field updates
     if (Object.hasOwn(req.body, "name") && req.body.name !== room.name) {
+      const nameExists = await Room.findOne({
+        name: req.body.name,
+        _id: { $ne: roomId },
+      });
+
+      if (nameExists) {
+        return res
+          .status(400)
+          .json({ message: "The name is already owned by a different room" });
+      }
       updatedFields.name = req.body.name;
     }
 
@@ -223,9 +262,49 @@ const updateRoom = async (req, res, next) => {
 
     if (Object.hasOwn(req.body, "isActive")) {
       updatedFields.isActive =
-        req.body.isActive === true || req.body.isActive === "true"
-          ? true
-          : false;
+        req.body.isActive === true || req.body.isActive === "true";
+    }
+
+    if (
+      Object.hasOwn(req.body, "perHourCredit") &&
+      Number(req.body.perHourCredit) !== room.perHourCredit
+    ) {
+      updatedFields.perHourCredit = Number(req.body.perHourCredit);
+    }
+
+    if (
+      Object.hasOwn(req.body, "perHourPrice") &&
+      Number(req.body.perHourPrice) !== room.perHourPrice
+    ) {
+      updatedFields.perHourPrice = Number(req.body.perHourPrice);
+    }
+
+    if (
+      Object.hasOwn(req.body, "dailyHours") &&
+      Number(req.body.dailyHours) !== room.dailyHours
+    ) {
+      updatedFields.dailyHours = Number(req.body.dailyHours);
+    }
+
+    if (
+      Object.hasOwn(req.body, "monthlyHours") &&
+      Number(req.body.monthlyHours) !== room.monthlyHours
+    ) {
+      updatedFields.monthlyHours = Number(req.body.monthlyHours);
+    }
+
+    if (
+      Object.hasOwn(req.body, "perSeatPrice") &&
+      Number(req.body.perSeatPrice) !== room.perSeatPrice
+    ) {
+      updatedFields.perSeatPrice = Number(req.body.perSeatPrice);
+    }
+
+    if (
+      Object.hasOwn(req.body, "perHourGstPrice") &&
+      Number(req.body.perHourGstPrice) !== room.perHourGstPrice
+    ) {
+      updatedFields.perHourGstPrice = Number(req.body.perHourGstPrice);
     }
 
     // Handle image update
@@ -278,7 +357,7 @@ const updateRoom = async (req, res, next) => {
     next(
       error instanceof CustomError
         ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
     );
   }
 };
