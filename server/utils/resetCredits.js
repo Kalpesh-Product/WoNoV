@@ -1,4 +1,4 @@
-const resetMeetingCreditsIfNeeded = async (BookingModel, clientId) => {
+export const resetMeetingCreditsIfNeeded = async (BookingModel, clientId) => {
   const record = await BookingModel.findById(clientId);
 
   if (!record) return;

@@ -24,6 +24,7 @@ const { isValid } = require("date-fns/isValid");
 const Role = require("../../models/roles/Roles");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
 const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const { resetMeetingCreditsIfNeeded } = require("../../utils/resetCredits");
 
 const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
@@ -1315,8 +1316,14 @@ const updateMeeting = async (req, res, next) => {
 
   try {
     const { user, ip, company } = req;
-    const { paymentAmount, paymentMode, paymentStatus, discountAmount } =
-      req.body;
+    const {
+      paymentAmount,
+      paymentMode,
+      paymentStatus,
+      discountAmount,
+      paymentBaseAmount,
+      paymentGstAmount,
+    } = req.body;
     const { meetingId } = req.params;
     const paymentProofFile = req.file;
 
@@ -1426,6 +1433,8 @@ const updateMeeting = async (req, res, next) => {
       };
     }
 
+    updatedMeeting.paymentBaseAmount = paymentBaseAmount;
+    updatedMeeting.paymentGstAmount = paymentGstAmount;
     updatedMeeting.paymentAmount = paymentAmount;
     updatedMeeting.paymentMode = paymentMode;
     updatedMeeting.paymentStatus = paymentStatus === "Paid";
