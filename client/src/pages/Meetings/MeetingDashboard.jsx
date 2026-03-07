@@ -28,7 +28,7 @@ const MeetingDashboard = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const { auth } = useAuth();
-  const [selectedFY, setSelectedFY] = useState("FY 2024-25");
+  const [selectedFY, setSelectedFY] = useState("FY 2025-26");
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
   //------------------------PAGE ACCESS-------------------//

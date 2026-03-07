@@ -30,7 +30,7 @@ import { filterPermissions } from "../../../utils/accessConfig";
 const ItDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const department = usePageDepartment();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const axios = useAxiosPrivate();
 
   const { auth } = useAuth();

@@ -39,7 +39,7 @@ const YearlyGraph = ({
     )
       return 1;
 
-    return 0; // fallback
+    return 1; // fallback
   };
 
   const [selectedYearIndex, setSelectedYearIndex] = useState(() => {
@@ -48,7 +48,7 @@ const YearlyGraph = ({
 
       if (dateValue) return getYearIndexFromDate(dateValue);
     }
-    return currentYear ? 1 : 0;
+    return 1;
   });
 
   const selectedYear = fiscalYears[selectedYearIndex];

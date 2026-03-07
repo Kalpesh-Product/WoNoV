@@ -152,8 +152,8 @@ const AdminBudget = () => {
                 <div><strong>HR Expense:</strong></div>
                 <div style="width: 10px;"></div>
              <div style="text-align: left;">INR ${Math.round(
-               rawData
-             ).toLocaleString("en-IN")}</div>
+          rawData
+        ).toLocaleString("en-IN")}</div>
 
               </div>
      
@@ -185,48 +185,48 @@ const AdminBudget = () => {
   // Transform data into the required format
   const groupedData = Array.isArray(hrFinance)
     ? hrFinance?.reduce((acc, item) => {
-        const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
+      const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
 
-        if (!acc[month]) {
-          acc[month] = {
-            month,
-            latestDueDate: item.dueDate, // Store latest due date for sorting
-            projectedAmount: 0,
-            amount: 0,
-            tableData: {
-              rows: [],
-              columns: [
-                { field: "expanseName", headerName: "Expense Name", flex: 1 },
-                { field: "expanseType", headerName: "Expense Type", flex: 1 },
-                {
-                  field: "projectedAmount",
-                  headerName: "Projected (INR)",
-                  flex: 1,
-                },
-                { field: "actualAmount", headerName: "Actual (INR)", flex: 1 }, // ✅ add this
-                { field: "dueDate", headerName: "Due Date", flex: 1 },
-                { field: "status", headerName: "Status", flex: 1 },
-              ],
-            },
-          };
-        }
+      if (!acc[month]) {
+        acc[month] = {
+          month,
+          latestDueDate: item.dueDate, // Store latest due date for sorting
+          projectedAmount: 0,
+          amount: 0,
+          tableData: {
+            rows: [],
+            columns: [
+              { field: "expanseName", headerName: "Expense Name", flex: 1 },
+              { field: "expanseType", headerName: "Expense Type", flex: 1 },
+              {
+                field: "projectedAmount",
+                headerName: "Projected (INR)",
+                flex: 1,
+              },
+              { field: "actualAmount", headerName: "Actual (INR)", flex: 1 }, // ✅ add this
+              { field: "dueDate", headerName: "Due Date", flex: 1 },
+              { field: "status", headerName: "Status", flex: 1 },
+            ],
+          },
+        };
+      }
 
-        acc[month].projectedAmount += item?.projectedAmount; // Summing the total projected amount per month
-        acc[month].amount += item?.actualAmount; // Summing the total amount per month
-        acc[month].tableData.rows.push({
-          id: item._id,
-          expanseName: item?.expanseName,
-          department: item?.department,
-          invoiceAttached : item?.invoiceAttached,
-          expanseType: item?.expanseType,
-          projectedAmount: Number(item?.projectedAmount).toFixed(2),
-          actualAmount: inrFormat(item?.actualAmount || 0), // ✅ Add this
-          dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
-          status: item.status,
-        });
+      acc[month].projectedAmount += item?.projectedAmount; // Summing the total projected amount per month
+      acc[month].amount += item?.actualAmount; // Summing the total amount per month
+      acc[month].tableData.rows.push({
+        id: item._id,
+        expanseName: item?.expanseName,
+        department: item?.department,
+        invoiceAttached: item?.invoiceAttached,
+        expanseType: item?.expanseType,
+        projectedAmount: Number(item?.projectedAmount).toFixed(2),
+        actualAmount: inrFormat(item?.actualAmount || 0), // ✅ Add this
+        dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+        status: item.status,
+      });
 
-        return acc;
-      }, {})
+      return acc;
+    }, {})
     : [];
 
   // Convert grouped data to array and sort by latest month (descending order)

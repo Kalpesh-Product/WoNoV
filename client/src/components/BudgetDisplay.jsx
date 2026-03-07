@@ -137,7 +137,7 @@ const BudgetDisplay = ({ budgetData }) => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <WidgetSection border layout={1} title={"BUDGET 2024-25"}>
+        <WidgetSection border layout={1} title={"BUDGET 2025-26"}>
           <BudgetGraph utilisedData={utilisedData} maxBudget={maxBudget} />
         </WidgetSection>
       </div>
@@ -148,7 +148,7 @@ const BudgetDisplay = ({ budgetData }) => {
           route={"/app/dashboard/it-dashboard/finance/budget"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-25`}
+          })}-26`}
         />
         <DataCard
           data={"INR " + inrFormat("3500000")}
@@ -156,7 +156,7 @@ const BudgetDisplay = ({ budgetData }) => {
           route={"/app/dashboard/it-dashboard/finance/budget"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-25`}
+          })}-26`}
         />
         <DataCard
           data={"INR " + inrFormat(60000)}
@@ -164,7 +164,7 @@ const BudgetDisplay = ({ budgetData }) => {
           route={"/app/dashboard/it-dashboard/finance/budget"}
           description={`Current Month: ${new Date().toLocaleString("default", {
             month: "short",
-          })}-25`}
+          })}-26`}
         />
       </WidgetSection>
 

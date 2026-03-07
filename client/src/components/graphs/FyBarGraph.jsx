@@ -43,8 +43,8 @@ const FyBarGraph = ({
   valueKey = "revenue",
   chartOptions = {},
   graphTitle = "",
-  responsiveResize=true,
-  chartId="bargraph"
+  responsiveResize = true,
+  chartId = "bargraph"
 }) => {
   const fyOptions = useMemo(() => {
     const yearsSet = new Set();
@@ -58,7 +58,7 @@ const FyBarGraph = ({
   const [selectedFY, setSelectedFY] = useState("");
   useEffect(() => {
     if (fyOptions.length > 0 && !selectedFY) {
-      setSelectedFY(fyOptions[0]);
+      setSelectedFY(fyOptions[fyOptions.length - 1]);
     }
   }, [fyOptions, selectedFY]);
 

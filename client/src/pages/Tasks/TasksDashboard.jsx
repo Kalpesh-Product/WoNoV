@@ -650,7 +650,7 @@ const TasksDashboard = () => {
 
   useEffect(() => {
     if (availableFYs.length > 0 && !selectedFY) {
-      setSelectedFY(availableFYs[0]); // Default to first FY (e.g., "FY 2024-25")
+      setSelectedFY(availableFYs[availableFYs.length - 1]); // Default to first FY (e.g., "FY 2024-25")
     }
   }, [availableFYs, selectedFY]);
 
