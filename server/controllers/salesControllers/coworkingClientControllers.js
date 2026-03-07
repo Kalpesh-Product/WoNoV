@@ -478,14 +478,14 @@ const updateCoworkingClient = async (req, res, next) => {
 
     if (
       req.body.ratePerOpenDesk !== undefined &&
-      req.body.ratePerOpenDesk <= 0
+      typeof req.body.ratePerOpenDesk !== "number"
     ) {
       return res.status(400).json({ message: "Invalid ratePerOpenDesk" });
     }
 
     if (
       req.body.ratePerCabinDesk !== undefined &&
-      req.body.ratePerCabinDesk <= 0
+      typeof req.body.ratePerCabinDesk !== "number"
     ) {
       return res.status(400).json({ message: "Invalid ratePerCabinDesk" });
     }
@@ -603,6 +603,7 @@ const updateCoworkingClient = async (req, res, next) => {
 
     existingClient.set(updateData);
 
+    console.log("existingClient", existingClient);
     await existingClient.save();
 
     await createLog({
