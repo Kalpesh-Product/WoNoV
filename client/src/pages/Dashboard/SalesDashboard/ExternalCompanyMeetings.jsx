@@ -37,11 +37,22 @@ const ExternalCompanyMeetings = () => {
     ];
 
     const tableData = useMemo(() => {
+        const normalizedClientName = decodedClientName.trim().toLowerCase();
+
         const filteredMeetings = meetings.filter(
-            (meeting) =>
-                meeting?.meetingType === "External" &&
-                meeting?.externalClient === decodedClientName,
+            (meeting) => {
+                const externalClientName = (meeting?.externalClient || "")
+                    .trim()
+                    .toLowerCase();
+                const clientName = (meeting?.client || "").trim().toLowerCase();
+
+                return (
+                    externalClientName === normalizedClientName ||
+                    clientName === normalizedClientName
+                );
+            },
         );
+
 
         return filteredMeetings.map((meeting, index) => ({
             ...meeting,
