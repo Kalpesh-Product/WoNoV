@@ -177,9 +177,9 @@ const raiseTicket = async (req, res, next) => {
       company: company,
       image: imageDetails
         ? {
-          id: imageDetails.id,
-          url: imageDetails.url,
-        }
+            id: imageDetails.id,
+            url: imageDetails.url,
+          }
         : null, // Store image only if uploaded
     });
 
@@ -305,8 +305,8 @@ const updateOtherTicket = async (req, res, next) => {
     error instanceof CustomError
       ? next(error)
       : next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-      );
+          new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+        );
   }
 };
 
@@ -548,8 +548,9 @@ const getTeamMemberTickets = async (req, res, next) => {
       }).length;
 
       return {
-        name: `${member.firstName} ${member.middleName || ""} ${member.lastName
-          }`.trim(),
+        name: `${member.firstName} ${member.middleName || ""} ${
+          member.lastName
+        }`.trim(),
         _id: member._id,
         department: member.departments.map((dept) => dept.name),
         role: member.role.map((r) => r.roleTitle),
@@ -1512,7 +1513,7 @@ const filterMyTickets = async (req, res, next) => {
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
       .select(
-        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image createdAt closedBy closedAt closingReason",
+        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image createdAt closedBy closedAt closingRemark",
       )
       .populate([
         {

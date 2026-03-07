@@ -87,121 +87,121 @@ const SupportTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
-          // const assignedTo = ticket.ticket?.assignees[0]
-          //   ? `${ticket.ticket?.assignees[0].firstName} ${ticket.ticket?.assignees[0].lastName}`
-          //   : "";
-          const assignmentDetails = Array.isArray(ticket.ticket?.assignedTo)
-            ? ticket.ticket.assignedTo.map((assignment) => {
-                const assignee = assignment?.assignee;
-                const assigneeName =
-                  assignee?.firstName && assignee?.lastName
-                    ? `${assignee.firstName} ${assignee.lastName}`
-                    : "Unknown";
-                const assignedAtFormatted = assignment?.assignedAt
-                  ? `${humanDate(assignment.assignedAt)}, ${humanTime(
-                      assignment.assignedAt,
-                    )}`
-                  : "";
-                return { assigneeName, assignedAtFormatted };
-              })
-            : [];
+        // const assignedTo = ticket.ticket?.assignees[0]
+        //   ? `${ticket.ticket?.assignees[0].firstName} ${ticket.ticket?.assignees[0].lastName}`
+        //   : "";
+        const assignmentDetails = Array.isArray(ticket.ticket?.assignedTo)
+          ? ticket.ticket.assignedTo.map((assignment) => {
+            const assignee = assignment?.assignee;
+            const assigneeName =
+              assignee?.firstName && assignee?.lastName
+                ? `${assignee.firstName} ${assignee.lastName}`
+                : "Unknown";
+            const assignedAtFormatted = assignment?.assignedAt
+              ? `${humanDate(assignment.assignedAt)}, ${humanTime(
+                assignment.assignedAt,
+              )}`
+              : "";
+            return { assigneeName, assignedAtFormatted };
+          })
+          : [];
 
-          const assignedToDisplay = assignmentDetails
-            .map(({ assigneeName, assignedAtFormatted }) =>
-              assignedAtFormatted
-                ? `${assigneeName} (${assignedAtFormatted})`
-                : assigneeName,
-            )
-            .join(", ");
+        const assignedToDisplay = assignmentDetails
+          .map(({ assigneeName, assignedAtFormatted }) =>
+            assignedAtFormatted
+              ? `${assigneeName} (${assignedAtFormatted})`
+              : assigneeName,
+          )
+          .join(", ");
 
-          const latestAssignment = Array.isArray(ticket.ticket?.assignedTo)
-            ? [...ticket.ticket.assignedTo]
-                .filter((assignment) => assignment?.assignee)
-                .sort(
-                  (a, b) =>
-                    new Date(b?.assignedAt || 0) - new Date(a?.assignedAt || 0),
-                )[0]
-            : null;
+        const latestAssignment = Array.isArray(ticket.ticket?.assignedTo)
+          ? [...ticket.ticket.assignedTo]
+            .filter((assignment) => assignment?.assignee)
+            .sort(
+              (a, b) =>
+                new Date(b?.assignedAt || 0) - new Date(a?.assignedAt || 0),
+            )[0]
+          : null;
 
-          const latestAssignee = latestAssignment?.assignee;
-          const latestAssignedTo =
-            latestAssignee?.firstName && latestAssignee?.lastName
-              ? `${latestAssignee.firstName} ${latestAssignee.lastName}`
-              : "N/A";
+        const latestAssignee = latestAssignment?.assignee;
+        const latestAssignedTo =
+          latestAssignee?.firstName && latestAssignee?.lastName
+            ? `${latestAssignee.firstName} ${latestAssignee.lastName}`
+            : "N/A";
 
-          const assignedAtDisplay = assignmentDetails
-            .map(({ assignedAtFormatted }) => assignedAtFormatted)
-            .filter(Boolean)
-            .join(", ");
+        const assignedAtDisplay = assignmentDetails
+          .map(({ assignedAtFormatted }) => assignedAtFormatted)
+          .filter(Boolean)
+          .join(", ");
 
-          const closedBy = ticket.ticket.closedBy
-            ? `${ticket.ticket.closedBy.firstName} ${ticket.ticket.closedBy.lastName}`
-            : "";
-          const supportRequestedBy = `${ticket.user.firstName} ${ticket.user.lastName}`;
-          const supportTicket = {
-            ...ticket,
-            id: ticket.ticket?._id,
-            srno: index + 1,
-            raisedBy:
-              ticket.ticket?.raisedBy?.firstName &&
+        const closedBy = ticket.ticket.closedBy
+          ? `${ticket.ticket.closedBy.firstName} ${ticket.ticket.closedBy.lastName}`
+          : "";
+        const supportRequestedBy = `${ticket.user.firstName} ${ticket.user.lastName}`;
+        const supportTicket = {
+          ...ticket,
+          id: ticket.ticket?._id,
+          srno: index + 1,
+          raisedBy:
+            ticket.ticket?.raisedBy?.firstName &&
               ticket.ticket?.raisedBy?.lastName
-                ? `${ticket.ticket?.raisedBy?.firstName} ${ticket.ticket?.raisedBy?.lastName}`
-                : "Unknown",
+              ? `${ticket.ticket?.raisedBy?.firstName} ${ticket.ticket?.raisedBy?.lastName}`
+              : "Unknown",
 
-            priority: ticket.priority,
-            selectedDepartment:
-              Array.isArray(ticket.ticket.raisedBy?.departments) &&
+          priority: ticket.priority,
+          selectedDepartment:
+            Array.isArray(ticket.ticket.raisedBy?.departments) &&
               ticket.ticket.raisedBy.departments.length > 0
-                ? ticket.ticket.raisedBy.departments.map((dept) => dept.name)
-                : ["N/A"],
+              ? ticket.ticket.raisedBy.departments.map((dept) => dept.name)
+              : ["N/A"],
 
-            ticketTitle: ticket.ticket?.ticket || "No Title",
-            reasonForSupport: ticket.reason || "No Reason",
-            acceptedBy: `${ticket.ticket?.acceptedBy?.firstName ?? ""} ${
-              ticket.ticket.acceptedBy?.lastName ?? ""
+          ticketTitle: ticket.ticket?.ticket || "No Title",
+          reasonForSupport: ticket.reason || "No Reason",
+          acceptedBy: `${ticket.ticket?.acceptedBy?.firstName ?? ""} ${ticket.ticket.acceptedBy?.lastName ?? ""
             }`,
-            acceptedAt: ticket.ticket?.acceptedAt
-              ? `${humanDate(ticket.ticket?.acceptedAt)}, ${humanTime(
-                  ticket.ticket?.acceptedAt,
-                )}`
-              : "",
-            assignedAt: ticket.ticket?.assignedAt
-              ? `${humanDate(ticket.ticket?.assignedAt)}, ${humanTime(
-                  ticket.ticket?.assignedAt,
-                )}`
-              : "",
-            closedAt: ticket.ticket?.closedAt
-              ? `${humanDate(ticket.ticket?.closedAt)}, ${humanTime(
-                  ticket.ticket?.closedAt,
-                )}`
-              : "",
+          acceptedAt: ticket.ticket?.acceptedAt
+            ? `${humanDate(ticket.ticket?.acceptedAt)}, ${humanTime(
+              ticket.ticket?.acceptedAt,
+            )}`
+            : "",
+          assignedAt: ticket.ticket?.assignedAt
+            ? `${humanDate(ticket.ticket?.assignedAt)}, ${humanTime(
+              ticket.ticket?.assignedAt,
+            )}`
+            : "",
+          closedAt: ticket.ticket?.closedAt
+            ? `${humanDate(ticket.ticket?.closedAt)}, ${humanTime(
+              ticket.ticket?.closedAt,
+            )}`
+            : "",
 
-            closedBy,
-            supportRequestedBy,
-            supportRequestedAt: ticket?.createdAt
-              ? `${humanDate(ticket?.createdAt)}, ${humanTime(
-                  ticket?.createdAt,
-                )}`
-              : "",
-            assignedTo: latestAssignedTo,
-            assignedToDisplay,
-            assignedToDetails: assignmentDetails,
-            tickets:
-              ticket.ticket?.assignees.length > 0
-                ? "Assigned Ticket"
-                : ticket.ticket?.acceptedBy
-                  ? "Accepted Ticket"
-                  : "N/A",
-            raisedDate: `${humanDate(ticket?.createdAt)}, ${humanTime(
+          closedBy,
+          supportRequestedBy,
+          supportRequestedAt: ticket?.createdAt
+            ? `${humanDate(ticket?.createdAt)}, ${humanTime(
               ticket?.createdAt,
-            )}`,
-            status: ticket.ticket.status || "Pending",
-            raisedToDepartment:
-              ticket.ticket?.raisedToDepartment?.name || "N/A",
-          };
+            )}`
+            : "",
+          assignedTo: latestAssignedTo,
+          assignedToDisplay,
+          assignedToDetails: assignmentDetails,
+          tickets:
+            ticket.ticket?.assignees.length > 0
+              ? "Assigned Ticket"
+              : ticket.ticket?.acceptedBy
+                ? "Accepted Ticket"
+                : "N/A",
+          raisedDate: `${humanDate(ticket?.createdAt)}, ${humanTime(
+            ticket?.createdAt,
+          )}`,
+          status: ticket.ticket.status || "Pending",
+          raisedToDepartment:
+            ticket.ticket?.raisedToDepartment?.name || "N/A",
+          image: ticket.ticket?.image?.url || null,
+        };
 
-          return supportTicket;
-        });
+        return supportTicket;
+      });
   };
 
   const rows = isLoading ? [] : transformTicketsData(supportedTickets);
@@ -474,31 +474,31 @@ const SupportTickets = ({ title, departmentId }) => {
 
         const conditionalItems = showOtherActions
           ? [
-              ...(canManageAssignments
-                ? [
-                    {
-                      label: "Accept",
-                      onClick: () => acceptTicket(params.data.id),
-                    },
-                    {
-                      label: "Re-Assign",
-                      onClick: () => handleOpenAssignModal(params.data.id),
-                    },
-                    {
-                      label: "Escalate",
-                      onClick: () => handleEscalateTicket(params.data),
-                    },
-                  ]
-                : []),
-              ...(canCloseTicket
-                ? [
-                    {
-                      label: "Close",
-                      onClick: () => handleCloseTicket(params.data.id),
-                    },
-                  ]
-                : []),
-            ]
+            ...(canManageAssignments
+              ? [
+                {
+                  label: "Accept",
+                  onClick: () => acceptTicket(params.data.id),
+                },
+                {
+                  label: "Re-Assign",
+                  onClick: () => handleOpenAssignModal(params.data.id),
+                },
+                {
+                  label: "Escalate",
+                  onClick: () => handleEscalateTicket(params.data),
+                },
+              ]
+              : []),
+            ...(canCloseTicket
+              ? [
+                {
+                  label: "Close",
+                  onClick: () => handleCloseTicket(params.data.id),
+                },
+              ]
+              : []),
+          ]
           : [];
 
         return (
@@ -690,6 +690,15 @@ const SupportTickets = ({ title, departmentId }) => {
               detail={selectedTicket?.priority || ""}
             />
             <DetalisFormatted title="Status" detail={selectedTicket.status} />
+            {selectedTicket?.image && (
+              <div className="lg:col-span-1">
+                <img
+                  src={selectedTicket.image}
+                  alt="Support Ticket Attachment"
+                  className="max-w-full max-h-96 rounded border"
+                />
+              </div>
+            )}
             <DetalisFormatted
               title="Accepted By"
               detail={selectedTicket?.acceptedBy || ""}

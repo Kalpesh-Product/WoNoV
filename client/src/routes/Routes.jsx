@@ -142,6 +142,7 @@ import SalesMixBag from "../pages/Dashboard/SalesDashboard/SalesMixBag";
 import ExternalClient from "../pages/Dashboard/SalesDashboard/ExternalClient";
 import ExternalClientCompanies from "../pages/Dashboard/SalesDashboard/ExternalClientCompanies";
 import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClientLayout";
+import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalCompanyMeetings";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
@@ -1587,7 +1588,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "meetings",
-                            element: <ClientDetails />,
+                            element: <ExternalCompanyMeetings />,
                           },
                           {
                             path: "revenue",
