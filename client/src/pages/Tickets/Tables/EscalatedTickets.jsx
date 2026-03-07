@@ -37,15 +37,15 @@ const EscalatedTickets = ({ title, departmentId }) => {
   const formatAssignments = (assignments = []) => {
     const assignmentDetails = Array.isArray(assignments)
       ? assignments.map((assignment) => {
-          const assignee = assignment?.assignee;
-          const assigneeName =
-            assignee?.firstName && assignee?.lastName
-              ? `${assignee.firstName} ${assignee.lastName}`
-              : "Unknown";
-          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+        const assignee = assignment?.assignee;
+        const assigneeName =
+          assignee?.firstName && assignee?.lastName
+            ? `${assignee.firstName} ${assignee.lastName}`
+            : "Unknown";
+        const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
 
-          return { assigneeName, assignedAtFormatted };
-        })
+        return { assigneeName, assignedAtFormatted };
+      })
       : [];
 
     const assignedToDisplay = assignmentDetails
@@ -85,62 +85,63 @@ const EscalatedTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
-          const escalatedIndex = ticket.escalatedTo.length - 1;
-          const escalatedStatus =
-            ticket.escalatedTo.length > 0
-              ? ticket.escalatedTo[escalatedIndex].status
-              : null;
-          const escalatedTo =
-            ticket.escalatedTo.length > 0
-              ? ticket.escalatedTo[escalatedIndex].raisedToDepartment.name
-              : null;
-          const escalatedAt =
-            ticket.escalatedTo.length > 0
-              ? ticket.escalatedTo[escalatedIndex].createdAt
-              : null;
-          const raisedBy = `${ticket.raisedBy?.firstName} ${ticket.raisedBy?.lastName}`;
-          const acceptedBy = ticket.acceptedBy
-            ? `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}`
-            : "N/A";
+        const escalatedIndex = ticket.escalatedTo.length - 1;
+        const escalatedStatus =
+          ticket.escalatedTo.length > 0
+            ? ticket.escalatedTo[escalatedIndex].status
+            : null;
+        const escalatedTo =
+          ticket.escalatedTo.length > 0
+            ? ticket.escalatedTo[escalatedIndex].raisedToDepartment.name
+            : null;
+        const escalatedAt =
+          ticket.escalatedTo.length > 0
+            ? ticket.escalatedTo[escalatedIndex].createdAt
+            : null;
+        const raisedBy = `${ticket.raisedBy?.firstName} ${ticket.raisedBy?.lastName}`;
+        const acceptedBy = ticket.acceptedBy
+          ? `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}`
+          : "N/A";
 
-          const escalatedTicket = {
-            srno: index + 1,
-            id: ticket._id,
-            raisedBy: raisedBy || "Unknown",
-            description: ticket.description || "N/A",
-            priority: ticket.priority,
-            raisedAt: ticket.createdAt || "N/A",
-            acceptedBy: acceptedBy,
-            raisedToDepartment: ticket.raisedToDepartment.name || "N/A",
-            selectedDepartment:
-              ticket.raisedBy?.departments.map((dept) => dept.name) || "N/A",
-            ticketTitle: ticket?.ticket || "No Title",
-            tickets:
-              ticket?.assignees.length > 0
-                ? "Ticket Assigned"
-                : ticket?.acceptedBy
-                  ? "Ticket Accepted"
-                  : "N/A",
-            status: ticket.status || "Pending",
-            acceptedAt: ticket.acceptedAt || "N/A",
-            escalatedStatus,
-            escalatedAt,
-            escalatedTo:
-              ticket.escalatedTo
-                .map((dept) => dept.raisedToDepartment.name)
-                .join(", ") || "N/A",
-            ...(() => {
-              const { assignedToDisplay, assignmentDetails } =
-                formatAssignments(ticket.assignedTo);
-              return {
-                assignedTo: assignedToDisplay,
-                assignedToDetails: assignmentDetails,
-              };
-            })(),
-          };
+        const escalatedTicket = {
+          srno: index + 1,
+          id: ticket._id,
+          raisedBy: raisedBy || "Unknown",
+          description: ticket.description || "N/A",
+          priority: ticket.priority,
+          raisedAt: ticket.createdAt || "N/A",
+          acceptedBy: acceptedBy,
+          raisedToDepartment: ticket.raisedToDepartment.name || "N/A",
+          selectedDepartment:
+            ticket.raisedBy?.departments.map((dept) => dept.name) || "N/A",
+          ticketTitle: ticket?.ticket || "No Title",
+          tickets:
+            ticket?.assignees.length > 0
+              ? "Ticket Assigned"
+              : ticket?.acceptedBy
+                ? "Ticket Accepted"
+                : "N/A",
+          status: ticket.status || "Pending",
+          acceptedAt: ticket.acceptedAt || "N/A",
+          escalatedStatus,
+          escalatedAt,
+          escalatedTo:
+            ticket.escalatedTo
+              .map((dept) => dept.raisedToDepartment.name)
+              .join(", ") || "N/A",
+          image: ticket.image?.url || null,
+          ...(() => {
+            const { assignedToDisplay, assignmentDetails } =
+              formatAssignments(ticket.assignedTo);
+            return {
+              assignedTo: assignedToDisplay,
+              assignedToDetails: assignmentDetails,
+            };
+          })(),
+        };
 
-          return escalatedTicket;
-        });
+        return escalatedTicket;
+      });
   };
 
   const rows = isLoading ? [] : transformTicketsData(escalatedTickets);
@@ -376,6 +377,15 @@ const EscalatedTickets = ({ title, departmentId }) => {
                 title="Escalated At"
                 detail={formatDateTime(selectedTicket?.escalatedAt)}
               />
+              {selectedTicket?.image && (
+                <div className="lg:col-span-1">
+                  <img
+                    src={selectedTicket.image}
+                    alt="Escalated Ticket Attachment"
+                    className="max-w-full max-h-96 rounded border"
+                  />
+                </div>
+              )}
             </div>
           )}
         </MuiModal>

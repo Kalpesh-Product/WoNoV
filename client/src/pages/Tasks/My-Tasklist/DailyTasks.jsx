@@ -32,6 +32,13 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
 
 const DailyTasks = () => {
+  const taskFormDefaultValues = {
+    taskName: "",
+    startDate: null,
+    endDate: null,
+    description: "",
+    dueTime: null,
+  };
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const [openModal, setOpenModal] = useState(false);
@@ -51,14 +58,10 @@ const DailyTasks = () => {
     control,
     formState: { errors },
     watch,
+    reset,
   } = useForm({
     mode: "onChange",
-    defaultValues: {
-      taskName: "",
-      startDate: null,
-      endDate: null,
-      description: "",
-    },
+    defaultValues: taskFormDefaultValues,
   });
   const startDate = watch("startDate");
 
@@ -103,6 +106,7 @@ const DailyTasks = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchMyTask"] });
       toast.success(data.message || "KRA Added");
+      reset(taskFormDefaultValues);
       setOpenModal(false);
     },
     onError: (error) => {
@@ -359,6 +363,7 @@ const DailyTasks = () => {
               tableTitle={`MY TASKS`}
               buttonTitle={"Add Task"}
               handleSubmit={() => {
+                reset(taskFormDefaultValues);
                 setModalMode("add-task");
                 setOpenModal(true);
               }}
