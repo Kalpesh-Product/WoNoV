@@ -442,6 +442,7 @@ const MeetingFormLayout = () => {
             <CircularProgress color="#1E3D73" />
           </div>
         ) : (
+          //month view removed
           <FullCalendar
             allDayText="All Day"
             allDaySlot={false} // 🔴 This removes the "All-day" tab in timeGrid views

@@ -372,9 +372,9 @@ const ExternalClients = () => {
         //   ? dayjs(data.checkOutRaw).toISOString()
         //   : null,
         checkOut: combinedCheckout ? combinedCheckout.toISOString() : null,
-        paymentStatus: data.paymentStatus,
+        // paymentStatus: data.paymentStatus,
         paymentAmount: data.paymentAmount,
-        paymentMode: data.paymentMode,
+        // paymentMode: data.paymentMode,
         brandName: data.brandName,
         registeredClientCompany: data.registeredClientCompany,
         checkOutBy: checkOutByName,
