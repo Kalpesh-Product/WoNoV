@@ -448,9 +448,11 @@ const MeetingFormLayout = () => {
             key={events.length}
             headerToolbar={{
               left: "prev title next",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
+              // right: "dayGridMonth,timeGridWeek,timeGridDay",
+              right: "timeGridWeek,timeGridDay",
             }}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            // plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            plugins={[timeGridPlugin, interactionPlugin]}
             initialView="timeGridDay"
             contentHeight={555}
             dayMaxEvents={2}
@@ -692,9 +694,8 @@ const MeetingFormLayout = () => {
                         size="small"
                         value={`${auth.user?._id} `}
                         disabled
-                        label={`${
-                          isReceptionist ? "Receptionist" : "Booked By"
-                        }`}
+                        label={`${isReceptionist ? "Receptionist" : "Booked By"
+                          }`}
                       />
                     )}
                   />
@@ -772,9 +773,8 @@ const MeetingFormLayout = () => {
                           getOptionLabel={(user) =>
                             isBizNest
                               ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
-                              : `${user.employeeName ?? ""} (${
-                                  user.clientName ?? ""
-                                })`
+                              : `${user.employeeName ?? ""} (${user.clientName ?? ""
+                              })`
                           }
                           onFocus={() => setShouldFetchParticipants(true)}
                           value={participantOptions.filter((user) =>
@@ -789,12 +789,10 @@ const MeetingFormLayout = () => {
                                 key={user._id}
                                 label={
                                   isBizNest
-                                    ? `${user.firstName ?? ""} ${
-                                        user.lastName ?? ""
-                                      }`
-                                    : `${user.employeeName ?? ""} (${
-                                        user.clientName ?? ""
-                                      })`
+                                    ? `${user.firstName ?? ""} ${user.lastName ?? ""
+                                    }`
+                                    : `${user.employeeName ?? ""} (${user.clientName ?? ""
+                                    })`
                                 }
                                 {...getTagProps({ index })}
                                 deleteIcon={<IoMdClose />}
@@ -857,9 +855,9 @@ const MeetingFormLayout = () => {
                           (item) =>
                             item.visitorFlag === "Client" &&
                             item.clientCompany ===
-                              externalUsers.find(
-                                (v) => v._id === externalCompany
-                              )?.clientCompany
+                            externalUsers.find(
+                              (v) => v._id === externalCompany
+                            )?.clientCompany
                         )}
                         getOptionLabel={(user) =>
                           `${user.firstName} ${user.lastName}`
@@ -867,9 +865,8 @@ const MeetingFormLayout = () => {
                         onChange={(_, newValue) =>
                           field.onChange(
                             newValue.map((user) => ({
-                              name: `${user.firstName ?? ""} ${
-                                user.lastName ?? ""
-                              }`.trim(),
+                              name: `${user.firstName ?? ""} ${user.lastName ?? ""
+                                }`.trim(),
                               mobileNumber: user.mobileNumber,
                             }))
                           )
