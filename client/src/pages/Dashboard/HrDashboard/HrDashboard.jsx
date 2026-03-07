@@ -36,9 +36,9 @@ import { PERMISSIONS } from "./../../../constants/permissions";
 const HrDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const dispatch = useDispatch();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const [selectedHrFiscalYear, setSelectedHrFiscalYear] =
-    useState("FY 2024-25");
+    useState("FY 2025-26");
 
   const [budgetData, setBudgetData] = useState({});
   const [totalSalary, setTotalSalary] = useState({});

@@ -57,7 +57,7 @@ const FyBarGraphCount = ({
   const [selectedFY, setSelectedFY] = useState("");
   useEffect(() => {
     if (fyOptions.length > 0 && !selectedFY) {
-      setSelectedFY(fyOptions[0]);
+      setSelectedFY(fyOptions[fyOptions.length - 1]);
     }
   }, [fyOptions, selectedFY]);
 

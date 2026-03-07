@@ -6,6 +6,26 @@ const BreadCrumbComponent = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const formatLabel = (value) => {
+    const acronymMap = {
+      amc: "AMC",
+      biz: "BIZ",
+    };
+
+    return decodeURIComponent(value)
+      .replace(/-/g, " ")
+      .split(" ")
+      .map((word) => {
+        const normalizedWord = word.toLowerCase();
+        if (acronymMap[normalizedWord]) {
+          return acronymMap[normalizedWord];
+        }
+
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(" ");
+  };
+
   // Extract query parameters
   const searchParams = new URLSearchParams(location.search);
 
@@ -17,10 +37,10 @@ const BreadCrumbComponent = () => {
     location.pathname === "/app/dashboard"
       ? ["dashboard"]
       : location.pathname
-          .split("/")
-          .filter(
-            (segment) => segment && segment !== "app" && segment !== "dashboard"
-          );
+        .split("/")
+        .filter(
+          (segment) => segment && segment !== "app" && segment !== "dashboard"
+        );
 
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {
@@ -40,15 +60,7 @@ const BreadCrumbComponent = () => {
     // .replace(/-/g, " ")
     // .replace(/\b\w/g, (char) => char.toUpperCase());
 
-    const displayText = decodeURIComponent(segment)
-      .replace(/-/g, " ")
-      .split(" ")
-      .map((word) =>
-        word.toLowerCase() === "amc"
-          ? "AMC"
-          : word.charAt(0).toUpperCase() + word.slice(1)
-      )
-      .join(" ");
+    const displayText = formatLabel(segment);
 
     return isLast ? (
       <Typography key={index} color="text.primary">
@@ -71,7 +83,7 @@ const BreadCrumbComponent = () => {
   queryParamEntries.forEach(([key, value], index) => {
     breadcrumbs.push(
       <Typography key={`param-${index}`} color="text.primary">
-        {`${value}`}
+        {formatLabel(value)}
       </Typography>
     );
   });

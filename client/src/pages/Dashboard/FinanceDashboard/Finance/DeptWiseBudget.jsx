@@ -15,7 +15,7 @@ import { CircularProgress } from "@mui/material";
 const DeptWiseBudget = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
 
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["allBudgets"],

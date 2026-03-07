@@ -39,6 +39,7 @@ const SalesMixBag = () => {
     {
       title: "External Client",
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client",
+      permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MIX_BAG.value,
     }
   ];
 

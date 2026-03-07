@@ -765,6 +765,7 @@ export const PERMISSIONS = {
   SALES_CLIENTS_MIX_BAG: { value: "sales_clients_mix_bag_card", title: "CLIENTS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/clients" },
   SALES_DESKS_MIX_BAG: { value: "sales_desks_mix_bag_card", title: "DESKS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/desks" },
   SALES_MANAGE_UNITS_MIX_BAG: { value: "sales_manage_units_mix_bag_card", title: "MANAGE UNITS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/manage-units" },
+  SALES_EXTERNAL_CLIENT_MIX_BAG: { value: "sales_external_client_mix_bag_card", title: "EXTERNAL CLIENT", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/external-client" },
 
   SALES_DATA: { value: "sales_data_card", title: "DATA", type: "read" },
   SALES_SETTINGS: { value: "sales_settings_card", title: "SETTINGS", type: "read" },

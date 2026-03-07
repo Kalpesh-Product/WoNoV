@@ -226,7 +226,7 @@ const StatutoryPayments = () => {
     <div className="flex flex-col gap-4">
       <WidgetSection
         border
-        title={"Statutory Payments FY 2024-25"}
+        title={"Statutory Payments FY 2025-26"}
         TitleAmount={`INR ${inrFormat(grandTotal)}`}
       >
         <BarGraph data={barGraphData} options={barGraphOptions} />
@@ -238,7 +238,7 @@ const StatutoryPayments = () => {
         dateColumn={"dueDate"}
         totalKey="actualAmount"
         columns={kraColumn}
-        tableTitle={"Statutory Payments FY 2024-25"}
+        tableTitle={"Statutory Payments FY 2025-26"}
       />
 
       {viewDetails && (

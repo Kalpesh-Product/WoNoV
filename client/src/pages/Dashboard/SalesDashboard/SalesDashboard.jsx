@@ -50,7 +50,7 @@ import {
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
 
   useEffect(() => {
     setIsSidebarOpen(true);

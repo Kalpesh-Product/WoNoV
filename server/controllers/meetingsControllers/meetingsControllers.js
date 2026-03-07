@@ -1228,7 +1228,10 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    if (bookingUserCompany.meetingCreditBalance < addedCredits) {
+    if (
+      meeting.meetingType === "Internal" &&
+      bookingUserCompany.meetingCreditBalance < addedCredits
+    ) {
       throw new CustomError(
         "Insufficient credits to extend this meeting",
         logPath,
