@@ -34,6 +34,22 @@ const ExternalClients = () => {
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
   const [paymentVisitor, setPaymentVisitor] = useState(null);
 
+  const renderFileLink = (fileLink) => {
+    if (!fileLink) return "—";
+
+    return (
+      <a
+        href={fileLink}
+        target="_blank"
+        rel="noreferrer"
+        className="text-primaryBlue underline"
+      >
+        View File
+      </a>
+    );
+  };
+
+
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
@@ -66,6 +82,17 @@ const ExternalClients = () => {
       paymentAmount: 0,
       paymentMode: "",
       brandName: "",
+      gender: "",
+      state: "",
+      city: "",
+      sector: "",
+      gstNumber: "",
+      gstFile: "",
+      panNumber: "",
+      panFile: "",
+      idType: "",
+      idNumber: "",
+      otherFile: "",
       registeredClientCompany: "",
     },
   });
@@ -88,6 +115,17 @@ const ExternalClients = () => {
         checkOutRaw: selectedVisitor?.checkOutRaw
           ? dayjs(selectedVisitor.checkOutRaw)
           : null,
+        gender: selectedVisitor.gender || "",
+        state: selectedVisitor.state || "",
+        city: selectedVisitor.city || "",
+        sector: selectedVisitor.sector || "",
+        gstNumber: selectedVisitor.gstNumber || "",
+        gstFile: selectedVisitor.gstFile || "",
+        panNumber: selectedVisitor.panNumber || "",
+        panFile: selectedVisitor.panFile || "",
+        idType: selectedVisitor.idType || "",
+        idNumber: selectedVisitor.idNumber || "",
+        otherFile: selectedVisitor.otherFile || "",
       });
     }
     setIsEditing(!isEditing);
@@ -454,6 +492,17 @@ const ExternalClients = () => {
                 brandName: item?.brandName || "N/A",
                 visitorCompany: item.visitorCompany || "N/A",
                 visitorType: item.visitorType,
+                gender: item?.gender || "N/A",
+                state: item?.state || item?.hoState || "N/A",
+                city: item?.city || item?.hoCity || "N/A",
+                sector: item?.sector || "N/A",
+                gstNumber: item?.gstNumber || "N/A",
+                gstFile: item?.gstFile?.link || "",
+                panNumber: item?.panNumber || "N/A",
+                panFile: item?.panFile?.link || "",
+                idType: item?.idProof?.idType || "N/A",
+                idNumber: item?.idProof?.idNumber || "N/A",
+                otherFile: item?.otherFile?.link || "",
               })),
           ]}
           columns={visitorsColumns}
@@ -469,6 +518,11 @@ const ExternalClients = () => {
           <form onSubmit={handleSubmit(submit)}>
             {!isVisitorsData ? (
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
+                {!isEditing && (
+                  <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2">
+                    Client Details
+                  </div>
+                )}
                 {/* First Name */}
                 {isEditing ? (
                   <Controller
@@ -554,6 +608,13 @@ const ExternalClients = () => {
                   />
                 )}
 
+                {!isEditing && (
+                  <DetalisFormatted
+                    title="Gender"
+                    detail={selectedVisitor.gender}
+                  />
+                )}
+
 
 
                 {/* Purpose of Visit */}
@@ -575,6 +636,12 @@ const ExternalClients = () => {
                     title="Purpose of Visit"
                     detail={selectedVisitor.purposeOfVisit}
                   />
+                )}
+
+                {!isEditing && (
+                  <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2 pt-2">
+                    Company Details
+                  </div>
                 )}
                 {/* Brand name */}
                 {isEditing ? (
@@ -616,6 +683,49 @@ const ExternalClients = () => {
                     detail={selectedVisitor.registeredClientCompany}
                   />
                 )}
+
+                {!isEditing && (
+                  <>
+                    <DetalisFormatted title="State" detail={selectedVisitor.state} />
+                    <DetalisFormatted title="City" detail={selectedVisitor.city} />
+                    <DetalisFormatted title="Sector" detail={selectedVisitor.sector} />
+                    <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2 pt-2">
+                      GST
+                    </div>
+                    <DetalisFormatted
+                      title="GST Number"
+                      detail={selectedVisitor.gstNumber}
+                    />
+                    <DetalisFormatted
+                      title="Upload File"
+                      detail={renderFileLink(selectedVisitor.gstFile)}
+                    />
+                    <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2 pt-2">
+                      Verification
+                    </div>
+                    <DetalisFormatted
+                      title="PAN Number"
+                      detail={selectedVisitor.panNumber}
+                    />
+                    <DetalisFormatted
+                      title="Upload File"
+                      detail={renderFileLink(selectedVisitor.panFile)}
+                    />
+                    <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2 pt-2">
+                      Others
+                    </div>
+                    <DetalisFormatted title="ID Type" detail={selectedVisitor.idType} />
+                    <DetalisFormatted
+                      title="ID Number"
+                      detail={selectedVisitor.idNumber}
+                    />
+                    <DetalisFormatted
+                      title="Upload File"
+                      detail={renderFileLink(selectedVisitor.otherFile)}
+                    />
+                  </>
+                )}
+
 
                 {/* date of visit */}
                 {isEditing ? (
@@ -713,40 +823,14 @@ const ExternalClients = () => {
                   />
                 )}
                 {/* payment status */}
-                {isEditing ? (
-                  <Controller
-                    name="paymentStatus"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Payment Status"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
+                {!isEditing && (
                   <DetalisFormatted
                     title="Payment Status"
                     detail={selectedVisitor?.paymentStatus}
                   />
                 )}
                 {/* payment mode */}
-                {isEditing ? (
-                  <Controller
-                    name="paymentMode"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Payment Mode"
-                        fullWidth
-                      />
-                    )}
-                  />
-                ) : (
+                {!isEditing && (
                   <DetalisFormatted
                     title="Payment Mode"
                     detail={selectedVisitor?.paymentMode}
