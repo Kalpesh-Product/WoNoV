@@ -30,7 +30,7 @@ const DeptWiseBudgetDetails = () => {
     },
   });
   const deptId = location.state?.deptId;
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const deptName = location.state?.deptName;
   const { data: departmentBudget = [], isPending: isBudgetLoading } = useQuery({
     queryKey: ["departmentBudget"],

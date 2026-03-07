@@ -27,7 +27,7 @@ const HrLeaves = () => {
     },
   ];
 
-  const [selectedFY, setSelectedFY] = useState(fyOptions[0]);
+  const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
   const [currentMonth, setCurrentMonth] = useState(selectedFY.start);
 
   const { data: attendanceData = {}, isLoading } = useQuery({

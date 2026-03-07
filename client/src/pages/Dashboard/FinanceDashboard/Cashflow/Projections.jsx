@@ -38,7 +38,7 @@ const Projections = () => {
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
-  const fiscalYears = ["FY 2024-25", "FY 2025-26"];
+  const fiscalYears = ["FY 2025-26", "FY 2025-26"];
   const [selectedYearIndex, setSelectedYearIndex] = useState(0);
   const selectedYear = fiscalYears[selectedYearIndex];
 
@@ -70,7 +70,7 @@ const Projections = () => {
   const projectionData = [
     {
       name: "Projections",
-      group: "FY 2024-25",
+      group: "FY 2025-26",
       data: monthlyIncomeExpense.map((m) => m.expense), // or .income if needed
     },
   ];
@@ -216,7 +216,7 @@ const Projections = () => {
         <WidgetSection
           border
           title={`Total Monthly P&L`}
-          titleLabel={"FY 2024-25"}
+          titleLabel={"FY 2025-26"}
           // TitleAmount={`INR ${totalPnL.toLocaleString()}`}
           TitleAmount={`INR 0`}
         >

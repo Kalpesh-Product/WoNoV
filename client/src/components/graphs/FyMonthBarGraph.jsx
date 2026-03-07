@@ -43,7 +43,7 @@ const FyMonthBarGraph = ({
   const [selectedMonth, setSelectedMonth] = useState("");
 
   useEffect(() => {
-    if (fyOptions.length > 0 && !selectedFY) setSelectedFY(fyOptions[0]);
+    if (fyOptions.length > 0 && !selectedFY) setSelectedFY(fyOptions[fyOptions.length - 1]);
   }, [fyOptions, selectedFY]);
 
   const fyFilteredData = useMemo(() => {
@@ -135,9 +135,8 @@ const FyMonthBarGraph = ({
           return `
       <div style="padding: 8px;">
         <div class="apexcharts-tooltip-title" style="font-weight: 300; margin-bottom: 4px; width : 200px"> ${label}</div>
-        <div">       <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
-          w.globals.colors[0]
-        }; display: inline-block;"></span> INR ${inrFormat(value)}</div>
+        <div">       <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[0]
+            }; display: inline-block;"></span> INR ${inrFormat(value)}</div>
       </div>
     `;
         },

@@ -12,7 +12,7 @@ import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentag
 
 const TotalRevenue = () => {
   const axios = useAxiosPrivate();
-  const [selectedYear, setSelectedYear] = useState("2024-25");
+  const [selectedYear, setSelectedYear] = useState("2025-26");
 
   const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
     queryKey: ["totalRevenue"],

@@ -251,7 +251,7 @@ const Collections = () => {
       <WidgetSection
         layout={1}
         title={"COLLECTIONS"}
-        titleLabel={"FY 2024-25"}
+        titleLabel={"FY 2025-26"}
         TitleAmount={`INR ${inrFormat(grandTotal)}`}
         border
       >

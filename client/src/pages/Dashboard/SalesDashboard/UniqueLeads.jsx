@@ -27,7 +27,7 @@ const UniqueLeads = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState([]);
 
-  const [selectedFY, setSelectedFY] = useState("FY 2024-25");
+  const [selectedFY, setSelectedFY] = useState("FY 2025-26");
   const [selectedMonth, setSelectedMonth] = useState(queryMonth || "Apr-24");
 
   const [viewType, setViewType] = useState("month"); // 'month' or 'year'
