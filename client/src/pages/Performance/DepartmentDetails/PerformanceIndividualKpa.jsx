@@ -308,7 +308,7 @@ const PerformanceIndividualKpa = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 checkbox={showCheckBox}
-                                tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
+                                tableTitle={`${department} INDIVIDUAL - MONTHLY KPA`}
                                 buttonTitle={"Add Monthly KPA"}
                                 // buttonDisabled={isAddKpaDisabled}
                                 handleSubmit={() => setOpenModal(true)}
@@ -340,7 +340,7 @@ const PerformanceIndividualKpa = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 exportData={true}
-                                tableTitle={`COMPLETED - MONTHLY KPA`}
+                                tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA`}
                                 key={completedEntries.length}
                                 data={[
                                     ...completedEntries.map((item, index) => ({
