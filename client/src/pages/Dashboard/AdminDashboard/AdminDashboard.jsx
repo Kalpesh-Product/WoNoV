@@ -245,10 +245,7 @@ const AdminDashboard = () => {
     queryKey: ["units-data"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/company/fetch-simple-units
-          `
-        );
+        const response = await axios.get("/api/company/fetch-simple-units");
         return response.data;
       } catch (error) {
         throw new Error("Error fetching data");
