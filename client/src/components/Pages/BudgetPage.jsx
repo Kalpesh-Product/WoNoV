@@ -24,7 +24,7 @@ const BudgetPage = () => {
   const location = useLocation();
   const department = usePageDepartment();
   const queryClient = useQueryClient();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const departmentAccess = ["67b2cf85b9b6ed5cedeb9a2e"];
 
   const isTop = auth.user.departments.some((item) => {

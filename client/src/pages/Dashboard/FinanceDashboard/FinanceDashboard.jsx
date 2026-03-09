@@ -38,7 +38,7 @@ const FinanceDashboard = () => {
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
   const navigate = useNavigate();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
 
   //------------------------PAGE ACCESS CARD START-------------------//
   const cardsConfig = [

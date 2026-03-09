@@ -404,7 +404,7 @@ const CheckAvailability = () => {
         layout={1}
         border
         normalCase={true}
-        title={"TOTAL v/s OCCUPIED FY 2024-25"}
+        title={"TOTAL v/s OCCUPIED FY 2025-26"}
       >
         {chartData.length > 0 ? (
           <NormalBarGraph

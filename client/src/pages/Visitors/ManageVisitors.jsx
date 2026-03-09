@@ -130,9 +130,9 @@ const ManageVisitors = () => {
       headerName: "Check In",
       cellRenderer: (params) => humanTime(params.value),
     },
-    { field: "checkInBy", headerName: "Check In By" },
+    // { field: "checkInBy", headerName: "Check In By" },
     { field: "checkOut", headerName: "Check Out" },
-    { field: "checkOutBy", headerName: "Check Out By" },
+    // { field: "checkOutBy", headerName: "Check Out By" },
     {
       field: "actions",
       headerName: "Actions",
@@ -188,10 +188,14 @@ const ManageVisitors = () => {
                   ? item?.clientToMeet?.employeeName
                   : "",
               checkIn: item.checkIn,
-              checkInBy: item.checkInBy,
+              checkInBy: item.checkedInBy
+                ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
+                : "-",
               checkOut: item.checkOut ? humanTime(item.checkOut) : "",
               checkOutRaw: item.checkOut,
-              checkOutBy: item.checkOutBy,
+              checkOutBy: item.checkedOutBy
+                ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
+                : "-",
             }))}
           columns={visitorsColumns}
         />

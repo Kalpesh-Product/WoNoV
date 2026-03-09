@@ -96,7 +96,7 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
         border
         padding
         title={"Unique Clients"}
-        titleLabel="FY 2024-25"
+        titleLabel="FY 2025-26"
         TitleAmount={additionalData || ""}
       >
         <div className="p-1"></div>

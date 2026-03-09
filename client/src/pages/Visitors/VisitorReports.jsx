@@ -78,10 +78,17 @@ const VisitorReports = () => {
       field: "checkInTime",
       headerName: "Check In Time",
     },
-
+    {
+      field: "checkInBy",
+      headerName: "Checked In By",
+    },
     {
       field: "checkOutTime",
       headerName: "Check Out Time",
+    },
+    {
+      field: "checkOutBy",
+      headerName: "Checked Out By",
     },
 
     // {
@@ -157,9 +164,15 @@ const VisitorReports = () => {
       checkIn: visitor.checkIn,
       checkInDate: visitor.checkIn,
       checkInTime: visitor.checkIn,
+      checkInBy: visitor.checkedInBy
+        ? `${visitor.checkedInBy.firstName} ${visitor.checkedInBy.lastName}`
+        : "-",
       checkOut: visitor.checkOut,
       checkOutDate: visitor.checkOut,
       checkOutTime: visitor.checkOut,
+      checkOutBy: visitor.checkedOutBy
+        ? `${visitor.checkedOutBy.firstName} ${visitor.checkedOutBy.lastName}`
+        : "-",
       rawData: visitor, // Pass full object for modal
       visitorFlag: visitor.visitorFlag || "-",
       visitorType: visitor.visitorType || "-",
@@ -320,8 +333,16 @@ const VisitorReports = () => {
               detail={selectedVisitor.checkInTime}
             />
             <DetalisFormatted
+              title="Checked In By"
+              detail={selectedVisitor.checkInBy}
+            />
+            <DetalisFormatted
               title="Check Out"
               detail={selectedVisitor.checkOutTime}
+            />
+            <DetalisFormatted
+              title="Checked Out By"
+              detail={selectedVisitor.checkOutBy}
             />
             <DetalisFormatted
               title="Date of Visit"

@@ -29,7 +29,7 @@ import { PERMISSIONS } from "../../../constants/permissions";
 const FrontendDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const [isReady, setIsReady] = useState(false);
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
@@ -69,12 +69,7 @@ const FrontendDashboard = () => {
     }
   }, [isHrLoading]);
 
-  const expenseRawSeries = useMemo(() => {
-    // Initialize monthly buckets
-    const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
-    );
-
+    const expenseRawSeries = useMemo(() => {
     const fyData = {
       "FY 2024-25": Array(12).fill(0),
       "FY 2025-26": Array(12).fill(0),
@@ -83,21 +78,17 @@ const FrontendDashboard = () => {
     hrFinance.forEach((item) => {
       const date = dayjs(item.dueDate);
       const year = date.year();
-      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+      const monthIndex = date.month();
 
       if (year === 2024 && monthIndex >= 3) {
-        // Apr 2024 to Dec 2024 (month 3 to 11)
         fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
       } else if (year === 2025) {
         if (monthIndex <= 2) {
-          // Jan to Mar 2025 (months 0–2)
           fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
         } else if (monthIndex >= 3) {
-          // Apr 2025 to Dec 2025 (months 3–11)
           fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
         }
       } else if (year === 2026 && monthIndex <= 2) {
-        // Jan to Mar 2026
         fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
       }
     });
@@ -453,7 +444,7 @@ const FrontendDashboard = () => {
       layout: 1,
       border: true,
       title: "Site Visitors",
-      titleLabel: "FY 2024-25",
+      titleLabel: "FY 2025-26",
       data: [],
       options: siteVisitorOptions,
     },
@@ -650,3 +641,5 @@ const FrontendDashboard = () => {
 };
 
 export default FrontendDashboard;
+
+

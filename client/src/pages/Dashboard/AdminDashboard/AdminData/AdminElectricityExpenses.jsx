@@ -23,7 +23,7 @@ const AdminElectricityExpenses = () => {
   const location = useLocation();
   const department = usePageDepartment();
   const queryClient = useQueryClient();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
     "6798bab9e469e809084e249e",
@@ -90,8 +90,8 @@ const AdminElectricityExpenses = () => {
     new Map(
       units.length > 0
         ? units
-            .filter((loc) => loc.building && loc.building._id)
-            .map((loc) => [loc.building._id, loc.building.buildingName])
+          .filter((loc) => loc.building && loc.building._id)
+          .map((loc) => [loc.building._id, loc.building.buildingName])
         : []
     ).entries()
   );
@@ -150,7 +150,7 @@ const AdminElectricityExpenses = () => {
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
-      unitNo : item.unit?.unitNo,
+      unitNo: item.unit?.unitNo,
       projectedAmount: item?.projectedAmount?.toFixed(2),
       actualAmount: inrFormat(item?.actualAmount || 0),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
@@ -173,7 +173,7 @@ const AdminElectricityExpenses = () => {
       }));
       const transformedCols = [
         { field: "srNo", headerName: "Sr No", width: 100 },
-        {field : "unitNo", headerName: "Unit No", width: 100 },
+        { field: "unitNo", headerName: "Unit No", width: 100 },
         ...data.tableData.columns,
       ];
 
@@ -330,8 +330,8 @@ const AdminElectricityExpenses = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData
-               ).toLocaleString("en-IN")}</div>
+          rawData
+        ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -448,10 +448,10 @@ const AdminElectricityExpenses = () => {
                   {locationsLoading
                     ? []
                     : uniqueBuildings.map((building) => (
-                        <MenuItem key={building[0]} value={building[1]}>
-                          {building[1]}
-                        </MenuItem>
-                      ))}
+                      <MenuItem key={building[0]} value={building[1]}>
+                        {building[1]}
+                      </MenuItem>
+                    ))}
                 </Select>
               </FormControl>
             )}
@@ -471,14 +471,14 @@ const AdminElectricityExpenses = () => {
                   {locationsLoading
                     ? []
                     : units.map((unit) =>
-                        unit.building.buildingName === selectedBuilding ? (
-                          <MenuItem key={unit._id} value={unit._id}>
-                            {unit.unitNo}
-                          </MenuItem>
-                        ) : (
-                          <></>
-                        )
-                      )}
+                      unit.building.buildingName === selectedBuilding ? (
+                        <MenuItem key={unit._id} value={unit._id}>
+                          {unit.unitNo}
+                        </MenuItem>
+                      ) : (
+                        <></>
+                      )
+                    )}
                 </Select>
               </FormControl>
             )}

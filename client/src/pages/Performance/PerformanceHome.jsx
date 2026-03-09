@@ -31,7 +31,7 @@ const PerformanceHome = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get("api/performance/get-depts-tasks");
+      const response = await axios.get("/api/performance/get-depts-tasks");
       return response.data;
     } catch (error) {
       console.error("Error fetching data:", error);

@@ -600,6 +600,7 @@ const RaiseTicket = () => {
                   description: ticket.description,
                   ticketTitle: ticket.ticket,
                   status: ticket.status,
+                  closingRemark: ticket.closingRemark,
                   acceptedBy: ticket?.acceptedBy
                     ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
                     : "None",
@@ -694,6 +695,10 @@ const RaiseTicket = () => {
             detail={formatDateTime(viewTicketDetails?.closedAt)}
           />
           <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
+          <DetalisFormatted
+            title="Closing Remark"
+            detail={viewTicketDetails?.closingRemark}
+          />
           {viewTicketDetails.image && (
             <div className="lg:col-span-1">
               <img

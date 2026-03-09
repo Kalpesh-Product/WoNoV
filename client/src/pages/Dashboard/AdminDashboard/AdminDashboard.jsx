@@ -39,7 +39,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];

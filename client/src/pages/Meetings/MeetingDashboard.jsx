@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { RiArchiveDrawerLine, RiPagesLine } from "react-icons/ri";
 import { MdFormatListBulleted } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
@@ -28,7 +28,8 @@ const MeetingDashboard = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const { auth } = useAuth();
-  const [selectedFY, setSelectedFY] = useState("FY 2024-25");
+  const [selectedFY, setSelectedFY] = useState("FY 2025-26");
+  const [currentTime, setCurrentTime] = useState(dayjs());
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
   //------------------------PAGE ACCESS-------------------//
@@ -53,9 +54,11 @@ const MeetingDashboard = () => {
       const response = await axios.get("/api/meetings/get-meetings");
       return response.data;
     },
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
 
-  const now = dayjs();
+  // const now = dayjs();
 
   const { data: roomsData = [], isLoading: isRoomLoading } = useQuery({
     queryKey: ["rooms"],
@@ -63,7 +66,18 @@ const MeetingDashboard = () => {
       const response = await axios.get("/api/meetings/get-rooms");
       return response.data;
     },
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(dayjs());
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
 
   const { data: holidaysData = [], isLoading: isHolidaysLoading } = useQuery({
     queryKey: ["holidays"],
@@ -164,28 +178,16 @@ const MeetingDashboard = () => {
   // Total duration in hours
   const totalDurationInHours = calculateTotalDurationInHours(meetingsData);
   // Fetch internal meetings
-  const { data: meetingsInternal = [] } = useQuery({
-    queryKey: ["meetings"],
-    queryFn: async () => {
-      const response = await axios.get("/api/meetings/get-meetings");
-      const filtered = response.data.filter(
-        (item) => item.meetingType === "Internal"
-      );
-      return filtered;
-    },
-  });
+  const meetingsInternal = useMemo(
+    () => meetingsData.filter((item) => item.meetingType === "Internal"),
+    [meetingsData]
+  );
 
   // Fetch external meetings
-  const { data: meetingsExternal = [] } = useQuery({
-    queryKey: ["meetingsExternal"],
-    queryFn: async () => {
-      const response = await axios.get("/api/meetings/get-meetings");
-      const filtered = response.data.filter(
-        (item) => item.meetingType === "External"
-      );
-      return filtered;
-    },
-  });
+  const meetingsExternal = useMemo(
+    () => meetingsData.filter((item) => item.meetingType === "External"),
+    [meetingsData]
+  );
 
   const meetingColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -360,24 +362,28 @@ const MeetingDashboard = () => {
   // ];
 
   // 🔁 Transform API response into availabilityRooms format
-  const availabilityRooms = roomsData.map((room, index) => {
-    const roomName = room.name;
+  const availabilityRooms = useMemo(
+    () =>
+      roomsData.map((room, index) => {
+        const roomName = room.name;
 
-    // Check if any current meeting is ongoing for this room
-    const hasOngoingMeeting = meetingsData.some((meeting) => {
-      return (
-        meeting.roomName === roomName &&
-        now.isAfter(dayjs(meeting.startTime)) &&
-        now.isBefore(dayjs(meeting.endTime))
-      );
-    });
+        // Check if any current meeting is ongoing for this room
+        const hasOngoingMeeting = meetingsData.some((meeting) => {
+          return (
+            meeting.roomName === roomName &&
+            currentTime.isAfter(dayjs(meeting.startTime)) &&
+            currentTime.isBefore(dayjs(meeting.endTime))
+          );
+        });
 
-    return {
-      roomID: index + 1,
-      roomName,
-      status: hasOngoingMeeting ? "Unavailable" : "Available",
-    };
-  });
+        return {
+          roomID: index + 1,
+          roomName,
+          status: hasOngoingMeeting ? "Unavailable" : "Available",
+        };
+      }),
+    [roomsData, meetingsData, currentTime]
+  );
 
   const availableRooms = availabilityRooms.filter(
     (r) => r.status === "Available"
@@ -977,10 +983,12 @@ const MeetingDashboard = () => {
       key: "bizNestBookings",
       title: "Total",
       data:
-        meetingsData.filter((item) => item.meetingType === "Internal" && item.client === "BIZ Nest").length ||
-        0,
+        meetingsData.filter(
+          (item) => item.meetingType === "Internal" && item.client === "BIZ Nest"
+        ).length || 0,
       description: "BIZ Nest Bookings",
       route: "reports",
+      onClick: () => navigate("reports?source=biz-nest"),
       permission: PERMISSIONS.MEETINGS_BIZ_NEST_BOOKINGS.value,
     },
     {
@@ -1197,6 +1205,7 @@ const MeetingDashboard = () => {
           data={card.data}
           description={card.description}
           route={card.route}
+          onClick={card.onClick}
         />
       )),
     },

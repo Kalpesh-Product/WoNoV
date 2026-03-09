@@ -68,7 +68,7 @@ const groupByMonth = (data) => {
 const ActualBusinessRevenue = () => {
   const axios = useAxiosPrivate();
   const [selectedMonth, setSelectedMonth] = useState(months[0]);
-  const [selectedFY, setSelectedFY] = useState(fyOptions[0].value);
+  const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1].value);
 
   const { data: totalRevenue = [], isLoading: isTotalRevenue } = useQuery({
     queryKey: ["totalRevenue"],
@@ -220,7 +220,7 @@ const ActualBusinessRevenue = () => {
 
           <WidgetSection
             border
-            title={`Vertical-wise Revenue Breakdown FY 2024-25`}
+            title={`Vertical-wise Revenue Breakdown FY 2025-26`}
             TitleAmount={`INR ${inrFormat(
               selectedMonthData.reduce((sum, d) => sum + d.revenue, 0)
             )}`}

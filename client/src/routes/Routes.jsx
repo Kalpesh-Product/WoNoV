@@ -139,6 +139,10 @@ import SalesPayment from "../pages/Dashboard/SalesDashboard/SalesFinance/SalesPa
 import UniqueClients from "../pages/Dashboard/SalesDashboard/UniqueClients";
 import MemberDetails from "../pages/Dashboard/SalesDashboard/ViewClients/MemberDetails";
 import SalesMixBag from "../pages/Dashboard/SalesDashboard/SalesMixBag";
+import ExternalClient from "../pages/Dashboard/SalesDashboard/ExternalClient";
+import ExternalClientCompanies from "../pages/Dashboard/SalesDashboard/ExternalClientCompanies";
+import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClientLayout";
+import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalCompanyMeetings";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
@@ -319,6 +323,10 @@ import PerformanceLayout from "../pages/Performance/PerformanceLayout";
 import PerformanceHome from "../pages/Performance/PerformanceHome";
 import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerformanceLayout";
 import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKra";
+import PerformanceIndividualKra from "../pages/Performance/DepartmentDetails/PerformanceIndividualKra";
+import PerformanceIndividualKpa from "../pages/Performance/DepartmentDetails/PerformanceIndividualKpa";
+import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
+import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
 import PerformanceAnnual from "../pages/Performance/DepartmentDetails/PerformanceAnnual";
 import PerformanceMonthly from "../pages/Performance/DepartmentDetails/PerformanceMonthly";
 import DepartmentTasksLayout from "../pages/Tasks/DepartmentTasks/DepartmentTasksLayout";
@@ -1563,6 +1571,36 @@ export const routes = createBrowserRouter([
                         element: <ManageUnit />,
                       },
                       {
+                        path: "mix-bag/external-client",
+                        element: <ExternalClient />,
+                      },
+                      {
+                        path: "mix-bag/external-client/meetings/external-companies",
+                        element: <ExternalClientCompanies />,
+                      },
+                      {
+                        path: "mix-bag/external-client/meetings/external-companies/:clientName",
+                        element: <ExternalClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <ClientDetails />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <ExternalCompanyMeetings />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <ClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ClientMembers />,
+                          },
+                        ],
+                      },
+                      {
                         path: "data",
                         element: <SalesDataCard />,
                         children: [
@@ -2208,6 +2246,22 @@ export const routes = createBrowserRouter([
                       {
                         path: "monthly-KPA",
                         element: <PerformanceMonthly />,
+                      },
+                      {
+                        path: "individual-Daily-KRA",
+                        element: <PerformanceIndividualKra />,
+                      },
+                      {
+                        path: "individual-Monthly-KPA",
+                        element: <PerformanceIndividualKpa />,
+                      },
+                      {
+                        path: "team-Daily-KRA",
+                        element: <PerformanceTeamKra />,
+                      },
+                      {
+                        path: "team-Monthly-KPA",
+                        element: <PerformanceTeamKpa />,
                       },
                       {
                         path: "annual-KPA",

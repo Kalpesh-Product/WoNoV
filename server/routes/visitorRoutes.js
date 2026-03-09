@@ -7,6 +7,7 @@ const {
   fetchExternalCompanies,
   fetchTeamMembers,
   bulkInsertExternalClients,
+  updateVisitorPayment,
 } = require("../controllers/visitorControllers/visitorController");
 
 router.get("/fetch-visitors", fetchVisitors);
@@ -31,6 +32,11 @@ router.post(
 );
 router.get("/fetch-external-companies", fetchExternalCompanies);
 router.patch("/update-visitor/:visitorId", updateVisitor);
+router.patch(
+  "/payment/:visitorId",
+  upload.single("paymentProof"),
+  updateVisitorPayment,
+);
 router.post(
   "/bulk-upload-external-clients",
   upload.single("external-clients"),

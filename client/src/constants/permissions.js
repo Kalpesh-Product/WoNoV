@@ -134,6 +134,30 @@ export const PERMISSIONS = {
     type: "read",
     route: "monthly-KPA",
   },
+  PERFORMANCE_INDIVIDUAL_KRA: {
+    value: "individual_kra",
+    title: "INDIVIDUAL KRA",
+    type: "read",
+    route: "individual-Daily-KRA",
+  },
+  PERFORMANCE_INDIVIDUAL_KPA: {
+    value: "individual_kpa",
+    title: "INDIVIDUAL KPA",
+    type: "read",
+    route: "individual-Monthly-KPA",
+  },
+  PERFORMANCE_TEAM_KRA: {
+    value: "team_kra",
+    title: "TEAM KRA",
+    type: "read",
+    route: "team-Daily-KRA",
+  },
+  PERFORMANCE_TEAM_KPA: {
+    value: "team_kpa",
+    title: "TEAM KPA",
+    type: "read",
+    route: "team-Monthly-KPA",
+  },
 
   //Tasks Module
   TASKS_OVERALL_AVERAGE_COMPLETION: {
@@ -741,6 +765,42 @@ export const PERMISSIONS = {
   SALES_CLIENTS_MIX_BAG: { value: "sales_clients_mix_bag_card", title: "CLIENTS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/clients" },
   SALES_DESKS_MIX_BAG: { value: "sales_desks_mix_bag_card", title: "DESKS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/desks" },
   SALES_MANAGE_UNITS_MIX_BAG: { value: "sales_manage_units_mix_bag_card", title: "MANAGE UNITS", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/manage-units" },
+  SALES_EXTERNAL_CLIENT_MIX_BAG: { value: "sales_external_client_mix_bag_card", title: "EXTERNAL CLIENT", type: "read", route: "/app/dashboard/sales-dashboard/mix-bag/external-client" },
+  SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES: {
+    value: "sales_external_client_meetings_companies_card",
+    title: "EXTERNAL CLIENT MEETINGS COMPANIES",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
+  },
+  SALES_EXTERNAL_COMPANY_CLIENT_DETAILS: {
+    value: "sales_external_company_client_details_tab",
+    title: "CLIENT DETAILS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/:clientName/client-details",
+  },
+  SALES_EXTERNAL_COMPANY_MEETINGS: {
+    value: "sales_external_company_meetings_tab",
+    title: "MEETINGS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/:clientName/meetings",
+  },
+  SALES_EXTERNAL_COMPANY_REVENUE: {
+    value: "sales_external_company_revenue_tab",
+    title: "REVENUE",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/:clientName/revenue",
+  },
+  SALES_EXTERNAL_COMPANY_MEMBERS: {
+    value: "sales_external_company_members_tab",
+    title: "MEMBERS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/:clientName/members",
+  },
 
   SALES_DATA: { value: "sales_data_card", title: "DATA", type: "read" },
   SALES_SETTINGS: { value: "sales_settings_card", title: "SETTINGS", type: "read" },

@@ -149,7 +149,7 @@ const PerformanceMonthly = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}&type=KPA`
+        `/api/performance/get-tasks?dept=${deptId}&type=KPA`
       );
       return response.data;
     } catch (error) {
@@ -221,23 +221,23 @@ const PerformanceMonthly = () => {
     },
     ...(matchingDepartment
       ? [
-          {
-            headerName: "Actions",
-            field: "actions",
-            cellRenderer: (params) => (
-              <div
-                role="button"
-                onClick={() => updateMonthlyKpa(params.data.mongoId)}
-                className="p-2"
-              >
-                <PrimaryButton
-                  title={"Mark As Done"}
-                  disabled={!params.node.selected}
-                />
-              </div>
-            ),
-          },
-        ]
+        {
+          headerName: "Actions",
+          field: "actions",
+          cellRenderer: (params) => (
+            <div
+              role="button"
+              onClick={() => updateMonthlyKpa(params.data.mongoId)}
+              className="p-2"
+            >
+              <PrimaryButton
+                title={"Mark As Done"}
+                disabled={!params.node.selected}
+              />
+            </div>
+          ),
+        },
+      ]
       : []),
   ];
 
@@ -294,7 +294,7 @@ const PerformanceMonthly = () => {
                 checkbox={showCheckBox}
                 tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
                 buttonTitle={"Add Monthly KPA"}
-                buttonDisabled={isAddKpaDisabled}
+                // buttonDisabled={isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
                 key={departmentKra.length}
                 data={[

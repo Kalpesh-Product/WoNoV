@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const Department = require("../../models/Departments");
 const NewTicketIssue = require("../../models/tickets/NewTicketIssue");
 const { handleFileUpload } = require("../../config/cloudinaryConfig");
-const sharp = require("sharp");
+// const sharp = require("sharp");
 const {
   filterCloseTickets,
   filterAcceptedTickets,
@@ -87,16 +87,20 @@ const raiseTicket = async (req, res, next) => {
     let imageDetails = null;
     if (image) {
       try {
-        const buffer = await sharp(image.buffer)
-          .resize(1200, 800, { fit: "cover" })
-          .webp({ quality: 80 })
-          .toBuffer();
-        const base64Image = `data:image/webp;base64,${buffer.toString(
+        // const buffer = await sharp(image.buffer)
+        //   .resize(1200, 800, { fit: "cover" })
+        //   .webp({ quality: 80 })
+        //   .toBuffer();
+        // const base64Image = `data:image/webp;base64,${buffer.toString(
+        //   "base64",
+        // )}`;
+        const base64Image = `data:${image.mimetype};base64,${image.buffer.toString(
           "base64",
         )}`;
         const uploadedImage = await handleFileUpload(
           base64Image,
           `${foundCompany.companyName}/tickets/${foundDepartment.name}`,
+          { preserveOriginal: true },
         );
 
         imageDetails = {
@@ -173,9 +177,9 @@ const raiseTicket = async (req, res, next) => {
       company: company,
       image: imageDetails
         ? {
-          id: imageDetails.id,
-          url: imageDetails.url,
-        }
+            id: imageDetails.id,
+            url: imageDetails.url,
+          }
         : null, // Store image only if uploaded
     });
 
@@ -301,8 +305,8 @@ const updateOtherTicket = async (req, res, next) => {
     error instanceof CustomError
       ? next(error)
       : next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-      );
+          new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+        );
   }
 };
 
@@ -544,8 +548,9 @@ const getTeamMemberTickets = async (req, res, next) => {
       }).length;
 
       return {
-        name: `${member.firstName} ${member.middleName || ""} ${member.lastName
-          }`.trim(),
+        name: `${member.firstName} ${member.middleName || ""} ${
+          member.lastName
+        }`.trim(),
         _id: member._id,
         department: member.departments.map((dept) => dept.name),
         role: member.role.map((r) => r.roleTitle),
@@ -1508,7 +1513,7 @@ const filterMyTickets = async (req, res, next) => {
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
       .select(
-        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedAt image createdAt closingReason",
+        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image createdAt closedBy closedAt closingRemark",
       )
       .populate([
         {
