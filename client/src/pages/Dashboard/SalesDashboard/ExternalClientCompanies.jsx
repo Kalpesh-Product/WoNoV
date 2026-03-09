@@ -20,29 +20,20 @@ const ExternalClientCompanies = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                // Fetch clients
-                const clientsResponse = await axios.get("/api/sales/co-working-clients");
-                const clients = clientsResponse.data;
-                dispatch(setClientData(clients));
+                // Reuse external clients visitor source and show only meeting-room visitors.
+                const visitorsResponse = await axios.get("/api/visitors/fetch-visitors");
+                const visitors = visitorsResponse.data;
 
-                // Fetch meetings to filter clients
-                const meetingsResponse = await axios.get("/api/meetings/get-meetings");
-                const allMeetings = meetingsResponse.data;
-
-                // Identify clients with at least one external meeting
-                const clientsWithExternalMeetings = clients.filter(client => {
-                    const normalizedName = client.clientName?.trim().toLowerCase();
-                    return allMeetings.some(meeting => {
-                        if (meeting.meetingType !== "External") return false;
-
-                        const extName = (meeting.externalClient || "").trim().toLowerCase();
-                        const intName = (meeting.client || "").trim().toLowerCase();
-
-                        return extName === normalizedName || intName === normalizedName;
-                    });
+                const externalVisitorsForMeetingBooking = visitors.filter((visitor) => {
+                    const isExternalVisitor = visitor.visitorFlag === "Client";
+                    const isMeetingRoomBooking =
+                        (visitor.purposeOfVisit || "").trim().toLowerCase() ===
+                        "meeting room booking";
+                    return isExternalVisitor && isMeetingRoomBooking;
                 });
 
-                setFilteredCompanies(clientsWithExternalMeetings);
+                dispatch(setClientData(externalVisitorsForMeetingBooking));
+                setFilteredCompanies(externalVisitorsForMeetingBooking);
             } catch (error) {
                 console.error("Failed to fetch data", error);
             } finally {
@@ -64,8 +55,8 @@ const ExternalClientCompanies = () => {
     const columns = [
         { field: "id", headerName: "Sr No" },
         {
-            field: "clientName",
-            headerName: "Company Name",
+            field: "name",
+            headerName: "Visitor Name",
             flex: 1,
             cellRenderer: (params) => (
                 <span
@@ -80,6 +71,7 @@ const ExternalClientCompanies = () => {
                 </span>
             ),
         },
+        { field: "visitorCompany", headerName: "Company", flex: 1 },
         {
             field: "status",
             headerName: "Status",
@@ -95,15 +87,17 @@ const ExternalClientCompanies = () => {
                 return <Chip label={status} style={{ backgroundColor, color }} />;
             },
         },
-        { field: "desks", headerName: "Desks" },
+        { field: "purposeOfVisit", headerName: "Purpose", flex: 1 },
     ];
 
     const tableData = filteredCompanies.map((item, index) => ({
         ...item,
         id: index + 1,
-        clientName: item.clientName,
+        clientName: item.visitorCompany || item.brandName || item.registeredClientCompany || item.email,
+        name: `${item.firstName || ""} ${item.lastName || ""}`.trim() || "N/A",
+        visitorCompany: item.visitorCompany || item.brandName || item.registeredClientCompany || "N/A",
         status: item.isActive,
-        desks: Number(item.openDesks || 0) + Number(item.cabinDesks || 0),
+        purposeOfVisit: item.purposeOfVisit || "N/A",
     }));
 
     return (
