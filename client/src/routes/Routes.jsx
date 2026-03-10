@@ -128,6 +128,7 @@ import ViewClientLayout from "../pages/Dashboard/SalesDashboard/ViewClients/View
 import ClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/ClientDetails";
 import Desks from "../pages/Dashboard/SalesDashboard/ViewClients/Desks";
 import ClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ClientRevenue";
+import ExternalClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ExternalClientRevenue";
 import ClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/ClientMembers";
 import CoWorkingSeats from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CoWorkingSeats";
 import CheckAvailability from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CheckAvailability";
@@ -1602,7 +1603,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "revenue",
-                            element: <ClientRevenue />,
+                            element: <ExternalClientRevenue />,
                           },
                           {
                             path: "members",

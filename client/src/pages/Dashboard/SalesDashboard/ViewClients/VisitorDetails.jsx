@@ -103,6 +103,13 @@ const VisitorDetails = () => {
                             {renderDetailRow("Purpose of Visit", currentVisitor?.purposeOfVisit)}
                             {renderDetailRow("Gender", currentVisitor?.gender)}
                             {renderDetailRow("Visitor Type", currentVisitor?.visitorType)}
+                            {renderDetailRow("Email", currentVisitor?.email)}
+
+                            {renderDetailRow("GST Number", currentVisitor?.gstNumber)}
+                            {renderDetailRow("PAN Number", currentVisitor?.panNumber)}
+
+
+
                         </div>
                     </div>
 
@@ -116,12 +123,7 @@ const VisitorDetails = () => {
                         <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                             {renderDetailRow("Company Name", companyDetails?.companyName)}
                             {renderDetailRow("Registered Company Name", companyDetails?.registeredCompanyName)}
-                            {renderDetailRow("Email", companyDetails?.email)}
-                            {renderDetailRow("Mobile Number", companyDetails?.mobileNumber)}
-                            {renderDetailRow("GST Number", companyDetails?.gstNumber)}
-                            {renderDetailRow("PAN Number", companyDetails?.panNumber)}
-                            {renderDetailRow("Address", companyDetails?.address)}
-                            {renderDetailRow("POC Name", companyDetails?.pocName)}
+
                         </div>
                     </div>
                 </div>
