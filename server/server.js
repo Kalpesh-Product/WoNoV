@@ -46,6 +46,8 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const agreementRoutes = require("./routes/agreementRoutes");
 const logRoutes = require("./routes/logRoutes");
 const auditLogger = require("./middlewares/auditLogger");
+const CoworkingRevenue = require("./models/sales/CoworkingRevenue");
+const CoworkingClient = require("./models/sales/CoworkingClient");
 require("./listeners/logEventListener");
 const app = express();
 const PORT = process.env.PORT || 5009;
@@ -155,3 +157,28 @@ mongoose.connection.once("open", () => {
 
 //   console.table(results);
 // })();
+
+// async function backfillClientNames() {
+//   const revenues = await CoworkingRevenue.find({
+//     clientName: { $exists: false },
+//   }).lean();
+
+//   console.log("revenues", revenues.length);
+
+//   for (const r of revenues) {
+//     const client = await CoworkingClient.findById(r.clients).select(
+//       "clientName",
+//     );
+
+//     if (client) {
+//       await CoworkingRevenue.updateOne(
+//         { _id: r._id },
+//         { $set: { clientName: client.clientName } },
+//       );
+//     }
+//   }
+
+//   console.log("Backfill complete");
+// }
+
+// backfillClientNames();

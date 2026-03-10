@@ -80,12 +80,44 @@ const ExternalClient = () => {
 
     const transformedData = transformClientsGroupedByMonth(unifiedClients);
 
+    const externalVisitors = useMemo(
+        () => unifiedClients.filter((client) => client.visitorFlag === "Client"),
+        [unifiedClients],
+    );
+
+    const meetingVisitorsCount = useMemo(
+        () =>
+            externalVisitors.filter(
+                (visitor) =>
+                    (visitor.purposeOfVisit || "").trim().toLowerCase() ===
+                    "meeting room booking",
+            ).length,
+        [externalVisitors],
+    );
+
+    const openDeskVisitorsCount = useMemo(
+        () =>
+            externalVisitors.filter((visitor) => {
+                const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
+                return purpose === "half-day pass" || purpose === "full-day pass";
+            }).length,
+        [externalVisitors],
+    );
+
     const cards = [
         {
             id: 1,
             name: "Meetings",
+            data: meetingVisitorsCount,
             route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
             permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
+        },
+        {
+            id: 2,
+            name: "Open Desk",
+            data: openDeskVisitorsCount,
+            route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
+            permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
         },
     ];
 
@@ -108,9 +140,9 @@ const ExternalClient = () => {
                     />
                 )}
             </div>
-            <WidgetSection layout={1}>
+            <WidgetSection layout={allowedCards.length <= 3 ? allowedCards.length : 3}>
                 {allowedCards.map((item) => (
-                    <DataCard key={item.id} title={item.name} data="" route={item.route} />
+                    <DataCard key={item.id} title={item.name} data={item.data || 0} route={item.route} />
                 ))}
             </WidgetSection>
         </div>

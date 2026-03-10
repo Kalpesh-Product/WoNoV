@@ -140,7 +140,9 @@ import UniqueClients from "../pages/Dashboard/SalesDashboard/UniqueClients";
 import MemberDetails from "../pages/Dashboard/SalesDashboard/ViewClients/MemberDetails";
 import SalesMixBag from "../pages/Dashboard/SalesDashboard/SalesMixBag";
 import ExternalClient from "../pages/Dashboard/SalesDashboard/ExternalClient";
+import InternalMeetingsDashboard from "../pages/Dashboard/SalesDashboard/InternalMeetingsDashboard";
 import ExternalClientCompanies from "../pages/Dashboard/SalesDashboard/ExternalClientCompanies";
+import VisitorDetails from "../pages/Dashboard/SalesDashboard/ViewClients/VisitorDetails";
 import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClientLayout";
 import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalCompanyMeetings";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
@@ -1575,7 +1577,15 @@ export const routes = createBrowserRouter([
                         element: <ExternalClient />,
                       },
                       {
+                        path: "mix-bag/clients/internal-meetings",
+                        element: <InternalMeetingsDashboard />,
+                      },
+                      {
                         path: "mix-bag/external-client/meetings/external-companies",
+                        element: <ExternalClientCompanies />,
+                      },
+                      {
+                        path: "mix-bag/external-client/open-desk/external-companies",
                         element: <ExternalClientCompanies />,
                       },
                       {
@@ -1584,7 +1594,7 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "client-details",
-                            element: <ClientDetails />,
+                            element: <VisitorDetails />,
                           },
                           {
                             path: "meetings",
