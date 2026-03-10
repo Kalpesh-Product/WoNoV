@@ -44,7 +44,7 @@ const ExternalCompanyMeetings = () => {
                 const externalClientName = (meeting?.externalClient || "")
                     .trim()
                     .toLowerCase();
-                const clientName = (meeting?.client || "").trim().toLowerCase();
+                const clientName = (meeting?.externalClient || "").trim().toLowerCase();
 
                 return (
                     externalClientName === normalizedClientName ||

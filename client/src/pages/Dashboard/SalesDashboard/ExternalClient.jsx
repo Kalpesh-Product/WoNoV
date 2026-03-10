@@ -87,6 +87,12 @@ const ExternalClient = () => {
             route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
             permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
         },
+        {
+            id: 2,
+            name: "Open Desk",
+            route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
+            permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
+        },
     ];
 
     const allowedCards = cards.filter(

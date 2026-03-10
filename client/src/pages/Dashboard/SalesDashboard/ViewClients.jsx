@@ -46,22 +46,22 @@ const ViewClients = () => {
     },
   });
   const unifiedClients = useMemo(() => {
-  if (!data || typeof data !== "object") return [];
+    if (!data || typeof data !== "object") return [];
 
-  return Object.entries(data).flatMap(([key, clients]) => {
-    const clientType = key.replace(/Clients$/, ""); // e.g., "coworkingClients" → "coworking"
-    return clients.map((client) => ({
-      ...client,
-      clientType, // dynamically tagged
-    }));
-  });
-}, [data]);
+    return Object.entries(data).flatMap(([key, clients]) => {
+      const clientType = key.replace(/Clients$/, ""); // e.g., "coworkingClients" → "coworking"
+      return clients.map((client) => ({
+        ...client,
+        clientType, // dynamically tagged
+      }));
+    });
+  }, [data]);
 
-console.log("data ", unifiedClients);
+  console.log("data ", unifiedClients);
   const clientCounts = {
-    coWorking : data?.coworkingClients?.length,
-    virtualOfficeClients :  data?.virtualOfficeClients?.length,
-    meetingClients : data?.meetingClients?.length,
+    coWorking: data?.coworkingClients?.length,
+    virtualOfficeClients: data?.virtualOfficeClients?.length,
+    meetingClients: data?.meetingClients?.length,
   }
 
   const verticalsData = [
@@ -79,9 +79,9 @@ console.log("data ", unifiedClients);
     },
     {
       id: 3,
-      name: "Meetings",
+      name: "Internal Meetings",
       value: clientCounts.meetingClients,
-      route: " ",
+      route: "/app/meetings/manage-meetings/internal-meetings",
     },
   ];
 

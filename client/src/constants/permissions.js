@@ -801,6 +801,13 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/:clientName/members",
   },
+  SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES: {
+    value: "sales_external_client_open_desk_companies_card",
+    title: "EXTERNAL CLIENT OPEN DESK COMPANIES",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
+  },
 
   SALES_DATA: { value: "sales_data_card", title: "DATA", type: "read" },
   SALES_SETTINGS: { value: "sales_settings_card", title: "SETTINGS", type: "read" },
