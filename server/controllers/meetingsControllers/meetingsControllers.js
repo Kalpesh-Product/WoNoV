@@ -499,7 +499,9 @@ const getMeetings = async (req, res, next) => {
       !roles.includes("Finance Admin") &&
       !roles.includes("Administration Employee") &&
       !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin")
+      !roles.includes("Super Admin") &&
+      !roles.includes("Tech Admin") &&
+      !roles.includes("Tech Employee")
     ) {
       filteredMeetings = meetings.filter((meeting) => {
         if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments))
@@ -1649,6 +1651,8 @@ const getAllCompanies = async (req, res, next) => {
 };
 
 const updateMeetingDetails = async (req, res, next) => {
+  const { roles } = req;
+
   try {
     const {
       meetingId,
@@ -1690,7 +1694,7 @@ const updateMeetingDetails = async (req, res, next) => {
     const isClient = !!meeting.clientBookedBy;
     const BookingCompanyModel = isClient ? CoworkingClient : Company;
     const BookingUserModel = isClient ? CoworkingMember : User;
-    const bookedUserId = meeting.client;
+    const bookedClientId = meeting.client;
 
     const currDate = new Date();
     const startTimeObj = new Date(startTime);
@@ -1698,6 +1702,19 @@ const updateMeetingDetails = async (req, res, next) => {
 
     if (isNaN(startTimeObj.getTime()) || isNaN(endTimeObj.getTime())) {
       return res.status(400).json({ message: "Invalid date/time format" });
+    }
+
+    console.log("role", roles);
+
+    const allowedRoles = ["Tech Admin", "Tech Employee"];
+    const isTech = roles?.some((r) => allowedRoles.includes(r));
+
+    const isUpcoming = meeting.startTime > currDate;
+
+    if (!isTech && !isUpcoming) {
+      return res.status(403).json({
+        message: "You are not allowed to edit meeting timings to past time",
+      });
     }
 
     if (startTimeObj > endTimeObj) {
@@ -1796,9 +1813,10 @@ const updateMeetingDetails = async (req, res, next) => {
 
     if (creditDifference > 0) {
       // Deduct extra credits
+      console.log("booked client ID", bookedClientId);
       const updatedUser = await BookingCompanyModel.findOneAndUpdate(
         {
-          _id: bookedUserId,
+          _id: bookedClientId,
           meetingCreditBalance: { $gte: creditDifference },
         },
         { $inc: { meetingCreditBalance: -creditDifference } },
@@ -1812,7 +1830,7 @@ const updateMeetingDetails = async (req, res, next) => {
       }
     } else if (creditDifference < 0) {
       // Refund excess credits
-      await BookingCompanyModel.findByIdAndUpdate(bookedUserId, {
+      await BookingCompanyModel.findByIdAndUpdate(bookedClientId, {
         $inc: { meetingCreditBalance: Math.abs(creditDifference) },
       });
     }
