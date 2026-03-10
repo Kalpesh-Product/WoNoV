@@ -1577,11 +1577,15 @@ export const routes = createBrowserRouter([
                         element: <ExternalClient />,
                       },
                       {
-                        path: "internal-meetings",
+                        path: "mix-bag/clients/internal-meetings",
                         element: <InternalMeetingsDashboard />,
                       },
                       {
                         path: "mix-bag/external-client/meetings/external-companies",
+                        element: <ExternalClientCompanies />,
+                      },
+                      {
+                        path: "mix-bag/external-client/open-desk/external-companies",
                         element: <ExternalClientCompanies />,
                       },
                       {
