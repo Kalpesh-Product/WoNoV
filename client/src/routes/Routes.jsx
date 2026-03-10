@@ -1612,6 +1612,28 @@ export const routes = createBrowserRouter([
                         ],
                       },
                       {
+                        path: "mix-bag/external-client/open-desk/external-companies/:clientName",
+                        element: <ExternalClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VisitorDetails />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <ExternalCompanyMeetings />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <ClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ClientMembers />,
+                          },
+                        ],
+                      },
+                      {
                         path: "data",
                         element: <SalesDataCard />,
                         children: [

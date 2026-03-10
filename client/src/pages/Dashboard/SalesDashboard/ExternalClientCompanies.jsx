@@ -56,6 +56,10 @@ const ExternalClientCompanies = () => {
     const handleClickRow = (clientData) => {
         dispatch(setSelectedClient(clientData));
         if (isOpenDeskView) {
+            navigate(
+                `/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies/${encodeURIComponent(clientData.clientName)}`,
+                { replace: true },
+            );
             return;
         }
 
@@ -74,13 +78,11 @@ const ExternalClientCompanies = () => {
             cellRenderer: (params) => (
                 <span
                     style={
-                        isOpenDeskView
-                            ? {}
-                            : {
-                                color: "#1E3D73",
-                                textDecoration: "underline",
-                                cursor: "pointer",
-                            }
+                        {
+                            color: "#1E3D73",
+                            textDecoration: "underline",
+                            cursor: "pointer",
+                        }
                     }
                     onClick={() => handleClickRow(params.data)}
                 >
