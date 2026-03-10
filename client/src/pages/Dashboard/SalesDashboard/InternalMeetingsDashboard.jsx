@@ -1,28 +1,20 @@
-import { useMemo } from "react";
-import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import React, { useMemo } from "react";
 import PageFrame from "../../../components/Pages/PageFrame";
 import AgTable from "../../../components/AgTable";
 import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 
-const ExternalCompanyMeetings = () => {
+const InternalMeetingsDashboard = () => {
     const axios = useAxiosPrivate();
-    const { clientName } = useParams();
-
-    const decodedClientName = useMemo(
-        () => decodeURIComponent(clientName || ""),
-        [clientName],
-    );
 
     const { data: meetings = [], isLoading } = useQuery({
-        queryKey: ["external-company-meetings", decodedClientName],
+        queryKey: ["all-meetings"],
         queryFn: async () => {
             const response = await axios.get("/api/meetings/get-meetings");
             return response.data;
         },
-        enabled: Boolean(decodedClientName),
     });
 
     const columns = [
@@ -30,50 +22,33 @@ const ExternalCompanyMeetings = () => {
         { field: "date", headerName: "Date", flex: 1 },
         { field: "roomName", headerName: "Meeting Room", flex: 1 },
         { field: "subject", headerName: "Subject", flex: 1.2 },
-        { field: "bookedBy", headerName: "Booked By", flex: 1 },
+        { field: "bookedByName", headerName: "Booked By", flex: 1 },
         { field: "startTime", headerName: "Start Time", flex: 1 },
         { field: "endTime", headerName: "End Time", flex: 1 },
         { field: "meetingStatus", headerName: "Status", flex: 1 },
     ];
 
     const tableData = useMemo(() => {
-        const normalizedClientName = decodedClientName.trim().toLowerCase();
-
-        const filteredMeetings = meetings.filter(
-            (meeting) => {
-                const extClient = meeting?.externalClient;
-                if (!extClient) return false;
-
-                // Check possible company name fields on the Visitor object
-                const possibleNames = [
-                    extClient.visitorCompany,
-                    extClient.brandName,
-                    extClient.registeredClientCompany,
-                    extClient.email,
-                    typeof extClient === 'string' ? extClient : "",
-                ].map(name => (name || "").trim().toLowerCase());
-
-                return possibleNames.includes(normalizedClientName);
-            },
+        const internalMeetings = meetings.filter(
+            (meeting) => meeting.meetingType === "Internal"
         );
 
-
-        return filteredMeetings.map((meeting, index) => ({
+        return internalMeetings.map((meeting, index) => ({
             ...meeting,
             srNo: index + 1,
             date: meeting?.date ? humanDate(new Date(meeting.date)) : "-",
-            bookedBy: meeting?.clientBookedBy?.employeeName || "-",
+            bookedByName: meeting?.bookedBy ? `${meeting.bookedBy.firstName || ""} ${meeting.bookedBy.lastName || ""}`.trim() : (meeting.clientBookedBy?.employeeName || "-"),
             startTime: meeting?.startTime ? humanTime(meeting.startTime) : "-",
             endTime: meeting?.endTime ? humanTime(meeting.endTime) : "-",
             subject: meeting?.subject || "-",
             meetingStatus: meeting?.meetingStatus || "-",
         }));
-    }, [decodedClientName, meetings]);
+    }, [meetings]);
 
     return (
         <PageFrame>
             <AgTable
-                tableTitle={`${decodedClientName} - Meeting Details`}
+                tableTitle="Internal Meetings"
                 data={tableData}
                 columns={columns}
                 loading={isLoading}
@@ -83,4 +58,4 @@ const ExternalCompanyMeetings = () => {
     );
 };
 
-export default ExternalCompanyMeetings;
+export default InternalMeetingsDashboard;

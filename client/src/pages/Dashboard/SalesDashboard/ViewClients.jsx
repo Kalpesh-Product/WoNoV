@@ -81,7 +81,7 @@ const ViewClients = () => {
       id: 3,
       name: "Internal Meetings",
       value: clientCounts.meetingClients,
-      route: "/app/meetings/manage-meetings/internal-meetings",
+      route: "/app/dashboard/sales-dashboard/internal-meetings",
     },
   ];
 
