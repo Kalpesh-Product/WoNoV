@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { useNavigate } from "react-router-dom";
@@ -6,25 +6,42 @@ import { useDispatch, useSelector } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { setClientData } from "../../../redux/slices/salesSlice";
 import { setSelectedClient } from "../../../redux/slices/clientSlice";
-import { Chip } from "@mui/material";
+import { Chip, CircularProgress } from "@mui/material";
 
 const ExternalClientCompanies = () => {
     const navigate = useNavigate();
     const clientsData = useSelector((state) => state.sales.clientsData);
     const dispatch = useDispatch();
     const axios = useAxiosPrivate();
+    const [loading, setLoading] = useState(true);
+    const [filteredCompanies, setFilteredCompanies] = useState([]);
 
     useEffect(() => {
-        const fetchClients = async () => {
+        const fetchData = async () => {
+            setLoading(true);
             try {
-                const response = await axios.get("/api/sales/co-working-clients");
-                dispatch(setClientData(response.data));
+                // Reuse external clients visitor source and show only meeting-room visitors.
+                const visitorsResponse = await axios.get("/api/visitors/fetch-visitors");
+                const visitors = visitorsResponse.data;
+
+                const externalVisitorsForMeetingBooking = visitors.filter((visitor) => {
+                    const isExternalVisitor = visitor.visitorFlag === "Client";
+                    const isMeetingRoomBooking =
+                        (visitor.purposeOfVisit || "").trim().toLowerCase() ===
+                        "meeting room booking";
+                    return isExternalVisitor && isMeetingRoomBooking;
+                });
+
+                dispatch(setClientData(externalVisitorsForMeetingBooking));
+                setFilteredCompanies(externalVisitorsForMeetingBooking);
             } catch (error) {
-                console.error("Failed to fetch external companies", error);
+                console.error("Failed to fetch data", error);
+            } finally {
+                setLoading(false);
             }
         };
 
-        fetchClients();
+        fetchData();
     }, [axios, dispatch]);
 
     const handleClickRow = (clientData) => {
@@ -38,8 +55,8 @@ const ExternalClientCompanies = () => {
     const columns = [
         { field: "id", headerName: "Sr No" },
         {
-            field: "clientName",
-            headerName: "Company Name",
+            field: "name",
+            headerName: "Visitor Name",
             flex: 1,
             cellRenderer: (params) => (
                 <span
@@ -54,6 +71,7 @@ const ExternalClientCompanies = () => {
                 </span>
             ),
         },
+        { field: "visitorCompany", headerName: "Company", flex: 1 },
         {
             field: "status",
             headerName: "Status",
@@ -69,27 +87,35 @@ const ExternalClientCompanies = () => {
                 return <Chip label={status} style={{ backgroundColor, color }} />;
             },
         },
-        { field: "desks", headerName: "Desks" },
+        { field: "purposeOfVisit", headerName: "Purpose", flex: 1 },
     ];
 
-    const tableData = clientsData.map((item, index) => ({
+    const tableData = filteredCompanies.map((item, index) => ({
         ...item,
         id: index + 1,
-        clientName: item.clientName,
+        clientName: item.visitorCompany || item.brandName || item.registeredClientCompany || item.email,
+        name: `${item.firstName || ""} ${item.lastName || ""}`.trim() || "N/A",
+        visitorCompany: item.visitorCompany || item.brandName || item.registeredClientCompany || "N/A",
         status: item.isActive,
-        desks: Number(item.openDesks || 0) + Number(item.cabinDesks || 0),
+        purposeOfVisit: item.purposeOfVisit || "N/A",
     }));
 
     return (
         <div className="p-4">
             <div className="w-full">
                 <PageFrame>
-                    <AgTable
-                        search={true}
-                        tableTitle={"EXTERNAL COMPANIES"}
-                        data={tableData}
-                        columns={columns}
-                    />
+                    {loading ? (
+                        <div className="flex justify-center p-8">
+                            <CircularProgress />
+                        </div>
+                    ) : (
+                        <AgTable
+                            search={true}
+                            tableTitle={"EXTERNAL COMPANIES"}
+                            data={tableData}
+                            columns={columns}
+                        />
+                    )}
                 </PageFrame>
             </div>
         </div>

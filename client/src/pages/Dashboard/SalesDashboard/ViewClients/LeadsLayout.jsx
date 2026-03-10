@@ -17,6 +17,7 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       "Co-Living": 0,
       Workations: 0,
       "Virtualoffice": 0,
+      "Meeting": 0,
     };
 
     monthData.clients.forEach((client) => {
@@ -50,6 +51,10 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       name: "Virtual Office",
       data: transformedData.map((item) => item["Virtualoffice"]),
     },
+    {
+      name: "Meetings",
+      data: transformedData.map((item) => item["Meeting"]),
+    },
   ];
   console.log("unique clients inside", uniqueClientsData);
 
@@ -78,7 +83,7 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       shared: false,
       y: { formatter: (val) => `${val} Clients` },
     },
-    colors: ["#1E3D73", "#80BF01", "#FFC300", "#00C8D7"],
+    colors: ["#1E3D73", "#80BF01", "#FFC300", "#00C8D7", "#FF5733"],
   };
 
   // Define Table Columns

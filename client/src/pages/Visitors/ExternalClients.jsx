@@ -7,7 +7,7 @@ import humanTime from "../../utils/humanTime";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { Chip, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import { TimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -208,6 +208,13 @@ const ExternalClients = () => {
     "ETC",
   ];
 
+  const isPaymentCompleted = (status) => {
+    if (typeof status === "boolean") return status;
+    if (!status) return false;
+    return ["paid", "completed"].includes(String(status).toLowerCase());
+  };
+
+
   const visitorsColumns = [
     { field: "srNo", headerName: "Sr No", sort: "desc" },
     // { field: "firstName", headerName: "First Name" },
@@ -265,6 +272,7 @@ const ExternalClients = () => {
             },
           },
           ...(params.data.visitorType !== "Meeting"
+            && !isPaymentCompleted(params.data.paymentStatus)
             ? [
               {
                 label: "Update Payment Details",
@@ -476,7 +484,11 @@ const ExternalClients = () => {
                 checkIn: item.checkIn,
                 checkOut: item.checkOut ? humanTime(item.checkOut) : "",
                 paymentStatus:
-                  item.paymentStatus === true ? "Paid" : "Unpaid",
+                  typeof item.paymentStatus === "string"
+                    ? item.paymentStatus
+                    : item.paymentStatus === true
+                      ? "Paid"
+                      : "Unpaid",
                 paymentAmount: item.totalAmount
                   ? inrFormat(item.totalAmount)
                   : 0,
@@ -486,7 +498,9 @@ const ExternalClients = () => {
                 discountPercentage: item.discountPercentage ?? 0,
                 finalAmount: item.totalAmount ?? 0,
                 paymentMode: item.paymentMode || "N/A",
+                paymentVerification: item.paymentVerification || "N/A",
                 paymentDate: item.updatedAt || null,
+                paymentProof: item?.paymentProof?.link || "",
                 meetingId: item?.meeting?._id || null,
                 registeredClientCompany: item?.registeredClientCompany || "N/A",
                 brandName: item?.brandName || "N/A",
@@ -519,9 +533,7 @@ const ExternalClients = () => {
             {!isVisitorsData ? (
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
                 {!isEditing && (
-                  <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2">
-                    Client Details
-                  </div>
+                  <div className="font-bold">Client Details</div>
                 )}
                 {/* First Name */}
                 {isEditing ? (
@@ -639,9 +651,10 @@ const ExternalClients = () => {
                 )}
 
                 {!isEditing && (
-                  <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2 pt-2">
-                    Company Details
-                  </div>
+                  <>
+                    <br />
+                    <div className="font-bold">Company Details</div>
+                  </>
                 )}
                 {/* Brand name */}
                 {isEditing ? (
@@ -689,9 +702,8 @@ const ExternalClients = () => {
                     <DetalisFormatted title="State" detail={selectedVisitor.state} />
                     <DetalisFormatted title="City" detail={selectedVisitor.city} />
                     <DetalisFormatted title="Sector" detail={selectedVisitor.sector} />
-                    <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2 pt-2">
-                      GST
-                    </div>
+                    <br />
+                    <div className="font-bold">GST</div>
                     <DetalisFormatted
                       title="GST Number"
                       detail={selectedVisitor.gstNumber}
@@ -700,20 +712,8 @@ const ExternalClients = () => {
                       title="Upload File"
                       detail={renderFileLink(selectedVisitor.gstFile)}
                     />
-                    <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2 pt-2">
-                      Verification
-                    </div>
-                    <DetalisFormatted
-                      title="PAN Number"
-                      detail={selectedVisitor.panNumber}
-                    />
-                    <DetalisFormatted
-                      title="Upload File"
-                      detail={renderFileLink(selectedVisitor.panFile)}
-                    />
-                    <div className="text-subtitle font-psemibold border-b-default border-borderGray pb-2 pt-2">
-                      Others
-                    </div>
+                    <br />
+                    <div className="font-bold">Verification</div>
                     <DetalisFormatted title="ID Type" detail={selectedVisitor.idType} />
                     <DetalisFormatted
                       title="ID Number"
@@ -723,6 +723,13 @@ const ExternalClients = () => {
                       title="Upload File"
                       detail={renderFileLink(selectedVisitor.otherFile)}
                     />
+                  </>
+                )}
+
+                {!isEditing && (
+                  <>
+                    <br />
+                    <div className="font-bold">Others</div>
                   </>
                 )}
 
@@ -744,7 +751,7 @@ const ExternalClients = () => {
                 ) : (
                   <DetalisFormatted
                     title="Date of Visit"
-                    detail={selectedVisitor.date}
+                    detail={selectedVisitor.dateOfVisit}
                   />
                 )}
 
@@ -823,19 +830,19 @@ const ExternalClients = () => {
                   />
                 )}
                 {/* payment status */}
-                {!isEditing && (
+                {/* {!isEditing && (
                   <DetalisFormatted
                     title="Payment Status"
                     detail={selectedVisitor?.paymentStatus}
                   />
-                )}
+                )} */}
                 {/* payment mode */}
-                {!isEditing && (
+                {/* {!isEditing && (
                   <DetalisFormatted
                     title="Payment Mode"
                     detail={selectedVisitor?.paymentMode}
                   />
-                )}
+                )} */}
 
                 {/* Checkout time */}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -929,10 +936,44 @@ const ExternalClients = () => {
                     )}
                   />
                 ) : (
-                  <DetalisFormatted
-                    title="Checkout By"
-                    detail={selectedVisitor?.checkOutBy}
-                  />
+                  <>
+                    <DetalisFormatted
+                      title="Checkout By"
+                      detail={selectedVisitor?.checkOutBy}
+                    />
+                    <br />
+                    {/* payment details */}
+                    {selectedVisitor?.purposeOfVisit !== "Meeting Room Booking" && (
+                      <>
+                        <div className="font-bold">Payment Details</div>
+                        <DetalisFormatted
+                          title="Amount"
+                          detail={`INR ${selectedVisitor?.paymentAmount || 0}`}
+                        />
+                        <DetalisFormatted
+                          title="Discount"
+                          detail={`INR ${selectedVisitor?.discountAmount || 0}`}
+                        />
+                        <DetalisFormatted
+                          title="Mode"
+                          detail={selectedVisitor?.paymentMode}
+                        />
+                        <DetalisFormatted
+                          title="Status"
+                          detail={selectedVisitor?.paymentStatus}
+                        />
+                        <DetalisFormatted
+                          title="Verification"
+                          detail={selectedVisitor?.paymentVerification}
+                        />
+                        <DetalisFormatted
+                          title="Upload File"
+                          detail={renderFileLink(selectedVisitor?.paymentProof)}
+                        />
+                      </>
+                    )}
+
+                  </>
                 )}
               </div>
             ) : (

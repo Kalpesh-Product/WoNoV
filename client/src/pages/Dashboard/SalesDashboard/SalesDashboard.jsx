@@ -261,9 +261,9 @@ const SalesDashboard = () => {
   const graphData = isLeadsPending
     ? []
     : leadsData.map((item) => ({
-        ...item,
-        category: item.serviceCategory?.serviceName,
-      }));
+      ...item,
+      category: item.serviceCategory?.serviceName,
+    }));
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -317,11 +317,10 @@ const SalesDashboard = () => {
       {
         title:
           selectedFiscalYear === "FY 2024-25" ? "March 2025" : "March 2026",
-        value: `INR ${
-          selectedFiscalYear === "FY 2024-25"
-            ? inrFormat(finalRevenueGraph[11])
-            : 0
-        }`,
+        value: `INR ${selectedFiscalYear === "FY 2024-25"
+          ? inrFormat(finalRevenueGraph[11])
+          : 0
+          }`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
@@ -525,17 +524,29 @@ const SalesDashboard = () => {
   let simplifiedClientsPie = [];
 
   if (!isClientsDataPending && Array.isArray(clientsData)) {
+    const normalizedClientDeskData = clientsData
+      .map((item) => ({
+        companyName: item?.clientName || "Unknown",
+        totalDesks: Number(item?.totalDesks) || 0,
+      }))
+      .filter((item) => item.totalDesks > 0)
+      .sort((a, b) => b.totalDesks - a.totalDesks);
+
+    const totalClientsDesks = normalizedClientDeskData.reduce(
+      (sum, item) => sum + item.totalDesks,
+      0
+    );
     let otherTotalDesks = 0;
+    simplifiedClientsPie = normalizedClientDeskData.reduce((acc, item) => {
+      const clientOccupancyPercent =
+        totalClientsDesks > 0 ? (item.totalDesks / totalClientsDesks) * 100 : 0;
 
-    simplifiedClientsPie = clientsData.reduce((acc, item) => {
-      const { clientName: companyName, totalDesks } = item;
-
-      if (totalDesks < 15) {
-        otherTotalDesks += totalDesks;
+      if (clientOccupancyPercent < 4) {
+        otherTotalDesks += item.totalDesks;
         return acc;
       }
 
-      acc.push({ companyName, totalDesks });
+      acc.push(item);
       return acc;
     }, []);
 
@@ -553,10 +564,10 @@ const SalesDashboard = () => {
   );
 
   const totalDeskPercent = simplifiedClientsPie.map((item) => ({
-    label: `${item.companyName} ${(
-      (item.totalDesks / totalClientsDesks) *
-      100
-    ).toFixed(1)}%`,
+    label: `${item.companyName} ${totalClientsDesks > 0
+      ? ((item.totalDesks / totalClientsDesks) * 100).toFixed(1)
+      : 0
+      }%`,
     value: item.totalDesks,
   }));
   const clientsDesksPieOptions = {
@@ -598,9 +609,9 @@ const SalesDashboard = () => {
 
   const sectorwiseData = Array.isArray(clientsData)
     ? clientsData.map((item) => ({
-        clientName: item.clientName,
-        sector: item.sector,
-      }))
+      clientName: item.clientName,
+      sector: item.sector,
+    }))
     : [];
 
   const totalClients = sectorwiseData.length;
@@ -703,9 +714,9 @@ const SalesDashboard = () => {
   const clientMembersData = isClientsDataPending
     ? []
     : clientsData
-        .filter((item) => item.members?.length > 0)
-        .map((item) => item.members)
-        .flat();
+      .filter((item) => item.members?.length > 0)
+      .map((item) => item.members)
+      .flat();
   //-----------------------------------------------Conversion of Gender-wise Pie-graph-----------------------------------------------------------//
   //-----------------------------------------------Client Anniversary-----------------------------------------------------------//
   const companyTableColumns = [

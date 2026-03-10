@@ -36,17 +36,20 @@ import useAuth from "../../hooks/useAuth";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [checklists, setChecklists] = useState({});
   const department = usePageDepartment();
   const isFinance = department?.name === "Finance";
+  const isTechDepartment = auth?.user?.departments?.some(
+    (dept) => dept._id === "6798ba9de469e809084e2494"
+  );
   const [newItem, setNewItem] = useState("");
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
-  const { auth } = useAuth();
 
   const statusColors = {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
@@ -1030,6 +1033,7 @@ const ManageMeetings = () => {
                       },
                     }}
                     shouldDisableTime={(time, view) => {
+                      if (isTechDepartment) return false;
                       const startTime = selectedMeeting.startTime;
                       const timeValue = time.$d;
 
@@ -1096,6 +1100,7 @@ const ManageMeetings = () => {
                     }}
                     label={"End Time"}
                     shouldDisableTime={(time, view) => {
+                      if (isTechDepartment) return false;
                       const endTime = selectedMeeting.endTime;
                       const timeValue = time.$d;
 

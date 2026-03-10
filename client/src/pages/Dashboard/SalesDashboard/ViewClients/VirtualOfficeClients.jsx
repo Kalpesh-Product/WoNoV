@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import AgTable from "../../../../components/AgTable";
@@ -6,12 +6,15 @@ import StatusChip from "../../../../components/StatusChip";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { toast } from "sonner";
 
 const VirtualOfficeClients = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
 
   //-------------------------API-----------------------------//
   const { data = [], isLoading } = useQuery({
@@ -28,10 +31,35 @@ const VirtualOfficeClients = () => {
   const verticalData = isLoading
     ? []
     : data.virtualOfficeClients?.map((item, index) => ({
-        ...item,
-        srNo: index + 1,
-        totalTerm: item.totalTerm || 0,
-      })) || [];
+      ...item,
+      srNo: index + 1,
+      totalTerm: item.totalTerm || 0,
+      isActive:
+        typeof item?.isActive === "boolean"
+          ? item.isActive
+          : Boolean(item?.clientStatus),
+    })) || [];
+
+  const { mutate: updateClientStatus, isPending: isStatusUpdating } = useMutation({
+    mutationFn: async ({ id, isActive }) => {
+      const response = await axios.patch(`/api/sales/virtual-office/${id}/status`, {
+        isActive,
+      });
+      return response.data;
+    },
+    onSuccess: (response) => {
+      toast.success(response?.message || "Client status updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update client status",
+      );
+    },
+  });
+
 
   //-------------------------API-----------------------------//
   //-------------------------Event Handlers-----------------------------//
@@ -44,6 +72,20 @@ const VirtualOfficeClients = () => {
         ? `/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`
         : `/app/dashboard/sales-dashboard/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`,
     );
+  };
+
+  const handleToggleClientStatus = (clientData) => {
+    if (!clientData?._id) {
+      toast.error("Unable to find selected client");
+      return;
+    }
+
+    const currentStatus =
+      typeof clientData?.isActive === "boolean"
+        ? clientData.isActive
+        : Boolean(clientData?.clientStatus);
+
+    updateClientStatus({ id: clientData._id, isActive: !currentStatus });
   };
 
   //-------------------------Event Handlers-----------------------------//
@@ -68,9 +110,29 @@ const VirtualOfficeClients = () => {
       field: "rentStatus",
       headerName: "Status",
       cellRenderer: (params) => {
-        const status = params.value === "Active" ? "Active" : "Inactive";
+        const status = params.data?.isActive ? "Active" : "Inactive";
         return <StatusChip status={status} />;
       },
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data._id || params.data.srNo}
+          menuItems={[
+            {
+              label: "Edit Client Details",
+              onClick: () => handleViewClient(params.data),
+            },
+            {
+              label: params.data?.isActive ? "Mark As Inactive" : "Mark As Active",
+              onClick: () => handleToggleClientStatus(params.data),
+              disabled: isStatusUpdating,
+            },
+          ]}
+        />
+      ),
     },
   ];
   //-------------------------Table Data-----------------------------//
