@@ -34,7 +34,7 @@ const ViewClients = () => {
     fetchSourceIfEmpty();
   }, [clientsData, dispatch]);
 
-  const { data = [], isLoading } = useQuery({
+  const { data = [] } = useQuery({
     queryKey: ["clientDetails"],
     queryFn: async () => {
       try {
@@ -57,11 +57,21 @@ const ViewClients = () => {
     });
   }, [data]);
 
+
+  const { data: meetings = [] } = useQuery({
+    queryKey: ["meetings"],
+    queryFn: async () => {
+      const response = await axios.get("/api/meetings/get-meetings");
+      return response.data;
+    },
+  });
+
+
   console.log("data ", unifiedClients);
   const clientCounts = {
     coWorking: data?.coworkingClients?.length,
     virtualOfficeClients: data?.virtualOfficeClients?.length,
-    meetingClients: data?.meetingClients?.length,
+    meetingClients: meetings.filter((meeting) => meeting.meetingType === "Internal").length,
   }
 
   const verticalsData = [

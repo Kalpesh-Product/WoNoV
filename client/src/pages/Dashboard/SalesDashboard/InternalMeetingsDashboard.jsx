@@ -5,6 +5,31 @@ import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { Avatar, AvatarGroup, Chip } from "@mui/material";
+
+const statusColors = {
+    Upcoming: { bg: "#E3F2FD", text: "#1565C0" },
+    Ongoing: { bg: "#FFF3E0", text: "#E65100" },
+    Completed: { bg: "#E8F5E9", text: "#1B5E20" },
+    Cancelled: { bg: "#FFEBEE", text: "#B71C1C" },
+    Available: { bg: "#E3F2FD", text: "#0D47A1" },
+    Occupied: { bg: "#ECEFF1", text: "#37474F" },
+    Cleaning: { bg: "#E0F2F1", text: "#00796B" },
+    Pending: { bg: "#FFFDE7", text: "#F57F17" },
+    "In Progress": { bg: "#FBE9E7", text: "#BF360C" },
+};
+
+const getAvatarName = (participant) => {
+    if (participant.firstName && participant.lastName) {
+        return `${participant.firstName}+${participant.lastName}`;
+    }
+
+    if (participant.employeeName) {
+        return participant.employeeName.replace(/\s+/g, "+");
+    }
+
+    return "User";
+};
 
 const InternalMeetingsDashboard = () => {
     const axios = useAxiosPrivate();
@@ -26,15 +51,69 @@ const InternalMeetingsDashboard = () => {
     });
 
     const columns = [
-        { field: "srNo", headerName: "Sr No", width: 90 },
+        { field: "srNo", headerName: "Sr No", width: 90, sort: "desc" },
+        { field: "client", headerName: "Company", flex: 1 },
+        { field: "bookedBy", headerName: "Booked By", flex: 1 },
+        { field: "building", headerName: "Building", flex: 1 },
+        { field: "roomName", headerName: "Room Name", flex: 1 },
         { field: "date", headerName: "Date", flex: 1 },
-        { field: "roomName", headerName: "Meeting Room", flex: 1 },
-        { field: "subject", headerName: "Subject", flex: 1.2 },
-        { field: "bookedByName", headerName: "Booked By", flex: 1 },
-        { field: "creditBalance", headerName: "Credit Balance", flex: 1 },
-        { field: "startTime", headerName: "Start Time", flex: 1 },
-        { field: "endTime", headerName: "End Time", flex: 1 },
-        { field: "meetingStatus", headerName: "Status", flex: 1 },
+        {
+            field: "startTime",
+            headerName: "Start Time",
+            flex: 1,
+            cellRenderer: (params) => humanTime(params.value),
+        },
+        {
+            field: "endTime",
+            headerName: "End Time",
+            flex: 1,
+            cellRenderer: (params) => humanTime(params.value),
+        },
+        {
+            field: "meetingCreditBalance",
+            headerName: "Credit Balance",
+            flex: 1,
+        },
+        {
+            field: "meetingStatus",
+            headerName: "Meeting Status",
+            flex: 1,
+            cellRenderer: (params) => (
+                <Chip
+                    label={params.value || ""}
+                    sx={{
+                        backgroundColor: statusColors[params.value]?.bg || "#F5F5F5",
+                        color: statusColors[params.value]?.text || "#000",
+                        fontWeight: "bold",
+                    }}
+                />
+            ),
+        },
+        {
+            field: "participants",
+            headerName: "Participants",
+            flex: 1,
+            cellRenderer: (params) => {
+                const participants = Array.isArray(params.data?.participants)
+                    ? params.data.participants
+                    : [];
+
+                return (
+                    <div className="flex justify-start items-center">
+                        <AvatarGroup max={4}>
+                            {participants.map((participant, index) => (
+                                <Avatar
+                                    key={index}
+                                    alt={participant.firstName || participant.employeeName}
+                                    src={`https://ui-avatars.com/api/?name=${getAvatarName(participant)}&background=random`}
+                                    sx={{ width: 23, height: 23 }}
+                                />
+                            ))}
+                        </AvatarGroup>
+                    </div>
+                );
+            },
+        },
     ];
 
     const tableData = useMemo(() => {
@@ -42,30 +121,41 @@ const InternalMeetingsDashboard = () => {
             coWorkingClients.map((client) => [
                 (client?.clientName || "").trim().toLowerCase(),
                 client?.meetingCreditBalance,
-            ]),
+            ])
         );
 
         const internalMeetings = meetings.filter(
-            (meeting) => meeting.meetingType === "Internal"
+            (meeting) =>
+                meeting.meetingType === "Internal" &&
+                meeting.meetingStatus !== "Completed"
         );
 
-        return internalMeetings.map((meeting, index) => ({
-            ...meeting,
-            srNo: index + 1,
-            date: meeting?.date ? humanDate(new Date(meeting.date)) : "-",
-            bookedByName: meeting?.bookedBy ? `${meeting.bookedBy.firstName || ""} ${meeting.bookedBy.lastName || ""}`.trim() : (meeting.clientBookedBy?.employeeName || "-"),
-            creditBalance: (() => {
-                const clientName = meeting?.client?.clientName?.trim().toLowerCase();
-                if (!clientName) return "-";
+        return internalMeetings.map((meeting, index) => {
+            const rawClientName =
+                typeof meeting?.client === "string"
+                    ? meeting.client
+                    : meeting?.client?.clientName || "";
+            const clientName = rawClientName.trim().toLowerCase();
+            const balance = clientCreditMap.get(clientName);
 
-                const balance = clientCreditMap.get(clientName);
-                return balance ?? "-";
-            })(),
-            startTime: meeting?.startTime ? humanTime(meeting.startTime) : "-",
-            endTime: meeting?.endTime ? humanTime(meeting.endTime) : "-",
-            subject: meeting?.subject || "-",
-            meetingStatus: meeting?.meetingStatus || "-",
-        }));
+            return {
+                ...meeting,
+                srNo: index + 1,
+                client: meeting?.client || "",
+                date: meeting?.date ? humanDate(new Date(meeting.date)) : "-",
+                bookedBy: meeting?.bookedBy
+                    ? `${meeting.bookedBy.firstName || ""} ${meeting.bookedBy.lastName || ""}`.trim()
+                    : meeting.clientBookedBy?.employeeName || "Unknown",
+                building: meeting?.location?.building?.buildingName || "",
+                endTime:
+                    meeting?.extendTime && meeting.extendTime > meeting.endTime
+                        ? meeting.extendTime
+                        : meeting.endTime,
+                meetingCreditBalance:
+                    typeof balance === "number" ? balance.toFixed(2) : "0.00",
+                meetingStatus: meeting?.meetingStatus || "-",
+            };
+        });
     }, [coWorkingClients, meetings]);
 
     const isLoading = meetingsLoading || clientsLoading;
