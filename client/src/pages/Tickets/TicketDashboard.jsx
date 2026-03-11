@@ -120,6 +120,12 @@ const TicketDashboard = () => {
       );
     }).length,
 
+    rejectedTickets: ticketsData.filter((item) => {
+      return (
+        item.status === "Rejected" && dayjs(item.createdAt).isSame(todayDate, "day")
+      );
+    }).length,
+
     closedTickets: ticketsData.filter(
       (item) =>
         item.status === "Closed" &&

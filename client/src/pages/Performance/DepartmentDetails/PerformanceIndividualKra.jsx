@@ -239,11 +239,11 @@ const PerformanceIndividualKra = () => {
         { headerName: "Completed By", field: "completedBy" },
         {
             headerName: "Completed Date",
-            field: "completedDate",
+            field: "completionDate",
         },
         {
             headerName: "Completed Time",
-            field: "completedTime",
+            field: "completionTime",
         },
         {
             field: "status",
@@ -327,8 +327,8 @@ const PerformanceIndividualKra = () => {
                                         dueDate: item.dueDate,
                                         status: item.status,
                                         completedBy: item.completedBy,
-                                        completedDate: humanDate(item.completedDate),
-                                        completedTime: humanTime(item.completedDate),
+                                        completionDate: humanDate(item.completionDate),
+                                        completionTime: humanTime(item.completionDate),
                                     }))}
                                     dateColumn={"dueDate"}
                                     columns={completedColumns}
