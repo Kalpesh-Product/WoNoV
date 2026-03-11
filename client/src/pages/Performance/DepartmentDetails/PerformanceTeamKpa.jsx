@@ -22,6 +22,8 @@ import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import { FaCheckSquare } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
 
 const PerformanceTeamKpa = () => {
   const axios = useAxiosPrivate();
@@ -215,9 +217,9 @@ const PerformanceTeamKpa = () => {
                   title="Delete Recurrence"
                   // disabled={!params.node.selected || isDeletePending}
                   onClick={() => deleteMonthlyKpaRecurrence(params.data.id)}
-                  className="w-16 h-10 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className=""
                 >
-                  {isDeletePending ? "⏳" : "🗑️"}
+                  {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
                 </button>
               )}
             </div>

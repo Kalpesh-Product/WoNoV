@@ -21,6 +21,8 @@ import dayjs from "dayjs";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { FaCheckSquare } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
 
 const PerformanceTeamKra = () => {
     const axios = useAxiosPrivate();
@@ -195,9 +197,9 @@ const PerformanceTeamKra = () => {
                                     title="Delete Recurrence"
                                     // disabled={!params.node.selected || isDeletePending}
                                     onClick={() => deleteDailyKraRecurrence(params.data.id)}
-                                    className="w-16 h-10 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    className=""
                                 >
-                                    {isDeletePending ? "⏳" : "🗑️"}
+                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
                                 </button>
                             )}
                         </div>

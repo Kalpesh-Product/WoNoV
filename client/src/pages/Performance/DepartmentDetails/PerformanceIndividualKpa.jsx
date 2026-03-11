@@ -26,6 +26,8 @@ import {
     setSelectedDepartment,
     setSelectedDepartmentName,
 } from "../../../redux/slices/performanceSlice";
+import { FaCheckSquare } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
 
 const PerformanceIndividualKpa = () => {
     const axios = useAxiosPrivate();
@@ -264,9 +266,9 @@ const PerformanceIndividualKpa = () => {
                                 title="Mark As Done"
                                 disabled={!params.node.selected || isUpdatePending || isDeletePending}
                                 onClick={() => updateMonthlyKpa(params.data.mongoId)}
-                                className="w-16 h-10 rounded-full bg-primary text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className=""
                             >
-                                {isUpdatePending ? "⏳" : "✅"}
+                                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color="green" />}
                             </button>
                             {canDeleteRecurrence && (
                                 <button
@@ -274,9 +276,9 @@ const PerformanceIndividualKpa = () => {
                                     title="Delete Recurrence"
                                     disabled={!params.node.selected || isDeletePending || isUpdatePending}
                                     onClick={() => deleteMonthlyKpaRecurrence(params.data.mongoId)}
-                                    className="w-16 h-10 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    className=""
                                 >
-                                    {isDeletePending ? "⏳" : "🗑️"}
+                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
                                 </button>
                             )}
                         </div>
