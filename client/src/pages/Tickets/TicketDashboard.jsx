@@ -64,7 +64,7 @@ const TicketDashboard = () => {
 
   const roles = auth.user.role.map((role) => role.roleTitle);
   const depts = auth.user.departments.map((dept) => dept.name);
-  const [timeFilter, setTimeFilter] = useState("Yearly");
+  const [timeFilter, setTimeFilter] = useState("Monthly");
   const [filteredTotal, setFilteredTotal] = useState(0);
   const [dateLabel, setDateLabel] = useState("");
 
