@@ -41,15 +41,19 @@ const ExternalCompanyMeetings = () => {
 
         const filteredMeetings = meetings.filter(
             (meeting) => {
-                const externalClientName = (meeting?.externalClient || "")
-                    .trim()
-                    .toLowerCase();
-                const clientName = (meeting?.client || "").trim().toLowerCase();
+                const extClient = meeting?.externalClient;
+                if (!extClient) return false;
 
-                return (
-                    externalClientName === normalizedClientName ||
-                    clientName === normalizedClientName
-                );
+                // Check possible company name fields on the Visitor object
+                const possibleNames = [
+                    extClient.visitorCompany,
+                    extClient.brandName,
+                    extClient.registeredClientCompany,
+                    extClient.email,
+                    typeof extClient === 'string' ? extClient : "",
+                ].map(name => (name || "").trim().toLowerCase());
+
+                return possibleNames.includes(normalizedClientName);
             },
         );
 

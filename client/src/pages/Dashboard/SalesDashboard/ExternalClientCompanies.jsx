@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PageFrame from "../../../components/Pages/PageFrame";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { setClientData } from "../../../redux/slices/salesSlice";
@@ -10,30 +10,39 @@ import { Chip, CircularProgress } from "@mui/material";
 
 const ExternalClientCompanies = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const clientsData = useSelector((state) => state.sales.clientsData);
     const dispatch = useDispatch();
     const axios = useAxiosPrivate();
     const [loading, setLoading] = useState(true);
     const [filteredCompanies, setFilteredCompanies] = useState([]);
 
+    const isOpenDeskView = location.pathname.includes("/open-desk/");
+
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                // Reuse external clients visitor source and show only meeting-room visitors.
+                // Reuse external clients visitor source and filter by selected external-client tab.
                 const visitorsResponse = await axios.get("/api/visitors/fetch-visitors");
                 const visitors = visitorsResponse.data;
 
-                const externalVisitorsForMeetingBooking = visitors.filter((visitor) => {
+                const externalVisitorsForPurpose = visitors.filter((visitor) => {
                     const isExternalVisitor = visitor.visitorFlag === "Client";
-                    const isMeetingRoomBooking =
-                        (visitor.purposeOfVisit || "").trim().toLowerCase() ===
-                        "meeting room booking";
-                    return isExternalVisitor && isMeetingRoomBooking;
+                    const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
+
+                    if (isOpenDeskView) {
+                        return (
+                            isExternalVisitor &&
+                            (purpose === "half-day pass" || purpose === "full-day pass")
+                        );
+                    }
+
+                    return isExternalVisitor && purpose === "meeting room booking";
                 });
 
-                dispatch(setClientData(externalVisitorsForMeetingBooking));
-                setFilteredCompanies(externalVisitorsForMeetingBooking);
+                dispatch(setClientData(externalVisitorsForPurpose));
+                setFilteredCompanies(externalVisitorsForPurpose);
             } catch (error) {
                 console.error("Failed to fetch data", error);
             } finally {
@@ -42,10 +51,14 @@ const ExternalClientCompanies = () => {
         };
 
         fetchData();
-    }, [axios, dispatch]);
+    }, [axios, dispatch, isOpenDeskView]);
 
     const handleClickRow = (clientData) => {
         dispatch(setSelectedClient(clientData));
+        if (isOpenDeskView) {
+            return;
+        }
+
         navigate(
             `/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies/${encodeURIComponent(clientData.clientName)}`,
             { replace: true },
@@ -60,11 +73,15 @@ const ExternalClientCompanies = () => {
             flex: 1,
             cellRenderer: (params) => (
                 <span
-                    style={{
-                        color: "#1E3D73",
-                        textDecoration: "underline",
-                        cursor: "pointer",
-                    }}
+                    style={
+                        isOpenDeskView
+                            ? {}
+                            : {
+                                color: "#1E3D73",
+                                textDecoration: "underline",
+                                cursor: "pointer",
+                            }
+                    }
                     onClick={() => handleClickRow(params.data)}
                 >
                     {params.value}
@@ -111,7 +128,11 @@ const ExternalClientCompanies = () => {
                     ) : (
                         <AgTable
                             search={true}
-                            tableTitle={"EXTERNAL COMPANIES"}
+                            tableTitle={
+                                isOpenDeskView
+                                    ? "EXTERNAL COMPANIES (OPEN DESK)"
+                                    : "EXTERNAL COMPANIES"
+                            }
                             data={tableData}
                             columns={columns}
                         />

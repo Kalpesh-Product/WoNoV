@@ -309,8 +309,13 @@ const getCoworkingClients = async (req, res, next) => {
     const clientsWithMembers = clients.map((client) => {
       return {
         ...client,
+        // members: members.filter(
+        //   (member) => member?.client._id.toString() === client?._id.toString(),
+        // ),
         members: members.filter(
-          (member) => member?.client._id.toString() === client?._id.toString(),
+          (member) =>
+            member.client &&
+            member.client._id.toString() === client._id.toString(),
         ),
       };
     });
