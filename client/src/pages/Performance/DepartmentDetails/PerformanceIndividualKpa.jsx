@@ -50,6 +50,7 @@ const PerformanceIndividualKpa = () => {
     const isAddKpaDisabled = auth?.user?.role?.some((role) =>
         restrictedRoles.includes(role.roleTitle)
     );
+    const canDeleteRecurrence = !isAddKpaDisabled;
 
     const departmentAccess = [
         "67b2cf85b9b6ed5cedeb9a2e",
@@ -92,6 +93,22 @@ const PerformanceIndividualKpa = () => {
         },
     });
     const startDate = watch("startDate");
+
+    const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } = useMutation({
+        mutationKey: ["deleteMonthlyKpaRecurrence"],
+        mutationFn: async (taskId) => {
+            const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+            toast.success(data.message || "KPA recurrence removed");
+        },
+        onError: () => {
+            toast.error("Failed to remove recurrence");
+        },
+    });
 
     //--------------POST REQUEST FOR MONTHLY KPA-----------------//
     const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
@@ -241,15 +258,27 @@ const PerformanceIndividualKpa = () => {
                     headerName: "Actions",
                     field: "actions",
                     cellRenderer: (params) => (
-                        <div
-                            role="button"
-                            onClick={() => updateMonthlyKpa(params.data.mongoId)}
-                            className="p-2"
-                        >
-                            <PrimaryButton
-                                title={"Mark As Done"}
-                                disabled={!params.node.selected}
-                            />
+                        <div className="p-2 flex gap-2 items-center">
+                            <button
+                                type="button"
+                                title="Mark As Done"
+                                disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                                onClick={() => updateMonthlyKpa(params.data.mongoId)}
+                                className="w-9 h-9 rounded-full bg-primary text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                {isUpdatePending ? "⏳" : "✅"}
+                            </button>
+                            {canDeleteRecurrence && (
+                                <button
+                                    type="button"
+                                    title="Delete Recurrence"
+                                    disabled={!params.node.selected || isDeletePending || isUpdatePending}
+                                    onClick={() => deleteMonthlyKpaRecurrence(params.data.mongoId)}
+                                    className="w-9 h-9 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                >
+                                    {isDeletePending ? "⏳" : "🗑️"}
+                                </button>
+                            )}
                         </div>
                     ),
                 },

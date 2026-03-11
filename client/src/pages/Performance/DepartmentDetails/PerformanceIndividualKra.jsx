@@ -47,6 +47,8 @@ const PerformanceIndividualKra = () => {
         restrictedRoles.includes(role.roleTitle)
     );
 
+    const canDeleteRecurrence = !isAddKraDisabled;
+
     const departmentAccess = [
         "67b2cf85b9b6ed5cedeb9a2e",
         "6798bab9e469e809084e249e",
@@ -85,6 +87,22 @@ const PerformanceIndividualKra = () => {
             description: "",
             assignTo: "",
             assignedDate: dayjs().toISOString(),
+        },
+    });
+
+    const { mutate: deleteDailyKraRecurrence, isPending: isDeletePending } = useMutation({
+        mutationKey: ["deleteDailyKraRecurrence"],
+        mutationFn: async (taskId) => {
+            const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+            toast.success(data.message || "KRA recurrence removed");
+        },
+        onError: () => {
+            toast.error("Failed to remove recurrence");
         },
     });
 
@@ -212,15 +230,27 @@ const PerformanceIndividualKra = () => {
                     headerName: "Actions",
                     field: "actions",
                     cellRenderer: (params) => (
-                        <div
-                            role="button"
-                            onClick={() => updateDailyKra(params.data.id)}
-                            className="p-2"
-                        >
-                            <PrimaryButton
-                                title={"Mark As Done"}
-                                disabled={!params.node.selected}
-                            />
+                        <div className="p-2 flex gap-2 items-center">
+                            <button
+                                type="button"
+                                title="Mark As Done"
+                                disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                                onClick={() => updateDailyKra(params.data.id)}
+                                className="w-9 h-9 rounded-full bg-primary text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                {isUpdatePending ? "⏳" : "✅"}
+                            </button>
+                            {canDeleteRecurrence && (
+                                <button
+                                    type="button"
+                                    title="Delete Recurrence"
+                                    disabled={!params.node.selected || isDeletePending || isUpdatePending}
+                                    onClick={() => deleteDailyKraRecurrence(params.data.id)}
+                                    className="w-9 h-9 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                >
+                                    {isDeletePending ? "⏳" : "🗑️"}
+                                </button>
+                            )}
                         </div>
                     ),
                 },

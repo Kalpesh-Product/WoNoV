@@ -42,9 +42,11 @@ const PerformanceTeamKpa = () => {
     "Finance Employee",
     "Marketing Employee",
   ];
-  const isAddKraDisabled = auth?.user?.role?.some((role) =>
+  const isAddKpaDisabled = auth?.user?.role?.some((role) =>
     restrictedRoles.includes(role.roleTitle)
   );
+
+  const canDeleteRecurrence = !isAddKpaDisabled;
 
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const isManager = userPermissions.includes(
@@ -67,6 +69,22 @@ const PerformanceTeamKpa = () => {
     },
   });
   const startDate = watch("startDate");
+
+  const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } = useMutation({
+    mutationKey: ["deleteMonthlyKpaRecurrence"],
+    mutationFn: async (taskId) => {
+      const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
+      queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+      toast.success(data.message || "KPA recurrence removed");
+    },
+    onError: () => {
+      toast.error("Failed to remove recurrence");
+    },
+  });
 
   const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
     mutationKey: ["addTeamMonthlyKpa"],
@@ -183,6 +201,30 @@ const PerformanceTeamKpa = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
+    ...(!isAddKpaDisabled
+      ? [
+        {
+          headerName: "Actions",
+          field: "actions",
+          cellRenderer: (params) => (
+            <div className="p-2 flex gap-2 items-center">
+
+              {canDeleteRecurrence && (
+                <button
+                  type="button"
+                  title="Delete Recurrence"
+                  // disabled={!params.node.selected || isDeletePending}
+                  onClick={() => deleteMonthlyKpaRecurrence(params.data.mongoId)}
+                  className="w-9 h-9 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {isDeletePending ? "⏳" : "🗑️"}
+                </button>
+              )}
+            </div>
+          ),
+        },
+      ]
+      : []),
   ];
 
   const completedColumns = [
@@ -238,7 +280,7 @@ const PerformanceTeamKpa = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 buttonTitle={"Add Team Monthly KPA"}
-                buttonDisabled={isAddKraDisabled}
+                buttonDisabled={isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
                 tableTitle={`${department} TEAM - MONTHLY KPA`}
                 data={(teamKpa || [])

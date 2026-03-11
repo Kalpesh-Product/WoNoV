@@ -219,6 +219,34 @@ const updateTaskStatus = async (req, res, next) => {
   }
 };
 
+const deleteTaskRecurrence = async (req, res, next) => {
+  try {
+    const { taskId } = req.params;
+
+    if (!taskId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(taskId)) {
+      return res.status(400).json({ message: "Invalid task ID provided" });
+    }
+
+    const deletedTask = await kraKpaRole.findByIdAndUpdate(
+      taskId,
+      { isDeleted: true },
+      { new: true }
+    );
+
+    if (!deletedTask) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    return res.status(200).json({ message: "Task recurrence removed" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
@@ -263,6 +291,7 @@ const getKraKpaTasks = async (req, res, next) => {
       .find({
         ...query,
         department: dept,
+        isDeleted: { $ne: true },
         completedDate: {
           $not: {
             $elemMatch: {
@@ -409,6 +438,7 @@ const getMyKraKpaTasks = async (req, res, next) => {
     const tasks = await kraKpaRole
       .find({
         ...query,
+        isDeleted: { $ne: true },
         completedDate: {
           $not: {
             $elemMatch: {
@@ -501,6 +531,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
         ? []
         : completedTasks
           .filter((task) => {
+            if (!task.task || task.task.isDeleted) return false;
             if (duration && duration !== task.task.kpaDuration) return;
             if (empId && task.completedBy.empId !== empId) return;
 
@@ -770,6 +801,7 @@ module.exports = {
   getMyKraKpaTasks,
   getAllDeptTasks,
   updateTaskStatus,
+  deleteTaskRecurrence,
   getCompletedKraKpaTasks,
   bulkInsertKraKpaTasks,
 };

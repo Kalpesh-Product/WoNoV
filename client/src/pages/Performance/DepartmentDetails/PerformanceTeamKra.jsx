@@ -41,9 +41,11 @@ const PerformanceTeamKra = () => {
         "Finance Employee",
         "Marketing Employee",
     ];
-    const isAddKpaDisabled = auth?.user?.role?.some((role) =>
+    const isAddKraDisabled = auth?.user?.role?.some((role) =>
         restrictedRoles.includes(role.roleTitle)
     );
+
+    const canDeleteRecurrence = !isAddKraDisabled;
 
     const userPermissions = auth?.user?.permissions?.permissions || [];
     const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value);
@@ -63,6 +65,22 @@ const PerformanceTeamKra = () => {
             teamDailyKra: "",
             assignTo: [], // Multi-select
             assignedDate: dayjs().toISOString(),
+        },
+    });
+
+    const { mutate: deleteDailyKraRecurrence, isPending: isDeletePending } = useMutation({
+        mutationKey: ["deleteDailyKraRecurrence"],
+        mutationFn: async (taskId) => {
+            const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+            toast.success(data.message || "KRA recurrence removed");
+        },
+        onError: () => {
+            toast.error("Failed to remove recurrence");
         },
     });
 
@@ -163,6 +181,30 @@ const PerformanceTeamKra = () => {
                 return <Chip label={params.value} style={{ backgroundColor, color }} />;
             },
         },
+        ...(!isAddKraDisabled
+            ? [
+                {
+                    headerName: "Actions",
+                    field: "actions",
+                    cellRenderer: (params) => (
+                        <div className="p-2 flex gap-2 items-center">
+
+                            {canDeleteRecurrence && (
+                                <button
+                                    type="button"
+                                    title="Delete Recurrence"
+                                    // disabled={!params.node.selected || isDeletePending}
+                                    onClick={() => deleteDailyKraRecurrence(params.data.mongoId)}
+                                    className="w-9 h-9 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                >
+                                    {isDeletePending ? "⏳" : "🗑️"}
+                                </button>
+                            )}
+                        </div>
+                    ),
+                },
+            ]
+            : []),
     ];
     const completedColumns = [
         { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
@@ -218,7 +260,7 @@ const PerformanceTeamKra = () => {
                             <YearWiseTable
                                 formatTime
                                 buttonTitle={"Add Team KRA"}
-                                buttonDisabled={isAddKpaDisabled}
+                                buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
                                 tableTitle={`${department} TEAM - DAILY KRA`}
                                 data={(teamKra || [])
