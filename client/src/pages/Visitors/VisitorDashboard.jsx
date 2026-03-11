@@ -429,6 +429,14 @@ const VisitorDashboard = () => {
     return acc;
   }, {});
 
+  const internalVisitorsCount = visitorsData.filter(
+    (visitor) => visitor.visitorFlag !== "Client",
+  ).length;
+
+  const externalClientsCount = visitorsData.filter(
+    (visitor) => visitor.visitorFlag === "Client",
+  ).length;
+
   const labels = Object.keys(visitorTypeCounts);
   const series = Object.values(visitorTypeCounts);
   const tooltipValue = series.map(
@@ -625,7 +633,6 @@ const VisitorDashboard = () => {
       description: "Checked Out Visitors",
       permission: PERMISSIONS.VISITORS_CHECKED_OUT_TODAY.value,
     },
-    
 
     {
       key: "checkedInVisitorsToday",
@@ -635,7 +642,7 @@ const VisitorDashboard = () => {
       permission: PERMISSIONS.VISITORS_CHECKED_IN_VISITORS_TODAY.value,
     },
 
-     {
+    {
       key: "yetToCheckOut",
       title: "Total",
       data: visitorsData.filter((item) => item.checkOut === null).length,
@@ -649,7 +656,7 @@ const VisitorDashboard = () => {
       description: "Checked Out Visitors",
       permission: PERMISSIONS.VISITORS_CHECKED_OUT_TODAY.value,
     },
-   
+
     {
       key: "walkInVisitsToday",
       title: "Total",
@@ -696,7 +703,6 @@ const VisitorDashboard = () => {
     (widget) =>
       !widget.permission || userPermissions.includes(widget.permission),
   );
-  
 
   //------------------------PAGE ACCESS DONUT START-------------------//
   const donutChartConfigs = [
@@ -724,15 +730,18 @@ const VisitorDashboard = () => {
   const donutChartConfig1 = [
     {
       layout: 2,
-      key: "visitorCategories",
+      key: "internalExternalClients",
       title: "Overall visitor ",
       titleLabel: "Internal & External Clients ",
       border: true,
       centerLabel: "Visitors",
-      labels: labels,
+      labels: ["Internal Visitors", "External Clients"],
       colors: ["#54C4A7", "#FFB946"],
-      series: series,
-      tooltipValue: tooltipValue,
+      series: [internalVisitorsCount, externalClientsCount],
+      tooltipValue: [
+        `${internalVisitorsCount} visitor${internalVisitorsCount !== 1 ? "s" : ""}`,
+        `${externalClientsCount} visitor${externalClientsCount !== 1 ? "s" : ""}`,
+      ],
       // isMonetary: true,
       //permission: PERMISSIONS.VISITORS_VISITOR_CATEGORIES.value,
     },
@@ -966,7 +975,7 @@ const VisitorDashboard = () => {
     {
       layout: 2,
       widgets: [
-          ...allowedPieChartsTop1.map((item) => (
+        ...allowedPieChartsTop1.map((item) => (
           <WidgetSection
             key={item.key}
             title={item.title}
@@ -981,7 +990,7 @@ const VisitorDashboard = () => {
             />
           </WidgetSection>
         )),
-        
+
         ...allowedPieChartsTop.map((item) => (
           <WidgetSection
             key={item.key}
@@ -1015,7 +1024,7 @@ const VisitorDashboard = () => {
           </WidgetSection>
         )),
 
-           ...allowedDonutCharts1.map((item) => (
+        ...allowedDonutCharts1.map((item) => (
           <WidgetSection
             key={item.key}
             title={item.title}
@@ -1031,7 +1040,6 @@ const VisitorDashboard = () => {
             />
           </WidgetSection>
         )),
-
       ],
     },
 
