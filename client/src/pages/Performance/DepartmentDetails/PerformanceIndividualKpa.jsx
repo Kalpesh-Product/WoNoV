@@ -26,6 +26,8 @@ import {
     setSelectedDepartment,
     setSelectedDepartmentName,
 } from "../../../redux/slices/performanceSlice";
+import { FaCheckSquare } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
 
 const PerformanceIndividualKpa = () => {
     const axios = useAxiosPrivate();
@@ -50,6 +52,7 @@ const PerformanceIndividualKpa = () => {
     const isAddKpaDisabled = auth?.user?.role?.some((role) =>
         restrictedRoles.includes(role.roleTitle)
     );
+    const canDeleteRecurrence = !isAddKpaDisabled;
 
     const departmentAccess = [
         "67b2cf85b9b6ed5cedeb9a2e",
@@ -92,6 +95,22 @@ const PerformanceIndividualKpa = () => {
         },
     });
     const startDate = watch("startDate");
+
+    const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } = useMutation({
+        mutationKey: ["deleteMonthlyKpaRecurrence"],
+        mutationFn: async (taskId) => {
+            const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+            toast.success(data.message || "KPA recurrence removed");
+        },
+        onError: () => {
+            toast.error("Failed to remove recurrence");
+        },
+    });
 
     //--------------POST REQUEST FOR MONTHLY KPA-----------------//
     const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
@@ -241,15 +260,27 @@ const PerformanceIndividualKpa = () => {
                     headerName: "Actions",
                     field: "actions",
                     cellRenderer: (params) => (
-                        <div
-                            role="button"
-                            onClick={() => updateMonthlyKpa(params.data.mongoId)}
-                            className="p-2"
-                        >
-                            <PrimaryButton
-                                title={"Mark As Done"}
-                                disabled={!params.node.selected}
-                            />
+                        <div className="p-2 flex gap-2 items-center">
+                            <button
+                                type="button"
+                                title="Mark As Done"
+                                disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                                onClick={() => updateMonthlyKpa(params.data.mongoId)}
+                                className="ml-2 disabled:cursor-not-allowed"
+                            >
+                                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color={!params.node.selected ? "gray" : "green"} />}
+                            </button>
+                            {canDeleteRecurrence && (
+                                <button
+                                    type="button"
+                                    title="Delete Recurrence"
+                                    disabled={!params.node.selected || isDeletePending || isUpdatePending}
+                                    onClick={() => deleteMonthlyKpaRecurrence(params.data.mongoId)}
+                                    className="ml-2 disabled:cursor-not-allowed"
+                                >
+                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
+                                </button>
+                            )}
                         </div>
                     ),
                 },
@@ -310,7 +341,7 @@ const PerformanceIndividualKpa = () => {
                                 checkbox={showCheckBox}
                                 tableTitle={`${department} INDIVIDUAL - MONTHLY KPA`}
                                 buttonTitle={"Add Monthly KPA"}
-                                // buttonDisabled={isAddKpaDisabled}
+                                buttonDisabled={isAddKpaDisabled}
                                 handleSubmit={() => setOpenModal(true)}
                                 key={departmentKra.length}
                                 data={[

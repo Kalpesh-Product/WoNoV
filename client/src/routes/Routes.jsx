@@ -128,6 +128,7 @@ import ViewClientLayout from "../pages/Dashboard/SalesDashboard/ViewClients/View
 import ClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/ClientDetails";
 import Desks from "../pages/Dashboard/SalesDashboard/ViewClients/Desks";
 import ClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ClientRevenue";
+import ExternalClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ExternalClientRevenue";
 import ClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/ClientMembers";
 import CoWorkingSeats from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CoWorkingSeats";
 import CheckAvailability from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CheckAvailability";
@@ -1590,6 +1591,28 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "mix-bag/external-client/meetings/external-companies/:clientName",
+                        element: <ExternalClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VisitorDetails />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <ExternalCompanyMeetings />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <ExternalClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ClientMembers />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "mix-bag/external-client/open-desk/external-companies/:clientName",
                         element: <ExternalClientLayout />,
                         children: [
                           {

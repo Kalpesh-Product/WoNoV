@@ -64,7 +64,7 @@ const TicketDashboard = () => {
 
   const roles = auth.user.role.map((role) => role.roleTitle);
   const depts = auth.user.departments.map((dept) => dept.name);
-  const [timeFilter, setTimeFilter] = useState("Yearly");
+  const [timeFilter, setTimeFilter] = useState("Monthly");
   const [filteredTotal, setFilteredTotal] = useState(0);
   const [dateLabel, setDateLabel] = useState("");
 
@@ -117,6 +117,12 @@ const TicketDashboard = () => {
     openTickets: ticketsData.filter((item) => {
       return (
         item.status === "Open" && dayjs(item.createdAt).isSame(todayDate, "day")
+      );
+    }).length,
+
+    rejectedTickets: ticketsData.filter((item) => {
+      return (
+        item.status === "Rejected" && dayjs(item.createdAt).isSame(todayDate, "day")
       );
     }).length,
 

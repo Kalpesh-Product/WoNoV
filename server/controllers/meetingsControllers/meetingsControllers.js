@@ -240,12 +240,15 @@ const addMeetings = async (req, res, next) => {
     const bookingUser = await User.findById(bookedBy);
 
     if (meetingType === "Internal") {
-      const updateQuery = { _id: client };
+      // const updateQuery = { _id: client };
       const BookingModel = isClient ? CoworkingClient : Company;
 
-      const creditOwner = await BookingModel.findById(client);
+      const creditRecord = await resetMeetingCreditsIfNeeded(
+        BookingModel,
+        client,
+      );
 
-      if (!creditOwner) {
+      if (!creditRecord) {
         throw new CustomError(
           "Booking client/company not found",
           logPath,
@@ -254,19 +257,9 @@ const addMeetings = async (req, res, next) => {
         );
       }
 
-      if (creditOwner.meetingCreditBalance < totalCreditsUsed) {
-        throw new CustomError(
-          "Insufficient meeting credits",
-          logPath,
-          logAction,
-          logSourceKey,
-        );
-      }
-
-      const creditRecord = await resetMeetingCreditsIfNeeded(
-        BookingModel,
-        client,
-      );
+      await BookingModel.findByIdAndUpdate(client, {
+        $inc: { meetingCreditBalance: -totalCreditsUsed },
+      });
 
       // const updatedUser = await BookingModel.findOneAndUpdate(
       //   {
@@ -319,17 +312,17 @@ const addMeetings = async (req, res, next) => {
     isClient
       ? null
       : emitter.emit("notification", {
-          initiatorData: bookingUser._id,
-          users: internalParticipants.map((userId) => ({
-            userActions: {
-              whichUser: userId,
-              hasRead: false,
-            },
-          })),
-          type: "book meeting",
-          module: "Meetings",
-          message: `You have been added to a meeting by ${bookingUser.firstName} ${bookingUser.lastName}`,
-        });
+        initiatorData: bookingUser._id,
+        users: internalParticipants.map((userId) => ({
+          userActions: {
+            whichUser: userId,
+            hasRead: false,
+          },
+        })),
+        type: "book meeting",
+        module: "Meetings",
+        message: `You have been added to a meeting by ${bookingUser.firstName} ${bookingUser.lastName}`,
+      });
 
     await createLog({
       path: logPath,
@@ -562,12 +555,12 @@ const getMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-              meeting.receptionist.firstName,
-              meeting.receptionist.middleName,
-              meeting.receptionist.lastName,
-            ]
-              .filter(Boolean)
-              .join(" ")
+            meeting.receptionist.firstName,
+            meeting.receptionist.middleName,
+            meeting.receptionist.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
           : "";
       }
 
@@ -718,12 +711,12 @@ const getMyMeetings = async (req, res, next) => {
 
       const bookedBy = meeting.bookedBy
         ? [
-            meeting.bookedBy.firstName,
-            meeting.bookedBy.middleName,
-            meeting.bookedBy.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
+          meeting.bookedBy.firstName,
+          meeting.bookedBy.middleName,
+          meeting.bookedBy.lastName,
+        ]
+          .filter(Boolean)
+          .join(" ")
         : "";
 
       const isReceptionist = meeting.receptionist.departments.some(
@@ -734,12 +727,12 @@ const getMyMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-              meeting.receptionist.firstName,
-              meeting.receptionist.middleName,
-              meeting.receptionist.lastName,
-            ]
-              .filter(Boolean)
-              .join(" ")
+            meeting.receptionist.firstName,
+            meeting.receptionist.middleName,
+            meeting.receptionist.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
           : "";
       }
 

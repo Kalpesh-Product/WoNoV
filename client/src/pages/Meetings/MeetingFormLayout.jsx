@@ -42,6 +42,7 @@ import { inrFormat } from "../../utils/currencyFormat";
 
 const MeetingFormLayout = () => {
   const { auth } = useAuth();
+  const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
   const [open, setOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const locationName = searchParams.get("location") || "";
@@ -119,7 +120,7 @@ const MeetingFormLayout = () => {
   const startTime = watch("startTime");
   const endTime = watch("endTime");
   const company = watch("company");
-  const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
+  const isBizNest = company === BIZNEST_COMPANY_ID;
   const externalCompany = watch("externalCompany");
   const bookedBy = watch("bookedBy");
 
@@ -144,7 +145,7 @@ const MeetingFormLayout = () => {
 
   useEffect(() => {
     if (!isReceptionist) {
-      setValue("company", "6799f0cd6a01edbe1bc3fcea");
+      setValue("company", BIZNEST_COMPANY_ID);
     }
   }, [isReceptionist, setValue]);
 
@@ -187,13 +188,29 @@ const MeetingFormLayout = () => {
       }
     },
   });
+
+  const selectedClient = useMemo(
+    () => clientsData.find((item) => item._id === company),
+    [clientsData, company]
+  );
+
+  const remainingMeetingCredits = useMemo(() => {
+    if (!company || company === BIZNEST_COMPANY_ID) return "-";
+
+    return selectedClient?.meetingCreditBalance ?? "-";
+  }, [company, selectedClient]);
   //-------------------------------API-------------------------------//
+  const displayedRemainingCredits = isReceptionist
+    ? remainingMeetingCredits
+    : auth.user?.company?.meetingCreditBalance ?? "-";
+
+  const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 
   //-------------------------------API-------------------------------//
   const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
     queryKey: ["participants", company],
     queryFn: async () => {
-      if (company === "6799f0cd6a01edbe1bc3fcea") {
+      if (company === BIZNEST_COMPANY_ID) {
         const response = await axios.get("/api/users/fetch-users");
         return (
           response.data
@@ -661,12 +678,12 @@ const MeetingFormLayout = () => {
                           <MenuItem value="" disabled>
                             Select a company
                           </MenuItem>
-                          <MenuItem value="6799f0cd6a01edbe1bc3fcea">
+                          <MenuItem value={BIZNEST_COMPANY_ID}>
                             BizNest
                           </MenuItem>
                           {clientsData.map((item) => (
                             <MenuItem key={item._id} value={item._id}>
-                              {item.clientName}
+                              {`${item.clientName}`}
                             </MenuItem>
                           ))}
                         </TextField>
@@ -684,6 +701,22 @@ const MeetingFormLayout = () => {
                     />
                   </div>
                 )}
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={displayedRemainingCredits}
+                  disabled
+                  label="Remaining Credit"
+                  InputProps={{
+                    sx: isRemainingCreditsNegative
+                      ? {
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          WebkitTextFillColor: "#d32f2f",
+                        },
+                      }
+                      : undefined,
+                  }}
+                />
                 <div className="hidden">
                   <Controller
                     name="internalBooked"

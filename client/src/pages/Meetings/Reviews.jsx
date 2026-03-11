@@ -1,13 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { Tabs, Tab } from "@mui/material";
 import WidgetSection from "../../components/WidgetSection";
 import DataCard from "../../components/DataCard";
 import AgTable from "../../components/AgTable";
 import MuiModal from "../../components/MuiModal";
-import { Chip } from "@mui/material";
-import { PiArrowBendUpLeftBold } from "react-icons/pi";
-import { PiArrowBendLeftDownBold } from "react-icons/pi";
-import MuiAside from "../../components/MuiAside";
-import PrimaryButton from "../../components/PrimaryButton";
 import TextField from "@mui/material/TextField";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -21,12 +17,17 @@ import { noOnlyWhitespace } from "../../utils/validators";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import PrimaryButton from "../../components/PrimaryButton";
 
 const Reviews = () => {
   const axios = useAxiosPrivate();
-  const [openSidebar, setOpenSidebar] = useState(false);
-  const [sidebarMode, setSidebarMode] = useState("view");
-  const [reviewData, setReviewData] = useState({});
+  const { auth } = useAuth();
+  const [activeTab, setActiveTab] = useState("clientCredit");
+  const [openModal, setOpenModal] = useState(false);
+  const [modalType, setModalType] = useState("creditView");
+  const [selectedData, setSelectedData] = useState({});
+  const [creditEdits, setCreditEdits] = useState({});
+
   const {
     handleSubmit,
     control,
@@ -36,39 +37,66 @@ const Reviews = () => {
     mode: "onChange",
     defaultValues: {
       reply: "",
+      monthlyCredit: "",
+      consumedCredit: "",
     },
   });
-  const { auth } = useAuth();
 
-  const handleOpenSidebar = (data, mode = "view") => {
-    setReviewData(data);
-    setSidebarMode(mode);
-    setOpenSidebar(true);
-    reset({ reply: mode === "reply" ? data?.replyText || "" : "" });
+  const handleOpenModal = (data, type) => {
+    setSelectedData(data || {});
+    setModalType(type);
+    setOpenModal(true);
+
+    if (type === "reviewReply") {
+      reset({
+        reply: data?.replyText || "",
+        monthlyCredit: "",
+        consumedCredit: "",
+      });
+      return;
+    }
+
+    if (type === "creditEdit") {
+      reset({
+        reply: "",
+        monthlyCredit: data?.monthlyCredit || "",
+        consumedCredit: data?.consumedCredit || "",
+      });
+      return;
+    }
+
+    reset({ reply: "", monthlyCredit: "", consumedCredit: "" });
   };
 
-  const handleCloseSidebar = () => {
-    setOpenSidebar(false);
-    setSidebarMode("view");
-    reset({ reply: "" });
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setSelectedData({});
+    setModalType("reviewView");
+    reset({ reply: "", monthlyCredit: "", consumedCredit: "" });
   };
 
   const { data: reviews = [] } = useQuery({
     queryKey: ["reviews"],
     queryFn: async () => {
-      try {
-        const response = await axios.get("/api/meetings/get-reviews");
-        return response.data;
-      } catch (error) {
-        throw new Error(error.response.data.message);
-      }
+      const response = await axios.get("/api/meetings/get-reviews");
+      return response.data;
     },
+    enabled: activeTab === "clientReview",
+  });
+
+  const { data: clientsData = [], isLoading: isClientsLoading } = useQuery({
+    queryKey: ["co-working-clients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return response.data;
+    },
+    enabled: activeTab === "clientCredit",
   });
 
   const { mutate: replyReview, isPending: isReplyReviewPending } = useMutation({
     mutationFn: async (data) => {
       const response = await axios.post("/api/meetings/create-reply", {
-        reviewId: reviewData.id,
+        reviewId: selectedData.id,
         reply: data.reply,
         replierEmail: auth.user.email,
         replierName: auth.user.firstName,
@@ -77,32 +105,42 @@ const Reviews = () => {
     },
     onSuccess: function (data) {
       toast.success(data.message);
-      handleCloseSidebar();
-      setOpenSidebar(false);
+      handleCloseModal();
       queryClient.invalidateQueries(["reviews"]);
     },
     onError: function (error) {
-      toast.error(error.message);
+      toast.error(error?.response?.data?.message || error.message);
     },
   });
 
-  const departmentsColumn = [
+  const submitCreditEdit = (formValues) => {
+    const monthlyCredit = Number(formValues.monthlyCredit);
+    const consumedCredit = Number(formValues.consumedCredit);
+
+    if (consumedCredit > monthlyCredit) {
+      toast.error("Consumed credit cannot be greater than monthly credit");
+      return;
+    }
+
+    setCreditEdits((prev) => ({
+      ...prev,
+      [selectedData.clientId]: { monthlyCredit, consumedCredit },
+    }));
+
+    toast.success("Client credit updated in UI");
+    handleCloseModal();
+  };
+
+  const reviewColumns = [
     { field: "srno", headerName: "Sr No" },
-    {
-      field: "nameofreview",
-      headerName: "User",
-      flex: 1,
-    },
+    { field: "nameofreview", headerName: "User", flex: 1 },
     { field: "date", headerName: "Date" },
     {
       field: "rate",
       headerName: "Rating",
       cellRenderer: (params) => (
         <div>
-          ⭐{" "}
-          {typeof params.value === "number"
-            ? params.value.toFixed(2)
-            : params.value}{" "}
+          ⭐ {typeof params.value === "number" ? params.value.toFixed(2) : params.value}{" "}
           <small>Out of 5</small>
         </div>
       ),
@@ -121,56 +159,11 @@ const Reviews = () => {
     {
       field: "action",
       headerName: "Actions",
-      // cellRenderer: (params) => {
-      //   const statusColorMap = {
-      //     "Reply Review": { backgroundColor: "#E8FEF1", color: "#527160" }, // Light orange bg, dark orange font
-      //     Replied: { backgroundColor: "#EAEAEA", color: "#868686" }, // Light green bg, dark green font
-      //   };
-
-      //   const { backgroundColor, color } = statusColorMap[params.value] || {
-      //     backgroundColor: "gray",
-      //     color: "white",
-      //   };
-
-      //   const handleClick = () => {
-      //     if (params.value === "Reply Review") {
-      //       // Trigger modal open when "Reply Review" is clicked
-      //       setOpenSidebar(true);
-      //       setReviewData(params.data); // Optional: You can pass the row data to the modal
-      //     }
-      //   };
-
-      //   return (
-      //     <>
-      //       <Chip
-      //         label={
-      //           params.value === "Reply Review" ? (
-      //             <div
-      //               className="flex flex-row items-center justify-center gap-2"
-      //               onClick={handleClick}
-      //             >
-      //               <PiArrowBendLeftDownBold />
-      //               {params.value}
-      //             </div>
-      //           ) : (
-      //             <div className="flex flex-row items-center justify-center gap-2">
-      //               <PiArrowBendUpLeftBold />
-      //               {params.value}
-      //             </div>
-      //           )
-      //         }
-      //         style={{
-      //           backgroundColor,
-      //           color,
-      //         }}
-      //       />
-      //     </>
-      //   );
-      // },
+      flex: 1,
       cellRenderer: (params) => (
         <div className="flex gap-2 items-center">
           <div
-            onClick={() => handleOpenSidebar(params.data, "view")}
+            onClick={() => handleOpenModal(params.data, "reviewView")}
             className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
           >
             <span className="text-subtitle">
@@ -183,167 +176,283 @@ const Reviews = () => {
             menuItems={[
               {
                 label: !params.data.replyText ? "Reply to Review" : "Replied",
-                onClick: () => handleOpenSidebar(params.data, "reply"),
+                onClick: () => handleOpenModal(params.data, "reviewReply"),
                 disabled: !!params.data.replyText,
               },
             ]}
           />
         </div>
       ),
+    },
+  ];
+
+  const clientCreditRows = useMemo(
+    () =>
+      clientsData.map((client, index) => {
+        const clientId = client?._id;
+        const fallbackMonthly = Number(client?.totalMeetingCredits || 0);
+        const fallbackBalance = Number(client?.meetingCreditBalance || 0);
+        const fallbackConsumed = Math.max(fallbackMonthly - fallbackBalance, 0);
+
+        const editedValues = creditEdits[clientId];
+        const monthlyCredit = editedValues?.monthlyCredit ?? fallbackMonthly;
+        const consumedCredit = editedValues?.consumedCredit ?? fallbackConsumed;
+
+        return {
+          id: index + 1,
+          srNo: index + 1,
+          clientId,
+          clientName: client?.clientName || "-",
+          monthlyCredit: Number(monthlyCredit).toFixed(2),
+          consumedCredit: Number(consumedCredit).toFixed(2),
+          remainingCredit: Math.max(monthlyCredit - consumedCredit).toFixed(2),
+        };
+      }),
+    [clientsData, creditEdits]
+  );
+
+  const clientCreditColumns = [
+    { field: "srNo", headerName: "Sr No", width: 90 },
+    { field: "clientName", headerName: "Client Name", flex: 1 },
+    { field: "monthlyCredit", headerName: "Monthly Credit", flex: 1 },
+    { field: "consumedCredit", headerName: "Consumed Credit", flex: 1 },
+    { field: "remainingCredit", headerName: "Remaining Credit", flex: 1 },
+    {
+      field: "action",
+      headerName: "Action",
       flex: 1,
+      cellRenderer: (params) => (
+        <div className="flex gap-2 items-center">
+          <div
+            onClick={() => handleOpenModal(params.data, "creditView")}
+            className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
+          >
+            <span className="text-subtitle">
+              <MdOutlineRemoveRedEye />
+            </span>
+          </div>
+
+          <ThreeDotMenu
+            rowId={`credit-${params.data.clientId}`}
+            menuItems={[
+              {
+                label: "Edit",
+                onClick: () => handleOpenModal(params.data, "creditEdit"),
+              },
+            ]}
+          />
+        </div>
+      ),
     },
   ];
 
   const averageRatings =
     reviews.length > 0
       ? (
-          reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length
-        ).toFixed(2)
+        reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length
+      ).toFixed(2)
       : "0.00";
 
-  // const averageRatings = rating
-
   return (
-    <>
-      <div>
-        <WidgetSection layout={2}>
-          <DataCard
-            data={reviews.length}
-            title="Total"
-            description="Reviews Count"
-          />
-          <DataCard
-            data={`${averageRatings} ⭐`}
-            title="Average"
-            description=" Ratings"
-          />
-          {/* <DataCard data="10.0k" title="Total" description="Reviews Count" /> */}
-        </WidgetSection>
+    <div className="p-4">
+      <Tabs
+        value={activeTab === "clientCredit" ? 0 : 1}
+        variant="fullWidth"
+        TabIndicatorProps={{ style: { display: "none" } }}
+        sx={{
+          backgroundColor: "white",
+          borderRadius: 2,
+          border: "1px solid #d1d5db",
+          overflow: "hidden",
+          "& .MuiTab-root": {
+            textTransform: "none",
+            fontWeight: "medium",
+            color: "#1E3D73",
+            borderRight: "0.1px solid #d1d5db",
+          },
+          "& .Mui-selected": {
+            backgroundColor: "#1E3D73",
+            color: "white !important",
+          },
+        }}
+      >
+        <Tab label="Client Credit" onClick={() => setActiveTab("clientCredit")} />
+        <Tab label="Client Review" onClick={() => setActiveTab("clientReview")} />
+      </Tabs>
 
-        <div className="p-6">
+      <div className="py-4">
+        {activeTab === "clientReview" ? (
+          <>
+            <WidgetSection layout={2}>
+              <DataCard data={reviews.length} title="Total" description="Reviews Count" />
+              <DataCard data={`${averageRatings} ⭐`} title="Average" description=" Ratings" />
+            </WidgetSection>
+
+            <div className="pt-4">
+              <PageFrame>
+                <AgTable
+                  search={true}
+                  tableTitle="Client Reviews"
+                  searchColumn={"nameofreview"}
+                  data={reviews.map((review, index) => {
+                    const replyText =
+                      typeof review.reply === "string"
+                        ? review.reply
+                        : review.reply?.text || "";
+                    const hasReply = !!replyText;
+
+                    return {
+                      id: review._id,
+                      srno: index + 1,
+                      nameofreview: review.reviewerName,
+                      date: humanDate(review.createdAt),
+                      rate: review.rate,
+                      Reviews: review.review,
+                      replyText,
+                      action: hasReply ? "Replied" : "Reply Review",
+                    };
+                  })}
+                  columns={reviewColumns}
+                />
+              </PageFrame>
+            </div>
+          </>
+        ) : (
           <PageFrame>
             <AgTable
               search={true}
-              searchColumn={"Policies"}
-              // data={[
-              //   ...reviews.map((review, index) => ({
-              //     id: review._id,
-              //     srno: index + 1,
-              //     nameofreview: review.reviewerName,
-              //     date: humanDate(review.createdAt),
-              //     rate: review.rate,
-              //     Reviews: review.review,
-              //     reply: review.reply,
-              //     action: review?.reply ? "Replied" : "Reply Review",
-              //   })),
-              // ]}
-              data={[
-                ...reviews.map((review, index) => {
-                  const replyText =
-                    typeof review.reply === "string"
-                      ? review.reply
-                      : review.reply?.text || "";
-                  const hasReply = !!replyText;
-
-                  return {
-                    id: review._id,
-                    srno: index + 1,
-                    nameofreview: review.reviewerName,
-                    date: humanDate(review.createdAt),
-                    rate: review.rate,
-                    Reviews: review.review,
-                    replyText,
-                    replierName: review.reply?.replierName || "",
-                    replierEmail: review.reply?.replierEmail || "",
-                    action: hasReply ? "Replied" : "Reply Review",
-                  };
-                }),
-              ]}
-              columns={departmentsColumn}
+              tableTitle="Client Credits"
+              searchColumn={"clientName"}
+              data={clientCreditRows}
+              columns={clientCreditColumns}
+              loading={isClientsLoading}
             />
           </PageFrame>
-        </div>
-
-        <MuiModal
-          open={openSidebar}
-          // onClose={() => setOpenSidebar(false)}
-          // title={"Reviews"}
-          onClose={handleCloseSidebar}
-          title={sidebarMode === "reply" ? "Reply to Review" : "Review Details"}
-        >
-          {sidebarMode === "view" ? (
-            <div className="space-y-4">
-              <DetalisFormatted title="User" detail={reviewData.nameofreview} />
-              <DetalisFormatted title="Date" detail={reviewData.date} />
-              <DetalisFormatted
-                title="Rating"
-                detail={
-                  typeof reviewData.rate === "number"
-                    ? `${reviewData.rate.toFixed(2)} / 5`
-                    : reviewData.rate || "—"
-                }
-              />
-              <DetalisFormatted title="Review" detail={reviewData.Reviews} />
-
-              <DetalisFormatted
-                title="Reply"
-                detail={reviewData.replyText || "No reply yet"}
-              />
-            </div>
-          ) : (
-            <div className="space-y-5">
-              <div className="p-2 space-y-6">
-                <p className="font-pmedium text-subtitle">
-                  {reviewData.nameofreview || "—"}
-                </p>
-                <p>
-                  ⭐ {reviewData.rate} <small> out of 5</small>
-                </p>
-                <p className="text-sm text-content">
-                  {reviewData.Reviews || "—"}
-                </p>
-              </div>
-
-              <form
-                onSubmit={handleSubmit(replyReview)}
-                className="flex flex-col gap-4"
-              >
-                <Controller
-                  name="reply"
-                  control={control}
-                  rules={{
-                    required: "Please add a review",
-                    validate: {
-                      noOnlyWhitespace,
-                    },
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      type="text"
-                      id="outlined-multiline-flexible"
-                      label="Reply"
-                      fullWidth
-                      error={!!errors.reply}
-                      helperText={errors.reply?.message}
-                      multiline
-                      rows={5}
-                    />
-                  )}
-                />
-
-                <PrimaryButton
-                  title={"Submit"}
-                  type={"submit"}
-                  isLoading={isReplyReviewPending}
-                  disabled={isReplyReviewPending}
-                />
-              </form>
-            </div>
-          )}
-        </MuiModal>
+        )}
       </div>
-    </>
+
+      <MuiModal
+        open={openModal}
+        onClose={handleCloseModal}
+        title={
+          modalType === "reviewReply"
+            ? "Reply to Review"
+            : modalType === "creditView"
+              ? "Client Credit Details"
+              : modalType === "creditEdit"
+                ? "Edit Client Credit"
+                : "Review Details"
+        }
+      >
+        {modalType === "reviewView" && (
+          <div className="space-y-4">
+            <DetalisFormatted title="User" detail={selectedData.nameofreview} />
+            <DetalisFormatted title="Date" detail={selectedData.date} />
+            <DetalisFormatted
+              title="Rating"
+              detail={
+                typeof selectedData.rate === "number"
+                  ? `${selectedData.rate.toFixed(2)} / 5`
+                  : selectedData.rate || "—"
+              }
+            />
+            <DetalisFormatted title="Review" detail={selectedData.Reviews} />
+            <DetalisFormatted title="Reply" detail={selectedData.replyText || "No reply yet"} />
+          </div>
+        )}
+
+        {modalType === "reviewReply" && (
+          <div className="space-y-5">
+            <div className="p-2 space-y-6">
+              <p className="font-pmedium text-subtitle">{selectedData.nameofreview || "—"}</p>
+              <p>
+                ⭐ {selectedData.rate} <small> out of 5</small>
+              </p>
+              <p className="text-sm text-content">{selectedData.Reviews || "—"}</p>
+            </div>
+
+            <form onSubmit={handleSubmit(replyReview)} className="flex flex-col gap-4">
+              <Controller
+                name="reply"
+                control={control}
+                rules={{
+                  required: "Please add a review",
+                  validate: {
+                    noOnlyWhitespace,
+                  },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="text"
+                    label="Reply"
+                    fullWidth
+                    error={!!errors.reply}
+                    helperText={errors.reply?.message}
+                    multiline
+                    rows={5}
+                  />
+                )}
+              />
+
+              <PrimaryButton
+                title={"Submit"}
+                type={"submit"}
+                isLoading={isReplyReviewPending}
+                disabled={isReplyReviewPending}
+              />
+            </form>
+          </div>
+        )}
+
+        {modalType === "creditView" && (
+          <div className="space-y-4">
+            <DetalisFormatted title="Client Name" detail={selectedData.clientName} />
+            <DetalisFormatted title="Monthly Credit" detail={selectedData.monthlyCredit} />
+            <DetalisFormatted title="Consumed Credit" detail={selectedData.consumedCredit} />
+            <DetalisFormatted title="Remaining Credit" detail={selectedData.remainingCredit} />
+          </div>
+        )}
+
+        {modalType === "creditEdit" && (
+          <form onSubmit={handleSubmit(submitCreditEdit)} className="flex flex-col gap-4">
+            <Controller
+              name="monthlyCredit"
+              control={control}
+              rules={{ required: "Monthly credit is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  label="Monthly Credit"
+                  fullWidth
+                  error={!!errors.monthlyCredit}
+                  helperText={errors.monthlyCredit?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="consumedCredit"
+              control={control}
+              rules={{ required: "Consumed credit is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  label="Consumed Credit"
+                  fullWidth
+                  error={!!errors.consumedCredit}
+                  helperText={errors.consumedCredit?.message}
+                />
+              )}
+            />
+
+            <PrimaryButton title={"Save"} type={"submit"} />
+          </form>
+        )}
+      </MuiModal>
+    </div>
   );
 };
 

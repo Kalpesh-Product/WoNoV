@@ -22,6 +22,8 @@ import { InsertEmoticonTwoTone } from "@mui/icons-material";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { FaCheckSquare } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
 
 const PerformanceIndividualKra = () => {
     const axios = useAxiosPrivate();
@@ -46,6 +48,8 @@ const PerformanceIndividualKra = () => {
     const isAddKraDisabled = auth?.user?.role?.some((role) =>
         restrictedRoles.includes(role.roleTitle)
     );
+
+    const canDeleteRecurrence = !isAddKraDisabled;
 
     const departmentAccess = [
         "67b2cf85b9b6ed5cedeb9a2e",
@@ -85,6 +89,22 @@ const PerformanceIndividualKra = () => {
             description: "",
             assignTo: "",
             assignedDate: dayjs().toISOString(),
+        },
+    });
+
+    const { mutate: deleteDailyKraRecurrence, isPending: isDeletePending } = useMutation({
+        mutationKey: ["deleteDailyKraRecurrence"],
+        mutationFn: async (taskId) => {
+            const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.refetchQueries({ queryKey: ["fetchedIndividualKRA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+            toast.success(data.message || "KRA recurrence removed");
+        },
+        onError: () => {
+            toast.error("Failed to remove recurrence");
         },
     });
 
@@ -212,15 +232,27 @@ const PerformanceIndividualKra = () => {
                     headerName: "Actions",
                     field: "actions",
                     cellRenderer: (params) => (
-                        <div
-                            role="button"
-                            onClick={() => updateDailyKra(params.data.id)}
-                            className="p-2"
-                        >
-                            <PrimaryButton
-                                title={"Mark As Done"}
-                                disabled={!params.node.selected}
-                            />
+                        <div className="p-2 flex gap-2 items-center">
+                            <button
+                                type="button"
+                                title="Mark As Done"
+                                disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                                onClick={() => updateDailyKra(params.data.id)}
+                                className="ml-2 disabled:cursor-not-allowed"
+                            >
+                                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color={!params.node.selected ? "gray" : "green"} />}
+                            </button>
+                            {canDeleteRecurrence && (
+                                <button
+                                    type="button"
+                                    title="Delete Recurrence"
+                                    disabled={!params.node.selected || isDeletePending || isUpdatePending}
+                                    onClick={() => deleteDailyKraRecurrence(params.data.id)}
+                                    className="ml-2 disabled:cursor-not-allowed"
+                                >
+                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
+                                </button>
+                            )}
                         </div>
                     ),
                 },
@@ -239,11 +271,11 @@ const PerformanceIndividualKra = () => {
         { headerName: "Completed By", field: "completedBy" },
         {
             headerName: "Completed Date",
-            field: "completedDate",
+            field: "completionDate",
         },
         {
             headerName: "Completed Time",
-            field: "completedTime",
+            field: "completionTime",
         },
         {
             field: "status",
@@ -285,7 +317,7 @@ const PerformanceIndividualKra = () => {
                                 formatTime
                                 checkbox={showCheckBox}
                                 buttonTitle={"Add Daily KRA"}
-                                // buttonDisabled={isAddKraDisabled}
+                                buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
                                 tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
                                 data={(departmentKra || [])
@@ -327,8 +359,8 @@ const PerformanceIndividualKra = () => {
                                         dueDate: item.dueDate,
                                         status: item.status,
                                         completedBy: item.completedBy,
-                                        completedDate: humanDate(item.completedDate),
-                                        completedTime: humanTime(item.completedDate),
+                                        completionDate: humanDate(item.completionDate),
+                                        completionTime: humanTime(item.completionDate),
                                     }))}
                                     dateColumn={"dueDate"}
                                     columns={completedColumns}

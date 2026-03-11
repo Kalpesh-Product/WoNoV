@@ -22,6 +22,8 @@ import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import { FaCheckSquare } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
 
 const PerformanceTeamKpa = () => {
   const axios = useAxiosPrivate();
@@ -30,6 +32,23 @@ const PerformanceTeamKpa = () => {
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const userId = auth.user._id;
+
+  const restrictedRoles = [
+    "IT Employee",
+    "Admin Employee",
+    "Tech Employee",
+    "Administration Employee",
+    "HR Employee",
+    "Maintenance Employee",
+    "Cafe Employee",
+    "Finance Employee",
+    "Marketing Employee",
+  ];
+  const isAddKpaDisabled = auth?.user?.role?.some((role) =>
+    restrictedRoles.includes(role.roleTitle)
+  );
+
+  const canDeleteRecurrence = !isAddKpaDisabled;
 
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const isManager = userPermissions.includes(
@@ -52,6 +71,22 @@ const PerformanceTeamKpa = () => {
     },
   });
   const startDate = watch("startDate");
+
+  const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } = useMutation({
+    mutationKey: ["deleteMonthlyKpaRecurrence"],
+    mutationFn: async (taskId) => {
+      const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.refetchQueries({ queryKey: ["fetchedTeamKPA"] });
+      queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+      toast.success(data.message || "KPA recurrence removed");
+    },
+    onError: () => {
+      toast.error("Failed to remove recurrence");
+    },
+  });
 
   const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
     mutationKey: ["addTeamMonthlyKpa"],
@@ -96,9 +131,9 @@ const PerformanceTeamKpa = () => {
       ? data.assignTo
       : typeof data.assignTo === "string"
         ? data.assignTo
-            .split(",")
-            .map((id) => id.trim())
-            .filter(Boolean)
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean)
         : [];
 
     addMonthlyKpa({
@@ -168,6 +203,30 @@ const PerformanceTeamKpa = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
+    ...(!isAddKpaDisabled
+      ? [
+        {
+          headerName: "Actions",
+          field: "actions",
+          cellRenderer: (params) => (
+            <div className="p-2 flex gap-2 items-center">
+
+              {canDeleteRecurrence && (
+                <button
+                  type="button"
+                  title="Delete Recurrence"
+                  // disabled={!params.node.selected || isDeletePending}
+                  onClick={() => deleteMonthlyKpaRecurrence(params.data.id)}
+                  className="ml-2 disabled:cursor-not-allowed"
+                >
+                  {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
+                </button>
+              )}
+            </div>
+          ),
+        },
+      ]
+      : []),
   ];
 
   const completedColumns = [
@@ -176,7 +235,7 @@ const PerformanceTeamKpa = () => {
     // { headerName: "Assigned Time", field: "assignedDate" },
 
     { headerName: "Completed By", field: "completedBy" },
-     {
+    {
       headerName: "Completed Date",
       field: "completionDate",
     },
@@ -223,6 +282,7 @@ const PerformanceTeamKpa = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 buttonTitle={"Add Team Monthly KPA"}
+                buttonDisabled={isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
                 tableTitle={`${department} TEAM - MONTHLY KPA`}
                 data={(teamKpa || [])
@@ -252,7 +312,7 @@ const PerformanceTeamKpa = () => {
               <WidgetSection padding>
                 <YearWiseTable
                   formatTime
-                  tableTitle={`COMPLETED TEAM - MONTHALY KPA`}
+                  tableTitle={`COMPLETED TEAM - MONTHLY KPA`}
                   exportData={true}
                   checkAll={false}
                   key={completedEntries.length}
@@ -278,7 +338,7 @@ const PerformanceTeamKpa = () => {
             )}
           </div>
         </PageFrame>
-        
+
       </div>
 
       <MuiModal
@@ -404,9 +464,9 @@ const PerformanceTeamKpa = () => {
                       ? value
                       : typeof value === "string"
                         ? value
-                            .split(",")
-                            .map((id) => id.trim())
-                            .filter(Boolean)
+                          .split(",")
+                          .map((id) => id.trim())
+                          .filter(Boolean)
                         : [],
                   );
                 }}

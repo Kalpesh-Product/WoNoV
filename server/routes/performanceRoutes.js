@@ -4,6 +4,7 @@ const upload = require("../config/multerConfig");
 const {
   createDeptBasedTask,
   updateTaskStatus,
+  deleteTaskRecurrence,
   getAllKpaTasks,
   getKraKpaTasks,
   getAllDeptTasks,
@@ -14,6 +15,7 @@ const {
 
 router.post("/create-task", createDeptBasedTask);
 router.patch("/update-status/:taskId/:taskType", updateTaskStatus);
+router.patch("/delete-recurrence/:taskId", deleteTaskRecurrence);
 router.post(
   "/bulk-insert-performance-tasks/:departmentId",
   upload.single("performance-tasks"),
