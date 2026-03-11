@@ -904,7 +904,7 @@ const MeetingDashboard = () => {
     },
     {
       key: "reviews",
-      title: "Reviews",
+      title: "Data",
       route: "/app/meetings/reviews",
       icon: <RiPagesLine />,
       permission: PERMISSIONS.MEETINGS_REVIEWS.value,

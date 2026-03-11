@@ -197,9 +197,14 @@ const MeetingFormLayout = () => {
   const remainingMeetingCredits = useMemo(() => {
     if (!company || company === BIZNEST_COMPANY_ID) return "-";
 
-    return selectedClient?.totalMeetingCredits ?? "-";
+    return selectedClient?.meetingCreditBalance ?? "-";
   }, [company, selectedClient]);
   //-------------------------------API-------------------------------//
+  const displayedRemainingCredits = isReceptionist
+    ? remainingMeetingCredits
+    : auth.user?.company?.meetingCreditBalance ?? "-";
+
+  const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 
   //-------------------------------API-------------------------------//
   const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
@@ -699,13 +704,18 @@ const MeetingFormLayout = () => {
                 <TextField
                   fullWidth
                   size="small"
-                  value={
-                    isReceptionist
-                      ? remainingMeetingCredits
-                      : auth.user?.company?.totalMeetingCredits ?? "-"
-                  }
+                  value={displayedRemainingCredits}
                   disabled
                   label="Remaining Credit"
+                  InputProps={{
+                    sx: isRemainingCreditsNegative
+                      ? {
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          WebkitTextFillColor: "#d32f2f",
+                        },
+                      }
+                      : undefined,
+                  }}
                 />
                 <div className="hidden">
                   <Controller
