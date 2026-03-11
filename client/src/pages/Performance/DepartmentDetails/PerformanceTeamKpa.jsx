@@ -312,7 +312,7 @@ const PerformanceTeamKpa = () => {
               <WidgetSection padding>
                 <YearWiseTable
                   formatTime
-                  tableTitle={`COMPLETED TEAM - MONTHALY KPA`}
+                  tableTitle={`COMPLETED TEAM - MONTHLY KPA`}
                   exportData={true}
                   checkAll={false}
                   key={completedEntries.length}
