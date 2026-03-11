@@ -30,6 +30,21 @@ const PerformanceTeamKra = () => {
     const deptId = useSelector((state) => state.performance.selectedDepartment);
     const userId = auth.user._id;
 
+    const restrictedRoles = [
+        "IT Employee",
+        "Admin Employee",
+        "Tech Employee",
+        "Administration Employee",
+        "HR Employee",
+        "Maintenance Employee",
+        "Cafe Employee",
+        "Finance Employee",
+        "Marketing Employee",
+    ];
+    const isAddKpaDisabled = auth?.user?.role?.some((role) =>
+        restrictedRoles.includes(role.roleTitle)
+    );
+
     const userPermissions = auth?.user?.permissions?.permissions || [];
     const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value);
 
@@ -63,29 +78,29 @@ const PerformanceTeamKra = () => {
             });
             return response.data;
         },
-       onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA"] });
-      toast.success(data.message || "Team KPA Added");
-      reset();
-      setOpenModal(false);
-    },
-    onError: (error) => {
-      toast.error("Adding failed");
-    },
-  });
-  const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({
-    queryKey: ["completedEntriesKPA"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/performance/get-completed-tasks?dept=${deptId}&type=TEAMKRA`,
-        );
-        return response.data;
-      } catch (error) {
-        console.error(error);
-      }
-    },
-  });
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA"] });
+            toast.success(data.message || "Team KPA Added");
+            reset();
+            setOpenModal(false);
+        },
+        onError: (error) => {
+            toast.error("Adding failed");
+        },
+    });
+    const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({
+        queryKey: ["completedEntriesKPA"],
+        queryFn: async () => {
+            try {
+                const response = await axios.get(
+                    `/api/performance/get-completed-tasks?dept=${deptId}&type=TEAMKRA`,
+                );
+                return response.data;
+            } catch (error) {
+                console.error(error);
+            }
+        },
+    });
 
     const handleFormSubmit = (data) => {
         const normalizedAssignees = Array.isArray(data.assignTo)
@@ -150,49 +165,49 @@ const PerformanceTeamKra = () => {
         },
     ];
     const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
-    { headerName: "KPA List", field: "taskName", flex: 1 },
-    // { headerName: "Assigned Time", field: "assignedDate" },
+        { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+        { headerName: "KPA List", field: "taskName", flex: 1 },
+        // { headerName: "Assigned Time", field: "assignedDate" },
 
-    { headerName: "Completed By", field: "completedBy" },
-     {
-      headerName: "Completed Date",
-      field: "completionDate",
-    },
-    {
-      headerName: "Completed Time",
-      field: "completionTime",
-    },
-    {
-      field: "status",
-      headerName: "Status",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-          InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
-          Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
-        };
+        { headerName: "Completed By", field: "completedBy" },
+        {
+            headerName: "Completed Date",
+            field: "completionDate",
+        },
+        {
+            headerName: "Completed Time",
+            field: "completionTime",
+        },
+        {
+            field: "status",
+            headerName: "Status",
+            cellRenderer: (params) => {
+                const statusColorMap = {
+                    Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+                    InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+                    resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+                    open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+                    Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
+                };
 
-        const { backgroundColor, color } = statusColorMap[params.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-        return (
-          <>
-            <Chip
-              label={params.value}
-              style={{
-                backgroundColor,
-                color,
-              }}
-            />
-          </>
-        );
-      },
-    },
-  ];
+                const { backgroundColor, color } = statusColorMap[params.value] || {
+                    backgroundColor: "gray",
+                    color: "white",
+                };
+                return (
+                    <>
+                        <Chip
+                            label={params.value}
+                            style={{
+                                backgroundColor,
+                                color,
+                            }}
+                        />
+                    </>
+                );
+            },
+        },
+    ];
 
     return (
         <>
@@ -203,6 +218,7 @@ const PerformanceTeamKra = () => {
                             <YearWiseTable
                                 formatTime
                                 buttonTitle={"Add Team KRA"}
+                                buttonDisabled={isAddKpaDisabled}
                                 handleSubmit={() => setOpenModal(true)}
                                 tableTitle={`${department} TEAM - DAILY KRA`}
                                 data={(teamKra || [])
@@ -226,17 +242,17 @@ const PerformanceTeamKra = () => {
                         </div>
                     )}
                 </PageFrame>
-                    <PageFrame>
-                              <div>
-                                {!isCompletedLoading ? (
-                                  <WidgetSection padding>
-                                    <YearWiseTable
-                                      formatTime
-                                      tableTitle={`COMPLETED TEAM - DAILY KRA`}
-                                      exportData={true}
-                                      checkAll={false}
-                                      key={completedEntries.length}
-                                      data={completedEntries.map((item, index) => ({
+                <PageFrame>
+                    <div>
+                        {!isCompletedLoading ? (
+                            <WidgetSection padding>
+                                <YearWiseTable
+                                    formatTime
+                                    tableTitle={`COMPLETED TEAM - DAILY KRA`}
+                                    exportData={true}
+                                    checkAll={false}
+                                    key={completedEntries.length}
+                                    data={completedEntries.map((item, index) => ({
                                         srno: index + 1,
                                         id: item.id,
                                         taskName: item.taskName,
@@ -246,19 +262,19 @@ const PerformanceTeamKra = () => {
                                         completedBy: item.completedBy,
                                         completionDate: humanDate(item.completionDate),
                                         completionTime: humanTime(item.completionDate),
-                                      }))}
-                                      dateColumn={"dueDate"}
-                                      columns={completedColumns}
-                                    />
-                                  </WidgetSection>
-                                ) : (
-                                  <div className="h-72 flex items-center justify-center">
-                                    <CircularProgress />
-                                  </div>
-                                )}
-                              </div>
-                            </PageFrame>
-                
+                                    }))}
+                                    dateColumn={"dueDate"}
+                                    columns={completedColumns}
+                                />
+                            </WidgetSection>
+                        ) : (
+                            <div className="h-72 flex items-center justify-center">
+                                <CircularProgress />
+                            </div>
+                        )}
+                    </div>
+                </PageFrame>
+
             </div>
 
             <MuiModal

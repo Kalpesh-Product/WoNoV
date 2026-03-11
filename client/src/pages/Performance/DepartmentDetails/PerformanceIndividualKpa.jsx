@@ -310,7 +310,7 @@ const PerformanceIndividualKpa = () => {
                                 checkbox={showCheckBox}
                                 tableTitle={`${department} INDIVIDUAL - MONTHLY KPA`}
                                 buttonTitle={"Add Monthly KPA"}
-                                // buttonDisabled={isAddKpaDisabled}
+                                buttonDisabled={isAddKpaDisabled}
                                 handleSubmit={() => setOpenModal(true)}
                                 key={departmentKra.length}
                                 data={[

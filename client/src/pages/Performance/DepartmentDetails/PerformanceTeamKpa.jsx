@@ -31,6 +31,21 @@ const PerformanceTeamKpa = () => {
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const userId = auth.user._id;
 
+  const restrictedRoles = [
+    "IT Employee",
+    "Admin Employee",
+    "Tech Employee",
+    "Administration Employee",
+    "HR Employee",
+    "Maintenance Employee",
+    "Cafe Employee",
+    "Finance Employee",
+    "Marketing Employee",
+  ];
+  const isAddKraDisabled = auth?.user?.role?.some((role) =>
+    restrictedRoles.includes(role.roleTitle)
+  );
+
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const isManager = userPermissions.includes(
     PERMISSIONS.PERFORMANCE_TEAM_KPA.value,
@@ -96,9 +111,9 @@ const PerformanceTeamKpa = () => {
       ? data.assignTo
       : typeof data.assignTo === "string"
         ? data.assignTo
-            .split(",")
-            .map((id) => id.trim())
-            .filter(Boolean)
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean)
         : [];
 
     addMonthlyKpa({
@@ -176,7 +191,7 @@ const PerformanceTeamKpa = () => {
     // { headerName: "Assigned Time", field: "assignedDate" },
 
     { headerName: "Completed By", field: "completedBy" },
-     {
+    {
       headerName: "Completed Date",
       field: "completionDate",
     },
@@ -223,6 +238,7 @@ const PerformanceTeamKpa = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 buttonTitle={"Add Team Monthly KPA"}
+                buttonDisabled={isAddKraDisabled}
                 handleSubmit={() => setOpenModal(true)}
                 tableTitle={`${department} TEAM - MONTHLY KPA`}
                 data={(teamKpa || [])
@@ -278,7 +294,7 @@ const PerformanceTeamKpa = () => {
             )}
           </div>
         </PageFrame>
-        
+
       </div>
 
       <MuiModal
@@ -404,9 +420,9 @@ const PerformanceTeamKpa = () => {
                       ? value
                       : typeof value === "string"
                         ? value
-                            .split(",")
-                            .map((id) => id.trim())
-                            .filter(Boolean)
+                          .split(",")
+                          .map((id) => id.trim())
+                          .filter(Boolean)
                         : [],
                   );
                 }}

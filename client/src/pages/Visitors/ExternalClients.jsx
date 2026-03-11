@@ -500,7 +500,7 @@ const ExternalClients = () => {
                 paymentMode: item.paymentMode || "N/A",
                 paymentVerification: item.paymentVerification || "N/A",
                 paymentDate: item.updatedAt || null,
-                paymentProof: item?.paymentProof?.link || "",
+                paymentProof: item?.paymentProof?.url || "",
                 meetingId: item?.meeting?._id || null,
                 registeredClientCompany: item?.registeredClientCompany || "N/A",
                 brandName: item?.brandName || "N/A",
@@ -967,7 +967,7 @@ const ExternalClients = () => {
                           detail={selectedVisitor?.paymentVerification}
                         />
                         <DetalisFormatted
-                          title="Upload File"
+                          title="Uploaded File"
                           detail={renderFileLink(selectedVisitor?.paymentProof)}
                         />
                       </>

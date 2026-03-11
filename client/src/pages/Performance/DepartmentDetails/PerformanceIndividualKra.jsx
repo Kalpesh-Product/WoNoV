@@ -285,7 +285,7 @@ const PerformanceIndividualKra = () => {
                                 formatTime
                                 checkbox={showCheckBox}
                                 buttonTitle={"Add Daily KRA"}
-                                // buttonDisabled={isAddKraDisabled}
+                                buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
                                 tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
                                 data={(departmentKra || [])
