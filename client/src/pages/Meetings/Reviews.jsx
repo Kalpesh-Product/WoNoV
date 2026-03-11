@@ -22,9 +22,9 @@ import PrimaryButton from "../../components/PrimaryButton";
 const Reviews = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
-  const [activeTab, setActiveTab] = useState("clientReview");
+  const [activeTab, setActiveTab] = useState("clientCredit");
   const [openModal, setOpenModal] = useState(false);
-  const [modalType, setModalType] = useState("reviewView");
+  const [modalType, setModalType] = useState("creditView");
   const [selectedData, setSelectedData] = useState({});
   const [creditEdits, setCreditEdits] = useState({});
 
