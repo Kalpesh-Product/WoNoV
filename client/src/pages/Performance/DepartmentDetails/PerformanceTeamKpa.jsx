@@ -77,7 +77,7 @@ const PerformanceTeamKpa = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
+      queryClient.refetchQueries({ queryKey: ["fetchedTeamKPA"] });
       queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
       toast.success(data.message || "KPA recurrence removed");
     },
@@ -214,8 +214,8 @@ const PerformanceTeamKpa = () => {
                   type="button"
                   title="Delete Recurrence"
                   // disabled={!params.node.selected || isDeletePending}
-                  onClick={() => deleteMonthlyKpaRecurrence(params.data.mongoId)}
-                  className="w-9 h-9 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  onClick={() => deleteMonthlyKpaRecurrence(params.data.id)}
+                  className="w-16 h-10 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   {isDeletePending ? "⏳" : "🗑️"}
                 </button>

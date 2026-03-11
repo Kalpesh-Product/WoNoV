@@ -218,7 +218,7 @@ const PerformanceKra = () => {
                 title="Mark As Done"
                 disabled={!params.node.selected || isUpdatePending || isDeletePending}
                 onClick={() => updateDailyKra(params.data.id)}
-                className="w-9 h-9 rounded-full bg-primary text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-16 h-10 rounded-full bg-primary text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {isUpdatePending ? "⏳" : "✅"}
               </button>
@@ -228,7 +228,7 @@ const PerformanceKra = () => {
                   title="Delete Recurrence"
                   disabled={!params.node.selected || isDeletePending || isUpdatePending}
                   onClick={() => deleteDailyKraRecurrence(params.data.id)}
-                  className="w-9 h-9 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="w-16 h-10 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   {isDeletePending ? "⏳" : "🗑️"}
                 </button>

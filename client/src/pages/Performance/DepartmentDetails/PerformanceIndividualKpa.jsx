@@ -264,7 +264,7 @@ const PerformanceIndividualKpa = () => {
                                 title="Mark As Done"
                                 disabled={!params.node.selected || isUpdatePending || isDeletePending}
                                 onClick={() => updateMonthlyKpa(params.data.mongoId)}
-                                className="w-9 h-9 rounded-full bg-primary text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="w-16 h-10 rounded-full bg-primary text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
                             >
                                 {isUpdatePending ? "⏳" : "✅"}
                             </button>
@@ -274,7 +274,7 @@ const PerformanceIndividualKpa = () => {
                                     title="Delete Recurrence"
                                     disabled={!params.node.selected || isDeletePending || isUpdatePending}
                                     onClick={() => deleteMonthlyKpaRecurrence(params.data.mongoId)}
-                                    className="w-9 h-9 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    className="w-16 h-10 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
                                     {isDeletePending ? "⏳" : "🗑️"}
                                 </button>

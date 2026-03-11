@@ -75,8 +75,8 @@ const PerformanceTeamKra = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
-            queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+            queryClient.refetchQueries({ queryKey: ["fetchedTeamKRA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
             toast.success(data.message || "KRA recurrence removed");
         },
         onError: () => {
@@ -194,8 +194,8 @@ const PerformanceTeamKra = () => {
                                     type="button"
                                     title="Delete Recurrence"
                                     // disabled={!params.node.selected || isDeletePending}
-                                    onClick={() => deleteDailyKraRecurrence(params.data.mongoId)}
-                                    className="w-9 h-9 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    onClick={() => deleteDailyKraRecurrence(params.data.id)}
+                                    className="w-16 h-10 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
                                     {isDeletePending ? "⏳" : "🗑️"}
                                 </button>
