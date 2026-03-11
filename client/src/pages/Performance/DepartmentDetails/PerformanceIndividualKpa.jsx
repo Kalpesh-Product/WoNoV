@@ -266,9 +266,9 @@ const PerformanceIndividualKpa = () => {
                                 title="Mark As Done"
                                 disabled={!params.node.selected || isUpdatePending || isDeletePending}
                                 onClick={() => updateMonthlyKpa(params.data.mongoId)}
-                                className=""
+                                className="ml-2 disabled:cursor-not-allowed"
                             >
-                                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color="green" />}
+                                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color={!params.node.selected ? "gray" : "green"} />}
                             </button>
                             {canDeleteRecurrence && (
                                 <button
@@ -276,9 +276,9 @@ const PerformanceIndividualKpa = () => {
                                     title="Delete Recurrence"
                                     disabled={!params.node.selected || isDeletePending || isUpdatePending}
                                     onClick={() => deleteMonthlyKpaRecurrence(params.data.mongoId)}
-                                    className=""
+                                    className="ml-2 disabled:cursor-not-allowed"
                                 >
-                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
+                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
                                 </button>
                             )}
                         </div>

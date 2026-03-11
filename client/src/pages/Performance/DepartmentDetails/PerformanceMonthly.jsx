@@ -250,9 +250,9 @@ const PerformanceMonthly = () => {
                 title="Mark As Done"
                 disabled={!params.node.selected || isUpdatePending || isDeletePending}
                 onClick={() => updateMonthlyKpa(params.data.mongoId)}
-                className=""
+                className="ml-2 disabled:cursor-not-allowed"
               >
-                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color="green" />}
+                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color={!params.node.selected ? "gray" : "green"} />}
               </button>
               {canDeleteRecurrence && (
                 <button

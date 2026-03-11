@@ -217,9 +217,9 @@ const PerformanceTeamKpa = () => {
                   title="Delete Recurrence"
                   // disabled={!params.node.selected || isDeletePending}
                   onClick={() => deleteMonthlyKpaRecurrence(params.data.id)}
-                  className=""
+                  className="ml-2 disabled:cursor-not-allowed"
                 >
-                  {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
+                  {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
                 </button>
               )}
             </div>
