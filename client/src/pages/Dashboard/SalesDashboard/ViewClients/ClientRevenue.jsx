@@ -10,22 +10,18 @@ import { useState } from "react";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import humanDate from "../../../../utils/humanDateForamt";
-import { useLocation } from "react-router-dom";
+
 
 const ClientRevenue = () => {
   const selectedClient = useSelector((state) => state?.client?.selectedClient);
-  const location = useLocation();
   const [openModal, setOpenModal] = useState(false);
   const [clientDetails, setClientDetails] = useState(null);
   const axios = useAxiosPrivate();
   const getValueOrNA = (value) => value ?? "N/A";
-  const isOpenDeskExternalClient = location.pathname.includes(
-    "/external-client/open-desk/",
-  );
 
   const { data: revenueDetails = [], isPending: isRevenuePending } = useQuery({
     queryKey: ["clientRevenue", selectedClient?._id],
-    enabled: !!selectedClient?._id && !isOpenDeskExternalClient,
+    enabled: !!selectedClient?._id,
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -112,60 +108,17 @@ const ClientRevenue = () => {
       }))
       : [];
 
-  const normalizedPaymentStatus =
-    typeof selectedClient?.paymentStatus === "string"
-      ? selectedClient?.paymentStatus
-      : selectedClient?.paymentStatus
-        ? "Paid"
-        : "Unpaid";
 
-  const externalClientRevenueData = selectedClient
-    ? [
-      {
-        srNo: 1,
-        clientName:
-          selectedClient?.visitorCompany ||
-          selectedClient?.brandName ||
-          selectedClient?.registeredClientCompany ||
-          selectedClient?.clientName ||
-          "N/A",
-        revenue:
-          Number(selectedClient?.totalAmount) ||
-          Number(selectedClient?.amount) ||
-          0,
-        noOfDesks: 1,
-        totalTerm: 1,
-        rentStatus: normalizedPaymentStatus,
-        deskRate: Number(selectedClient?.amount) ||
-          Number(selectedClient?.totalAmount) ||
-          0,
-        rentDate: selectedClient?.updatedAt || selectedClient?.createdAt || null,
-        channel: selectedClient?.visitorType || "External Client",
-        paymentMode: selectedClient?.paymentMode || "N/A",
-      },
-    ]
-    : [];
-
-  const finalTableData = isOpenDeskExternalClient
-    ? externalClientRevenueData
-    : tableData;
-
-  const displayClientName =
-    selectedClient?.clientName ||
-    selectedClient?.visitorCompany ||
-    selectedClient?.brandName ||
-    selectedClient?.registeredClientCompany ||
-    "Unknown";
 
   return (
     <div className="w-full">
       <PageFrame>
         <YearWiseTable
           dateColumn="rentDate"
-          tableTitle={`${displayClientName} Revenue Details`}
+          tableTitle={`${selectedClient?.clientName || "Unknown"} Revenue Details`}
           search={true}
           searchColumn="clientName"
-          data={finalTableData}
+          data={tableData}
           columns={viewEmployeeColumns}
         />
       </PageFrame>

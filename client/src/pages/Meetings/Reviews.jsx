@@ -136,7 +136,7 @@ const Reviews = () => {
     queryKey: ["co-working-clients"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
-      return response.data;
+      return response.data.filter((client) => client.isActive);
     },
     enabled: activeTabKey === "clientCredit",
   });
