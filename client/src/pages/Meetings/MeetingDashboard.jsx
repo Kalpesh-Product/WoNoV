@@ -907,7 +907,7 @@ const MeetingDashboard = () => {
       title: "Data",
       route: "/app/meetings/client-credit",
       icon: <RiPagesLine />,
-      permission: PERMISSIONS.MEETINGS_CLIENT_CREDIT.value,
+      permission: PERMISSIONS.MEETINGS_DATA_CARD.value,
     },
     {
       key: "settings",

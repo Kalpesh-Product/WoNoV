@@ -406,9 +406,9 @@ export const PERMISSIONS = {
     title: "REPORTS",
     type: "read",
   },
-  MEETINGS_REVIEWS: {
-    value: "reviews",
-    title: "REVIEWS",
+  MEETINGS_DATA_CARD: {
+    value: "meetings_data_card",
+    title: "MEETINGS DATA CARD",
     type: "read",
   },
   MEETINGS_SETTINGS: {
