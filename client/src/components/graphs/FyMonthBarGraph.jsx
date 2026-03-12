@@ -169,7 +169,7 @@ const FyMonthBarGraph = ({
           height={350}
         />
 
-        <div className="flex justify-center items-center gap-6 mt-4 flex-wrap">
+        <div className="flex justify-center items-center gap-6 mt-8 flex-wrap">
           {/* FY Navigation */}
           <div className="flex items-center gap-2">
             <SecondaryButton
