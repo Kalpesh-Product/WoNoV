@@ -157,7 +157,7 @@ const VisitorDashboard = () => {
       },
     },
     dataLabels: {
-      enabled: true,
+      enabled: false,
       offsetY: -25,
       style: {
         fontSize: "12px",
@@ -736,7 +736,7 @@ const VisitorDashboard = () => {
       border: true,
       centerLabel: "Visitors",
       labels: ["Internal Visitors", "External Clients"],
-      colors: ["#54C4A7", "#FFB946"],
+      colors: ["#4BC0C0", "#36A2EB"],
       series: [internalVisitorsCount, externalClientsCount],
       tooltipValue: [
         `${internalVisitorsCount} visitor${internalVisitorsCount !== 1 ? "s" : ""}`,

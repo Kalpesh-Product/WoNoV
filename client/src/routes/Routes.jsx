@@ -129,6 +129,7 @@ import ClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/ClientD
 import Desks from "../pages/Dashboard/SalesDashboard/ViewClients/Desks";
 import ClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ClientRevenue";
 import ExternalClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ExternalClientRevenue";
+import OpenDeskRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/OpenDeskRevenue";
 import ClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/ClientMembers";
 import CoWorkingSeats from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CoWorkingSeats";
 import CheckAvailability from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CheckAvailability";
@@ -1625,7 +1626,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "revenue",
-                            element: <ClientRevenue />,
+                            element: <OpenDeskRevenue />,
                           },
                           {
                             path: "members",
@@ -2173,6 +2174,14 @@ export const routes = createBrowserRouter([
                   {
                     path: "reports",
                     element: <MeetingReports />,
+                  },
+                  {
+                    path: "client-credit",
+                    element: <Reviews />,
+                  },
+                  {
+                    path: "client-review",
+                    element: <Reviews />,
                   },
                   {
                     path: "reviews",

@@ -15,6 +15,7 @@ const AreaGraph = ({
   onDateLabelChange,
 }) => {
   const [currentDate, setCurrentDate] = useState(dayjs());
+  const [activeArrow, setActiveArrow] = useState("next");
   const [data, setData] = useState({
     series: [
       { name: "Total Tickets", data: [], color: "#007bff" },
@@ -192,7 +193,7 @@ const AreaGraph = ({
         currentDate.month() < 3 ? currentDate.year() - 1 : currentDate.year();
       const fyEnd = fyStart + 1;
       label = `FY ${fyStart}-${String(fyEnd).slice(-2)}`; // ✅ only last 2 digits of end year
-    } else if (timeFilter === "Yealry") {
+    } else if (timeFilter === "Yearly") {
       label = currentDate.format("MMMM YYYY");
     } else if (timeFilter === "Weekly") {
       label = `Week ${Math.ceil(currentDate.date() / 7)} - ${currentDate.format(
@@ -280,11 +281,14 @@ const AreaGraph = ({
         type="area"
         height={350}
       />
-
-      <div className="flex justify-center w-full items-center gap-2">
+    {/* <div className="flex justify-center w-full items-center gap-2"> */}
+      <div className="flex justify-center items-center gap-4 mt-3">
         <SecondaryButton
           title={<MdNavigateBefore />}
+          externalStyles={activeArrow === "prev" ? "bg-gray-400" : ""}
           handleSubmit={() => {
+            setActiveArrow("prev");
+          
             if (timeFilter === "Yearly") {
               setCurrentDate((prev) => prev.subtract(1, "year"));
             } else if (timeFilter === "Monthly") {
@@ -294,8 +298,9 @@ const AreaGraph = ({
             }
           }}
         />
-
-        <span className="text-sm font-medium text-gray-700">
+      {/*  */}
+        {/* <span className="text-sm font-medium text-gray-700"> */}
+        <span className="text-primary text-content font-semibold">
           {timeFilter === "Yearly" &&
             `FY ${
               currentDate.month() < 3
@@ -317,7 +322,10 @@ const AreaGraph = ({
 
         <SecondaryButton
           title={<MdNavigateNext />}
+          externalStyles={activeArrow === "next" ? "bg-gray-400" : ""}
           handleSubmit={() => {
+            setActiveArrow("next");
+          
             if (timeFilter === "Yearly") {
               setCurrentDate((prev) => prev.add(1, "year"));
             } else if (timeFilter === "Monthly") {

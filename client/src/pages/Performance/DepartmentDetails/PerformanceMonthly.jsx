@@ -262,7 +262,7 @@ const PerformanceMonthly = () => {
                   onClick={() => deleteMonthlyKpaRecurrence(params.data.mongoId)}
                   className=""
                 >
-                  {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
+                  {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
                 </button>
               )}
             </div>

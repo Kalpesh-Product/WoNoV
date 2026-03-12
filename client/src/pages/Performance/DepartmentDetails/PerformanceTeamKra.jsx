@@ -199,7 +199,7 @@ const PerformanceTeamKra = () => {
                                     onClick={() => deleteDailyKraRecurrence(params.data.id)}
                                     className="ml-2 disabled:cursor-not-allowed"
                                 >
-                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
+                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
                                 </button>
                             )}
                         </div>

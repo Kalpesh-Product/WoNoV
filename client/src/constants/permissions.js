@@ -406,9 +406,9 @@ export const PERMISSIONS = {
     title: "REPORTS",
     type: "read",
   },
-  MEETINGS_REVIEWS: {
-    value: "reviews",
-    title: "REVIEWS",
+  MEETINGS_DATA_CARD: {
+    value: "meetings_data_card",
+    title: "MEETINGS DATA CARD",
     type: "read",
   },
   MEETINGS_SETTINGS: {
@@ -448,6 +448,20 @@ export const PERMISSIONS = {
     type: "read",
     access: "page",
     route: "/app/meetings/manage-meetings/external-meetings",
+  },
+  MEETINGS_CLIENT_CREDIT: {
+    value: "client_credit",
+    title: "CLIENT CREDIT",
+    type: "read",
+    access: "page",
+    route: "/app/meetings/client-credit",
+  },
+  MEETINGS_CLIENT_REVIEW: {
+    value: "client_review",
+    title: "CLIENT REVIEW",
+    type: "read",
+    access: "page",
+    route: "/app/meetings/client-review",
   },
 
   // Data Cards
