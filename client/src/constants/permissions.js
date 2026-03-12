@@ -449,6 +449,20 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/meetings/manage-meetings/external-meetings",
   },
+  MEETINGS_CLIENT_CREDIT: {
+    value: "client_credit",
+    title: "CLIENT CREDIT",
+    type: "read",
+    access: "page",
+    route: "/app/meetings/client-credit",
+  },
+  MEETINGS_CLIENT_REVIEW: {
+    value: "client_review",
+    title: "CLIENT REVIEW",
+    type: "read",
+    access: "page",
+    route: "/app/meetings/client-review",
+  },
 
   // Data Cards
   MEETINGS_HOURS_BOOKED: {

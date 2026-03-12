@@ -2175,6 +2175,14 @@ export const routes = createBrowserRouter([
                     element: <MeetingReports />,
                   },
                   {
+                    path: "client-credit",
+                    element: <Reviews />,
+                  },
+                  {
+                    path: "client-review",
+                    element: <Reviews />,
+                  },
+                  {
                     path: "reviews",
                     element: <Reviews />,
                   },

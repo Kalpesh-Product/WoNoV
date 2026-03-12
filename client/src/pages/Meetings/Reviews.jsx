@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Tabs, Tab } from "@mui/material";
 import WidgetSection from "../../components/WidgetSection";
 import DataCard from "../../components/DataCard";
@@ -18,15 +18,63 @@ import ThreeDotMenu from "../../components/ThreeDotMenu";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import PrimaryButton from "../../components/PrimaryButton";
+import { PERMISSIONS } from "../../constants/permissions";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Reviews = () => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { auth } = useAuth();
-  const [activeTab, setActiveTab] = useState("clientCredit");
+  // const [activeTab, setActiveTab] = useState("clientCredit");
   const [openModal, setOpenModal] = useState(false);
   const [modalType, setModalType] = useState("creditView");
   const [selectedData, setSelectedData] = useState({});
   const [creditEdits, setCreditEdits] = useState({});
+
+  const userPermissions = useMemo(
+    () => auth?.user?.permissions?.permissions || [],
+    [auth?.user?.permissions?.permissions]
+  );
+
+  const tabItems = useMemo(
+    () => [
+      {
+        key: "clientCredit",
+        label: "Client Credit",
+        path: "/app/meetings/client-credit",
+        permission: PERMISSIONS.MEETINGS_CLIENT_CREDIT.value,
+      },
+      {
+        key: "clientReview",
+        label: "Client Review",
+        path: "/app/meetings/client-review",
+        permission: PERMISSIONS.MEETINGS_CLIENT_REVIEW.value,
+      },
+    ],
+    []
+  );
+
+  const visibleTabs = useMemo(
+    () => tabItems.filter((tab) => userPermissions.includes(tab.permission)),
+    [tabItems, userPermissions]
+  );
+
+  const activeTabIndex = Math.max(
+    visibleTabs.findIndex((tab) => tab.path === location.pathname),
+    0
+  );
+
+  const activeTabKey = visibleTabs[activeTabIndex]?.key || null;
+
+  useEffect(() => {
+    if (visibleTabs.length === 0) return;
+
+    const isPathAllowed = visibleTabs.some((tab) => tab.path === location.pathname);
+    if (!isPathAllowed) {
+      navigate(visibleTabs[0].path, { replace: true });
+    }
+  }, [location.pathname, navigate, visibleTabs]);
 
   const {
     handleSubmit,
@@ -81,7 +129,7 @@ const Reviews = () => {
       const response = await axios.get("/api/meetings/get-reviews");
       return response.data;
     },
-    enabled: activeTab === "clientReview",
+    enabled: activeTabKey === "clientReview",
   });
 
   const { data: clientsData = [], isLoading: isClientsLoading } = useQuery({
@@ -90,7 +138,7 @@ const Reviews = () => {
       const response = await axios.get("/api/sales/co-working-clients");
       return response.data;
     },
-    enabled: activeTab === "clientCredit",
+    enabled: activeTabKey === "clientCredit",
   });
 
   const { mutate: replyReview, isPending: isReplyReviewPending } = useMutation({
@@ -255,33 +303,36 @@ const Reviews = () => {
 
   return (
     <div className="p-4">
-      <Tabs
-        value={activeTab === "clientCredit" ? 0 : 1}
-        variant="fullWidth"
-        TabIndicatorProps={{ style: { display: "none" } }}
-        sx={{
-          backgroundColor: "white",
-          borderRadius: 2,
-          border: "1px solid #d1d5db",
-          overflow: "hidden",
-          "& .MuiTab-root": {
-            textTransform: "none",
-            fontWeight: "medium",
-            color: "#1E3D73",
-            borderRight: "0.1px solid #d1d5db",
-          },
-          "& .Mui-selected": {
-            backgroundColor: "#1E3D73",
-            color: "white !important",
-          },
-        }}
-      >
-        <Tab label="Client Credit" onClick={() => setActiveTab("clientCredit")} />
-        <Tab label="Client Review" onClick={() => setActiveTab("clientReview")} />
-      </Tabs>
+      {visibleTabs.length > 0 && (
+        <Tabs
+          value={activeTabIndex}
+          variant="fullWidth"
+          TabIndicatorProps={{ style: { display: "none" } }}
+          sx={{
+            backgroundColor: "white",
+            borderRadius: 2,
+            border: "1px solid #d1d5db",
+            overflow: "hidden",
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: "medium",
+              color: "#1E3D73",
+              borderRight: "0.1px solid #d1d5db",
+            },
+            "& .Mui-selected": {
+              backgroundColor: "#1E3D73",
+              color: "white !important",
+            },
+          }}
+        >
+          {visibleTabs.map((tab) => (
+            <Tab key={tab.key} label={tab.label} onClick={() => navigate(tab.path)} />
+          ))}
+        </Tabs>
+      )}
 
       <div className="py-4">
-        {activeTab === "clientReview" ? (
+        {activeTabKey === "clientReview" ? (
           <>
             <WidgetSection layout={2}>
               <DataCard data={reviews.length} title="Total" description="Reviews Count" />
@@ -317,7 +368,7 @@ const Reviews = () => {
               </PageFrame>
             </div>
           </>
-        ) : (
+        ) : activeTabKey === "clientCredit" ? (
           <PageFrame>
             <AgTable
               search={true}
@@ -328,7 +379,7 @@ const Reviews = () => {
               loading={isClientsLoading}
             />
           </PageFrame>
-        )}
+        ) : null}
       </div>
 
       <MuiModal
