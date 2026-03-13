@@ -117,7 +117,7 @@ const PerformanceMonthly = () => {
     onError: (error) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
       queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
-      toast.success("KPA Added");
+      toast.error("Task type should be KRA");
       setOpenModal(false);
     },
   });
