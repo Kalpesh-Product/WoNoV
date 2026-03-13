@@ -448,7 +448,21 @@ const MeetingFormLayout = () => {
       return response.data;
     },
   });
+
+  const externalCompanyMembers = useMemo(() => {
+    if (!externalCompany) return [];
+    const target = externalUsers.find((v) => v._id === externalCompany);
+    if (!target) return [];
+
+    return externalUsers.filter(
+      (item) =>
+        item.visitorFlag === "Client" &&
+        item.clientCompany === target.clientCompany
+    );
+  }, [externalCompany, externalUsers]);
+
   //-------------------------------API vISITORS-------------------------------//
+
 
   const onSubmit = (data) => {
     const { manualExternalParticipants, ...restData } = data;
@@ -884,6 +898,33 @@ const MeetingFormLayout = () => {
             {/* New Start */}
             {meetingType === "External" ? (
               <>
+                <div className="col-span-2">
+                  <div className="hidden">
+                    <Controller
+                      name="internalBooked"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          fullWidth
+                          size="small"
+                          value={`${auth.user?._id} `}
+                          disabled
+                          label={`${isReceptionist ? "Receptionist" : "Booked By"
+                            }`}
+                        />
+                      )}
+                    />
+                  </div>
+                  <TextField
+                    name="internalBooked"
+                    fullWidth
+                    size="small"
+                    value={`${auth.user?.firstName} ${auth.user?.lastName} `}
+                    disabled
+                    label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
+                  />
+                </div>
                 <div className="col-span-1">
                   <Controller
                     name="externalCompany"
@@ -918,28 +959,34 @@ const MeetingFormLayout = () => {
                       rules={{ required: "Please select who is booking the meeting" }}
                       render={({ field }) => (
                         <Autocomplete
-                          options={participantOptions}
-                          loading={isEmployeesLoading || isAvailableEmployees}
+                          options={externalCompanyMembers}
+                          loading={externalUsersLoading}
                           getOptionLabel={(user) =>
-                            isBizNest
-                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Unnamed"
-                              : `${user.employeeName ?? ""}`.trim() || "Unnamed"
+                            `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Unnamed"
                           }
                           value={
-                            participantOptions.find((u) => u._id === field.value) || null
+                            externalCompanyMembers.find((u) => u._id === field.value) || null
                           }
-                          // Very important when company changes
-                          key={company}   // ← forces remount when company changes
+                          key={externalCompany}   // ← forces remount when external company changes
                           onFocus={() => setShouldFetchParticipants(true)}
                           onChange={(_, newValue) => {
                             const selectedId = newValue?._id || "";
 
-                            // Auto-add the bookedBy person to participants (common UX)
-                            const currentParticipants = getValues("internalParticipants") || [];
-                            if (selectedId && !currentParticipants.includes(selectedId)) {
+                            const currentParticipants = getValues("externalParticipants") || [];
+                            const isAlreadyParticipant = currentParticipants.some(
+                              (p) => p.mobileNumber === newValue?.mobileNumber
+                            );
+
+                            if (newValue && !isAlreadyParticipant) {
                               setValue(
-                                "internalParticipants",
-                                [...currentParticipants, selectedId],
+                                "externalParticipants",
+                                [
+                                  ...currentParticipants,
+                                  {
+                                    name: `${newValue.firstName ?? ""} ${newValue.lastName ?? ""}`.trim(),
+                                    mobileNumber: newValue.mobileNumber,
+                                  }
+                                ],
                                 { shouldDirty: true }
                               );
                             }
@@ -963,82 +1010,6 @@ const MeetingFormLayout = () => {
                     />
                   </div>
                 ) : null}
-                <div className="col-span-1">
-                  <Controller
-                    name="externalParticipants"
-                    control={control}
-                    render={({ field }) => (
-                      <Autocomplete
-                        multiple
-                        disabled={!externalCompany}
-                        options={externalUsers.filter(
-                          (item) =>
-                            item.visitorFlag === "Client" &&
-                            item.clientCompany ===
-                            externalUsers.find(
-                              (v) => v._id === externalCompany
-                            )?.clientCompany
-                        )}
-                        getOptionLabel={(user) =>
-                          `${user.firstName} ${user.lastName}`
-                        } // Display names
-                        onChange={(_, newValue) =>
-                          field.onChange(
-                            newValue.map((user) => ({
-                              name: `${user.firstName ?? ""} ${user.lastName ?? ""
-                                }`.trim(),
-                              mobileNumber: user.mobileNumber,
-                            }))
-                          )
-                        } // Sync selected users with form state
-                        renderTags={(selected, getTagProps) =>
-                          selected.map((user, index) => (
-                            <Chip
-                              key={user._id}
-                              label={`${user.firstName}`}
-                              {...getTagProps({ index })}
-                              deleteIcon={<IoMdClose />}
-                            />
-                          ))
-                        }
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Select Participants"
-                            size="small"
-                            disabled={!externalCompany}
-                            fullWidth
-                          />
-                        )}
-                      />
-                    )}
-                  />
-                </div>
-                <div className="hidden">
-                  <Controller
-                    name="internalBooked"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        size="small"
-                        value={`${auth.user?._id} `}
-                        disabled
-                        label={`${isReceptionist ? "Receptionist" : "Booked By"
-                          }`}
-                      />
-                    )}
-                  />
-                </div>
-                <TextField
-                  name="internalBooked"
-                  fullWidth
-                  size="small"
-                  value={`${auth.user?.firstName} ${auth.user?.lastName} `}
-                  disabled
-                  label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
-                />
               </>
             ) : null}
             {meetingType === "External" && (
