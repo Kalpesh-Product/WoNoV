@@ -472,6 +472,7 @@ const getMeetings = async (req, res, next) => {
           populate: { path: "departments", select: "name" },
         },
         { path: "clientBookedBy", select: "employeeName email" },
+        { path: "externalBookedBy", select: "firstName middleName lastName" },
         {
           path: "receptionist",
           select: "firstName lastName departments",
