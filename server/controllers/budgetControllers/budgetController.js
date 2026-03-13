@@ -1001,6 +1001,7 @@ const bulkInsertBudgets = async (req, res, next) => {
     const unitsMap = new Map(units.map((u) => [u.unitNo, u._id]));
 
     const budgets = [];
+    const invalidRows = [];
     Readable.from(csvData)
       .pipe(csvParser())
       .on("data", (row) => {
@@ -1010,9 +1011,9 @@ const bulkInsertBudgets = async (req, res, next) => {
           : 0;
         const month = new Date(row["Due Date"]);
 
-        /** skip clearly bad rows **/
         if (isNaN(projectedAmt) || isNaN(month.getTime())) {
-          return res.status(400).json({ message: "please check the csv file" });
+          invalidRows.push(row);
+          return;
         }
 
         budgets.push({
@@ -1024,29 +1025,55 @@ const bulkInsertBudgets = async (req, res, next) => {
           unit: row["Unit"] ? (unitsMap.get(row["Unit"].trim()) ?? null) : null,
           status: row["Status"] || "Pending",
           month,
+          dueDate: month,
+          expanseType: row["Expanse Type"],
           category: row["Expanse Category"],
         });
       })
+      // .on("end", async () => {
+      //   if (budgets.length === 0) {
+      //     return res
+      //       .status(400)
+      //       .json({ success: false, message: "No valid budgets found in CSV" });
+      //   }
+
+      //   try {
+      //     await Budget.insertMany(budgets);
+      //     return res.status(201).json({
+      //       success: true,
+      //       message: "Budgets uploaded successfully",
+      //       uploadCount: budgets.length,
+      //       data: budgets,
+      //     });
+      //   } catch (dbErr) {
+      //     console.error(dbErr);
+      //     return res
+      //       .status(500)
+      //       .json({ success: false, message: dbErr.message });
+      //   }
+      // })
       .on("end", async () => {
-        if (budgets.length === 0) {
-          return res
-            .status(400)
-            .json({ success: false, message: "No valid budgets found in CSV" });
+        if (invalidRows.length > 0) {
+          return res.status(400).json({
+            message: "Invalid rows found in CSV",
+            invalidRows,
+          });
         }
 
-        try {
-          await Budget.insertMany(budgets);
-          return res.status(201).json({
-            success: true,
-            message: "Budgets uploaded successfully",
-            data: budgets,
+        if (budgets.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: "No valid budgets found in CSV",
           });
-        } catch (dbErr) {
-          console.error(dbErr);
-          return res
-            .status(500)
-            .json({ success: false, message: dbErr.message });
         }
+
+        await Budget.insertMany(budgets);
+
+        return res.status(201).json({
+          success: true,
+          message: "Budgets uploaded successfully",
+          uploadCount: budgets.length,
+        });
       })
       .on("error", (streamErr) => {
         console.error(streamErr);
