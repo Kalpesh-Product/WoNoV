@@ -457,6 +457,15 @@ const MeetingFormLayout = () => {
     return [selectedVisitor];
   }, [externalCompany, externalUsers]);
 
+  const externalCompanyOptions = useMemo(() => {
+    return externalUsers
+      .filter((item) => item.visitorFlag === "Client")
+      .map((item) => ({
+        id: item._id,
+        label: item.registeredClientCompany || "Unnamed Company",
+      }));
+  }, [externalUsers]);
+
   //-------------------------------API vISITORS-------------------------------//
 
 
@@ -925,25 +934,39 @@ const MeetingFormLayout = () => {
                   <Controller
                     name="externalCompany"
                     control={control}
-                    render={({ field }) => (
-                      <TextField
+                    render={({ field: { onChange, value, ...field }, fieldState }) => (
+                      <Autocomplete
                         {...field}
-                        select
-                        label="Select External Company"
-                        size="small"
-                        fullWidth
-                      >
-                        <MenuItem value="" disabled>
-                          Select a company
-                        </MenuItem>
-                        {externalUsers
-                          .filter((item) => item.visitorFlag === "Client")
-                          .map((user) => (
-                            <MenuItem key={user._id} value={user._id}>
-                              {user.registeredClientCompany ?? ""}
-                            </MenuItem>
-                          ))}
-                      </TextField>
+                        options={externalCompanyOptions}
+                        getOptionLabel={(option) => option.label}
+                        isOptionEqualToValue={(option, val) => option.id === val}
+                        value={externalCompanyOptions.find((opt) => opt.id === value) || null}
+                        onChange={(_, newValue) => {
+                          onChange(newValue ? newValue.id : "");
+                        }}
+                        loading={externalUsersLoading}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="External Company"
+                            size="small"
+                            fullWidth
+                            error={!!fieldState.error}
+                            helperText={fieldState.error?.message}
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  {externalUsersLoading ? (
+                                    <CircularProgress color="inherit" size={20} />
+                                  ) : null}
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
                     )}
                   />
                 </div>
