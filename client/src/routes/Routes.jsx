@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { Navigate, createBrowserRouter } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import LoginPage from "../pages/LoginPage/LoginPage";
@@ -129,7 +129,9 @@ import ClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/ClientD
 import Desks from "../pages/Dashboard/SalesDashboard/ViewClients/Desks";
 import ClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ClientRevenue";
 import ExternalClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ExternalClientRevenue";
+import OpenDeskRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/OpenDeskRevenue";
 import ClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/ClientMembers";
+import ExternalClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/ExternalClientMembers";
 import CoWorkingSeats from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CoWorkingSeats";
 import CheckAvailability from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CheckAvailability";
 import ViewAvailability from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/ViewAvailability";
@@ -1586,8 +1588,26 @@ export const routes = createBrowserRouter([
                         element: <ExternalClientCompanies />,
                       },
                       {
+                        path: "mix-bag/external-client/meetings",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies"
+                            replace
+                          />
+                        ),
+                      },
+                      {
                         path: "mix-bag/external-client/open-desk/external-companies",
                         element: <ExternalClientCompanies />,
+                      },
+                      {
+                        path: "mix-bag/external-client/open-desk",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies"
+                            replace
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/external-client/meetings/external-companies/:clientName",
@@ -1607,7 +1627,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "members",
-                            element: <ClientMembers />,
+                            element: <ExternalClientMembers />,
                           },
                         ],
                       },
@@ -1625,11 +1645,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "revenue",
-                            element: <ClientRevenue />,
+                            element: <OpenDeskRevenue />,
                           },
                           {
                             path: "members",
-                            element: <ClientMembers />,
+                            element: <ExternalClientMembers />,
                           },
                         ],
                       },
@@ -2173,6 +2193,14 @@ export const routes = createBrowserRouter([
                   {
                     path: "reports",
                     element: <MeetingReports />,
+                  },
+                  {
+                    path: "client-credit",
+                    element: <Reviews />,
+                  },
+                  {
+                    path: "client-review",
+                    element: <Reviews />,
                   },
                   {
                     path: "reviews",

@@ -128,7 +128,7 @@ const MeetingDashboard = () => {
     {
       key: "reviews",
       title: "Reviews",
-      route: "/app/meetings/reviews",
+      route: "/app/meetings/client-review",
       icon: <RiPagesLine />,
       onlyTop: true,
     },
@@ -905,9 +905,9 @@ const MeetingDashboard = () => {
     {
       key: "reviews",
       title: "Data",
-      route: "/app/meetings/reviews",
+      route: "/app/meetings/client-credit",
       icon: <RiPagesLine />,
-      permission: PERMISSIONS.MEETINGS_REVIEWS.value,
+      permission: PERMISSIONS.MEETINGS_DATA_CARD.value,
     },
     {
       key: "settings",

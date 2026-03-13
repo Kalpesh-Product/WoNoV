@@ -48,19 +48,64 @@ const ExternalClient = () => {
                 .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                 .join("-");
 
-        clientsArray.forEach((client) => {
-            const date = client.startDate ? new Date(client.startDate) : null;
+        const serviceMapping = {
+            coworking: "Coworking",
+            virtualOffice: "Virtualoffice",
+            meeting: "Meeting",
+            workation: "Workations",
+            coliving: "Co-Living",
+        };
 
-            const formattedDate = date ? date.toISOString().split("T")[0] : "N/A";
-            const month = date
+        clientsArray.forEach((client) => {
+            let rawServiceName = client.clientType || "Unknown";
+
+            // Dynamically detect type from serviceName if it's under coworkingClients
+            if (rawServiceName === "coworking" && client.service?.serviceName) {
+                const sName = client.service.serviceName.toLowerCase();
+                if (sName.includes("workation")) {
+                    rawServiceName = "workation";
+                } else if (sName.includes("living") || sName.includes("coliving")) {
+                    rawServiceName = "coliving";
+                }
+            }
+
+            const formattedServiceName =
+                serviceMapping[rawServiceName] || toTitleCase(rawServiceName);
+
+            let date = null;
+            if (rawServiceName === "coworking") {
+                date = client.startDate ? new Date(client.startDate) : null;
+            } else if (rawServiceName === "virtualOffice") {
+                date = client.termStartDate
+                    ? new Date(client.termStartDate)
+                    : client.rentDate
+                        ? new Date(client.rentDate)
+                        : null;
+            } else if (rawServiceName === "meeting") {
+                date = client.dateOfVisit
+                    ? new Date(client.dateOfVisit)
+                    : client.scheduledDate
+                        ? new Date(client.scheduledDate)
+                        : null;
+            } else {
+                date = client.startDate || client.dateOfVisit || client.termStartDate
+                    ? new Date(client.startDate || client.dateOfVisit || client.termStartDate)
+                    : null;
+            }
+
+            const formattedDate = date && !isNaN(date.getTime()) ? date.toISOString().split("T")[0] : "N/A";
+            const month = date && !isNaN(date.getTime())
                 ? date.toLocaleString("default", { month: "long" })
                 : "Unknown";
 
-            const rawServiceName = client.clientType || "Unknown";
-            const formattedServiceName = toTitleCase(rawServiceName);
+            const clientName =
+                client.clientName ||
+                (client.firstName
+                    ? `${client.firstName} ${client.lastName || ""}`
+                    : "Unknown");
 
             const transformedClient = {
-                client: client.clientName || "Unknown",
+                client: clientName,
                 typeOfClient: formattedServiceName,
                 date: formattedDate,
             };
