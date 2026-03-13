@@ -451,14 +451,10 @@ const MeetingFormLayout = () => {
 
   const externalCompanyMembers = useMemo(() => {
     if (!externalCompany) return [];
-    const target = externalUsers.find((v) => v._id === externalCompany);
-    if (!target) return [];
+    const selectedVisitor = externalUsers.find((v) => v._id === externalCompany);
+    if (!selectedVisitor || selectedVisitor.visitorFlag !== "Client") return [];
 
-    return externalUsers.filter(
-      (item) =>
-        item.visitorFlag === "Client" &&
-        item.clientCompany === target.clientCompany
-    );
+    return [selectedVisitor];
   }, [externalCompany, externalUsers]);
 
   //-------------------------------API vISITORS-------------------------------//
