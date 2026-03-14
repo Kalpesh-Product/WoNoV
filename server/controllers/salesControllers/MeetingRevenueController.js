@@ -4,7 +4,7 @@ const createMeetingRevenue = async (req, res, next) => {
   try {
     const {
       date,
-      clientName,
+      client,
       particulars,
       unitsOrHours,
       costPerPass,
@@ -18,7 +18,7 @@ const createMeetingRevenue = async (req, res, next) => {
     const newRevenue = new MeetingRevenue({
       date,
       company,
-      clientName,
+      client,
       particulars,
       unitsOrHours,
       costPerPass,
@@ -44,7 +44,7 @@ const updateMeetingRevenue = async (req, res, next) => {
     const updatedRevenue = await MeetingRevenue.findOneAndUpdate(
       { _id: id, company },
       { ...req.body },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedRevenue) {
@@ -101,7 +101,7 @@ const getMeetingRevenue = async (req, res, next) => {
         const monthDateKey = new Date(
           referenceDate.getFullYear(),
           referenceDate.getMonth(),
-          1
+          1,
         ); // First day of the month
 
         if (!monthlyMap.has(monthKey)) {
@@ -117,16 +117,18 @@ const getMeetingRevenue = async (req, res, next) => {
         monthData.actual += item.taxable;
 
         monthData.revenue.push({
-          clientName: item.clientName,
-          particulars: item.particulars,
-          unitsOrHours: item.unitsOrHours,
-          costPerPass: item.costPerPass,
-          taxable: item.taxable,
-          gst: item.gst,
-          status: item.status,
-          totalAmount: item.totalAmount,
-          date: item.date,
-          paymentDate: item.paymentDate,
+          clientName: item?.client,
+          particulars: item?.particulars,
+          unitsOrHours: item?.unitsOrHours,
+          hoursBooked: item?.hoursBooked,
+          costPerPass: item?.costPerPass,
+          taxable: item?.taxable,
+          gst: item?.gst,
+          status: item?.status,
+          totalAmount: item?.totalAmount,
+          date: item?.date,
+          paymentDate: item?.paymentDate,
+          meetingRoomName: item?.meetingRoomName,
           remarks: item.remarks || "",
         });
       });

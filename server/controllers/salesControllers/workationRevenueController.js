@@ -65,7 +65,7 @@ const bulkInsertWorkationRevenue = async (req, res, next) => {
       workationClients.map((client) => [
         client.clientName.trim().toLowerCase(),
         client._id,
-      ])
+      ]),
     );
 
     const results = [];
@@ -76,20 +76,22 @@ const bulkInsertWorkationRevenue = async (req, res, next) => {
       .on("data", (row) => {
         const nameOfClient = row["Name Of Client"]?.trim();
         const workationClientId = workationClientsMap.get(
-          nameOfClient?.toLowerCase()
+          nameOfClient?.toLowerCase(),
         );
 
         if (!workationClientId) return;
 
+        const parseAmount = (value) =>
+          parseFloat(value?.replace(/,/g, "")) || 0;
         const revenueEntry = {
           company: req.company,
-          workationClient: workationClientId,
+          client: workationClientId,
           nameOfClient: nameOfClient,
           status: row["Status"]?.trim() || "",
           particulars: row["Particulars"]?.trim(),
-          taxableAmount: parseFloat(row["Taxable Amount"]) || 0,
-          gst: parseFloat(row["GST"]) || 0,
-          totalAmount: parseFloat(row["Total Amount"]) || 0,
+          taxableAmount: parseAmount(row["Taxable Amount"]),
+          gst: parseAmount(row["GST"]),
+          totalAmount: parseAmount(row["Total Amount"]),
           date: new Date(row["Paid Date"]),
         };
 

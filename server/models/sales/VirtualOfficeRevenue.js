@@ -9,13 +9,13 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
     },
     location: {
       type: String,
-      required: true,
+      // required: true,
     },
 
     channel: {
       type: String,
       enum: ["Direct", "SPV"],
-      required: true,
+      // required: true,
     },
     taxableAmount: {
       type: Number,
@@ -27,15 +27,15 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
     },
     totalTerm: {
       type: Number, // Assuming in months
-      required: true,
+      // required: true,
     },
     dueTerm: {
       type: Number, // Assuming in months
-      required: true,
+      // required: true,
     },
     rentDate: {
       type: Date,
-      required: true,
+      // required: true,
     },
     status: {
       type: Boolean,
@@ -63,12 +63,12 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
       ref: "ClientService",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const VirtualOfficeRevenue = mongoose.model(
   "VirtualOfficeRevenue",
-  virtualOfficeRevenueSchema
+  virtualOfficeRevenueSchema,
 );
 
 module.exports = VirtualOfficeRevenue;
