@@ -142,15 +142,15 @@ const AllocatedBudget = ({
   }, [financialData]);
 
   const validDateSet = useMemo(() => {
-  const set = new Set();
-  financialData?.forEach((fd) => {
-    const date = dayjs(fd.month);
-    if (date.isValid()) {
-      set.add(date.format("YYYY-MM-DD"));
-    }
-  });
-  return set;
-}, [financialData]);
+    const set = new Set();
+    financialData?.forEach((fd) => {
+      const date = dayjs(fd.month);
+      if (date.isValid()) {
+        set.add(date.format("YYYY-MM-DD"));
+      }
+    });
+    return set;
+  }, [financialData]);
 
 
   const filteredRows = useMemo(() => {
@@ -195,8 +195,8 @@ const AllocatedBudget = ({
                   {invoiceAttached
                     ? "Invoice Uploaded"
                     : isRejected
-                    ? "Rejected"
-                    : ""}
+                      ? "Rejected"
+                      : ""}
                 </span>
               )}
             </div>
@@ -209,9 +209,9 @@ const AllocatedBudget = ({
 
   console.log("filtered ata : ", filteredRows);
 
-  const totalProjectedAmount = useMemo(() => {
+  const totalActualAmount = useMemo(() => {
     return filteredRows.reduce(
-      (sum, r) => sum + Number((r.projectedAmount || "0").replace(/,/g, "")),
+      (sum, r) => sum + Number((r.actualAmount || "0").replace(/,/g, "")),
       0
     );
   }, [filteredRows]);
@@ -226,7 +226,7 @@ const AllocatedBudget = ({
             ? "Annual Expenses"
             : newTitle || "BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"
         }
-        TitleAmount={`INR ${inrFormat(totalProjectedAmount)}`}
+        TitleAmount={`INR ${inrFormat(totalActualAmount)}`}
         border
       >
         <div className="flex flex-col gap-4 rounded-md">
