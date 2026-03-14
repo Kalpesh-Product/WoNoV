@@ -145,7 +145,6 @@ router.post(
 //Revenues
 router.post("/add-coworking-revenue", addRevenue);
 router.get("/fetch-coworking-revenues", getRevenues);
-router.get("/get-meeting-revenue", getMeetingRevenue);
 router.get(
   "/coworking-client-revenue/:coworkingId",
   getCoworkingClientRevenues,
@@ -155,8 +154,11 @@ router.post(
   upload.single("coworking-revenues"),
   bulkInsertCoworkingClientRevenues,
 );
+
 router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);
+router.get("/get-meeting-revenue", getMeetingRevenue);
+
 router.get("/get-alternate-revenue", getAlternateRevenues);
 router.post("/create-alternate-revenue", createAlternateRevenue);
 router.post(

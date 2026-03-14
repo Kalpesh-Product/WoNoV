@@ -10,7 +10,7 @@ const meetingClientRevenueSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
-    clientName: {
+    client: {
       type: String,
       required: true,
     },
@@ -24,7 +24,7 @@ const meetingClientRevenueSchema = new mongoose.Schema(
     },
     hoursBooked: {
       type: String,
-      required: true,
+      // required: true,
     },
     // meetingRoomName: {
     //   type: String,
@@ -32,7 +32,12 @@ const meetingClientRevenueSchema = new mongoose.Schema(
     // },
     costPerHour: {
       type: Number,
-      required: true,
+      // required: true,
+    },
+    //field added in bulk upload
+    meetingRoomName: {
+      type: String,
+      // required: true,
     },
     meeting: {
       type: mongoose.Schema.Types.ObjectId,
@@ -48,27 +53,27 @@ const meetingClientRevenueSchema = new mongoose.Schema(
     },
     totalAmount: {
       type: Number,
-      required: true,
+      // required: true,
     },
     paymentDate: {
       type: Date,
-      required: false, // could be null if not yet paid
+      // required: false,
     },
     status: {
       type: String,
     },
     remarks: {
       type: String,
-      required: false, // could be payment mode (Cheque,NEFT etc)
+      // required: false,
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const MeetingRevenue = mongoose.model(
   "MeetingClientRevenue",
-  meetingClientRevenueSchema
+  meetingClientRevenueSchema,
 );
 module.exports = MeetingRevenue;
