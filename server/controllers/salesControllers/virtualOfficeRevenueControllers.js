@@ -2,7 +2,7 @@ const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
 const csvParser = require("csv-parser");
 const { Readable } = require("stream");
-const { parseAmount } = require("../../../client/src/utils/parseAmount");
+const { parseAmount } = require("../../utils/parseAmount");
 
 const createVirtualOfficeRevenue = async (req, res, next) => {
   try {

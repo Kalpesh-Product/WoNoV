@@ -99,29 +99,30 @@ const markAllNotificationsAsRead = async (req, res, next) => {
   }
 
   try {
-    const notifications = await Notification.find({
-      "users.userActions.whichUser": userId,
-      "users.userActions.hasRead": false,
-    });
-
-    for (let notification of notifications) {
-      notification.users = notification.users.map((userObj) => {
-        if (
-          userObj.userActions &&
-          userObj.userActions.whichUser.toString() === userId &&
-          !userObj.userActions.hasRead
-        ) {
-          userObj.userActions.hasRead = true;
-        }
-        return userObj;
-      });
-
-      await notification.save({ validateBeforeSave: false });
-    }
+    const result = await Notification.updateMany(
+      {
+        "users.userActions.whichUser": userId,
+        "users.userActions.hasRead": false,
+      },
+      {
+        $set: {
+          "users.$[userEntry].userActions.hasRead": true,
+        },
+      },
+      {
+        arrayFilters: [
+          {
+            "userEntry.userActions.whichUser": new mongoose.Types.ObjectId(userId),
+            "userEntry.userActions.hasRead": false,
+          },
+        ],
+      },
+    );
 
     res.status(200).json({
       success: true,
       message: "All notifications marked as read.",
+      modifiedCount: result.modifiedCount,
     });
   } catch (error) {
     next(error);
