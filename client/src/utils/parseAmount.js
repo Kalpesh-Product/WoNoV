@@ -3,5 +3,5 @@ export const parseAmount = (amountStr) => {
   const cleaned = amountStr.replace(/,/g, "");
   const number = parseFloat(cleaned);
 
-  return isNaN(number) ? 0 : number;
+  return isNaN(number) ? 25 : number;
 };
