@@ -54,6 +54,7 @@ const {
   createMeetingRevenue,
   getMeetingRevenue,
   updateMeetingRevenue,
+  bulkInsertMeetingRevenue,
 } = require("../controllers/salesControllers/MeetingRevenueController");
 
 const {
@@ -158,6 +159,11 @@ router.post(
 router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);
 router.get("/get-meeting-revenue", getMeetingRevenue);
+router.post(
+  "/bulk-insert-meeting-revenue",
+  upload.single("meeting-revenue"),
+  bulkInsertMeetingRevenue,
+);
 
 router.get("/get-alternate-revenue", getAlternateRevenues);
 router.post("/create-alternate-revenue", createAlternateRevenue);

@@ -103,11 +103,11 @@ const MeetingRevenue = () => {
       ) : (
         <>
           <FyBarGraph
-          data={graphData}
-          dateKey="date"
-          valueKey="taxable"
-          graphTitle="ANNUAL MONTHLY MEETINGS REVENUES"
-          chartOptions={options}
+            data={graphData}
+            dateKey="date"
+            valueKey="taxable"
+            graphTitle="ANNUAL MONTHLY MEETINGS REVENUES"
+            chartOptions={options}
           />
 
           <WidgetTable
@@ -118,8 +118,9 @@ const MeetingRevenue = () => {
             totalKey="taxable"
             columns={[
               { headerName: "Sr No", field: "srNo", width: 100 },
-              { headerName: "Particulars", field: "particulars", width: 200 },
-              { headerName: "Units / Hours", field: "unitsOrHours" },
+              // { headerName: "Particulars", field: "particulars", width: 200 },
+              // { headerName: "Units / Hours", field: "unitsOrHours" },
+              { headerName: "Client Name", field: "clientName" },
               {
                 headerName: "Taxable (INR)",
                 field: "taxable",

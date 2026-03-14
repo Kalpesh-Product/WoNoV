@@ -60,16 +60,20 @@ const SalesBudget = () => {
   }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
+    const fy2024 = budgetBar?.["FY 2024-25"]?.utilisedBudget ||
+      Array(12).fill(0);
+    const fy2025 = budgetBar?.["FY 2025-26"]?.utilisedBudget ||
+      Array(12).fill(0);
     return [
       {
         name: "total",
         group: "FY 2024-25",
-        data: budgetBar?.utilisedBudget || [],
+        data: fy2024,
       },
       {
         name: "total",
         group: "FY 2025-26",
-        data: [1000054, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        data: fy2025,
       },
     ];
   }, [budgetBar]);
@@ -108,18 +112,18 @@ const SalesBudget = () => {
     },
     xaxis: {
       categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+        "Jan",
+        "Feb",
+        "Mar",
       ],
       title: {
         text: "  ",
@@ -154,8 +158,8 @@ const SalesBudget = () => {
                 <div><strong>Sales Expense:</strong></div>
                 <div style="width: 10px;"></div>
              <div style="text-align: left;">INR ${Math.round(
-               rawData
-             ).toLocaleString("en-IN")}</div>
+          rawData
+        ).toLocaleString("en-IN")}</div>
 
               </div>
      
@@ -165,8 +169,11 @@ const SalesBudget = () => {
     },
   };
 
-  const totalUtilised =
-    budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+  const totalUtilised = expenseRawSeries.reduce(
+    (seriesTotal, series) =>
+      seriesTotal + series.data.reduce((acc, val) => acc + val, 0),
+    0
+  );
   const navigate = useNavigate();
 
   const { control, handleSubmit, reset } = useForm({
@@ -187,43 +194,43 @@ const SalesBudget = () => {
   // Transform data into the required format
   const groupedData = Array.isArray(hrFinance)
     ? hrFinance?.reduce((acc, item) => {
-        const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
+      const month = dayjs(item.dueDate).format("MMM-YYYY"); // Extracting month and year
 
-        if (!acc[month]) {
-          acc[month] = {
-            month,
-            latestDueDate: item.dueDate, // Store latest due date for sorting
-            projectedAmount: 0,
-            amount: 0,
-            tableData: {
-              rows: [],
-              columns: [
-                { field: "expanseName", headerName: "Expense Name", flex: 1 },
-                { field: "expanseType", headerName: "Expense Type", flex: 1 },
-                { field: "projectedAmount", headerName: "Projected", flex: 1 },
-                { field: "actualAmount", headerName: "Actual", flex: 1 }, // ✅ add this
-                { field: "dueDate", headerName: "Due Date", flex: 1 },
-                { field: "status", headerName: "Status", flex: 1 },
-              ],
-            },
-          };
-        }
+      if (!acc[month]) {
+        acc[month] = {
+          month,
+          latestDueDate: item.dueDate, // Store latest due date for sorting
+          projectedAmount: 0,
+          amount: 0,
+          tableData: {
+            rows: [],
+            columns: [
+              { field: "expanseName", headerName: "Expense Name", flex: 1 },
+              { field: "expanseType", headerName: "Expense Type", flex: 1 },
+              { field: "projectedAmount", headerName: "Projected", flex: 1 },
+              { field: "actualAmount", headerName: "Actual", flex: 1 }, // ✅ add this
+              { field: "dueDate", headerName: "Due Date", flex: 1 },
+              { field: "status", headerName: "Status", flex: 1 },
+            ],
+          },
+        };
+      }
 
-        acc[month].projectedAmount += item?.projectedAmount; // Summing the total projected amount per month
-        acc[month].amount += item?.actualAmount; // Summing the total amount per month
-        acc[month].tableData.rows.push({
-          id: item._id,
-          expanseName: item?.expanseName,
-          department: item?.department,
-          expanseType: item?.expanseType,
-          projectedAmount: Number(item?.projectedAmount).toFixed(2),
-          actualAmount: inrFormat(Number(item?.actualAmount || 0).toFixed(0)), // ✅ Add this
-          dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
-          status: item.status,
-        });
+      acc[month].projectedAmount += item?.projectedAmount; // Summing the total projected amount per month
+      acc[month].amount += item?.actualAmount; // Summing the total amount per month
+      acc[month].tableData.rows.push({
+        id: item._id,
+        expanseName: item?.expanseName,
+        department: item?.department,
+        expanseType: item?.expanseType,
+        projectedAmount: Number(item?.projectedAmount).toFixed(2),
+        actualAmount: inrFormat(Number(item?.actualAmount || 0).toFixed(0)), // ✅ Add this
+        dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+        status: item.status,
+      });
 
-        return acc;
-      }, {})
+      return acc;
+    }, {})
     : [];
 
   // Convert grouped data to array and sort by latest month (descending order)
@@ -232,7 +239,7 @@ const SalesBudget = () => {
       const transoformedRows = data.tableData.rows.map((row, index) => ({
         ...row,
         srNo: index + 1,
-        invoiceAttached : row?.invoiceAttached,
+        invoiceAttached: row?.invoiceAttached,
         projectedAmount: Number(
           row.projectedAmount.toLocaleString("en-IN").replace(/,/g, "")
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
