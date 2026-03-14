@@ -12,7 +12,7 @@ const meetingClientRevenueSchema = new mongoose.Schema(
     },
     client: {
       type: String,
-      required: true,
+      // required: true,
     },
     particulars: {
       type: String,
