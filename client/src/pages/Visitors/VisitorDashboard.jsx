@@ -786,8 +786,8 @@ const VisitorDashboard = () => {
 
       data: genderData,
       options: genderPieChart,
-      width: 438,
       height: 320,
+      width: 500,
       permission: PERMISSIONS.VISITORS_GENDER_DATA_PIE.value,
     },
     {
@@ -799,7 +799,7 @@ const VisitorDashboard = () => {
       data: pieChartData,
       options: pieChartOptions,
       height: 320,
-      width: 438,
+      width: 500,
       permission: PERMISSIONS.VISITORS_DEPARTMENT_WISE_VISITS_PIE.value,
     },
   ];

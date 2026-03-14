@@ -364,24 +364,26 @@ const MeetingDashboard = () => {
   // 🔁 Transform API response into availabilityRooms format
   const availabilityRooms = useMemo(
     () =>
-      roomsData.map((room, index) => {
-        const roomName = room.name;
+       roomsData
+        .filter((room) => room.isActive)
+        .map((room, index) => {
+          const roomName = room.name;
 
-        // Check if any current meeting is ongoing for this room
-        const hasOngoingMeeting = meetingsData.some((meeting) => {
-          return (
-            meeting.roomName === roomName &&
-            currentTime.isAfter(dayjs(meeting.startTime)) &&
-            currentTime.isBefore(dayjs(meeting.endTime))
-          );
-        });
+          // Check if any current meeting is ongoing for this room
+          const hasOngoingMeeting = meetingsData.some((meeting) => {
+            return (
+              meeting.roomName === roomName &&
+              currentTime.isAfter(dayjs(meeting.startTime)) &&
+              currentTime.isBefore(dayjs(meeting.endTime))
+            );
+          });
 
-        return {
-          roomID: index + 1,
-          roomName,
-          status: hasOngoingMeeting ? "Unavailable" : "Available",
-        };
-      }),
+          return {
+            roomID: index + 1,
+            roomName,
+            status: hasOngoingMeeting ? "Unavailable" : "Available",
+          };
+        }),
     [roomsData, meetingsData, currentTime]
   );
 
@@ -416,7 +418,7 @@ const MeetingDashboard = () => {
 
   const CustomLegend = (
     <div>
-      <div className="h-64 px-4 overflow-y-scroll">
+      <div className="h-[320px] px-4 overflow-y-scroll">
         {availabilityRooms
           .sort((a, b) => (a.status === "Available" ? 1 : -1))
           .map((room, index) => (
@@ -1300,14 +1302,16 @@ const MeetingDashboard = () => {
             titleLabel={item.titleLabel}
             title={item.title}
           >
-            <DonutChart
-              series={item.series}
-              labels={item.labels}
-              colors={item.colors}
-              centerLabel={item.centerLabel}
-              tooltipValue={item.tooltipValue}
-              width={item.width}
-            />
+            <div className="flex justify-center">
+              <DonutChart
+                series={item.series}
+                labels={item.labels}
+                colors={item.colors}
+                centerLabel={item.centerLabel}
+                tooltipValue={item.tooltipValue}
+                width={item.width}
+              />
+            </div>
           </WidgetSection>
         )),
       ],
