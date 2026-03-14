@@ -42,7 +42,7 @@ const PerformanceHome = () => {
       queryKey: ["fetchedDepartments"],
       queryFn: fetchDepartments,
     });
-
+  //console.log(fetchedDepartments)
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100 },
     {
@@ -67,6 +67,10 @@ const PerformanceHome = () => {
     },
     { headerName: "Daily KRA", field: "dailyKra" },
     { headerName: "Monthly KPA", field: "monthlyKpa" },
+    { headerName: "Individual Daily KRA", field: "individualDailyKra" },
+    { headerName: "Individual Monthly KPA", field: "individualMonthlyKpa" },
+    { headerName: "Team Daily KRA", field: "teamDailyKra" },
+    { headerName: "Team Monthly KPA", field: "teamMonthlyKpa" },
   ];
   return (
     <div className="flex flex-col gap-4">
@@ -80,6 +84,10 @@ const PerformanceHome = () => {
                 department: item.department?.name,
                 dailyKra: item.dailyKRA,
                 monthlyKpa: item.monthlyKPA,
+                individualDailyKra: item.individualDailyKRA,               
+                individualMonthlyKpa: item.individualMonthlyKPA,
+                teamDailyKra: item.teamDailyKRA,               
+                teamMonthlyKpa: item.teamMonthlyKPA,
                 annualKpa: item.annualKPA,
               })),
             ]}

@@ -605,6 +605,10 @@ const getAllDeptTasks = async (req, res, next) => {
         dailyKRA: 0,
         monthlyKPA: 0,
         annualKPA: 0,
+        teamDailyKRA: 0,
+        teamMonthlyKPA: 0,
+        individualDailyKRA: 0,
+        individualMonthlyKPA: 0,
       });
     });
 
@@ -622,6 +626,10 @@ const getAllDeptTasks = async (req, res, next) => {
           dailyKRA: 0,
           monthlyKPA: 0,
           annualKPA: 0,
+          teamDailyKRA: 0,
+          teamMonthlyKPA: 0,
+          individualDailyKRA: 0,
+          individualMonthlyKPA: 0,
         });
       }
 
@@ -632,8 +640,22 @@ const getAllDeptTasks = async (req, res, next) => {
         department.monthlyKPA++;
       if (task.taskType === "KPA" && task.kpaDuration === "Annually")
         department.annualKPA++;
-    });
+      if (task.taskType === "TEAMKRA")
+        department.teamDailyKRA++;
+      if (
+        task.taskType === "TEAMKPA" && task.kpaDuration === "Monthly")
+        department.teamMonthlyKPA++;
 
+      if (task.taskType === "INDIVIDUALKRA" || task.taskType === "TEAMKRA") 
+        {
+         department.individualDailyKRA++;
+        }
+      if ((task.taskType === "INDIVIDUALKPA" || task.taskType === "TEAMKPA") && task.kpaDuration === "Monthly") 
+        {
+         department.individualMonthlyKPA++;
+        }
+    });
+    
     const result = Array.from(departmentMap.values());
 
     return res.status(200).json(result);

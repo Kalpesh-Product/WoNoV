@@ -39,7 +39,8 @@ const BudgetPage = () => {
       paymentType: "",
       building: "",
       unitId: "",
-      projectedAmount: null,
+      // projectedAmount: null,
+      actualAmount: null,
       dueDate: "",
       typeOfBudget: "Direct Budget",
     },
@@ -86,8 +87,8 @@ const BudgetPage = () => {
     new Map(
       units.length > 0
         ? units
-            .filter((loc) => loc.building && loc.building._id)
-            .map((loc) => [loc.building._id, loc.building.buildingName])
+          .filter((loc) => loc.building && loc.building._id)
+          .map((loc) => [loc.building._id, loc.building.buildingName])
         : []
     ).entries()
   );
@@ -123,7 +124,8 @@ const BudgetPage = () => {
       acc[month] = {
         month,
         latestDueDate: item.dueDate, // Store latest due date for sorting
-        projectedAmount: 0,
+        // projectedAmount: 0,
+        actualAmount: 0,
         amount: 0,
         tableData: {
           rows: [],
@@ -131,7 +133,8 @@ const BudgetPage = () => {
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
             // { field: "department", headerName: "Department", flex: 200 },
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            { field: "projectedAmount", headerName: "Amount (INR)", flex: 1 },
+            // { field: "projectedAmount", headerName: "Amount (INR)", flex: 1 },
+            { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
             { field: "dueDate", headerName: "Due Date", flex: 1 },
             { field: "status", headerName: "Status", flex: 1 },
           ],
@@ -139,15 +142,16 @@ const BudgetPage = () => {
       };
     }
 
-    acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+    // acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
+    acc[month].actualAmount += item.actualAmount; // Summing the total actual amount per month
     acc[month].amount += item?.actualAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
-      projectedAmount: item?.projectedAmount?.toFixed(2),
-      actualAmount: inrFormat(item?.actualAmount || 0),
+      // projectedAmount: item?.projectedAmount?.toFixed(2),
+      actualAmount: item?.actualAmount?.toFixed(2),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       status: item.status,
       invoiceAttached: item.invoiceAttached,
@@ -162,8 +166,11 @@ const BudgetPage = () => {
       const transoformedRows = data.tableData.rows.map((row, index) => ({
         ...row,
         srNo: index + 1,
-        projectedAmount: Number(
-          row.projectedAmount?.toLocaleString("en-IN").replace(/,/g, "")
+        // projectedAmount: Number(
+        //   row.projectedAmount?.toLocaleString("en-IN").replace(/,/g, "")
+        // ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+        actualAmount: Number(
+          row.actualAmount?.toLocaleString("en-IN").replace(/,/g, "")
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
       }));
       const transformedCols = [
@@ -173,7 +180,8 @@ const BudgetPage = () => {
 
       return {
         ...data,
-        projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        // projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        actualAmount: data.actualAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
         amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
         tableData: {
           ...data.tableData,
@@ -294,11 +302,11 @@ const BudgetPage = () => {
     },
 
     yaxis: {
-       min: 0,
+      min: 0,
       max: roundedMax,
       title: { text: "Amount In Lakhs (INR)" },
       // tickAmount: Math.ceil((roundedMax / 600000).toFixed(0)) ,
-      tickAmount : 4,
+      tickAmount: 4,
       labels: {
         formatter: (val) => `${val / 100000}`,
       },
@@ -325,8 +333,8 @@ const BudgetPage = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData
-               ).toLocaleString("en-IN")}</div>
+          rawData
+        ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -349,11 +357,11 @@ const BudgetPage = () => {
     <div className="flex flex-col gap-8">
 
       <FyBarGraph
-      data={hrFinance}
-      dateKey="dueDate"
-      valueKey="actualAmount"
-      chartOptions={expenseOptions}
-      graphTitle={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
+        data={hrFinance}
+        dateKey="dueDate"
+        valueKey="actualAmount"
+        chartOptions={expenseOptions}
+        graphTitle={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
       />
 
       {!isTop && (
@@ -405,14 +413,14 @@ const BudgetPage = () => {
                   {isHrLoading
                     ? []
                     : [
-                        ...new Map(
-                          hrFinance.map((item) => [item.expanseType, item])
-                        ).values(),
-                      ].map((item) => (
-                        <MenuItem key={item._id} value={item.expanseType}>
-                          {item.expanseType}
-                        </MenuItem>
-                      ))}
+                      ...new Map(
+                        hrFinance.map((item) => [item.expanseType, item])
+                      ).values(),
+                    ].map((item) => (
+                      <MenuItem key={item._id} value={item.expanseType}>
+                        {item.expanseType}
+                      </MenuItem>
+                    ))}
                 </Select>
               </FormControl>
             )}
@@ -450,10 +458,10 @@ const BudgetPage = () => {
                   {locationsLoading
                     ? []
                     : uniqueBuildings.map((building) => (
-                        <MenuItem key={building[0]} value={building[1]}>
-                          {building[1]}
-                        </MenuItem>
-                      ))}
+                      <MenuItem key={building[0]} value={building[1]}>
+                        {building[1]}
+                      </MenuItem>
+                    ))}
                 </Select>
               </FormControl>
             )}
@@ -473,21 +481,21 @@ const BudgetPage = () => {
                   {locationsLoading
                     ? []
                     : units.map((unit) =>
-                        unit.building.buildingName === selectedBuilding ? (
-                          <MenuItem key={unit._id} value={unit._id}>
-                            {unit.unitNo}
-                          </MenuItem>
-                        ) : (
-                          <></>
-                        )
-                      )}
+                      unit.building.buildingName === selectedBuilding ? (
+                        <MenuItem key={unit._id} value={unit._id}>
+                          {unit.unitNo}
+                        </MenuItem>
+                      ) : (
+                        <></>
+                      )
+                    )}
                 </Select>
               </FormControl>
             )}
           />
 
           {/* Amount */}
-          <Controller
+          {/* <Controller
             name="projectedAmount"
             control={control}
             rules={{
@@ -501,6 +509,28 @@ const BudgetPage = () => {
               <TextField
                 {...field}
                 label="Projected Amount"
+                fullWidth
+                size="small"
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          /> */}
+
+          <Controller
+            name="actualAmount"
+            control={control}
+            rules={{
+              required: "Amount is required",
+              pattern: {
+                value: /^[0-9]+(\.[0-9]{1,2})?$/,
+                message: "Enter a valid amount",
+              },
+            }}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Actual Amount"
                 fullWidth
                 size="small"
                 error={!!fieldState.error}

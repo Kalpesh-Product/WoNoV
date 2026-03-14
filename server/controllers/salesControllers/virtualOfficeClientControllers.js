@@ -691,6 +691,16 @@ const bulkInsertVirtualOfficeClients = async (req, res, next) => {
       throw new Error("No file found");
     }
 
+    const service = await ClientService.findOne({
+      serviceName: "Virtual Office",
+    });
+
+    if (!service) {
+      return res
+        .status(404)
+        .json({ message: "Virtual office service doesn't exists" });
+    }
+
     const newClients = [];
 
     await new Promise((resolve, reject) => {
@@ -701,10 +711,13 @@ const bulkInsertVirtualOfficeClients = async (req, res, next) => {
           try {
             const clientObj = {
               clientName: row["Client Name"],
+              channel: row["Channel"],
               unit: row["Unit"] || null,
+              location: row["Location"],
               totalTerm: row["Total Term"],
-              termEnd: row["Term End"],
-              rentDate: new Date(row["Rent Date"]),
+              termStartDate: row["Term Start Date"],
+              termEnd: row["Term End Date"],
+              rentDate: row["Rent Date"] ? new Date(row["Rent Date"]) : null,
               rentStatus: row["Rent Status"],
               pastDueDate: row["Past Due Date"]
                 ? new Date(row["Past Due Date"])
@@ -712,6 +725,9 @@ const bulkInsertVirtualOfficeClients = async (req, res, next) => {
               nextIncrementDate: row["Next Increment Date"]
                 ? new Date(row["Next Increment Date"])
                 : null,
+              annualIncrement: row["Annual Increment"] || null,
+              clientStatus: row["Rent Status"] === "Not Active" ? false : true,
+              service: service._id,
               company: companyId,
             };
 

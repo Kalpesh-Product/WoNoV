@@ -237,7 +237,7 @@ const addMeetings = async (req, res, next) => {
 
     // Atomically deduct credits using findOneAndUpdate with credit check
 
-    const bookingUser = await User.findById(bookedBy);
+    const bookingUser = bookedBy ? await User.findById(bookedBy) : null;
 
     if (meetingType === "Internal") {
       // const updateQuery = { _id: client };
@@ -273,8 +273,9 @@ const addMeetings = async (req, res, next) => {
 
     const meeting = new Meeting({
       meetingType,
-      bookedBy: !isClient ? bookedBy : null,
-      clientBookedBy: isClient ? bookedBy : null,
+      bookedBy: meetingType === "Internal" && !isClient ? bookedBy : null,
+      clientBookedBy: meetingType === "Internal" && isClient ? bookedBy : null,
+      externalBookedBy: meetingType === "External" ? bookedBy : null,
       receptionist: user,
       startDate: startDateObj,
       endDate: endDateObj,
@@ -309,9 +310,13 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
-    isClient
-      ? null
-      : emitter.emit("notification", {
+    if (
+      !isClient &&
+      bookingUser &&
+      Array.isArray(internalParticipants) &&
+      internalParticipants.length > 0
+    ) {
+      emitter.emit("notification", {
         initiatorData: bookingUser._id,
         users: internalParticipants.map((userId) => ({
           userActions: {
@@ -323,6 +328,7 @@ const addMeetings = async (req, res, next) => {
         module: "Meetings",
         message: `You have been added to a meeting by ${bookingUser.firstName} ${bookingUser.lastName}`,
       });
+    }
 
     await createLog({
       path: logPath,
@@ -466,6 +472,7 @@ const getMeetings = async (req, res, next) => {
           populate: { path: "departments", select: "name" },
         },
         { path: "clientBookedBy", select: "employeeName email" },
+        { path: "externalBookedBy", select: "firstName middleName lastName" },
         {
           path: "receptionist",
           select: "firstName lastName departments",
@@ -572,7 +579,16 @@ const getMeetings = async (req, res, next) => {
         clientBookedBy: meeting.clientBookedBy,
         department: meeting?.bookedBy?.departments,
         roomName: meeting.bookedRoom.name,
-        bookedBy: meeting.bookedBy,
+        bookedBy:
+          meeting.bookedBy ||
+          (meeting.externalBookedBy
+            ? {
+              _id: meeting.externalBookedBy._id,
+              firstName: meeting.externalBookedBy.firstName,
+              middleName: meeting.externalBookedBy.middleName,
+              lastName: meeting.externalBookedBy.lastName,
+            }
+            : null),
         location: meeting.bookedRoom.location,
         client: isClient
           ? meeting.client.clientName
@@ -658,6 +674,7 @@ const getMyMeetings = async (req, res, next) => {
           selected: "firstName lastName email departments",
           populate: { path: "departments" },
         },
+        { path: "externalBookedBy", select: "firstName lastName" },
         { path: "clientBookedBy", select: "employeeName email" },
         {
           path: "receptionist",

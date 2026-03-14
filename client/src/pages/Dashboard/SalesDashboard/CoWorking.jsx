@@ -62,24 +62,25 @@ const CoWorking = () => {
     colors: ["#1E3D73"],
   };
 
+  let serialNumber = 1;
   const tableData = isCoWorkingLoading
     ? []
-    : coWorkingData.map((monthData, index) => ({
-        revenue: monthData?.clients?.map((client, i) => ({
-          id: i + 1,
-          clientName: client.clientName,
-          channel: client.channel,
-          noOfDesks: client.noOfDesks,
-          deskRate: inrFormat(client.deskRate),
-          revenue: client.revenue,
-          totalTerm: client.totalTerm || 0,
-          rentDate: client.rentDate,
-          rentStatus: client.rentStatus,
-          pastDueDate: client.pastDueDate,
-          annualIncrement: client.annualIncrement || 0,
-          nextIncrementDate: client.nextIncrementDate,
-        })),
-      }));
+    : coWorkingData.map((monthData) => ({
+      revenue: monthData?.clients?.map((client) => ({
+        id: serialNumber++,
+        clientName: client.clientName,
+        channel: client.channel,
+        noOfDesks: client.noOfDesks,
+        deskRate: inrFormat(client.deskRate),
+        revenue: client.revenue,
+        totalTerm: client.totalTerm || 0,
+        rentDate: client.rentDate,
+        rentStatus: client.rentStatus,
+        pastDueDate: client.pastDueDate,
+        annualIncrement: client.annualIncrement || 0,
+        nextIncrementDate: client.nextIncrementDate,
+      })),
+    }));
 
   const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
 

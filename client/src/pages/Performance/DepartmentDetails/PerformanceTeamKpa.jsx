@@ -109,7 +109,7 @@ const PerformanceTeamKpa = () => {
       setOpenModal(false);
     },
     onError: (error) => {
-      toast.error("Adding failed");
+      toast.error("Task type should be KRA");
     },
   });
   const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({

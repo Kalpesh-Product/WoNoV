@@ -197,7 +197,13 @@ const ExternalMeetingCLients = () => {
         ...meeting,
         date: meeting.date,
         bookedBy: meeting.bookedBy
-          ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
+          ? [
+            meeting.bookedBy.firstName,
+            meeting.bookedBy.middleName,
+            meeting.bookedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
           : meeting.clientBookedBy?.employeeName || "Unknown",
         startTime: meeting.startTime,
         endTime:

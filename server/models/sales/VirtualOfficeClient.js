@@ -19,32 +19,20 @@ const virtualOfficeSchema = new mongoose.Schema(
 
     // Client Info
     clientName: { type: String, required: true, trim: true },
-    email: { type: String, trim: true, lowercase: true },
-    phone: { type: String, trim: true },
+    // email: { type: String, trim: true, lowercase: true },
+    // phone: { type: String, trim: true },
 
     service: { type: String, required: true, trim: true },
-    sector: { type: String, trim: true },
-    state: { type: String, trim: true },
-    city: { type: String, trim: true },
+    // sector: { type: String, trim: true },
+    // state: { type: String, trim: true },
+    // city: { type: String, trim: true },
 
+    channel: { type: String, trim: true },
     // Space & Desks
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
     },
-
-    cabinDesks: { type: Number, default: 0, min: 0 },
-    cabinDeskRate: { type: Number, default: 0, min: 0 },
-    cabinTotal: { type: Number, default: 0, min: 0 },
-
-    openDesks: { type: Number, default: 0, min: 0 },
-    openDeskRate: { type: Number, default: 0, min: 0 },
-    openTotal: { type: Number, default: 0, min: 0 },
-
-    annualIncrement: { type: Number, default: 0, min: 0 },
-
-    perDeskMeetingCredits: { type: Number, default: 0, min: 0 },
-    totalMeetingCredits: { type: Number, default: 0, min: 0 },
 
     // KYC / Dates
     termStartDate: { type: Date },
@@ -53,20 +41,22 @@ const virtualOfficeSchema = new mongoose.Schema(
 
     rentDate: { type: Date },
     nextIncrementDate: { type: Date },
+    annualIncrement: { type: Number },
+    totalTerm: { type: Number },
 
     rentStatus: {
       type: String,
-      enum: ["Active", "Expired", "Terminated", "Not Active"],
+      // enum: ["Active", "Expired", "Terminated", "Not Active"],
       default: "Active",
     },
-
+    location: { type: String, trim: true },
     clientStatus: {
       type: Boolean,
       default: true,
     },
 
-    localPoc: { type: pocSchema, default: () => ({}) },
-    hoPoc: { type: pocSchema, default: () => ({}) },
+    // localPoc: { type: pocSchema, default: () => ({}) },
+    // hoPoc: { type: pocSchema, default: () => ({}) },
   },
   { timestamps: true },
 );
