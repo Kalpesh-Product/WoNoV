@@ -13,12 +13,48 @@ import humanDate from "../../../../utils/humanDateForamt";
 import dayjs from "dayjs";
 import { Chip } from "@mui/material";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
+import SecondaryButton from "../../../../components/SecondaryButton";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+
+const fiscalYears = ["FY 2024-25", "FY 2025-26"];
+
+const fiscalYearMonthMap = {
+  "FY 2024-25": [
+    "Apr-24",
+    "May-24",
+    "Jun-24",
+    "Jul-24",
+    "Aug-24",
+    "Sep-24",
+    "Oct-24",
+    "Nov-24",
+    "Dec-24",
+    "Jan-25",
+    "Feb-25",
+    "Mar-25",
+  ],
+  "FY 2025-26": [
+    "Apr-25",
+    "May-25",
+    "Jun-25",
+    "Jul-25",
+    "Aug-25",
+    "Sep-25",
+    "Oct-25",
+    "Nov-25",
+    "Dec-25",
+    "Jan-26",
+    "Feb-26",
+    "Mar-26",
+  ],
+};
 
 const Collections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
   const [selectedMonthData, setSelectedMonthData] = useState([]);
   const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
+  const [selectedYearIndex, setSelectedYearIndex] = useState(1);
   const axios = useAxiosPrivate();
 
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
@@ -93,10 +129,21 @@ const Collections = () => {
     );
   }, [coWorkingData]);
 
-  const barGraphData = useMemo(() => {
-    const paid = [];
-    const unpaid = [];
-    const tooltipMeta = [];
+  const fiscalGraphData = useMemo(() => {
+    const fyBuckets = {
+      "FY 2024-25": fiscalYearMonthMap["FY 2024-25"].map((month) => ({
+        month,
+        paid: 0,
+        unpaid: 0,
+        tooltipMeta: null,
+      })),
+      "FY 2025-26": fiscalYearMonthMap["FY 2025-26"].map((month) => ({
+        month,
+        paid: 0,
+        unpaid: 0,
+        tooltipMeta: null,
+      })),
+    };
 
     sortedData.forEach((entry) => {
       let paidClients = 0;
@@ -113,28 +160,61 @@ const Collections = () => {
       });
 
       const total = paidClients + unpaidClients || 1;
-      paid.push(Math.round((paidClients / total) * 100));
-      unpaid.push(Math.round((unpaidClients / total) * 100));
+      const monthIndex = dayjs(`01-${entry.month}`, "DD-MMM-YY").month();
+      const yearSuffix = Number(entry.month.split("-")[1]);
+      const fullYear = 2000 + yearSuffix;
 
-      tooltipMeta.push({
+      let fiscalYear = null;
+      if ((fullYear === 2024 && monthIndex >= 3) || (fullYear === 2025 && monthIndex <= 2)) {
+        fiscalYear = "FY 2024-25";
+      } else if (
+        (fullYear === 2025 && monthIndex >= 3) ||
+        (fullYear === 2026 && monthIndex <= 2)
+      ) {
+        fiscalYear = "FY 2025-26";
+      }
+
+      if (!fiscalYear) return;
+
+      const targetMonthIndex = fiscalYearMonthMap[fiscalYear].indexOf(entry.month);
+      if (targetMonthIndex === -1) return;
+
+      fyBuckets[fiscalYear][targetMonthIndex] = {
         month: entry.month,
-        paidClients,
-        unpaidClients,
-        total,
-        paidAmount,
-      });
+        paid: Math.round((paidClients / total) * 100),
+        unpaid: Math.round((unpaidClients / total) * 100),
+        tooltipMeta: {
+          month: entry.month,
+          paidClients,
+          unpaidClients,
+          total,
+          paidAmount,
+        },
+      };
     });
 
-    return {
-      chartData: [
-        { name: "Collected", data: paid },
-        { name: "Due", data: unpaid },
-      ],
-      tooltipMeta,
-    };
+    return fiscalYears.reduce((acc, fy) => {
+      acc[fy] = {
+        chartData: [
+          { name: "Collected", data: fyBuckets[fy].map((item) => item.paid) },
+          { name: "Due", data: fyBuckets[fy].map((item) => item.unpaid) },
+        ],
+        tooltipMeta: fyBuckets[fy].map((item) => item.tooltipMeta),
+      };
+      return acc;
+    }, {});
   }, [sortedData]);
 
-  const barValues = barGraphData.chartData.map((item) => item.data);
+  const selectedFiscalYear = fiscalYears[selectedYearIndex];
+  const selectedGraph = fiscalGraphData[selectedFiscalYear] || {
+    chartData: [
+      { name: "Collected", data: Array(12).fill(0) },
+      { name: "Due", data: Array(12).fill(0) },
+    ],
+    tooltipMeta: Array(12).fill(null),
+  };
+
+  const barValues = selectedGraph.chartData.map((item) => item.data);
   const completed = barValues[0].reduce((sum, item) => item + sum, 0);
 
   const barGraphOptions = {
@@ -156,7 +236,7 @@ const Collections = () => {
       formatter: (val) => `${val}%`,
     },
     xaxis: {
-      categories: sortedData.map((item) => item.month),
+      categories: fiscalYearMonthMap[selectedFiscalYear],
     },
     yaxis: {
       max: 100,
@@ -188,7 +268,7 @@ const Collections = () => {
 
     tooltip: {
       custom: function ({ seriesIndex, dataPointIndex }) {
-        const meta = barGraphData.tooltipMeta[dataPointIndex];
+        const meta = selectedGraph.tooltipMeta[dataPointIndex];
         if (!meta) return "";
 
         const { month, paidClients, unpaidClients, total, paidAmount } = meta;
@@ -255,7 +335,25 @@ const Collections = () => {
         TitleAmount={`INR ${inrFormat(grandTotal)}`}
         border
       >
-        <BarGraph data={barGraphData.chartData} options={barGraphOptions} />
+        <BarGraph data={selectedGraph.chartData} options={barGraphOptions} />
+
+        <div className="flex justify-center items-center mt-4">
+          <div className="flex items-center gap-4">
+            <SecondaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={() => setSelectedYearIndex((prev) => Math.max(0, prev - 1))}
+              disabled={selectedYearIndex === 0}
+            />
+            <div className="text-primary text-content font-semibold">{selectedFiscalYear}</div>
+            <SecondaryButton
+              title={<MdNavigateNext />}
+              handleSubmit={() =>
+                setSelectedYearIndex((prev) => Math.min(fiscalYears.length - 1, prev + 1))
+              }
+              disabled={selectedYearIndex === fiscalYears.length - 1}
+            />
+          </div>
+        </div>
 
         <hr />
         <WidgetSection layout={2}>
@@ -269,7 +367,7 @@ const Collections = () => {
             title={"Due"}
             // description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
             description={`Total : INR 0`}
-            data={`${barGraphData[1]?.data?.[0] || 0}%`}
+            data={`${selectedGraph.chartData[1]?.data?.[0] || 0}%`}
           />
         </WidgetSection>
       </WidgetSection>
