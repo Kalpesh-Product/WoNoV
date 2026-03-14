@@ -104,20 +104,23 @@ const SalesDashboard = () => {
   //------------------------PAGE ACCESS END-------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
-  function aggregateMonthlyRevenue(data, year = "2024-25") {
+  function aggregateMonthlyRevenueByYear(data = []) {
     const monthsInYear = 12;
-    const result = new Array(monthsInYear).fill(0);
+    const revenueByYear = {};
 
-    data?.forEach((item) => {
-      const revenueArray = item.data[year];
-      if (revenueArray) {
-        for (let i = 0; i < monthsInYear; i++) {
-          result[i] += revenueArray[i] || 0;
+    data.forEach((item) => {
+      Object.entries(item?.data || {}).forEach(([year, revenueArray]) => {
+        if (!revenueByYear[year]) {
+          revenueByYear[year] = new Array(monthsInYear).fill(0);
         }
-      }
+
+        for (let i = 0; i < monthsInYear; i++) {
+          revenueByYear[year][i] += revenueArray?.[i] || 0;
+        }
+      });
     });
 
-    return result;
+    return revenueByYear;
   }
 
   const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
@@ -132,15 +135,22 @@ const SalesDashboard = () => {
     },
   });
 
-  const finalRevenueGraph = aggregateMonthlyRevenue(totalRevenue);
+  const revenueByFiscalYear = useMemo(
+    () => aggregateMonthlyRevenueByYear(totalRevenue),
+    [totalRevenue]
+  );
 
-  const incomeExpenseData = [
-    {
-      name: "Expense",
-      group: "FY 2024-25",
-      data: finalRevenueGraph,
-    },
-  ];
+  const incomeExpenseData = useMemo(
+    () =>
+      Object.entries(revenueByFiscalYear)
+        .sort(([yearA], [yearB]) => yearA.localeCompare(yearB))
+        .map(([year, data]) => ({
+          name: "Expense",
+          group: `FY ${year}`,
+          data,
+        })),
+    [revenueByFiscalYear]
+  );
 
   const selectedSeries = incomeExpenseData.find(
     (item) => item.group === selectedFiscalYear
@@ -150,6 +160,28 @@ const SalesDashboard = () => {
     if (!selectedSeries) return 0;
     return selectedSeries.data.reduce((sum, val) => sum + val, 0);
   }, [selectedSeries]);
+
+  const selectedFiscalYearShort = selectedSeries?.group?.replace("FY ", "");
+  const selectedFiscalYearStart = Number(
+    selectedFiscalYearShort?.split("-")?.[0]
+  );
+  const incomeExpenseCategories =
+    Number.isFinite(selectedFiscalYearStart) && selectedFiscalYearStart > 0
+      ? [
+        `Apr-${String(selectedFiscalYearStart).slice(-2)}`,
+        `May-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Jun-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Jul-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Aug-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Sep-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Oct-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Nov-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Dec-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Jan-${String(selectedFiscalYearStart + 1).slice(-2)}`,
+        `Feb-${String(selectedFiscalYearStart + 1).slice(-2)}`,
+        `Mar-${String(selectedFiscalYearStart + 1).slice(-2)}`,
+      ]
+      : [];
   const incomeExpenseOptions = {
     chart: {
       id: "income-vs-expense-bar",
@@ -191,20 +223,7 @@ const SalesDashboard = () => {
       colors: ["transparent"],
     },
     xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
+      categories: incomeExpenseCategories,
     },
     yaxis: {
       min: 0,
@@ -315,12 +334,11 @@ const SalesDashboard = () => {
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
-        title:
-          selectedFiscalYear === "FY 2024-25" ? "March 2025" : "March 2026",
-        value: `INR ${selectedFiscalYear === "FY 2024-25"
-          ? inrFormat(finalRevenueGraph[11])
-          : 0
+        title: `March ${Number.isFinite(selectedFiscalYearStart)
+            ? selectedFiscalYearStart + 1
+            : ""
           }`,
+        value: `INR ${inrFormat(selectedSeries?.data?.[11] || 0)}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
