@@ -2,7 +2,7 @@ const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const transformRevenues = require("../../utils/revenueFormatter");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
-const { parseAmount } = require("../../../client/src/utils/parseAmount");
+const { parseAmount } = require("../../utils/parseAmount");
 
 const createAlternateRevenue = async (req, res, next) => {
   try {
