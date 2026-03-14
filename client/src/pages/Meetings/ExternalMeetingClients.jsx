@@ -1282,7 +1282,14 @@ const ExternalMeetingCLients = () => {
             formData.append("paymentMode", data?.paymentType);
             formData.append("paymentStatus", data?.paymentStatus);
             formData.append("meetingId", paymentMeeting?._id);
-            formData.append("discountAmount", data?.discountAmount);
+            formData.append("discountAmount", data?.discountAmount || 0);
+            formData.append("paymentBaseAmount", data?.amount || 0);
+            formData.append("paymentGstAmount", data?.gstAmount || 0);
+            formData.append("unitsOrHours", "Hours");
+            formData.append("taxable", data?.amount || 0);
+            formData.append("gst", data?.gstAmount || 0);
+            formData.append("status", data?.paymentStatus);
+            formData.append("meetingRoomName", paymentMeeting?.roomName || "");
 
             // If it's a file input (like a PDF or image):
             if (data?.paymentProof) {
