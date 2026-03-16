@@ -725,14 +725,48 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
 
     stream
       .pipe(csvParser())
+      // .on("data", (row) => {
+      //   const { "Client Name": clientName, Unit: unitNo } = row;
+
+      //   if (!clientName) return; // skip empty rows
+
+      //   let unitId = null;
+
+      //   // Unit is OPTIONAL
+      //   if (unitNo) {
+      //     unitId = unitMap.get(unitNo);
+
+      //     if (!unitId) {
+      //       unitNotFound.push({
+      //         clientName,
+      //         unitNo,
+      //         reason: "Unit not found",
+      //       });
+      //       return;
+      //     }
+      //   }
+
+      //   const newClientObj = {
+      //     company,
+      //     clientName: clientName.trim(),
+      //     service: getClientService?._id,
+      //     isActive: true,
+      //   };
+
+      //   if (unitId) {
+      //     newClientObj.unit = unitId;
+      //   }
+
+      //   coWorkingClients.push(newClientObj);
+      // })
+
       .on("data", (row) => {
         const { "Client Name": clientName, Unit: unitNo } = row;
 
-        if (!clientName) return; // skip empty rows
+        if (!clientName) return;
 
         let unitId = null;
 
-        // Unit is OPTIONAL
         if (unitNo) {
           unitId = unitMap.get(unitNo);
 
@@ -748,8 +782,62 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
 
         const newClientObj = {
           company,
-          clientName: clientName.trim(),
           service: getClientService?._id,
+
+          clientName: row["Client Name"]?.trim(),
+          clientInvoiceName: row["Client Invoice Name"]?.trim(),
+
+          email: row["Email"]?.trim().toLowerCase(),
+          bookingType: row["Booking Type"]?.trim(),
+          phone: row["Phone"]?.trim(),
+
+          sector: row["Sector"]?.trim(),
+          hoCity: row["HO City"]?.trim(),
+          hoState: row["HO State"]?.trim(),
+
+          cabinDesks: Number(row["Cabin Desks"]) || 0,
+          openDesks: Number(row["Open Desks"]) || 0,
+          totalDesks: Number(row["Total Desks"]) || 0,
+
+          ratePerOpenDesk: Number(row["Rate Per Open Desk"]) || undefined,
+          ratePerCabinDesk: Number(row["Rate Per Cabin Desk"]) || undefined,
+
+          annualIncrement: Number(row["Annual Increment"]) || undefined,
+
+          perDeskMeetingCredits: Number(row["Per Desk Meeting Credits"]) || 0,
+          totalMeetingCredits: Number(row["Total Meeting Credits"]) || 0,
+          meetingCreditBalance: Number(row["Meeting Credit Balance"]) || 0,
+
+          startDate: row["Start Date"]
+            ? new Date(row["Start Date"])
+            : undefined,
+          endDate: row["End Date"] ? new Date(row["End Date"]) : undefined,
+
+          lockinPeriod: Number(row["Lockin Period"]) || undefined,
+
+          rentDate: row["Rent Date"]?.trim() || undefined,
+          nextIncrement: row["Next Increment"]
+            ? new Date(row["Next Increment"])
+            : undefined,
+
+          goaLead: {
+            name: row["Goa Lead Name"]?.trim(),
+            email: row["Goa Lead Email"]?.trim(),
+            phone: row["Goa Lead Phone"]?.trim(),
+          },
+
+          localPoc: {
+            name: row["Local POC Name"]?.trim(),
+            email: row["Local POC Email"]?.trim(),
+            phone: row["Local POC Phone"]?.trim(),
+          },
+
+          hOPoc: {
+            name: row["HO POC Name"]?.trim(),
+            email: row["HO POC Email"]?.trim(),
+            phone: row["HO POC Phone"]?.trim(),
+          },
+
           isActive: true,
         };
 
@@ -757,9 +845,9 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
           newClientObj.unit = unitId;
         }
 
+        if (!newClientObj.clientName) return;
         coWorkingClients.push(newClientObj);
       })
-
       .on("end", async () => {
         try {
           if (coWorkingClients.length === 0) {
@@ -830,6 +918,7 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
           // ----------------------------
           // 4️⃣ Insert Remaining
           // ----------------------------
+
           if (finalClients.length > 0) {
             await CoworkingClient.insertMany(finalClients);
           }

@@ -1,4 +1,7 @@
 const MeetingRevenue = require("../../models/sales/MeetingRevenue");
+const { parseAmount } = require("../../utils/parseAmount");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
 
 const createMeetingRevenue = async (req, res, next) => {
   try {
@@ -146,8 +149,145 @@ const getMeetingRevenue = async (req, res, next) => {
   }
 };
 
+// const bulkInsertMeetingRevenue = async (req, res, next) => {
+//   const logPath = "sales/SalesLog";
+//   const logAction = "Bulk Insert Meeting Revenue";
+//   const logSourceKey = "meetingRevenue";
+//   const { company: companyId } = req;
+
+//   try {
+//     if (!req.file) {
+//       throw new Error("No file found");
+//     }
+
+//     const revenues = [];
+
+//     await new Promise((resolve, reject) => {
+//       const stream = Readable.from(req.file.buffer.toString("utf-8").trim());
+
+//       stream
+//         .pipe(csvParser())
+//         .on("data", (row) => {
+//           try {
+//             const revenueObj = {
+//               company: companyId,
+//               date: row["Date"] ? new Date(row["Date"]) : null,
+//               client: row["Client"]?.trim(),
+//               particulars: row["Particulars"]?.trim(),
+//               unitsOrHours: row["Units/Hours"]?.trim() || "",
+//               hoursBooked: row["Hours Booked"]?.trim() || "",
+//               meetingRoomName: row["Meeting Room Name"]?.trim() || "",
+//               costPerHour: parseAmount(row["Cost Per Hour"]),
+//               taxable: parseAmount(row["Taxable"]),
+//               gst: parseAmount(row["GST"]),
+//               totalAmount: parseAmount(row["Total Amount"]),
+//               paymentDate: row["Payment Date"]
+//                 ? new Date(row["Payment Date"])
+//                 : null,
+//               status: row["Status"]?.trim() || "",
+//               remarks: row["Remarks"]?.trim() || "",
+//             };
+
+//             if (!revenueObj.client || !revenueObj.particulars) return;
+
+//             revenues.push(revenueObj);
+//           } catch (error) {
+//             reject(
+//               new CustomError(error.message, logPath, logAction, logSourceKey),
+//             );
+//           }
+//         })
+//         .on("end", () => resolve())
+//         .on("error", (error) => {
+//           reject(
+//             new CustomError(error.message, logPath, logAction, logSourceKey),
+//           );
+//         });
+//     });
+
+//     if (!revenues.length) {
+//       throw new Error("No valid data found in CSV");
+//     }
+
+//     await MeetingRevenue.insertMany(revenues);
+
+//     return res.status(201).json({
+//       message: "Bulk meeting revenue inserted successfully",
+//       insertedCount: revenues.length,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+const bulkInsertMeetingRevenue = async (req, res) => {
+  const { company: companyId } = req;
+
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file found" });
+    }
+
+    const revenues = [];
+
+    await new Promise((resolve, reject) => {
+      const stream = Readable.from(req.file.buffer.toString("utf-8").trim());
+
+      stream
+        .pipe(csvParser())
+        .on("data", (row) => {
+          try {
+            const revenueObj = {
+              company: companyId,
+              date: row["DATE"] ? new Date(row["DATE"]) : null,
+              client: row["NAME OF CLIENT"]?.trim(),
+              particulars: row["PARTCULARS"]?.trim(),
+              hoursBooked: row["HOURS BOOKED"]?.trim() || "",
+              meetingRoomName: row["MEETING ROOM NAME"]?.trim() || "",
+              costPerHour: parseAmount(row["COST PER HOUR"]),
+              taxable: parseAmount(row["TAXABLE"]),
+              gst: parseAmount(row["GST"]),
+              totalAmount: parseAmount(row["TOTAL AMOUNT"]),
+              paymentDate: row["PAYMENT DATE"]
+                ? new Date(row["PAYMENT DATE"])
+                : null,
+              status: row["STATUS"]?.trim() || "",
+              remarks: row["REMARKS"]?.trim() || "",
+            };
+
+            if (!revenueObj.client || !revenueObj.particulars) return;
+
+            revenues.push(revenueObj);
+          } catch (error) {
+            reject(error);
+          }
+        })
+        .on("end", resolve)
+        .on("error", reject);
+    });
+
+    if (!revenues.length) {
+      return res.status(400).json({
+        message: "No valid data found in CSV",
+      });
+    }
+
+    await MeetingRevenue.insertMany(revenues);
+
+    return res.status(201).json({
+      message: "Bulk meeting revenue inserted successfully",
+      insertedCount: revenues.length,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || "Failed to insert meeting revenue",
+    });
+  }
+};
+
 module.exports = {
   createMeetingRevenue,
   updateMeetingRevenue,
   getMeetingRevenue,
+  bulkInsertMeetingRevenue,
 };
