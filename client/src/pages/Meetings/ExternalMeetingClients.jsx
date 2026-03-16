@@ -1289,6 +1289,10 @@ const ExternalMeetingCLients = () => {
             formData.append("taxable", data?.amount || 0);
             formData.append("gst", data?.gstAmount || 0);
             formData.append("status", data?.paymentStatus);
+            formData.append(
+              "client",
+              paymentMeeting?.externalClient || paymentMeeting?.client || "",
+            );
             formData.append("meetingRoomName", paymentMeeting?.roomName || "");
 
             // If it's a file input (like a PDF or image):
