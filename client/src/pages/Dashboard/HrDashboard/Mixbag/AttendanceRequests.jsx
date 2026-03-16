@@ -129,7 +129,7 @@ const AttendanceRequests = () => {
         addedBy: item.addedBy ? `${item.addedBy.firstName} ${item.addedBy.lastName}` : "—",
         reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
-        requestDay: humanDate(item.createdAt) || "N/A",
+        requestDay: humanDate(item.inTime || item.originalInTime) || "N/A",
         inTime: item.inTime
           ? humanTime(item.inTime)
           : item.originalInTime
@@ -204,7 +204,7 @@ const AttendanceRequests = () => {
                 />
                 <DetalisFormatted
                   title="Attendance Date"
-                  detail={humanDate(selectedRequest?.createdAt)}
+                  detail={selectedRequest?.requestDay}
                 />
                 <DetalisFormatted
                   title="Status"
