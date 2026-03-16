@@ -407,6 +407,9 @@ import CoWorkingClients from "../pages/Dashboard/SalesDashboard/ViewClients/CoWo
 import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/WorkationClients";
 import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
 import VirtualOfficeClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDetails";
+import VirtualOfficeClientDesks from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDesks";
+import VirtualOfficeClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientRevenue";
+import VirtualOfficeClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientMembers";
 import LogPage from "../pages/LogPage";
 import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
 import AccessPages from "../pages/Access/AccessPages";
@@ -1531,15 +1534,15 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "desks",
-                            element: <VirtualOfficeClientDetails />,
+                            element: <VirtualOfficeClientDesks />,
                           },
                           {
                             path: "revenue",
-                            element: <VirtualOfficeClientDetails />,
+                            element: <VirtualOfficeClientRevenue />,
                           },
                           {
                             path: "members",
-                            element: <VirtualOfficeClientDetails />,
+                            element: <VirtualOfficeClientMembers />,
                           },
                         ],
                       },
