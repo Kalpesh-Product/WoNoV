@@ -1265,35 +1265,37 @@ const MeetingDashboard = () => {
       ),
     },
     {
-      layout: 2,
-      widgets: [
-        ...allowedPieCharts.map((item) => (
-          <WidgetSection
-            key={item.key}
-            layout={item.layout}
-            title={item.title}
-            border={item.border}
-          >
-            <div className="flex justify-end">
-              {/* CHART – fixed size, cannot shrink */}
-              <div className="shrink-0 w-[320px] h-[320px]">
-                <PieChartMui
-                  data={item.data}
-                  options={item.options}
-                  width={320}
-                  height={320}
-                />
-              </div>
+     layout: 2,
+widgets: [
+  ...allowedPieCharts.map((item) => (
+    <WidgetSection
+      key={item.key}
+      layout={item.layout}
+      title={item.title}
+      border={item.border}
+    >
+      <div className="relative flex items-center justify-center">
 
-              {/* LEGEND – scrolls instead of stretching */}
-              {item.customLegend && (
-                <div className="ml-4 max-h-[320px] overflow-y-auto">
-                  {item.customLegend}
-                </div>
-              )}
-            </div>
-          </WidgetSection>
-        )),
+        {/* CHART – perfectly centered */}
+        <div className="w-[320px] h-[320px]">
+          <PieChartMui
+            data={item.data}
+            options={item.options}
+            width={320}
+            height={320}
+          />
+        </div>
+
+        {/* LEGEND – stays on right */}
+        {item.customLegend && (
+          <div className="absolute right-0 max-h-[320px] overflow-y-auto">
+            {item.customLegend}
+          </div>
+        )}
+
+      </div>
+    </WidgetSection>
+  )),
         ...allowedDonutCharts.map((item) => (
           <WidgetSection
             key={item.key} // Add a key if possible!
