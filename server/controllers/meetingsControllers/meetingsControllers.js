@@ -1338,6 +1338,12 @@ const updateMeeting = async (req, res, next) => {
       discountAmount,
       paymentBaseAmount,
       paymentGstAmount,
+      client,
+      taxable,
+      gst,
+      status,
+      unitsOrHours,
+      meetingRoomName,
     } = req.body;
     const { meetingId } = req.params;
     const paymentProofFile = req.file;
@@ -1457,14 +1463,24 @@ const updateMeeting = async (req, res, next) => {
 
     await updatedMeeting.save();
 
+    const resolvedPaymentStatus = paymentStatus === "Paid" ? "Paid" : "Unpaid";
+    const resolvedClientName =
+      client || updatedMeeting.externalClient?.registeredClientCompany || "";
+
+
     const meetingRevenue = new MeetingRevenue({
       date: updatedMeeting.startDate,
       company,
-      clientName: updatedMeeting.externalClient.registeredClientCompany,
+      client: resolvedClientName,
       particulars: "Meeting room booking",
+      unitsOrHours: unitsOrHours || "Hours",
       costPerHour: updatedMeeting.bookedRoom.perHourPrice,
+      meetingRoomName: meetingRoomName || updatedMeeting.bookedRoom?.name,
+      taxable: Number(taxable ?? paymentBaseAmount ?? 0),
+      gst: Number(gst ?? paymentGstAmount ?? 0),
       totalAmount: paymentAmount,
       paymentDate: updatedMeeting.startDate,
+      status: status || resolvedPaymentStatus,
       remarks: paymentMode,
       meeting: updatedMeeting._id,
       hoursBooked: durationInHours,

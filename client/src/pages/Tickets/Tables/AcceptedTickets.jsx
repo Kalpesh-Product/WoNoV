@@ -37,7 +37,10 @@ const AcceptedTickets = ({ title, departmentId }) => {
   const [esCalatedTicket, setEscalatedTicket] = useState(null);
   const [openView, setOpenView] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
+  const topManagementDepartments = [
+    "67b2cf85b9b6ed5cedeb9a2e",
+    "6798ba9de469e809084e2494",
+  ];
   const { isTop } = useTopDepartment();
 
   const [selectedTicketId, setSelectedTicketId] = useState(null);
@@ -267,7 +270,8 @@ const AcceptedTickets = ({ title, departmentId }) => {
         // ];
 
         const showOtherActions =
-          !isTop || (isTop && departmentId === topManagementDepartment);
+          !isTop ||
+          (isTop && topManagementDepartments.includes(String(departmentId)));
 
         const roleTitle = auth?.user?.role?.[0]?.roleTitle || "";
         const canManageAssignments = roleTitle.endsWith("Admin");
