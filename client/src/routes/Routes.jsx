@@ -1523,11 +1523,47 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "mix-bag/clients/virtual-office/:clientId",
-                        element: <VirtualOfficeClientDetails />,
+                        element: <ViewClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "members",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                        ],
                       },
                       {
                         path: "clients/virtual-office/:clientId",
-                        element: <VirtualOfficeClientDetails />,
+                        element: <ViewClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "members",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                        ],
                       },
                       {
                         path: "mix-bag/clients/co-working/:clientName",
