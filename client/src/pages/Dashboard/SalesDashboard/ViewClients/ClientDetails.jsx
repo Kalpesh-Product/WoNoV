@@ -150,9 +150,9 @@ const ClientDetails = () => {
       localPocName: data.localPocName,
       localPocEmail: data.localPocEmail,
       localPocPhone: data.localPocPhone,
-      hoPocName: data.hoPocName,
-      hoPocEmail: data.hoPocEmail,
-      hoPocPhone: data.hoPocPhone,
+      hOPocName: data.hoPocName,
+      hOPocEmail: data.hoPocEmail,
+      hOPocPhone: data.hoPocPhone,
     };
 
     try {
@@ -165,12 +165,12 @@ const ClientDetails = () => {
         ...selectedClient,
         ...response?.data?.client,
         ...payload,
-        localPocName: payload.localPoc.name,
-        localPocEmail: payload.localPoc.email,
-        localPocPhone: payload.localPoc.phone,
-        hoPocName: payload.hOPoc.name,
-        hoPocEmail: payload.hOPoc.email,
-        hoPocPhone: payload.hOPoc.phone,
+        localPocName: payload.localPocName,
+        localPocEmail: payload.localPocEmail,
+        localPocPhone: payload.localPocPhone,
+        hoPocName: payload.hOPocName,
+        hoPocEmail: payload.hOPocEmail,
+        hoPocPhone: payload.hOPocPhone,
       };
 
       dispatch(setSelectedClient(updatedClient));

@@ -179,21 +179,17 @@ const VirtualOfficeClientDetails = () => {
       lockinPeriod: Number(data.lockinPeriod) || 0,
       rentDate: data.rentDate,
       nextIncrement: data.nextIncrement,
-      localPoc: {
-        name: data.localPocName,
-        email: data.localPocEmail,
-        phone: data.localPocPhone,
-      },
-      hOPoc: {
-        name: data.hoPocName,
-        email: data.hoPocEmail,
-        phone: data.hoPocPhone,
-      },
+      localPocName: data.localPocName,
+      localPocEmail: data.localPocEmail,
+      localPocPhone: data.localPocPhone,
+      hOPocName: data.hoPocName,
+      hOPocEmail: data.hoPocEmail,
+      hOPocPhone: data.hoPocPhone,
     };
 
     try {
       const response = await axios.patch(
-        `/api/sales/update-co-working-clients/${selectedClient._id}`,
+        `/api/sales/virtual-office/${selectedClient._id}`,
         payload,
       );
 
@@ -442,8 +438,8 @@ const VirtualOfficeClientDetails = () => {
                               {fieldKey === "isActive"
                                 ? "Status"
                                 : fieldKey
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
                             </span>{" "}
                           </div>
                           <div className="">
