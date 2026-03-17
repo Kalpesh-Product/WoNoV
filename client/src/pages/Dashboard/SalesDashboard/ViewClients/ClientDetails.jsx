@@ -147,16 +147,12 @@ const ClientDetails = () => {
       lockinPeriod: Number(data.lockinPeriod) || 0,
       rentDate: data.rentDate,
       nextIncrement: data.nextIncrement,
-      localPoc: {
-        name: data.localPocName,
-        email: data.localPocEmail,
-        phone: data.localPocPhone,
-      },
-      hOPoc: {
-        name: data.hoPocName,
-        email: data.hoPocEmail,
-        phone: data.hoPocPhone,
-      },
+      localPocName: data.localPocName,
+      localPocEmail: data.localPocEmail,
+      localPocPhone: data.localPocPhone,
+      hoPocName: data.hoPocName,
+      hoPocEmail: data.hoPocEmail,
+      hoPocPhone: data.hoPocPhone,
     };
 
     try {
