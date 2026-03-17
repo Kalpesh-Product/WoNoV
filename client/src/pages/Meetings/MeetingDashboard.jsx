@@ -1277,7 +1277,7 @@ widgets: [
       <div className="relative flex items-center justify-center">
 
         {/* CHART – perfectly centered */}
-        <div className="w-[320px] h-[320px]">
+        <div className="w-[400px] h-[320px]">
           <PieChartMui
             data={item.data}
             options={item.options}

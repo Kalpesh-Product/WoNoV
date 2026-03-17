@@ -23,6 +23,7 @@ const createMember = async (req, res, next) => {
   try {
     const {
       name,
+      gender,
       designation,
       email,
       phone,
@@ -76,6 +77,7 @@ const createMember = async (req, res, next) => {
 
     const newMember = new CoworkingMembers({
       employeeName: name,
+      gender,
       designation,
       email,
       mobileNo: phone,
@@ -122,6 +124,7 @@ const updateCoworkingMember = async (req, res, next) => {
 
     const {
       name,
+      gender,
       designation,
       email,
       phone,
@@ -168,6 +171,7 @@ const updateCoworkingMember = async (req, res, next) => {
 
     // Update only provided fields
     existingMember.employeeName = name ?? existingMember.employeeName;
+    existingMember.gender = gender ?? existingMember.gender;
     existingMember.designation = designation ?? existingMember.designation;
     existingMember.email = email ?? existingMember.email;
     existingMember.mobileNo = phone ?? existingMember.mobileNo;
@@ -215,7 +219,7 @@ const getAllMembers = async (req, res, next) => {
     }
     s;
 
-    const members = await CoworkingMembers.find({
+    const members = await CoworkingMembers.find({ 
       company,
       client,
     }).populate("client", "clientName service");
@@ -403,7 +407,7 @@ const getMemberByClient = async (req, res) => {
 
     const member = await CoworkingMembers.find(query)
       .populate("client", "clientName service")
-      .select("employeeName email");
+      .select("employeeName email gender");
 
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
@@ -932,6 +936,7 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
         const {
           "Company Name": companyName,
           "Employee Name": employeeName,
+          Gender: gender,
           Designation: designation,
           "Mobile No": mobileNo,
           Email: email,
@@ -984,6 +989,7 @@ const bulkInsertCoworkingMembers = async (req, res, next) => {
         members.push({
           client: clientId,
           employeeName: employeeName.trim(),
+          gender: gender?.trim() || undefined,
           designation: designation?.trim() || undefined,
           mobileNo: mobileNo?.trim() || undefined,
           email: email?.trim()?.toLowerCase() || undefined,
@@ -1146,6 +1152,7 @@ const bulkUpdateCoworkingMembers = async (req, res, next) => {
         const {
           "Company Name": companyName,
           "Employee Name": employeeName,
+          Gender: gender,
           Designation: designation,
           "Mobile No": mobileNo,
           Email: email,
@@ -1199,6 +1206,7 @@ const bulkUpdateCoworkingMembers = async (req, res, next) => {
         const $set = {};
 
         if (designation?.trim()) $set.designation = designation.trim();
+        if (gender?.trim()) $set.gender = gender.trim();
         if (mobileNo?.trim()) $set.mobileNo = mobileNo.trim();
         if (email?.trim()) $set.email = email.trim().toLowerCase();
         if (bloodGroup?.trim()) $set.bloodGroup = bloodGroup.trim();
