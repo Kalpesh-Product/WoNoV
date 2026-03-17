@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import SecondaryButton from "../../../../components/SecondaryButton";
 
 const VisitorDetails = () => {
     const axios = useAxiosPrivate();
@@ -25,10 +26,8 @@ const VisitorDetails = () => {
             gender: "",
             gstNumber: "",
             panNumber: "",
-            companyName: "",
-            registeredCompanyName: "",
-            companyEmail: "",
-            mobileNumber: "",
+            registeredClientCompany: "",
+            brandName: "",
         },
     });
 
@@ -36,14 +35,6 @@ const VisitorDetails = () => {
         () => decodeURIComponent(clientName || ""),
         [clientName],
     );
-
-    const { data: externalCompanies = [], isLoading: isLoadingCompany } = useQuery({
-        queryKey: ["all-external-companies"],
-        queryFn: async () => {
-            const res = await axios.get("/api/visitors/fetch-external-companies");
-            return res.data;
-        },
-    });
 
     const { data: visitors = [], isLoading: isLoadingVisitors } = useQuery({
         queryKey: ["all-visitors", "all"],
@@ -87,18 +78,6 @@ const VisitorDetails = () => {
         return visitors.find(companyMatches);
     }, [visitors, decodedClientName, isOpenDeskView]);
 
-    const companyDetails = useMemo(() => {
-        const normalizedName = decodedClientName.toLowerCase();
-        return externalCompanies.find((c) => {
-            const possibleNames = [
-                c.companyName,
-                c.registeredCompanyName,
-                c.email,
-            ].map((n) => (n || "").toLowerCase());
-            return possibleNames.includes(normalizedName);
-        });
-    }, [externalCompanies, decodedClientName]);
-
     useEffect(() => {
         reset({
             firstName: currentVisitor?.firstName || "",
@@ -109,12 +88,10 @@ const VisitorDetails = () => {
             gender: currentVisitor?.gender || "",
             gstNumber: currentVisitor?.gstNumber || "",
             panNumber: currentVisitor?.panNumber || "",
-            companyName: companyDetails?.companyName || "",
-            registeredCompanyName: companyDetails?.registeredCompanyName || "",
-            companyEmail: companyDetails?.email || "",
-            mobileNumber: companyDetails?.mobileNumber || "",
+            registeredClientCompany: currentVisitor?.registeredClientCompany || "",
+            brandName: currentVisitor?.brandName || "",
         });
-    }, [currentVisitor, companyDetails, reset]);
+    }, [currentVisitor, reset]);
 
     const onSubmit = async (data) => {
         try {
@@ -131,21 +108,9 @@ const VisitorDetails = () => {
                         gender: data.gender,
                         gstNumber: data.gstNumber,
                         panNumber: data.panNumber,
+                        registeredClientCompany: data.registeredClientCompany,
+                        brandName: data.brandName,
                     }),
-                );
-            }
-
-            if (companyDetails?._id) {
-                updates.push(
-                    axios.patch(
-                        `/api/visitors/update-external-company/${companyDetails._id}`,
-                        {
-                            companyName: data.companyName,
-                            registeredCompanyName: data.registeredCompanyName,
-                            email: data.companyEmail,
-                            mobileNumber: data.mobileNumber,
-                        },
-                    ),
                 );
             }
 
@@ -153,7 +118,6 @@ const VisitorDetails = () => {
 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["all-visitors"] }),
-                queryClient.invalidateQueries({ queryKey: ["all-external-companies"] }),
             ]);
 
             setIsEditing(false);
@@ -187,7 +151,38 @@ const VisitorDetails = () => {
         />
     );
 
-    if (isLoadingCompany || isLoadingVisitors) {
+    const handleReset = () => {
+        reset({
+            firstName: currentVisitor?.firstName || "",
+            lastName: currentVisitor?.lastName || "",
+            email: currentVisitor?.email || "",
+            phoneNumber: currentVisitor?.phoneNumber || "",
+            purposeOfVisit: currentVisitor?.purposeOfVisit || "",
+            gender: currentVisitor?.gender || "",
+            gstNumber: currentVisitor?.gstNumber || "",
+            panNumber: currentVisitor?.panNumber || "",
+            registeredClientCompany: currentVisitor?.registeredClientCompany || "",
+            brandName: currentVisitor?.brandName || "",
+        });
+    };
+
+    const renderFileLink = (value) => {
+        const fileUrl = value?.link || value?.url || value;
+        if (!fileUrl) return "N/A";
+
+        return (
+            <a
+                href={fileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary underline break-all"
+            >
+                View File
+            </a>
+        );
+    };
+
+    if (isLoadingVisitors) {
         return (
             <div className="flex justify-center items-center p-8">
                 <CircularProgress />
@@ -204,72 +199,104 @@ const VisitorDetails = () => {
                         : "Open Desk Client Detail"}
                 </span>
                 <PrimaryButton
-                    handleSubmit={
-                        isEditing ? handleSubmit(onSubmit) : () => setIsEditing(true)
-                    }
-                    title={isEditing ? "Save" : "Edit"}
+                    handleSubmit={() => setIsEditing((prev) => !prev)}
+                    title={isEditing ? "Cancel" : "Edit"}
                 />
             </div>
 
             <div className="h-[51vh] overflow-y-auto">
-                <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <div className="py-4 border-b-default border-borderGray">
-                            <span className="text-subtitle font-pmedium">Client Detail</span>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div className="py-4 border-b-default border-borderGray">
+                                <span className="text-subtitle font-pmedium">Client Detail</span>
+                            </div>
+                            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                                {isEditing
+                                    ? renderEditableRow("firstName", "First Name")
+                                    : renderDetailRow("First Name", currentVisitor?.firstName)}
+                                {isEditing
+                                    ? renderEditableRow("lastName", "Last Name")
+                                    : renderDetailRow("Last Name", currentVisitor?.lastName)}
+                                {isEditing
+                                    ? renderEditableRow("email", "Email")
+                                    : renderDetailRow("Email", currentVisitor?.email)}
+                                {isEditing
+                                    ? renderEditableRow("phoneNumber", "Phone Number")
+                                    : renderDetailRow("Phone Number", currentVisitor?.phoneNumber)}
+                                {isEditing
+                                    ? renderEditableRow("purposeOfVisit", "Purpose of Visit")
+                                    : renderDetailRow("Purpose of Visit", currentVisitor?.purposeOfVisit)}
+                                {isEditing
+                                    ? renderEditableRow("gender", "Gender")
+                                    : renderDetailRow("Gender", currentVisitor?.gender)}
+                                {isEditing
+                                    ? renderEditableRow("gstNumber", "GST Number")
+                                    : renderDetailRow("GST Number", currentVisitor?.gstNumber)}
+                                {isEditing
+                                    ? renderEditableRow("panNumber", "PAN Number")
+                                    : renderDetailRow("PAN Number", currentVisitor?.panNumber)}
+                            </div>
                         </div>
-                        <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                            {isEditing
-                                ? renderEditableRow("firstName", "First Name")
-                                : renderDetailRow("First Name", currentVisitor?.firstName)}
-                            {isEditing
-                                ? renderEditableRow("lastName", "Last Name")
-                                : renderDetailRow("Last Name", currentVisitor?.lastName)}
-                            {isEditing
-                                ? renderEditableRow("email", "Email")
-                                : renderDetailRow("Email", currentVisitor?.email)}
-                            {isEditing
-                                ? renderEditableRow("phoneNumber", "Phone Number")
-                                : renderDetailRow("Phone Number", currentVisitor?.phoneNumber)}
-                            {isEditing
-                                ? renderEditableRow("purposeOfVisit", "Purpose of Visit")
-                                : renderDetailRow("Purpose of Visit", currentVisitor?.purposeOfVisit)}
-                            {isEditing
-                                ? renderEditableRow("gender", "Gender")
-                                : renderDetailRow("Gender", currentVisitor?.gender)}
-                            {isEditing
-                                ? renderEditableRow("gstNumber", "GST Number")
-                                : renderDetailRow("GST Number", currentVisitor?.gstNumber)}
-                            {isEditing
-                                ? renderEditableRow("panNumber", "PAN Number")
-                                : renderDetailRow("PAN Number", currentVisitor?.panNumber)}
+
+                        <div>
+                            <div className="py-4 border-b-default border-borderGray">
+                                <span className="text-subtitle font-pmedium">
+                                    Client Company Detail
+                                </span>
+                            </div>
+                            <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                                {isEditing
+                                    ? renderEditableRow("registeredClientCompany", "Registered Client Company")
+                                    : renderDetailRow(
+                                        "Registered Client Company",
+                                        currentVisitor?.registeredClientCompany,
+                                    )}
+                                {isEditing
+                                    ? renderEditableRow("brandName", "Brand Name")
+                                    : renderDetailRow("Brand Name", currentVisitor?.brandName)}
+                            </div>
                         </div>
+
+                        {!isEditing && (
+                            <>
+                                <div>
+                                    <div className="py-4 border-b-default border-borderGray">
+                                        <span className="text-subtitle font-pmedium">GST</span>
+                                    </div>
+                                    <div className="p-4">
+                                        {renderDetailRow("GST File", renderFileLink(currentVisitor?.gstFile))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="py-4 border-b-default border-borderGray">
+                                        <span className="text-subtitle font-pmedium">Verification</span>
+                                    </div>
+                                    <div className="p-4">
+                                        {renderDetailRow("Verification File", renderFileLink(currentVisitor?.panFile))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="py-4 border-b-default border-borderGray">
+                                        <span className="text-subtitle font-pmedium">Others</span>
+                                    </div>
+                                    <div className="p-4">
+                                        {renderDetailRow("Other File", renderFileLink(currentVisitor?.otherFile))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
 
-                    <div>
-                        <div className="py-4 border-b-default border-borderGray">
-                            <span className="text-subtitle font-pmedium">
-                                Client Company Detail
-                            </span>
+                    {isEditing && (
+                        <div className="flex items-center justify-center gap-2 py-4">
+                            <PrimaryButton title="Submit" handleSubmit={handleSubmit(onSubmit)} />
+                            <SecondaryButton title="Reset" handleSubmit={handleReset} />
                         </div>
-                        <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                            {isEditing
-                                ? renderEditableRow("companyName", "Company Name")
-                                : renderDetailRow("Company Name", companyDetails?.companyName)}
-                            {isEditing
-                                ? renderEditableRow("registeredCompanyName", "Registered Company Name")
-                                : renderDetailRow(
-                                    "Registered Company Name",
-                                    companyDetails?.registeredCompanyName,
-                                )}
-                            {isEditing
-                                ? renderEditableRow("companyEmail", "Company Email")
-                                : renderDetailRow("Company Email", companyDetails?.email)}
-                            {isEditing
-                                ? renderEditableRow("mobileNumber", "Company Mobile Number")
-                                : renderDetailRow("Company Mobile Number", companyDetails?.mobileNumber)}
-                        </div>
-                    </div>
-                </div>
+                    )}
+                </form>
             </div>
         </div>
     );
