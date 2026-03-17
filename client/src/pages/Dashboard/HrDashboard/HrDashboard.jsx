@@ -1223,10 +1223,11 @@ const HrDashboard = () => {
       key: "employeeGenderDistribution",
       title: "Employee Gender Distribution ",
       border: true,
-
       percent: true,
       data: genderData,
       options: genderPieChart,
+      height:320,
+      width:500,
       permission: PERMISSIONS.HR_EMPLOYEE_GENDER_DISTRIBUTION_PIE.value,
     },
     {
@@ -1234,10 +1235,11 @@ const HrDashboard = () => {
       key: "cityWiseEmployees",
       title: "City Wise Employees ",
       border: true,
-
       percent: true,
       data: pieChartData,
       options: techGoaVisitorsOptions,
+      height:320,
+      width:500,
       permission: PERMISSIONS.HR_CITY_WISE_EMPLOYEES_PIE.value,
     },
   ];
@@ -1386,6 +1388,8 @@ const HrDashboard = () => {
             title={item.title}
             data={item.data}
             options={item.options}
+            width={item?.width}
+            height={item?.height}
             centerAlign
           />
         </WidgetSection>

@@ -10,21 +10,21 @@ const ExternalClientLayout = () => {
 
     const tabs = [
         {
-            label: "Client Details",
+            label: isOpenDeskView ? "Open Desk Client Details" : "External Client Details",
             path: "client-details",
             permission: isOpenDeskView
                 ? PERMISSIONS.SALES_EXTERNAL_OPEN_DESK_COMPANY_CLIENT_DETAILS.value
                 : PERMISSIONS.SALES_EXTERNAL_COMPANY_CLIENT_DETAILS.value,
         },
         {
-            label: "Meetings",
+            label: isOpenDeskView ? "Open Desk" : "External Meetings",
             path: "meetings",
             permission: isOpenDeskView
                 ? PERMISSIONS.SALES_EXTERNAL_OPEN_DESK_COMPANY_MEETINGS.value
                 : PERMISSIONS.SALES_EXTERNAL_COMPANY_MEETINGS.value,
         },
         {
-            label: "Revenue",
+            label: isOpenDeskView ? "Half-day / Full-day" : "Revenue",
             path: "revenue",
             permission: isOpenDeskView
                 ? PERMISSIONS.SALES_EXTERNAL_OPEN_DESK_COMPANY_REVENUE.value

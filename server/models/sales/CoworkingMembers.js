@@ -14,6 +14,12 @@ const coworkingMemberSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    gender: {
+      type: String,
+      enum: ["Male", "Female"],
+      required: true, 
+    },
+
     designation: {
       type: String,
     },

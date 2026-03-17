@@ -19,6 +19,7 @@ const virtualOfficeSchema = new mongoose.Schema(
 
     // Client Info
     clientName: { type: String, required: true, trim: true },
+    brandName: { type: String, trim: true },
     // email: { type: String, trim: true, lowercase: true },
     // phone: { type: String, trim: true },
 
