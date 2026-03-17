@@ -82,7 +82,7 @@ const VisitorDetails = () => {
         <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4">
             <div className="flex justify-between items-center">
                 <span className="text-subtitle font-pmedium text-primary">
-                    Visitor Details
+                    {currentVisitor?.purposeOfVisit === "Meeting Room Booking" ? `External Client Detail` : `Open Desk Client Detail`}
                 </span>
             </div>
 

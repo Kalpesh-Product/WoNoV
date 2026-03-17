@@ -30,6 +30,10 @@ const clientSchema = new mongoose.Schema(
       maxlength: 20,
       match: [/^\+?[0-9]+$/, "Invalid phone number format"],
     },
+    brandName: {
+      type: String,
+      trim: true,
+    },
     service: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ClientService",
