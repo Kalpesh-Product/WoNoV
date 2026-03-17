@@ -1,18 +1,40 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CircularProgress, TextField } from "@mui/material";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { CircularProgress } from "@mui/material";
+import PrimaryButton from "../../../../components/PrimaryButton";
 
 const VisitorDetails = () => {
     const axios = useAxiosPrivate();
+    const queryClient = useQueryClient();
     const { clientName } = useParams();
     const location = useLocation();
     const isOpenDeskView = location.pathname.includes("/open-desk/");
+    const [isEditing, setIsEditing] = useState(false);
+
+    const { control, handleSubmit, reset } = useForm({
+        defaultValues: {
+            firstName: "",
+            lastName: "",
+            email: "",
+            phoneNumber: "",
+            purposeOfVisit: "",
+            gender: "",
+            gstNumber: "",
+            panNumber: "",
+            companyName: "",
+            registeredCompanyName: "",
+            companyEmail: "",
+            mobileNumber: "",
+        },
+    });
 
     const decodedClientName = useMemo(
         () => decodeURIComponent(clientName || ""),
-        [clientName]
+        [clientName],
     );
 
     const { data: externalCompanies = [], isLoading: isLoadingCompany } = useQuery({
@@ -24,7 +46,7 @@ const VisitorDetails = () => {
     });
 
     const { data: visitors = [], isLoading: isLoadingVisitors } = useQuery({
-        queryKey: ["all-visitors", "today"],
+        queryKey: ["all-visitors", "all"],
         queryFn: async () => {
             const res = await axios.get("/api/visitors/fetch-visitors?query=all");
             return res.data;
@@ -77,22 +99,76 @@ const VisitorDetails = () => {
         });
     }, [externalCompanies, decodedClientName]);
 
-    if (isLoadingCompany || isLoadingVisitors) {
-        return (
-            <div className="flex justify-center items-center p-8">
-                <CircularProgress />
-            </div>
-        );
-    }
+    useEffect(() => {
+        reset({
+            firstName: currentVisitor?.firstName || "",
+            lastName: currentVisitor?.lastName || "",
+            email: currentVisitor?.email || "",
+            phoneNumber: currentVisitor?.phoneNumber || "",
+            purposeOfVisit: currentVisitor?.purposeOfVisit || "",
+            gender: currentVisitor?.gender || "",
+            gstNumber: currentVisitor?.gstNumber || "",
+            panNumber: currentVisitor?.panNumber || "",
+            companyName: companyDetails?.companyName || "",
+            registeredCompanyName: companyDetails?.registeredCompanyName || "",
+            companyEmail: companyDetails?.email || "",
+            mobileNumber: companyDetails?.mobileNumber || "",
+        });
+    }, [currentVisitor, companyDetails, reset]);
+
+    const onSubmit = async (data) => {
+        try {
+            const updates = [];
+
+            if (currentVisitor?._id) {
+                updates.push(
+                    axios.patch(`/api/visitors/update-visitor/${currentVisitor._id}`, {
+                        firstName: data.firstName,
+                        lastName: data.lastName,
+                        email: data.email,
+                        phoneNumber: data.phoneNumber,
+                        purposeOfVisit: data.purposeOfVisit,
+                        gender: data.gender,
+                        gstNumber: data.gstNumber,
+                        panNumber: data.panNumber,
+                    }),
+                );
+            }
+
+            if (companyDetails?._id) {
+                updates.push(
+                    axios.patch(
+                        `/api/visitors/update-external-company/${companyDetails._id}`,
+                        {
+                            companyName: data.companyName,
+                            registeredCompanyName: data.registeredCompanyName,
+                            email: data.companyEmail,
+                            mobileNumber: data.mobileNumber,
+                        },
+                    ),
+                );
+            }
+
+            await Promise.all(updates);
+
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["all-visitors"] }),
+                queryClient.invalidateQueries({ queryKey: ["all-external-companies"] }),
+            ]);
+
+            setIsEditing(false);
+            toast.success("Client details updated successfully");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Failed to update details");
+        }
+    };
 
     const renderDetailRow = (label, value) => (
         <div className="py-2 flex justify-between items-start gap-2">
             <div className="w-[100%] justify-start flex">
-                <span className="font-pmedium text-gray-600 text-content">
-                    {label}
-                </span>
+                <span className="font-pmedium text-gray-600 text-content">{label}</span>
             </div>
-            <div className="">
+            <div>
                 <span>:</span>
             </div>
             <div className="w-full">
@@ -101,42 +177,74 @@ const VisitorDetails = () => {
         </div>
     );
 
+    const renderEditableRow = (name, label) => (
+        <Controller
+            name={name}
+            control={control}
+            render={({ field }) => (
+                <TextField {...field} label={label} size="small" fullWidth />
+            )}
+        />
+    );
+
+    if (isLoadingCompany || isLoadingVisitors) {
+        return (
+            <div className="flex justify-center items-center p-8">
+                <CircularProgress />
+            </div>
+        );
+    }
+
     return (
         <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4">
             <div className="flex justify-between items-center">
                 <span className="text-subtitle font-pmedium text-primary">
-                    {currentVisitor?.purposeOfVisit === "Meeting Room Booking" ? `External Client Detail` : `Open Desk Client Detail`}
+                    {currentVisitor?.purposeOfVisit === "Meeting Room Booking"
+                        ? "External Client Detail"
+                        : "Open Desk Client Detail"}
                 </span>
+                <PrimaryButton
+                    handleSubmit={
+                        isEditing ? handleSubmit(onSubmit) : () => setIsEditing(true)
+                    }
+                    title={isEditing ? "Save" : "Edit"}
+                />
             </div>
 
             <div className="h-[51vh] overflow-y-auto">
                 <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Section: Client Detail */}
                     <div>
                         <div className="py-4 border-b-default border-borderGray">
-                            <span className="text-subtitle font-pmedium">
-                                Client Detail
-                            </span>
+                            <span className="text-subtitle font-pmedium">Client Detail</span>
                         </div>
                         <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                            {renderDetailRow("First Name", currentVisitor?.firstName)}
-                            {renderDetailRow("Last Name", currentVisitor?.lastName)}
-                            {renderDetailRow("Email", currentVisitor?.email)}
-                            {renderDetailRow("Phone Number", currentVisitor?.phoneNumber)}
-                            {renderDetailRow("Purpose of Visit", currentVisitor?.purposeOfVisit)}
-                            {renderDetailRow("Gender", currentVisitor?.gender)}
-                            {/* {renderDetailRow("Visitor Type", currentVisitor?.visitorType)} */}
-                            {renderDetailRow("Email", currentVisitor?.email)}
-
-                            {renderDetailRow("GST Number", currentVisitor?.gstNumber)}
-                            {renderDetailRow("PAN Number", currentVisitor?.panNumber)}
-
-
-
+                            {isEditing
+                                ? renderEditableRow("firstName", "First Name")
+                                : renderDetailRow("First Name", currentVisitor?.firstName)}
+                            {isEditing
+                                ? renderEditableRow("lastName", "Last Name")
+                                : renderDetailRow("Last Name", currentVisitor?.lastName)}
+                            {isEditing
+                                ? renderEditableRow("email", "Email")
+                                : renderDetailRow("Email", currentVisitor?.email)}
+                            {isEditing
+                                ? renderEditableRow("phoneNumber", "Phone Number")
+                                : renderDetailRow("Phone Number", currentVisitor?.phoneNumber)}
+                            {isEditing
+                                ? renderEditableRow("purposeOfVisit", "Purpose of Visit")
+                                : renderDetailRow("Purpose of Visit", currentVisitor?.purposeOfVisit)}
+                            {isEditing
+                                ? renderEditableRow("gender", "Gender")
+                                : renderDetailRow("Gender", currentVisitor?.gender)}
+                            {isEditing
+                                ? renderEditableRow("gstNumber", "GST Number")
+                                : renderDetailRow("GST Number", currentVisitor?.gstNumber)}
+                            {isEditing
+                                ? renderEditableRow("panNumber", "PAN Number")
+                                : renderDetailRow("PAN Number", currentVisitor?.panNumber)}
                         </div>
                     </div>
 
-                    {/* Section: Client Company Detail */}
                     <div>
                         <div className="py-4 border-b-default border-borderGray">
                             <span className="text-subtitle font-pmedium">
@@ -144,9 +252,21 @@ const VisitorDetails = () => {
                             </span>
                         </div>
                         <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                            {renderDetailRow("Company Name", companyDetails?.companyName)}
-                            {renderDetailRow("Registered Company Name", companyDetails?.registeredCompanyName)}
-
+                            {isEditing
+                                ? renderEditableRow("companyName", "Company Name")
+                                : renderDetailRow("Company Name", companyDetails?.companyName)}
+                            {isEditing
+                                ? renderEditableRow("registeredCompanyName", "Registered Company Name")
+                                : renderDetailRow(
+                                    "Registered Company Name",
+                                    companyDetails?.registeredCompanyName,
+                                )}
+                            {isEditing
+                                ? renderEditableRow("companyEmail", "Company Email")
+                                : renderDetailRow("Company Email", companyDetails?.email)}
+                            {isEditing
+                                ? renderEditableRow("mobileNumber", "Company Mobile Number")
+                                : renderDetailRow("Company Mobile Number", companyDetails?.mobileNumber)}
                         </div>
                     </div>
                 </div>

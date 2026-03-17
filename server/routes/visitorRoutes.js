@@ -5,6 +5,7 @@ const {
   addVisitor,
   updateVisitor,
   fetchExternalCompanies,
+  updateExternalCompany,
   fetchTeamMembers,
   bulkInsertExternalClients,
   updateVisitorPayment,
@@ -31,6 +32,7 @@ router.post(
   addVisitor,
 );
 router.get("/fetch-external-companies", fetchExternalCompanies);
+router.patch("/update-external-company/:externalCompanyId", updateExternalCompany);
 router.patch("/update-visitor/:visitorId", updateVisitor);
 router.patch(
   "/payment/:visitorId",

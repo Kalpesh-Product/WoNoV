@@ -519,28 +519,28 @@ const updateVisitor = async (req, res, next) => {
         message: "Visitor not found",
       });
     }
-    const parsedCheckout = new Date(updateData.checkOut);
-    const parsedCheckin = new Date(visitor.checkIn);
+    if (updateData.checkOut) {
+      const parsedCheckout = new Date(updateData.checkOut);
+      const parsedCheckin = new Date(visitor.checkIn);
 
-    if (isNaN(parsedCheckout.getTime())) {
-      return res.status(400).json({
-        message: "Invalid checkout time",
-      });
-    }
+      if (isNaN(parsedCheckout.getTime())) {
+        return res.status(400).json({
+          message: "Invalid checkout time",
+        });
+      }
 
-    if (parsedCheckout.getDate() !== parsedCheckin.getDate()) {
-      return res.status(400).json({
-        message: "Check-in and Check-out date should be the same",
-      });
-    }
+      if (parsedCheckout.getDate() !== parsedCheckin.getDate()) {
+        return res.status(400).json({
+          message: "Check-in and Check-out date should be the same",
+        });
+      }
 
-    if (parsedCheckout.getTime() < parsedCheckin.getTime()) {
-      return res.status(400).json({
-        message: "Check-out time should be after Check-in time",
-      });
-    }
+      if (parsedCheckout.getTime() < parsedCheckin.getTime()) {
+        return res.status(400).json({
+          message: "Check-out time should be after Check-in time",
+        });
+      }
 
-    if (parsedCheckout) {
       updateData.checkedOutBy = user;
     }
 
@@ -588,6 +588,53 @@ const updateVisitor = async (req, res, next) => {
     }
   }
 };
+
+const updateExternalCompany = async (req, res, next) => {
+  const logPath = "visitor/VisitorLog";
+  const logAction = "Update External Company";
+  const logSourceKey = "visitor";
+  const { user, ip, company } = req;
+
+  try {
+    const { externalCompanyId } = req.params;
+    const updateData = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(externalCompanyId)) {
+      return res.status(400).json({ message: "Invalid external company ID" });
+    }
+
+    const updatedExternalCompany = await ExternalCompany.findByIdAndUpdate(
+      externalCompanyId,
+      updateData,
+      { new: true, runValidators: true },
+    );
+
+    if (!updatedExternalCompany) {
+      return res.status(404).json({ message: "External company not found" });
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "External company updated successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: updatedExternalCompany._id,
+      changes: updateData,
+    });
+
+    return res.status(200).json({
+      message: "External company updated successfully",
+      data: updatedExternalCompany,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 const fetchExternalCompanies = async (req, res, next) => {
   const { company } = req;
@@ -982,6 +1029,7 @@ module.exports = {
   updateVisitor,
   updateVisitorPayment,
   fetchExternalCompanies,
+  updateExternalCompany,
   fetchTeamMembers,
   bulkInsertExternalClients,
 };
