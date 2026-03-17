@@ -84,8 +84,8 @@ const AttendanceRequests = () => {
     { field: "name", headerName: "Name", flex: 1 },
     { field: "addedBy", headerName: "Added By", flex: 1 },
     { field: "requestDay", headerName: "Date" },
-    { field: "inTime", headerName: "Start Time" },
-    { field: "outTime", headerName: "End Time" },
+    { field: "inTime", headerName: "Corrected In Time" },
+    { field: "outTime", headerName: "Corrected Out Time" },
     {
       field: "actions",
       headerName: "Actions",
@@ -223,11 +223,11 @@ const AttendanceRequests = () => {
 
               <div className="grid grid-cols-1 gap-4">
                 <DetalisFormatted
-                  title="Start Time"
+                  title="Corrected In Time"
                   detail={selectedRequest?.inTime}
                 />
                 <DetalisFormatted
-                  title="End Time"
+                  title="Corrected Out Time"
                   detail={selectedRequest?.outTime}
                 />
                 <DetalisFormatted

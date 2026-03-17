@@ -49,8 +49,8 @@ const AttendanceCompleted = () => {
     },
     { field: "addedBy", headerName: "Added By", flex: 1 },
     { field: "date", headerName: "Date" },
-    { field: "inTime", headerName: "Start Time" },
-    { field: "outTime", headerName: "End Time" },
+    { field: "inTime", headerName: "Corrected In Time" },
+    { field: "outTime", headerName: "Corrected Out Time" },
     { field: "status", headerName: "Status", cellRenderer : (params)=>(<StatusChip status={params.value} />) },
   ];
 
@@ -113,11 +113,11 @@ const AttendanceCompleted = () => {
               detail={selectedRequest?.addedBy || "N/A"}
             />
             <DetalisFormatted
-              title="Start Time"
+              title="Corrected In Time"
               detail={selectedRequest?.inTime}
             />
             <DetalisFormatted
-              title="End Time"
+              title="Corrected Out Time"
               detail={selectedRequest?.outTime}
             />
             <DetalisFormatted

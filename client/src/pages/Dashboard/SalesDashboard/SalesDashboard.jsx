@@ -735,6 +735,49 @@ const SalesDashboard = () => {
       .filter((item) => item.members?.length > 0)
       .map((item) => item.members)
       .flat();
+  const genderCounts = clientMembersData.reduce(
+  (acc, member) => {
+    const value = String(member?.gender || "").trim().toLowerCase();
+
+    if (value.startsWith("m")) acc.Male += 1;
+    else if (value.startsWith("f")) acc.Female += 1;
+
+    return acc;
+  },
+  { Male: 0, Female: 0 }
+);
+
+  const genderWiseData = [
+  { label: "Male", value: genderCounts.Male || 0 },
+  { label: "Female", value: genderCounts.Female || 0 },
+];
+
+  const genderPieChartOptions = {
+  chart: {
+    type: "pie",
+    fontFamily: "Poppins-Regular",
+  },
+  labels: genderWiseData.map((item) => item.label),
+  series: genderWiseData.map((item) => item.value),
+  tooltip: {
+    y: {
+      formatter: (val) => `${val} Members`,
+    },
+  },
+  legend: {
+    position: "right",
+  },
+  colors: ["#1E3D73", "#54C4A7"],
+};
+
+// console.log(clientsData);
+// console.log(clientMembersData);
+//console.log(genderCounts);
+// console.log(config.data);
+// console.log(genderWiseData);
+// console.log(clientMembersData);
+
+  
   //-----------------------------------------------Conversion of Gender-wise Pie-graph-----------------------------------------------------------//
   //-----------------------------------------------Client Anniversary-----------------------------------------------------------//
   const companyTableColumns = [
@@ -934,6 +977,8 @@ const SalesDashboard = () => {
       layout: 1,
       data: sectorPieData,
       options: sectorPieChartOptions,
+      height:320,
+      width:500,
     },
     {
       key: PERMISSIONS.SALES_CLIENT_WISE_OCCUPANCY.value,
@@ -942,7 +987,8 @@ const SalesDashboard = () => {
       layout: 1,
       data: totalDeskPercent,
       options: clientsDesksPieOptions,
-      width: "100%",
+      height:320,
+      width:500,
     },
   ];
   const allowedPieCharts = salesFilterPermissions(
@@ -952,18 +998,22 @@ const SalesDashboard = () => {
 
   const pieChartLocalConfigs = [
     {
-      key: PERMISSIONS.SALES_SECTOR_WISE_OCCUPANCY.value,
-      title: "Client Gender Wise Data",
+      key: PERMISSIONS.SALES_CLIENT_GENDER_WISE_DATA.value,
+      title: "Client Member Gender Wise Data",
       border: true,
       layout: 1,
-      data: [],
-      options: [],
+      height:320,
+      width:500,
+      data: genderWiseData,
+      options: genderPieChartOptions,
     },
     {
-      key: PERMISSIONS.SALES_CLIENT_WISE_OCCUPANCY.value,
+      key: PERMISSIONS.SALES_INDIA_WISE_MEMBERS.value,
       title: "India-wise Members",
       border: true,
       layout: 1,
+      height:320,
+      width:500,
       data: locationWiseData,
       options: locationPieChartOptions,
     },
@@ -974,17 +1024,7 @@ const SalesDashboard = () => {
   );
 
   const muiTableConfigs = [
-    {
-      Title: "Current Month Client Anniversary",
-      columns: companyTableColumns,
-      rows: formattedCompanyTableData,
-      rowKey: "id",
-      rowsToDisplay: 40,
-      scroll: true,
-      className: "h-full",
-      layout: 1,
-      key: PERMISSIONS.SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY.value,
-    },
+    
     {
       Title: "Client Member Birthday",
       columns: upcomingBirthdaysColumns,
@@ -996,6 +1036,17 @@ const SalesDashboard = () => {
       layout: 1,
       padding: true,
       key: PERMISSIONS.SALES_CLIENT_MEMBER_BIRTHDAY.value,
+    },
+    {
+      Title: "Current Month Client Anniversary",
+      columns: companyTableColumns,
+      rows: formattedCompanyTableData,
+      rowKey: "id",
+      rowsToDisplay: 40,
+      scroll: true,
+      className: "h-full",
+      layout: 1,
+      key: PERMISSIONS.SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY.value,
     },
   ];
   const allowedMuiTableConfigs = salesFilterPermissions(
@@ -1108,6 +1159,7 @@ const SalesDashboard = () => {
               data={config.data}
               options={config.options}
               width={config?.width}
+              height={config?.height}
               centerAlign
             />
           ) : (
@@ -1120,17 +1172,18 @@ const SalesDashboard = () => {
       layout: 2,
       widgets: allowedLocalPieCharts.map((config) => (
         <WidgetSection
+          key={config.key}
           layout={config.layout}
           title={config.title}
           border={config.border}
         >
-          <div className="h-[300px]">
             <PieChartMui
-              data={config.data}
-              options={config.options}
-              centerAlign
-            />
-          </div>
+            data={config.data}
+            options={config.options}
+            width={config?.width}
+            height={config?.height}
+            centerAlign
+          />
         </WidgetSection>
       )),
     },
