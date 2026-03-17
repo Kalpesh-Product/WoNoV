@@ -1,5 +1,6 @@
 import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -13,12 +14,18 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
+import { useParams } from "react-router-dom";
 
 const ClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
+  const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
+  const normalizedClientName = useMemo(
+    () => decodeURIComponent(clientName || "").trim().toLowerCase(),
+    [clientName],
+  );
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       clientName: "",
@@ -96,6 +103,28 @@ const ClientDetails = () => {
       });
     }
   }, [selectedClient, reset]);
+
+  const { isLoading: isClientLoading } = useQuery({
+    queryKey: ["coWorkingClientByName", normalizedClientName],
+    enabled:
+      Boolean(normalizedClientName) &&
+      (selectedClient?.clientName || "").trim().toLowerCase() !== normalizedClientName,
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      const clients = Array.isArray(response?.data) ? response.data : [];
+      const matchedClient = clients.find(
+        (client) =>
+          (client?.clientName || "").trim().toLowerCase() === normalizedClientName,
+      );
+
+      if (matchedClient?._id) {
+        dispatch(setSelectedClient(matchedClient));
+      }
+
+      return matchedClient;
+    },
+  });
+
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -270,6 +299,7 @@ const ClientDetails = () => {
           <PrimaryButton
             handleSubmit={handleEditToggle}
             title={isEditing ? "Cancel" : "Edit"}
+            disabled={!selectedClient?._id || isClientLoading}
           />
         </div>
       </div>

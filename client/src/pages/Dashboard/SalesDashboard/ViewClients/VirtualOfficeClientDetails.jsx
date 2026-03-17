@@ -1,5 +1,5 @@
 import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -22,6 +22,11 @@ const VirtualOfficeClientDetails = () => {
   const { clientId } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
+  const normalizedClientName = useMemo(
+    () => decodeURIComponent(clientId || "").trim().toLowerCase(),
+    [clientId],
+  );
+
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       clientName: "",
@@ -103,6 +108,28 @@ const VirtualOfficeClientDetails = () => {
   const virtualOfficeClientId = /^[a-fA-F0-9]{24}$/.test(clientId)
     ? clientId
     : selectedClient?._id;
+
+  const { isLoading: isClientByNameLoading } = useQuery({
+    queryKey: ["virtualOfficeClientByName", normalizedClientName],
+    enabled:
+      Boolean(normalizedClientName) &&
+      !/^[a-fA-F0-9]{24}$/.test(clientId || "") &&
+      (selectedClient?.clientName || "").trim().toLowerCase() !== normalizedClientName,
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/virtual-office/clients");
+      const clients = Array.isArray(response?.data) ? response.data : [];
+      const matchedClient = clients.find(
+        (client) =>
+          (client?.clientName || "").trim().toLowerCase() === normalizedClientName,
+      );
+
+      if (matchedClient?._id) {
+        dispatch(setSelectedClient(matchedClient));
+      }
+
+      return matchedClient;
+    },
+  });
 
   const { isLoading: isClientLoading } = useQuery({
     queryKey: ["virtualOfficeClient", virtualOfficeClientId],
@@ -326,7 +353,7 @@ const VirtualOfficeClientDetails = () => {
           <PrimaryButton
             handleSubmit={handleEditToggle}
             title={isEditing ? "Cancel" : "Edit"}
-            disabled={isClientLoading}
+            disabled={isClientLoading || isClientByNameLoading || !selectedClient?._id}
           />
         </div>
       </div>
