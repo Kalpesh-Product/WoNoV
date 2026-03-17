@@ -35,6 +35,7 @@ const AdminClientOnboard = () => {
     defaultValues: {
       client: "",
       name: "",
+      gender: "",
       email: "",
       phone: "",
       dob: null,
@@ -285,6 +286,28 @@ const AdminClientOnboard = () => {
                       helperText={errors.email?.message}
                       fullWidth
                     />
+                  )}
+                />
+                <Controller
+                  name="gender"
+                  control={control}
+                  rules={{ required: "Gender is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="Gender"
+                      error={!!errors.gender}
+                      helperText={errors.gender?.message}
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select Gender
+                      </MenuItem>
+                      <MenuItem value="Male">Male</MenuItem>
+                      <MenuItem value="Female">Female</MenuItem>
+                    </TextField>
                   )}
                 />
                 <Controller

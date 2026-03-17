@@ -20,13 +20,15 @@ const virtualOfficeSchema = new mongoose.Schema(
     // Client Info
     clientName: { type: String, required: true, trim: true },
     brandName: { type: String, trim: true },
-    // email: { type: String, trim: true, lowercase: true },
-    // phone: { type: String, trim: true },
+    bookingType: { type: String, trim: true },
+    email: { type: String, trim: true, lowercase: true },
+    phone: { type: String, trim: true },
 
     service: { type: String, required: true, trim: true },
-    // sector: { type: String, trim: true },
-    // state: { type: String, trim: true },
-    // city: { type: String, trim: true },
+    sector: { type: String, trim: true },
+    state: { type: String, trim: true },
+    city: { type: String, trim: true },
+    totalDesks: { type: Number, default: 0 },
 
     channel: { type: String, trim: true },
     // Space & Desks
@@ -45,6 +47,16 @@ const virtualOfficeSchema = new mongoose.Schema(
     annualIncrement: { type: Number },
     totalTerm: { type: Number },
 
+    // Desks & Credits
+    cabinDesks: { type: Number, default: 0 },
+    cabinDeskRate: { type: Number, default: 0 },
+    cabinTotal: { type: Number, default: 0 },
+    openDesks: { type: Number, default: 0 },
+    openDeskRate: { type: Number, default: 0 },
+    openTotal: { type: Number, default: 0 },
+    perDeskMeetingCredits: { type: Number, default: 0 },
+    totalMeetingCredits: { type: Number, default: 0 },
+
     rentStatus: {
       type: String,
       // enum: ["Active", "Expired", "Terminated", "Not Active"],
@@ -56,8 +68,8 @@ const virtualOfficeSchema = new mongoose.Schema(
       default: true,
     },
 
-    // localPoc: { type: pocSchema, default: () => ({}) },
-    // hoPoc: { type: pocSchema, default: () => ({}) },
+    localPoc: { type: pocSchema, default: () => ({}) },
+    hoPoc: { type: pocSchema, default: () => ({}) },
   },
   { timestamps: true },
 );

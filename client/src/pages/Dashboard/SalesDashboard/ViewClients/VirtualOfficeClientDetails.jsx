@@ -1,5 +1,5 @@
 import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -22,6 +22,11 @@ const VirtualOfficeClientDetails = () => {
   const { clientId } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
+  const normalizedClientName = useMemo(
+    () => decodeURIComponent(clientId || "").trim().toLowerCase(),
+    [clientId],
+  );
+
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       clientName: "",
@@ -32,29 +37,27 @@ const VirtualOfficeClientDetails = () => {
       hoState: "",
       unitName: "",
       unitNo: "",
-      buildingName: "",
-      buildingAddress: "",
       cabinDesks: 0,
       openDesks: 0,
       totalDesks: 0,
       bookingType: "",
-      ratePerOpenDesk: 0,
-      ratePerCabinDesk: 0,
+      openDeskRate: 0,
+      cabinDeskRate: 0,
       annualIncrement: 0,
       perDeskMeetingCredits: 0,
       totalMeetingCredits: 0,
-      startDate: "",
-      endDate: "",
-      lockinPeriod: 0,
+      termStartDate: "",
+      termEnd: "",
+      lockInPeriodMonths: 0,
       rentDate: "",
-      nextIncrement: "",
+      nextIncrementDate: "",
       localPocName: "",
       localPocEmail: "",
       localPocPhone: "",
       hoPocName: "",
       hoPocEmail: "",
       hoPocPhone: "",
-      isActive: false,
+      clientStatus: true,
       createdAt: "",
       updatedAt: "",
     },
@@ -67,33 +70,35 @@ const VirtualOfficeClientDetails = () => {
         serviceName: selectedClient.service?.serviceName || "",
         serviceDescription: selectedClient.service?.description || "",
         sector: selectedClient.sector,
-        hoCity: selectedClient.hoCity,
-        hoState: selectedClient.hoState,
+        hoCity: selectedClient.city || selectedClient.hoCity,
+        hoState: selectedClient.state || selectedClient.hoState,
         unitName: selectedClient.unit?.unitName || "",
         unitNo: selectedClient.unitNo || "",
         buildingName: selectedClient.unit?.building?.buildingName || "",
         buildingAddress: selectedClient.unit?.building?.fullAddress || "",
-        cabinDesks: selectedClient.cabinDesks,
-        openDesks: selectedClient.openDesks,
-        totalDesks: selectedClient.totalDesks,
-        ratePerOpenDesk: selectedClient.ratePerOpenDesk,
-        ratePerCabinDesk: selectedClient.ratePerCabinDesk,
-        annualIncrement: selectedClient.annualIncrement,
-        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
-        totalMeetingCredits: selectedClient.totalMeetingCredits,
-        startDate: selectedClient.startDate,
+        cabinDesks: selectedClient.cabinDesks || 0,
+        openDesks: selectedClient.openDesks || 0,
+        totalDesks: selectedClient.totalDesks || 0,
+        openDeskRate: selectedClient.openDeskRate || 0,
+        cabinDeskRate: selectedClient.cabinDeskRate || 0,
+        annualIncrement: selectedClient.annualIncrement || 0,
+        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
+        totalMeetingCredits: selectedClient.totalMeetingCredits || 0,
+        termStartDate: selectedClient.termStartDate || selectedClient.startDate,
         bookingType: selectedClient.bookingType,
-        endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
+        termEnd: selectedClient.termEnd || selectedClient.endDate,
+        lockInPeriodMonths:
+          selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod,
         rentDate: selectedClient.rentDate,
-        nextIncrement: selectedClient.nextIncrement,
-        localPocName: selectedClient.localPocName || "",
-        localPocEmail: selectedClient.localPocEmail || "",
-        localPocPhone: selectedClient.localPocPhone || "",
-        hoPocName: selectedClient.hoPocName || "",
-        hoPocEmail: selectedClient.hoPocEmail || "",
-        hoPocPhone: selectedClient.hoPocPhone || "",
-        isActive: selectedClient.isActive,
+        nextIncrementDate:
+          selectedClient.nextIncrementDate || selectedClient.nextIncrement,
+        localPocName: selectedClient.localPoc?.name || "",
+        localPocEmail: selectedClient.localPoc?.email || "",
+        localPocPhone: selectedClient.localPoc?.phone || "",
+        hoPocName: selectedClient.hoPoc?.name || "",
+        hoPocEmail: selectedClient.hoPoc?.email || "",
+        hoPocPhone: selectedClient.hoPoc?.phone || "",
+        clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
         createdAt: selectedClient.createdAt,
         updatedAt: selectedClient.updatedAt,
       });
@@ -103,6 +108,28 @@ const VirtualOfficeClientDetails = () => {
   const virtualOfficeClientId = /^[a-fA-F0-9]{24}$/.test(clientId)
     ? clientId
     : selectedClient?._id;
+
+  const { isLoading: isClientByNameLoading } = useQuery({
+    queryKey: ["virtualOfficeClientByName", normalizedClientName],
+    enabled:
+      Boolean(normalizedClientName) &&
+      !/^[a-fA-F0-9]{24}$/.test(clientId || "") &&
+      (selectedClient?.clientName || "").trim().toLowerCase() !== normalizedClientName,
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/virtual-office/clients");
+      const clients = Array.isArray(response?.data) ? response.data : [];
+      const matchedClient = clients.find(
+        (client) =>
+          (client?.clientName || "").trim().toLowerCase() === normalizedClientName,
+      );
+
+      if (matchedClient?._id) {
+        dispatch(setSelectedClient(matchedClient));
+      }
+
+      return matchedClient;
+    },
+  });
 
   const { isLoading: isClientLoading } = useQuery({
     queryKey: ["virtualOfficeClient", virtualOfficeClientId],
@@ -160,31 +187,28 @@ const VirtualOfficeClientDetails = () => {
     const payload = {
       clientName: data.clientName,
       sector: data.sector,
-      hoCity: data.hoCity,
-      hoState: data.hoState,
-      isActive: data.isActive === true || data.isActive === "true",
+      city: data.hoCity,
+      state: data.hoState,
+      clientStatus: data.clientStatus === true || data.clientStatus === "true",
       bookingType: data.bookingType,
       unitNo: data.unitNo,
       cabinDesks: Number(data.cabinDesks) || 0,
       openDesks: Number(data.openDesks) || 0,
-      totalDesks:
-        (Number(data.cabinDesks) || 0) + (Number(data.openDesks) || 0),
-      ratePerCabinDesk: Number(data.ratePerCabinDesk) || 0,
-      ratePerOpenDesk: Number(data.ratePerOpenDesk) || 0,
+      cabinDeskRate: Number(data.cabinDeskRate) || 0,
+      openDeskRate: Number(data.openDeskRate) || 0,
       annualIncrement: Number(data.annualIncrement) || 0,
       perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
-      totalMeetingCredits: Number(data.totalMeetingCredits) || 0,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      lockinPeriod: Number(data.lockinPeriod) || 0,
+      termStartDate: data.termStartDate,
+      termEnd: data.termEnd,
+      lockInPeriodMonths: Number(data.lockInPeriodMonths) || 0,
       rentDate: data.rentDate,
-      nextIncrement: data.nextIncrement,
+      nextIncrementDate: data.nextIncrementDate,
       localPoc: {
         name: data.localPocName,
         email: data.localPocEmail,
         phone: data.localPocPhone,
       },
-      hOPoc: {
+      hoPoc: {
         name: data.hoPocName,
         email: data.hoPocEmail,
         phone: data.hoPocPhone,
@@ -192,43 +216,64 @@ const VirtualOfficeClientDetails = () => {
     };
 
     try {
+      console.log("Submitting payload:", payload);
       const response = await axios.patch(
-        `/api/sales/update-co-working-clients/${selectedClient._id}`,
+        `/api/sales/virtual-office/${selectedClient._id}`,
         payload,
       );
 
+      console.log("Server response:", response.data);
+      const serverData = response?.data?.data || response?.data?.client || {};
+
       const updatedClient = {
         ...selectedClient,
-        ...response?.data?.client,
-        ...payload,
+        ...serverData,
+        // Map POC data back to flattened fields for UI consistency
+        unitNo: serverData.unitNo ?? serverData.unitNumber ?? data.unitNo,
         localPocName: payload.localPoc.name,
         localPocEmail: payload.localPoc.email,
         localPocPhone: payload.localPoc.phone,
-        hoPocName: payload.hOPoc.name,
-        hoPocEmail: payload.hOPoc.email,
-        hoPocPhone: payload.hOPoc.phone,
+        hoPocName: payload.hoPoc.name,
+        hoPocEmail: payload.hoPoc.email,
+        hoPocPhone: payload.hoPoc.phone,
+        // Map other potentially renamed fields back for UI compatibility
+        hoCity: serverData.city || serverData.hoCity || data.hoCity,
+        hoState: serverData.state || serverData.hoState || data.hoState,
+        clientStatus: serverData.clientStatus ?? serverData.isActive ?? data.clientStatus,
+        lockInPeriodMonths: serverData.lockInPeriodMonths ?? serverData.lockinPeriod ?? data.lockInPeriodMonths,
+        termStartDate: serverData.termStartDate ?? serverData.startDate ?? data.termStartDate,
+        termEnd: serverData.termEnd ?? serverData.endDate ?? data.termEnd,
+        nextIncrementDate: serverData.nextIncrementDate ?? serverData.nextIncrement ?? data.nextIncrementDate,
       };
 
       dispatch(setSelectedClient(updatedClient));
-      dispatch(
-        setClientData(
-          clientsData.map((item) =>
-            item._id === selectedClient._id
-              ? { ...item, ...updatedClient }
-              : item,
-          ),
-        ),
-      );
 
+      if (Array.isArray(clientsData)) {
+        dispatch(
+          setClientData(
+            clientsData.map((item) =>
+              item._id === selectedClient._id
+                ? { ...item, ...updatedClient }
+                : item,
+            ),
+          ),
+        );
+      }
+
+      // Sync form with updated data
       reset({
         ...data,
-        totalDesks: payload.totalDesks,
+        ...updatedClient,
+        totalDesks: serverData.totalDesks || payload.cabinDesks + payload.openDesks,
+        totalMeetingCredits: serverData.totalMeetingCredits,
       });
+
       setIsEditing(false);
       toast.success(
         response?.data?.message || "Client details updated successfully",
       );
     } catch (error) {
+      console.error("Update failed:", error);
       toast.error(
         error?.response?.data?.message || "Unable to update client details",
       );
@@ -242,33 +287,35 @@ const VirtualOfficeClientDetails = () => {
         serviceName: selectedClient.service?.serviceName || "",
         serviceDescription: selectedClient.service?.description || "",
         sector: selectedClient.sector,
-        hoCity: selectedClient.hoCity,
-        hoState: selectedClient.hoState,
+        hoCity: selectedClient.city || selectedClient.hoCity,
+        hoState: selectedClient.state || selectedClient.hoState,
         unitName: selectedClient.unit?.unitName || "",
         unitNo: selectedClient.unitNo || "",
         buildingName: selectedClient.unit?.building?.buildingName || "",
         buildingAddress: selectedClient.unit?.building?.fullAddress || "",
-        cabinDesks: selectedClient.cabinDesks,
-        openDesks: selectedClient.openDesks,
-        totalDesks: selectedClient.totalDesks,
-        ratePerOpenDesk: selectedClient.ratePerOpenDesk,
-        ratePerCabinDesk: selectedClient.ratePerCabinDesk,
-        annualIncrement: selectedClient.annualIncrement,
-        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
-        totalMeetingCredits: selectedClient.totalMeetingCredits,
-        startDate: selectedClient.startDate,
+        cabinDesks: selectedClient.cabinDesks || 0,
+        openDesks: selectedClient.openDesks || 0,
+        totalDesks: selectedClient.totalDesks || 0,
+        openDeskRate: selectedClient.openDeskRate || 0,
+        cabinDeskRate: selectedClient.cabinDeskRate || 0,
+        annualIncrement: selectedClient.annualIncrement || 0,
+        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
+        totalMeetingCredits: selectedClient.totalMeetingCredits || 0,
+        termStartDate: selectedClient.termStartDate || selectedClient.startDate,
         bookingType: selectedClient.bookingType,
-        endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
+        termEnd: selectedClient.termEnd || selectedClient.endDate,
+        lockInPeriodMonths:
+          selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod,
         rentDate: selectedClient.rentDate,
-        nextIncrement: selectedClient.nextIncrement,
-        localPocName: selectedClient.localPocName || "",
-        localPocEmail: selectedClient.localPocEmail || "",
-        localPocPhone: selectedClient.localPocPhone || "",
-        hoPocName: selectedClient.hoPocName || "",
-        hoPocEmail: selectedClient.hoPocEmail || "",
-        hoPocPhone: selectedClient.hoPocPhone || "",
-        isActive: selectedClient.isActive,
+        nextIncrementDate:
+          selectedClient.nextIncrementDate || selectedClient.nextIncrement,
+        localPocName: selectedClient.localPoc?.name || "",
+        localPocEmail: selectedClient.localPoc?.email || "",
+        localPocPhone: selectedClient.localPoc?.phone || "",
+        hoPocName: selectedClient.hoPoc?.name || "",
+        hoPocEmail: selectedClient.hoPoc?.email || "",
+        hoPocPhone: selectedClient.hoPoc?.phone || "",
+        clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
         createdAt: selectedClient.createdAt,
         updatedAt: selectedClient.updatedAt,
       });
@@ -306,7 +353,7 @@ const VirtualOfficeClientDetails = () => {
           <PrimaryButton
             handleSubmit={handleEditToggle}
             title={isEditing ? "Cancel" : "Edit"}
-            disabled={isClientLoading}
+            disabled={isClientLoading || isClientByNameLoading || !selectedClient?._id}
           />
         </div>
       </div>
@@ -380,7 +427,12 @@ const VirtualOfficeClientDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {control._defaultValues[fieldKey] || "N/A"}
+                              {(fieldKey === "hoCity"
+                                ? selectedClient?.city || selectedClient?.hoCity
+                                : fieldKey === "hoState"
+                                  ? selectedClient?.state ||
+                                  selectedClient?.hoState
+                                  : selectedClient?.[fieldKey]) || "N/A"}
                             </span>
                           </div>
                         </div>
@@ -401,10 +453,11 @@ const VirtualOfficeClientDetails = () => {
                   {[
                     "unitNo",
                     "cabinDesks",
-                    "ratePerCabinDesk",
+                    "cabinDeskRate",
                     "openDesks",
-                    "ratePerOpenDesk",
-                    "isActive",
+                    "openDeskRate",
+                    "totalDesks",
+                    "clientStatus",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
@@ -412,7 +465,7 @@ const VirtualOfficeClientDetails = () => {
                           name={fieldKey}
                           control={control}
                           render={({ field }) =>
-                            fieldKey === "isActive" ? (
+                            fieldKey === "clientStatus" ? (
                               <TextField
                                 {...field}
                                 select
@@ -423,6 +476,14 @@ const VirtualOfficeClientDetails = () => {
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
+                            ) : fieldKey === "totalDesks" ? (
+                              <TextField
+                                {...field}
+                                disabled
+                                size="small"
+                                label="Total Desks"
+                                fullWidth
+                              />
                             ) : (
                               <TextField
                                 {...field}
@@ -439,11 +500,11 @@ const VirtualOfficeClientDetails = () => {
                         <div className="py-2 flex justify-between items-start gap-2">
                           <div className="w-[100%] justify-start flex">
                             <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey === "isActive"
+                              {fieldKey === "clientStatus"
                                 ? "Status"
                                 : fieldKey
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
                             </span>{" "}
                           </div>
                           <div className="">
@@ -451,11 +512,12 @@ const VirtualOfficeClientDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {fieldKey === "isActive"
-                                ? control._defaultValues.isActive
+                              {fieldKey === "clientStatus"
+                                ? (selectedClient?.clientStatus ??
+                                  selectedClient?.isActive)
                                   ? "Active"
                                   : "Inactive"
-                                : control._defaultValues[fieldKey] || "N/A"}
+                                : selectedClient?.[fieldKey] || "N/A"}
                             </span>
                           </div>
                         </div>
@@ -499,7 +561,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {control._defaultValues.annualIncrement}%
+                            {selectedClient?.annualIncrement}%
                           </span>
                         </div>
                       </div>
@@ -533,7 +595,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {control._defaultValues.perDeskMeetingCredits}
+                            {selectedClient?.perDeskMeetingCredits}
                           </span>
                         </div>
                       </div>
@@ -567,7 +629,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {control._defaultValues.totalMeetingCredits}
+                            {selectedClient?.totalMeetingCredits}
                           </span>
                         </div>
                       </div>
@@ -578,7 +640,7 @@ const VirtualOfficeClientDetails = () => {
                   <div>
                     {isEditing ? (
                       <Controller
-                        name="startDate"
+                        name="termStartDate"
                         control={control}
                         render={({ field }) =>
                           renderDatePickerField(field, "Start Date")
@@ -596,7 +658,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(control._defaultValues.startDate)}
+                            {humanDate(selectedClient?.termStartDate || selectedClient?.startDate)}
                           </span>
                         </div>
                       </div>
@@ -607,7 +669,7 @@ const VirtualOfficeClientDetails = () => {
                   <div>
                     {isEditing ? (
                       <Controller
-                        name="endDate"
+                        name="termEnd"
                         control={control}
                         render={({ field }) =>
                           renderDatePickerField(field, "End Date")
@@ -625,7 +687,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(control._defaultValues.endDate)}
+                            {humanDate(selectedClient?.termEnd || selectedClient?.endDate)}
                           </span>
                         </div>
                       </div>
@@ -636,7 +698,7 @@ const VirtualOfficeClientDetails = () => {
                   <div>
                     {isEditing ? (
                       <Controller
-                        name="lockinPeriod"
+                        name="lockInPeriodMonths"
                         control={control}
                         render={({ field }) => (
                           <TextField
@@ -659,7 +721,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {control._defaultValues.lockinPeriod}
+                            {selectedClient?.lockInPeriodMonths || selectedClient?.lockinPeriod}
                           </span>
                         </div>
                       </div>
@@ -688,7 +750,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(control._defaultValues.rentDate)}
+                            {humanDate(selectedClient?.rentDate)}
                           </span>
                         </div>
                       </div>
@@ -699,7 +761,7 @@ const VirtualOfficeClientDetails = () => {
                   <div>
                     {isEditing ? (
                       <Controller
-                        name="nextIncrement"
+                        name="nextIncrementDate"
                         control={control}
                         render={({ field }) =>
                           renderDatePickerField(field, "Next Increment")
@@ -717,7 +779,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(control._defaultValues.nextIncrement)}
+                            {humanDate(selectedClient?.nextIncrementDate || selectedClient?.nextIncrement)}
                           </span>
                         </div>
                       </div>
@@ -771,7 +833,19 @@ const VirtualOfficeClientDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {control._defaultValues[fieldKey]}
+                              {fieldKey === "localPocName"
+                                ? selectedClient?.localPoc?.name
+                                : fieldKey === "localPocEmail"
+                                  ? selectedClient?.localPoc?.email
+                                  : fieldKey === "localPocPhone"
+                                    ? selectedClient?.localPoc?.phone
+                                    : fieldKey === "hoPocName"
+                                      ? selectedClient?.hoPoc?.name
+                                      : fieldKey === "hoPocEmail"
+                                        ? selectedClient?.hoPoc?.email
+                                        : fieldKey === "hoPocPhone"
+                                          ? selectedClient?.hoPoc?.phone
+                                          : ""}
                             </span>
                           </div>
                         </div>
