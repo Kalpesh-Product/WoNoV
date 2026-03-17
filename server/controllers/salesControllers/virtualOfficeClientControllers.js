@@ -170,6 +170,7 @@ const createVirtualOfficeClient = async (req, res) => {
     // Auto totals
     const cabinTotal = cabinDesks * cabinDeskRate;
     const openTotal = openDesks * openDeskRate;
+    const totalDesks = cabinDesks + openDesks;
     const totalMeetingCredits =
       (cabinDesks + openDesks) * perDeskMeetingCredits;
 
@@ -200,6 +201,7 @@ const createVirtualOfficeClient = async (req, res) => {
       annualIncrement,
       perDeskMeetingCredits,
       totalMeetingCredits,
+      totalDesks,
       termStartDate,
       termEnd,
       rentDate,
@@ -582,6 +584,7 @@ const updateVirtualOfficeClient = async (req, res) => {
 
     updates.cabinTotal = cabinDesks * cabinDeskRate;
     updates.openTotal = openDesks * openDeskRate;
+    updates.totalDesks = cabinDesks + openDesks;
     updates.totalMeetingCredits =
       (cabinDesks + openDesks) * perDeskMeetingCredits;
 
