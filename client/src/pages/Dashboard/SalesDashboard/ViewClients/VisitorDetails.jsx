@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { CircularProgress } from "@mui/material";
@@ -7,6 +7,8 @@ import { CircularProgress } from "@mui/material";
 const VisitorDetails = () => {
     const axios = useAxiosPrivate();
     const { clientName } = useParams();
+    const location = useLocation();
+    const isOpenDeskView = location.pathname.includes("/open-desk/");
 
     const decodedClientName = useMemo(
         () => decodeURIComponent(clientName || ""),
@@ -31,7 +33,7 @@ const VisitorDetails = () => {
 
     const currentVisitor = useMemo(() => {
         const normalizedName = decodedClientName.toLowerCase();
-        return visitors.find((v) => {
+        const companyMatches = (v) => {
             const possibleNames = [
                 v.visitorCompany,
                 v.brandName,
@@ -39,8 +41,29 @@ const VisitorDetails = () => {
                 v.email,
             ].map((n) => (n || "").toLowerCase());
             return possibleNames.includes(normalizedName);
-        });
-    }, [visitors, decodedClientName]);
+        };
+
+        const purposeMatchesView = (v) => {
+            const purpose = (v.purposeOfVisit || "").trim().toLowerCase();
+            if (isOpenDeskView) {
+                return purpose === "half-day pass" || purpose === "full-day pass";
+            }
+
+            return purpose === "meeting room booking";
+        };
+
+        const matchingVisitors = visitors.filter(
+            (v) => companyMatches(v) && purposeMatchesView(v),
+        );
+
+        if (matchingVisitors.length > 0) {
+            return [...matchingVisitors].sort(
+                (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+            )[0];
+        }
+
+        return visitors.find(companyMatches);
+    }, [visitors, decodedClientName, isOpenDeskView]);
 
     const companyDetails = useMemo(() => {
         const normalizedName = decodedClientName.toLowerCase();
@@ -102,7 +125,7 @@ const VisitorDetails = () => {
                             {renderDetailRow("Phone Number", currentVisitor?.phoneNumber)}
                             {renderDetailRow("Purpose of Visit", currentVisitor?.purposeOfVisit)}
                             {renderDetailRow("Gender", currentVisitor?.gender)}
-                            {renderDetailRow("Visitor Type", currentVisitor?.visitorType)}
+                            {/* {renderDetailRow("Visitor Type", currentVisitor?.visitorType)} */}
                             {renderDetailRow("Email", currentVisitor?.email)}
 
                             {renderDetailRow("GST Number", currentVisitor?.gstNumber)}
