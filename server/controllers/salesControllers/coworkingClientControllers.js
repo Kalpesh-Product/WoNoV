@@ -15,6 +15,7 @@ const sharp = require("sharp");
 const ClientService = require("../../models/sales/ClientService");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const TestCoworkingClient = require("../../models/sales/TestCoworkingClient");
+const { normalizeClientName } = require("../../utils/dataSheetFormatters");
 
 const createCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -995,6 +996,7 @@ const bulkUpdateCoworkingClients = async (req, res, next) => {
           "Open Desks": openDesks,
           "Rate Per Cabin Desk": ratePerCabinDesk,
           "Rate Per Open Desk": ratePerOpenDesk,
+          "Total Meeting Credits": totalMeetingCredits,
           "Annual Increment": annualIncrement,
           "Per Desk Meeting Credits": perDeskMeetingCredits,
           "Start Date": startDate,
@@ -1071,6 +1073,7 @@ const bulkUpdateCoworkingClients = async (req, res, next) => {
         const openDesksN = toNum(openDesks);
         const rateCabinN = toNum(ratePerCabinDesk);
         const rateOpenN = toNum(ratePerOpenDesk);
+        const totalCredits = toNum(totalMeetingCredits);
         const annualIncN = toNum(annualIncrement);
         const perDeskCreditsN = toNum(perDeskMeetingCredits);
         const lockinN = toNum(lockinPeriod);
@@ -1079,6 +1082,10 @@ const bulkUpdateCoworkingClients = async (req, res, next) => {
         if (openDesksN !== undefined) $set.openDesks = openDesksN;
         if (rateCabinN !== undefined) $set.ratePerCabinDesk = rateCabinN;
         if (rateOpenN !== undefined) $set.ratePerOpenDesk = rateOpenN;
+        if (totalMeetingCredits !== undefined)
+          $set.totalMeetingCredits = totalCredits;
+        if (totalMeetingCredits !== undefined)
+          $set.meetingCreditBalance = totalCredits;
         if (annualIncN !== undefined) $set.annualIncrement = annualIncN;
         if (perDeskCreditsN !== undefined)
           $set.perDeskMeetingCredits = perDeskCreditsN;
@@ -1106,9 +1113,9 @@ const bulkUpdateCoworkingClients = async (req, res, next) => {
           $set.totalDesks = cd + od;
 
           // totalMeetingCredits
-          if (perDeskCreditsN !== undefined) {
-            $set.totalMeetingCredits = (cd + od) * perDeskCreditsN;
-          }
+          //   if (perDeskCreditsN !== undefined) {
+          //     $set.totalMeetingCredits = (cd + od) * perDeskCreditsN;
+          //   }
         }
 
         // nothing to update
