@@ -823,6 +823,57 @@ const AdminDashboard = () => {
     ).toFixed(1)}%`,
     value: item.totalDesks,
   }));
+  const biometricStatusSummary = useMemo(() => {
+    if (isClientsDataPending || !Array.isArray(clientsData)) {
+      return [];
+    }
+
+    const summary = clientsData
+      .flatMap((client) => client?.members || [])
+      .reduce(
+        (acc, member) => {
+          const biometricStatus = String(
+            member?.biometricStatus || "pending",
+          ).toLowerCase();
+
+          if (biometricStatus === "approved") {
+            acc.approved += 1;
+          } else {
+            acc.pending += 1;
+          }
+
+          return acc;
+        },
+        { approved: 0, pending: 0 },
+      );
+
+    return [
+      { label: `Approved ${summary.approved}`, value: summary.approved },
+      { label: `Pending ${summary.pending}`, value: summary.pending },
+    ].filter((item) => item.value > 0);
+  }, [clientsData, isClientsDataPending]);
+
+  const biometricPieOptions = {
+    labels: biometricStatusSummary.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+      toolbar: false,
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/dashboard/admin-dashboard/mix-bag/biometric-access");
+        },
+      },
+    },
+    colors: ["#0B7A3E", "#E69A00"],
+    legend: {
+      position: "bottom",
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Members`,
+      },
+    },
+  };
   const clientsDesksPieOptions = {
     labels: simplifiedClientsPie.map((item) => {
       const label = item?.companyName ? `${item.companyName}` : "Unknown";
@@ -995,8 +1046,8 @@ const AdminDashboard = () => {
       title: "Unit Wise Due Tasks",
       chartType: "PieChartMui",
       border: true,
-      height:320,
-      width:500,
+      height: 320,
+      width: 500,
       data: unitWisePieData,
       options: unitPieChartOptions,
     },
@@ -1008,7 +1059,7 @@ const AdminDashboard = () => {
   );
 
 
-  
+
   //Executivve wise
   const executiveWiseDueTasksWidget = [
     {
@@ -1049,8 +1100,8 @@ const AdminDashboard = () => {
       title: "Biometrics Data",
       chartType: "PieChartMui",
       border: true,
-      data: [],
-      options: [],
+      data: biometricStatusSummary,
+      options: biometricPieOptions,
     },
   ];
 

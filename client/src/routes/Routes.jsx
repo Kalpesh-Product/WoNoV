@@ -310,6 +310,8 @@ import DirectorData from "../pages/Dashboard/FinanceDashboard/MixBag/DirectorDat
 import AdminClientLayout from "../pages/Dashboard/AdminDashboard/AdminClientLayout";
 import AdminClientsData from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientsData";
 import AdminClientOnboard from "../pages/Dashboard/AdminDashboard/AdminClientsData/AdminClientOnboard";
+import BiometricAccessClients from "../pages/Dashboard/AdminDashboard/BiometricAccess/BiometricAccessClients";
+import BiometricAccessMembers from "../pages/Dashboard/AdminDashboard/BiometricAccess/BiometricAccessMembers";
 import FinanceViewVoucher from "../pages/Dashboard/FinanceDashboard/FinanceData/FinanceViewVoucher";
 import MonthMeetings from "../pages/MonthMeetings";
 import DepartmentWiseTickets from "../pages/Tickets/DepartmentWiseTickets";
@@ -950,6 +952,15 @@ export const routes = createBrowserRouter([
                       },
 
                       {
+                        path: "mix-bag/biometric-access",
+                        element: <BiometricAccessClients />,
+                      },
+                      {
+                        path: "mix-bag/biometric-access/:clientName",
+                        element: <BiometricAccessMembers />,
+                      },
+
+                      {
                         path: "data",
                         element: <AdminData />,
                         children: [
@@ -1284,6 +1295,14 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag/team-members-schedule/:name",
                         element: <TeamMemberDetails />,
+                      },
+                      {
+                        path: "mix-bag/biometric-access",
+                        element: <BiometricAccessClients />,
+                      },
+                      {
+                        path: "mix-bag/biometric-access/:clientName",
+                        element: <BiometricAccessMembers />,
                       },
                       {
                         path: "settings",
