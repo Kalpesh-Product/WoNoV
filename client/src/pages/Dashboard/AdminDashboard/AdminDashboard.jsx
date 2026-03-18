@@ -1097,7 +1097,7 @@ const AdminDashboard = () => {
     {
       key: PERMISSIONS.ADMIN_BIOMETRICS_GENDER_DATA.value,
       layout: 2,
-      title: "Biometrics Data",
+      title: "Biometrics Activation Data",
       chartType: "PieChartMui",
       border: true,
       data: biometricStatusSummary,

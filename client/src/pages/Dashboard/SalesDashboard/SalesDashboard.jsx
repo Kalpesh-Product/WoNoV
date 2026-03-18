@@ -710,7 +710,7 @@ const SalesDashboard = () => {
     legend: {
       position: "bottom",
       horizontalAlign: "center",
-      fontSize: "14px",
+      fontSize: "12px",
       itemMargin: {
         horizontal: 8,
         vertical: 4,
