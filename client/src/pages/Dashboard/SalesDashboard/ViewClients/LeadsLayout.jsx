@@ -78,7 +78,7 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       const domainCounts = {
         "Coworking": 0,
         "Co-Living": 0,
-        Workations: 0,
+        "Workations": 0,
         "Virtualoffice": 0,
         "Meeting": 0,
       };
@@ -103,14 +103,14 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       name: "Co-Working",
       data: transformedData.map((item) => item["Coworking"] || 0),
     },
-    {
-      name: "Co-Living",
-      data: transformedData.map((item) => item["Co-Living"] || 0),
-    },
-    {
-      name: "Workations",
-      data: transformedData.map((item) => item["Workations"] || 0),
-    },
+    // {
+    //   name: "Co-Living",
+    //   data: transformedData.map((item) => item["Co-Living"] || 0),
+    // },
+    // {
+    //   name: "Workations",
+    //   data: transformedData.map((item) => item["Workations"] || 0),
+    // },
     {
       name: "Virtual Office",
       data: transformedData.map((item) => item["Virtualoffice"] || 0),

@@ -71,8 +71,8 @@ const ViewClients = () => {
   const clientCounts = {
     coWorking: data?.coworkingClients?.length,
     virtualOfficeClients: data?.virtualOfficeClients?.length,
-    meetingClients: meetings.filter((meeting) => meeting.meetingType === "Internal").length,
-  }
+    externalClients: unifiedClients.filter((client) => client.visitorFlag === "Client").length,
+  };
 
   const verticalsData = [
     {
@@ -87,11 +87,25 @@ const ViewClients = () => {
       value: clientCounts.virtualOfficeClients,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office",
     },
+    // {
+    //   id: 3,
+    //   name: "External Client",
+    //   value: clientCounts.externalClients,
+    //   route: "/app/dashboard/sales-dashboard/mix-bag/external-client",
+    // },
     {
       id: 3,
-      name: "Internal Meetings",
-      value: clientCounts.meetingClients,
-      route: "/app/dashboard/sales-dashboard/mix-bag/clients/internal-meetings",
+      name: "External Meetings",
+      // data: meetingVisitorsCount,
+      route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
+      // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
+    },
+    {
+      id: 4,
+      name: "Open Desk",
+      // data: openDeskVisitorsCount,
+      route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
+      // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
     },
   ];
 
@@ -137,17 +151,17 @@ const ViewClients = () => {
         date = client.termStartDate
           ? new Date(client.termStartDate)
           : client.rentDate
-          ? new Date(client.rentDate)
-          : null;
+            ? new Date(client.rentDate)
+            : null;
       } else if (rawServiceName === "meeting") {
         date = client.dateOfVisit
           ? new Date(client.dateOfVisit)
           : client.scheduledDate
-          ? new Date(client.scheduledDate)
-          : null;
+            ? new Date(client.scheduledDate)
+            : null;
       } else {
-        date = client.startDate || client.dateOfVisit || client.termStartDate 
-          ? new Date(client.startDate || client.dateOfVisit || client.termStartDate) 
+        date = client.startDate || client.dateOfVisit || client.termStartDate
+          ? new Date(client.startDate || client.dateOfVisit || client.termStartDate)
           : null;
       }
 
