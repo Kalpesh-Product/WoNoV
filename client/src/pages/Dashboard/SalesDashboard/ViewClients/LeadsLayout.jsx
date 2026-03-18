@@ -80,7 +80,8 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
         "Co-Living": 0,
         "Workations": 0,
         "Virtualoffice": 0,
-        "Meeting": 0,
+        "External Meetings": 0,
+        "Open Desk": 0,
       };
 
       groupedByMonth[monthLabel].forEach((client) => {
@@ -116,8 +117,12 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       data: transformedData.map((item) => item["Virtualoffice"] || 0),
     },
     {
-      name: "Meetings",
-      data: transformedData.map((item) => item["Meeting"] || 0),
+      name: "External Meetings",
+      data: transformedData.map((item) => item["External Meetings"] || 0),
+    },
+    {
+      name: "Open Desk",
+      data: transformedData.map((item) => item["Open Desk"] || 0),
     },
   ];
   const barChartOptions = {

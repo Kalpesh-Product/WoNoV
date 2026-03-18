@@ -68,10 +68,37 @@ const ViewClients = () => {
 
 
   console.log("data ", unifiedClients);
+  const externalVisitors = useMemo(
+    () =>
+      unifiedClients.filter(
+        (client) => (client.visitorFlag || "").trim().toLowerCase() === "client"
+      ),
+    [unifiedClients]
+  );
+
+  const meetingVisitorsCount = useMemo(
+    () =>
+      externalVisitors.filter((visitor) => {
+        const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
+        return purpose === "meeting room booking";
+      }).length,
+    [externalVisitors]
+  );
+
+  const openDeskVisitorsCount = useMemo(
+    () =>
+      externalVisitors.filter((visitor) => {
+        const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
+        return purpose === "half-day pass" || purpose === "full-day pass";
+      }).length,
+    [externalVisitors]
+  );
+
   const clientCounts = {
-    coWorking: data?.coworkingClients?.length,
-    virtualOfficeClients: data?.virtualOfficeClients?.length,
-    externalClients: unifiedClients.filter((client) => client.visitorFlag === "Client").length,
+    coWorking: data?.coworkingClients?.length || 0,
+    virtualOfficeClients: data?.virtualOfficeClients?.length || 0,
+    externalMeetings: meetingVisitorsCount,
+    openDesk: openDeskVisitorsCount,
   };
 
   const verticalsData = [
@@ -96,14 +123,14 @@ const ViewClients = () => {
     {
       id: 3,
       name: "External Meetings",
-      // data: meetingVisitorsCount,
+      value: clientCounts.externalMeetings,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
     },
     {
       id: 4,
       name: "Open Desk",
-      // data: openDeskVisitorsCount,
+      value: clientCounts.openDesk,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
     },
@@ -123,7 +150,8 @@ const ViewClients = () => {
     const serviceMapping = {
       coworking: "Coworking",
       virtualOffice: "Virtualoffice",
-      meeting: "Meeting",
+      externalMeeting: "External Meetings",
+      openDesk: "Open Desk",
       workation: "Workations",
       coliving: "Co-Living",
     };
@@ -132,6 +160,15 @@ const ViewClients = () => {
       let rawServiceName = client.clientType || "Unknown";
 
       // Dynamically detect type from serviceName if it's under coworkingClients
+      if (rawServiceName === "meeting") {
+        const purpose = (client.purposeOfVisit || "").trim().toLowerCase();
+        if (purpose === "meeting room booking") {
+          rawServiceName = "externalMeeting";
+        } else if (purpose === "half-day pass" || purpose === "full-day pass") {
+          rawServiceName = "openDesk";
+        }
+      }
+
       if (rawServiceName === "coworking" && client.service?.serviceName) {
         const sName = client.service.serviceName.toLowerCase();
         if (sName.includes("workation")) {
@@ -153,7 +190,10 @@ const ViewClients = () => {
           : client.rentDate
             ? new Date(client.rentDate)
             : null;
-      } else if (rawServiceName === "meeting") {
+      } else if (
+        rawServiceName === "externalMeeting" ||
+        rawServiceName === "openDesk"
+      ) {
         date = client.dateOfVisit
           ? new Date(client.dateOfVisit)
           : client.scheduledDate
