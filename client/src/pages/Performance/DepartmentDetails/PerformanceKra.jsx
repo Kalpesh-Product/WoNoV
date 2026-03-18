@@ -14,14 +14,15 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import useAuth from "../../../hooks/useAuth";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
-import { FaCheck } from "react-icons/fa6";
+// import { FaCheck } from "react-icons/fa6";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { InsertEmoticonTwoTone } from "@mui/icons-material";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
-
+import { FaCheckSquare } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -44,6 +45,8 @@ const PerformanceKra = () => {
   const isAddKraDisabled = auth?.user?.role?.some((role) =>
     restrictedRoles.includes(role.roleTitle)
   );
+
+  const canDeleteRecurrence = !isAddKraDisabled;
 
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -79,6 +82,22 @@ const PerformanceKra = () => {
     defaultValues: {
       dailyKra: "",
       description: "",
+    },
+  });
+
+  const { mutate: deleteDailyKraRecurrence, isPending: isDeletePending } = useMutation({
+    mutationKey: ["deleteDailyKraRecurrence"],
+    mutationFn: async (taskId) => {
+      const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
+      queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+      toast.success(data.message || "KRA recurrence removed");
+    },
+    onError: () => {
+      toast.error("Failed to remove recurrence");
     },
   });
 
@@ -138,7 +157,7 @@ const PerformanceKra = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}&type=KRA`
+        `/api/performance/get-tasks?dept=${deptId}&type=KRA`
       );
       return response.data;
     } catch (error) {
@@ -190,23 +209,35 @@ const PerformanceKra = () => {
     },
     ...(matchingDepartment
       ? [
-          {
-            headerName: "Actions",
-            field: "actions",
-            cellRenderer: (params) => (
-              <div
-                role="button"
+        {
+          headerName: "Actions",
+          field: "actions",
+          cellRenderer: (params) => (
+            <div className="p-2 flex gap-2 items-center">
+              <button
+                type="button"
+                title="Mark As Done"
+                disabled={!params.node.selected || isUpdatePending || isDeletePending}
                 onClick={() => updateDailyKra(params.data.id)}
-                className="p-2"
+                className="ml-2 disabled:cursor-not-allowed"
               >
-                <PrimaryButton
-                  title={"Mark As Done"}
-                  disabled={!params.node.selected}
-                />
-              </div>
-            ),
-          },
-        ]
+                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color={!params.node.selected ? "gray" : "green"} />}
+              </button>
+              {canDeleteRecurrence && (
+                <button
+                  type="button"
+                  title="Delete Recurrence"
+                  disabled={!params.node.selected || isDeletePending || isUpdatePending}
+                  onClick={() => deleteDailyKraRecurrence(params.data.id)}
+                  className="ml-2 disabled:cursor-not-allowed"
+                >
+                  {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
+                </button>
+              )}
+            </div>
+          ),
+        },
+      ]
       : []),
   ];
 

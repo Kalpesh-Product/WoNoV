@@ -46,6 +46,8 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const agreementRoutes = require("./routes/agreementRoutes");
 const logRoutes = require("./routes/logRoutes");
 const auditLogger = require("./middlewares/auditLogger");
+const CoworkingRevenue = require("./models/sales/CoworkingRevenue");
+const CoworkingClient = require("./models/sales/CoworkingClient");
 require("./listeners/logEventListener");
 const app = express();
 const PORT = process.env.PORT || 5009;
@@ -122,6 +124,7 @@ app.all("*", (req, res) => {
 });
 
 app.use(errorHandler);
+// test
 
 mongoose.connection.once("open", () => {
   console.log("Connected to MongoDB");
@@ -131,6 +134,51 @@ mongoose.connection.once("open", () => {
 
 // For Generating hashed password for testing
 // (async () => {
-//   const hashed = await hashPassword("Arpita@0625");
+//   const hashed = await hashPassword("Pass@1234");
 //   console.log(hashed);
 // })();
+
+// For Generating multiple hashed passwords
+// (async () => {
+//   const passwords = [];
+
+// const emailArray = [];
+
+//   const results = await Promise.all(
+//     passwords.map(async (rawPassword, i) => {
+//       const hashed = await hashPassword(rawPassword);
+//        return {
+//         rawPassword,
+//         email: emailArray[i],
+//         hashedPassword: hashed,
+//       };
+//     }),
+//   );
+
+//   console.table(results);
+// })();
+
+// async function backfillClientNames() {
+//   const revenues = await CoworkingRevenue.find({
+//     clientName: { $exists: false },
+//   }).lean();
+
+//   console.log("revenues", revenues.length);
+
+//   for (const r of revenues) {
+//     const client = await CoworkingClient.findById(r.clients).select(
+//       "clientName",
+//     );
+
+//     if (client) {
+//       await CoworkingRevenue.updateOne(
+//         { _id: r._id },
+//         { $set: { clientName: client.clientName } },
+//       );
+//     }
+//   }
+
+//   console.log("Backfill complete");
+// }
+
+// backfillClientNames();

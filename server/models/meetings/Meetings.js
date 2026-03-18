@@ -10,6 +10,10 @@ const meetingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "CoworkingMember",
     },
+    externalBookedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Visitor",
+    },
     receptionist: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
@@ -45,15 +49,31 @@ const meetingSchema = new mongoose.Schema(
     creditsUsed: {
       type: Number,
     },
+    paymentBaseAmount: {
+      type: Number,
+    },
+    paymentGstAmount: {
+      type: Number,
+    },
     paymentAmount: {
       type: Number,
     },
     paymentStatus: {
       type: Boolean,
+      default: false,
     },
     paymentMode: {
       type: String,
-      enum: ["Cash", "Cheque", "NEFT", "RTGS", "IMPS", "Credit Card", "ETC"],
+      enum: [
+        "UPI",
+        "Cash",
+        "Cheque",
+        "NEFT",
+        "RTGS",
+        "IMPS",
+        "Credit Card",
+        "ETC",
+      ],
     },
     paymentProof: {
       link: {
@@ -65,8 +85,8 @@ const meetingSchema = new mongoose.Schema(
     },
     paymentVerification: {
       type: String,
-      enum: ["Under Review", "Verified"],
-      default: "Under Review",
+      enum: ["Pending", "Under Review", "Verified"],
+      default: "Pending",
     },
     internalParticipants: [
       {
@@ -144,7 +164,7 @@ const meetingSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Meeting = mongoose.model("Meeting", meetingSchema);

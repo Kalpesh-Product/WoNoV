@@ -70,6 +70,21 @@ const Header = ({
     },
   });
 
+  const { mutate: markAllRead } = useMutation({
+    mutationKey: ["markAllRead"],
+    mutationFn: async () => {
+      const response = await axios.patch(`/api/notifications/mark-all-read`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error");
+    },
+  });
+
+
   // State for Popover
   const [anchorEl, setAnchorEl] = useState(null);
   const { data: companyLogo } = useQuery({
@@ -155,7 +170,12 @@ const Header = ({
 
             <div className="flex w-full justify-end gap-4">
               <button
-                onClick={(e) => setNotificationAnchorEl(e.currentTarget)}
+                onClick={(e) => {
+                  setNotificationAnchorEl(e.currentTarget);
+                  markAllRead();
+                }}
+
+
                 className="relative bg-[#1E3D73] text-white rounded-md "
               >
                 <Badge

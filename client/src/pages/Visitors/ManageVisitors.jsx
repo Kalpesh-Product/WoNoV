@@ -17,8 +17,12 @@ import { toast } from "sonner";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import useAuth from "../../hooks/useAuth";
 
 const ManageVisitors = () => {
+
+  const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("view");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,7 +41,7 @@ const ManageVisitors = () => {
     mutationFn: async (updatedData) => {
       const response = await axios.patch(
         `/api/visitors/update-visitor/${selectedVisitor.mongoId}`,
-        updatedData
+        updatedData,
       );
       return response.data;
     },
@@ -64,7 +68,7 @@ const ManageVisitors = () => {
       setValue("purposeOfVisit", visitor.purposeOfVisit || "");
       setValue(
         "checkOutRaw",
-        visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null
+        visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null,
       );
     }
   };
@@ -91,49 +95,67 @@ const ManageVisitors = () => {
     const combinedCheckout =
       checkInDate && checkOutRaw
         ? checkInDate
-            .hour(checkOutRaw.hour())
-            .minute(checkOutRaw.minute())
-            .second(checkOutRaw.second())
-            .millisecond(checkOutRaw.millisecond())
+          .hour(checkOutRaw.hour())
+          .minute(checkOutRaw.minute())
+          .second(checkOutRaw.second())
+          .millisecond(checkOutRaw.millisecond())
         : checkOutRaw;
+
+    const checkOutByName = auth?.user
+      ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim() ||
+      auth.user.name ||
+      auth.user.email ||
+      "Unknown User"
+      : "-";
 
     mutate({
       ...data,
       checkOut: combinedCheckout ? combinedCheckout.toISOString() : null,
+      checkOutBy: checkOutByName,
     });
   };
 
   const visitorsColumns = [
     { field: "srNo", headerName: "Sr No" },
-    { field: "firstName", headerName: "First Name" },
-    { field: "lastName", headerName: "Last Name" },
-    { field: "email", headerName: "Email" },
-    { field: "phoneNumber", headerName: "Phone No" },
+    // { field: "firstName", headerName: "First Name" },
+    // { field: "lastName", headerName: "Last Name" },
+    { field: "name", headerName: "Name" },
+    // { field: "email", headerName: "Email" },
+    // { field: "phoneNumber", headerName: "Phone No" },
     { field: "purposeOfVisit", headerName: "Purpose" },
     { field: "toMeet", headerName: "To Meet" },
+    { field: "date", headerName: "Date of Visit" },
     {
       field: "checkIn",
       headerName: "Check In",
       cellRenderer: (params) => humanTime(params.value),
     },
-    { field: "checkOut", headerName: "Checkout" },
+    // { field: "checkInBy", headerName: "Check In By" },
+    { field: "checkOut", headerName: "Check Out" },
+    // { field: "checkOutBy", headerName: "Check Out By" },
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: ({ data }) => {
         return (
-          <ThreeDotMenu
-            menuItems={[
-              {
-                label: "View details",
-                onClick: () => openModalWithMode(data, "view"),
-              },
-              {
-                label: "Edit",
-                onClick: () => openModalWithMode(data, "edit"),
-              },
-            ]}
-          />
+          <div className="flex items-center gap-2">
+            <div
+              role="button"
+              onClick={() => openModalWithMode(data, "view")}
+              className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+            >
+              <MdOutlineRemoveRedEye />
+            </div>
+            <ThreeDotMenu
+              menuItems={[
+                {
+                  label: "Edit",
+                  onClick: () => openModalWithMode(data, "edit"),
+                },
+              ]}
+            />
+          </div>
         );
       },
     },
@@ -153,17 +175,27 @@ const ManageVisitors = () => {
               mongoId: item._id,
               firstName: item.firstName,
               lastName: item.lastName,
+              name: `${item.firstName} ${item.lastName}`,
               email: item.email,
+              visitorType: item.visitorType,
+              visitorCompany: item.visitorCompany,
+              date: item.date,
               phoneNumber: item.phoneNumber,
               purposeOfVisit: item.purposeOfVisit,
               toMeet: item.toMeet
                 ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
                 : item.clientToMeet
-                ? item?.clientToMeet?.employeeName
-                : "",
+                  ? item?.clientToMeet?.employeeName
+                  : "",
               checkIn: item.checkIn,
+              checkInBy: item.checkedInBy
+                ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
+                : "-",
               checkOut: item.checkOut ? humanTime(item.checkOut) : "",
               checkOutRaw: item.checkOut,
+              checkOutBy: item.checkedOutBy
+                ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
+                : "-",
             }))}
           columns={visitorsColumns}
         />
@@ -188,22 +220,51 @@ const ManageVisitors = () => {
                 title="Last Name"
                 detail={selectedVisitor?.lastName}
               />
+              <DetalisFormatted title="Email" detail={selectedVisitor?.email} />
               <DetalisFormatted
                 title="Phone Number"
                 detail={selectedVisitor?.phoneNumber}
               />
-              <DetalisFormatted title="Email" detail={selectedVisitor?.email} />
+
               <DetalisFormatted
                 title="Purpose"
                 detail={selectedVisitor?.purposeOfVisit}
               />
               <DetalisFormatted
-                title="Checkout"
+                title="Visitor Type"
+                detail={selectedVisitor?.visitorType}
+              />
+              <DetalisFormatted
+                title="Visitor Company"
+                detail={selectedVisitor?.visitorCompany}
+              />
+              <DetalisFormatted
+                title="To Meet"
+                detail={selectedVisitor?.toMeet}
+              />
+              <DetalisFormatted
+                title="Date of Visit"
+                detail={selectedVisitor?.date}
+              />
+              <DetalisFormatted
+                title="Check In"
+                detail={humanTime(selectedVisitor?.checkIn)}
+              />
+              <DetalisFormatted
+                title="Check In By"
+                detail={selectedVisitor?.checkInBy}
+              />
+              <DetalisFormatted
+                title="Check Out"
                 detail={
                   selectedVisitor?.checkOutRaw
                     ? humanTime(selectedVisitor.checkOutRaw)
                     : ""
                 }
+              />
+              <DetalisFormatted
+                title="Check Out By"
+                detail={selectedVisitor?.checkOutBy}
               />
             </>
           ) : (
@@ -233,6 +294,13 @@ const ManageVisitors = () => {
                 )}
               />
               <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} label="Email" size="small" fullWidth />
+                )}
+              />
+              <Controller
                 name="phoneNumber"
                 control={control}
                 render={({ field }) => (
@@ -244,13 +312,7 @@ const ManageVisitors = () => {
                   />
                 )}
               />
-              <Controller
-                name="email"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} label="Email" size="small" fullWidth />
-                )}
-              />
+
               <Controller
                 name="purposeOfVisit"
                 control={control}

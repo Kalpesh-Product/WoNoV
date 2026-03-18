@@ -42,6 +42,7 @@ import { inrFormat } from "../../utils/currencyFormat";
 
 const MeetingFormLayout = () => {
   const { auth } = useAuth();
+  const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
   const [open, setOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const locationName = searchParams.get("location") || "";
@@ -119,7 +120,7 @@ const MeetingFormLayout = () => {
   const startTime = watch("startTime");
   const endTime = watch("endTime");
   const company = watch("company");
-  const isBizNest = company === "6799f0cd6a01edbe1bc3fcea";
+  const isBizNest = company === BIZNEST_COMPANY_ID;
   const externalCompany = watch("externalCompany");
   const bookedBy = watch("bookedBy");
 
@@ -144,7 +145,7 @@ const MeetingFormLayout = () => {
 
   useEffect(() => {
     if (!isReceptionist) {
-      setValue("company", "6799f0cd6a01edbe1bc3fcea");
+      setValue("company", BIZNEST_COMPANY_ID);
     }
   }, [isReceptionist, setValue]);
 
@@ -187,13 +188,29 @@ const MeetingFormLayout = () => {
       }
     },
   });
+
+  const selectedClient = useMemo(
+    () => clientsData.find((item) => item._id === company),
+    [clientsData, company]
+  );
+
+  const remainingMeetingCredits = useMemo(() => {
+    if (!company || company === BIZNEST_COMPANY_ID) return "-";
+
+    return selectedClient?.meetingCreditBalance ?? "-";
+  }, [company, selectedClient]);
   //-------------------------------API-------------------------------//
+  const displayedRemainingCredits = isReceptionist
+    ? remainingMeetingCredits
+    : auth.user?.company?.meetingCreditBalance ?? "-";
+
+  const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 
   //-------------------------------API-------------------------------//
   const { data: employees = [], isLoading: isEmployeesLoading } = useQuery({
     queryKey: ["participants", company],
     queryFn: async () => {
-      if (company === "6799f0cd6a01edbe1bc3fcea") {
+      if (company === BIZNEST_COMPANY_ID) {
         const response = await axios.get("/api/users/fetch-users");
         return (
           response.data
@@ -282,6 +299,26 @@ const MeetingFormLayout = () => {
     isSameDaySelection,
     startDateTime,
   ]);
+
+  const companyOptions = useMemo(() => {
+    const opts = [
+      {
+        id: BIZNEST_COMPANY_ID,
+        label: "BizNest",
+      },
+    ];
+
+    if (clientsData?.length) {
+      clientsData.forEach((client) => {
+        opts.push({
+          id: client._id,
+          label: client.clientName || client.name || "Unnamed Client",
+        });
+      });
+    }
+
+    return opts;
+  }, [clientsData]);
 
   // useEffect(() => {
   //   if (isCurrentUserUnavailable) {
@@ -411,7 +448,26 @@ const MeetingFormLayout = () => {
       return response.data;
     },
   });
+
+  const externalCompanyMembers = useMemo(() => {
+    if (!externalCompany) return [];
+    const selectedVisitor = externalUsers.find((v) => v._id === externalCompany);
+    if (!selectedVisitor || selectedVisitor.visitorFlag !== "Client") return [];
+
+    return [selectedVisitor];
+  }, [externalCompany, externalUsers]);
+
+  const externalCompanyOptions = useMemo(() => {
+    return externalUsers
+      .filter((item) => item.visitorFlag === "Client")
+      .map((item) => ({
+        id: item._id,
+        label: item.registeredClientCompany || "Unnamed Company",
+      }));
+  }, [externalUsers]);
+
   //-------------------------------API vISITORS-------------------------------//
+
 
   const onSubmit = (data) => {
     const { manualExternalParticipants, ...restData } = data;
@@ -442,15 +498,18 @@ const MeetingFormLayout = () => {
             <CircularProgress color="#1E3D73" />
           </div>
         ) : (
+          //month view removed
           <FullCalendar
             allDayText="All Day"
             allDaySlot={false} // 🔴 This removes the "All-day" tab in timeGrid views
             key={events.length}
             headerToolbar={{
               left: "prev title next",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
+              // right: "dayGridMonth,timeGridWeek,timeGridDay",
+              right: "timeGridWeek,timeGridDay",
             }}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            // plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            plugins={[timeGridPlugin, interactionPlugin]}
             initialView="timeGridDay"
             contentHeight={555}
             dayMaxEvents={2}
@@ -643,44 +702,125 @@ const MeetingFormLayout = () => {
             {meetingType === "Internal" ? (
               <>
                 {isReceptionist ? (
-                  <>
-                    <Controller
-                      name="company"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Company"
-                          select
-                          size="small"
-                          fullWidth
-                        >
-                          <MenuItem value="" disabled>
-                            Select a company
-                          </MenuItem>
-                          <MenuItem value="6799f0cd6a01edbe1bc3fcea">
-                            BizNest
-                          </MenuItem>
-                          {clientsData.map((item) => (
-                            <MenuItem key={item._id} value={item._id}>
-                              {item.clientName}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      )}
-                    />
-                  </>
+                  <Controller
+                    name="company"
+                    control={control}
+                    rules={{ required: "Company is required" }} // ← optional but recommended
+                    render={({ field: { onChange, value, ...field }, fieldState }) => (
+                      <Autocomplete
+                        {...field}
+                        options={companyOptions}                    // ← defined below
+                        getOptionLabel={(option) => option.label}   // what to show in input & dropdown
+                        isOptionEqualToValue={(option, val) => option.id === val}
+                        value={companyOptions.find((opt) => opt.id === value) || null}
+                        onChange={(_, newValue) => {
+                          onChange(newValue ? newValue.id : "");   // store only _id in form
+                        }}
+                        loading={isClientsDataPending}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Company"
+                            size="small"
+                            fullWidth
+                            error={!!fieldState.error}
+                            helperText={fieldState.error?.message}
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  {isClientsDataPending ? <CircularProgress color="inherit" size={20} /> : null}
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
+                          />
+                        )}
+                      />
+                    )}
+                  />
                 ) : (
                   <div>
                     <TextField
                       fullWidth
                       size="small"
-                      value={`${auth.user?.company?.companyName} `}
+                      value={`${auth.user?.company?.companyName || "BizNest"} `}
                       disabled
-                      label={`Company`}
+                      label="Company"
                     />
                   </div>
                 )}
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={displayedRemainingCredits}
+                  disabled
+                  label="Remaining Credit"
+                  InputProps={{
+                    sx: isRemainingCreditsNegative
+                      ? {
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          WebkitTextFillColor: "#d32f2f",
+                        },
+                      }
+                      : undefined,
+                  }}
+                />
+
+
+                {isReceptionist ? (
+                  <div className="col-span-1">
+                    <Controller
+                      name="bookedBy"
+                      control={control}
+                      rules={{ required: "Please select who is booking the meeting" }}
+                      render={({ field }) => (
+                        <Autocomplete
+                          options={participantOptions}
+                          loading={isEmployeesLoading || isAvailableEmployees}
+                          getOptionLabel={(user) =>
+                            isBizNest
+                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Unnamed"
+                              : `${user.employeeName ?? ""}`.trim() || "Unnamed"
+                          }
+                          value={
+                            participantOptions.find((u) => u._id === field.value) || null
+                          }
+                          // Very important when company changes
+                          key={company}   // ← forces remount when company changes
+                          onFocus={() => setShouldFetchParticipants(true)}
+                          onChange={(_, newValue) => {
+                            const selectedId = newValue?._id || "";
+
+                            // Auto-add the bookedBy person to participants (common UX)
+                            const currentParticipants = getValues("internalParticipants") || [];
+                            if (selectedId && !currentParticipants.includes(selectedId)) {
+                              setValue(
+                                "internalParticipants",
+                                [...currentParticipants, selectedId],
+                                { shouldDirty: true }
+                              );
+                            }
+
+                            field.onChange(selectedId);
+                          }}
+                          isOptionEqualToValue={(option, value) => option._id === value?._id}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Booked by"
+                              size="small"
+                              fullWidth
+                              required
+                              error={!!errors.bookedBy}
+                              helperText={errors.bookedBy?.message}
+                            />
+                          )}
+                        />
+                      )}
+                    />
+                  </div>
+                ) : null}
                 <div className="hidden">
                   <Controller
                     name="internalBooked"
@@ -692,9 +832,8 @@ const MeetingFormLayout = () => {
                         size="small"
                         value={`${auth.user?._id} `}
                         disabled
-                        label={`${
-                          isReceptionist ? "Receptionist" : "Booked By"
-                        }`}
+                        label={`${isReceptionist ? "Receptionist" : "Booked By"
+                          }`}
                       />
                     )}
                   />
@@ -707,58 +846,6 @@ const MeetingFormLayout = () => {
                   disabled
                   label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
                 />
-
-                {isReceptionist ? (
-                  <div className="col-span-2">
-                    <Controller
-                      name="bookedBy"
-                      control={control}
-                      render={({ field }) => (
-                        <Autocomplete
-                          options={participantOptions}
-                          loading={isAvailableEmployees}
-                          getOptionLabel={(user) =>
-                            isBizNest
-                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
-                              : `${user.employeeName ?? ""}`
-                          }
-                          value={
-                            participantOptions.find(
-                              (u) => u._id === field.value
-                            ) || null
-                          }
-                          onFocus={() => setShouldFetchParticipants(true)}
-                          onChange={(_, newValue) => {
-                            const selectedId = newValue?._id || "";
-                            const selectedParticipants =
-                              getValues("internalParticipants") || [];
-
-                            if (
-                              selectedId &&
-                              !selectedParticipants.includes(selectedId)
-                            ) {
-                              setValue(
-                                "internalParticipants",
-                                [...selectedParticipants, selectedId],
-                                { shouldDirty: true }
-                              );
-                            }
-
-                            field.onChange(selectedId);
-                          }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Booked by"
-                              size="small"
-                              fullWidth
-                            />
-                          )}
-                        />
-                      )}
-                    />
-                  </div>
-                ) : null}
                 <div className="col-span-2 sm:col-span-1 md:col-span-2">
                   <div className="">
                     <Controller
@@ -772,9 +859,8 @@ const MeetingFormLayout = () => {
                           getOptionLabel={(user) =>
                             isBizNest
                               ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
-                              : `${user.employeeName ?? ""} (${
-                                  user.clientName ?? ""
-                                })`
+                              : `${user.employeeName ?? ""} (${user.clientName ?? ""
+                              })`
                           }
                           onFocus={() => setShouldFetchParticipants(true)}
                           value={participantOptions.filter((user) =>
@@ -789,12 +875,10 @@ const MeetingFormLayout = () => {
                                 key={user._id}
                                 label={
                                   isBizNest
-                                    ? `${user.firstName ?? ""} ${
-                                        user.lastName ?? ""
-                                      }`
-                                    : `${user.employeeName ?? ""} (${
-                                        user.clientName ?? ""
-                                      })`
+                                    ? `${user.firstName ?? ""} ${user.lastName ?? ""
+                                    }`
+                                    : `${user.employeeName ?? ""} (${user.clientName ?? ""
+                                    })`
                                 }
                                 {...getTagProps({ index })}
                                 deleteIcon={<IoMdClose />}
@@ -819,84 +903,132 @@ const MeetingFormLayout = () => {
             {/* New Start */}
             {meetingType === "External" ? (
               <>
-                <div className="col-span-1">
-                  <Controller
-                    name="externalCompany"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        select
-                        label="Select External Company"
-                        size="small"
-                        fullWidth
-                      >
-                        <MenuItem value="" disabled>
-                          Select a company
-                        </MenuItem>
-                        {externalUsers
-                          .filter((item) => item.visitorFlag === "Client")
-                          .map((user) => (
-                            <MenuItem key={user._id} value={user._id}>
-                              {user.registeredClientCompany ?? ""}
-                            </MenuItem>
-                          ))}
-                      </TextField>
-                    )}
+                <div className="col-span-2">
+                  <div className="hidden">
+                    <Controller
+                      name="internalBooked"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          fullWidth
+                          size="small"
+                          value={`${auth.user?._id} `}
+                          disabled
+                          label={`${isReceptionist ? "Receptionist" : "Booked By"
+                            }`}
+                        />
+                      )}
+                    />
+                  </div>
+                  <TextField
+                    name="internalBooked"
+                    fullWidth
+                    size="small"
+                    value={`${auth.user?.firstName} ${auth.user?.lastName} `}
+                    disabled
+                    label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
                   />
                 </div>
                 <div className="col-span-1">
                   <Controller
-                    name="externalParticipants"
+                    name="externalCompany"
                     control={control}
-                    render={({ field }) => (
+                    render={({ field: { onChange, value, ...field }, fieldState }) => (
                       <Autocomplete
-                        multiple
-                        disabled={!externalCompany}
-                        options={externalUsers.filter(
-                          (item) =>
-                            item.visitorFlag === "Client" &&
-                            item.clientCompany ===
-                              externalUsers.find(
-                                (v) => v._id === externalCompany
-                              )?.clientCompany
-                        )}
-                        getOptionLabel={(user) =>
-                          `${user.firstName} ${user.lastName}`
-                        } // Display names
-                        onChange={(_, newValue) =>
-                          field.onChange(
-                            newValue.map((user) => ({
-                              name: `${user.firstName ?? ""} ${
-                                user.lastName ?? ""
-                              }`.trim(),
-                              mobileNumber: user.mobileNumber,
-                            }))
-                          )
-                        } // Sync selected users with form state
-                        renderTags={(selected, getTagProps) =>
-                          selected.map((user, index) => (
-                            <Chip
-                              key={user._id}
-                              label={`${user.firstName}`}
-                              {...getTagProps({ index })}
-                              deleteIcon={<IoMdClose />}
-                            />
-                          ))
-                        }
+                        {...field}
+                        options={externalCompanyOptions}
+                        getOptionLabel={(option) => option.label}
+                        isOptionEqualToValue={(option, val) => option.id === val}
+                        value={externalCompanyOptions.find((opt) => opt.id === value) || null}
+                        onChange={(_, newValue) => {
+                          onChange(newValue ? newValue.id : "");
+                        }}
+                        loading={externalUsersLoading}
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label="Select Participants"
+                            label="External Company"
                             size="small"
-                            disabled={!externalCompany}
                             fullWidth
+                            error={!!fieldState.error}
+                            helperText={fieldState.error?.message}
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  {externalUsersLoading ? (
+                                    <CircularProgress color="inherit" size={20} />
+                                  ) : null}
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
                           />
                         )}
                       />
                     )}
                   />
                 </div>
+                {isReceptionist ? (
+                  <div className="col-span-1">
+                    <Controller
+                      name="bookedBy"
+                      control={control}
+                      rules={{ required: "Please select who is booking the meeting" }}
+                      render={({ field }) => (
+                        <Autocomplete
+                          options={externalCompanyMembers}
+                          loading={externalUsersLoading}
+                          getOptionLabel={(user) =>
+                            `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Unnamed"
+                          }
+                          value={
+                            externalCompanyMembers.find((u) => u._id === field.value) || null
+                          }
+                          key={externalCompany}   // ← forces remount when external company changes
+                          onFocus={() => setShouldFetchParticipants(true)}
+                          onChange={(_, newValue) => {
+                            const selectedId = newValue?._id || "";
+
+                            const currentParticipants = getValues("externalParticipants") || [];
+                            const isAlreadyParticipant = currentParticipants.some(
+                              (p) => p.mobileNumber === newValue?.mobileNumber
+                            );
+
+                            if (newValue && !isAlreadyParticipant) {
+                              setValue(
+                                "externalParticipants",
+                                [
+                                  ...currentParticipants,
+                                  {
+                                    name: `${newValue.firstName ?? ""} ${newValue.lastName ?? ""}`.trim(),
+                                    mobileNumber: newValue.mobileNumber,
+                                  }
+                                ],
+                                { shouldDirty: true }
+                              );
+                            }
+
+                            field.onChange(selectedId);
+                          }}
+                          isOptionEqualToValue={(option, value) => option._id === value?._id}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Booked by"
+                              size="small"
+                              fullWidth
+                              required
+                              error={!!errors.bookedBy}
+                              helperText={errors.bookedBy?.message}
+                            />
+                          )}
+                        />
+                      )}
+                    />
+                  </div>
+                ) : null}
               </>
             ) : null}
             {meetingType === "External" && (

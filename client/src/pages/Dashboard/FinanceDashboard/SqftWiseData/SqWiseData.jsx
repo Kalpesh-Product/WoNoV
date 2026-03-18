@@ -54,8 +54,7 @@ const SqWiseData = () => {
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const monthWiseExpenses = {};
   const yearCategories = {
-    "FY 2024-25": [
-      "Apr-24",
+    "FY 2024-25": [      "Apr-24",
       "May-24",
       "Jun-24",
       "Jul-24",
@@ -149,7 +148,7 @@ const SqWiseData = () => {
   console.log("income data : ", incomeData);
 
   const lastMonthRawIncome = incomeData.filter(
-    (item) => item.group === "FY 2024-25"
+    (item) => item.group === "FY 2025-26"
   );
   const lastMonthDataIncome = lastMonthRawIncome.map(
     (item) => item.data[item.data.length - 1]
@@ -351,7 +350,7 @@ const SqWiseData = () => {
   };
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
-  const monthlyProfitLossData = yearCategories["FY 2024-25"].map(
+  const monthlyProfitLossData = yearCategories["FY 2025-26"].map(
     (month, index) => {
       const income = incomeMap[month] || 0;
       const expense = expenseMap[month] || 0;
@@ -408,7 +407,7 @@ const SqWiseData = () => {
           <WidgetSection
             border
             // TitleAmount={`P&L :  INR ${inrFormat(totalPnL)}`}
-            titleLabel={"FY 2024-25"}
+            titleLabel={"FY 2025-26"}
             title={`Total Monthly P&L`}
           >
             <AgTable
@@ -459,3 +458,7 @@ const SqWiseData = () => {
 };
 
 export default SqWiseData;
+
+
+
+

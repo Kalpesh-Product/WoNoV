@@ -518,7 +518,7 @@ const AssetsDashboard = () => {
           layout={1}
           border
           title={"Assets Value"}
-          titleLabel={"FY 2024-25"}
+          titleLabel={"FY 2025-26"}
         >
           <NormalBarGraph
             height={400}

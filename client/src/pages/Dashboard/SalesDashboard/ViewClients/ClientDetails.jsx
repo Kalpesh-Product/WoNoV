@@ -1,16 +1,31 @@
-import { Avatar, Button, Chip, TextField } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
+import React, { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import dayjs from "dayjs";
 import humanDate from "../../../../utils/humanDateForamt";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { setSelectedClient } from "../../../../redux/slices/clientSlice";
+import { setClientData } from "../../../../redux/slices/salesSlice";
+import { useParams } from "react-router-dom";
 
 const ClientDetails = () => {
+  const dispatch = useDispatch();
+  const axios = useAxiosPrivate();
+  const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
-  console.log(selectedClient);
+  const clientsData = useSelector((state) => state.sales.clientsData);
+  const normalizedClientName = useMemo(
+    () => decodeURIComponent(clientName || "").trim().toLowerCase(),
+    [clientName],
+  );
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       clientName: "",
@@ -89,20 +104,188 @@ const ClientDetails = () => {
     }
   }, [selectedClient, reset]);
 
+  const { isLoading: isClientLoading } = useQuery({
+    queryKey: ["coWorkingClientByName", normalizedClientName],
+    enabled:
+      Boolean(normalizedClientName) &&
+      (selectedClient?.clientName || "").trim().toLowerCase() !== normalizedClientName,
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      const clients = Array.isArray(response?.data) ? response.data : [];
+      const matchedClient = clients.find(
+        (client) =>
+          (client?.clientName || "").trim().toLowerCase() === normalizedClientName,
+      );
+
+      if (matchedClient?._id) {
+        dispatch(setSelectedClient(matchedClient));
+      }
+
+      return matchedClient;
+    },
+  });
+
+
   const [isEditing, setIsEditing] = useState(false);
+
+  const bookingTypeOptions = React.useMemo(() => {
+    const options = new Set();
+
+    clientsData?.forEach((client) => {
+      if (client?.bookingType) {
+        options.add(client.bookingType);
+      }
+    });
+
+    if (selectedClient?.bookingType) {
+      options.add(selectedClient.bookingType);
+    }
+
+    return [...options];
+  }, [clientsData, selectedClient?.bookingType]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
   };
 
-  const onSubmit = (data) => {
-    setIsEditing(!isEditing);
-    toast.success("User details updated successfully");
+  const onSubmit = async (data) => {
+    if (!selectedClient?._id) {
+      toast.error("Client details not found");
+      return;
+    }
+
+    const payload = {
+      clientName: data.clientName,
+      sector: data.sector,
+      hoCity: data.hoCity,
+      hoState: data.hoState,
+      isActive: data.isActive === true || data.isActive === "true",
+      bookingType: data.bookingType,
+      unitNo: data.unitNo,
+      cabinDesks: Number(data.cabinDesks) || 0,
+      openDesks: Number(data.openDesks) || 0,
+      totalDesks:
+        (Number(data.cabinDesks) || 0) + (Number(data.openDesks) || 0),
+      ratePerCabinDesk: Number(data.ratePerCabinDesk) || 0,
+      ratePerOpenDesk: Number(data.ratePerOpenDesk) || 0,
+      annualIncrement: Number(data.annualIncrement) || 0,
+      perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
+      totalMeetingCredits: Number(data.totalMeetingCredits) || 0,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      lockinPeriod: Number(data.lockinPeriod) || 0,
+      rentDate: data.rentDate,
+      nextIncrement: data.nextIncrement,
+      localPocName: data.localPocName,
+      localPocEmail: data.localPocEmail,
+      localPocPhone: data.localPocPhone,
+      hOPocName: data.hoPocName,
+      hOPocEmail: data.hoPocEmail,
+      hOPocPhone: data.hoPocPhone,
+    };
+
+    try {
+      const response = await axios.patch(
+        `/api/sales/update-co-working-clients/${selectedClient._id}`,
+        payload,
+      );
+
+      const updatedClient = {
+        ...selectedClient,
+        ...response?.data?.client,
+        ...payload,
+        localPocName: payload.localPocName,
+        localPocEmail: payload.localPocEmail,
+        localPocPhone: payload.localPocPhone,
+        hoPocName: payload.hOPocName,
+        hoPocEmail: payload.hOPocEmail,
+        hoPocPhone: payload.hOPocPhone,
+      };
+
+      dispatch(setSelectedClient(updatedClient));
+      dispatch(
+        setClientData(
+          clientsData.map((item) =>
+            item._id === selectedClient._id
+              ? { ...item, ...updatedClient }
+              : item,
+          ),
+        ),
+      );
+
+      reset({
+        ...data,
+        totalDesks: payload.totalDesks,
+      });
+      setIsEditing(false);
+      toast.success(
+        response?.data?.message || "Client details updated successfully",
+      );
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Unable to update client details",
+      );
+    }
   };
 
   const handleReset = () => {
-    reset();
+    if (selectedClient) {
+      reset({
+        clientName: selectedClient.clientName,
+        serviceName: selectedClient.service?.serviceName || "",
+        serviceDescription: selectedClient.service?.description || "",
+        sector: selectedClient.sector,
+        hoCity: selectedClient.hoCity,
+        hoState: selectedClient.hoState,
+        unitName: selectedClient.unit?.unitName || "",
+        unitNo: selectedClient.unitNo || "",
+        buildingName: selectedClient.unit?.building?.buildingName || "",
+        buildingAddress: selectedClient.unit?.building?.fullAddress || "",
+        cabinDesks: selectedClient.cabinDesks,
+        openDesks: selectedClient.openDesks,
+        totalDesks: selectedClient.totalDesks,
+        ratePerOpenDesk: selectedClient.ratePerOpenDesk,
+        ratePerCabinDesk: selectedClient.ratePerCabinDesk,
+        annualIncrement: selectedClient.annualIncrement,
+        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
+        totalMeetingCredits: selectedClient.totalMeetingCredits,
+        startDate: selectedClient.startDate,
+        bookingType: selectedClient.bookingType,
+        endDate: selectedClient.endDate,
+        lockinPeriod: selectedClient.lockinPeriod,
+        rentDate: selectedClient.rentDate,
+        nextIncrement: selectedClient.nextIncrement,
+        localPocName: selectedClient.localPocName || "",
+        localPocEmail: selectedClient.localPocEmail || "",
+        localPocPhone: selectedClient.localPocPhone || "",
+        hoPocName: selectedClient.hoPocName || "",
+        hoPocEmail: selectedClient.hoPocEmail || "",
+        hoPocPhone: selectedClient.hoPocPhone || "",
+        isActive: selectedClient.isActive,
+        createdAt: selectedClient.createdAt,
+        updatedAt: selectedClient.updatedAt,
+      });
+    }
   };
+
+  const renderDatePickerField = (field, label) => (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <DatePicker
+        label={label}
+        format="DD-MM-YYYY"
+        value={field.value ? dayjs(field.value) : null}
+        onChange={(dateValue) =>
+          field.onChange(dateValue ? dayjs(dateValue).toISOString() : "")
+        }
+        slotProps={{
+          textField: {
+            size: "small",
+            fullWidth: true,
+          },
+        }}
+      />
+    </LocalizationProvider>
+  );
 
   return (
     <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">
@@ -115,7 +298,8 @@ const ClientDetails = () => {
         <div>
           <PrimaryButton
             handleSubmit={handleEditToggle}
-            title={isEditing ? "Save" : "Edit"}
+            title={isEditing ? "Cancel" : "Edit"}
+            disabled={!selectedClient?._id || isClientLoading}
           />
         </div>
       </div>
@@ -145,16 +329,35 @@ const ClientDetails = () => {
                         <Controller
                           name={fieldKey}
                           control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
+                          render={({ field }) =>
+                            fieldKey === "bookingType" ? (
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label="Booking Type"
+                                fullWidth
+                              >
+                                {bookingTypeOptions.map((bookingType) => (
+                                  <MenuItem
+                                    key={bookingType}
+                                    value={bookingType}
+                                  >
+                                    {bookingType}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            ) : (
+                              <TextField
+                                {...field}
+                                size="small"
+                                label={fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
+                                fullWidth
+                              />
+                            )
+                          }
                         />
                       ) : (
                         <div className="py-2 flex justify-between items-center gap-2">
@@ -194,30 +397,46 @@ const ClientDetails = () => {
                     "ratePerCabinDesk",
                     "openDesks",
                     "ratePerOpenDesk",
+                    "isActive",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
                         <Controller
                           name={fieldKey}
                           control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                              fullWidth
-                            />
-                          )}
+                          render={({ field }) =>
+                            fieldKey === "isActive" ? (
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label="Status"
+                                fullWidth
+                              >
+                                <MenuItem value={true}>Active</MenuItem>
+                                <MenuItem value={false}>Inactive</MenuItem>
+                              </TextField>
+                            ) : (
+                              <TextField
+                                {...field}
+                                size="small"
+                                label={fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
+                                fullWidth
+                              />
+                            )
+                          }
                         />
                       ) : (
                         <div className="py-2 flex justify-between items-start gap-2">
                           <div className="w-[100%] justify-start flex">
                             <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
+                              {fieldKey === "isActive"
+                                ? "Status"
+                                : fieldKey
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
                             </span>{" "}
                           </div>
                           <div className="">
@@ -225,7 +444,11 @@ const ClientDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {control._defaultValues[fieldKey] || "N/A"}
+                              {fieldKey === "isActive"
+                                ? control._defaultValues.isActive
+                                  ? "Active"
+                                  : "Inactive"
+                                : control._defaultValues[fieldKey] || "N/A"}
                             </span>
                           </div>
                         </div>
@@ -350,14 +573,9 @@ const ClientDetails = () => {
                       <Controller
                         name="startDate"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Start Date"
-                            fullWidth
-                          />
-                        )}
+                        render={({ field }) =>
+                          renderDatePickerField(field, "Start Date")
+                        }
                       />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
@@ -384,14 +602,9 @@ const ClientDetails = () => {
                       <Controller
                         name="endDate"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="End Date"
-                            fullWidth
-                          />
-                        )}
+                        render={({ field }) =>
+                          renderDatePickerField(field, "End Date")
+                        }
                       />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
@@ -452,14 +665,9 @@ const ClientDetails = () => {
                       <Controller
                         name="rentDate"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Rent Date"
-                            fullWidth
-                          />
-                        )}
+                        render={({ field }) =>
+                          renderDatePickerField(field, "Rent Date")
+                        }
                       />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
@@ -473,7 +681,7 @@ const ClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {control._defaultValues.rentDate}
+                            {humanDate(control._defaultValues.rentDate)}
                           </span>
                         </div>
                       </div>
@@ -486,14 +694,9 @@ const ClientDetails = () => {
                       <Controller
                         name="nextIncrement"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Next Increment"
-                            fullWidth
-                          />
-                        )}
+                        render={({ field }) =>
+                          renderDatePickerField(field, "Next Increment")
+                        }
                       />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">

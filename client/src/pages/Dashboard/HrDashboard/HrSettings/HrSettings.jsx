@@ -9,24 +9,23 @@ const HrSettings = () => {
   const navigate = useNavigate();
 
   // Map routes to tabs
-const tabs = [
-  {
-    label: "Bulk Upload",
-    path: "bulk-upload",
-    permission: PERMISSIONS.HR_BULK_UPLOAD.value,
-  },
-  {
-    label: "SOPs",
-    path: "sops",
-    permission: PERMISSIONS.HR_SOPS.value,
-  },
-  {
-    label: "Policies",
-    path: "policies",
-    permission: PERMISSIONS.HR_POLICIES.value,
-  },
-];
-
+  const tabs = [
+    {
+      label: "Bulk Upload",
+      path: "bulk-upload",
+      permission: PERMISSIONS.HR_BULK_UPLOAD.value,
+    },
+    {
+      label: "SOPs",
+      path: "sops",
+      permission: PERMISSIONS.HR_SOPS.value,
+    },
+    {
+      label: "Policies",
+      path: "policies",
+      permission: PERMISSIONS.HR_POLICIES.value,
+    },
+  ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   // useEffect(() => {
@@ -42,12 +41,12 @@ const tabs = [
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
-    location.pathname.includes(tab.path)
+    location.pathname.includes(tab.path),
   );
 
   return (
-      <TabLayout
-      basePath="/app/dashboard/sales-dashboard/settings"
+    <TabLayout
+      basePath="/app/dashboard/hr-dashboard/settings"
       defaultTabPath="bulk-upload"
       tabs={tabs}
       hideTabsCondition={(pathname) => pathname.includes("bulk-upload/")}

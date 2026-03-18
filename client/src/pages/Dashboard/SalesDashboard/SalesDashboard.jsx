@@ -50,7 +50,7 @@ import {
 
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -104,20 +104,23 @@ const SalesDashboard = () => {
   //------------------------PAGE ACCESS END-------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
-  function aggregateMonthlyRevenue(data, year = "2024-25") {
+  function aggregateMonthlyRevenueByYear(data = []) {
     const monthsInYear = 12;
-    const result = new Array(monthsInYear).fill(0);
+    const revenueByYear = {};
 
-    data?.forEach((item) => {
-      const revenueArray = item.data[year];
-      if (revenueArray) {
-        for (let i = 0; i < monthsInYear; i++) {
-          result[i] += revenueArray[i] || 0;
+    data.forEach((item) => {
+      Object.entries(item?.data || {}).forEach(([year, revenueArray]) => {
+        if (!revenueByYear[year]) {
+          revenueByYear[year] = new Array(monthsInYear).fill(0);
         }
-      }
+
+        for (let i = 0; i < monthsInYear; i++) {
+          revenueByYear[year][i] += revenueArray?.[i] || 0;
+        }
+      });
     });
 
-    return result;
+    return revenueByYear;
   }
 
   const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
@@ -132,15 +135,22 @@ const SalesDashboard = () => {
     },
   });
 
-  const finalRevenueGraph = aggregateMonthlyRevenue(totalRevenue);
+  const revenueByFiscalYear = useMemo(
+    () => aggregateMonthlyRevenueByYear(totalRevenue),
+    [totalRevenue]
+  );
 
-  const incomeExpenseData = [
-    {
-      name: "Expense",
-      group: "FY 2024-25",
-      data: finalRevenueGraph,
-    },
-  ];
+  const incomeExpenseData = useMemo(
+    () =>
+      Object.entries(revenueByFiscalYear)
+        .sort(([yearA], [yearB]) => yearA.localeCompare(yearB))
+        .map(([year, data]) => ({
+          name: "Expense",
+          group: `FY ${year}`,
+          data,
+        })),
+    [revenueByFiscalYear]
+  );
 
   const selectedSeries = incomeExpenseData.find(
     (item) => item.group === selectedFiscalYear
@@ -150,6 +160,28 @@ const SalesDashboard = () => {
     if (!selectedSeries) return 0;
     return selectedSeries.data.reduce((sum, val) => sum + val, 0);
   }, [selectedSeries]);
+
+  const selectedFiscalYearShort = selectedSeries?.group?.replace("FY ", "");
+  const selectedFiscalYearStart = Number(
+    selectedFiscalYearShort?.split("-")?.[0]
+  );
+  const incomeExpenseCategories =
+    Number.isFinite(selectedFiscalYearStart) && selectedFiscalYearStart > 0
+      ? [
+        `Apr-${String(selectedFiscalYearStart).slice(-2)}`,
+        `May-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Jun-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Jul-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Aug-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Sep-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Oct-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Nov-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Dec-${String(selectedFiscalYearStart).slice(-2)}`,
+        `Jan-${String(selectedFiscalYearStart + 1).slice(-2)}`,
+        `Feb-${String(selectedFiscalYearStart + 1).slice(-2)}`,
+        `Mar-${String(selectedFiscalYearStart + 1).slice(-2)}`,
+      ]
+      : [];
   const incomeExpenseOptions = {
     chart: {
       id: "income-vs-expense-bar",
@@ -191,20 +223,7 @@ const SalesDashboard = () => {
       colors: ["transparent"],
     },
     xaxis: {
-      categories: [
-        "Apr-24",
-        "May-24",
-        "Jun-24",
-        "Jul-24",
-        "Aug-24",
-        "Sep-24",
-        "Oct-24",
-        "Nov-24",
-        "Dec-24",
-        "Jan-25",
-        "Feb-25",
-        "Mar-25",
-      ],
+      categories: incomeExpenseCategories,
     },
     yaxis: {
       min: 0,
@@ -261,9 +280,9 @@ const SalesDashboard = () => {
   const graphData = isLeadsPending
     ? []
     : leadsData.map((item) => ({
-        ...item,
-        category: item.serviceCategory?.serviceName,
-      }));
+      ...item,
+      category: item.serviceCategory?.serviceName,
+    }));
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -315,13 +334,11 @@ const SalesDashboard = () => {
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
-        title:
-          selectedFiscalYear === "FY 2024-25" ? "March 2025" : "March 2026",
-        value: `INR ${
-          selectedFiscalYear === "FY 2024-25"
-            ? inrFormat(finalRevenueGraph[11])
-            : 0
-        }`,
+        title: `March ${Number.isFinite(selectedFiscalYearStart)
+            ? selectedFiscalYearStart + 1
+            : ""
+          }`,
+        value: `INR ${inrFormat(selectedSeries?.data?.[11] || 0)}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
@@ -525,17 +542,29 @@ const SalesDashboard = () => {
   let simplifiedClientsPie = [];
 
   if (!isClientsDataPending && Array.isArray(clientsData)) {
+    const normalizedClientDeskData = clientsData
+      .map((item) => ({
+        companyName: item?.clientName || "Unknown",
+        totalDesks: Number(item?.totalDesks) || 0,
+      }))
+      .filter((item) => item.totalDesks > 0)
+      .sort((a, b) => b.totalDesks - a.totalDesks);
+
+    const totalClientsDesks = normalizedClientDeskData.reduce(
+      (sum, item) => sum + item.totalDesks,
+      0
+    );
     let otherTotalDesks = 0;
+    simplifiedClientsPie = normalizedClientDeskData.reduce((acc, item) => {
+      const clientOccupancyPercent =
+        totalClientsDesks > 0 ? (item.totalDesks / totalClientsDesks) * 100 : 0;
 
-    simplifiedClientsPie = clientsData.reduce((acc, item) => {
-      const { clientName: companyName, totalDesks } = item;
-
-      if (totalDesks < 15) {
-        otherTotalDesks += totalDesks;
+      if (clientOccupancyPercent < 4) {
+        otherTotalDesks += item.totalDesks;
         return acc;
       }
 
-      acc.push({ companyName, totalDesks });
+      acc.push(item);
       return acc;
     }, []);
 
@@ -553,10 +582,10 @@ const SalesDashboard = () => {
   );
 
   const totalDeskPercent = simplifiedClientsPie.map((item) => ({
-    label: `${item.companyName} ${(
-      (item.totalDesks / totalClientsDesks) *
-      100
-    ).toFixed(1)}%`,
+    label: `${item.companyName} ${totalClientsDesks > 0
+      ? ((item.totalDesks / totalClientsDesks) * 100).toFixed(1)
+      : 0
+      }%`,
     value: item.totalDesks,
   }));
   const clientsDesksPieOptions = {
@@ -598,9 +627,9 @@ const SalesDashboard = () => {
 
   const sectorwiseData = Array.isArray(clientsData)
     ? clientsData.map((item) => ({
-        clientName: item.clientName,
-        sector: item.sector,
-      }))
+      clientName: item.clientName,
+      sector: item.sector,
+    }))
     : [];
 
   const totalClients = sectorwiseData.length;
@@ -703,9 +732,52 @@ const SalesDashboard = () => {
   const clientMembersData = isClientsDataPending
     ? []
     : clientsData
-        .filter((item) => item.members?.length > 0)
-        .map((item) => item.members)
-        .flat();
+      .filter((item) => item.members?.length > 0)
+      .map((item) => item.members)
+      .flat();
+  const genderCounts = clientMembersData.reduce(
+  (acc, member) => {
+    const value = String(member?.gender || "").trim().toLowerCase();
+
+    if (value.startsWith("m")) acc.Male += 1;
+    else if (value.startsWith("f")) acc.Female += 1;
+
+    return acc;
+  },
+  { Male: 0, Female: 0 }
+);
+
+  const genderWiseData = [
+  { label: "Male", value: genderCounts.Male || 0 },
+  { label: "Female", value: genderCounts.Female || 0 },
+];
+
+  const genderPieChartOptions = {
+  chart: {
+    type: "pie",
+    fontFamily: "Poppins-Regular",
+  },
+  labels: genderWiseData.map((item) => item.label),
+  series: genderWiseData.map((item) => item.value),
+  tooltip: {
+    y: {
+      formatter: (val) => `${val} Members`,
+    },
+  },
+  legend: {
+    position: "right",
+  },
+  colors: ["#1E3D73", "#54C4A7"],
+};
+
+// console.log(clientsData);
+// console.log(clientMembersData);
+//console.log(genderCounts);
+// console.log(config.data);
+// console.log(genderWiseData);
+// console.log(clientMembersData);
+
+  
   //-----------------------------------------------Conversion of Gender-wise Pie-graph-----------------------------------------------------------//
   //-----------------------------------------------Client Anniversary-----------------------------------------------------------//
   const companyTableColumns = [
@@ -905,6 +977,8 @@ const SalesDashboard = () => {
       layout: 1,
       data: sectorPieData,
       options: sectorPieChartOptions,
+      height:320,
+      width:500,
     },
     {
       key: PERMISSIONS.SALES_CLIENT_WISE_OCCUPANCY.value,
@@ -913,7 +987,8 @@ const SalesDashboard = () => {
       layout: 1,
       data: totalDeskPercent,
       options: clientsDesksPieOptions,
-      width: "100%",
+      height:320,
+      width:500,
     },
   ];
   const allowedPieCharts = salesFilterPermissions(
@@ -923,18 +998,22 @@ const SalesDashboard = () => {
 
   const pieChartLocalConfigs = [
     {
-      key: PERMISSIONS.SALES_SECTOR_WISE_OCCUPANCY.value,
-      title: "Client Gender Wise Data",
+      key: PERMISSIONS.SALES_CLIENT_GENDER_WISE_DATA.value,
+      title: "Client Member Gender Wise Data",
       border: true,
       layout: 1,
-      data: [],
-      options: [],
+      height:320,
+      width:500,
+      data: genderWiseData,
+      options: genderPieChartOptions,
     },
     {
-      key: PERMISSIONS.SALES_CLIENT_WISE_OCCUPANCY.value,
+      key: PERMISSIONS.SALES_INDIA_WISE_MEMBERS.value,
       title: "India-wise Members",
       border: true,
       layout: 1,
+      height:320,
+      width:500,
       data: locationWiseData,
       options: locationPieChartOptions,
     },
@@ -945,17 +1024,7 @@ const SalesDashboard = () => {
   );
 
   const muiTableConfigs = [
-    {
-      Title: "Current Month Client Anniversary",
-      columns: companyTableColumns,
-      rows: formattedCompanyTableData,
-      rowKey: "id",
-      rowsToDisplay: 40,
-      scroll: true,
-      className: "h-full",
-      layout: 1,
-      key: PERMISSIONS.SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY.value,
-    },
+    
     {
       Title: "Client Member Birthday",
       columns: upcomingBirthdaysColumns,
@@ -967,6 +1036,17 @@ const SalesDashboard = () => {
       layout: 1,
       padding: true,
       key: PERMISSIONS.SALES_CLIENT_MEMBER_BIRTHDAY.value,
+    },
+    {
+      Title: "Current Month Client Anniversary",
+      columns: companyTableColumns,
+      rows: formattedCompanyTableData,
+      rowKey: "id",
+      rowsToDisplay: 40,
+      scroll: true,
+      className: "h-full",
+      layout: 1,
+      key: PERMISSIONS.SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY.value,
     },
   ];
   const allowedMuiTableConfigs = salesFilterPermissions(
@@ -1079,6 +1159,7 @@ const SalesDashboard = () => {
               data={config.data}
               options={config.options}
               width={config?.width}
+              height={config?.height}
               centerAlign
             />
           ) : (
@@ -1091,17 +1172,18 @@ const SalesDashboard = () => {
       layout: 2,
       widgets: allowedLocalPieCharts.map((config) => (
         <WidgetSection
+          key={config.key}
           layout={config.layout}
           title={config.title}
           border={config.border}
         >
-          <div className="h-[300px]">
             <PieChartMui
-              data={config.data}
-              options={config.options}
-              centerAlign
-            />
-          </div>
+            data={config.data}
+            options={config.options}
+            width={config?.width}
+            height={config?.height}
+            centerAlign
+          />
         </WidgetSection>
       )),
     },

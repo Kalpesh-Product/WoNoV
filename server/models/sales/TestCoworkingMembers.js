@@ -1,0 +1,68 @@
+const mongoose = require("mongoose");
+
+const coworkingMemberSchema = new mongoose.Schema(
+  {
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+    },
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CoworkingClient",
+    },
+    employeeName: {
+      type: String,
+      required: true,
+    },
+    designation: {
+      type: String,
+    },
+    mobileNo: {
+      type: String,
+    },
+    email: {
+      type: String,
+    },
+    bloodGroup: {
+      type: String,
+    },
+    dob: {
+      type: Date,
+    },
+    emergencyName: {
+      type: String,
+    },
+    emergencyNo: {
+      type: String,
+    },
+    dateOfJoining: {
+      type: Date,
+    },
+    unit: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Unit",
+    },
+    credits: {
+      type: Number,
+      default: 10,
+    },
+    biometricStatus: {
+      type: String,
+      enum: ["Active", "Inactive", "Pending"], // customize if needed
+      default: "Pending",
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+const TestCoworkingMember = mongoose.model(
+  "TestCoworkingMember",
+  coworkingMemberSchema,
+);
+module.exports = TestCoworkingMember;

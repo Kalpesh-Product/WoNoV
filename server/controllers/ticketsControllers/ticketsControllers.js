@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const Department = require("../../models/Departments");
 const NewTicketIssue = require("../../models/tickets/NewTicketIssue");
 const { handleFileUpload } = require("../../config/cloudinaryConfig");
-const sharp = require("sharp");
+// const sharp = require("sharp");
 const {
   filterCloseTickets,
   filterAcceptedTickets,
@@ -35,20 +35,20 @@ const raiseTicket = async (req, res, next) => {
         "Invalid department ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     if (
       typeof description !== "string" ||
       !description.length ||
-      description.replace(/\s/g, "").length > 100
+      description.replace(/\s/g, "").length > 500
     ) {
       throw new CustomError(
-        "Description should not exceed 100 characters.",
+        "Description should not exceed 500 characters.",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -62,12 +62,12 @@ const raiseTicket = async (req, res, next) => {
         "Company not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const department = foundCompany.selectedDepartments.find(
-      (dept) => dept.department.toString() === departmentId
+      (dept) => dept.department.toString() === departmentId,
     );
 
     if (!department) {
@@ -75,7 +75,7 @@ const raiseTicket = async (req, res, next) => {
         "Invalid Department ID",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -87,16 +87,20 @@ const raiseTicket = async (req, res, next) => {
     let imageDetails = null;
     if (image) {
       try {
-        const buffer = await sharp(image.buffer)
-          .resize(1200, 800, { fit: "cover" })
-          .webp({ quality: 80 })
-          .toBuffer();
-        const base64Image = `data:image/webp;base64,${buffer.toString(
-          "base64"
+        // const buffer = await sharp(image.buffer)
+        //   .resize(1200, 800, { fit: "cover" })
+        //   .webp({ quality: 80 })
+        //   .toBuffer();
+        // const base64Image = `data:image/webp;base64,${buffer.toString(
+        //   "base64",
+        // )}`;
+        const base64Image = `data:${image.mimetype};base64,${image.buffer.toString(
+          "base64",
         )}`;
         const uploadedImage = await handleFileUpload(
           base64Image,
-          `${foundCompany.companyName}/tickets/${foundDepartment.name}`
+          `${foundCompany.companyName}/tickets/${foundDepartment.name}`,
+          { preserveOriginal: true },
         );
 
         imageDetails = {
@@ -108,7 +112,7 @@ const raiseTicket = async (req, res, next) => {
           "Error uploading image",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
@@ -122,12 +126,12 @@ const raiseTicket = async (req, res, next) => {
           "Invalid title Id provided",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
       foundIssue = department?.ticketIssues?.find(
-        (ticketIssue) => ticketIssue._id.toString() === title
+        (ticketIssue) => ticketIssue._id.toString() === title,
       );
 
       if (!foundIssue) {
@@ -135,7 +139,7 @@ const raiseTicket = async (req, res, next) => {
           "Issue not found",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
       ticketTitle = foundIssue.title;
@@ -227,7 +231,7 @@ const raiseTicket = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -250,7 +254,7 @@ const updateOtherTicket = async (req, res, next) => {
         "Invalid ticket ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -261,14 +265,14 @@ const updateOtherTicket = async (req, res, next) => {
         "Ticket not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const updatedTicket = await Ticket.findByIdAndUpdate(
       { _id: ticketId },
       { ticket: ticketTitle },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedTicket) {
@@ -276,7 +280,7 @@ const updateOtherTicket = async (req, res, next) => {
         "Failed to update ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -301,7 +305,7 @@ const updateOtherTicket = async (req, res, next) => {
     error instanceof CustomError
       ? next(error)
       : next(
-          new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+          new CustomError(error.message, logPath, logAction, logSourceKey, 500),
         );
   }
 };
@@ -368,14 +372,14 @@ const getTickets = async (req, res, next) => {
       const department = foundCompany.selectedDepartments.find(
         (dept) =>
           dept.department.toString() ===
-          ticket.raisedToDepartment?._id.toString()
+          ticket.raisedToDepartment?._id.toString(),
       );
 
       let priority = "Low"; // Default
 
       if (department) {
         const issue = department?.ticketIssues?.find(
-          (issue) => issue.title === ticket.ticket
+          (issue) => issue.title === ticket.ticket,
         );
         priority = issue?.priority || "High";
       }
@@ -451,7 +455,7 @@ const getTeamMemberTickets = async (req, res, next) => {
     const query = { company };
 
     const allValid = departments.every((dept) =>
-      mongoose.Types.ObjectId.isValid(dept._id)
+      mongoose.Types.ObjectId.isValid(dept._id),
     );
 
     if (!allValid) {
@@ -461,7 +465,7 @@ const getTeamMemberTickets = async (req, res, next) => {
     }
 
     const departmentIds = departments.map(
-      (dept) => new mongoose.Types.ObjectId(dept._id)
+      (dept) => new mongoose.Types.ObjectId(dept._id),
     );
 
     const teamMembers = await UserData.find({
@@ -514,8 +518,8 @@ const getTeamMemberTickets = async (req, res, next) => {
 
       const relevantAssignedTickets = tickets.filter((ticket) =>
         ticket.assignees.some(
-          (assignee) => assignee._id.toString() === memberId
-        )
+          (assignee) => assignee._id.toString() === memberId,
+        ),
       );
       // const relevantAcceptedTickets = tickets.filter(
       //   (ticket) =>
@@ -526,7 +530,7 @@ const getTeamMemberTickets = async (req, res, next) => {
 
       const relevantAcceptedTickets = tickets.filter(
         (ticket) =>
-          ticket.acceptedBy && ticket.acceptedBy._id.toString() === memberId
+          ticket.acceptedBy && ticket.acceptedBy._id.toString() === memberId,
       );
 
       const totalaccepted = relevantAcceptedTickets.length;
@@ -570,7 +574,7 @@ const getAllTickets = async (req, res, next) => {
 
     const query = { company };
     const departmentIds = departments.map(
-      (dept) => new mongoose.Types.ObjectId(dept._id)
+      (dept) => new mongoose.Types.ObjectId(dept._id),
     );
 
     if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
@@ -648,7 +652,7 @@ const acceptTicket = async (req, res, next) => {
         "Ticket ID is required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -657,7 +661,7 @@ const acceptTicket = async (req, res, next) => {
         "Invalid ticket ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -667,7 +671,7 @@ const acceptTicket = async (req, res, next) => {
         "Ticket not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -675,14 +679,14 @@ const acceptTicket = async (req, res, next) => {
     const userDepartments = departments.map((dept) => dept._id.toString());
 
     const ticketInDepartment = userDepartments.some(
-      (deptId) => foundTicket.raisedToDepartment.toString() === deptId
+      (deptId) => foundTicket.raisedToDepartment.toString() === deptId,
     );
     if (!ticketInDepartment) {
       throw new CustomError(
         "User does not have permission to accept this ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -694,14 +698,14 @@ const acceptTicket = async (req, res, next) => {
         status: "In Progress",
         acceptedAt: new Date(),
       },
-      { new: true }
+      { new: true },
     );
     if (!updatedTicket) {
       throw new CustomError(
         "Failed to accept ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -725,7 +729,7 @@ const acceptTicket = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -746,7 +750,7 @@ const rejectTicket = async (req, res, next) => {
         "Ticket ID is required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -755,7 +759,7 @@ const rejectTicket = async (req, res, next) => {
         "Invalid ticket ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -765,7 +769,7 @@ const rejectTicket = async (req, res, next) => {
         "Ticket not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -779,7 +783,7 @@ const rejectTicket = async (req, res, next) => {
           reason: reason,
         },
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedTicket) {
@@ -787,7 +791,7 @@ const rejectTicket = async (req, res, next) => {
         "Failed to reject ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -817,7 +821,7 @@ const rejectTicket = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -838,7 +842,7 @@ const assignTicket = async (req, res, next) => {
         "Ticket ID and assignees are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -847,7 +851,7 @@ const assignTicket = async (req, res, next) => {
         "Assignees are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -858,7 +862,7 @@ const assignTicket = async (req, res, next) => {
         "Invalid one or many assignee IDs",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -869,7 +873,7 @@ const assignTicket = async (req, res, next) => {
         "Ticket not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -894,7 +898,7 @@ const assignTicket = async (req, res, next) => {
         : [];
 
       ticketInDepartment = userDepartments.some(
-        (deptId) => foundTicket.raisedToDepartment.toString() === deptId
+        (deptId) => foundTicket.raisedToDepartment.toString() === deptId,
       );
     }
 
@@ -903,18 +907,18 @@ const assignTicket = async (req, res, next) => {
         "User does not have permission to assign this ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     // Update the ticket by adding the assignees and setting status to "In Progress"
 
     const existingAssigneeIds = (foundTicket.assignees || []).map((id) =>
-      id.toString()
+      id.toString(),
     );
 
     const newAssignees = assignees.filter(
-      (assigneeId) => !existingAssigneeIds.includes(assigneeId.toString())
+      (assigneeId) => !existingAssigneeIds.includes(assigneeId.toString()),
     );
 
     const assignmentTimestamp = new Date();
@@ -933,7 +937,7 @@ const assignTicket = async (req, res, next) => {
         status: "In Progress",
         assignedAt: assignmentTimestamp,
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedTicket) {
@@ -941,7 +945,7 @@ const assignTicket = async (req, res, next) => {
         "Failed to assign ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -968,7 +972,7 @@ const assignTicket = async (req, res, next) => {
     next(
       error instanceof CustomError
         ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
     );
   }
 };
@@ -997,7 +1001,15 @@ const ticketData = async (req, res, next) => {
       raisedToDepartment: { $in: [departmentId] },
     })
       .populate([
-        { path: "raisedBy", select: "firstName lastName" },
+        {
+          path: "raisedBy",
+          select: "firstName lastName departments",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
+        },
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName lastName email" },
         { path: "closedBy", select: "firstName lastName email" },
@@ -1054,7 +1066,7 @@ const ticketsReports = async (req, res, next) => {
       roles?.includes("Master Admin") || roles?.includes("Super Admin");
 
     const departmentIds = departments.map(
-      (dept) => new mongoose.Types.ObjectId(dept._id)
+      (dept) => new mongoose.Types.ObjectId(dept._id),
     );
 
     const selectedDepartments =
@@ -1069,7 +1081,15 @@ const ticketsReports = async (req, res, next) => {
 
     const tickets = await Ticket.find(query)
       .populate([
-        { path: "raisedBy", select: "firstName lastName" },
+        {
+          path: "raisedBy",
+          select: "firstName lastName departments",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
+        },
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName lastName email" },
         { path: "closedBy", select: "firstName lastName email" },
@@ -1140,7 +1160,7 @@ const escalateTicket = async (req, res, next) => {
         "Description not provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1149,7 +1169,7 @@ const escalateTicket = async (req, res, next) => {
         "At least one department ID must be provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1159,7 +1179,7 @@ const escalateTicket = async (req, res, next) => {
           "Invalid Department ID provided",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
@@ -1174,7 +1194,7 @@ const escalateTicket = async (req, res, next) => {
         "One or more departments do not exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1183,7 +1203,7 @@ const escalateTicket = async (req, res, next) => {
         "Invalid ticket ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1193,12 +1213,12 @@ const escalateTicket = async (req, res, next) => {
         "Ticket does not exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const userDepartments = foundUser.departments.map((dept) =>
-      dept.toString()
+      dept.toString(),
     );
     const foundTickets = await Tickets.find({
       raisedToDepartment: {
@@ -1211,7 +1231,7 @@ const escalateTicket = async (req, res, next) => {
         "User does not have permission to escalate this ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1237,7 +1257,7 @@ const escalateTicket = async (req, res, next) => {
         $push: { escalatedTo: { $each: escalatedTicketIds } },
         $set: { status: "Escalated", escalatededAt: new Date() },
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedTicket) {
@@ -1245,7 +1265,7 @@ const escalateTicket = async (req, res, next) => {
         "Failed to escalate ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1268,7 +1288,7 @@ const escalateTicket = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -1288,7 +1308,7 @@ const closeTicket = async (req, res, next) => {
         "Ticket ID is required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1297,7 +1317,7 @@ const closeTicket = async (req, res, next) => {
         "Invalid ticket ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1323,36 +1343,36 @@ const closeTicket = async (req, res, next) => {
         "Ticket does not exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const userDepartments = foundUser.departments.map((dept) =>
-      dept.toString()
+      dept.toString(),
     );
     const ticketInDepartment = userDepartments.some(
-      (deptId) => foundTicket.raisedToDepartment.toString() === deptId
+      (deptId) => foundTicket.raisedToDepartment.toString() === deptId,
     );
     if (!ticketInDepartment && !foundTicket.assignees.includes(foundUser._id)) {
       throw new CustomError(
         "User does not have permission to close this ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
       { status: "Closed", closedAt: new Date(), closedBy: user, closingRemark },
-      { new: true }
+      { new: true },
     );
     if (!updatedTicket) {
       throw new CustomError(
         "Failed to close ticket",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1376,7 +1396,7 @@ const closeTicket = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -1431,7 +1451,7 @@ const fetchFilteredTickets = async (req, res, next) => {
           user,
           roles,
           department,
-          company
+          company,
         );
 
         break;
@@ -1440,7 +1460,7 @@ const fetchFilteredTickets = async (req, res, next) => {
           user,
           roles,
           department,
-          company
+          company,
         );
         break;
       case "assign":
@@ -1448,7 +1468,7 @@ const fetchFilteredTickets = async (req, res, next) => {
           user,
           roles,
           department,
-          company
+          company,
         );
         break;
       case "support":
@@ -1456,14 +1476,14 @@ const fetchFilteredTickets = async (req, res, next) => {
           user,
           roles,
           department,
-          company
+          company,
         );
         break;
       case "escalate":
         filteredTickets = await filterEscalatedTickets(
           roles,
           department,
-          company
+          company,
         );
         break;
       case "close":
@@ -1471,7 +1491,7 @@ const fetchFilteredTickets = async (req, res, next) => {
           user,
           roles,
           department,
-          company
+          company,
         );
         break;
 
@@ -1493,10 +1513,18 @@ const filterMyTickets = async (req, res, next) => {
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
       .select(
-        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedAt image createdAt closingReason"
+        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image createdAt closedBy closedAt closingRemark",
       )
       .populate([
-        { path: "raisedBy", select: "firstName lastName" },
+        {
+          path: "raisedBy",
+          select: "firstName lastName departments",
+          populate: {
+            path: "departments",
+            select: "name",
+            model: "Department",
+          },
+        },
         { path: "raisedToDepartment", select: "name" },
         { path: "reject.rejectedBy", select: "firstName lastName email" },
         { path: "acceptedBy", select: "firstName lastName email" },
@@ -1535,14 +1563,14 @@ const filterMyTickets = async (req, res, next) => {
       const department = foundCompany.selectedDepartments.find(
         (dept) =>
           dept.department.toString() ===
-          ticket.raisedToDepartment?._id.toString()
+          ticket.raisedToDepartment?._id.toString(),
       );
 
       let priority = "Low"; // Default priority
 
       if (department) {
         const issue = department?.ticketIssues?.find(
-          (issue) => issue.title === ticket.ticket
+          (issue) => issue.title === ticket.ticket,
         );
 
         priority = issue?.priority || "High";
@@ -1612,14 +1640,14 @@ const filterTodayTickets = async (req, res, next) => {
       const department = foundCompany.selectedDepartments.find(
         (dept) =>
           dept.department.toString() ===
-          ticket.raisedToDepartment?._id.toString()
+          ticket.raisedToDepartment?._id.toString(),
       );
 
       let priority = "Low"; // Default priority
 
       if (department) {
         const issue = department?.ticketIssues?.find(
-          (issue) => issue.title === ticket.ticket
+          (issue) => issue.title === ticket.ticket,
         );
 
         priority = issue?.priority || "High";
@@ -1678,7 +1706,7 @@ const getOtherTickets = async (req, res, next) => {
     }
 
     const foundOtherTickets = tickets.filter(
-      (ticket) => ticket.ticket === "Other"
+      (ticket) => ticket.ticket === "Other",
     );
 
     return res.status(200).json(foundOtherTickets);

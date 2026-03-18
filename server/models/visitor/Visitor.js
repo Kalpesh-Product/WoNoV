@@ -11,7 +11,7 @@ const visitorSchema = new mongoose.Schema(
     },
     lastName: {
       type: String,
-      required: true,
+      // required: true,
     },
     email: {
       type: String,
@@ -19,7 +19,7 @@ const visitorSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      required: true,
+      // required: true,
     },
     city: {
       type: String,
@@ -32,11 +32,11 @@ const visitorSchema = new mongoose.Schema(
     },
     phoneNumber: {
       type: String,
-      required: true,
+      // required: true,
     },
     purposeOfVisit: {
       type: String,
-      required: true,
+      // required: true,
     },
     panNumber: {
       type: String,
@@ -83,14 +83,21 @@ const visitorSchema = new mongoose.Schema(
     },
     dateOfVisit: {
       type: Date,
-      required: true,
+      // required: true,
     },
     checkIn: {
       type: Date,
     },
     checkOut: {
       type: Date,
-      default: null,
+    },
+    checkedInBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
+    checkedOutBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
     },
     scheduledDate: {
       type: Date,
@@ -132,7 +139,13 @@ const visitorSchema = new mongoose.Schema(
     },
     visitorType: {
       type: String,
-      enum: ["Walk In", "Scheduled", "Meeting"],
+      enum: [
+        "Walk In",
+        "Scheduled",
+        "Meeting",
+        "Full-Day Pass",
+        "Half-Day Pass",
+      ],
       default: "Walk In",
     },
     visitorCompany: {
@@ -150,8 +163,49 @@ const visitorSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
     },
+    amount: {
+      type: Number,
+      default: 0,
+    },
+    totalAmount: {
+      type: Number,
+      default: 0,
+    },
+    gstAmount: {
+      type: Number,
+      default: 0,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    paymentStatus: {
+      type: Boolean,
+      default: false,
+    },
+    paymentMode: {
+      type: String,
+      enum: [
+        "UPI",
+        "Cash",
+        "Cheque",
+        "NEFT",
+        "RTGS",
+        "IMPS",
+        "Credit Card",
+        "ETC",
+      ],
+    },
+    paymentProof: {
+      url: {
+        type: String,
+      },
+      id: {
+        type: String,
+      },
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Visitor = mongoose.model("Visitor", visitorSchema);

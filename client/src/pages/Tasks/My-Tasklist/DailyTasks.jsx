@@ -32,6 +32,13 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
 
 const DailyTasks = () => {
+  const taskFormDefaultValues = {
+    taskName: "",
+    startDate: null,
+    endDate: null,
+    description: "",
+    dueTime: null,
+  };
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const [openModal, setOpenModal] = useState(false);
@@ -51,14 +58,10 @@ const DailyTasks = () => {
     control,
     formState: { errors },
     watch,
+    reset,
   } = useForm({
     mode: "onChange",
-    defaultValues: {
-      taskName: "",
-      startDate: null,
-      endDate: null,
-      description: "",
-    },
+    defaultValues: taskFormDefaultValues,
   });
   const startDate = watch("startDate");
 
@@ -103,6 +106,7 @@ const DailyTasks = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchMyTask"] });
       toast.success(data.message || "KRA Added");
+      reset(taskFormDefaultValues);
       setOpenModal(false);
     },
     onError: (error) => {
@@ -157,7 +161,7 @@ const DailyTasks = () => {
       ),
     },
     {
-      headerName: "Assigned Date",
+      headerName: "Start Date",
       field: "assignedDate",
     },
     // { headerName: "Assigned Time", field: "createdAt" },
@@ -263,11 +267,12 @@ const DailyTasks = () => {
         </div>
       ),
     },
-    { headerName: "Assigned Date", field: "assignedDate", hide: true },
+    { headerName: "Start Date", field: "assignedDate", hide: true },
     { headerName: "Due Date", field: "dueDate", hide: true },
     { headerName: "Due Time", field: "dueTime", hide: true },
     { headerName: "Department", field: "department", hide: true },
-    { headerName: "Completed By", field: "completedBy" },
+    // { headerName: "Completed By", field: "completedBy" },
+    { headerName: "Assigned By", field: "assignedBy" },
     // { headerName: "Completed Date", field: "completedDate" },
     {
       headerName: "Completed Date",
@@ -330,21 +335,22 @@ const DailyTasks = () => {
   const completedData = isCompletedLoading
     ? []
     : completedEntries.map((item, index) => ({
-        srno: index + 1,
-        mongoId: item._id,
-        taskList: item.taskName,
-        department: item.department?.name,
-        completedBy: item.completedBy,
-        assignedDate: item.assignedDate,
-        dueDate: item.dueDate,
-        dueTime: item.dueTime,
-        completedDate: item.completedDate,
-        completedTime: item.completedDate,
-        completedDateTime: `${humanDate(item.completedDate)}, ${humanTime(
-          item.completedDate
-        )}`,
-        status: item.status,
-      }));
+      srno: index + 1,
+      mongoId: item._id,
+      taskList: item.taskName,
+      department: item.department?.name,
+      completedBy: item.completedBy,
+      assignedBy: item.assignedBy.firstName + " " + item.assignedBy.lastName,
+      assignedDate: item.assignedDate,
+      dueDate: item.dueDate,
+      dueTime: item.dueTime,
+      completedDate: item.completedDate,
+      completedTime: item.completedDate,
+      completedDateTime: `${humanDate(item.completedDate)}, ${humanTime(
+        item.completedDate
+      )}`,
+      status: item.status,
+    }));
 
   return (
     <>
@@ -357,6 +363,7 @@ const DailyTasks = () => {
               tableTitle={`MY TASKS`}
               buttonTitle={"Add Task"}
               handleSubmit={() => {
+                reset(taskFormDefaultValues);
                 setModalMode("add-task");
                 setOpenModal(true);
               }}
@@ -407,8 +414,8 @@ const DailyTasks = () => {
           modalMode === "add-task"
             ? "Add My Task"
             : modalMode === "view"
-            ? "View Task"
-            : "Completed task"
+              ? "View Task"
+              : "Completed task"
         }
       >
         {modalMode === "add-task" && (
@@ -552,7 +559,7 @@ const DailyTasks = () => {
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
             <DetalisFormatted
-              title={"Assigned Date"}
+              title={"Start Date"}
               detail={`${selectedTask?.assignedDate}`}
             />
             <DetalisFormatted
@@ -572,7 +579,7 @@ const DailyTasks = () => {
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
             <DetalisFormatted
-              title={"Assigned Date"}
+              title={"Start Date"}
               detail={selectedTask?.assignedDate}
             />
             <DetalisFormatted
@@ -583,6 +590,12 @@ const DailyTasks = () => {
             <DetalisFormatted
               title={"Due Date"}
               detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
+            />
+
+
+            <DetalisFormatted
+              title={"Assigned By"}
+              detail={selectedTask?.assignedBy}
             />
 
             <DetalisFormatted

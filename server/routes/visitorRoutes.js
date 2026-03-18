@@ -5,7 +5,10 @@ const {
   addVisitor,
   updateVisitor,
   fetchExternalCompanies,
+  updateExternalCompany,
   fetchTeamMembers,
+  bulkInsertExternalClients,
+  updateVisitorPayment,
 } = require("../controllers/visitorControllers/visitorController");
 
 router.get("/fetch-visitors", fetchVisitors);
@@ -26,9 +29,20 @@ router.post(
       maxCount: 1,
     },
   ]),
-  addVisitor
+  addVisitor,
 );
 router.get("/fetch-external-companies", fetchExternalCompanies);
+router.patch("/update-external-company/:externalCompanyId", updateExternalCompany);
 router.patch("/update-visitor/:visitorId", updateVisitor);
+router.patch(
+  "/payment/:visitorId",
+  upload.single("paymentProof"),
+  updateVisitorPayment,
+);
+router.post(
+  "/bulk-upload-external-clients",
+  upload.single("external-clients"),
+  bulkInsertExternalClients,
+);
 
 module.exports = router;

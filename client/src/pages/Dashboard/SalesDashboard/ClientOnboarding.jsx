@@ -26,6 +26,7 @@ const ClientOnboarding = () => {
       clientName: "",
       email: "",
       phone: "",
+      brandName: "",
       service: "",
       sector: "",
       hoCity: "",
@@ -223,58 +224,71 @@ const ClientOnboarding = () => {
                       />
                     )}
                   />
-
                   <Controller
-                    name="service"
+                    name="brandName"
                     control={control}
-                    rules={{ required: "Service is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
-                        select
-                        label="Service"
-                        error={!!errors.service}
-                        helperText={errors.service?.message}
+                        label="Brand Name"
                         fullWidth
-                      >
-                        <MenuItem value="" disabled>
-                          Select a Service
-                        </MenuItem>
-                        {!isServicesPending ? (
-                          services.map((item) => (
-                            <MenuItem key={item._id} value={item._id}>
-                              {item.serviceName}
-                            </MenuItem>
-                          ))
-                        ) : (
-                          <CircularProgress color="#1E3D73" />
-                        )}
-                      </TextField>
+                      />
                     )}
                   />
-                  <Controller
-                    name="sector"
-                    control={control}
-                    rules={{ required: "Sector is required" }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Sector"
-                        fullWidth
-                        error={!!errors.sector}
-                        helperText={errors.sector?.message}
-                      >
-                        <MenuItem value="" disabled>
-                          Select a Sector
-                        </MenuItem>
-                        <MenuItem value="IT & Consulting">
-                          IT & Consulting
-                        </MenuItem>
-                      </TextField>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                    <Controller
+                      name="service"
+                      control={control}
+                      rules={{ required: "Service is required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          select
+                          label="Service"
+                          error={!!errors.service}
+                          helperText={errors.service?.message}
+                          fullWidth
+                        >
+                          <MenuItem value="" disabled>
+                            Select a Service
+                          </MenuItem>
+                          {!isServicesPending ? (
+                            services.map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.serviceName}
+                              </MenuItem>
+                            ))
+                          ) : (
+                            <CircularProgress color="#1E3D73" />
+                          )}
+                        </TextField>
+                      )}
+                    />
+                    <Controller
+                      name="sector"
+                      control={control}
+                      rules={{ required: "Sector is required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Sector"
+                          fullWidth
+                          error={!!errors.sector}
+                          helperText={errors.sector?.message}
+                        >
+                          <MenuItem value="" disabled>
+                            Select a Sector
+                          </MenuItem>
+                          <MenuItem value="IT & Consulting">
+                            IT & Consulting
+                          </MenuItem>
+                        </TextField>
+                      )}
+                    />
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
                     <Controller
                       name="hoState"

@@ -20,7 +20,7 @@ const ClosedTickets = ({ title, departmentId }) => {
     queryKey: ["closed-tickets"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/tickets/ticket-filter/close/${departmentId}`
+        `/api/tickets/ticket-filter/close/${departmentId}`,
       );
       return response.data || [];
     },
@@ -63,7 +63,7 @@ const ClosedTickets = ({ title, departmentId }) => {
       .map(({ assigneeName, assignedAtFormatted }) =>
         assignedAtFormatted && assignedAtFormatted !== "N/A"
           ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName
+          : assigneeName,
       )
       .join(", ");
 
@@ -80,8 +80,9 @@ const ClosedTickets = ({ title, departmentId }) => {
           raisedBy: ticket.raisedBy?.firstName || "Unknown",
 
           fromDepartment: ticket.raisedBy?.departments?.map(
-            (item) => item.name || "N/A"
+            (item) => item.name || "N/A",
           ),
+          raisedToDepartment: ticket?.raisedToDepartment?.name || "N/A",
           ticketTitle: ticket?.ticket || "No Title",
           status: ticket.status || "Pending",
           description: ticket.description || "-",
@@ -91,7 +92,7 @@ const ClosedTickets = ({ title, departmentId }) => {
           acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
           ...(() => {
             const { assignedToDisplay, assignmentDetails } = formatAssignments(
-              ticket.assignedTo
+              ticket.assignedTo,
             );
             return {
               assignees: assignedToDisplay || "N/A",
@@ -107,7 +108,7 @@ const ClosedTickets = ({ title, departmentId }) => {
           assignedAt: ticket.assignedAt || null,
           ...(() => {
             const { assignedToDisplay, assignmentDetails } = formatAssignments(
-              ticket.assignedTo
+              ticket.assignedTo,
             );
             return {
               assignees: assignedToDisplay || "N/A",
@@ -128,9 +129,11 @@ const ClosedTickets = ({ title, departmentId }) => {
 
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No" },
-    { field: "raisedBy", headerName: "Raised By" },
-    { field: "fromDepartment", headerName: "From Department" },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
+    { field: "fromDepartment", headerName: "From Department" },
+    { field: "raisedBy", headerName: "Raised By" },
+    { field: "raisedToDepartment", headerName: "Raised To Department" },
+    { field: "acceptedBy", headerName: "Accepted By" },
     {
       field: "status",
       headerName: "Status",
@@ -138,6 +141,7 @@ const ClosedTickets = ({ title, departmentId }) => {
         return <StatusChip status={params.value} />;
       },
     },
+    { field: "closedBy", headerName: "Closed By" },
     { field: "closedAt", headerName: "Closed At" },
     {
       field: "actions",
@@ -193,6 +197,10 @@ const ClosedTickets = ({ title, departmentId }) => {
             detail={viewTicketDetails?.description}
           />
           <DetalisFormatted
+            title="From Department"
+            detail={viewTicketDetails?.fromDepartment}
+          />
+          <DetalisFormatted
             title="Raised By"
             detail={viewTicketDetails?.raisedBy}
           />
@@ -200,19 +208,16 @@ const ClosedTickets = ({ title, departmentId }) => {
             title="Raised At"
             detail={formatDateTime(viewTicketDetails.createdAt)}
           />
-          <DetalisFormatted
-            title="From Department"
-            detail={viewTicketDetails?.fromDepartment}
-          />
+
           <DetalisFormatted
             title="Raised To Department"
             detail={viewTicketDetails.raisedToDepartment?.name || "N/A"}
           />
-          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           <DetalisFormatted
             title="Priority"
             detail={viewTicketDetails?.priority}
           />
+          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
           <DetalisFormatted
             title="Accepted By"
             detail={viewTicketDetails?.acceptedBy}
@@ -237,7 +242,7 @@ const ClosedTickets = ({ title, departmentId }) => {
                         {assignment.assignedAtFormatted || "N/A"}
                       </div>
                     </div>
-                  )
+                  ),
                 )}
               </div>
             </div>

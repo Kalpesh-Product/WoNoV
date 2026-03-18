@@ -2,6 +2,7 @@ const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
 const csvParser = require("csv-parser");
 const { Readable } = require("stream");
+const { parseAmount } = require("../../utils/parseAmount");
 
 const createVirtualOfficeRevenue = async (req, res, next) => {
   try {
@@ -87,7 +88,7 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
       virtualOfficeClients.map((client) => [
         client.clientName.trim(),
         client._id,
-      ])
+      ]),
     );
 
     stream
@@ -118,8 +119,8 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
           client: clientId,
           location: location?.trim(),
           channel: channel?.trim(),
-          taxableAmount: parseFloat(taxableAmount) || 0,
-          revenue: parseFloat(revenue) || 0,
+          taxableAmount: parseAmount(taxableAmount) || 0,
+          revenue: parseAmount(revenue) || 0,
           totalTerm: parseInt(totalTerm) || 0,
           dueTerm: parseInt(dueTerm) || 0,
           rentDate: rentDate ? new Date(rentDate) : null,

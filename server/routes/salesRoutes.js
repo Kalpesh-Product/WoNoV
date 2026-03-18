@@ -8,6 +8,8 @@ const {
   uploadClientOccupancyImage,
   updateCoworkingClient,
   getCoworkingClientRevenues,
+  updateClientStatus,
+  bulkUpdateCoworkingClients,
 } = require("../controllers/salesControllers/coworkingClientControllers");
 const {
   bulkInsertWorkationClients,
@@ -21,11 +23,16 @@ const {
   updateVirtualOfficeClient,
   createVirtualOfficeClient,
   getVirtualOfficeClients,
+  updateVirtualOfficeStatus,
+  getVirtualOfficeClientsByMonth,
+  bulkUpdateVirtualOfficeClients,
 } = require("../controllers/salesControllers/virtualOfficeClientControllers");
 const {
   createLead,
   getLeads,
   bulkInsertLeads,
+  editLead,
+  updateCoworkingClientStatus,
 } = require("../controllers/salesControllers/leadsControllers");
 
 const {
@@ -47,6 +54,7 @@ const {
   createMeetingRevenue,
   getMeetingRevenue,
   updateMeetingRevenue,
+  bulkInsertMeetingRevenue,
 } = require("../controllers/salesControllers/MeetingRevenueController");
 
 const {
@@ -65,6 +73,9 @@ const {
   getMemberByClient,
   createMember,
   bulkInsertCoworkingMembers,
+  updateCoworkingMember,
+  updateMemberStatus,
+  bulkUpdateCoworkingMembers,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
 const {
   getVirtualOfficeRevenue,
@@ -78,78 +89,106 @@ const {
 } = require("../controllers/salesControllers/consolidatedRevenueControllers");
 
 //Coworking routes
-router.get("/consolidated-clients", getConsolidatedClients);
+router.post(
+  "/bulk-insert-co-working-clients",
+  upload.single("clients"),
+  bulkInsertCoworkingClients,
+);
+router.post(
+  "/bulk-edit-co-working-clients",
+  upload.single("clients"),
+  bulkUpdateCoworkingClients,
+);
 router.post("/onboard-co-working-client", createCoworkingClient);
-router.post("/onboard-co-working-member", createMember);
+router.patch("/update-co-working-clients/:clientId", updateCoworkingClient);
+router.get("/consolidated-clients", getConsolidatedClients);
+router.get("/co-working-clients", getCoworkingClients);
+router.patch("/co-working-client/:clientId/status", updateClientStatus);
+
 router.post(
   "/bulk-insert-co-working-client-members",
   upload.single("members"),
-  bulkInsertCoworkingMembers
+  bulkInsertCoworkingMembers,
 );
-router.get("/co-working-clients", getCoworkingClients);
-router.patch("/update-co-working-clients", updateCoworkingClient);
+router.post(
+  "/bulk-edit-co-working-client-members",
+  upload.single("members"),
+  bulkUpdateCoworkingMembers,
+);
+router.post("/onboard-co-working-member", createMember);
+router.patch("/co-working-member/:memberId", updateCoworkingMember);
+router.patch("/co-working-member/:memberId/status", updateMemberStatus);
 router.get("/co-working-members", getMembersByUnit);
 router.get("/co-working-client-members", getMemberByClient);
 router.post(
   "/upload-client-unit-image",
   upload.single("unitImage"),
-  uploadClientOccupancyImage
-);
-router.post(
-  "/bulk-insert-co-working-clients",
-  upload.single("clients"),
-  bulkInsertCoworkingClients
+  uploadClientOccupancyImage,
 );
 
 //Virtual Office routes
 router.post("/onboard-virtual-office-client", createVirtualOfficeClient);
-router.get("/virtual-office-clients", getVirtualOfficeClients);
-router.patch("/update-virtual-office-clients", updateVirtualOfficeClient);
+router.get("/virtual-office/clients", getVirtualOfficeClients);
+router.get("/virtual-office-clients", getVirtualOfficeClientsByMonth);
+router.patch("/virtual-office/:id", updateVirtualOfficeClient);
+router.patch("/virtual-office/:id/status", updateVirtualOfficeStatus);
 router.post(
   "/bulk-insert-virtual-office-clients",
   upload.single("virtualoffice"),
-  bulkInsertVirtualOfficeClients
+  bulkInsertVirtualOfficeClients,
+);
+router.post(
+  "/bulk-edit-virtual-office-clients",
+  upload.single("virtualoffice"),
+  bulkUpdateVirtualOfficeClients,
 );
 
 //Revenues
 router.post("/add-coworking-revenue", addRevenue);
 router.get("/fetch-coworking-revenues", getRevenues);
-router.get("/get-meeting-revenue", getMeetingRevenue);
 router.get(
   "/coworking-client-revenue/:coworkingId",
-  getCoworkingClientRevenues
+  getCoworkingClientRevenues,
 );
 router.post(
   "/bulk-insert-coworking-client-revenue",
   upload.single("coworking-revenues"),
-  bulkInsertCoworkingClientRevenues
+  bulkInsertCoworkingClientRevenues,
 );
+
 router.post("/create-meeting-revenue", createMeetingRevenue);
 router.patch("/update-meeting-revenue", updateMeetingRevenue);
+router.get("/get-meeting-revenue", getMeetingRevenue);
+router.post(
+  "/bulk-insert-meeting-revenue",
+  upload.single("meeting-revenue"),
+  bulkInsertMeetingRevenue,
+);
+
 router.get("/get-alternate-revenue", getAlternateRevenues);
 router.post("/create-alternate-revenue", createAlternateRevenue);
 router.post(
   "/bulk-insert-alternate-revenue",
   upload.single("alternate-revenue"),
-  bulkInsertAlternateRevenue
+  bulkInsertAlternateRevenue,
 );
 router.get("/get-virtual-office-revenue", getVirtualOfficeRevenue);
 router.post(
   "/bulk-insert-virtual-office-revenue",
   upload.single("virtual-office-revenue"),
-  bulkInsertVirtualOfficeRevenue
+  bulkInsertVirtualOfficeRevenue,
 );
 router.post("/create-virtual-office-revenue", createVirtualOfficeRevenue);
 router.get("/get-workation-revenue", getWorkationRevenues);
 router.post(
   "/bulk-insert-workation-revenue",
   upload.single("workation-revenue"),
-  bulkInsertWorkationRevenue
+  bulkInsertWorkationRevenue,
 );
 router.post(
   "/bulk-insert-workation-clients",
   upload.single("workation-clients"),
-  bulkInsertWorkationClients
+  bulkInsertWorkationClients,
 );
 router.post("/create-workation-revenue", createWorkationRevenue);
 router.get("/consolidated-revenue", getConsolidatedRevenue);
@@ -161,6 +200,7 @@ router.get("/services", getClientServices);
 
 //Lead routes
 router.post("/create-lead", createLead);
+router.patch("/edit-lead", editLead);
 router.get("/leads", getLeads);
 router.post("/bulk-insert-leads", upload.single("leads"), bulkInsertLeads);
 

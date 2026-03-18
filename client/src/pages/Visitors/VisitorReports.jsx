@@ -34,7 +34,6 @@ const VisitorReports = () => {
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
-    { field: "visitorType", headerName: "Type" },
     {
       field: "name",
       headerName: "Name",
@@ -45,6 +44,14 @@ const VisitorReports = () => {
           </span>
         </div>
       ),
+    },
+    { field: "visitorType", headerName: "Type" },
+    { field: "registeredClientCompany", headerName: "Client Company" },
+    { field: "purpose", headerName: "Purpose" },
+    { field: "toMeet", headerName: "To Meet" },
+    {
+      field: "dateOfVisit",
+      headerName: "Date Of Visit",
     },
     { field: "gender", headerName: "Gender", hide: true },
     { field: "visitorCompany", headerName: "Visitor Company", hide: true },
@@ -59,12 +66,8 @@ const VisitorReports = () => {
     { field: "otherFile", headerName: "Other File", hide: true },
     { field: "email", headerName: "Email" },
     { field: "phone", headerName: "Phone No" },
-    { field: "purpose", headerName: "Purpose" },
-    { field: "toMeet", headerName: "To Meet" },
-    {
-      field: "dateOfVisit",
-      headerName: "Date Of Visit",
-    },
+
+
     {
       field: "scheduledDate",
       headerName: "Scheduled Date",
@@ -75,10 +78,17 @@ const VisitorReports = () => {
       field: "checkInTime",
       headerName: "Check In Time",
     },
-
+    {
+      field: "checkInBy",
+      headerName: "Checked In By",
+    },
     {
       field: "checkOutTime",
       headerName: "Check Out Time",
+    },
+    {
+      field: "checkOutBy",
+      headerName: "Checked Out By",
     },
 
     // {
@@ -123,17 +133,17 @@ const VisitorReports = () => {
     const toMeetName = visitor.toMeet
       ? `${visitor.toMeet?.firstName} ${visitor.toMeet?.lastName}`
       : visitor.clientToMeet
-      ? visitor?.clientToMeet?.employeeName
-      : "-";
+        ? visitor?.clientToMeet?.employeeName
+        : "-";
 
     const toMeetCompany =
       visitor.toMeetCompany === "6799f0cd6a01edbe1bc3fcea"
         ? "BIZNest"
         : visitor?.toMeetCompany?.clientName ||
-          visitor?.toMeetCompany?.companyName ||
-          visitor?.toMeetCompany?.name ||
-          visitor?.toMeetCompany ||
-          "-";
+        visitor?.toMeetCompany?.companyName ||
+        visitor?.toMeetCompany?.name ||
+        visitor?.toMeetCompany ||
+        "-";
 
     return {
       srNo: index + 1,
@@ -154,9 +164,15 @@ const VisitorReports = () => {
       checkIn: visitor.checkIn,
       checkInDate: visitor.checkIn,
       checkInTime: visitor.checkIn,
+      checkInBy: visitor.checkedInBy
+        ? `${visitor.checkedInBy.firstName} ${visitor.checkedInBy.lastName}`
+        : "-",
       checkOut: visitor.checkOut,
       checkOutDate: visitor.checkOut,
       checkOutTime: visitor.checkOut,
+      checkOutBy: visitor.checkedOutBy
+        ? `${visitor.checkedOutBy.firstName} ${visitor.checkedOutBy.lastName}`
+        : "-",
       rawData: visitor, // Pass full object for modal
       visitorFlag: visitor.visitorFlag || "-",
       visitorType: visitor.visitorType || "-",
@@ -317,8 +333,16 @@ const VisitorReports = () => {
               detail={selectedVisitor.checkInTime}
             />
             <DetalisFormatted
+              title="Checked In By"
+              detail={selectedVisitor.checkInBy}
+            />
+            <DetalisFormatted
               title="Check Out"
               detail={selectedVisitor.checkOutTime}
+            />
+            <DetalisFormatted
+              title="Checked Out By"
+              detail={selectedVisitor.checkOutBy}
             />
             <DetalisFormatted
               title="Date of Visit"

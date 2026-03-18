@@ -30,7 +30,7 @@ const TicketReports = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/ticket-reports/${auth.user?.departments[0]?._id}`
+          `/api/tickets/ticket-reports/${auth.user?.departments[0]?._id}`,
         );
         // const response = await axios.get(
         //   `/api/tickets/get-all-tickets`
@@ -49,21 +49,34 @@ const TicketReports = () => {
     time: value ? humanTime(value) : "",
   });
 
+  const getFromDepartment = (ticket) => {
+    const departments = [
+      ...(Array.isArray(ticket?.raisedBy?.departments)
+        ? ticket.raisedBy.departments
+        : []),
+      ...(Array.isArray(ticket?.ticket?.raisedBy?.departments)
+        ? ticket.ticket.raisedBy.departments
+        : []),
+    ];
+
+    const departmentNames = departments
+      .map((department) => department?.name)
+      .filter(Boolean);
+
+    return departmentNames.length ? departmentNames.join(", ") : "N/A";
+  };
+
   const kraColumn = [
-    { field: "srNo", headerName: "Sr No", flex: 1 },
-    { field: "ticket", headerName: "Ticket", flex: 1 },
+    { field: "srNo", headerName: "Sr No" },
+    { field: "ticket", headerName: "Ticket Title" },
+    { field: "fromDepartment", headerName: "From Department" },
+    { field: "raisedBy", headerName: "Raised By" },
     {
-      field: "createdAtDate",
-      headerName: "Raised Date",
-      flex: 1,
+      field: "raisedAt",
+      headerName: "Raised At",
     },
-    {
-      field: "createdAtTime",
-      headerName: "Raised Time",
-      flex: 1,
-    },
-    { field: "raisedToDepartment", headerName: "Raised To", flex: 1 },
-    { field: "raisedBy", headerName: "Raised By", flex: 1 },
+    { field: "raisedToDepartment", headerName: "Raised To Department" },
+    { field: "acceptedBy", headerName: "Accepted By" },
     {
       field: "status",
       headerName: "Status",
@@ -160,7 +173,7 @@ const TicketReports = () => {
       .map(({ assigneeName, assignedAtFormatted }) =>
         assignedAtFormatted
           ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName
+          : assigneeName,
       )
       .join(", ");
 
@@ -205,6 +218,7 @@ const TicketReports = () => {
                 ...ticketsData.map((item) => ({
                   ...item,
                   ticket: item.ticket || "",
+                  fromDepartment: getFromDepartment(item),
                   raisedToDepartment: item.raisedToDepartment?.name || "",
                   raisedBy: `${item.raisedBy?.firstName || ""} ${
                     item.raisedBy?.lastName || ""
@@ -213,11 +227,11 @@ const TicketReports = () => {
                   status: item.status || "",
                   assignees:
                     item.assignees?.map(
-                      (assignee) => `${assignee.firstName} ${assignee.lastName}`
+                      (assignee) =>
+                        `${assignee.firstName} ${assignee.lastName}`,
                     ) || "",
                   company: item.company?.companyName,
-                  createdAtDate: item.createdAt || "",
-                  createdAtTime: item.createdAt || "",
+                  raisedAt: formatDateTime(item.createdAt) || "N/A",
                   updatedAt: item.updatedAt || "",
                   acceptedBy: `${item.acceptedBy?.firstName || ""} ${
                     item.acceptedBy?.lastName || ""
@@ -259,7 +273,7 @@ const TicketReports = () => {
 
                     const { date: assignedAtDate, time: assignedAtTime } =
                       splitDateAndTime(
-                        item.assignedAt || latestAssignment?.assignedAt
+                        item.assignedAt || latestAssignment?.assignedAt,
                       );
 
                     return {
@@ -301,14 +315,17 @@ const TicketReports = () => {
         {!isLoading && selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted
-              title={"Ticket"}
+              title={"Ticket Title"}
               detail={selectedMeeting?.ticket || ""}
             />
             <DetalisFormatted
               title={"Description"}
               detail={selectedMeeting?.description || ""}
             />
-
+            <DetalisFormatted
+              title={"From Department"}
+              detail={selectedMeeting?.fromDepartment || "N/A"}
+            />
             <DetalisFormatted
               title={"Raised By"}
               detail={`${selectedMeeting?.raisedBy}`}
@@ -322,12 +339,12 @@ const TicketReports = () => {
               detail={selectedMeeting?.raisedToDepartment || ""}
             />
             <DetalisFormatted
-              title={"Status"}
-              detail={selectedMeeting?.status || ""}
-            />
-            <DetalisFormatted
               title={"Priority"}
               detail={selectedMeeting?.priority || ""}
+            />
+            <DetalisFormatted
+              title={"Status"}
+              detail={selectedMeeting?.status || ""}
             />
             {/* <DetalisFormatted
               title={"Assignees"}
@@ -344,24 +361,10 @@ const TicketReports = () => {
               title={"Accepted By"}
               detail={selectedMeeting.acceptedBy || "None"}
             />
-
             <DetalisFormatted
               title={"Accepted At"}
               detail={formatDateTime(selectedMeeting?.acceptedAt) || "N/A"}
             />
-            <DetalisFormatted
-              title={"Escalated To"}
-              detail={selectedMeeting?.escalatedTo || ""}
-            />
-            <DetalisFormatted
-              title={"Escalated Status"}
-              detail={selectedMeeting?.escalatedStatus || ""}
-            />
-            <DetalisFormatted
-              title={"Escalated At"}
-              detail={selectedMeeting?.escalatedAt || ""}
-            />
-
             {selectedMeeting?.assignedToDetails?.length ? (
               <div className="text-content flex items-start w-full">
                 <span className="w-[50%]">Assignees</span>
@@ -377,7 +380,7 @@ const TicketReports = () => {
                           {assignment.assignedAtFormatted || "N/A"}
                         </div>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               </div>
@@ -387,16 +390,26 @@ const TicketReports = () => {
                 detail={selectedMeeting?.assignedTo || ""}
               />
             )}
-
             <DetalisFormatted
-              title="Closed At"
-              detail={formatDateTime(selectedMeeting?.closedAt)}
+              title={"Escalated To"}
+              detail={selectedMeeting?.escalatedTo || ""}
+            />
+            <DetalisFormatted
+              title={"Escalated Status"}
+              detail={selectedMeeting?.escalatedStatus || ""}
+            />
+            <DetalisFormatted
+              title={"Escalated At"}
+              detail={selectedMeeting?.escalatedAt || ""}
             />
             <DetalisFormatted
               title="Closed By"
               detail={selectedMeeting?.closedBy}
             />
-
+            <DetalisFormatted
+              title="Closed At"
+              detail={formatDateTime(selectedMeeting?.closedAt)}
+            />
             {/* <DetalisFormatted
               title={"Rejected By"}
               detail={selectedMeeting?.rejectedBy || "None"}

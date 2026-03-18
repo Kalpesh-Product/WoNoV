@@ -38,7 +38,7 @@ const FinanceDashboard = () => {
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
   const navigate = useNavigate();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
 
   //------------------------PAGE ACCESS CARD START-------------------//
   const cardsConfig = [
@@ -110,15 +110,15 @@ const FinanceDashboard = () => {
   const march2025Payments = isBudgetDataLoading
     ? []
     : budgetData.filter((item) => {
-        const due = new Date(item.dueDate);
-        return due.getFullYear() === 2025 && due.getMonth() === 2;
-      });
+      const due = new Date(item.dueDate);
+      return due.getFullYear() === 2025 && due.getMonth() === 2;
+    });
 
   const financeBudgetsRaw = isBudgetDataLoading
     ? []
     : budgetData.filter(
-        (item) => item.department?._id === "6798bab0e469e809084e249a"
-      );
+      (item) => item.department?._id === "6798bab0e469e809084e249a"
+    );
 
   const financeBudgets = financeBudgetsRaw.filter(
     (item) => item.expanseType === "Statutory Payments"
@@ -213,12 +213,8 @@ const FinanceDashboard = () => {
     })
   );
 
-  const lastMonthRawIncome = incomeData.filter(
-    (item) => item.group === "FY 2024-25"
-  );
-  const lastMonthDataIncome = lastMonthRawIncome.map(
-    (item) => item.data[item.data.length - 1]
-  );
+  const selectedYearMonths = yearCategories[selectedFiscalYear] || [];
+  const lastMonthLabel = selectedYearMonths[selectedYearMonths.length - 1] || "-";
 
   const monthWiseExpenses = {};
   testExpense.forEach((exp) => {
@@ -284,12 +280,8 @@ const FinanceDashboard = () => {
 
   //------------------Expensedata----------------------//
 
-  const lastMonthRaw = expenseData.filter(
-    (item) => item.group === "FY 2024-25"
-  );
-  const lastMonthData = lastMonthRaw.map(
-    (item) => item.data[item.data.length - 1]
-  );
+  const lastMonthDataIncome = currentIncomeSeries?.data?.at(-1) || 0;
+  const lastMonthData = currentExpenseSeries?.data?.at(-1) || 0;
   //----------INCOME-EXPENSE GRAPH conversion------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
@@ -383,10 +375,10 @@ const FinanceDashboard = () => {
   //-----------------------------------------------------DataCards------------------------------------------------------//
   const incomeCardData = {
     cardTitle: "Income",
-    timePeriod: "FY 2024-25",
+    timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: "March 2025",
+        title: lastMonthLabel,
         value: `INR ${inrFormat(lastMonthDataIncome)}`,
         route: "monthly-profit-loss",
       },
@@ -410,10 +402,10 @@ const FinanceDashboard = () => {
 
   const expenseCardData = {
     cardTitle: "Expense",
-    timePeriod: "FY 2024-25",
+    timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: "March 2025",
+        title: lastMonthLabel,
         value: `INR ${inrFormat(lastMonthData)}`,
         route: "monthly-profit-loss",
       },
@@ -437,10 +429,10 @@ const FinanceDashboard = () => {
 
   const netSavingsCardData = {
     cardTitle: "Profit & Loss",
-    timePeriod: "FY 2024-25",
+    timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: "March 2025",
+        title: lastMonthLabel,
         value: `INR ${inrFormat(lastMonthDataIncome - lastMonthData)}`,
         route: "monthly-profit-loss",
       },
@@ -683,8 +675,8 @@ const FinanceDashboard = () => {
   const statutoryPaymentsData = isBudgetDataLoading
     ? []
     : budgetData.filter((budget) => {
-        return budget.expanseType === "Statutory";
-      });
+      return budget.expanseType === "Statutory";
+    });
 
   const statutoryPaymentsMap = new Map();
 
@@ -755,7 +747,7 @@ const FinanceDashboard = () => {
     // Determine status
     const status =
       rentExpenses.length > 0 &&
-      rentExpenses.every((exp) => exp.status === "Approved")
+        rentExpenses.every((exp) => exp.status === "Approved")
         ? "paid"
         : "unpaid";
 

@@ -40,7 +40,7 @@ const AccessProfile = () => {
   const fetchUserPermissions = async () => {
     if (!user?._id) return null;
     const response = await axios.get(
-      `/api/access/user-permissions/${user._id}`
+      `/api/access/user-permissions/${user._id}`,
     );
     return response.data;
   };
@@ -62,7 +62,7 @@ const AccessProfile = () => {
         `/api/access/modify-permissions/${user._id}`,
         {
           permissions: data.permissions,
-        }
+        },
       );
       return response.data;
     },
@@ -105,7 +105,7 @@ const AccessProfile = () => {
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join("_"),
         });
-      }
+      },
     );
     return grouped;
   };

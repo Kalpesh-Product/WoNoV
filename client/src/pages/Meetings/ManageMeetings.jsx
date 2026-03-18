@@ -36,17 +36,20 @@ import useAuth from "../../hooks/useAuth";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [checklists, setChecklists] = useState({});
   const department = usePageDepartment();
   const isFinance = department?.name === "Finance";
+  const isTechDepartment = auth?.user?.departments?.some(
+    (dept) => dept._id === "6798ba9de469e809084e2494"
+  );
   const [newItem, setNewItem] = useState("");
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
-  const { auth } = useAuth();
 
   const statusColors = {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
@@ -86,6 +89,14 @@ const ManageMeetings = () => {
         .filter((u) => u.isActive === true);
     },
   });
+  const { data: clientDetails = [], isLoading: isClientDetailsLoading } = useQuery({
+    queryKey: ["clientsData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return response.data;
+    },
+  });
+  // console.log("clientDetails", clientDetails);
   const { data: clientEmployees = [], isLoading: isClientEmployeesLoading } =
     useQuery({
       queryKey: ["client-participants"],
@@ -141,7 +152,7 @@ const ManageMeetings = () => {
       const response = await axios.patch(
         "/api/meetings/update-meeting-details",
         // { ...data, meetingId: selectedMeetingId, internalParticipants: [] }
-        { ...data, meetingId: selectedMeetingId }
+        { ...data, meetingId: selectedMeetingId },
       );
       return response.data;
     },
@@ -203,7 +214,7 @@ const ManageMeetings = () => {
   });
   const filteredMeetings = meetings.filter(
     (item) =>
-      item.meetingStatus !== "Completed" && item.meetingType === "Internal"
+      item.meetingStatus !== "Completed" && item.meetingType === "Internal",
   );
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
@@ -214,15 +225,35 @@ const ManageMeetings = () => {
       : meeting.clientBookedBy?.employeeName || "Unknown",
     bookedById: meeting.bookedBy ? meeting.bookedBy._id : "",
     startTime: meeting.startTime,
-    endTime: meeting.endTime,
+    endTime:
+      meeting.extendTime > meeting.endTime
+        ? meeting.extendTime
+        : meeting.endTime,
     extendTime: meeting.extendTime,
     srNo: index + 1,
     company: meeting.client || "",
     clientBookedBy: meeting.clientBookedBy || "",
+    building: meeting.location?.building?.buildingName || "",
     department:
       meeting.bookedBy &&
       [...meeting.bookedBy.departments.map((dept) => dept.name)].join(","),
+    meetingCreditBalance: clientDetails.find((c) => c.clientName === meeting.client)?.meetingCreditBalance.toFixed(2) || "0.00",
   }));
+
+  const getDisplayDuration = (meeting) => {
+    const startTime = meeting?.startTime;
+    const endTime = meeting?.endTime;
+
+    if (!startTime || !endTime) return meeting?.duration || "N/A";
+
+    const durationInMinutes = dayjs(endTime).diff(dayjs(startTime), "minute");
+
+    if (!Number.isFinite(durationInMinutes) || durationInMinutes < 0) {
+      return meeting?.duration || "N/A";
+    }
+
+    return `${durationInMinutes}min`;
+  };
 
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
@@ -248,7 +279,7 @@ const ManageMeetings = () => {
     mutationFn: async (data) => {
       const respone = await axios.patch(
         `/api/meetings/cancel-meeting/${selectedMeetingId}`,
-        data
+        data,
       );
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       return respone.data;
@@ -281,7 +312,7 @@ const ManageMeetings = () => {
       mutationFn: async (data) => {
         const respone = await axios.patch(
           `/api/meetings/update-meeting-status`,
-          data
+          data,
         );
         queryClient.invalidateQueries({ queryKey: ["meetings"] });
         return respone.data;
@@ -292,7 +323,7 @@ const ManageMeetings = () => {
       onError: (error) => {
         toast.error(error.response.data.message);
       },
-    }
+    },
   );
   //------------------------------API--------------------------------//
 
@@ -378,7 +409,7 @@ const ManageMeetings = () => {
     if (!selectedMeetingId) return;
     setChecklists((prev) => {
       const updatedItems = prev[selectedMeetingId][type].map((item, i) =>
-        i === index ? { ...item, checked: !item.checked } : item
+        i === index ? { ...item, checked: !item.checked } : item,
       );
       return {
         ...prev,
@@ -394,7 +425,7 @@ const ManageMeetings = () => {
     if (!selectedMeetingId) return;
     setChecklists((prev) => {
       const updatedCustomItems = prev[selectedMeetingId].customItems.filter(
-        (_, i) => i !== index
+        (_, i) => i !== index,
       );
       return {
         ...prev,
@@ -419,7 +450,7 @@ const ManageMeetings = () => {
     if (!selectedMeetingId) return;
 
     const selectedMeeting = meetings.find(
-      (meeting) => meeting._id === selectedMeetingId
+      (meeting) => meeting._id === selectedMeetingId,
     );
     if (!selectedMeeting) return;
 
@@ -427,7 +458,7 @@ const ManageMeetings = () => {
       checklists[selectedMeetingId] || {};
 
     const allCheckedItems = [...defaultItems, ...customItems].filter(
-      (item) => item.checked
+      (item) => item.checked,
     );
 
     const housekeepingTasks = allCheckedItems.map((item) => ({
@@ -465,6 +496,7 @@ const ManageMeetings = () => {
     { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "client", headerName: "Company" },
     { field: "bookedBy", headerName: "Booked By" },
+    { field: "building", headerName: "Building" },
     { field: "roomName", headerName: "Room Name" },
     {
       field: "date",
@@ -482,10 +514,15 @@ const ManageMeetings = () => {
       cellRenderer: (params) => humanTime(params.value),
     },
     {
-      field: "extendTime",
-      headerName: "Extended Time",
-      cellRenderer: (params) => humanTime(params.value) || "-",
+      field: "meetingCreditBalance",
+      headerName: "Credit Balance",
+      cellRenderer: (params) => params.value,
     },
+    // {
+    //   field: "extendTime",
+    //   headerName: "Extended Time",
+    //   cellRenderer: (params) => humanTime(params.value) || "-",
+    // },
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
@@ -534,7 +571,7 @@ const ManageMeetings = () => {
                     // src={participant.avatar}
                     // src="https://ui-avatars.com/api/?name=Alice+Johnson&background=random"
                     src={`https://ui-avatars.com/api/?name=${getAvatarName(
-                      participant
+                      participant,
                     )}&background=random`}
                     sx={{ width: 23, height: 23 }}
                   />
@@ -562,20 +599,20 @@ const ManageMeetings = () => {
 
         const menuItems = [
           !isOngoing &&
-            !isHousekeepingCompleted && {
-              label: "Update Checklist",
-              onClick: () =>
-                handleOpenChecklistModal("update", params.data._id),
-            },
+          !isHousekeepingCompleted && {
+            label: "Update Checklist",
+            onClick: () =>
+              handleOpenChecklistModal("update", params.data._id),
+          },
           isUpcoming && {
             label: "Edit",
             onClick: () => handleEditMeeting("edit", params.data),
           },
           !isOngoing &&
-            !isHousekeepingPending && {
-              label: "Mark As Ongoing",
-              onClick: () => handleOngoing("ongoing", params.data._id),
-            },
+          !isHousekeepingPending && {
+            label: "Mark As Ongoing",
+            onClick: () => handleOngoing("ongoing", params.data._id),
+          },
           !isUpcoming && {
             label: "Mark As Completed",
             onClick: () => handleCompleted("complete", params.data._id),
@@ -660,7 +697,7 @@ const ManageMeetings = () => {
                     />
                     {item.name}
                   </ListItem>
-                )
+                ),
               )}
             </List>
 
@@ -696,7 +733,7 @@ const ManageMeetings = () => {
                           </div>
                         </div>
                       </ListItem>
-                    )
+                    ),
                   )}
                 </List>
               </>
@@ -742,12 +779,12 @@ const ManageMeetings = () => {
           modalMode === "viewDetails"
             ? "Meeting Details"
             : modalMode === "cancel"
-            ? "Cancel Meeting"
-            : modalMode === "extend"
-            ? "Extend Meeting"
-            : modalMode === "edit"
-            ? "Edit Meeting"
-            : ""
+              ? "Cancel Meeting"
+              : modalMode === "extend"
+                ? "Extend Meeting"
+                : modalMode === "edit"
+                  ? "Edit Meeting"
+                  : ""
         }
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
@@ -767,12 +804,12 @@ const ManageMeetings = () => {
             <DetalisFormatted
               title="Time"
               detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
-                selectedMeeting.endTime
+                selectedMeeting.endTime,
               )}`}
             />
             <DetalisFormatted
               title="Duration"
-              detail={selectedMeeting.duration || "N/A"}
+              detail={getDisplayDuration(selectedMeeting)}
             />
             <DetalisFormatted
               title="Status"
@@ -797,8 +834,8 @@ const ManageMeetings = () => {
                       return p.firstName
                         ? `${p.firstName} ${p.lastName}`
                         : p.employeeName
-                        ? p.employeeName
-                        : "N/A";
+                          ? p.employeeName
+                          : "N/A";
                     })
                     .join(", ") || "N/A"
                 }
@@ -812,7 +849,7 @@ const ManageMeetings = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-              // detail={`N/A`}
+            // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"
@@ -996,6 +1033,7 @@ const ManageMeetings = () => {
                       },
                     }}
                     shouldDisableTime={(time, view) => {
+                      if (isTechDepartment) return false;
                       const startTime = selectedMeeting.startTime;
                       const timeValue = time.$d;
 
@@ -1062,6 +1100,7 @@ const ManageMeetings = () => {
                     }}
                     label={"End Time"}
                     shouldDisableTime={(time, view) => {
+                      if (isTechDepartment) return false;
                       const endTime = selectedMeeting.endTime;
                       const timeValue = time.$d;
 
@@ -1136,7 +1175,7 @@ const ManageMeetings = () => {
                       const availableOptions = employees.filter(
                         (emp) =>
                           !selectedParticipantIds.includes(emp._id) &&
-                          emp._id !== bookedById
+                          emp._id !== bookedById,
                       );
 
                       const mergedOptions = [
@@ -1191,7 +1230,7 @@ const ManageMeetings = () => {
 
                       // Find the booking employee from clientEmployees
                       const bookedByEmployee = clientEmployees.find(
-                        (emp) => emp.employeeName === bookedByEmployeeName
+                        (emp) => emp.employeeName === bookedByEmployeeName,
                       );
                       const bookedByCompanyId = bookedByEmployee?.client?._id;
 
@@ -1200,7 +1239,7 @@ const ManageMeetings = () => {
                         (emp) =>
                           emp.client?._id === bookedByCompanyId &&
                           emp.employeeName !== bookedByEmployeeName &&
-                          !selectedExternalIds.includes(emp._id)
+                          !selectedExternalIds.includes(emp._id),
                       );
                       const mergedExternalOptions = [
                         ...field.value,

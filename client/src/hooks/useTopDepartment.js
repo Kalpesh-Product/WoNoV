@@ -32,7 +32,7 @@ export function useTopDepartment({
 
   const topDepartmentIds = useMemo(() => {
     return Array.from(
-      new Set([...baseTopDepartmentIds, ...additionalTopDepartmentIds])
+      new Set([...baseTopDepartmentIds, ...additionalTopDepartmentIds]),
     );
   }, [additionalTopDepartmentIds]);
 

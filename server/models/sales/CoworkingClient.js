@@ -14,20 +14,25 @@ const clientSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: true,
-      unique: true,
+      // required: true,
+      // unique: true,
       trim: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
     bookingType: {
       type: String,
+      trim: true,
     },
     phone: {
       type: String,
       minlength: 7,
       maxlength: 20,
       match: [/^\+?[0-9]+$/, "Invalid phone number format"],
+    },
+    brandName: {
+      type: String,
+      trim: true,
     },
     service: {
       type: mongoose.Schema.Types.ObjectId,
@@ -61,6 +66,9 @@ const clientSchema = new mongoose.Schema(
     ratePerOpenDesk: {
       type: Number,
     },
+    ratePerCabinDesk: {
+      type: Number,
+    },
     annualIncrement: {
       type: Number,
     },
@@ -90,7 +98,11 @@ const clientSchema = new mongoose.Schema(
       imageId: String,
       imageUrl: String,
     },
-    rentDate: { type: Date },
+    // rentDate: { type: Date },
+    // rentDate: { type: String },
+    rentDate: {
+      type: mongoose.Schema.Types.Mixed,
+    },
     nextIncrement: {
       type: Date,
     },
@@ -149,8 +161,17 @@ const clientSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    lastCreditReset: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
+);
+
+clientSchema.index(
+  { email: 1 },
+  { unique: true, partialFilterExpression: { email: { $type: "string" } } },
 );
 
 const CoworkingClient = mongoose.model("CoworkingClient", clientSchema);

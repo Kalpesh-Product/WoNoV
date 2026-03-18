@@ -2,6 +2,7 @@ const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const transformRevenues = require("../../utils/revenueFormatter");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const { parseAmount } = require("../../utils/parseAmount");
 
 const createAlternateRevenue = async (req, res, next) => {
   try {
@@ -99,7 +100,7 @@ const getAlternateRevenues = async (req, res, next) => {
           const [month, year] = key.split("-");
           const monthIndex = MONTHS_SHORT.indexOf(month);
           return parseInt(
-            `20${year}${String(monthIndex + 1).padStart(2, "0")}`
+            `20${year}${String(monthIndex + 1).padStart(2, "0")}`,
           );
         };
         return parseKey(a.month) - parseKey(b.month); // Ascending
@@ -135,9 +136,9 @@ const bulkInsertAlternateRevenue = async (req, res, next) => {
         const record = {
           particulars: row["PARTICULARS"],
           name: row["Name"],
-          taxableAmount: parseFloat(row["Taxable Amount"]) || 0,
-          gst: parseFloat(row["GST"]) || 0,
-          invoiceAmount: parseFloat(row["Invoice Amount"]) || 0,
+          taxableAmount: parseAmount(row["Taxable Amount"]) || 0,
+          gst: parseAmount(row["GST"]) || 0,
+          invoiceAmount: parseAmount(row["Invoice Amount"]) || 0,
           invoiceCreationDate: new Date(row["Invoice Creation Date"]),
           invoicePaidDate: new Date(row["Paid Date"]),
           company: company._id,

@@ -22,7 +22,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
     queryKey: ["escalate-tickets"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/tickets/ticket-filter/escalate/${departmentId}`
+        `/api/tickets/ticket-filter/escalate/${departmentId}`,
       );
 
       return response.data;
@@ -37,22 +37,22 @@ const EscalatedTickets = ({ title, departmentId }) => {
   const formatAssignments = (assignments = []) => {
     const assignmentDetails = Array.isArray(assignments)
       ? assignments.map((assignment) => {
-          const assignee = assignment?.assignee;
-          const assigneeName =
-            assignee?.firstName && assignee?.lastName
-              ? `${assignee.firstName} ${assignee.lastName}`
-              : "Unknown";
-          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+        const assignee = assignment?.assignee;
+        const assigneeName =
+          assignee?.firstName && assignee?.lastName
+            ? `${assignee.firstName} ${assignee.lastName}`
+            : "Unknown";
+        const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
 
-          return { assigneeName, assignedAtFormatted };
-        })
+        return { assigneeName, assignedAtFormatted };
+      })
       : [];
 
     const assignedToDisplay = assignmentDetails
       .map(({ assigneeName, assignedAtFormatted }) =>
         assignedAtFormatted && assignedAtFormatted !== "N/A"
           ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName
+          : assigneeName,
       )
       .join(", ");
 
@@ -85,74 +85,76 @@ const EscalatedTickets = ({ title, departmentId }) => {
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
-          const escalatedIndex = ticket.escalatedTo.length - 1;
-          const escalatedStatus =
-            ticket.escalatedTo.length > 0
-              ? ticket.escalatedTo[escalatedIndex].status
-              : null;
-          const escalatedTo =
-            ticket.escalatedTo.length > 0
-              ? ticket.escalatedTo[escalatedIndex].raisedToDepartment.name
-              : null;
-          const escalatedAt =
-            ticket.escalatedTo.length > 0
-              ? ticket.escalatedTo[escalatedIndex].createdAt
-              : null;
-          const raisedBy = `${ticket.raisedBy?.firstName} ${ticket.raisedBy?.lastName}`;
-          const acceptedBy = ticket.acceptedBy
-            ? `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}`
-            : "N/A";
+        const escalatedIndex = ticket.escalatedTo.length - 1;
+        const escalatedStatus =
+          ticket.escalatedTo.length > 0
+            ? ticket.escalatedTo[escalatedIndex].status
+            : null;
+        const escalatedTo =
+          ticket.escalatedTo.length > 0
+            ? ticket.escalatedTo[escalatedIndex].raisedToDepartment.name
+            : null;
+        const escalatedAt =
+          ticket.escalatedTo.length > 0
+            ? ticket.escalatedTo[escalatedIndex].createdAt
+            : null;
+        const raisedBy = `${ticket.raisedBy?.firstName} ${ticket.raisedBy?.lastName}`;
+        const acceptedBy = ticket.acceptedBy
+          ? `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}`
+          : "N/A";
 
-          const escalatedTicket = {
-            srno: index + 1,
-            id: ticket._id,
-            raisedBy: raisedBy || "Unknown",
-            description: ticket.description || "N/A",
-            priority: ticket.priority,
-            raisedAt: ticket.createdAt || "N/A",
-            acceptedBy: acceptedBy,
-            raisedToDepartment: ticket.raisedToDepartment.name || "N/A",
-            selectedDepartment:
-              ticket.raisedBy?.departments.map((dept) => dept.name) || "N/A",
-            ticketTitle: ticket?.ticket || "No Title",
-            tickets:
-              ticket?.assignees.length > 0
-                ? "Ticket Assigned"
-                : ticket?.acceptedBy
+        const escalatedTicket = {
+          srno: index + 1,
+          id: ticket._id,
+          raisedBy: raisedBy || "Unknown",
+          description: ticket.description || "N/A",
+          priority: ticket.priority,
+          raisedAt: ticket.createdAt || "N/A",
+          acceptedBy: acceptedBy,
+          raisedToDepartment: ticket.raisedToDepartment.name || "N/A",
+          selectedDepartment:
+            ticket.raisedBy?.departments.map((dept) => dept.name) || "N/A",
+          ticketTitle: ticket?.ticket || "No Title",
+          tickets:
+            ticket?.assignees.length > 0
+              ? "Ticket Assigned"
+              : ticket?.acceptedBy
                 ? "Ticket Accepted"
                 : "N/A",
-            status: ticket.status || "Pending",
-            acceptedAt: ticket.acceptedAt || "N/A",
-            escalatedStatus,
-            escalatedAt,
-            escalatedTo:
-              ticket.escalatedTo
-                .map((dept) => dept.raisedToDepartment.name)
-                .join(", ") || "N/A",
-            ...(() => {
-              const { assignedToDisplay, assignmentDetails } =
-                formatAssignments(ticket.assignedTo);
-              return {
-                assignedTo: assignedToDisplay,
-                assignedToDetails: assignmentDetails,
-              };
-            })(),
-          };
+          status: ticket.status || "Pending",
+          acceptedAt: ticket.acceptedAt || "N/A",
+          escalatedStatus,
+          escalatedAt,
+          escalatedTo:
+            ticket.escalatedTo
+              .map((dept) => dept.raisedToDepartment.name)
+              .join(", ") || "N/A",
+          image: ticket.image?.url || null,
+          ...(() => {
+            const { assignedToDisplay, assignmentDetails } =
+              formatAssignments(ticket.assignedTo);
+            return {
+              assignedTo: assignedToDisplay,
+              assignedToDetails: assignmentDetails,
+            };
+          })(),
+        };
 
-          return escalatedTicket;
-        });
+        return escalatedTicket;
+      });
   };
 
   const rows = isLoading ? [] : transformTicketsData(escalatedTickets);
 
   const recievedTicketsColumns = [
     { field: "srno", headerName: "Sr No", width: 100 },
-    { field: "raisedBy", headerName: "Raised By" },
+    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     {
       field: "selectedDepartment",
       headerName: "From Department",
     },
-    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
+    { field: "raisedBy", headerName: "Raised By" },
+    { field: "raisedToDepartment", headerName: "Raised To Department" },
     // {
     //   field: "tickets",
     //   headerName: "Tickets",
@@ -182,6 +184,10 @@ const EscalatedTickets = ({ title, departmentId }) => {
     //     );
     //   },
     // },
+    {
+      field: "escalatedTo",
+      headerName: "Escalated To",
+    },
     {
       field: "status",
       headerName: "Status",
@@ -240,21 +246,19 @@ const EscalatedTickets = ({ title, departmentId }) => {
         );
       },
     },
-    {
-      field: "escalatedTo",
-      headerName: "Escalated To",
-    },
+
     {
       field: "action",
       headerName: "Action",
       pinned: "right",
       cellRenderer: (params) => {
-        const menuItems = [
-          {
-            label: "View",
-            onClick: () => handleViewTicket(params.data),
-          },
-        ];
+        // const menuItems = [
+        //   {
+        //     label: "View",
+        //     onClick: () => handleViewTicket(params.data),
+        //   },
+        // ];
+        const menuItems = [];
 
         // Allow closing the original ticket only if escalated ticket is closed
         const isClosed = params.data.escalatedStatus === "Closed";
@@ -265,7 +269,16 @@ const EscalatedTickets = ({ title, departmentId }) => {
           });
         }
         return (
-          <ThreeDotMenu rowId={params.data.meetingId} menuItems={menuItems} />
+          <div className="flex items-center gap-2">
+            <div
+              role="button"
+              onClick={() => handleViewTicket(params.data)}
+              className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+            >
+              <MdOutlineRemoveRedEye />
+            </div>
+            <ThreeDotMenu rowId={params.data.meetingId} menuItems={menuItems} />
+          </div>
         );
       },
     },
@@ -286,20 +299,12 @@ const EscalatedTickets = ({ title, departmentId }) => {
           {selectedTicket && (
             <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
               <DetalisFormatted
-                title="Ticket"
+                title="Ticket Title"
                 detail={selectedTicket.ticketTitle || "N/A"}
               />
               <DetalisFormatted
                 title="Description"
                 detail={selectedTicket.description || "N/A"}
-              />
-              <DetalisFormatted
-                title="Raised By"
-                detail={selectedTicket.raisedBy || "Unknown"}
-              />
-              <DetalisFormatted
-                title="Raised At"
-                detail={formatDateTime(selectedTicket.raisedAt)}
               />
               <DetalisFormatted
                 title="From Department"
@@ -310,10 +315,18 @@ const EscalatedTickets = ({ title, departmentId }) => {
                 }
               />
               <DetalisFormatted
+                title="Raised By"
+                detail={selectedTicket.raisedBy || "Unknown"}
+              />
+              <DetalisFormatted
+                title="Raised At"
+                detail={formatDateTime(selectedTicket.raisedAt)}
+              />
+              <DetalisFormatted
                 title="Raised To Department"
                 detail={selectedTicket.raisedToDepartment || "N/A"}
               />
-              <DetalisFormatted title="Status" detail={selectedTicket.status} />
+              {/* <DetalisFormatted title="Status" detail={selectedTicket.status} /> */}
               <DetalisFormatted
                 title="Priority"
                 detail={selectedTicket?.priority || "N/A"}
@@ -341,7 +354,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
                             {assignment.assignedAtFormatted || "N/A"}
                           </div>
                         </div>
-                      )
+                      ),
                     )}
                   </div>
                 </div>
@@ -357,13 +370,22 @@ const EscalatedTickets = ({ title, departmentId }) => {
               />
               <DetalisFormatted title="Status" detail={selectedTicket.status} />
               <DetalisFormatted
-                title="Escalated Status"
+                title="Escalation Status"
                 detail={selectedTicket.escalatedStatus}
               />
               <DetalisFormatted
                 title="Escalated At"
                 detail={formatDateTime(selectedTicket?.escalatedAt)}
               />
+              {selectedTicket?.image && (
+                <div className="lg:col-span-1">
+                  <img
+                    src={selectedTicket.image}
+                    alt="Escalated Ticket Attachment"
+                    className="max-w-full max-h-96 rounded border"
+                  />
+                </div>
+              )}
             </div>
           )}
         </MuiModal>

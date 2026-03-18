@@ -15,11 +15,13 @@ const AreaGraph = ({
   onDateLabelChange,
 }) => {
   const [currentDate, setCurrentDate] = useState(dayjs());
+  const [activeArrow, setActiveArrow] = useState("next");
   const [data, setData] = useState({
     series: [
       { name: "Total Tickets", data: [], color: "#007bff" },
       { name: "Closed Tickets", data: [], color: "#28a745" },
       { name: "Open Tickets", data: [], color: "#ff4d4d" },
+      { name: "Rejected Tickets", data: [], color: "#f0f0f0" },
     ],
     categories: [],
   });
@@ -50,6 +52,11 @@ const AreaGraph = ({
         data: Array(daysInMonth).fill(0),
         color: "#ff4d4d",
       },
+      {
+        name: "Rejected Tickets",
+        data: Array(daysInMonth).fill(0),
+        color: "#999999",
+      },
     ];
     const monthlyCategories = Array.from(
       { length: daysInMonth },
@@ -62,6 +69,7 @@ const AreaGraph = ({
           { name: "Total Tickets", data: Array(12).fill(0), color: "#007bff" },
           { name: "Closed Tickets", data: Array(12).fill(0), color: "#28a745" },
           { name: "Open Tickets", data: Array(12).fill(0), color: "#ff4d4d" },
+          { name: "Rejected Tickets", data: Array(12).fill(0), color: "#999999" },
         ],
         categories: [
           "Apr-25",
@@ -87,6 +95,7 @@ const AreaGraph = ({
           { name: "Total Tickets", data: Array(7).fill(0), color: "#007bff" },
           { name: "Closed Tickets", data: Array(7).fill(0), color: "#28a745" },
           { name: "Open Tickets", data: Array(7).fill(0), color: "#ff4d4d" },
+          { name: "Rejected Tickets", data: Array(7).fill(0), color: "#999999" },
         ],
         categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
       },
@@ -140,6 +149,8 @@ const AreaGraph = ({
           transformed[filter].series[1].data[categoryIndex] += 1;
         } else if (ticket.status === "Open") {
           transformed[filter].series[2].data[categoryIndex] += 1;
+        } else if (ticket.status === "Rejected") {
+          transformed[filter].series[3].data[categoryIndex] += 1;
         }
       }
     });
@@ -177,12 +188,12 @@ const AreaGraph = ({
 
     // Calculate date label
     let label = "";
-    if (timeFilter === "Yearly") {
+    if (timeFilter === "Monthly") {
       const fyStart =
         currentDate.month() < 3 ? currentDate.year() - 1 : currentDate.year();
       const fyEnd = fyStart + 1;
       label = `FY ${fyStart}-${String(fyEnd).slice(-2)}`; // ✅ only last 2 digits of end year
-    } else if (timeFilter === "Monthly") {
+    } else if (timeFilter === "Yearly") {
       label = currentDate.format("MMMM YYYY");
     } else if (timeFilter === "Weekly") {
       label = `Week ${Math.ceil(currentDate.date() / 7)} - ${currentDate.format(
@@ -270,11 +281,14 @@ const AreaGraph = ({
         type="area"
         height={350}
       />
-
-      <div className="flex justify-center w-full items-center gap-2">
+    {/* <div className="flex justify-center w-full items-center gap-2"> */}
+      <div className="flex justify-center items-center gap-4 mt-3">
         <SecondaryButton
           title={<MdNavigateBefore />}
+          externalStyles={activeArrow === "prev" ? "bg-gray-400" : ""}
           handleSubmit={() => {
+            setActiveArrow("prev");
+          
             if (timeFilter === "Yearly") {
               setCurrentDate((prev) => prev.subtract(1, "year"));
             } else if (timeFilter === "Monthly") {
@@ -284,8 +298,9 @@ const AreaGraph = ({
             }
           }}
         />
-
-        <span className="text-sm font-medium text-gray-700">
+      {/*  */}
+        {/* <span className="text-sm font-medium text-gray-700"> */}
+        <span className="text-primary text-content font-semibold">
           {timeFilter === "Yearly" &&
             `FY ${
               currentDate.month() < 3
@@ -307,7 +322,10 @@ const AreaGraph = ({
 
         <SecondaryButton
           title={<MdNavigateNext />}
+          externalStyles={activeArrow === "next" ? "bg-gray-400" : ""}
           handleSubmit={() => {
+            setActiveArrow("next");
+          
             if (timeFilter === "Yearly") {
               setCurrentDate((prev) => prev.add(1, "year"));
             } else if (timeFilter === "Monthly") {

@@ -32,8 +32,9 @@ const VisitorTeamMembers = () => {
   const teamMembersColumn = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "name", headerName: "Name", flex: 1 },
-    { field: "email", headerName: "Email", flex: 1 },
     { field: "role", headerName: "Role", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1 },
+
   ];
 
   return (
@@ -48,17 +49,17 @@ const VisitorTeamMembers = () => {
               isLoading
                 ? []
                 : [
-                    //   ...taskList.map((task, index) => ({
-                    ...teamMembersData.map((task, index) => ({
-                      srNo: index + 1,
-                      name: task.name,
-                      email: task.email,
-                      role: task.role,
-                      currentDesk: task.currentDesk,
-                      location: task.location,
-                      status: task.status,
-                    })),
-                  ]
+                  //   ...taskList.map((task, index) => ({
+                  ...teamMembersData.map((task, index) => ({
+                    srNo: index + 1,
+                    name: task.name,
+                    email: task.email,
+                    role: task.role,
+                    currentDesk: task.currentDesk,
+                    location: task.location,
+                    status: task.status,
+                  })),
+                ]
             }
             columns={teamMembersColumn}
           />

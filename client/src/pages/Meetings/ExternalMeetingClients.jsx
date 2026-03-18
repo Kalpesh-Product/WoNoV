@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Delete } from "@mui/icons-material";
@@ -45,10 +46,14 @@ const ExternalMeetingCLients = () => {
   const [selectedMeeting, setSelectedMeeting] = useState([]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
+  const location = useLocation();
   const department = usePageDepartment();
-  const isFinance = department?.name === "Finance";
+  const isFinance =
+    department?.name?.toLowerCase().includes("finance") ||
+    location.pathname.includes("finance-dashboard");
 
   const paymentModes = [
+    "UPI",
     "Cash",
     "Cheque",
     "NEFT",
@@ -112,6 +117,30 @@ const ExternalMeetingCLients = () => {
 
   const watchedDiscountAmount = paymentWatch("discountAmount");
 
+  const calculatePaymentDetails = (meeting, meetingRoom, discount = 0) => {
+    if (!meeting || !meetingRoom?.perHourPrice) return null;
+
+    const start = new Date(meeting.startTime);
+    const end = new Date(meeting.endTime);
+    const durationInHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+    const amount = meetingRoom.perHourPrice * durationInHours;
+    const safeDiscount = Number.isFinite(discount) ? discount : 0;
+    const discountedAmount = Math.max(amount - safeDiscount, 0);
+    const gstAmount = discountedAmount * 0.18;
+    const finalAmount = discountedAmount + gstAmount;
+    const discountPercentage = amount
+      ? ((safeDiscount / amount) * 100).toFixed(2)
+      : "0.00";
+
+    return {
+      amount,
+      gstAmount,
+      finalAmount,
+      discountPercentage,
+    };
+  };
+
   const {
     handleSubmit: cancelMeetingSubmit,
     control: cancelMeetingControl,
@@ -158,7 +187,7 @@ const ExternalMeetingCLients = () => {
     },
   });
   const filteredMeetings = meetings.filter(
-    (item) => item.meetingStatus !== "Completed"
+    (item) => item.meetingStatus !== "Completed",
   );
 
   const transformedMeetings = filteredMeetings
@@ -168,10 +197,19 @@ const ExternalMeetingCLients = () => {
         ...meeting,
         date: meeting.date,
         bookedBy: meeting.bookedBy
-          ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
+          ? [
+            meeting.bookedBy.firstName,
+            meeting.bookedBy.middleName,
+            meeting.bookedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
           : meeting.clientBookedBy?.employeeName || "Unknown",
         startTime: meeting.startTime,
-        endTime: meeting.endTime,
+        endTime:
+          meeting.extendTime > meeting.endTime
+            ? meeting.extendTime
+            : meeting.endTime,
         extendTime: meeting.extendTime,
         srNo: index + 1,
         paymentAmount: meeting.paymentAmount ?? 0,
@@ -181,15 +219,17 @@ const ExternalMeetingCLients = () => {
         paymentStatus: meeting.paymentStatus ?? false,
         paymentVerification: meeting.paymentVerification || "Under Review",
         client: meeting.client || "",
+        building: meeting.location?.building?.buildingName || "",
       };
     });
+
 
   //Fetch Single Room
   const { data: room = {}, isLoading: isRoomLoading } = useQuery({
     queryKey: ["room"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/meetings/get-room/${paymentMeeting.roomName}`
+        `/api/meetings/get-room/${paymentMeeting.roomName}`,
       );
       return response.data;
     },
@@ -220,7 +260,7 @@ const ExternalMeetingCLients = () => {
     mutationFn: async (data) => {
       const respone = await axios.patch(
         `/api/meetings/cancel-meeting/${selectedMeetingId}`,
-        data
+        data,
       );
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
       return respone.data;
@@ -228,7 +268,7 @@ const ExternalMeetingCLients = () => {
     onSuccess: (data) => {
       toast.success(data.message);
     },
-    onError: (error) => {},
+    onError: (error) => { },
   });
 
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
@@ -251,7 +291,7 @@ const ExternalMeetingCLients = () => {
       mutationFn: async (data) => {
         const respone = await axios.patch(
           `/api/meetings/update-meeting-status`,
-          data
+          data,
         );
         queryClient.invalidateQueries({ queryKey: ["meetings"] });
         return respone.data;
@@ -262,7 +302,7 @@ const ExternalMeetingCLients = () => {
       onError: (error) => {
         toast.error(error.message);
       },
-    }
+    },
   );
 
   const { mutate: editMeeting, isPending: isEditPending } = useMutation({
@@ -272,7 +312,7 @@ const ExternalMeetingCLients = () => {
         {
           ...data,
           meetingId: selectedMeetingId,
-        }
+        },
       );
 
       return respone.data;
@@ -297,7 +337,7 @@ const ExternalMeetingCLients = () => {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       return response.data;
     },
@@ -318,7 +358,7 @@ const ExternalMeetingCLients = () => {
         {
           status: data,
           meetingId: selectedMeeting._id,
-        }
+        },
       );
 
       return respone.data;
@@ -433,7 +473,7 @@ const ExternalMeetingCLients = () => {
     if (!selectedMeetingId) return;
     setChecklists((prev) => {
       const updatedItems = prev[selectedMeetingId][type].map((item, i) =>
-        i === index ? { ...item, checked: !item.checked } : item
+        i === index ? { ...item, checked: !item.checked } : item,
       );
       return {
         ...prev,
@@ -449,7 +489,7 @@ const ExternalMeetingCLients = () => {
     if (!selectedMeetingId) return;
     setChecklists((prev) => {
       const updatedCustomItems = prev[selectedMeetingId].customItems.filter(
-        (_, i) => i !== index
+        (_, i) => i !== index,
       );
       return {
         ...prev,
@@ -474,7 +514,7 @@ const ExternalMeetingCLients = () => {
     if (!selectedMeetingId) return;
 
     const selectedMeeting = meetings.find(
-      (meeting) => meeting._id === selectedMeetingId
+      (meeting) => meeting._id === selectedMeetingId,
     );
     if (!selectedMeeting) return;
 
@@ -482,7 +522,7 @@ const ExternalMeetingCLients = () => {
       checklists[selectedMeetingId] || {};
 
     const allCheckedItems = [...defaultItems, ...customItems].filter(
-      (item) => item.checked
+      (item) => item.checked,
     );
 
     const housekeepingTasks = allCheckedItems.map((item) => ({
@@ -500,47 +540,32 @@ const ExternalMeetingCLients = () => {
   };
   useEffect(() => {
     if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
-      // Calculate actual duration
+      const paymentDetails = calculatePaymentDetails(paymentMeeting, room);
 
-      const start = new Date(paymentMeeting.startTime);
-      const end = new Date(paymentMeeting.endTime);
-      console.log("meeting info", start.getTime());
-      console.log("meeting info", end.getTime());
 
-      const durationInHours =
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      if (!paymentDetails) return;
 
-      console.log("duration", durationInHours);
-
-      // Multiply rates by duration
-      const baseAmount = room.perHourPrice * durationInHours;
-      const gstAmount = room.perHourGstPrice * durationInHours;
-      const finalAmount = gstAmount;
-      setPaymentValue("amount", baseAmount);
-      setPaymentValue("gstAmount", gstAmount);
-      setPaymentValue("finalAmount", finalAmount);
+      setPaymentValue("amount", paymentDetails.amount);
+      setPaymentValue("gstAmount", paymentDetails.gstAmount);
+      setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
+
   }, [room, isRoomLoading, setPaymentValue]);
 
   useEffect(() => {
-    if (!isRoomLoading && paymentMeeting && room?.perHourGstPrice) {
-      const start = new Date(paymentMeeting.startTime);
-      const end = new Date(paymentMeeting.endTime);
-      const durationInHours =
-        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
+      const discountAmount = parseFloat(watchedDiscountAmount) || 0;
+      const paymentDetails = calculatePaymentDetails(
+        paymentMeeting,
+        room,
+        discountAmount,
+      );
 
-      // Multiply rates by duration
-      const baseAmount = room.perHourPrice * durationInHours;
-      const gstAmount = room.perHourGstPrice * durationInHours;
-      const calculatedAmount = gstAmount;
-      const discountPercentage = (
-        (watchedDiscountAmount / calculatedAmount) *
-        100
-      ).toFixed(2);
-      const finalAmount = calculatedAmount - watchedDiscountAmount;
+      if (!paymentDetails) return;
 
-      setPaymentValue("discountPercentage", discountPercentage);
-      setPaymentValue("finalAmount", finalAmount);
+      setPaymentValue("discountPercentage", paymentDetails.discountPercentage);
+      setPaymentValue("gstAmount", paymentDetails.gstAmount);
+      setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
   }, [watchedDiscountAmount, room, isRoomLoading]);
 
@@ -553,6 +578,7 @@ const ExternalMeetingCLients = () => {
   const columns = [
     { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "bookedBy", headerName: "Booked By" },
+    { field: "building", headerName: "Building" },
     { field: "roomName", headerName: "Room Name" },
     {
       field: "date",
@@ -569,11 +595,11 @@ const ExternalMeetingCLients = () => {
       headerName: "End Time",
       cellRenderer: (params) => humanTime(params.value),
     },
-    {
-      field: "extendTime",
-      headerName: "Extended Time",
-      cellRenderer: (params) => humanTime(params.value) || "-",
-    },
+    // {
+    //   field: "extendTime",
+    //   headerName: "Extended Time",
+    //   cellRenderer: (params) => humanTime(params.value) || "-",
+    // },
     {
       field: "paymentAmount",
       headerName: "Amount (INR)",
@@ -587,10 +613,10 @@ const ExternalMeetingCLients = () => {
       headerName: "Status",
       cellRenderer: (params) => (
         <Chip
-          label={params.value ? "Paid" : "Unpaid"}
+          label={params.value === "Paid" ? "Paid" : "Unpaid"}
           sx={{
-            backgroundColor: params.value ? "#D1FAE5" : "#FECACA", // Tailwind: green-100 / red-100
-            color: params.value ? "#047857" : "#B91C1C", // Tailwind: green-700 / red-700
+            backgroundColor: params.value === "Paid" ? "#D1FAE5" : "#FECACA", // Tailwind: green-100 / red-100
+            color: params.value === "Paid" ? "#047857" : "#B91C1C", // Tailwind: green-700 / red-700
             fontWeight: "bold",
           }}
         />
@@ -635,7 +661,7 @@ const ExternalMeetingCLients = () => {
       cellRenderer: (params) => {
         const status = params.data.meetingStatus;
         const housekeepingStatus = params.data.housekeepingStatus;
-        const isPaid = params.data.paymentStatus === true;
+        const isPaid = params.data.paymentStatus === "Paid";
         const isUpcoming = status === "Upcoming";
         const isCancelled = status === "Cancelled";
         const isOngoing = status === "Ongoing";
@@ -643,71 +669,91 @@ const ExternalMeetingCLients = () => {
         const isHousekeepingPending = housekeepingStatus === "Pending";
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
         const isVerified = params.data.paymentVerification === "Verified";
+        const paymentVerificationStatus = params.data.paymentVerification;
+
+        const shouldHideMenu =
+          isCancelled || paymentVerificationStatus === "Verified" || !isPaid;
 
         const menuItems = [
+          // {
+          //   label: "View",
+          //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
+          // },
+          !isPaid &&
+          isFinance &&
           {
-            label: "View",
-            onClick: () => handleSelectedMeeting("viewDetails", params.data),
+            label: "wait for payment",
           },
+
           isPaid &&
-            isFinance &&
-            !isVerified && {
-              label: "Verify Payment",
-              onClick: () => handleVerifyPayment(params.data, "Verified"),
-            },
+          isFinance &&
+          paymentVerificationStatus === "Under Review" && {
+            label: "Verify Payment",
+            onClick: () => handleVerifyPayment(params.data, "Verified"),
+          },
+
           isPaid &&
-            isFinance &&
-            isVerified && {
-              label: "Review Payment",
-              onClick: () => handleVerifyPayment(params.data, "Under Review"),
-            },
+          isFinance &&
+          paymentVerificationStatus === "Pending" && {
+            label: "Review Payment",
+            onClick: () => handleVerifyPayment(params.data, "Under Review"),
+          },
+
+          isPaid &&
+          isFinance &&
+          paymentVerificationStatus === "Verified" && {
+            label: "Completed",
+          },
 
           // Show the following only when NOT finance
           ...(!isFinance
             ? [
-                !isPaid && {
-                  label: "Update Payment Details",
-                  onClick: () => handleOpenPaymentModal(params.data),
-                },
-                !isOngoing &&
-                  !isHousekeepingCompleted && {
-                    label: "Update Checklist",
-                    onClick: () =>
-                      handleOpenChecklistModal("update", params.data._id),
-                  },
-                isUpcoming && {
-                  label: "Edit",
-                  onClick: () => handleEditMeeting("edit", params.data),
-                },
-                !isOngoing &&
-                  !isHousekeepingPending && {
-                    label: "Mark As Ongoing",
-                    onClick: () => handleOngoing("ongoing", params.data._id),
-                  },
-                !isUpcoming && {
-                  label: "Mark As Completed",
-                  onClick: () => handleCompleted("complete", params.data._id),
-                },
-                !isCancelled && {
-                  label: "Cancel",
-                  onClick: () => handleSelectedMeeting("cancel", params.data),
-                },
-              ]
+              !isPaid && {
+                label: "Update Payment Details",
+                onClick: () => handleOpenPaymentModal(params.data),
+              },
+              !isOngoing &&
+              !isHousekeepingCompleted && {
+                label: "Update Checklist",
+                onClick: () =>
+                  handleOpenChecklistModal("update", params.data._id),
+              },
+              isUpcoming && {
+                label: "Edit",
+                onClick: () => handleEditMeeting("edit", params.data),
+              },
+              !isOngoing &&
+              !isHousekeepingPending && {
+                label: "Mark As Ongoing",
+                onClick: () => handleOngoing("ongoing", params.data._id),
+              },
+              !isUpcoming && {
+                label: "Mark As Completed",
+                onClick: () => handleCompleted("complete", params.data._id),
+              },
+              !isCancelled && {
+                label: "Cancel",
+                onClick: () => handleSelectedMeeting("cancel", params.data),
+              },
+            ]
             : []),
         ].filter(Boolean);
 
         return (
           <div className="flex gap-2 items-center">
-            {/* <div
+            <div
               onClick={() => handleSelectedMeeting("viewDetails", params.data)}
               className="hover:bg-gray-200 cursor-pointer p-2 rounded-full transition-all"
             >
               <span className="text-subtitle">
                 <MdOutlineRemoveRedEye />
               </span>
-            </div> */}
+            </div>
 
             {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
+            {/* {shouldHideMenu && menuItems.length > 0 && (
+              <ThreeDotMenu menuItems={menuItems} />
+            )} */}
           </div>
         );
       },
@@ -765,7 +811,7 @@ const ExternalMeetingCLients = () => {
                     />
                     {item.name}
                   </ListItem>
-                )
+                ),
               )}
             </List>
 
@@ -801,7 +847,7 @@ const ExternalMeetingCLients = () => {
                           </div>
                         </div>
                       </ListItem>
-                    )
+                    ),
                   )}
                 </List>
               </>
@@ -847,12 +893,12 @@ const ExternalMeetingCLients = () => {
           modalMode === "viewDetails"
             ? "Meeting Details"
             : modalMode === "cancel"
-            ? "Cancel Meeting"
-            : modalMode === "extend"
-            ? "Extend Meeting"
-            : modalMode === "edit"
-            ? "Edit Meeting"
-            : ""
+              ? "Cancel Meeting"
+              : modalMode === "extend"
+                ? "Extend Meeting"
+                : modalMode === "edit"
+                  ? "Edit Meeting"
+                  : ""
         }
         open={detailsModal}
         onClose={() => setDetailsModal(false)}
@@ -872,7 +918,7 @@ const ExternalMeetingCLients = () => {
             <DetalisFormatted
               title="Time"
               detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
-                selectedMeeting.endTime
+                selectedMeeting.endTime,
               )}`}
             />
             <DetalisFormatted
@@ -964,7 +1010,7 @@ const ExternalMeetingCLients = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-              // detail={`N/A`}
+            // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"
@@ -1015,7 +1061,7 @@ const ExternalMeetingCLients = () => {
             <DetalisFormatted
               title="Discount"
               detail={`INR ${inrFormat(
-                selectedMeeting?.paymnetDiscountAmount
+                selectedMeeting?.paymnetDiscountAmount,
               )}`}
             />
             <DetalisFormatted
@@ -1236,7 +1282,18 @@ const ExternalMeetingCLients = () => {
             formData.append("paymentMode", data?.paymentType);
             formData.append("paymentStatus", data?.paymentStatus);
             formData.append("meetingId", paymentMeeting?._id);
-            formData.append("discountAmount", data?.discountAmount);
+            formData.append("discountAmount", data?.discountAmount || 0);
+            formData.append("paymentBaseAmount", data?.amount || 0);
+            formData.append("paymentGstAmount", data?.gstAmount || 0);
+            formData.append("unitsOrHours", "Hours");
+            formData.append("taxable", data?.amount || 0);
+            formData.append("gst", data?.gstAmount || 0);
+            formData.append("status", data?.paymentStatus);
+            formData.append(
+              "client",
+              paymentMeeting?.externalClient || paymentMeeting?.client || "",
+            );
+            formData.append("meetingRoomName", paymentMeeting?.roomName || "");
 
             // If it's a file input (like a PDF or image):
             if (data?.paymentProof) {
@@ -1389,14 +1446,14 @@ const ExternalMeetingCLients = () => {
                 value={field.value}
                 label="Add Payment Proof"
                 onChange={field.onChange}
-                allowedExtensions={["pdf"]}
+                allowedExtensions={["pdf", "jpg", "jpeg", "png"]}
                 previewType="pdf"
               />
             )}
           />
           <div>
             <p className="text-xs">
-              Add payment proof as : ( "Add Payment Proof in PDF format & Name
+              Add payment proof as : ( "Add Payment Proof in PDF, jpg, jpeg, png format & Name
               as : DD-MM-YYYY_(Customer Name)" )
             </p>
           </div>

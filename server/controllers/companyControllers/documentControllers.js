@@ -100,6 +100,17 @@ const uploadCompanyDocument = async (req, res, next) => {
 const updateCompanyDocument = async (req, res, next) => {
   const { newName, documentId } = req.body; // updated: use _id
   const user = req.user;
+  const file = req.file;
+
+  if (!documentId) {
+    return res.status(400).json({ message: "Document ID is required" });
+  }
+
+  if (!newName?.trim() && !file) {
+    return res.status(400).json({
+      message: "Provide at least a new document name or a new file",
+    });
+  }
 
   try {
     const foundUser = await User.findById(user)
@@ -111,39 +122,147 @@ const updateCompanyDocument = async (req, res, next) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    const companyId = foundUser.company._id;
-
-    const tryUpdate = async (path) => {
-      const result = await Company.updateOne(
-        {
-          _id: companyId,
-          [`${path}._id`]: documentId, // match using the ObjectId of the embedded doc
-        },
-        {
-          $set: {
-            [`${path}.$.name`]: newName,
-            [`${path}.$.updatedAt`]: new Date(),
-          },
-        },
-      );
-      return result;
-    };
+    const company = await Company.findById(foundUser.company._id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
 
     const sections = ["templates", "sop", "policies", "agreements"];
+    const uploadFolders = {
+      templates: "templates",
+      sop: "sops",
+      policies: "policies",
+      agreements: "agreements",
+    };
+
+    let targetDoc = null;
+    let targetSection = null;
+
     for (const section of sections) {
-      const result = await tryUpdate(section);
-      if (result.modifiedCount > 0) {
-        return res.status(200).json({
-          message: `Document name updated successfully in ${section}`,
-        });
+      const doc = company[section]?.id(documentId);
+      if (doc) {
+        targetDoc = doc;
+        targetSection = section;
+        break;
       }
     }
 
-    return res.status(404).json({ message: "Document not found" });
+    if (!targetDoc) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (newName?.trim()) {
+      targetDoc.name = newName.trim();
+    }
+
+    if (file) {
+      const allowedExtensions = [".pdf"];
+      const extension = path.extname(file.originalname).toLowerCase();
+
+      if (!allowedExtensions.includes(extension)) {
+        // return res.status(400).json({
+        //   message: `Unsupported file type. Allowed extensions: ${allowedExtensions.join(
+        //     ", ",
+        //   )}`,
+        // });
+
+        return res.status(400).json({
+          message: `Unsupported file type. Please provide a pdf`,
+        });
+      }
+
+      let finalBuffer = file.buffer;
+
+      if (extension === ".pdf") {
+        const pdfDoc = await PDFDocument.load(file.buffer);
+        pdfDoc.setTitle(
+          file.originalname ? file.originalname.split(".")[0] : "Untitled",
+        );
+        finalBuffer = await pdfDoc.save();
+      }
+
+      if (targetDoc.documentId) {
+        await handleDocumentDelete(targetDoc.documentId);
+      }
+
+      const folderName = `${foundUser.company.companyName}/${
+        uploadFolders[targetSection]
+      }`;
+      const sanitizedFileName = file.originalname.replace(/\s+/g, "_");
+
+      const response = await handleDocumentUpload(
+        finalBuffer,
+        folderName,
+        sanitizedFileName,
+      );
+
+      if (!response?.public_id) {
+        return res.status(500).json({ message: "Failed to upload document" });
+      }
+
+      targetDoc.documentLink = response.secure_url;
+      targetDoc.documentId = response.public_id;
+    }
+
+    targetDoc.updatedAt = new Date();
+
+    await company.save({ validateBeforeSave: false });
+
+    return res.status(200).json({
+      message: `Document updated successfully in ${targetSection}`,
+    });
   } catch (error) {
     return next(error);
   }
 };
+
+// const updateCompanyDocument = async (req, res, next) => {
+//   const { newName, documentId } = req.body; // updated: use _id
+//   const user = req.user;
+
+//   try {
+//     const foundUser = await User.findById(user)
+//       .select("company")
+//       .populate("company", "companyName")
+//       .lean();
+
+//     if (!foundUser?.company) {
+//       return res.status(404).json({ message: "Company not found" });
+//     }
+
+//     const companyId = foundUser.company._id;
+
+//     const tryUpdate = async (path) => {
+//       const result = await Company.updateOne(
+//         {
+//           _id: companyId,
+//           [`${path}._id`]: documentId, // match using the ObjectId of the embedded doc
+//         },
+//         {
+//           $set: {
+//             [`${path}.$.name`]: newName,
+//             [`${path}.$.updatedAt`]: new Date(),
+//           },
+//         },
+//       );
+//       return result;
+//     };
+
+//     const sections = ["templates", "sop", "policies", "agreements"];
+//     for (const section of sections) {
+//       const result = await tryUpdate(section);
+//       if (result.modifiedCount > 0) {
+//         return res.status(200).json({
+//           message: `Document name updated successfully in ${section}`,
+//         });
+//       }
+//     }
+
+//     return res.status(404).json({ message: "Document not found" });
+//   } catch (error) {
+//     return next(error);
+//   }
+// };
 
 const toggleCompanyDocumentStatus = async (req, res, next) => {
   const user = req.user;

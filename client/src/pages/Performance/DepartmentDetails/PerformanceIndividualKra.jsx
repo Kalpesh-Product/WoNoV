@@ -1,0 +1,464 @@
+import { useLocation, useParams } from "react-router-dom";
+import AgTable from "../../../components/AgTable";
+import WidgetSection from "../../../components/WidgetSection";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import humanTime from "../../../utils/humanTime";
+import humanDate from "../../../utils/humanDateForamt";
+import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
+import { useEffect, useState } from "react";
+import MuiModal from "../../../components/MuiModal";
+import { PERMISSIONS } from "../../../constants/permissions";
+import { Controller, useForm } from "react-hook-form";
+import PrimaryButton from "../../../components/PrimaryButton";
+import useAuth from "../../../hooks/useAuth";
+import { toast } from "sonner";
+import { queryClient } from "../../../main";
+import { FaCheck } from "react-icons/fa6";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import { InsertEmoticonTwoTone } from "@mui/icons-material";
+import PageFrame from "../../../components/Pages/PageFrame";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { FaCheckSquare } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
+
+const PerformanceIndividualKra = () => {
+    const axios = useAxiosPrivate();
+    const { auth } = useAuth();
+    const { department } = useParams();
+    const [openModal, setOpenModal] = useState(false);
+    const deptId = useSelector((state) => state.performance.selectedDepartment);
+    const userId = auth.user._id;
+    const [selectedKra, setSelectedKra] = useState(null);
+
+    const restrictedRoles = [
+        "IT Employee",
+        "Admin Employee",
+        "Tech Employee",
+        "Administration Employee",
+        "HR Employee",
+        "Maintenance Employee",
+        "Cafe Employee",
+        "Finance Employee",
+        "Marketing Employee",
+    ];
+    const isAddKraDisabled = auth?.user?.role?.some((role) =>
+        restrictedRoles.includes(role.roleTitle)
+    );
+
+    const canDeleteRecurrence = !isAddKraDisabled;
+
+    const departmentAccess = [
+        "67b2cf85b9b6ed5cedeb9a2e",
+        "6798bab9e469e809084e249e",
+    ];
+
+    const isTop = auth.user.departments.some((item) => {
+        return departmentAccess.includes(item._id.toString());
+    });
+
+    const allowedDept = auth.user.departments.some((item) => {
+        return item._id.toString() === deptId.toString();
+    });
+
+    const showCheckBox = allowedDept;
+    const userPermissions = auth?.user?.permissions?.permissions || [];
+    const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_DAILY_KRA.value);
+    const isHr = department === "HR";
+
+    const matchingDepartment = auth.user?.departments?.some(
+        (dept) => dept._id === deptId
+    );
+
+    useEffect(() => {
+        queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
+    }, [department]);
+
+    const {
+        handleSubmit: submitDailyKra,
+        control,
+        formState: { errors },
+        reset,
+    } = useForm({
+        mode: "onChange",
+        defaultValues: {
+            individualDailyKra: "",
+            description: "",
+            assignTo: "",
+            assignedDate: dayjs().toISOString(),
+        },
+    });
+
+    const { mutate: deleteDailyKraRecurrence, isPending: isDeletePending } = useMutation({
+        mutationKey: ["deleteDailyKraRecurrence"],
+        mutationFn: async (taskId) => {
+            const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.refetchQueries({ queryKey: ["fetchedIndividualKRA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+            toast.success(data.message || "KRA recurrence removed");
+        },
+        onError: () => {
+            toast.error("Failed to remove recurrence");
+        },
+    });
+
+    //--------------POST REQUEST FOR DAILY KRA-----------------//
+    const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
+        mutationKey: ["addDailyKra"],
+        mutationFn: async (data) => {
+            const response = await axios.post("/api/performance/create-task", {
+                task: data.individualDailyKra, // Fixed field name
+                taskType: "INDIVIDUALKRA",
+                // description: data.description,
+                department: deptId,
+                assignedDate: data.assignedDate,
+                assignTo: data.assignTo,
+            });
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
+            queryClient.refetchQueries({ queryKey: ["fetchedIndividualKRA"] });
+            toast.success(data.message || "KRA Added");
+            reset();
+            setOpenModal(false);
+        },
+        onError: (error) => {
+            toast.error("Adding failed");
+            // toast.error(error.message || "Error Adding KRA");
+        },
+    });
+    const handleFormSubmit = (data) => {
+        const payload = {
+            ...data,
+            assignTo: userId,
+        };
+        addDailyKra(payload);
+    };
+
+    const { mutate: updateDailyKra, isPending: isUpdatePending } = useMutation({
+        mutationKey: ["updateDailyKra"],
+        mutationFn: async (data) => {
+            const response = await axios.patch(
+                `/api/performance/update-status/${data}/KRA`
+            );
+            return response.data;
+        },
+        onSuccess: (data) => {
+            queryClient.refetchQueries({ queryKey: ["fetchedIndividualKRA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+            queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
+            queryClient.invalidateQueries({ queryKey: ["completedEntries"] });
+            toast.success(data.message || "KRA updated");
+        },
+        onError: (error) => {
+            toast.error(error?.response?.data?.message || "Error Updating");
+        },
+    });
+
+    //--------------POST REQUEST FOR DAILY KRA-----------------//
+
+    const fetchTasks = async () => {
+        try {
+            const response = await axios.get(
+                `/api/performance/get-tasks?dept=${deptId}&type=INDIVIDUALKRA`
+            );
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    };
+    const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
+        queryKey: ["fetchedIndividualKRA"],
+        queryFn: fetchTasks,
+    });
+
+    // const { data: assignees = [] } = useQuery({
+    //     queryKey: ["fetchAssignees", deptId],
+    //     queryFn: async () => {
+    //         const response = await axios.get(`/api/user/assignees?deptId=${deptId}`);
+    //         return response.data;
+    //     },
+    //     enabled: !!deptId,
+    // });
+    const { data: completedEntries = [], isLoading: isCompletedLoading } =
+        useQuery({
+            queryKey: ["completedEntries"],
+            queryFn: async () => {
+                try {
+                    const response = await axios.get(
+                        `/api/performance/get-completed-tasks?dept=${deptId}&type=INDIVIDUALKRA`
+                    );
+                    return response.data;
+                } catch (error) {
+                    console.error(error);
+                }
+            },
+        });
+
+    const departmentColumns = [
+        { headerName: "Sr no", field: "srno", width: 100 },
+        { headerName: "KRA List", field: "taskName", flex: 1 },
+        { headerName: "DueTime", field: "dueTime" },
+        {
+            field: "status",
+            headerName: "Status",
+            cellRenderer: (params) => {
+                const statusColorMap = {
+                    Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
+                    InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" },
+                    resolved: { backgroundColor: "#90EE90", color: "#006400" },
+                    open: { backgroundColor: "#E6E6FA", color: "#4B0082" },
+                    Completed: { backgroundColor: "#16f8062c", color: "#00731b" },
+                };
+
+                const { backgroundColor, color } = statusColorMap[params.value] || {
+                    backgroundColor: "gray",
+                    color: "white",
+                };
+
+                return <Chip label={params.value} style={{ backgroundColor, color }} />;
+            },
+        },
+        ...(matchingDepartment
+            ? [
+                {
+                    headerName: "Actions",
+                    field: "actions",
+                    cellRenderer: (params) => (
+                        <div className="p-2 flex gap-2 items-center">
+                            <button
+                                type="button"
+                                title="Mark As Done"
+                                disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                                onClick={() => updateDailyKra(params.data.id)}
+                                className="ml-2 disabled:cursor-not-allowed"
+                            >
+                                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color={!params.node.selected ? "gray" : "green"} />}
+                            </button>
+                            {canDeleteRecurrence && (
+                                <button
+                                    type="button"
+                                    title="Delete Recurrence"
+                                    disabled={!params.node.selected || isDeletePending || isUpdatePending}
+                                    onClick={() => deleteDailyKraRecurrence(params.data.id)}
+                                    className="ml-2 disabled:cursor-not-allowed"
+                                >
+                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
+                                </button>
+                            )}
+                        </div>
+                    ),
+                },
+            ]
+            : []),
+    ];
+
+    const formatDateTime = (value) =>
+        value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
+
+    const completedColumns = [
+        { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+        { headerName: "KRA List", field: "taskName", flex: 1 },
+        // { headerName: "Assigned Time", field: "assignedDate" },
+
+        { headerName: "Completed By", field: "completedBy" },
+        {
+            headerName: "Completed Date",
+            field: "completionDate",
+        },
+        {
+            headerName: "Completed Time",
+            field: "completionTime",
+        },
+        {
+            field: "status",
+            headerName: "Status",
+            cellRenderer: (params) => {
+                const statusColorMap = {
+                    Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+                    InProgress: { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+                    resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+                    open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+                    Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
+                };
+
+                const { backgroundColor, color } = statusColorMap[params.value] || {
+                    backgroundColor: "gray",
+                    color: "white",
+                };
+                return (
+                    <>
+                        <Chip
+                            label={params.value}
+                            style={{
+                                backgroundColor,
+                                color,
+                            }}
+                        />
+                    </>
+                );
+            },
+        },
+    ];
+    return (
+        <>
+            <div className="flex flex-col gap-4">
+                <PageFrame>
+                    {!departmentLoading ? (
+                        <WidgetSection padding layout={1}>
+                            <YearWiseTable
+                                formatTime
+                                checkbox={showCheckBox}
+                                buttonTitle={"Add Daily KRA"}
+                                buttonDisabled={isAddKraDisabled}
+                                handleSubmit={() => setOpenModal(true)}
+                                tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
+                                data={(departmentKra || [])
+                                    .filter((item) => item.status !== "Completed")
+                                    .map((item, index) => ({
+                                        srno: index + 1,
+                                        id: item.id,
+                                        taskName: item.taskName,
+                                        assignedDate: item.assignedDate,
+                                        dueTime: item.dueTime,
+                                        status: item.status,
+                                        assignedTo: item.assignedTo,
+                                    }))}
+                                dateColumn={"dueDate"}
+                                columns={departmentColumns}
+                            />
+                        </WidgetSection>
+                    ) : (
+                        <div className="h-72 flex items-center justify-center">
+                            <CircularProgress />
+                        </div>
+                    )}
+                </PageFrame>
+                <PageFrame>
+                    <div>
+                        {!departmentLoading ? (
+                            <WidgetSection padding>
+                                <YearWiseTable
+                                    formatTime
+                                    tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA`}
+                                    exportData={true}
+                                    checkAll={false}
+                                    key={completedEntries.length}
+                                    data={completedEntries.map((item, index) => ({
+                                        srno: index + 1,
+                                        id: item.id,
+                                        taskName: item.taskName,
+                                        assignedDate: item.assignedDate,
+                                        dueDate: item.dueDate,
+                                        status: item.status,
+                                        completedBy: item.completedBy,
+                                        completionDate: humanDate(item.completionDate),
+                                        completionTime: humanTime(item.completionDate),
+                                    }))}
+                                    dateColumn={"dueDate"}
+                                    columns={completedColumns}
+                                />
+                            </WidgetSection>
+                        ) : (
+                            <div className="h-72 flex items-center justify-center">
+                                <CircularProgress />
+                            </div>
+                        )}
+                    </div>
+                </PageFrame>
+            </div>
+
+            <MuiModal
+                open={openModal}
+                onClose={() => setOpenModal(false)}
+                title={"Add Daily KRA"}
+            >
+                <form
+                    onSubmit={submitDailyKra(handleFormSubmit)}
+                    className="grid grid-cols-1 lg:grid-cols-1 gap-4"
+                >
+                    <Controller
+                        name="individualDailyKra"
+                        control={control}
+                        rules={{
+                            required: "Daily KRA is required",
+                            validate: {
+                                noOnlyWhitespace,
+                                isAlphanumeric,
+                            },
+                        }}
+                        render={({ field }) => (
+                            <TextField
+                                {...field}
+                                size="small"
+                                label={"Individual Daily KRA"}
+                                fullWidth
+                                error={!!errors?.individualDailyKra?.message}
+                                helperText={errors?.individualDailyKra?.message}
+                            />
+                        )}
+                    />
+
+                    <Controller
+                        name="assignedDate"
+                        control={control}
+                        rules={{ required: "Assigned Date Is Required" }}
+                        render={({ field, fieldState: { error } }) => (
+                            <DatePicker
+                                label="Assigned Date"
+                                disablePast
+                                format="DD-MM-YYYY"
+                                value={field.value ? dayjs(field.value) : null}
+                                onChange={(date) =>
+                                    field.onChange(date ? date.toISOString() : null)
+                                }
+                                slotProps={{
+                                    textField: {
+                                        size: "small",
+                                        fullWidth: true,
+                                        error: !!error,
+                                        helperText: error?.message,
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+
+                    {/* removed assignTo dropdown */}
+                    {/* <Controller
+            name="description"
+            control={control}
+            rules={{ required: "Description is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                label={"Description"}
+                multiline
+                rows={4}
+                fullWidth
+                error={!!errors?.description?.message}
+                helperText={errors?.description?.message}
+              />
+            )}
+          /> */}
+                    <PrimaryButton
+                        type="submit"
+                        title={"Submit"}
+                        isLoading={isAddKraPending}
+                        disabled={isAddKraPending}
+                    />
+                </form>
+            </MuiModal>
+        </>
+    );
+};
+
+export default PerformanceIndividualKra;

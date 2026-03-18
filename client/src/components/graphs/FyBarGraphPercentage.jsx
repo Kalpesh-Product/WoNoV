@@ -43,6 +43,7 @@ const FyBarGraphPercentage = ({
   totalValue,
   chartOptions = {},
   graphTitle = "",
+  tooltipBuilder,
 }) => {
   const fyOptions = useMemo(() => {
     const yearsSet = new Set();
@@ -56,7 +57,7 @@ const FyBarGraphPercentage = ({
   const [selectedFY, setSelectedFY] = useState("");
   useEffect(() => {
     if (fyOptions.length > 0 && !selectedFY) {
-      setSelectedFY(fyOptions[0]);
+      setSelectedFY(fyOptions[fyOptions.length - 1]);
     }
   }, [fyOptions, selectedFY]);
 
@@ -108,8 +109,8 @@ const FyBarGraphPercentage = ({
           typeof totalValue === "function"
             ? totalValue(label)
             : typeof totalValue === "number"
-            ? totalValue
-            : monthlyTotals[label] || 1;
+              ? totalValue
+              : monthlyTotals[label] || 1;
         return parseFloat(((val / total) * 100).toFixed(2));
       });
 
@@ -161,28 +162,44 @@ const FyBarGraphPercentage = ({
       tooltip: {
         shared: false,
         custom: ({ series, dataPointIndex, w }) => {
-          const monthLabel = w.globals.categoryLabels[dataPointIndex];
+          const monthLabel =
+            w?.globals?.categoryLabels?.[dataPointIndex] ||
+            w?.globals?.labels?.[dataPointIndex] ||
+            w?.config?.xaxis?.categories?.[dataPointIndex] ||
+            "N/A";
+
+          if (typeof tooltipBuilder === "function") {
+            return tooltipBuilder({
+              series,
+              dataPointIndex,
+              w,
+              monthLabel,
+              rawDataMap,
+              inrFormat,
+            });
+          }
+
+
           let tooltipHtml = `<div class="apex-tooltip-title">${monthLabel}</div>`;
           let total = 0;
 
           w.globals.seriesNames.forEach((seriesName, i) => {
-            const percentVal = series[i][dataPointIndex];
+            // const percentVal = series[i][dataPointIndex];
             const rawVal = rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
             total += rawVal;
 
             tooltipHtml += `
               <div style="display: flex; justify-content: space-between; gap: 40px;">
-                <span style="color: ${
-                  w.globals.colors[i]
-                }; font-weight: 500;">${seriesName}</span>
+                <span style="color: ${w.globals.colors[i]
+              }; font-weight: 500;">${seriesName}</span>
                 <span>${inrFormat(rawVal)}</span>
               </div>`;
           });
 
           tooltipHtml += `<hr style="margin-top: 6px;"/>
             <div style="text-align: right; font-weight: 600;">Total: INR ${inrFormat(
-              total
-            )}</div>`;
+            total
+          )}</div>`;
 
           return `<div class="apex-tooltip-custom" style="padding : 10px">${tooltipHtml}</div>`;
         },
@@ -191,7 +208,7 @@ const FyBarGraphPercentage = ({
       colors: ["#1E3D73", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
       ...chartOptions,
     };
-  }, [monthsWithLabels, chartOptions, rawDataMap]);
+  }, [monthsWithLabels, chartOptions, rawDataMap, tooltipBuilder]);
 
   if (fyOptions.length === 0) {
     return (

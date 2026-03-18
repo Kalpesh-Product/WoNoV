@@ -89,6 +89,7 @@ export default function ManageUnit() {
   const handleEditClick = (unit) => {
     setModalMode("edit");
     setValue("unitId", unit._id);
+    setValue("sqft", unit.sqft);
     setValue("openDesks", unit.openDesks);
     setValue("cabinDesks", unit.cabinDesks);
     setOpenEdit(true);
@@ -110,6 +111,7 @@ export default function ManageUnit() {
     if (modalMode === "edit") {
       updateUnit({
         unitId: data.unitId,
+        sqft: data.sqft,
         openDesks: data.openDesks,
         cabinDesks: data.cabinDesks,
       });
@@ -170,7 +172,6 @@ export default function ManageUnit() {
     if (modalMode === "edit") {
       unregister("unitName");
       unregister("unitNo");
-      unregister("sqft");
       unregister("buildingId");
     }
   }, [modalMode]);
@@ -321,6 +322,28 @@ export default function ManageUnit() {
               />
             )}
           />
+
+          {modalMode === "edit" && (
+            <Controller
+              control={control}
+              name="sqft"
+              rules={{
+                required: "Sqft is required",
+                min: { value: 0, message: "Sqft must be 0 or more" },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Sqft"
+                  type="number"
+                  fullWidth
+                  size="small"
+                  error={!!errors.sqft}
+                  helperText={errors.sqft?.message}
+                />
+              )}
+            />
+          )}
 
           <PrimaryButton
             disabled={isUpdatePending || isCreatePending}

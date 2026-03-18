@@ -10,7 +10,7 @@ const csvParser = require("csv-parser");
 const createDeptBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
   try {
-    const { task, taskType, department, dueDate, assignedDate, kpaDuration } =
+    const { task, taskType, department, dueDate, assignedDate, kpaDuration, assignTo } =
       req.body;
 
     if (!task || !taskType || !department || !assignedDate) {
@@ -37,7 +37,10 @@ const createDeptBasedTask = async (req, res, next) => {
     const parsedDueDate = dueDate ? new Date(dueDate) : currDate;
     const dueTime = "6:30 PM";
 
-    if (currDate === parsedDueDate && taskType !== "KRA") {
+    const isKraType = ["KRA", "INDIVIDUALKRA", "TEAMKRA"].includes(taskType);
+    const isSameDate = currDate.toDateString() === parsedDueDate.toDateString();
+
+    if (isSameDate && !isKraType) {
       return res.status(400).json({ message: "Task type should be KRA" });
     }
 
@@ -46,8 +49,8 @@ const createDeptBasedTask = async (req, res, next) => {
         ? "Monthly"
         : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
           parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
-        ? "Annually"
-        : "No match";
+          ? "Annually"
+          : "No match";
 
     if (taskType === "KPA" && kpaTypeMatch !== kpaDuration) {
       return res
@@ -63,19 +66,22 @@ const createDeptBasedTask = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid date format provided" });
     }
 
-    const newRoleKraKpa = new kraKpaRole({
+    const assignees = Array.isArray(assignTo) ? assignTo : [assignTo || user];
+
+    const tasksToCreate = assignees.map((assigneeId) => ({
       task,
       assignedBy: user,
       department,
+      assignTo: assigneeId,
       assignedDate: parsedAssignedDate,
-      dueDate: taskType === "KRA" ? currDate : parsedDueDate,
+      dueDate: taskType === "KRA" || taskType === "TEAMKRA" || taskType === "INDIVIDUALKRA" ? currDate : parsedDueDate,
       dueTime,
       taskType,
       kpaDuration,
       company,
-    });
+    }));
 
-    const savedNewRoleKraKpa = await newRoleKraKpa.save();
+    const createdTasks = await kraKpaRole.insertMany(tasksToCreate);
 
     // * Emit notification event for kra/kpa creation *
 
@@ -108,7 +114,7 @@ const createDeptBasedTask = async (req, res, next) => {
 
     return res.status(201).json({
       message: `${taskType} added successfully`,
-      data: savedNewRoleKraKpa,
+      data: createdTasks,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Server Error" });
@@ -213,6 +219,34 @@ const updateTaskStatus = async (req, res, next) => {
   }
 };
 
+const deleteTaskRecurrence = async (req, res, next) => {
+  try {
+    const { taskId } = req.params;
+
+    if (!taskId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(taskId)) {
+      return res.status(400).json({ message: "Invalid task ID provided" });
+    }
+
+    const deletedTask = await kraKpaRole.findByIdAndUpdate(
+      taskId,
+      { isDeleted: true },
+      { new: true }
+    );
+
+    if (!deletedTask) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    return res.status(200).json({ message: "Task recurrence removed" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
@@ -235,12 +269,29 @@ const getKraKpaTasks = async (req, res, next) => {
     const endOfDay = new Date(today.setUTCHours(23, 59, 59, 999));
 
     // query.department = dept;
-    query.taskType = type;
+    if (type === "INDIVIDUALKRA") {
+      query.taskType = { $in: ["INDIVIDUALKRA", "TEAMKRA"] };
+    } else if (type === "INDIVIDUALKPA") {
+      query.taskType = { $in: ["INDIVIDUALKPA", "TEAMKPA"] };
+    } else {
+      query.taskType = type;
+    }
+
+    const { roles, departments: userDepts } = req;
+
+    const isHrOrSuperAdmin =
+      roles.includes("Master Admin") ||
+      roles.includes("Super Admin") ||
+      roles.includes("HR Admin") ||
+      roles.includes("HR Employee");
+
+    const isManager = isHrOrSuperAdmin || userDepts.includes(dept);
 
     const tasks = await kraKpaRole
       .find({
         ...query,
         department: dept,
+        isDeleted: { $ne: true },
         completedDate: {
           $not: {
             $elemMatch: {
@@ -250,12 +301,42 @@ const getKraKpaTasks = async (req, res, next) => {
           },
         },
       })
-      .populate([{ path: "department", select: "name" }])
+      .populate([
+        { path: "department", select: "name" },
+        { path: "assignTo", select: "firstName lastName" }
+      ])
       .select("-company");
 
     const transformedTasks = tasks
       .filter((task) => {
-        return task.taskType === type;
+        // Department KRA/KPA: Everyone in dept sees
+        if (type === "KRA" || type === "KPA") {
+          return task.taskType === type;
+        }
+
+        // Team KRA/KPA: Only managers see
+        if (type === "TEAMKRA" || type === "TEAMKPA") {
+          return task.taskType === type;
+        }
+
+        // Individual KRA/KPA: User sees own (including from Team assignments)
+        if (type === "INDIVIDUALKRA" || type === "INDIVIDUALKPA") {
+          const isOwnTask = task.assignTo?._id.toString() === req.user.toString();
+
+          // If the task type matches exactly (Individual)
+          if (task.taskType === type) {
+            if (isManager) return true;
+            return isOwnTask;
+          }
+
+          // If it's a Team task assigned to this user, show it in their Individual tab
+          const mappedType = type === "INDIVIDUALKRA" ? "TEAMKRA" : "TEAMKPA";
+          if (task.taskType === mappedType) {
+            return isOwnTask;
+          }
+        }
+
+        return false;
       })
       .map((task) => {
         return {
@@ -265,6 +346,8 @@ const getKraKpaTasks = async (req, res, next) => {
           assignedDate: task.assignedDate,
           dueTime: "6:30 PM",
           status: task.status ? task.status : "Pending",
+          assignedTo: task.assignTo ? `${task.assignTo.firstName} ${task.assignTo.lastName}` : "N/A",
+          assignToId: task.assignTo?._id
         };
       });
 
@@ -355,6 +438,7 @@ const getMyKraKpaTasks = async (req, res, next) => {
     const tasks = await kraKpaRole
       .find({
         ...query,
+        isDeleted: { $ne: true },
         completedDate: {
           $not: {
             $elemMatch: {
@@ -446,34 +530,34 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
       completedTasks.length < 0
         ? []
         : completedTasks
-            .filter((task) => {
-              if (duration && duration !== task.task.kpaDuration) return;
-              if (empId && task.completedBy.empId !== empId) return;
+          .filter((task) => {
+            if (!task.task || task.task.isDeleted) return false;
+            if (duration && duration !== task.task.kpaDuration) return;
+            if (empId && task.completedBy.empId !== empId) return;
 
-              return (
-                task.task.department._id.toString() === dept &&
-                task.task.taskType === type
-              );
-            })
-            .map((task) => {
-              const completedBy = `${task.completedBy.firstName} ${
-                task.completedBy.middleName || ""
+            return (
+              task.task.department._id.toString() === dept &&
+              task.task.taskType === type
+            );
+          })
+          .map((task) => {
+            const completedBy = `${task.completedBy.firstName} ${task.completedBy.middleName || ""
               } ${task.completedBy.lastName}`;
 
-              return {
-                id: task._id,
-                taskName: task.task.task,
-                department: task.task.department.name,
-                completedBy: completedBy,
-                assignedDate: task.task.assignedDate,
-                dueDate: task.task.dueDate,
-                dueTime: "6:30 PM",
-                completionDate: task.completionDate
-                  ? task.completionDate
-                  : "N/A",
-                status: task.status,
-              };
-            });
+            return {
+              id: task._id,
+              taskName: task.task.task,
+              department: task.task.department.name,
+              completedBy: completedBy,
+              assignedDate: task.task.assignedDate,
+              dueDate: task.task.dueDate,
+              dueTime: "6:30 PM",
+              completionDate: task.completionDate
+                ? task.completionDate
+                : "N/A",
+              status: task.status,
+            };
+          });
 
     return res.status(200).json(transformedCompletedTasks);
   } catch (error) {
@@ -521,6 +605,10 @@ const getAllDeptTasks = async (req, res, next) => {
         dailyKRA: 0,
         monthlyKPA: 0,
         annualKPA: 0,
+        teamDailyKRA: 0,
+        teamMonthlyKPA: 0,
+        individualDailyKRA: 0,
+        individualMonthlyKPA: 0,
       });
     });
 
@@ -538,6 +626,10 @@ const getAllDeptTasks = async (req, res, next) => {
           dailyKRA: 0,
           monthlyKPA: 0,
           annualKPA: 0,
+          teamDailyKRA: 0,
+          teamMonthlyKPA: 0,
+          individualDailyKRA: 0,
+          individualMonthlyKPA: 0,
         });
       }
 
@@ -548,8 +640,22 @@ const getAllDeptTasks = async (req, res, next) => {
         department.monthlyKPA++;
       if (task.taskType === "KPA" && task.kpaDuration === "Annually")
         department.annualKPA++;
-    });
+      if (task.taskType === "TEAMKRA")
+        department.teamDailyKRA++;
+      if (
+        task.taskType === "TEAMKPA" && task.kpaDuration === "Monthly")
+        department.teamMonthlyKPA++;
 
+      if (task.taskType === "INDIVIDUALKRA" || task.taskType === "TEAMKRA") 
+        {
+         department.individualDailyKRA++;
+        }
+      if ((task.taskType === "INDIVIDUALKPA" || task.taskType === "TEAMKPA") && task.kpaDuration === "Monthly") 
+        {
+         department.individualMonthlyKPA++;
+        }
+    });
+    
     const result = Array.from(departmentMap.values());
 
     return res.status(200).json(result);
@@ -592,9 +698,8 @@ const getAllKpaTasks = async (req, res, next) => {
       if (task.task.taskType !== "KPA") return;
 
       const departmentName = task.task.department.name;
-      const assignee = `${task.completedBy.firstName} ${
-        task.completedBy.middleName || ""
-      } ${task.completedBy.lastName}`.trim();
+      const assignee = `${task.completedBy.firstName} ${task.completedBy.middleName || ""
+        } ${task.completedBy.lastName}`.trim();
 
       const transformedTask = {
         taskName: task.task.task,
@@ -718,6 +823,7 @@ module.exports = {
   getMyKraKpaTasks,
   getAllDeptTasks,
   updateTaskStatus,
+  deleteTaskRecurrence,
   getCompletedKraKpaTasks,
   bulkInsertKraKpaTasks,
 };

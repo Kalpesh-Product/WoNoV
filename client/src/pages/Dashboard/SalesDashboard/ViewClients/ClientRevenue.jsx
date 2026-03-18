@@ -11,15 +11,17 @@ import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import humanDate from "../../../../utils/humanDateForamt";
 
+
 const ClientRevenue = () => {
   const selectedClient = useSelector((state) => state?.client?.selectedClient);
   const [openModal, setOpenModal] = useState(false);
   const [clientDetails, setClientDetails] = useState(null);
   const axios = useAxiosPrivate();
+  const getValueOrNA = (value) => value ?? "N/A";
 
   const { data: revenueDetails = [], isPending: isRevenuePending } = useQuery({
     queryKey: ["clientRevenue", selectedClient?._id],
-    enabled: !!selectedClient?._id, // Only run query if client is selected
+    enabled: !!selectedClient?._id,
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -50,7 +52,7 @@ const ClientRevenue = () => {
           }}
           className="text-primary underline cursor-pointer"
         >
-          {params?.value || "N/A"}
+          {params?.value ?? selectedClient?.clientName ?? "N/A"}
         </span>
       ),
     },
@@ -69,7 +71,7 @@ const ClientRevenue = () => {
       field: "totalTerm",
       headerName: "Total Term (Months)",
       flex: 1,
-      valueGetter: (params) => params?.data?.totalTerm || "N/A",
+      valueGetter: (params) => getValueOrNA(params?.data?.totalTerm),
     },
     {
       field: "rentStatus",
@@ -98,11 +100,15 @@ const ClientRevenue = () => {
   const tableData = isRevenuePending
     ? []
     : Array.isArray(revenueDetails)
-    ? revenueDetails.map((item, index) => ({
+      ? revenueDetails.map((item, index) => ({
         ...item,
+        clientName:
+          item?.clientName ?? item?.clients?.clientName ?? selectedClient?.clientName,
         srNo: index + 1,
       }))
-    : [];
+      : [];
+
+
 
   return (
     <div className="w-full">
@@ -179,7 +185,7 @@ const ClientRevenue = () => {
               />
               <DetalisFormatted
                 title="Total Term (Months)"
-                detail={clientDetails?.totalTerm || "N/A"}
+                detail={getValueOrNA(clientDetails?.totalTerm)}
               />
               <DetalisFormatted
                 title="Next Increment Date"

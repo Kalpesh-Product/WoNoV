@@ -64,7 +64,7 @@ const TicketDashboard = () => {
 
   const roles = auth.user.role.map((role) => role.roleTitle);
   const depts = auth.user.departments.map((dept) => dept.name);
-  const [timeFilter, setTimeFilter] = useState("Yearly");
+  const [timeFilter, setTimeFilter] = useState("Monthly");
   const [filteredTotal, setFilteredTotal] = useState(0);
   const [dateLabel, setDateLabel] = useState("");
 
@@ -98,10 +98,31 @@ const TicketDashboard = () => {
 
   const todayDate = dayjs().startOf("day");
 
+  const currentUserId = auth.user?._id?.toString();
+
+  const isAssignedToCurrentUser = (ticket) => {
+    if (!currentUserId || !Array.isArray(ticket?.assignees)) return false;
+
+    return ticket.assignees.some((assignee) => {
+      const assigneeId =
+        typeof assignee === "string"
+          ? assignee
+          : assignee?._id || assignee?.id;
+
+      return assigneeId?.toString() === currentUserId;
+    });
+  };
+
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => {
       return (
         item.status === "Open" && dayjs(item.createdAt).isSame(todayDate, "day")
+      );
+    }).length,
+
+    rejectedTickets: ticketsData.filter((item) => {
+      return (
+        item.status === "Rejected" && dayjs(item.createdAt).isSame(todayDate, "day")
       );
     }).length,
 
@@ -126,7 +147,7 @@ const TicketDashboard = () => {
 
     assignedTickets: ticketsData.filter(
       (item) =>
-        item.assignees?.length > 0 &&
+        isAssignedToCurrentUser(item) &&
         dayjs(item?.assignedAt).isSame(todayDate, "day")
     ).length,
 
@@ -171,8 +192,8 @@ const TicketDashboard = () => {
   } else {
     masterDepartments = !departmentsIsLoading
       ? departments
-          .filter((dept) => depts.includes(dept.name))
-          .map((dept) => dept.name)
+        .filter((dept) => depts.includes(dept.name))
+        .map((dept) => dept.name)
       : [];
   }
 
@@ -526,7 +547,7 @@ const TicketDashboard = () => {
             series={item.series}
             tooltipValue={item.tooltipValue}
             onSliceClick={item.onSliceClick}
-            // isMonetary={item.isMonetary}
+          // isMonetary={item.isMonetary}
           />
         </WidgetSection>
       )),

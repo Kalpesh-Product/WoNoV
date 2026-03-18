@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 const OverallProfitLoss = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();;
-  const [selectedFY, setSelectedFY] = useState("FY 2024-25");
+  const [selectedFY, setSelectedFY] = useState("FY 2025-26");
   const [dynamicIncome, setDynamicIncome] = useState("0");
   const [dynamicExpense, setDynamicExpense] = useState("0");
 
@@ -55,8 +55,7 @@ const OverallProfitLoss = () => {
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const monthWiseExpenses = {};
   const yearCategories = {
-    "FY 2024-25": [
-      "Apr-24",
+    "FY 2024-25": [      "Apr-24",
       "May-24",
       "Jun-24",
       "Jul-24",
@@ -166,7 +165,7 @@ const OverallProfitLoss = () => {
   );
 
   const lastMonthRawIncome = incomeData.filter(
-    (item) => item.group === "FY 2024-25"
+    (item) => item.group === "FY 2025-26"
   );
   const lastMonthDataIncome = lastMonthRawIncome.map(
     (item) => item.data[item.data.length - 1]
@@ -390,7 +389,7 @@ const OverallProfitLoss = () => {
   };
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
-  const monthlyProfitLossData = yearCategories["FY 2024-25"].map(
+  const monthlyProfitLossData = yearCategories["FY 2025-26"].map(
     (month, index) => {
       const income = incomeMap[month] || 0;
       const expense = expenseMap[month] || 0;
@@ -448,7 +447,7 @@ const OverallProfitLoss = () => {
           <WidgetSection
             border
             TitleAmount={`P&L :  INR ${inrFormat(totalPnL)}`}
-            titleLabel={"FY 2024-25"}
+            titleLabel={"FY 2025-26"}
             title={`Total Monthly P&L`}
           >
             <AgTable
@@ -499,3 +498,7 @@ const OverallProfitLoss = () => {
 };
 
 export default OverallProfitLoss;
+
+
+
+

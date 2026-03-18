@@ -5,6 +5,10 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const {
+  normalizeClientName,
+  normalizeAmount,
+} = require("../../utils/dataSheetFormatters");
 
 const addRevenue = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -40,7 +44,7 @@ const addRevenue = async (req, res, next) => {
         "All fields are required.",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -53,7 +57,7 @@ const addRevenue = async (req, res, next) => {
         "CoworkingClient not found.",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -62,7 +66,7 @@ const addRevenue = async (req, res, next) => {
         "Service not found.",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -116,7 +120,7 @@ const addRevenue = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -206,10 +210,14 @@ const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
 
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
     const revenues = [];
+    let skippedClients = [];
 
     const coworkingClients = await CoworkingClient.find({ company }).lean();
     const clientMap = new Map(
-      coworkingClients.map((client) => [client.clientName.trim(), client._id])
+      coworkingClients.map((client) => [
+        normalizeClientName(client.clientName),
+        client._id,
+      ]),
     );
 
     stream
@@ -230,16 +238,17 @@ const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
           "Next Increment Date": nextIncrementDate,
         } = row;
 
-        const clientId = clientMap.get(clientName?.trim());
+        const clientId = clientMap.get(normalizeClientName(clientName));
 
         if (!clientId) {
           console.warn(`Skipping row: Client "${clientName}" not found`);
+          skippedClients.push(clientName);
           return;
         }
 
-        const parsedRevenue = parseFloat(revenue) || 0;
+        const parsedRevenue = normalizeAmount(revenue);
+        const parsedRate = normalizeAmount(deskRate);
         const parsedDesks = parseInt(noOfDesks) || 0;
-        const parsedRate = parseFloat(deskRate) || 0;
         const parsedTotalTerm = parseInt(totalTerm) || 0;
 
         const revenueEntry = {
@@ -252,7 +261,7 @@ const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
           totalTerm: parsedTotalTerm,
           dueTerm: 0, // Optional: You can derive logic here if needed
           rentDate: rentDate ? new Date(rentDate) : null,
-          rentStatus: rentStatus?.trim(),
+          rentStatus: rentStatus?.trim().toLowerCase(),
           pastDueDate: pastDueDate ? new Date(pastDueDate) : null,
           annualIncrement: isNaN(parseFloat(annualIncrement))
             ? null
@@ -277,6 +286,7 @@ const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
 
           res.status(201).json({
             message: `${revenues.length} revenue records inserted successfully`,
+            skippedClients,
           });
         } catch (err) {
           next(err);

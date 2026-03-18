@@ -14,6 +14,7 @@ const {
 const sharp = require("sharp");
 const ClientService = require("../../models/sales/ClientService");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+const TestCoworkingClient = require("../../models/sales/TestCoworkingClient");
 
 const createCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -26,7 +27,7 @@ const createCoworkingClient = async (req, res, next) => {
       clientName,
       email,
       phone,
-      service,
+      brandName,
       sector,
       hoCity,
       hoState,
@@ -49,6 +50,8 @@ const createCoworkingClient = async (req, res, next) => {
       hOPocName,
       hOPocEmail,
       hOPocPhone,
+      bookingType,
+      clientInvoiceName,
     } = req.body;
 
     const clientExists = await CoworkingClient.findOne({ clientName });
@@ -57,7 +60,7 @@ const createCoworkingClient = async (req, res, next) => {
         "CoworkingClient already exists",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -66,7 +69,7 @@ const createCoworkingClient = async (req, res, next) => {
         "Invalid unit ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
     const unitExists = await Unit.findOne({ _id: unit });
@@ -75,35 +78,25 @@ const createCoworkingClient = async (req, res, next) => {
         "Unit doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
-    if (!mongoose.Types.ObjectId.isValid(service)) {
-      throw new CustomError(
-        "Invalid service ID provided",
-        logPath,
-        logAction,
-        logSourceKey
-      );
-    }
-
-    const coworkingService = await ClientService.findOne({ _id: service });
+    const coworkingService = await ClientService.findOne({
+      serviceName: "Co-working",
+    });
 
     if (!coworkingService) {
       throw new CustomError(
-        "Provide co-working service ID",
+        "Coworking service doesn't exists",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     if (
       !clientName ||
-      !email ||
-      !phone ||
-      !service ||
       !sector ||
       !hoCity ||
       !hoState ||
@@ -126,8 +119,14 @@ const createCoworkingClient = async (req, res, next) => {
         "All required fields must be provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
+    }
+
+    const parsedRentDate = new Date(rentDate);
+
+    if (isNaN(parsedRentDate.getTime())) {
+      return res.status(400).json({ message: "Invalid rent date" });
     }
 
     const bookedDesks = cabinDesks + openDesks;
@@ -141,7 +140,7 @@ const createCoworkingClient = async (req, res, next) => {
         "Invalid numerical values",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -150,7 +149,7 @@ const createCoworkingClient = async (req, res, next) => {
         "Start date must be before end date",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -159,7 +158,8 @@ const createCoworkingClient = async (req, res, next) => {
       clientName,
       email,
       phone,
-      service,
+      brandName,
+      service: coworkingService._id,
       sector,
       hoCity,
       hoState,
@@ -175,7 +175,7 @@ const createCoworkingClient = async (req, res, next) => {
       startDate,
       endDate,
       lockinPeriod,
-      rentDate,
+      rentDate: parsedRentDate,
       nextIncrement,
       hOPoc: {
         name: hOPocName,
@@ -187,6 +187,8 @@ const createCoworkingClient = async (req, res, next) => {
         email: localPocEmail,
         phone: localPocPhone,
       },
+      bookingType,
+      clientInvoiceName,
     });
 
     const totalDesks = unitExists.cabinDesks + unitExists.openDesks;
@@ -213,7 +215,7 @@ const createCoworkingClient = async (req, res, next) => {
         {
           bookedDesks: totalBookedDesks,
           availableDesks: totalDesks - totalBookedDesks,
-        }
+        },
       );
     } else {
       const booking = new Desk({
@@ -227,27 +229,7 @@ const createCoworkingClient = async (req, res, next) => {
       newbooking = await booking.save();
     }
 
-    const savedClient = await client.save();
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "CoworkingClient onboarded successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: savedClient._id,
-      changes: {
-        client: savedClient,
-        desks: {
-          deskId: newbooking ? newbooking._id : bookingExists._id,
-          unit,
-          bookedDesks,
-          availableDesks,
-        },
-      },
-    });
+    await client.save();
 
     return res
       .status(201)
@@ -257,7 +239,7 @@ const createCoworkingClient = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -266,7 +248,7 @@ const createCoworkingClient = async (req, res, next) => {
 const getCoworkingClients = async (req, res, next) => {
   try {
     const { company } = req;
-    const { coworkingclientid, unitId } = req.query;
+    const { coworkingclientid, unitId, active } = req.query;
 
     if (
       coworkingclientid &&
@@ -294,6 +276,8 @@ const getCoworkingClients = async (req, res, next) => {
       query = { _id: coworkingclientid };
     } else if (unitId) {
       query.unit = unitId;
+    } else if (active) {
+      query.isActive = active === "true" ? true : false;
     }
 
     const populateOptions = [
@@ -327,8 +311,13 @@ const getCoworkingClients = async (req, res, next) => {
     const clientsWithMembers = clients.map((client) => {
       return {
         ...client,
+        // members: members.filter(
+        //   (member) => member?.client._id.toString() === client?._id.toString(),
+        // ),
         members: members.filter(
-          (member) => member?.client._id.toString() === client?._id.toString()
+          (member) =>
+            member.client &&
+            member.client._id.toString() === client._id.toString(),
         ),
       };
     });
@@ -361,23 +350,333 @@ const getCoworkingClientRevenues = async (req, res, next) => {
 };
 
 const updateCoworkingClient = async (req, res, next) => {
+  const logPath = "sales/SalesLog";
+  const logAction = "Edit CoworkingClient";
+  const logSourceKey = "client";
+
+  const { user, ip, company } = req;
+
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid client ID format" });
+    const { clientId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      throw new CustomError(
+        "Invalid client ID",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
     }
-    const client = await CoworkingClient.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    }).populate("company unit");
-    if (!client) {
-      return res.status(404).json({ message: "CoworkingClient not found" });
+
+    const existingClient = await CoworkingClient.findOne({
+      _id: clientId,
+      company,
+    });
+
+    if (!existingClient) {
+      throw new CustomError(
+        "Client not found",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
     }
-    res
-      .status(200)
-      .json({ message: "CoworkingClient updated successfully", client });
+
+    if (typeof req.body.isActive === "boolean" && req.body.isActive === false) {
+      const updateClientMembers = await CoworkingMembers.updateMany(
+        {
+          client: clientId,
+        },
+        {
+          isActive: req.body.isActive,
+        },
+      );
+
+      if (!updateClientMembers) {
+        return res.status(400).json({ messages: "Client members not found" });
+      }
+    }
+
+    const {
+      clientName,
+      service,
+      unit,
+      cabinDesks = 0,
+      openDesks = 0,
+      ratePerOpenDesk,
+      ratePerCabinDesk,
+      annualIncrement,
+      startDate,
+      endDate,
+      hOPocName,
+      hOPocEmail,
+      hOPocPhone,
+      localPocName,
+      localPocEmail,
+      localPocPhone,
+      clientInvoiceName,
+      bookingType,
+      isActive,
+    } = req.body;
+
+    // ✅ Duplicate name check (excluding self)
+    if (clientName) {
+      const nameExists = await CoworkingClient.findOne({
+        clientName,
+        _id: { $ne: clientId },
+      });
+
+      if (nameExists) {
+        throw new CustomError(
+          "Client with this name already exists",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
+    // ✅ Validate unit if changed
+    if (unit) {
+      if (!mongoose.Types.ObjectId.isValid(unit)) {
+        throw new CustomError(
+          "Invalid unit ID",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      const unitExists = await Unit.findById(unit);
+      if (!unitExists) {
+        throw new CustomError(
+          "Unit doesn't exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
+    // ✅ Validate service if changed
+    if (service) {
+      if (!mongoose.Types.ObjectId.isValid(service)) {
+        throw new CustomError(
+          "Invalid service ID",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      const serviceExists = await ClientService.findById(service);
+      if (!serviceExists) {
+        throw new CustomError(
+          "Service doesn't exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
+    // ✅ Numeric validations
+    const newBookedDesks = Number(cabinDesks) + Number(openDesks);
+
+    if (
+      req.body.ratePerOpenDesk !== undefined &&
+      typeof req.body.ratePerOpenDesk !== "number"
+    ) {
+      return res.status(400).json({ message: "Invalid ratePerOpenDesk" });
+    }
+
+    if (
+      req.body.ratePerCabinDesk !== undefined &&
+      typeof req.body.ratePerCabinDesk !== "number"
+    ) {
+      return res.status(400).json({ message: "Invalid ratePerCabinDesk" });
+    }
+
+    if (
+      req.body.annualIncrement !== undefined &&
+      req.body.annualIncrement < 0
+    ) {
+      return res.status(400).json({ message: "Invalid annualIncrement" });
+    }
+
+    if (req.body.rentDate) {
+      const parsedRentDate = new Date(req.body.rentDate);
+      req.body.rentDate = parsedRentDate;
+
+      if (isNaN(parsedRentDate.getTime())) {
+        console.log("error on rent date");
+        return res.status(400).json({ message: "Invalid rent date" });
+      }
+    }
+
+    if (req.body.startDate && req.body.endDate) {
+      if (new Date(req.body.startDate) >= new Date(req.body.endDate)) {
+        return res.status(400).json({
+          message: "Start date must be before end date",
+        });
+      }
+    }
+
+    // 🔥 DESK ADJUSTMENT LOGIC
+    const oldBookedDesks = existingClient.totalDesks;
+    const deskDifference = newBookedDesks - oldBookedDesks;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    const startOfMonth = new Date(year, month, 1);
+    const endOfMonth = new Date(year, month + 1, 1);
+
+    const deskRecord = await Desk.findOne({
+      unit: unit || existingClient.unit,
+      month: { $gte: startOfMonth, $lt: endOfMonth },
+    });
+
+    if (deskRecord) {
+      const updatedBooked = deskRecord.bookedDesks + deskDifference;
+
+      if (updatedBooked < 0) {
+        throw new CustomError(
+          "Desk calculation error",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      deskRecord.bookedDesks = updatedBooked;
+      deskRecord.availableDesks = deskRecord.availableDesks - deskDifference;
+
+      await deskRecord.save();
+    }
+
+    // ✅ Whitelist update
+    const allowedFields = [
+      "clientName",
+      "email",
+      "phone",
+      "service",
+      "sector",
+      "hoCity",
+      "hoState",
+      "unit",
+      "cabinDesks",
+      "openDesks",
+      "ratePerOpenDesk",
+      "ratePerCabinDesk",
+      "annualIncrement",
+      "perDeskMeetingCredits",
+      "totalMeetingCredits",
+      "startDate",
+      "endDate",
+      "lockinPeriod",
+      "rentDate",
+      "nextIncrement",
+      "clientInvoiceName",
+      "bookingType",
+      "isActive",
+    ];
+
+    const updateData = {};
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+
+    updateData.totalDesks = newBookedDesks;
+
+    // nested POCs
+    updateData.hOPoc = {
+      name: hOPocName,
+      email: hOPocEmail,
+      phone: hOPocPhone,
+    };
+
+    updateData.localPoc = {
+      name: localPocName,
+      email: localPocEmail,
+      phone: localPocPhone,
+    };
+
+    const oldState = existingClient.toObject();
+
+    existingClient.set(updateData);
+
+    console.log("existingClient", existingClient);
+    await existingClient.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "CoworkingClient updated successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: existingClient._id,
+      changes: {
+        before: oldState,
+        after: existingClient,
+        deskAdjustment: deskDifference,
+      },
+    });
+
+    return res.status(200).json({
+      message: "CoworkingClient updated successfully",
+    });
   } catch (error) {
-    next(error);
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+      );
+    }
+  }
+};
+
+const updateClientStatus = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    const { isActive } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      return res.status(400).json({ message: "Invalid client ID" });
+    }
+
+    if (typeof isActive !== "boolean") {
+      return res.status(400).json({
+        message: "isActive must be true or false",
+      });
+    }
+
+    const client = await CoworkingClient.findById(clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    client.isActive = isActive;
+    await client.save();
+
+    return res.status(200).json({
+      message: `Client marked as ${isActive ? "Active" : "Inactive"}`,
+      data: client,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+    });
   }
 };
 
@@ -390,7 +689,7 @@ const deleteCoworkingClient = async (req, res, next) => {
     const client = await CoworkingClient.findByIdAndUpdate(
       id,
       { isActive: false },
-      { new: true }
+      { new: true },
     );
     if (!client) {
       return res.status(404).json({ message: "CoworkingClient not found" });
@@ -412,39 +711,292 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
       return res.status(400).json({ message: "Please provide a CSV file" });
     }
 
-    // Fetch all units for the company and map them by unit number
-    const units = await Unit.find({ company })
-      .populate([{ path: "building", select: "buildingName" }])
-      .lean()
-      .exec();
-
+    // Fetch units
+    const units = await Unit.find({ company }).lean().exec();
     const unitMap = new Map(units.map((unit) => [unit.unitNo, unit._id]));
 
-    // Convert file buffer to readable stream
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
     const getClientService = await ClientService.findOne({
       serviceName: "Co-working",
       company,
-    })
+    }).lean();
+
+    let coWorkingClients = [];
+    let unitNotFound = [];
+
+    stream
+      .pipe(csvParser())
+      // .on("data", (row) => {
+      //   const { "Client Name": clientName, Unit: unitNo } = row;
+
+      //   if (!clientName) return; // skip empty rows
+
+      //   let unitId = null;
+
+      //   // Unit is OPTIONAL
+      //   if (unitNo) {
+      //     unitId = unitMap.get(unitNo);
+
+      //     if (!unitId) {
+      //       unitNotFound.push({
+      //         clientName,
+      //         unitNo,
+      //         reason: "Unit not found",
+      //       });
+      //       return;
+      //     }
+      //   }
+
+      //   const newClientObj = {
+      //     company,
+      //     clientName: clientName.trim(),
+      //     service: getClientService?._id,
+      //     isActive: true,
+      //   };
+
+      //   if (unitId) {
+      //     newClientObj.unit = unitId;
+      //   }
+
+      //   coWorkingClients.push(newClientObj);
+      // })
+
+      .on("data", (row) => {
+        const { "Client Name": clientName, Unit: unitNo } = row;
+
+        if (!clientName) return;
+
+        let unitId = null;
+
+        if (unitNo) {
+          unitId = unitMap.get(unitNo);
+
+          if (!unitId) {
+            unitNotFound.push({
+              clientName,
+              unitNo,
+              reason: "Unit not found",
+            });
+            return;
+          }
+        }
+
+        const newClientObj = {
+          company,
+          service: getClientService?._id,
+
+          clientName: row["Client Name"]?.trim(),
+          clientInvoiceName: row["Client Invoice Name"]?.trim(),
+
+          email: row["Email"]?.trim().toLowerCase(),
+          bookingType: row["Booking Type"]?.trim(),
+          phone: row["Phone"]?.trim(),
+
+          sector: row["Sector"]?.trim(),
+          hoCity: row["HO City"]?.trim(),
+          hoState: row["HO State"]?.trim(),
+
+          cabinDesks: Number(row["Cabin Desks"]) || 0,
+          openDesks: Number(row["Open Desks"]) || 0,
+          totalDesks: Number(row["Total Desks"]) || 0,
+
+          ratePerOpenDesk: Number(row["Rate Per Open Desk"]) || undefined,
+          ratePerCabinDesk: Number(row["Rate Per Cabin Desk"]) || undefined,
+
+          annualIncrement: Number(row["Annual Increment"]) || undefined,
+
+          perDeskMeetingCredits: Number(row["Per Desk Meeting Credits"]) || 0,
+          totalMeetingCredits: Number(row["Total Meeting Credits"]) || 0,
+          meetingCreditBalance: Number(row["Meeting Credit Balance"]) || 0,
+
+          startDate: row["Start Date"]
+            ? new Date(row["Start Date"])
+            : undefined,
+          endDate: row["End Date"] ? new Date(row["End Date"]) : undefined,
+
+          lockinPeriod: Number(row["Lockin Period"]) || undefined,
+
+          rentDate: row["Rent Date"]?.trim() || undefined,
+          nextIncrement: row["Next Increment"]
+            ? new Date(row["Next Increment"])
+            : undefined,
+
+          goaLead: {
+            name: row["Goa Lead Name"]?.trim(),
+            email: row["Goa Lead Email"]?.trim(),
+            phone: row["Goa Lead Phone"]?.trim(),
+          },
+
+          localPoc: {
+            name: row["Local POC Name"]?.trim(),
+            email: row["Local POC Email"]?.trim(),
+            phone: row["Local POC Phone"]?.trim(),
+          },
+
+          hOPoc: {
+            name: row["HO POC Name"]?.trim(),
+            email: row["HO POC Email"]?.trim(),
+            phone: row["HO POC Phone"]?.trim(),
+          },
+
+          isActive: true,
+        };
+
+        if (unitId) {
+          newClientObj.unit = unitId;
+        }
+
+        if (!newClientObj.clientName) return;
+        coWorkingClients.push(newClientObj);
+      })
+      .on("end", async () => {
+        try {
+          if (coWorkingClients.length === 0) {
+            return res.status(400).json({
+              message: "No valid clients found in the file",
+              unitNotFound,
+            });
+          }
+
+          // ----------------------------
+          // 1️⃣ Remove CSV duplicates
+          // ----------------------------
+          const uniqueMap = new Map();
+          const csvDuplicates = [];
+
+          coWorkingClients.forEach((client) => {
+            const key = `${client.clientName}_${client.unit?.toString() || "NO_UNIT"}`;
+
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, client);
+            } else {
+              csvDuplicates.push({
+                clientName: client.clientName,
+                unit: client.unit || null,
+                reason: "Duplicate in CSV",
+              });
+            }
+          });
+
+          const uniqueClients = Array.from(uniqueMap.values());
+
+          // ----------------------------
+          // 2️⃣ Fetch ALL possible matches from DB
+          // ----------------------------
+          const existingClients = await CoworkingClient.find({
+            company,
+            clientName: { $in: uniqueClients.map((c) => c.clientName) },
+          })
+            .select("clientName unit")
+            .lean();
+
+          const existingSet = new Set(
+            existingClients.map(
+              (c) => `${c.clientName}_${c.unit?.toString() || "NO_UNIT"}`,
+            ),
+          );
+
+          // ----------------------------
+          // 3️⃣ Filter DB duplicates
+          // ----------------------------
+          const dbDuplicates = [];
+
+          const finalClients = uniqueClients.filter((client) => {
+            const key = `${client.clientName}_${client.unit?.toString() || "NO_UNIT"}`;
+
+            if (existingSet.has(key)) {
+              dbDuplicates.push({
+                clientName: client.clientName,
+                unit: client.unit || null,
+                reason: "Already exists in database",
+              });
+              return false;
+            }
+
+            return true;
+          });
+
+          // ----------------------------
+          // 4️⃣ Insert Remaining
+          // ----------------------------
+
+          if (finalClients.length > 0) {
+            await CoworkingClient.insertMany(finalClients);
+          }
+
+          return res.status(201).json({
+            message: `${finalClients.length} clients inserted successfully`,
+            insertedCount: finalClients.length,
+            skippedCount:
+              unitNotFound.length + csvDuplicates.length + dbDuplicates.length,
+            unitNotFound,
+            csvDuplicates,
+            dbDuplicates,
+          });
+        } catch (err) {
+          next(err);
+        }
+      })
+
+      .on("error", (error) => {
+        next(error);
+      });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const bulkUpdateCoworkingClients = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const company = req.company;
+
+    if (!file) {
+      return res.status(400).json({ message: "Please provide a CSV file" });
+    }
+
+    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+    // ---- 1) Load existing clients (to match and update) ----
+    const existingClients = await CoworkingClient.find({ company })
+      .select("_id clientName")
       .lean()
       .exec();
 
-    let coWorkingClients = [];
+    const existingClientMap = new Map(
+      existingClients.map((c) => [normalizeClientName(c.clientName), c._id]),
+    );
+
+    // ---- 2) Units map (Unit No -> ObjectId) ----
+    const units = await Unit.find({ company })
+      .select("_id unitNo")
+      .lean()
+      .exec();
+    const unitMap = new Map(units.map((u) => [`${u.unitNo}`.trim(), u._id]));
+
+    const updates = [];
+    const notFoundClients = [];
+    const unknownUnits = [];
 
     stream
       .pipe(csvParser())
       .on("data", (row) => {
+        // Adjust these headers to exactly match your CSV template
         const {
           "Client Name": clientName,
-          "Client Invoice Name": clientInvoiceName,
-          Sector: sector,
+          "Invoice Name": clientInvoiceName,
+          Email: email,
+          Phone: phone,
           "Booking Type": bookingType,
+          Sector: sector,
           "HO City": hoCity,
           "HO State": hoState,
-          Unit: unitNo,
+          "Unit No": unitNo,
           "Cabin Desks": cabinDesks,
           "Open Desks": openDesks,
-          "Rate Per Desk": ratePerDesk,
+          "Rate Per Cabin Desk": ratePerCabinDesk,
+          "Rate Per Open Desk": ratePerOpenDesk,
           "Annual Increment": annualIncrement,
           "Per Desk Meeting Credits": perDeskMeetingCredits,
           "Start Date": startDate,
@@ -452,89 +1004,185 @@ const bulkInsertCoworkingClients = async (req, res, next) => {
           "Lockin Period": lockinPeriod,
           "Rent Date": rentDate,
           "Next Increment": nextIncrement,
-          "Local POC Name": localPocName,
-          "Local POC Email": localPocEmail,
-          "Local POC Mobile": localPocPhone,
-          "HO POC Name": hoPocName,
-          "HO POC Email": hoPocEmail,
-          "HO POC Mobile": hoPocPhone,
+          Active: isActive,
         } = row;
 
-        const unitId = unitMap.get(unitNo);
-        if (!unitId) {
-          console.warn(`Unit not found for unitNo: ${unitNo}`);
+        if (!clientName || String(clientName).trim() === "") return;
+
+        const key = normalizeClientName(clientName);
+        const clientId = existingClientMap.get(key);
+
+        if (!clientId) {
+          notFoundClients.push({
+            clientName,
+            reason: "Client not found in DB",
+          });
           return;
         }
 
-        const parsedCabinDesks = parseInt(cabinDesks) || 0;
-        const parsedOpenDesks = parseInt(openDesks) || 0;
-        const totalDesks = parsedCabinDesks + parsedOpenDesks;
-        const parsedMeetingCredits = parseInt(perDeskMeetingCredits) || 0;
-        const totalMeetingCredits = totalDesks * parsedMeetingCredits;
-        const parsedAnnualIncrement = parseFloat(annualIncrement) || 0;
-        const parsedLockinPeriod = parseInt(lockinPeriod) || 0;
+        // Unit mapping if provided
+        let unitId;
+        if (unitNo && String(unitNo).trim() !== "") {
+          unitId = unitMap.get(String(unitNo).trim());
+          if (!unitId) {
+            unknownUnits.push({ clientName, unitNo, reason: "Unit not found" });
+            return;
+          }
+        }
 
-        const parsedStartDate = startDate ? new Date(startDate) : null;
-        const parsedEndDate = endDate ? new Date(endDate) : null;
-
-        const newClientObj = {
-          company,
-          clientName,
-          clientInvoiceName,
-          sector,
-          bookingType,
-          hoCity,
-          service: getClientService._id,
-          hoState,
-          unit: unitId,
-          cabinDesks: parsedCabinDesks,
-          openDesks: parsedOpenDesks,
-          totalDesks,
-          ratePerCabinDesk: ratePerDesk,
-          ratePerOpenDesk: ratePerDesk,
-          annualIncrement: parsedAnnualIncrement,
-          perDeskMeetingCredits: parsedMeetingCredits,
-          totalMeetingCredits,
-          startDate: parsedStartDate,
-          endDate: parsedEndDate,
-          lockinPeriod: parsedLockinPeriod,
-          rentDate,
-          nextIncrement,
-          localPoc: {
-            name: localPocName,
-            email: localPocEmail,
-            phone: localPocPhone,
-          },
-          hOPoc: {
-            name: hoPocName,
-            email: hoPocEmail,
-            phone: hoPocPhone,
-          },
-          isActive: true,
+        // Helper parsers
+        const toNum = (v) => {
+          if (v === undefined || v === null) return undefined;
+          const s = String(v).trim();
+          if (!s) return undefined;
+          // removes commas/currency/etc, keeps digits, dot, minus
+          const cleaned = s.replace(/[^0-9.-]/g, "");
+          if (!cleaned) return undefined;
+          const n = Number(cleaned);
+          return Number.isFinite(n) ? n : undefined;
         };
 
-        coWorkingClients.push(newClientObj);
+        const toDate = (v) => {
+          if (!v) return undefined;
+          const d = new Date(v);
+          return Number.isNaN(d.getTime()) ? undefined : d;
+        };
+
+        const toBool = (v) => {
+          if (v === undefined || v === null) return undefined;
+          const s = String(v).trim().toLowerCase();
+          if (s === "true" || s === "yes" || s === "1") return true;
+          if (s === "false" || s === "no" || s === "0") return false;
+          return undefined;
+        };
+
+        // Build $set only for provided fields
+        const $set = {};
+
+        if (clientInvoiceName?.trim())
+          $set.clientInvoiceName = clientInvoiceName.trim();
+        if (email?.trim()) $set.email = email.trim().toLowerCase();
+        if (phone?.trim()) $set.phone = phone.trim();
+        if (bookingType?.trim()) $set.bookingType = bookingType.trim();
+        if (sector?.trim()) $set.sector = sector.trim();
+        if (hoCity?.trim()) $set.hoCity = hoCity.trim();
+        if (hoState?.trim()) $set.hoState = hoState.trim();
+        if (unitId) $set.unit = unitId;
+
+        const cabinDesksN = toNum(cabinDesks);
+        const openDesksN = toNum(openDesks);
+        const rateCabinN = toNum(ratePerCabinDesk);
+        const rateOpenN = toNum(ratePerOpenDesk);
+        const annualIncN = toNum(annualIncrement);
+        const perDeskCreditsN = toNum(perDeskMeetingCredits);
+        const lockinN = toNum(lockinPeriod);
+
+        if (cabinDesksN !== undefined) $set.cabinDesks = cabinDesksN;
+        if (openDesksN !== undefined) $set.openDesks = openDesksN;
+        if (rateCabinN !== undefined) $set.ratePerCabinDesk = rateCabinN;
+        if (rateOpenN !== undefined) $set.ratePerOpenDesk = rateOpenN;
+        if (annualIncN !== undefined) $set.annualIncrement = annualIncN;
+        if (perDeskCreditsN !== undefined)
+          $set.perDeskMeetingCredits = perDeskCreditsN;
+        if (lockinN !== undefined) $set.lockinPeriod = lockinN;
+
+        // Dates
+        const startD = toDate(startDate);
+        const endD = toDate(endDate);
+        const rentD = toDate(rentDate);
+        const nextIncD = toDate(nextIncrement);
+
+        if (startD) $set.startDate = startD;
+        if (endD) $set.endDate = endD;
+        if (rentD) $set.rentDate = rentD; // your schema uses Mixed; still ok
+        if (nextIncD) $set.nextIncrement = nextIncD;
+
+        const activeBool = toBool(isActive);
+        if (activeBool !== undefined) $set.isActive = activeBool;
+
+        // Derived fields (only when inputs present)
+        // totalDesks
+        if (cabinDesksN !== undefined || openDesksN !== undefined) {
+          const cd = cabinDesksN ?? 0;
+          const od = openDesksN ?? 0;
+          $set.totalDesks = cd + od;
+
+          // totalMeetingCredits
+          if (perDeskCreditsN !== undefined) {
+            $set.totalMeetingCredits = (cd + od) * perDeskCreditsN;
+          }
+        }
+
+        // nothing to update
+        if (Object.keys($set).length === 0) return;
+
+        updates.push({
+          key, // CSV duplicate detection
+          clientId,
+          $set,
+        });
       })
       .on("end", async () => {
         try {
-          if (coWorkingClients.length === 0) {
-            return res
-              .status(400)
-              .json({ message: "No valid clients found in the file" });
+          if (!updates.length) {
+            return res.status(400).json({
+              message: "No valid update records found",
+              notFoundClients,
+              unknownUnits,
+            });
           }
 
-          await CoworkingClient.insertMany(coWorkingClients);
-          res.status(201).json({
-            message: `${coWorkingClients.length} clients inserted successfully`,
+          // ---- 3) Remove CSV duplicates (same client repeated) ----
+          const uniqueMap = new Map();
+          const csvDuplicates = [];
+
+          for (const u of updates) {
+            if (!uniqueMap.has(u.key)) uniqueMap.set(u.key, u);
+            else {
+              csvDuplicates.push({
+                clientName: u.key,
+                reason: "Duplicate client in CSV",
+              });
+            }
+          }
+
+          const uniqueUpdates = Array.from(uniqueMap.values());
+
+          // ---- 4) bulkWrite updates ----
+          const bulkOps = uniqueUpdates.map((u) => ({
+            updateOne: {
+              filter: { _id: u.clientId, company },
+              update: { $set: u.$set },
+            },
+          }));
+
+          let bulkResult = null;
+          if (bulkOps.length > 0) {
+            bulkResult = await CoworkingClient.bulkWrite(bulkOps, {
+              ordered: false,
+            });
+          }
+
+          const updatedCount =
+            bulkResult?.modifiedCount ?? bulkResult?.nModified ?? 0;
+
+          return res.status(200).json({
+            message: `${updatedCount} co-working clients updated successfully`,
+            updatedCount,
+            attemptedUpdates: bulkOps.length,
+            skippedCount:
+              notFoundClients.length +
+              unknownUnits.length +
+              csvDuplicates.length,
+            notFoundClients,
+            unknownUnits,
+            csvDuplicates,
           });
         } catch (err) {
           next(err);
         }
       })
-      .on("error", (error) => {
-        console.error("Error reading CSV file:", error);
-        next(error);
-      });
+      .on("error", (err) => next(err));
   } catch (error) {
     next(error);
   }
@@ -557,7 +1205,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "No image provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -567,7 +1215,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Company ID, Location ID, Client ID, and Image Type are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -577,7 +1225,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Invalid image type",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -588,7 +1236,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Client doesn't exist",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -624,7 +1272,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Error processing image before upload",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -634,7 +1282,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
     const updatedClient = await CoworkingClient.findByIdAndUpdate(
       { _id: clientId },
       { $set: { [imageType]: imageDetails } },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedClient || !updatedClient[imageType]) {
@@ -642,7 +1290,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
         "Failed to upload the image",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -669,7 +1317,7 @@ const uploadClientOccupancyImage = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -753,9 +1401,11 @@ const onboardedNames = [
 module.exports = {
   createCoworkingClient,
   updateCoworkingClient,
+  updateClientStatus,
   deleteCoworkingClient,
   getCoworkingClients,
   bulkInsertCoworkingClients,
+  bulkUpdateCoworkingClients,
   uploadClientOccupancyImage,
   getCoworkingClientRevenues,
 };

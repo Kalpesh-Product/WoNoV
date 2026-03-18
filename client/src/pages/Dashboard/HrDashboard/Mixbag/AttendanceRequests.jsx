@@ -84,13 +84,18 @@ const AttendanceRequests = () => {
     { field: "name", headerName: "Name", flex: 1 },
     { field: "addedBy", headerName: "Added By", flex: 1 },
     { field: "requestDay", headerName: "Date" },
-    { field: "inTime", headerName: "Start Time" },
-    { field: "outTime", headerName: "End Time" },
+    { field: "inTime", headerName: "Corrected In Time" },
+    { field: "outTime", headerName: "Corrected Out Time" },
     {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => (
         <div className="flex items-center gap-4 py-2">
+          <MdOutlineRemoveRedEye
+        className="text-xl cursor-pointer text-black-600"
+        onClick={() => handleViewUser(params.data)}
+        title="View Details"
+      />
           <ThreeDotMenu
             rowId={params.data.id}
             menuItems={[
@@ -104,11 +109,11 @@ const AttendanceRequests = () => {
                 onClick: () => rejectRequest(params.data._id),
                 isLoading: isLoading,
               },
-              {
-                label: "View",
-                onClick: () => handleViewUser(params.data),
-                isLoading: isLoading,
-              },
+              // {
+              //   label: "View",
+              //   onClick: () => handleViewUser(params.data),
+              //   isLoading: isLoading,
+              // },
             ]}
           />
         </div>
@@ -124,15 +129,23 @@ const AttendanceRequests = () => {
         addedBy: item.addedBy ? `${item.addedBy.firstName} ${item.addedBy.lastName}` : "—",
         reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
-        requestDay: humanDate(item.inTime) || "N/A",
-        inTime: humanTime(item.inTime),
+        requestDay: humanDate(item.inTime || item.originalInTime) || "N/A",
+        inTime: item.inTime
+          ? humanTime(item.inTime)
+          : item.originalInTime
+            ? humanTime(item.originalInTime)
+            : "N/A",
         outTime: humanTime(item.outTime),
-        originalInTime: (item.originalInTime),
-        originalOutTime: humanTime(item.originalOutTime),
+        originalInTime: item.originalInTime ? humanTime(item.originalInTime)  : "N/A",
+        originalOutTime: item.originalOutTime
+          ? humanTime(item.originalOutTime)
+          : item.outTime
+            ? humanTime(item.outTime)
+            : "N/A",
         createdDate: item.createdDate,
         status: item.status,
       }));
-
+       console.log(tableData);
   return (
     <div className="flex flex-col">
       <PageFrame>
@@ -210,11 +223,11 @@ const AttendanceRequests = () => {
 
               <div className="grid grid-cols-1 gap-4">
                 <DetalisFormatted
-                  title="Start Time"
+                  title="Corrected In Time"
                   detail={selectedRequest?.inTime}
                 />
                 <DetalisFormatted
-                  title="End Time"
+                  title="Corrected Out Time"
                   detail={selectedRequest?.outTime}
                 />
                 <DetalisFormatted

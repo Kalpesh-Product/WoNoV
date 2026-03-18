@@ -32,7 +32,7 @@ const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const department = usePageDepartment();
   const axios = useAxiosPrivate();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];

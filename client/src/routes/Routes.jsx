@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { Navigate, createBrowserRouter } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import LoginPage from "../pages/LoginPage/LoginPage";
@@ -128,7 +128,10 @@ import ViewClientLayout from "../pages/Dashboard/SalesDashboard/ViewClients/View
 import ClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/ClientDetails";
 import Desks from "../pages/Dashboard/SalesDashboard/ViewClients/Desks";
 import ClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ClientRevenue";
+import ExternalClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/ExternalClientRevenue";
+import OpenDeskRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/OpenDeskRevenue";
 import ClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/ClientMembers";
+import ExternalClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/ExternalClientMembers";
 import CoWorkingSeats from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CoWorkingSeats";
 import CheckAvailability from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/CheckAvailability";
 import ViewAvailability from "../pages/Dashboard/SalesDashboard/CoWorkingSeats/ViewAvailability";
@@ -139,6 +142,12 @@ import SalesPayment from "../pages/Dashboard/SalesDashboard/SalesFinance/SalesPa
 import UniqueClients from "../pages/Dashboard/SalesDashboard/UniqueClients";
 import MemberDetails from "../pages/Dashboard/SalesDashboard/ViewClients/MemberDetails";
 import SalesMixBag from "../pages/Dashboard/SalesDashboard/SalesMixBag";
+import ExternalClient from "../pages/Dashboard/SalesDashboard/ExternalClient";
+import InternalMeetingsDashboard from "../pages/Dashboard/SalesDashboard/InternalMeetingsDashboard";
+import ExternalClientCompanies from "../pages/Dashboard/SalesDashboard/ExternalClientCompanies";
+import VisitorDetails from "../pages/Dashboard/SalesDashboard/ViewClients/VisitorDetails";
+import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClientLayout";
+import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalCompanyMeetings";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
@@ -319,6 +328,10 @@ import PerformanceLayout from "../pages/Performance/PerformanceLayout";
 import PerformanceHome from "../pages/Performance/PerformanceHome";
 import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerformanceLayout";
 import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKra";
+import PerformanceIndividualKra from "../pages/Performance/DepartmentDetails/PerformanceIndividualKra";
+import PerformanceIndividualKpa from "../pages/Performance/DepartmentDetails/PerformanceIndividualKpa";
+import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
+import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
 import PerformanceAnnual from "../pages/Performance/DepartmentDetails/PerformanceAnnual";
 import PerformanceMonthly from "../pages/Performance/DepartmentDetails/PerformanceMonthly";
 import DepartmentTasksLayout from "../pages/Tasks/DepartmentTasks/DepartmentTasksLayout";
@@ -393,6 +406,10 @@ import ViewClientInfo from "../pages/Dashboard/SalesDashboard/ViewClientInfo";
 import CoWorkingClients from "../pages/Dashboard/SalesDashboard/ViewClients/CoWorkingClients";
 import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/WorkationClients";
 import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
+import VirtualOfficeClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDetails";
+import VirtualOfficeClientDesks from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDesks";
+import VirtualOfficeClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientRevenue";
+import VirtualOfficeClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientMembers";
 import LogPage from "../pages/LogPage";
 import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
 import AccessPages from "../pages/Access/AccessPages";
@@ -1508,6 +1525,50 @@ export const routes = createBrowserRouter([
                         element: <VirtualOfficeClients />,
                       },
                       {
+                        path: "mix-bag/clients/virtual-office/:clientId",
+                        element: <ViewClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <VirtualOfficeClientDesks />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <VirtualOfficeClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <VirtualOfficeClientMembers />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "clients/virtual-office/:clientId",
+                        element: <ViewClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "members",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                        ],
+                      },
+                      {
                         path: "mix-bag/clients/co-working/:clientName",
                         element: <ViewClientLayout />,
                         children: [
@@ -1552,6 +1613,84 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag/manage-units",
                         element: <ManageUnit />,
+                      },
+                      {
+                        path: "mix-bag/external-client",
+                        element: <ExternalClient />,
+                      },
+                      {
+                        path: "mix-bag/clients/internal-meetings",
+                        element: <InternalMeetingsDashboard />,
+                      },
+                      {
+                        path: "mix-bag/external-client/meetings/external-companies",
+                        element: <ExternalClientCompanies />,
+                      },
+                      {
+                        path: "mix-bag/external-client/meetings",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies"
+                            replace
+                          />
+                        ),
+                      },
+                      {
+                        path: "mix-bag/external-client/open-desk/external-companies",
+                        element: <ExternalClientCompanies />,
+                      },
+                      {
+                        path: "mix-bag/external-client/open-desk",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies"
+                            replace
+                          />
+                        ),
+                      },
+                      {
+                        path: "mix-bag/external-client/meetings/external-companies/:clientName",
+                        element: <ExternalClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VisitorDetails />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <ExternalCompanyMeetings />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <ExternalClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ExternalClientMembers />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "mix-bag/external-client/open-desk/external-companies/:clientName",
+                        element: <ExternalClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VisitorDetails />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <ExternalCompanyMeetings />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <OpenDeskRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ExternalClientMembers />,
+                          },
+                        ],
                       },
                       {
                         path: "data",
@@ -2095,6 +2234,14 @@ export const routes = createBrowserRouter([
                     element: <MeetingReports />,
                   },
                   {
+                    path: "client-credit",
+                    element: <Reviews />,
+                  },
+                  {
+                    path: "client-review",
+                    element: <Reviews />,
+                  },
+                  {
                     path: "reviews",
                     element: <Reviews />,
                   },
@@ -2199,6 +2346,22 @@ export const routes = createBrowserRouter([
                       {
                         path: "monthly-KPA",
                         element: <PerformanceMonthly />,
+                      },
+                      {
+                        path: "individual-Daily-KRA",
+                        element: <PerformanceIndividualKra />,
+                      },
+                      {
+                        path: "individual-Monthly-KPA",
+                        element: <PerformanceIndividualKpa />,
+                      },
+                      {
+                        path: "team-Daily-KRA",
+                        element: <PerformanceTeamKra />,
+                      },
+                      {
+                        path: "team-Monthly-KPA",
+                        element: <PerformanceTeamKpa />,
                       },
                       {
                         path: "annual-KPA",

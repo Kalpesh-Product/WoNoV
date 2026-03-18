@@ -12,7 +12,7 @@ import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentag
 
 const TotalRevenue = () => {
   const axios = useAxiosPrivate();
-  const [selectedYear, setSelectedYear] = useState("2024-25");
+  const [selectedYear, setSelectedYear] = useState("2025-26");
 
   const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
     queryKey: ["totalRevenue"],
@@ -67,13 +67,13 @@ const TotalRevenue = () => {
     const revenue = isTotalLoading
       ? []
       : totalRevenue.map((category) => {
-          const value = category.data?.["2024-25"]?.[i] ?? 0;
-          return {
-            vertical: category.name,
-            revenue: inrFormat(value),
-            percentage: "100%",
-          };
-        });
+        const value = category.data?.["2024-25"]?.[i] ?? 0;
+        return {
+          vertical: category.name,
+          revenue: inrFormat(value),
+          percentage: "100%",
+        };
+      });
 
     return {
       month: monthLabel,
@@ -81,22 +81,22 @@ const TotalRevenue = () => {
     };
   });
 
-  const filteredByYear = totalRevenue.map((item) => ({
-    name: item.name,
-    data: item.data[selectedYear] || [],
-  }));
+  // const filteredByYear = totalRevenue.map((item) => ({
+  //   name: item.name,
+  //   data: item.data[selectedYear] || [],
+  // }));
 
-  const normalizedData = filteredByYear.map((domain) => ({
-    name: domain.name,
-    group: "FY 2024-25",
-    data: domain.data.map((val, idx) => {
-      const totalThisMonth = filteredByYear.reduce(
-        (sum, item) => sum + item.data[idx],
-        0
-      );
-      return totalThisMonth ? Math.round((val / totalThisMonth) * 100) : 0;
-    }),
-  }));
+  // const normalizedData = filteredByYear.map((domain) => ({
+  //   name: domain.name,
+  //   group: "FY 2024-25",
+  //   data: domain.data.map((val, idx) => {
+  //     const totalThisMonth = filteredByYear.reduce(
+  //       (sum, item) => sum + item.data[idx],
+  //       0
+  //     );
+  //     return totalThisMonth ? Math.round((val / totalThisMonth) * 100) : 0;
+  //   }),
+  // }));
   const options = {
     chart: {
       toolbar: false,
@@ -104,76 +104,71 @@ const TotalRevenue = () => {
       fontFamily: "Poppins-Regular",
     },
 
-    tooltip: {
-      shared: true,
-      intersect: false,
-      custom: function ({ dataPointIndex, w }) {
-        const monthLabel = w.globals.labels[dataPointIndex];
+    // tooltip: {
+    //   shared: true,
+    //   intersect: false,
+    //   custom: function ({ dataPointIndex, w }) {
+    //     const monthLabel = w.globals.labels[dataPointIndex];
 
-        // meetings altRevenue
-        const meetings = filteredByYear[0]?.data?.[dataPointIndex] ?? 0;
-        const altRevenue = filteredByYear[1]?.data?.[dataPointIndex] ?? 0;
-        const virtualOffice = filteredByYear[2]?.data?.[dataPointIndex] ?? 0;
-        const workation = filteredByYear[3]?.data?.[dataPointIndex] ?? 0;
-        const coworking = filteredByYear[4]?.data?.[dataPointIndex] ?? 0;
+    //     // meetings altRevenue
+    //     const meetings = filteredByYear[0]?.data?.[dataPointIndex] ?? 0;
+    //     const altRevenue = filteredByYear[1]?.data?.[dataPointIndex] ?? 0;
+    //     const virtualOffice = filteredByYear[2]?.data?.[dataPointIndex] ?? 0;
+    //     const workation = filteredByYear[3]?.data?.[dataPointIndex] ?? 0;
+    //     const coworking = filteredByYear[4]?.data?.[dataPointIndex] ?? 0;
 
-        return `
-      <div style="padding: 10px; width: 300px">
-        <div class="apexcharts-tooltip-title" style="margin-bottom: 8px; font-weight: bold;">${monthLabel}</div>
+    //     return `
+    //   <div style="padding: 10px; width: 300px">
+    //     <div class="apexcharts-tooltip-title" style="margin-bottom: 8px; font-weight: bold;">${monthLabel}</div>
 
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
-            w.globals.colors[0]
-          }; display: inline-block;"></span>
-          <div style="display: flex; justify-content: space-between; width: 100%;">
-            <span>Co-Working</span>
-            <span>INR ${coworking.toLocaleString("en-IN")}</span>
-          </div>
-        </div>
+    //     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+    //       <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[0]
+    //       }; display: inline-block;"></span>
+    //       <div style="display: flex; justify-content: space-between; width: 100%;">
+    //         <span>Co-Working</span>
+    //         <span>INR ${coworking.toLocaleString("en-IN")}</span>
+    //       </div>
+    //     </div>
 
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
-            w.globals.colors[1]
-          }; display: inline-block;"></span>
-          <div style="display: flex; justify-content: space-between; width: 100%;">
-            <span>Meetings</span>
-            <span>INR ${meetings.toLocaleString("en-IN")}</span>
-          </div>
-        </div>
+    //     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+    //       <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[1]
+    //       }; display: inline-block;"></span>
+    //       <div style="display: flex; justify-content: space-between; width: 100%;">
+    //         <span>Meetings</span>
+    //         <span>INR ${meetings.toLocaleString("en-IN")}</span>
+    //       </div>
+    //     </div>
 
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
-            w.globals.colors[2]
-          }; display: inline-block;"></span>
-          <div style="display: flex; justify-content: space-between; width: 100%;">
-            <span>Virtual Office</span>
-            <span>INR ${virtualOffice.toLocaleString("en-IN")}</span>
-          </div>
-        </div>
+    //     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+    //       <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[2]
+    //       }; display: inline-block;"></span>
+    //       <div style="display: flex; justify-content: space-between; width: 100%;">
+    //         <span>Virtual Office</span>
+    //         <span>INR ${virtualOffice.toLocaleString("en-IN")}</span>
+    //       </div>
+    //     </div>
 
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
-            w.globals.colors[3]
-          }; display: inline-block;"></span>
-          <div style="display: flex; justify-content: space-between; width: 100%;">
-            <span>Workation</span>
-            <span>INR ${workation.toLocaleString("en-IN")}</span>
-          </div>
-        </div>
+    //     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+    //       <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[3]
+    //       }; display: inline-block;"></span>
+    //       <div style="display: flex; justify-content: space-between; width: 100%;">
+    //         <span>Workation</span>
+    //         <span>INR ${workation.toLocaleString("en-IN")}</span>
+    //       </div>
+    //     </div>
 
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${
-            w.globals.colors[4]
-          }; display: inline-block;"></span>
-          <div style="display: flex; justify-content: space-between; width: 100%;">
-            <span>Alt Revenues</span>
-            <span>INR ${altRevenue.toLocaleString("en-IN")}</span>
-          </div>
-        </div>
-      </div>
-    `;
-      },
-    },
+    //     <div style="display: flex; align-items: center; gap: 8px;">
+    //       <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${w.globals.colors[4]
+    //       }; display: inline-block;"></span>
+    //       <div style="display: flex; justify-content: space-between; width: 100%;">
+    //         <span>Alt Revenues</span>
+    //         <span>INR ${altRevenue.toLocaleString("en-IN")}</span>
+    //       </div>
+    //     </div>
+    //   </div>
+    // `;
+    //   },
+    // },
 
     plotOptions: {
       bar: {
@@ -194,6 +189,51 @@ const TotalRevenue = () => {
       "#1976D2", // Medium Blue (Alt Revenues)
     ],
   };
+  const tooltipBuilder = ({ monthLabel, rawDataMap, w, dataPointIndex }) => {
+    const tooltipRows = [
+      { label: "Co-Working", seriesName: "Co-Working" },
+      { label: "Meetings", seriesName: "Meeting" },
+      { label: "Virtual Office", seriesName: "Virtual Office" },
+      { label: "Workation", seriesName: "Workation" },
+      { label: "Alt Revenues", seriesName: "Alternate" },
+    ];
+
+    let total = 0;
+
+    const rowsHtml = tooltipRows
+      .map(({ label, seriesName }) => {
+        const seriesIndex = w.globals.seriesNames.indexOf(seriesName);
+        const color =
+          seriesIndex >= 0
+            ? w.globals.colors[seriesIndex]
+            : "#6B7280";
+        const value = rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
+        total += value;
+
+        return `
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${color}; display: inline-block;"></span>
+            <div style="display: flex; justify-content: space-between; width: 100%;">
+              <span>${label}</span>
+              <span>INR ${value.toLocaleString("en-IN")}</span>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+    return `
+      <div style="padding: 10px; width: 300px">
+        <div class="apexcharts-tooltip-title" style="margin-bottom: 8px; font-weight: bold;">${monthLabel}</div>
+        ${rowsHtml}
+        <hr style="margin-top: 6px;"/>
+        <div style="text-align: right; font-weight: 600;">Total: INR ${total.toLocaleString(
+      "en-IN"
+    )}</div>
+      </div>
+    `;
+  };
+
   const unifiedRevenueData = useMemo(() => {
     if (!simpleRevenue) return [];
 
@@ -280,6 +320,7 @@ const TotalRevenue = () => {
           valueKey="revenue"
           graphTitle="ANNUAL MONTHLY MIX INCOME"
           chartOptions={options}
+          tooltipBuilder={tooltipBuilder}
         />
       )}
 

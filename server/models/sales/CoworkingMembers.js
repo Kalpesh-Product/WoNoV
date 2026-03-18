@@ -12,7 +12,14 @@ const coworkingMemberSchema = new mongoose.Schema(
     },
     employeeName: {
       type: String,
+      required: true,
     },
+    gender: {
+      type: String,
+      enum: ["Male", "Female"],
+      required: true, 
+    },
+
     designation: {
       type: String,
     },
@@ -50,14 +57,18 @@ const coworkingMemberSchema = new mongoose.Schema(
       enum: ["Active", "Inactive", "Pending"], // customize if needed
       default: "Pending",
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const CoworkingMember = mongoose.model(
   "CoworkingMember",
-  coworkingMemberSchema
+  coworkingMemberSchema,
 );
 module.exports = CoworkingMember;

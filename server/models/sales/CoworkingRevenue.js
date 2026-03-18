@@ -9,23 +9,26 @@ const coworkingClientRevenue = new mongoose.Schema(
     clientName: {
       type: String,
     },
+    clientInvoiceName: {
+      type: String,
+    },
     channel: {
       type: String,
     },
     noOfDesks: {
       type: Number,
-      required: true,
+      // required: true,
     },
     deskRate: {
       type: Number,
-      required: true,
+      // required: true,
     },
     occupation: {
       type: String,
     },
     revenue: {
       type: Number,
-      required: true,
+      // required: true,
     },
     totalTerm: {
       type: Number, // In months or as required
@@ -37,7 +40,8 @@ const coworkingClientRevenue = new mongoose.Schema(
       type: Date,
     },
     rentStatus: {
-      type: String, // Consider enum: ['paid', 'unpaid', 'partial'] if applicable
+      type: String,
+      // enum: ["paid", "unpaid", "partial"], // Consider enum: ['paid', 'unpaid', 'partial'] if applicable
     },
     pastDueDate: {
       type: Date,
@@ -53,12 +57,12 @@ const coworkingClientRevenue = new mongoose.Schema(
       ref: "Company",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const CoworkingRevenue = mongoose.model(
   "CoworkingClientRevenue",
-  coworkingClientRevenue
+  coworkingClientRevenue,
 );
 
 module.exports = CoworkingRevenue;

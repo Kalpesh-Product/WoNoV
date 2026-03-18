@@ -6,6 +6,7 @@ const { Readable } = require("stream");
 const mongoose = require("mongoose");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
+const Role = require("../../models/roles/Roles");
 
 const onboardVendor = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -170,69 +171,275 @@ const onboardVendor = async (req, res, next) => {
   }
 };
 
+// const updateVendor = async (req, res, next) => {
+//   const logPath = "hr/HrLog";
+//   const logAction = "Update Vendor";
+//   const logSourceKey = "vendor";
+//   const { ip, company, user, departments, role } = req;
+
+//   const allowedFields = [
+//     "name",
+//     "address",
+//     "category",
+//     "subCategory",
+//     "email",
+//     "mobile",
+//     "status",
+//     "companyName",
+//     "onboardingDate",
+//     "state",
+//     "city",
+//     "country",
+//     "pinCode",
+//     "panIdNo",
+//     "gstIn",
+//     "partyType",
+//     "ifscCode",
+//     "bankName",
+//     "branchName",
+//     "nameOnAccount",
+//     "accountNumber",
+//   ];
+
+//   try {
+//     const { vendorId } = req.params;
+
+//     if (!vendorId) {
+//       throw new CustomError(
+//         "Vendor ID is required",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+//     if (!mongoose.Types.ObjectId.isValid(vendorId)) {
+//       throw new CustomError(
+//         "Invalid vendor ID",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     const currentUser = await User.findOne({ _id: user })
+//       .select("departments company role")
+//       .lean()
+//       .exec();
+
+//     if (!currentUser) {
+//       throw new CustomError("User not found", logPath, logAction, logSourceKey);
+//     }
+
+//     const vendor = await Vendor.findById({ _id: vendorId });
+//     if (!vendor) {
+//       throw new CustomError(
+//         "Vendor not found",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     // Check if the user is a member of the department the vendor belongs to
+//     const isMember = currentUser.departments.find(
+//       (dept) => dept._id.toString() === vendor.departmentId.toString(),
+//     );
+//     if (!isMember) {
+//       throw new CustomError(
+//         "You are not a member of this department.",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     const roleIds = currentUser.role.map((role) => role._id);
+
+//     const companyDoc = await Company.findOne({
+//       _id: currentUser.company,
+//       selectedDepartments: {
+//         $elemMatch: {
+//           department: vendor.departmentId,
+//           $or: [
+//             { admin: { $in: roleIds } },
+//             { admin: { $exists: false } },
+//             { admin: null },
+//           ],
+//         },
+//       },
+//     })
+//       .lean()
+//       .exec();
+
+//     if (!companyDoc) {
+//       throw new CustomError(
+//         "You are not authorized to update this vendor.",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     const updateData = {};
+//     for (const key of allowedFields) {
+//       if (req.body[key] !== undefined) {
+//         updateData[key] = req.body[key];
+//       }
+//     }
+
+//     // Update vendor
+//     const updatedVendor = await Vendor.findByIdAndUpdate(
+//       vendorId,
+//       { ...updateData, updatedAt: new Date() },
+//       { new: true, runValidators: true },
+//     );
+
+//     // Log the vendor update
+//     await createLog({
+//       path: logPath,
+//       action: logAction,
+//       remarks: "Vendor updated successfully",
+//       status: "Success",
+//       user: user,
+//       ip: ip,
+//       company: company,
+//       sourceKey: logSourceKey,
+//       sourceId: vendorId,
+//       changes: updateData,
+//     });
+
+//     return res.status(200).json({
+//       message: "Vendor updated successfully",
+//     });
+//   } catch (error) {
+//     if (error instanceof CustomError) {
+//       next(error);
+//     } else {
+//       next(
+//         new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+//       );
+//     }
+//   }
+// };
+
 const updateVendor = async (req, res, next) => {
-  const logPath = "hr/HrLog";
-  const logAction = "Update Vendor";
-  const logSourceKey = "vendor";
-  const { ip, company, user } = req;
+  const { ip, company, user, departments, roles } = req;
+
+  const allowedFields = [
+    "name",
+    "address",
+    "category",
+    "subCategory",
+    "email",
+    "mobile",
+    "status",
+    "companyName",
+    "onboardingDate",
+    "state",
+    "city",
+    "country",
+    "pinCode",
+    "panIdNo",
+    "gstIn",
+    "partyType",
+    "ifscCode",
+    "bankName",
+    "branchName",
+    "nameOnAccount",
+    "accountNumber",
+  ];
+
+  const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/i;
+  const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i;
+  const accountNumberRegex = /^[0-9]{9,18}$/;
+  const gstInRegex =
+    /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i;
 
   try {
     const { vendorId } = req.params;
-    const updateData = req.body;
 
-    if (!vendorId) {
-      throw new CustomError(
-        "Vendor ID is required",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+    // Validation
+    const updateData = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        updateData[key] = req.body[key];
+      }
     }
 
-    const currentUser = await User.findOne({ _id: user })
-      .select("departments company role")
-      .lean()
-      .exec();
-
-    if (!currentUser) {
-      throw new CustomError("User not found", logPath, logAction, logSourceKey);
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).send({
+        message: "No valid fields provided to update",
+      });
     }
 
-    const vendor = await Vendor.findById({ _id: vendorId });
+    if (!vendorId || !mongoose.Types.ObjectId.isValid(vendorId)) {
+      return res.status(400).send({
+        message: "Invalid vendor ID",
+      });
+    }
+
+    if (req.body.status && !["Active", "Inactive"].includes(req.body.status)) {
+      return res.status(400).send({
+        message: "Status should contain Active/Inactive values",
+      });
+    }
+
+    // Simpler and handles empty strings correctly
+    if (req.body.ifscCode && !ifscRegex.test(req.body.ifscCode)) {
+      return res.status(400).send({
+        message: "Invalid IFSC code format. Expected format: ABCD0123456",
+      });
+    }
+
+    if (req.body.panIdNo && !panRegex.test(req.body.panIdNo)) {
+      return res.status(400).send({
+        message: "Invalid PAN number format. Expected format: ABCDE1234F",
+      });
+    }
+
+    if (
+      req.body.accountNumber &&
+      !accountNumberRegex.test(req.body.accountNumber)
+    ) {
+      return res.status(400).send({
+        message: "Invalid account number. Must be 9-18 digits",
+      });
+    }
+
+    if (req.body.gstIn && !gstInRegex.test(req.body.gstIn)) {
+      return res.status(400).send({
+        message: "Invalid GST number format. Expected format: 22AAAAA0000A1Z5",
+      });
+    }
+
+    const vendor = await Vendor.findById(vendorId);
     if (!vendor) {
-      throw new CustomError(
-        "Vendor not found",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      return res.status(404).send({
+        message: "Vendor not found",
+      });
     }
 
-    // Check if the user is a member of the department the vendor belongs to
-    const isMember = currentUser.departments.find(
+    // Use req.departments directly (already validated by middleware)
+    const isMember = departments.find(
       (dept) => dept._id.toString() === vendor.departmentId.toString(),
     );
     if (!isMember) {
-      throw new CustomError(
-        "You are not a member of this department.",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      return res.status(403).send({
+        message: "You are not a member of this department",
+      });
     }
 
-    const roleIds = currentUser.role.map((role) => role._id);
+    // Use req.role directly
+    // const roleIds = roles.map((r) => r._id);
+    const foundRoles = await Role.find({ roleTitle: { $in: roles } });
 
+    const roleIds = foundRoles.map((r) => r._id);
     const companyDoc = await Company.findOne({
-      _id: currentUser.company,
+      _id: company,
       selectedDepartments: {
         $elemMatch: {
           department: vendor.departmentId,
-          $or: [
-            { admin: { $in: roleIds } },
-            { admin: { $exists: false } },
-            { admin: null },
-          ],
+          admin: { $in: roleIds }, // Strict check only
         },
       },
     })
@@ -240,46 +447,25 @@ const updateVendor = async (req, res, next) => {
       .exec();
 
     if (!companyDoc) {
-      throw new CustomError(
-        "You are not authorized to update this vendor.",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      return res.status(403).send({
+        message: "You are not authorized to update this vendor",
+      });
     }
 
-    // Update vendor
     const updatedVendor = await Vendor.findByIdAndUpdate(
       vendorId,
       { ...updateData, updatedAt: new Date() },
       { new: true, runValidators: true },
     );
 
-    // Log the vendor update
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Vendor updated successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: vendorId,
-      changes: updateData,
-    });
-
     return res.status(200).json({
       message: "Vendor updated successfully",
+      data: updatedVendor,
     });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-      );
-    }
+    return res.status(500).send({
+      message: error.message || "Internal server error",
+    });
   }
 };
 

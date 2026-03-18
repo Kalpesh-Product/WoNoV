@@ -145,9 +145,8 @@ const HousekeepingTeamMembersCalendar = () => {
           if (!sub?.isActive) return;
 
           const subName =
-            `${sub?.substitute?.firstName ?? ""} ${
-              sub?.substitute?.lastName ?? ""
-            }`.trim() || "Unknown Substitute";
+            `${sub?.substitute?.firstName ?? ""} ${sub?.substitute?.lastName ?? ""
+              }`.trim() || "Unknown Substitute";
           const subStart = dayjs(sub?.fromDate);
           const subEnd = dayjs(sub?.toDate);
 
@@ -272,9 +271,8 @@ const HousekeepingTeamMembersCalendar = () => {
           <div className="flex flex-col gap-2">
             <DetalisFormatted
               title="Employee"
-              detail={`${selectedEvent.extendedProps.employeeName}${
-                selectedEvent.extendedProps.isSubstitute ? " (Substitute)" : ""
-              }`}
+              detail={`${selectedEvent.extendedProps.employeeName}${selectedEvent.extendedProps.isSubstitute ? " (Substitute)" : ""
+                }`}
             />
             <DetalisFormatted
               title="Date"
@@ -334,7 +332,7 @@ const HousekeepingTeamMembersCalendar = () => {
               rules={{ required: "From Date is required" }}
               render={({ field }) => (
                 <DatePicker
-                  {...field}
+                  // newDate={dayjs(selectedEvent.start).format("DD-MM-YYYY")}
                   label="From Date"
                   format="DD-MM-YYYY"
                   disablePast
@@ -357,7 +355,7 @@ const HousekeepingTeamMembersCalendar = () => {
               rules={{ required: "To Date is required" }}
               render={({ field }) => (
                 <DatePicker
-                  {...field}
+
                   label="To Date"
                   format="DD-MM-YYYY"
                   disablePast

@@ -43,7 +43,7 @@ const ModulePermissions = () => {
     mutationFn: async (permissions) => {
       const res = await axios.post(
         `/api/access/modify-permissions/${user._id}`,
-        { permissions }
+        { permissions },
       );
       return res.data;
     },
@@ -129,7 +129,7 @@ const ModulePermissions = () => {
                         />
                       </TableCell>
                     </TableRow>
-                  )
+                  ),
                 )}
               </TableBody>
             </Table>

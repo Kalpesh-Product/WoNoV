@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import AgTable from "../../../../components/AgTable";
 import { Chip, FormControl, MenuItem, Select, TextField } from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -16,12 +16,22 @@ import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import { queryClient } from "../../../../main";
 import { noOnlyWhitespace, isAlphanumeric } from "../../../../utils/validators";
 import DangerButton from "../../../../components/DangerButton";
+import { PERMISSIONS } from "../../../../constants/permissions";
+import useAuth from "../../../../hooks/useAuth";
 
 const EmployeeType = () => {
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedItem, setSelectedItem] = useState(null);
   const axios = useAxiosPrivate();
+
+  const { user } = useAuth();
+
+  const hasAddEmployeeTypeAccess = useMemo(() => {
+    return user?.permissions?.some(
+      (permission) => permission.value === PERMISSIONS.HR_ADD_EMPLOYEE_TYPE.value
+    );
+  }, [user?.permissions]);
 
   const {
     handleSubmit,
@@ -228,6 +238,7 @@ const EmployeeType = () => {
           searchColumn={"Employee Type"}
           tableTitle={"Employee Type List"}
           buttonTitle={"Add Employee Type"}
+          buttonDisabled={!hasAddEmployeeTypeAccess}
           handleClick={handleAddType}
           data={[
             ...employeeTypes.map((type, index) => ({
@@ -246,10 +257,10 @@ const EmployeeType = () => {
             modalMode === "add"
               ? "Add Employee Type"
               : modalMode === "edit"
-              ? "Edit Employee Type"
-              : modalMode === "delete"
-              ? "Confirm Delete"
-              : "Employee Type Details"
+                ? "Edit Employee Type"
+                : modalMode === "delete"
+                  ? "Confirm Delete"
+                  : "Employee Type Details"
           }
           onClose={() => setOpenModal(false)}
         >

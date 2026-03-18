@@ -42,7 +42,7 @@ const RaiseTicket = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments"
+        "api/company/get-company-data?field=selectedDepartments",
       );
       return response.data?.selectedDepartments;
     } catch (error) {
@@ -126,22 +126,22 @@ const RaiseTicket = () => {
   const formatAssignments = (assignments = []) => {
     const assignmentDetails = Array.isArray(assignments)
       ? assignments.map((assignment) => {
-          const assignee = assignment?.assignee;
-          const assigneeName =
-            assignee?.firstName && assignee?.lastName
-              ? `${assignee.firstName} ${assignee.lastName}`
-              : "Unknown";
-          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+        const assignee = assignment?.assignee;
+        const assigneeName =
+          assignee?.firstName && assignee?.lastName
+            ? `${assignee.firstName} ${assignee.lastName}`
+            : "Unknown";
+        const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
 
-          return { assigneeName, assignedAtFormatted };
-        })
+        return { assigneeName, assignedAtFormatted };
+      })
       : [];
 
     const assignedToDisplay = assignmentDetails
       .map(({ assigneeName, assignedAtFormatted }) =>
         assignedAtFormatted && assignedAtFormatted !== "N/A"
           ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName
+          : assigneeName,
       )
       .join(", ");
 
@@ -166,7 +166,7 @@ const RaiseTicket = () => {
 
     // Find the selected department and get its ticketIssues
     const selectedDept = fetchedDepartments.find(
-      (dept) => dept.department._id === deptId
+      (dept) => dept.department._id === deptId,
     );
 
     setTicketIssues(selectedDept?.ticketIssues || []);
@@ -185,53 +185,54 @@ const RaiseTicket = () => {
 
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No", width: 80 },
-    { field: "raisedBy", headerName: "Raised By", width: 150 },
-    { field: "raisedTo", headerName: "To Department", width: 150 },
-    {
-      field: "raisedAt",
-      headerName: "Raised At",
-      width: 200,
-      cellRenderer: (params) => formatDateTime(params.value),
-    },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
-    { field: "description", headerName: "Description", width: 300 },
+    { field: "raisedTo", headerName: "To Department", width: 150 },
+    // { field: "raisedBy", headerName: "Raised By", width: 150 },
+    // {
+    //   field: "raisedAt",
+    //   headerName: "Raised At",
+    //   width: 200,
+    //   cellRenderer: (params) => formatDateTime(params.value),
+    // },
+
+    // { field: "description", headerName: "Description", width: 300 },
     { field: "acceptedBy", headerName: "Accepted By", width: 300 },
-    {
-      field: "acceptedAt",
-      headerName: "Accepted At",
-      width: 300,
-      cellRenderer: (params) => formatDateTime(params.value),
-    },
+    // {
+    //   field: "acceptedAt",
+    //   headerName: "Accepted At",
+    //   width: 300,
+    //   cellRenderer: (params) => formatDateTime(params.value),
+    // },
 
-    {
-      field: "priority",
-      headerName: "Priority",
-      width: 130,
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          High: { backgroundColor: "#FFC5C5", color: "#8B0000" },
-          Medium: { backgroundColor: "#FFECC5", color: "#CC8400" },
-          Low: { backgroundColor: "#ADD8E6", color: "#00008B" },
-        };
+    // {
+    //   field: "priority",
+    //   headerName: "Priority",
+    //   width: 130,
+    //   cellRenderer: (params) => {
+    //     const statusColorMap = {
+    //       High: { backgroundColor: "#FFC5C5", color: "#8B0000" },
+    //       Medium: { backgroundColor: "#FFECC5", color: "#CC8400" },
+    //       Low: { backgroundColor: "#ADD8E6", color: "#00008B" },
+    //     };
 
-        const { backgroundColor, color } = statusColorMap[
-          params.value === "high" ? "High" : params.value
-        ] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
+    //     const { backgroundColor, color } = statusColorMap[
+    //       params.value === "high" ? "High" : params.value
+    //     ] || {
+    //       backgroundColor: "gray",
+    //       color: "white",
+    //     };
 
-        return (
-          <Chip
-            label={params.value === "high" ? "High" : params.value}
-            style={{
-              backgroundColor,
-              color,
-            }}
-          />
-        );
-      },
-    },
+    //     return (
+    //       <Chip
+    //         label={params.value === "high" ? "High" : params.value}
+    //         style={{
+    //           backgroundColor,
+    //           color,
+    //         }}
+    //       />
+    //     );
+    //   },
+    // },
     {
       field: "status",
       headerName: "Status",
@@ -324,11 +325,18 @@ const RaiseTicket = () => {
                             fetchedDepartments
                               ?.filter(
                                 (dept) =>
+                                  dept.department.name !== "Sales" &&
+                                  dept.department.name !== "HR" &&
+                                  dept.department.name !== "Finance" &&
+                                  dept.department.name !== "IT" &&
+                                  dept.department.name !== "Maintainance" &&
+                                  dept.department.name !== "Top Management" &&
+                                  dept.department.name !== "Test Dept 1" &&
                                   dept.department.name !== "Cafe" &&
                                   dept.department.name !== "Marketing" &&
                                   dept.department.name !== "Expansion" &&
                                   dept.department.name !== "Compliance" &&
-                                  dept.department.name !== "Legal"
+                                  dept.department.name !== "Legal",
                               )
                               .map((dept) => (
                                 <MenuItem
@@ -339,6 +347,27 @@ const RaiseTicket = () => {
                                 </MenuItem>
                               ))
                           )}
+                          <MenuItem value="Sales" disabled>
+                            Sales
+                          </MenuItem>
+                          <MenuItem value="HR" disabled>
+                            HR
+                          </MenuItem>
+                          <MenuItem value="Finance" disabled>
+                            Finance
+                          </MenuItem>
+                          <MenuItem value="IT" disabled>
+                            IT
+                          </MenuItem>
+                          {/* <MenuItem value="Maintainance" disabled>
+                            Maintainance
+                          </MenuItem> */}
+                          <MenuItem value="Top Management" disabled>
+                            Top Management
+                          </MenuItem>
+                          {/* <MenuItem value="Test Dept 1" disabled>
+                            Test Dept 1
+                          </MenuItem> */}
                           <MenuItem value="Cafe" disabled>
                             Cafe
                           </MenuItem>
@@ -359,7 +388,7 @@ const RaiseTicket = () => {
                     )}
                   />
                 </div>
-
+                {/* div  */}
                 <div>
                   <Controller
                     name="ticketTitle"
@@ -379,11 +408,13 @@ const RaiseTicket = () => {
                         >
                           <MenuItem value="">Select Ticket Title</MenuItem>
                           {ticketIssues.length > 0 ? (
-                            ticketIssues.map((issue) => (
-                              <MenuItem key={issue._id} value={issue.title}>
-                                {issue.title}
-                              </MenuItem>
-                            ))
+                            ticketIssues
+                              .filter((issue) => issue.title !== "Other")
+                              .map((issue) => (
+                                <MenuItem key={issue._id} value={issue.title}>
+                                  {issue.title}
+                                </MenuItem>
+                              ))
                           ) : (
                             <MenuItem disabled>No Issues Available</MenuItem>
                           )}
@@ -569,6 +600,7 @@ const RaiseTicket = () => {
                   description: ticket.description,
                   ticketTitle: ticket.ticket,
                   status: ticket.status,
+                  closingRemark: ticket.closingRemark,
                   acceptedBy: ticket?.acceptedBy
                     ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
                     : "None",
@@ -611,24 +643,23 @@ const RaiseTicket = () => {
             title="Description"
             detail={viewTicketDetails?.description}
           />
-          <DetalisFormatted
+          {/* <DetalisFormatted
             title="Raised By"
             detail={viewTicketDetails?.raisedBy}
+          /> */}
+          <DetalisFormatted
+            title="Raised To Department"
+            detail={viewTicketDetails?.raisedTo}
           />
           <DetalisFormatted
             title="Raised At"
             detail={formatDateTime(viewTicketDetails?.raisedAt)}
           />
-          <DetalisFormatted
-            title="Raised To Department"
-            detail={viewTicketDetails?.raisedTo}
-          />
 
-          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
-          <DetalisFormatted
+          {/* <DetalisFormatted
             title="Priority"
             detail={viewTicketDetails?.priority}
-          />
+          /> */}
           <DetalisFormatted
             title="Accepted By"
             detail={viewTicketDetails?.acceptedBy}
@@ -642,32 +673,8 @@ const RaiseTicket = () => {
             title="Assigned To"
             detail={viewTicketDetails?.assignedTo || ""}
           /> */}
-          {viewTicketDetails?.assignedToDetails?.length ? (
-            <div className="text-content flex items-start w-full">
-              <span className="w-[50%]">Assignees</span>
-              <span>:</span>
-              <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
-                {viewTicketDetails.assignedToDetails.map(
-                  (assignment, index) => (
-                    <div key={`${assignment.assigneeName}-${index}`}>
-                      <div className="font-medium">
-                        {assignment.assigneeName}
-                      </div>
-                      <div className="text-borderGray">
-                        {assignment.assignedAtFormatted || "N/A"}
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-          ) : (
-            <DetalisFormatted
-              title="Assigned At"
-              detail={formatDateTime(viewTicketDetails?.assignedAt)}
-            />
-          )}
-          <DetalisFormatted
+
+          {/* <DetalisFormatted
             title="Escalated To"
             detail={viewTicketDetails?.escalatedTo || ""}
           />
@@ -678,7 +685,7 @@ const RaiseTicket = () => {
           <DetalisFormatted
             title="Escalated At"
             detail={viewTicketDetails?.escalatedAt || ""}
-          />
+          /> */}
           <DetalisFormatted
             title="Closed By"
             detail={viewTicketDetails?.closedBy}
@@ -686,6 +693,11 @@ const RaiseTicket = () => {
           <DetalisFormatted
             title="Closed At"
             detail={formatDateTime(viewTicketDetails?.closedAt)}
+          />
+          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
+          <DetalisFormatted
+            title="Closing Remark"
+            detail={viewTicketDetails?.closingRemark}
           />
           {viewTicketDetails.image && (
             <div className="lg:col-span-1">

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
 import { toast } from "sonner";
@@ -17,8 +17,8 @@ import { Controller, useForm } from "react-hook-form";
 
 const HoildaysEvents = ({ title }) => {
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
-  const [localEvents, setLocalEvents] = useState([]);
 
   const {
     control,
@@ -29,6 +29,7 @@ const HoildaysEvents = ({ title }) => {
     mode: "onChange",
     defaultValues: {
       title: "",
+      description: "",
       startDate: null,
     },
   });
@@ -47,22 +48,35 @@ const HoildaysEvents = ({ title }) => {
   const { data: holidayEvents = [] } = useQuery({
     queryKey: ["holidayEvents"],
     queryFn: async () => {
-      const response = await axios.get("/api/events/all-events");
+      const response = await axios.get("/api/events/get-holidays");
       return response.data;
     },
   });
 
-  const combinedEvents = [...holidayEvents, ...localEvents].map(
-    (holiday, index) => {
-      const date = dayjs(holiday.start);
-      return {
-        id: index + 1,
-        title: holiday.title,
-        day: date.format("dddd"),
-        start: date,
-      };
-    }
-  );
+  const combinedEvents = holidayEvents.map((holiday) => {
+    const date = dayjs(holiday.start);
+    return {
+      title: holiday.title,
+      day: date.format("dddd"),
+      start: holiday.start,
+    };
+  });
+
+  const addHolidayMutation = useMutation({
+    mutationFn: async (eventData) => {
+      const response = await axios.post("/api/events/create-event", eventData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["holidayEvents"] });
+      toast.success("Holiday added successfully!");
+      reset();
+      setModalOpen(false);
+    },
+    onError: () => {
+      toast.error("Failed to add holiday.");
+    },
+  });
 
   const onSubmit = (data) => {
     if (!data.title || !data.startDate) {
@@ -70,15 +84,15 @@ const HoildaysEvents = ({ title }) => {
       return;
     }
 
-    const newEvent = {
+    const payload = {
       title: data.title.trim(),
+      type: { $in: ["Holiday", "holiday"] },
+      description: data.description,
       start: data.startDate,
+      end: data.startDate,
     };
 
-    setLocalEvents((prev) => [...prev, newEvent]);
-    toast.success("Holiday/Event added successfully!");
-    reset();
-    setModalOpen(false);
+    addHolidayMutation.mutate(payload);
   };
 
   return (
@@ -126,6 +140,30 @@ const HoildaysEvents = ({ title }) => {
                     size="small"
                     error={!!errors.title}
                     helperText={errors?.title?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name="description"
+                control={control}
+                rules={{
+                  required: "Description is required",
+                  validate: {
+                    noOnlyWhitespace,
+                    isAlphanumeric,
+                  },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Description"
+                    fullWidth
+                    multiline
+                    rows={3}
+                    size="small"
+                    error={!!errors.description}
+                    helperText={errors?.description?.message}
                   />
                 )}
               />

@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React, { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -13,7 +13,7 @@ const MeetingLayout = () => {
   //------------------------------------------ Common API's------------------------------------//
   const {
     data: meetings = [],
-    isPending : isMeetingsPending,
+    isPending: isMeetingsPending,
     error,
   } = useQuery({
     queryKey: ["meetings"],

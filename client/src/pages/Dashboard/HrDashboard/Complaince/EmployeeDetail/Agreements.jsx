@@ -17,9 +17,21 @@ import {
   noOnlyWhitespace,
 } from "../../../../../utils/validators";
 import StatusChip from "../../../../../components/StatusChip";
+import useAuth from "../../../../../hooks/useAuth";
+import { PERMISSIONS } from "../../../../../constants/permissions";
+import { useMemo } from "react";
 
 const Agreements = () => {
   const axios = useAxiosPrivate();
+
+  const { auth } = useAuth();
+
+  const hasAgreementRequestAccess = useMemo(() => {
+    return auth?.permissions?.some(
+      (permission) => permission.value === PERMISSIONS.HR_AGREEMENT_REQUEST.value
+    );
+  }, [auth?.permissions]);
+
   const id = useSelector((state) => state.hr.selectedEmployee);
   console.log("user id : ", id);
   const name = localStorage.getItem("employeeName") || "Employee";
@@ -207,8 +219,8 @@ const Agreements = () => {
   const tableData = isLoading
     ? []
     : agreements.map((item) => ({
-        ...item,
-      }));
+      ...item,
+    }));
 
   return (
     <div className="flex flex-col gap-8">
@@ -218,6 +230,7 @@ const Agreements = () => {
           search={true}
           tableTitle={`${name}'s Agreement List`}
           buttonTitle={"Add Agreement"}
+          buttonDisabled={!hasAgreementRequestAccess}
           handleSubmit={() => {
             setModalMode("add");
             setModalOpen(true);

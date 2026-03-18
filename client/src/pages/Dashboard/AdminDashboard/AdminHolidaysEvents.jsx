@@ -106,7 +106,7 @@ const AdminHolidaysEvents = ({ title }) => {
         <div>
           <div className="flex justify-between items-center pb-4">
             <span className="text-title font-pmedium text-primary">
-              {title}
+              {`Holiday & Event List`}
             </span>
             <PrimaryButton
               title={"Add Holiday / Event"}

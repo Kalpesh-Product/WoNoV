@@ -39,7 +39,7 @@ const YearlyGraph = ({
     )
       return 1;
 
-    return 0; // fallback
+    return 1; // fallback
   };
 
   const [selectedYearIndex, setSelectedYearIndex] = useState(() => {
@@ -48,7 +48,7 @@ const YearlyGraph = ({
 
       if (dateValue) return getYearIndexFromDate(dateValue);
     }
-    return currentYear ? 1 : 0;
+    return 1;
   });
 
   const selectedYear = fiscalYears[selectedYearIndex];
@@ -141,13 +141,17 @@ const YearlyGraph = ({
           />
 
           <div className="flex justify-center items-center">
-            <div className="flex items-center pb-4">
+            {/* <div className="flex items-center pb-2 gap-4 mt-4"> */}
+            <div className="flex items-center gap-4 mt-4">
               <SecondaryButton
                 title={<MdNavigateBefore />}
                 handleSubmit={goToPrevYear}
                 disabled={selectedYearIndex === 0}
               />
-              <div className="text-sm min-w-[120px] text-center">
+              {/* <div className="text-sm min-w-[120px] text-center">
+                {selectedYear}
+              </div> */}
+               <div className="text-primary text-content font-semibold">
                 {selectedYear}
               </div>
               <SecondaryButton

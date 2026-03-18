@@ -14,7 +14,7 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
-import { FaCheck } from "react-icons/fa6";
+// import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
@@ -25,7 +25,8 @@ import {
   setSelectedDepartment,
   setSelectedDepartmentName,
 } from "../../../redux/slices/performanceSlice";
-
+import { FaCheckSquare } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
@@ -49,6 +50,8 @@ const PerformanceMonthly = () => {
   const isAddKpaDisabled = auth?.user?.role?.some((role) =>
     restrictedRoles.includes(role.roleTitle)
   );
+
+  const canDeleteRecurrence = !isAddKpaDisabled;
 
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -114,7 +117,7 @@ const PerformanceMonthly = () => {
     onError: (error) => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKra"] });
       queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
-      toast.success("KPA Added");
+      toast.error("Task type should be KRA");
       setOpenModal(false);
     },
   });
@@ -146,10 +149,26 @@ const PerformanceMonthly = () => {
   });
   //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
 
+  const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } = useMutation({
+    mutationKey: ["deleteMonthlyKpaRecurrence"],
+    mutationFn: async (taskId) => {
+      const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
+      queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+      toast.success(data.message || "KPA recurrence removed");
+    },
+    onError: () => {
+      toast.error("Failed to remove recurrence");
+    },
+  });
+
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${deptId}&type=KPA`
+        `/api/performance/get-tasks?dept=${deptId}&type=KPA`
       );
       return response.data;
     } catch (error) {
@@ -221,23 +240,35 @@ const PerformanceMonthly = () => {
     },
     ...(matchingDepartment
       ? [
-          {
-            headerName: "Actions",
-            field: "actions",
-            cellRenderer: (params) => (
-              <div
-                role="button"
+        {
+          headerName: "Actions",
+          field: "actions",
+          cellRenderer: (params) => (
+            <div className="p-2 flex gap-2 items-center">
+              <button
+                type="button"
+                title="Mark As Done"
+                disabled={!params.node.selected || isUpdatePending || isDeletePending}
                 onClick={() => updateMonthlyKpa(params.data.mongoId)}
-                className="p-2"
+                className="ml-2 disabled:cursor-not-allowed"
               >
-                <PrimaryButton
-                  title={"Mark As Done"}
-                  disabled={!params.node.selected}
-                />
-              </div>
-            ),
-          },
-        ]
+                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color={!params.node.selected ? "gray" : "green"} />}
+              </button>
+              {canDeleteRecurrence && (
+                <button
+                  type="button"
+                  title="Delete Recurrence"
+                  disabled={!params.node.selected || isDeletePending || isUpdatePending}
+                  onClick={() => deleteMonthlyKpaRecurrence(params.data.mongoId)}
+                  className=""
+                >
+                  {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
+                </button>
+              )}
+            </div>
+          ),
+        },
+      ]
       : []),
   ];
 

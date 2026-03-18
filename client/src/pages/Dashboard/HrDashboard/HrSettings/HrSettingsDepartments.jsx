@@ -1,18 +1,15 @@
-import React, { useMemo, useState }  from "react";
+import React, { useMemo, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import { Chip, Skeleton, TextField } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { noOnlyWhitespace, isAlphanumeric } from "../../../../utils/validators";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 const createDepartmentId = (name) => {
   const normalized = name
@@ -26,8 +23,10 @@ const createDepartmentId = (name) => {
 
 const HrSettingsDepartments = () => {
   const axios = useAxiosPrivate();
-   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
+  const [statusUpdatingDepartmentId, setStatusUpdatingDepartmentId] =
+    useState(null);
 
   const {
     control,
@@ -41,7 +40,7 @@ const HrSettingsDepartments = () => {
     },
   });
 
-   const { data: departments = [], isPending: departmentLoading } = useQuery({
+  const { data: departments = [], isPending: departmentLoading } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
       const response = await axios.get("/api/departments/get-departments");
@@ -53,10 +52,9 @@ const HrSettingsDepartments = () => {
     queryKey: ["selectedDepartments"],
     queryFn: async () => {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments"
+        "api/company/get-company-data?field=selectedDepartments",
       );
       return response.data?.selectedDepartments;
-    
     },
   });
 
@@ -67,11 +65,11 @@ const HrSettingsDepartments = () => {
       if (deptId) {
         map.set(deptId, item?.admin || "—");
       }
-    })
-      return map;
+    });
+    return map;
   }, [selectedDepartments]);
 
-   const { mutate: addDepartment, isPending: isAddingDepartment } = useMutation({
+  const { mutate: addDepartment, isPending: isAddingDepartment } = useMutation({
     mutationKey: ["add-department"],
     mutationFn: async ({ deptName }) => {
       const payload = {
@@ -91,6 +89,38 @@ const HrSettingsDepartments = () => {
     onError: (error) => {
       const message = error?.response?.data?.message || error.message;
       toast.error(message || "Failed to add department");
+    },
+  });
+
+  const {
+    mutate: markDepartmentStatus,
+    isPending: isUpdatingDepartmentStatus,
+  } = useMutation({
+    mutationKey: ["mark-department-status"],
+    mutationFn: async ({ departmentId, isActive }) => {
+      const response = await axios.patch(
+        "/api/company/mark-department-status",
+        {
+          departmentId,
+          isActive,
+        },
+      );
+      return response.data;
+    },
+    onMutate: ({ departmentId }) => {
+      setStatusUpdatingDepartmentId(departmentId);
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Department status updated");
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      queryClient.invalidateQueries({ queryKey: ["selectedDepartments"] });
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || error.message;
+      toast.error(message || "Failed to update department status");
+    },
+    onSettled: () => {
+      setStatusUpdatingDepartmentId(null);
     },
   });
 
@@ -121,17 +151,18 @@ const HrSettingsDepartments = () => {
     {
       field: "status",
       headerName: "Status",
-      cellRenderer: () => {
+      cellRenderer: (params) => {
+        const status = params.value ? "Active" : "Inactive";
         const statusColorMap = {
           Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
           Active: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
         };
 
-        const { backgroundColor, color } = statusColorMap["Active"] 
+        const { backgroundColor, color } = statusColorMap[status];
         return (
           <>
             <Chip
-              label={"Active"}
+              label={status}
               style={{
                 backgroundColor,
                 color,
@@ -141,28 +172,43 @@ const HrSettingsDepartments = () => {
         );
       },
     },
-    // {
-    //   field: "actions",
-    //   headerName: "Actions",
-    //   cellRenderer: (params) => (
-    //     <>
-    //       <div className="p-2 mb-2 flex gap-2">
-    //         <span className="text-content text-primary hover:underline cursor-pointer">
-    //           Make Inactive
-    //         </span>
-    //       </div>
-    //     </>
-    //   ),
-    // },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 180,
+      cellRenderer: (params) => {
+        const isActive = Boolean(params.data.status);
+
+        return (
+          <ThreeDotMenu
+            rowId={params.data.id}
+            disabled={statusUpdatingDepartmentId === params.data.departmentId}
+            menuItems={[
+              {
+                label: isActive ? "Mark As Inactive" : "Mark As Active",
+                onClick: () =>
+                  markDepartmentStatus({
+                    departmentId: params.data.departmentId,
+                    isActive: !isActive,
+                  }),
+                disabled:
+                  isUpdatingDepartmentStatus &&
+                  statusUpdatingDepartmentId === params.data.departmentId,
+              },
+            ]}
+          />
+        );
+      },
+    },
   ];
 
-   const tableData = departments.map((item, index) => ({
+  const tableData = departments.map((item, index) => ({
     id: index + 1,
+    departmentId: item._id,
     departmentName: item.name,
     manager: managerByDepartmentId.get(item._id) || "—",
     status: item.isActive,
   }));
-
 
   return (
     <div className="flex flex-col gap-8">
@@ -194,7 +240,7 @@ const HrSettingsDepartments = () => {
           )}
         </div>
       </PageFrame>
-      
+
       <MuiModal
         open={openModal}
         onClose={handleCloseModal}

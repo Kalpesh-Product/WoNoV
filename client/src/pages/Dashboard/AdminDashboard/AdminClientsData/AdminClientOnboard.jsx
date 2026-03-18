@@ -14,7 +14,12 @@ import { toast } from "sonner";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { queryClient } from "../../../../main";
-import { isAlphanumeric, noOnlyWhitespace, isValidEmail, isValidPhoneNumber } from "../../../../utils/validators";
+import {
+  isAlphanumeric,
+  noOnlyWhitespace,
+  isValidEmail,
+  isValidPhoneNumber,
+} from "../../../../utils/validators";
 
 const AdminClientOnboard = () => {
   const dispatch = useDispatch();
@@ -30,6 +35,7 @@ const AdminClientOnboard = () => {
     defaultValues: {
       client: "",
       name: "",
+      gender: "",
       email: "",
       phone: "",
       dob: null,
@@ -63,19 +69,19 @@ const AdminClientOnboard = () => {
       "localPocEmail",
       clientsData
         .filter((item) => item._id === selectedCompany)
-        .map((item) => item.localPoc?.email)
+        .map((item) => item.localPoc?.email),
     );
     setValue(
       "localPocName",
       clientsData
         .filter((item) => item._id === selectedCompany)
-        .map((item) => item.localPoc?.name)
+        .map((item) => item.localPoc?.name),
     );
     setValue(
       "localPocPhone",
       clientsData
         .filter((item) => item._id === selectedCompany)
-        .map((item) => item.localPoc?.phone)
+        .map((item) => item.localPoc?.phone),
     );
   }, [selectedCompany]);
 
@@ -125,14 +131,14 @@ const AdminClientOnboard = () => {
     queryKey: ["units"],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/company/fetch-units?deskCalculated=true`
+        `/api/company/fetch-units?deskCalculated=true`,
       );
       return response.data;
     },
   });
 
   const availableCabinDesks = units.filter(
-    (item) => item._id?.trim() === selectedUnit.trim()
+    (item) => item._id?.trim() === selectedUnit.trim(),
   );
   const {
     data: services = [],
@@ -154,7 +160,7 @@ const AdminClientOnboard = () => {
       mutationFn: async (data) => {
         const response = await axios.post(
           `/api/sales/onboard-co-working-member`,
-          data
+          data,
         );
         return response.data;
       },
@@ -265,10 +271,10 @@ const AdminClientOnboard = () => {
                   name="email"
                   control={control}
                   rules={{
-                    required: "Email is required",
                     validate: {
-                      noOnlyWhitespace,
-                      isValidEmail
+                      noOnlyWhitespace: (value) =>
+                        !value || noOnlyWhitespace(value),
+                      isValidEmail: (value) => !value || isValidEmail(value),
                     },
                   }}
                   render={({ field }) => (
@@ -283,12 +289,38 @@ const AdminClientOnboard = () => {
                   )}
                 />
                 <Controller
+                  name="gender"
+                  control={control}
+                  rules={{ required: "Gender is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="Gender"
+                      error={!!errors.gender}
+                      helperText={errors.gender?.message}
+                      fullWidth
+                    >
+                      <MenuItem value="" disabled>
+                        Select Gender
+                      </MenuItem>
+                      <MenuItem value="Male">Male</MenuItem>
+                      <MenuItem value="Female">Female</MenuItem>
+                    </TextField>
+                  )}
+                />
+                <Controller
                   name="phone"
                   control={control}
-                  rules={{ required: "Phone is required",  validate: {
-                      isAlphanumeric,
-                      isValidPhoneNumber
-                    }, }}
+                  rules={{
+                    validate: {
+                      isAlphanumeric: (value) =>
+                        !value || isAlphanumeric(value),
+                      isValidPhoneNumber: (value) =>
+                        !value || isValidPhoneNumber(value),
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -303,7 +335,6 @@ const AdminClientOnboard = () => {
                 <Controller
                   name="dob"
                   control={control}
-                  rules={{ required: "Date of Birth is required" }}
                   render={({ field }) => (
                     <DatePicker
                       {...field}
@@ -516,7 +547,6 @@ const AdminClientOnboard = () => {
                 <Controller
                   name="localPocName"
                   control={control}
-                  rules={{ required: "Local POC Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -549,7 +579,6 @@ const AdminClientOnboard = () => {
                 <Controller
                   name="localPocPhone"
                   control={control}
-                  rules={{ required: "Local POC Phone is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}

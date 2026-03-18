@@ -30,6 +30,7 @@ import SeperatorUnderline from "./SeperatorUnderline";
 import { VscPersonAdd } from "react-icons/vsc";
 import { GrDocumentPerformance } from "react-icons/gr";
 import useAuth from "../hooks/useAuth";
+import { PERMISSIONS } from "../constants/permissions";
 
 const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
@@ -49,10 +50,14 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
     setMobileOpen(drawerOpen);
   }, [drawerOpen]);
 
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  const canAccessSidebarItem = (permission) =>
+    !permission || userPermissions.includes(permission);
+
   const userDeptIds = auth?.user?.departments?.map((d) => d._id) || [];
 
-  const canAccessVisitors = userDeptIds.some((id) =>
-    allowedVisitorDeptIds.includes(id)
+  const canAccessVisitorsByDepartment = userDeptIds.some((id) =>
+    allowedVisitorDeptIds.includes(id),
   );
 
   // Menu items array (without DASHBOARD)
@@ -61,62 +66,87 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       name: "Tickets",
       icon: <TiTicket />,
       route: "tickets",
+      permission: PERMISSIONS.SIDEBAR_TICKETS.value,
     },
     {
       name: "Meetings",
       icon: <MdMeetingRoom />,
       route: "meetings",
+      permission: PERMISSIONS.SIDEBAR_MEETINGS.value,
     },
     {
       name: "Tasks",
       icon: <FaTasks />,
       route: "tasks",
+      permission: PERMISSIONS.SIDEBAR_TASKS.value,
     },
 
     {
       name: "Performance",
       icon: <GrDocumentPerformance />,
       route: "performance",
+      permission: PERMISSIONS.SIDEBAR_PERFORMANCE.value,
     },
 
-    ...(canAccessVisitors
-      ? [
-          {
-            name: "Visitors",
-            icon: <VscPersonAdd />,
-            route: "visitors",
-          },
-        ]
-      : []),
-  ];
+    {
+      name: "Visitors",
+      icon: <VscPersonAdd />,
+      route: "visitors",
+      permission: PERMISSIONS.SIDEBAR_VISITORS.value,
+    },
+  ].filter(
+    (item) =>
+      canAccessSidebarItem(item.permission) &&
+      (item.route !== "visitors" || canAccessVisitorsByDepartment),
+  );
 
   const generalItems = [
-    { name: "Calendar", icon: <FaRegCalendarAlt />, route: "calendar" },
-    { name: "Access", icon: <SiAuthelia />, route: "access" },
+    {
+      name: "Calendar",
+      icon: <FaRegCalendarAlt />,
+      route: "calendar",
+      permission: PERMISSIONS.SIDEBAR_CALENDAR.value,
+    },
+    {
+      name: "Access",
+      icon: <SiAuthelia />,
+      route: "access",
+      permission: PERMISSIONS.SIDEBAR_ACCESS.value,
+    },
     {
       name: "Notifications",
       icon: <IoMdNotifications />,
       route: "notifications",
+      permission: PERMISSIONS.SIDEBAR_NOTIFICATIONS.value,
     },
     {
       name: "Profile",
       icon: <FaUserTie />,
       route: "profile",
+      permission: PERMISSIONS.SIDEBAR_PROFILE.value,
     },
-  ];
+  ].filter((item) => canAccessSidebarItem(item.permission));
+
   const upcomingItems = [
     {
       name: "Reports",
       icon: <TbReportSearch />,
       route: "#",
+      permission: PERMISSIONS.SIDEBAR_REPORTS.value,
     },
     {
       name: "Assets",
       icon: <FaBoxesStacked />,
       route: "#",
+      permission: PERMISSIONS.SIDEBAR_ASSETS.value,
     },
-    { name: "Chat", icon: <HiOutlineChatAlt2 />, route: "#" },
-  ];
+    {
+      name: "Chat",
+      icon: <HiOutlineChatAlt2 />,
+      route: "#",
+      permission: PERMISSIONS.SIDEBAR_CHAT.value,
+    },
+  ].filter((item) => canAccessSidebarItem(item.permission));
 
   const defaultModules = [
     {
@@ -124,6 +154,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       icon: <MdHome />,
       title: "Dashboard",
       route: "/app/dashboard",
+      permission: PERMISSIONS.SIDEBAR_DASHBOARD.value,
       submenus: [
         {
           id: 4,
@@ -131,6 +162,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           codeName: "Finance",
           route: "/app/dashboard/finance-dashboard",
           icon: <TbCashRegister />,
+          permission: PERMISSIONS.SIDEBAR_FINANCE_DASHBOARD.value,
         },
         {
           id: 5,
@@ -138,6 +170,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           codeName: "Sales",
           icon: <FaChartLine />,
           route: "/app/dashboard/sales-dashboard",
+          permission: PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
         },
         {
           id: 3,
@@ -145,6 +178,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           codeName: "HR",
           icon: <RiAdminFill />,
           route: "/app/dashboard/HR-dashboard",
+          permission: PERMISSIONS.SIDEBAR_HR_DASHBOARD.value,
         },
 
         {
@@ -153,6 +187,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           codeName: "Tec",
           icon: <FaLaptopCode />,
           route: "/app/dashboard/frontend-dashboard",
+          permission: PERMISSIONS.SIDEBAR_FRONTEND_DASHBOARD.value,
         },
 
         {
@@ -161,6 +196,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           codeName: "Administration",
           route: "/app/dashboard/admin-dashboard",
           icon: <FaUserShield />,
+          permission: PERMISSIONS.SIDEBAR_ADMIN_DASHBOARD.value,
         },
 
         {
@@ -169,6 +205,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           codeName: "Maintenance",
           route: "/app/dashboard/maintenance-dashboard",
           icon: <GiAutoRepair />,
+          permission: PERMISSIONS.SIDEBAR_MAINTENANCE_DASHBOARD.value,
         },
         {
           id: 9,
@@ -176,6 +213,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           codeName: "IT",
           route: "/app/dashboard/IT-dashboard",
           icon: <FaLaptopMedical />,
+          permission: PERMISSIONS.SIDEBAR_IT_DASHBOARD.value,
         },
 
         {
@@ -184,32 +222,31 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           codeName: "Cafe",
           route: "/app/dashboard/cafe-dashboard",
           icon: <GrCafeteria />,
+          permission: PERMISSIONS.SIDEBAR_CAFE_DASHBOARD.value,
         },
       ],
     },
   ];
 
-  const userDepartments = auth.user.departments.map((item) => item.name);
+  const filteredModules = defaultModules
+    .map((module) => {
+      const filteredSubmenus = module.submenus.filter((submenu) =>
+        canAccessSidebarItem(submenu.permission),
+      );
 
-  // First, attempt to filter submenus based on user departments
-  const filteredModules = defaultModules.map((module) => {
-    const filteredSubmenus = module.submenus.filter((submenu) =>
-      userDepartments.includes(submenu.codeName)
-    );
+      const hasModulePermission = canAccessSidebarItem(module.permission);
 
-    return {
-      ...module,
-      submenus: filteredSubmenus,
-    };
-  });
+      if (!hasModulePermission && filteredSubmenus.length === 0) {
+        return null;
+      }
 
-  // Check if all submenus are empty
-  const hasAnySubmenus = filteredModules.some(
-    (module) => module.submenus.length > 0
-  );
-
-  // If none match, return the original defaultModules
-  const finalModules = hasAnySubmenus ? filteredModules : defaultModules;
+      return {
+        ...module,
+        hasModulePermission,
+        submenus: filteredSubmenus,
+      };
+    })
+    .filter(Boolean);
 
   const handleMenuOpen = (item) => {
     navigate(item.route);
@@ -237,15 +274,15 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                 expandedModule === 0 ? "bg-gray-200" : "bg-white"
               }`}
             >
-              {finalModules.map((module, index) => (
+              {filteredModules.map((module, index) => (
                 <div key={index} className="">
                   <div
                     className={`cursor-pointer text-gray-500  flex ${
                       expandedModule === null && isSidebarOpen
                         ? "justify-between pr-2"
                         : expandedModule === 0 && isSidebarOpen
-                        ? "justify-between text-[#1E3D73] pr-2"
-                        : "justify-center pr-0"
+                          ? "justify-between text-[#1E3D73] pr-2"
+                          : "justify-center pr-0"
                     } items-center   ${
                       expandedModule === 0 &&
                       "bg-gray-200 rounded-t-md text-black"
@@ -255,7 +292,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                         : ""
                     }`}
                     onClick={() => {
-                      navigate(module.route);
+                      if (module.hasModulePermission) {
+                        navigate(module.route);
+                      } else if (module.submenus?.length) {
+                        toggleModule(index);
+                      }
                     }}
                   >
                     <div className="flex justify-start items-center">
@@ -333,95 +374,101 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
               ))}
             </div>
             {/* menuitems */}
-            <div className="pt-2  flex flex-col gap-2 w-full">
-              <SeperatorUnderline title={"Apps"} />
-              {menuItems.map((item, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleMenuOpen(item)}
-                  className={`cursor-pointer hover:text-primary transition-all duration-100 ${
-                    isAppsActive(item.route)
-                      ? "text-primary bg-gray-200 rounded-md"
-                      : "text-gray-500"
-                  } flex ${
-                    isSidebarOpen ? "" : "justify-center"
-                  } items-center py-0 `}
-                >
+            {menuItems.length > 0 && (
+              <div className="pt-2  flex flex-col gap-2 w-full">
+                <SeperatorUnderline title={"Apps"} />
+                {menuItems.map((item, index) => (
                   <div
-                    className={`flex justify-center items-center w-9 h-9 ${
+                    key={index}
+                    onClick={() => handleMenuOpen(item)}
+                    className={`cursor-pointer hover:text-primary transition-all duration-100 ${
                       isAppsActive(item.route)
-                        ? "bg-primary text-white rounded-md"
-                        : ""
-                    } text-sm`}
+                        ? "text-primary bg-gray-200 rounded-md"
+                        : "text-gray-500"
+                    } flex ${
+                      isSidebarOpen ? "" : "justify-center"
+                    } items-center py-0 `}
                   >
-                    {item.icon}
+                    <div
+                      className={`flex justify-center items-center w-9 h-9 ${
+                        isAppsActive(item.route)
+                          ? "bg-primary text-white rounded-md"
+                          : ""
+                      } text-sm`}
+                    >
+                      {item.icon}
+                    </div>
+                    {isSidebarOpen && (
+                      <span className="pl-5 text-sm">{item.name}</span>
+                    )}
                   </div>
-                  {isSidebarOpen && (
-                    <span className="pl-5 text-sm">{item.name}</span>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             {/* general */}
-            <div className="pt-2  flex flex-col gap-2 w-full">
-              <SeperatorUnderline title={"General"} />
-              {generalItems.map((item, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleMenuOpen(item)}
-                  className={`cursor-pointer hover:text-primary transition-all duration-100 ${
-                    isAppsActive(item.route)
-                      ? "text-primary bg-gray-200 rounded-md"
-                      : "text-gray-500"
-                  } flex ${
-                    isSidebarOpen ? "" : "justify-center"
-                  } items-center py-0 `}
-                >
+            {generalItems.length > 0 && (
+              <div className="pt-2  flex flex-col gap-2 w-full">
+                <SeperatorUnderline title={"General"} />
+                {generalItems.map((item, index) => (
                   <div
-                    className={`flex justify-center items-center w-9 h-9 ${
+                    key={index}
+                    onClick={() => handleMenuOpen(item)}
+                    className={`cursor-pointer hover:text-primary transition-all duration-100 ${
                       isAppsActive(item.route)
-                        ? "bg-primary text-white rounded-md"
-                        : ""
-                    } text-sm`}
+                        ? "text-primary bg-gray-200 rounded-md"
+                        : "text-gray-500"
+                    } flex ${
+                      isSidebarOpen ? "" : "justify-center"
+                    } items-center py-0 `}
                   >
-                    {item.icon}
+                    <div
+                      className={`flex justify-center items-center w-9 h-9 ${
+                        isAppsActive(item.route)
+                          ? "bg-primary text-white rounded-md"
+                          : ""
+                      } text-sm`}
+                    >
+                      {item.icon}
+                    </div>
+                    {isSidebarOpen && (
+                      <span className="pl-5 text-sm">{item.name}</span>
+                    )}
                   </div>
-                  {isSidebarOpen && (
-                    <span className="pl-5 text-sm">{item.name}</span>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             {/* coming soon */}
-            <div className="pt-2  flex flex-col gap-2 w-full">
-              <SeperatorUnderline smallText title={"Coming-soon"} />
-              {upcomingItems.map((item, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleMenuOpen(item)}
-                  className={`cursor-pointer hover:text-primary transition-all duration-100 ${
-                    isAppsActive(item.route)
-                      ? "text-primary bg-gray-200 rounded-md"
-                      : "text-gray-500"
-                  } flex ${
-                    isSidebarOpen ? "" : "justify-center"
-                  } items-center py-0 `}
-                >
+            {upcomingItems.length > 0 && (
+              <div className="pt-2  flex flex-col gap-2 w-full">
+                <SeperatorUnderline smallText title={"Coming-soon"} />
+                {upcomingItems.map((item, index) => (
                   <div
-                    className={`flex justify-center items-center w-9 h-9 ${
+                    key={index}
+                    onClick={() => handleMenuOpen(item)}
+                    className={`cursor-pointer hover:text-primary transition-all duration-100 ${
                       isAppsActive(item.route)
-                        ? "bg-primary text-white rounded-md"
-                        : ""
-                    } text-sm`}
+                        ? "text-primary bg-gray-200 rounded-md"
+                        : "text-gray-500"
+                    } flex ${
+                      isSidebarOpen ? "" : "justify-center"
+                    } items-center py-0 `}
                   >
-                    {item.icon}
+                    <div
+                      className={`flex justify-center items-center w-9 h-9 ${
+                        isAppsActive(item.route)
+                          ? "bg-primary text-white rounded-md"
+                          : ""
+                      } text-sm`}
+                    >
+                      {item.icon}
+                    </div>
+                    {isSidebarOpen && (
+                      <span className="pl-5 text-sm">{item.name}</span>
+                    )}
                   </div>
-                  {isSidebarOpen && (
-                    <span className="pl-5 text-sm">{item.name}</span>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

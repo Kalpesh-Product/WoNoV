@@ -30,7 +30,7 @@ import { filterPermissions } from "../../../utils/accessConfig";
 const ItDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const department = usePageDepartment();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const axios = useAxiosPrivate();
 
   const { auth } = useAuth();
@@ -1146,39 +1146,39 @@ const ItDashboard = () => {
         />
       )),
     },
-    {
-      layout: allowedDueTasks.length,
-      widgets: allowedDueTasks.map((config) => {
-        if (config.type === "PieChartMui") {
-          return (
-            <WidgetSection
-              key={config.key}
-              border={config.border}
-              title={config.title}
-            >
-              <PieChartMui data={config.data} options={config.options} />
-            </WidgetSection>
-          );
-        } else if (config.type === "DonutChart") {
-          return (
-            <WidgetSection
-              key={config.key}
-              border={config.border}
-              title={config.title}
-            >
-              <DonutChart
-                centerLabel={config.centerLabel}
-                labels={config.labels}
-                colors={config.colors}
-                series={config.series}
-                tooltipValue={config.tooltipValue}
-                width={config.width}
-              />
-            </WidgetSection>
-          );
-        }
-      }),
-    },
+    // {
+    //   layout: allowedDueTasks.length,
+    //   widgets: allowedDueTasks.map((config) => {
+    //     if (config.type === "PieChartMui") {
+    //       return (
+    //         <WidgetSection
+    //           key={config.key}
+    //           border={config.border}
+    //           title={config.title}
+    //         >
+    //           <PieChartMui data={config.data} options={config.options} />
+    //         </WidgetSection>
+    //       );
+    //     } else if (config.type === "DonutChart") {
+    //       return (
+    //         <WidgetSection
+    //           key={config.key}
+    //           border={config.border}
+    //           title={config.title}
+    //         >
+    //           <DonutChart
+    //             centerLabel={config.centerLabel}
+    //             labels={config.labels}
+    //             colors={config.colors}
+    //             series={config.series}
+    //             tooltipValue={config.tooltipValue}
+    //             width={config.width}
+    //           />
+    //         </WidgetSection>
+    //       );
+    //     }
+    //   }),
+    // },
     {
       layout: allowedPieCharts.length,
       widgets: allowedPieCharts.map((config) => (

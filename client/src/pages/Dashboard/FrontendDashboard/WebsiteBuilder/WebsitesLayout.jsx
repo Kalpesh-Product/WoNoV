@@ -7,12 +7,12 @@ const WebsitesLayout = () => {
     {
       label: "Active",
       path: "active",
-      // permission: PERMISSIONS.FINANCE_BUDGET.value,
+      permission: PERMISSIONS.FRONTEND_ACTIVE_WEBSITES.value,
     },
     {
       label: "InActive",
       path: "inactive",
-      // permission: PERMISSIONS.FINANCE_BUDGET.value,
+      permission: PERMISSIONS.FRONTEND_INACTIVE_WEBSITES.value,
     },
   ];
 

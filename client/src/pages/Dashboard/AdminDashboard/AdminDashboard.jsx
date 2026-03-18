@@ -39,12 +39,12 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2024-25");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
-    const userDepartments = auth?.user?.departments || [];
+  const userDepartments = auth?.user?.departments || [];
   const departmentIds = useMemo(
     () => userDepartments.map((dept) => dept?._id).filter(Boolean),
     [userDepartments]
@@ -174,8 +174,8 @@ const AdminDashboard = () => {
   const electrictyExpense = isHrFinanceLoading
     ? 0
     : hrFinance
-        .filter((item) => item.expanseType === "ELECTRICITY")
-        .reduce((sum, item) => sum + item.actualAmount || 0, 0);
+      .filter((item) => item.expanseType === "ELECTRICITY")
+      .reduce((sum, item) => sum + item.actualAmount || 0, 0);
   console.log("electric : ", electrictyExpense);
   //----------------------Electricity expense-----------------------//
   //----------------------Monthly average-----------------------//
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
     ? 0
     : hrFinance.reduce((sum, item) => sum + item.actualAmount || 0, 0);
 
-    const expensePerSqFtTotals = useMemo(() => {
+  const expensePerSqFtTotals = useMemo(() => {
     if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
       return { totalSqFt: 0, totalExpense: 0, perSqFtExpense: 0 };
     }
@@ -245,10 +245,7 @@ const AdminDashboard = () => {
     queryKey: ["units-data"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/company/fetch-simple-units
-          `
-        );
+        const response = await axios.get("/api/company/fetch-simple-units");
         return response.data;
       } catch (error) {
         throw new Error("Error fetching data");
@@ -294,7 +291,7 @@ const AdminDashboard = () => {
     },
   });
 
-    const { data: tasksSummary = [], isLoading: isTasksSummaryLoading } =
+  const { data: tasksSummary = [], isLoading: isTasksSummaryLoading } =
     useQuery({
       queryKey: ["tasks-summary"],
       queryFn: async () => {
@@ -441,8 +438,8 @@ const AdminDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData
-               ).toLocaleString("en-IN")}</div>
+          rawData
+        ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -470,14 +467,14 @@ const AdminDashboard = () => {
 
   //-----------------------------------------------------------------------------------------------------------------//
   const taskData = [
-    { unit: "ST-701A", tasks: 25 },
+    { unit: "ST-701A", tasks: 50 },
     { unit: "ST-701B", tasks: 30 },
-    { unit: "ST-701A", tasks: 25 },
-    { unit: "ST-701B", tasks: 30 },
-    { unit: "ST-701A", tasks: 25 },
-    { unit: "ST-701B", tasks: 30 },
-    { unit: "ST-701A", tasks: 25 },
-    { unit: "ST-701B", tasks: 30 },
+    { unit: "ST-601A", tasks: 25 },
+    { unit: "ST-601B", tasks: 30 },
+    { unit: "ST-501A", tasks: 25 },
+    { unit: "ST-501B", tasks: 30 },
+    { unit: "DT-002", tasks: 25 },
+    { unit: "DT-706", tasks: 30 },
   ];
 
   const totalUnitWiseTask = taskData.reduce((sum, item) => sum + item.tasks, 0);
@@ -697,8 +694,8 @@ const AdminDashboard = () => {
           upComingInDays === 0
             ? "Today"
             : upComingInDays === 1
-            ? "Tomorrow"
-            : `${upComingInDays} days`,
+              ? "Tomorrow"
+              : `${upComingInDays} days`,
         isUpcoming:
           anniversary.isBefore(cutOff) &&
           anniversary.isAfter(today.subtract(1, "day")),
@@ -748,7 +745,7 @@ const AdminDashboard = () => {
 
   let simplifiedClientsPie = [];
 
-   const totalDueTasks = useMemo(() => {
+  const totalDueTasks = useMemo(() => {
     if (hasMultipleDepartments) {
       if (isTasksSummaryLoading) return 0;
 
@@ -998,8 +995,10 @@ const AdminDashboard = () => {
       title: "Unit Wise Due Tasks",
       chartType: "PieChartMui",
       border: true,
-      data: [],
-      options: [],
+      height:320,
+      width:500,
+      data: unitWisePieData,
+      options: unitPieChartOptions,
     },
   ];
 
@@ -1008,6 +1007,8 @@ const AdminDashboard = () => {
     userPermissions
   );
 
+
+  
   //Executivve wise
   const executiveWiseDueTasksWidget = [
     {
@@ -1045,7 +1046,7 @@ const AdminDashboard = () => {
     {
       key: PERMISSIONS.ADMIN_BIOMETRICS_GENDER_DATA.value,
       layout: 2,
-      title: "Biometrics Gender Data",
+      title: "Biometrics Data",
       chartType: "PieChartMui",
       border: true,
       data: [],
@@ -1136,27 +1137,33 @@ const AdminDashboard = () => {
       layout: 2,
       widgets: allowedTables.map((config) => <MuiTable {...config} />),
     },
-    {
-      layout: 2,
-      widgets: [
-        allowedUnitWise.map((config) => (
-          <WidgetSection border={config.border} title={config.title}>
-            <PieChartMui data={config.data} options={config.options} />
-          </WidgetSection>
-        )),
-        allowedExecutiveWise.map((config) => (
-          <WidgetSection border={config.border} title={config.title}>
-            <DonutChart
-              centerLabel={config.centerLabel}
-              labels={config.labels}
-              colors={config.colors}
-              series={config.series}
-              tooltipValue={config.tooltipValue}
-            />
-          </WidgetSection>
-        )),
-      ],
-    },
+    // {
+    //   layout: 2,
+    //   widgets: [
+    //     allowedUnitWise.map((config) => (
+    //       <WidgetSection border={config.border} title={config.title}>
+    //         <PieChartMui 
+    //         data={config.data} 
+    //         options={config.options} 
+    //         width={config?.width}
+    //         height={config?.height}
+    //         centerAlign
+    //         />
+    //       </WidgetSection>
+    //     )),
+    //     allowedExecutiveWise.map((config) => (
+    //       <WidgetSection border={config.border} title={config.title}>
+    //         <DonutChart
+    //           centerLabel={config.centerLabel}
+    //           labels={config.labels}
+    //           colors={config.colors}
+    //           series={config.series}
+    //           tooltipValue={config.tooltipValue}
+    //         />
+    //       </WidgetSection>
+    //     )),
+    //   ],
+    // },
     {
       layout: 2,
       widgets: allowedPiechartConfig2.map((config) => (
