@@ -163,7 +163,7 @@ const BiometricAccessMembers = () => {
                     : undefined,
             emergencyName: selectedMember.emergencyName,
             emergencyNo: selectedMember.emergencyNo,
-            biometricStatus: data.biometricStatus.toLowerCase(),
+            biometricStatus: data.biometricStatus,
             dateOfJoining: selectedMember.dateOfJoining
                 ? dayjs(selectedMember.dateOfJoining).format("YYYY-MM-DD")
                 : undefined,
