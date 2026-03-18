@@ -9,6 +9,7 @@ wono-7a9f9-firebase-adminsdk-1vvh4-2509500cec.json
 
 # testing
 /coverage
+.vscode/
 
 # production
 /build
