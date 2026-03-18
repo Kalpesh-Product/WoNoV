@@ -407,6 +407,9 @@ import CoWorkingClients from "../pages/Dashboard/SalesDashboard/ViewClients/CoWo
 import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/WorkationClients";
 import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
 import VirtualOfficeClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDetails";
+import VirtualOfficeClientDesks from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDesks";
+import VirtualOfficeClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientRevenue";
+import VirtualOfficeClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientMembers";
 import LogPage from "../pages/LogPage";
 import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
 import AccessPages from "../pages/Access/AccessPages";
@@ -1523,11 +1526,47 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "mix-bag/clients/virtual-office/:clientId",
-                        element: <VirtualOfficeClientDetails />,
+                        element: <ViewClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <VirtualOfficeClientDesks />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <VirtualOfficeClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <VirtualOfficeClientMembers />,
+                          },
+                        ],
                       },
                       {
                         path: "clients/virtual-office/:clientId",
-                        element: <VirtualOfficeClientDetails />,
+                        element: <ViewClientLayout />,
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "members",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                        ],
                       },
                       {
                         path: "mix-bag/clients/co-working/:clientName",

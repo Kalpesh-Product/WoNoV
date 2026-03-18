@@ -53,34 +53,16 @@ const MonthlyProfitLoss = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
   const [selectedFY, setSelectedFY] = useState("FY 2025-26");
-  const [dynamicPnL, setDynamicPnL] = useState("0");
-  const [dynamicIncome, setDynamicIncome] = useState("0");
-  const [dynamicExpense, setDynamicExpense] = useState("0");
+
 
   const handleYearChange = (fiscalYear) => {
     setSelectedFY(fiscalYear);
-
-    const months = yearCategories[fiscalYear];
-
-    const income = months.reduce(
-      (sum, month) => sum + (incomeMap[month] || 0),
-      0
-    );
-    const expense = months.reduce(
-      (sum, month) => sum + (expenseMap[month] || 0),
-      0
-    );
-    const pnl = income - expense;
-
-    setDynamicIncome(`INR ${inrFormat(income)}`);
-    setDynamicExpense(`INR ${inrFormat(expense)}`);
-    setDynamicPnL(`INR ${inrFormat(pnl)}`);
   };
 
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const monthWiseExpenses = {};
   const yearCategories = {
-    "FY 2024-25": [      "Apr-24",
+    "FY 2024-25": ["Apr-24",
       "May-24",
       "Jun-24",
       "Jul-24",
@@ -378,11 +360,11 @@ const MonthlyProfitLoss = () => {
         const monthIndex = dataPointIndex;
         const income =
           w.globals.initialSeries.find((s) => s.name === "Income")?.data[
-            monthIndex
+          monthIndex
           ] ?? 0;
         const expense =
           w.globals.initialSeries.find((s) => s.name === "Expense")?.data[
-            monthIndex
+          monthIndex
           ] ?? 0;
 
         const monthLabel =
@@ -411,26 +393,54 @@ const MonthlyProfitLoss = () => {
   };
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
-  const monthlyProfitLossData = yearCategories["FY 2025-26"].map(
-    (month, index) => {
-      const income = incomeMap[month] || 0;
-      const expense = expenseMap[month] || 0;
-      const pnl = income - expense;
+  // const monthlyProfitLossData = yearCategories["FY 2025-26"].map(
+  //   (month, index) => {
+  //     const income = incomeMap[month] || 0;
+  //     const expense = expenseMap[month] || 0;
+  //     const pnl = income - expense;
 
-      return {
-        id: index + 1,
-        month,
-        income: inrFormat(income),
-        expense: inrFormat(expense),
-        pnl: inrFormat(pnl),
-      };
-    }
+  //     return {
+  //       id: index + 1,
+  //       month,
+  //       income: inrFormat(income),
+  //       expense: inrFormat(expense),
+  //       pnl: inrFormat(pnl),
+  //     };
+  //   }
+  // );
+  // const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
+  //   const numericalPnL = parseInt(item.pnl?.replace(/,/g, ""), 10) || 0;
+
+  //   return sum + numericalPnL;
+  // }, 0);
+
+  const selectedFYMonths = yearCategories[selectedFY] || [];
+
+  const selectedFYIncome = selectedFYMonths.reduce(
+    (sum, month) => sum + (incomeMap[month] || 0),
+    0
   );
-  const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
-    const numericalPnL = parseInt(item.pnl?.replace(/,/g, ""), 10) || 0;
 
-    return sum + numericalPnL;
-  }, 0);
+  const selectedFYExpense = selectedFYMonths.reduce(
+    (sum, month) => sum + (expenseMap[month] || 0),
+    0
+  );
+
+  const monthlyProfitLossData = selectedFYMonths.map((month, index) => {
+    const income = incomeMap[month] || 0;
+    const expense = expenseMap[month] || 0;
+    const pnl = income - expense;
+
+    return {
+      id: index + 1,
+      month,
+      income: inrFormat(income),
+      expense: inrFormat(expense),
+      pnl: inrFormat(pnl),
+    };
+  });
+
+  const totalPnL = selectedFYIncome - selectedFYExpense;
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const techWidgets = [
@@ -442,8 +452,8 @@ const MonthlyProfitLoss = () => {
           options={incomeExpenseOptions}
           chartId={"bargraph-finance-income"}
           title={"BIZNest FINANCE INCOME V/S EXPENSE"}
-          TitleAmountGreen={dynamicIncome}
-          TitleAmountRed={dynamicExpense}
+          TitleAmountGreen={`INR ${inrFormat(selectedFYIncome)}`}
+          TitleAmountRed={`INR ${inrFormat(selectedFYExpense)}`}
           onYearChange={handleYearChange}
         />,
       ],
@@ -470,7 +480,7 @@ const MonthlyProfitLoss = () => {
           <WidgetSection
             border
             TitleAmount={`P&L :  INR ${inrFormat(totalPnL)}`}
-            titleLabel={"FY 2025-26"}
+            titleLabel={selectedFY}
             title={`Total Monthly P&L`}
           >
             <AgTable
@@ -482,7 +492,7 @@ const MonthlyProfitLoss = () => {
         ) : (
           <WidgetSection title="Monthly P&L">
             <p className="text-center text-gray-500 py-8">
-              No data available for FY 2024–25
+              {`No data available for ${selectedFY}`}
             </p>
           </WidgetSection>
         )}

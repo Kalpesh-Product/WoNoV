@@ -861,7 +861,7 @@ export const PERMISSIONS = {
 
   // 🔷 Sales graphs
   SALES_DEPARTMENT_REVENUES: {
-    value: "sales_department_revenues_card",
+    value: "sales_department_revenues_Chart",
     title: "DEPARTMENT REVENUES",
     type: "read",
   },

@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { Chip, TextField } from "@mui/material";
+import { Chip, MenuItem, TextField } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -34,6 +34,7 @@ const AdminClientMembers = () => {
     mode: "onChange",
     defaultValues: {
       employeeName: "",
+      gender: "",
       email: "",
       phone: "",
       dob: null,
@@ -44,6 +45,7 @@ const AdminClientMembers = () => {
     setSelectedMemberId(member._id || member.id || member.employeeName);
     reset({
       employeeName: member.employeeName || "",
+      gender: member.gender || "",
       email: member.email || "",
       phone: member.mobileNo || member.phone || "",
       dob: member.dob && dayjs(member.dob).isValid() ? dayjs(member.dob) : null,
@@ -82,8 +84,8 @@ const AdminClientMembers = () => {
     onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed to update member",
+        error?.message ||
+        "Failed to update member",
       );
     },
   });
@@ -119,8 +121,8 @@ const AdminClientMembers = () => {
     onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
-          error?.message ||
-          "Failed to update member status",
+        error?.message ||
+        "Failed to update member status",
       );
     },
   });
@@ -138,6 +140,7 @@ const AdminClientMembers = () => {
 
     const payload = {
       name: data.employeeName?.trim(),
+      gender: data.gender,
       designation: selectedMember.designation,
       email: data.email?.trim() || selectedMember.email,
       phone:
@@ -289,6 +292,28 @@ const AdminClientMembers = () => {
                 error={!!errors?.employeeName}
                 helperText={errors?.employeeName?.message}
               />
+            )}
+          />
+          <Controller
+            name="gender"
+            control={control}
+            rules={{ required: "Gender is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label="Gender"
+                size="small"
+                fullWidth
+                error={!!errors?.gender}
+                helperText={errors?.gender?.message}
+              >
+                <MenuItem value="" disabled>
+                  Select Gender
+                </MenuItem>
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+              </TextField>
             )}
           />
 

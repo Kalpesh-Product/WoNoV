@@ -1146,39 +1146,39 @@ const ItDashboard = () => {
         />
       )),
     },
-    {
-      layout: allowedDueTasks.length,
-      widgets: allowedDueTasks.map((config) => {
-        if (config.type === "PieChartMui") {
-          return (
-            <WidgetSection
-              key={config.key}
-              border={config.border}
-              title={config.title}
-            >
-              <PieChartMui data={config.data} options={config.options} />
-            </WidgetSection>
-          );
-        } else if (config.type === "DonutChart") {
-          return (
-            <WidgetSection
-              key={config.key}
-              border={config.border}
-              title={config.title}
-            >
-              <DonutChart
-                centerLabel={config.centerLabel}
-                labels={config.labels}
-                colors={config.colors}
-                series={config.series}
-                tooltipValue={config.tooltipValue}
-                width={config.width}
-              />
-            </WidgetSection>
-          );
-        }
-      }),
-    },
+    // {
+    //   layout: allowedDueTasks.length,
+    //   widgets: allowedDueTasks.map((config) => {
+    //     if (config.type === "PieChartMui") {
+    //       return (
+    //         <WidgetSection
+    //           key={config.key}
+    //           border={config.border}
+    //           title={config.title}
+    //         >
+    //           <PieChartMui data={config.data} options={config.options} />
+    //         </WidgetSection>
+    //       );
+    //     } else if (config.type === "DonutChart") {
+    //       return (
+    //         <WidgetSection
+    //           key={config.key}
+    //           border={config.border}
+    //           title={config.title}
+    //         >
+    //           <DonutChart
+    //             centerLabel={config.centerLabel}
+    //             labels={config.labels}
+    //             colors={config.colors}
+    //             series={config.series}
+    //             tooltipValue={config.tooltipValue}
+    //             width={config.width}
+    //           />
+    //         </WidgetSection>
+    //       );
+    //     }
+    //   }),
+    // },
     {
       layout: allowedPieCharts.length,
       widgets: allowedPieCharts.map((config) => (

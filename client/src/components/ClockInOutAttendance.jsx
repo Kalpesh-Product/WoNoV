@@ -518,6 +518,13 @@ const ClockInOutAttendance = () => {
       : yesterday;
   };
 
+  const getCorrectionTargetDay = () => {
+    if (clockInTime) {
+      return dayjs(clockInTime);
+    }
+    return getPrevDay();
+  };
+
   const timeStats = [
     {
       label: "Clock-in Time",
@@ -559,7 +566,10 @@ const ClockInOutAttendance = () => {
             <button
               onClick={() => {
                 if (hasClockedIn && !isToday) {
-                  setValue("targetedDay", getPrevDay().format("YYYY-MM-DD"));
+                  setValue(
+                    "targetedDay",
+                    getCorrectionTargetDay().format("YYYY-MM-DD")
+                  );
                   setOpenModal(true);
                 } else {
                   hasClockedIn
@@ -670,7 +680,7 @@ const ClockInOutAttendance = () => {
           <Controller
             name="targetedDay"
             control={control}
-            defaultValue={getPrevDay().format("YYYY-MM-DD")}
+            defaultValue={getCorrectionTargetDay().format("YYYY-MM-DD")}
             render={({ field }) => (
               <TextField
                 {...field}
