@@ -1412,6 +1412,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/admin-dashboard/mix-bag/client-members",
   },
+  ADMIN_BIOMETRIC_ACCESS_MIX_BAG: {
+    value: "admin_biometric_access_card",
+    title: "BIOMETRIC ACCESS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/mix-bag/biometric-access",
+  },
   ADMIN_CLIENT_DETAILS: {
     value: "admin_client_details_tab",
     title: "CLIENT DETAILS",
@@ -1840,6 +1846,12 @@ export const PERMISSIONS = {
     title: "IT TEAM MEMBERS SCHEDULE MIX BAG",
     type: "read",
     route: "/app/dashboard/it-dashboard/mix-bag/team-members-schedule",
+  },
+  IT_BIOMETRIC_ACCESS_MIX_BAG: {
+    value: "it_biometric_access_mix_bag_card",
+    title: "IT BIOMETRIC ACCESS MIX BAG",
+    type: "read",
+    route: "/app/dashboard/it-dashboard/mix-bag/biometric-access",
   },
   IT_DATA: { value: "it_data_card", title: "IT DATA", type: "read", access: "page" },
   IT_SETTINGS: {
