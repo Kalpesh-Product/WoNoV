@@ -8,6 +8,7 @@ const {
 const {
   addLandlordDocument,
   getLandlordDocuments,
+  createLandlord,
 } = require("../controllers/financeControllers/landlordControllers");
 const upload = require("../config/multerConfig");
 
@@ -19,6 +20,7 @@ router.post(
   upload.single("client-invoice"),
   uploadClientInvoice
 );
+router.post("/create-landlord", createLandlord);
 router.post(
   "/add-landlord-agreement",
   upload.single("agreement"),

@@ -272,11 +272,20 @@ const ClientOnboarding = () => {
                             Select a Service
                           </MenuItem>
                           {!isServicesPending ? (
-                            services.map((item) => (
-                              <MenuItem key={item._id} value={item._id}>
-                                {item.serviceName}
-                              </MenuItem>
-                            ))
+                            services
+                              .filter((item) =>
+                                [
+                                  "co-working",
+                                  // "virtual office",
+                                ].some((s) =>
+                                  item.serviceName.toLowerCase().includes(s)
+                                )
+                              )
+                              .map((item) => (
+                                <MenuItem key={item._id} value={item._id}>
+                                  {item.serviceName}
+                                </MenuItem>
+                              ))
                           ) : (
                             <CircularProgress color="#1E3D73" />
                           )}

@@ -464,23 +464,124 @@ const AdminDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
 
   //-----------------------------------------------------------------------------------------------------------------//
-  const taskData = [
-    { unit: "ST-701A", tasks: 50 },
-    { unit: "ST-701B", tasks: 30 },
-    { unit: "ST-601A", tasks: 25 },
-    { unit: "ST-601B", tasks: 30 },
-    { unit: "ST-501A", tasks: 25 },
-    { unit: "ST-501B", tasks: 30 },
-    { unit: "DT-002", tasks: 25 },
-    { unit: "DT-706", tasks: 30 },
-  ];
+  //   const accessibleDepartmentTasks = useMemo(() => {
+  //   if (hasMultipleDepartments) {
+  //     if (isTasksSummaryLoading) return [];
+
+  //     return tasksSummary
+  //       .filter((dept) => {
+  //         const deptId =
+  //           typeof dept?.department === "object"
+  //             ? dept?.department?._id
+  //             : dept?.department;
+  //         const deptName =
+  //           typeof dept?.department === "object"
+  //             ? dept?.department?.name
+  //             : dept?.department;
+  //         const normalizedName =
+  //           typeof deptName === "string" ? deptName.toLowerCase() : "";
+
+  //         return (
+  //           (deptId && departmentIds.includes(deptId)) ||
+  //           (normalizedName && departmentNames.includes(normalizedName))
+  //         );
+  //       })
+  //       .flatMap((dept) =>
+  //         Array.isArray(dept?.tasks)
+  //           ? dept.tasks.filter((task) => task?.taskType === "Department")
+  //           : [],
+  //       );
+  //   }
+
+  //   return tasks.filter((task) => task?.taskType === "Department");
+  // }, [
+  //   departmentIds,
+  //   departmentNames,
+  //   hasMultipleDepartments,
+  //   isTasksSummaryLoading,
+  //   tasks,
+  //   tasksSummary,
+  // ]);
+
+  // const unitWiseTaskData = useMemo(() => {
+  //   const groupedTasks = accessibleDepartmentTasks.reduce((acc, task) => {
+  //     const unitNo = task?.location?.unitNo?.trim();
+
+  //     if (!unitNo || task?.status === "Completed") {
+  //       return acc;
+  //     }
+
+  //     if (!acc[unitNo]) {
+  //       acc[unitNo] = {
+  //         unit: unitNo,
+  //         tasks: 0,
+  //       };
+  //     }
+
+  //     acc[unitNo].tasks += 1;
+  //     return acc;
+  //   }, {});
+
+  //   return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
+  // }, [accessibleDepartmentTasks]);
+
+  // const totalUnitWiseTask = unitWiseTaskData.reduce(
+  //   (sum, item) => sum + item.tasks,
+  //   0,
+  // );
+  // const unitWisePieData = unitWiseTaskData.map((item) => ({
+  //   label: `${item.unit} (${((item.tasks / totalUnitWiseTask) * 100).toFixed(
+  //     1,
+  //   )}%)`,
+  //   value: item.tasks,
+  // }));
+
+  // const unitPieChartOptions = {
+  //   labels: unitWisePieData.map((item) => item.label),
+  //   chart: {
+  //     fontFamily: "Poppins-Regular",
+  //     events: {
+  //       dataPointSelection: () => {
+  //          navigate("/app/tasks/department-tasks");
+  //       },
+  //     },
+  //   },
+  //   toolTip: {
+  //     y: {
+  //       formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
+  //     },
+  //   },
+  // };
+
+
+  const taskData = useMemo(() => {
+    const pendingDepartmentTasks = tasks.filter(
+      (task) => task?.taskType === "Department" && task?.status === "Pending",
+    );
+
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const unitName = task?.location?.unitNo || "Unassigned";
+
+      if (!acc[unitName]) {
+        acc[unitName] = {
+          unit: unitName,
+          tasks: 0,
+        };
+      }
+
+      acc[unitName].tasks += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) =>
+      a.unit.localeCompare(b.unit, undefined, { numeric: true }),
+    );
+  }, [tasks]);
 
   const totalUnitWiseTask = taskData.reduce((sum, item) => sum + item.tasks, 0);
   const unitWisePieData = taskData.map((item) => ({
-    label: `${item.unit} (${((item.tasks / totalUnitWiseTask) * 100).toFixed(
-      1,
-    )}%)`,
-    value: item.tasks,
+   label: item.unit, // ✅ only unit name
+  value: item.tasks,
   }));
 
   const unitPieChartOptions = {
@@ -493,12 +594,13 @@ const AdminDashboard = () => {
         },
       },
     },
-    toolTip: {
+    tooltip: {
       y: {
-        formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
+        formatter: (val) => `${val} Due tasks`,
       },
     },
   };
+
 
   //-----------------------------------------------------------------------------------------------------------------//
   const executiveTasks = [
@@ -1237,33 +1339,33 @@ const AdminDashboard = () => {
       layout: 2,
       widgets: allowedTables.map((config) => <MuiTable {...config} />),
     },
-    // {
-    //   layout: 2,
-    //   widgets: [
-    //     allowedUnitWise.map((config) => (
-    //       <WidgetSection border={config.border} title={config.title}>
-    //         <PieChartMui
-    //         data={config.data}
-    //         options={config.options}
-    //         width={config?.width}
-    //         height={config?.height}
-    //         centerAlign
-    //         />
-    //       </WidgetSection>
-    //     )),
-    //     allowedExecutiveWise.map((config) => (
-    //       <WidgetSection border={config.border} title={config.title}>
-    //         <DonutChart
-    //           centerLabel={config.centerLabel}
-    //           labels={config.labels}
-    //           colors={config.colors}
-    //           series={config.series}
-    //           tooltipValue={config.tooltipValue}
-    //         />
-    //       </WidgetSection>
-    //     )),
-    //   ],
-    // },
+    {
+      layout: 2,
+      widgets: [
+        allowedUnitWise.map((config) => (
+          <WidgetSection border={config.border} title={config.title}>
+            <PieChartMui
+            data={config.data}
+            options={config.options}
+            width={config?.width}
+            height={config?.height}
+            centerAlign
+            />
+          </WidgetSection>
+        )),
+        allowedExecutiveWise.map((config) => (
+          <WidgetSection border={config.border} title={config.title}>
+            <DonutChart
+              centerLabel={config.centerLabel}
+              labels={config.labels}
+              colors={config.colors}
+              series={config.series}
+              tooltipValue={config.tooltipValue}
+            />
+          </WidgetSection>
+        )),
+      ],
+    },
     {
       layout: 2,
       widgets: allowedPiechartConfig2.map((config) => (

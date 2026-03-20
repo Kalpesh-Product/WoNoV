@@ -185,9 +185,8 @@ const updateCompanyDocument = async (req, res, next) => {
         await handleDocumentDelete(targetDoc.documentId);
       }
 
-      const folderName = `${foundUser.company.companyName}/${
-        uploadFolders[targetSection]
-      }`;
+      const folderName = `${foundUser.company.companyName}/${uploadFolders[targetSection]
+        }`;
       const sanitizedFileName = file.originalname.replace(/\s+/g, "_");
 
       const response = await handleDocumentUpload(
@@ -317,9 +316,8 @@ const toggleCompanyDocumentStatus = async (req, res, next) => {
     }
 
     return res.status(200).json({
-      message: `Document ${
-        newStatus ? "activated" : "deactivated"
-      } successfully`,
+      message: `Document ${newStatus ? "activated" : "deactivated"
+        } successfully`,
     });
   } catch (error) {
     next(error);
@@ -461,9 +459,8 @@ const uploadDepartmentDocument = async (req, res, next) => {
     }
 
     return res.status(200).json({
-      message: `${type.toUpperCase()} uploaded successfully for ${
-        department.department.name
-      } department`,
+      message: `${type.toUpperCase()} uploaded successfully for ${department.department.name
+        } department`,
     });
   } catch (error) {
     next(error);
@@ -752,8 +749,7 @@ const addCompanyKyc = async (req, res, next) => {
 
       uploadResult = await handleDocumentUpload(
         buffer,
-        `${
-          company.companyName
+        `${company.companyName
         }/kyc/${type}/${nameOfDirector}/${documentName?.trim()}`,
         originalname,
       );
@@ -795,6 +791,80 @@ const addCompanyKyc = async (req, res, next) => {
     next(error);
   }
 };
+
+const createCompanyKycEntry = async (req, res, next) => {
+  try {
+    const { type, nameOfDirector } = req.body;
+    const companyId = req.company;
+
+    if (!companyId || !type) {
+      return res
+        .status(400)
+        .json({ message: "companyId and type are required" });
+    }
+
+    const company = await Company.findOne({ _id: companyId });
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    if (type === "directorKyc") {
+      if (!nameOfDirector || !nameOfDirector.trim()) {
+        return res
+          .status(400)
+          .json({ message: "Director name is required" });
+      }
+
+      const trimmedName = nameOfDirector.trim();
+      const directorKyc = company.kycDetails.directorKyc || [];
+      const exists = directorKyc.some(
+        (director) =>
+          director.nameOfDirector?.toLowerCase() === trimmedName.toLowerCase(),
+      );
+
+      if (exists) {
+        return res.status(409).json({ message: "Director already exists" });
+      }
+
+      directorKyc.push({
+        nameOfDirector: trimmedName,
+        documents: [],
+        isActive: true,
+      });
+
+      company.kycDetails.directorKyc = directorKyc;
+      await company.save();
+
+      return res.status(201).json({
+        message: "Director KYC entry created successfully",
+        data: {
+          name: trimmedName,
+          type,
+          documents: [],
+        },
+      });
+    }
+
+    if (type === "companyKyc") {
+      return res.status(201).json({
+        message: "Company KYC entry is available",
+        data: {
+          name: "Company",
+          type,
+          documents: company.kycDetails.companyKyc || [],
+        },
+      });
+    }
+
+    return res.status(400).json({
+      message: "Invalid type: must be either 'companyKyc' or 'directorKyc'",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 const getCompanyKyc = async (req, res, next) => {
   try {
@@ -1133,9 +1203,8 @@ const deleteDepartmentTemplate = async (req, res, next) => {
     await department.save({ validateBeforeSave: false });
 
     res.status(200).json({
-      message: `Template ${
-        template.isActive ? "activated" : "deactivated"
-      } successfully`,
+      message: `Template ${template.isActive ? "activated" : "deactivated"
+        } successfully`,
     });
   } catch (error) {
     next(error);
@@ -1206,6 +1275,7 @@ module.exports = {
   uploadDepartmentDocument,
   getDepartmentDocuments,
   addCompanyKyc,
+  createCompanyKycEntry,
   getCompanyKyc,
   getComplianceDocuments,
   uploadComplianceDocument,
