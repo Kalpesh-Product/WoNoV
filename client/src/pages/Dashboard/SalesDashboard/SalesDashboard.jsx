@@ -709,21 +709,7 @@ const SalesDashboard = () => {
 
     legend: {
       position: "bottom",
-      horizontalAlign: "center",
-      fontSize: "14px",
-      itemMargin: {
-        horizontal: 8,
-        vertical: 4,
-      },
-      markers: {
-        width: 12,
-        height: 12,
-      },
-      formatter: (seriesName) => {
-        return seriesName.length > 20
-          ? seriesName.slice(0, 20) + "..."
-          : seriesName;
-      },
+     fontSize: "12px",
     },
   };
 
