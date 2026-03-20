@@ -32,6 +32,7 @@ const createCoworkingClient = async (req, res, next) => {
       sector,
       hoCity,
       hoState,
+      building,
       unit,
       cabinDesks,
       openDesks,
@@ -73,6 +74,14 @@ const createCoworkingClient = async (req, res, next) => {
         logSourceKey,
       );
     }
+    if (!mongoose.Types.ObjectId.isValid(building)) {
+      throw new CustomError(
+        "Invalid building ID provided",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
     const unitExists = await Unit.findOne({ _id: unit });
     if (!unitExists) {
       throw new CustomError(
@@ -82,6 +91,15 @@ const createCoworkingClient = async (req, res, next) => {
         logSourceKey,
       );
     }
+    if (String(unitExists.building) !== String(building)) {
+      throw new CustomError(
+        "Selected building does not match the selected unit",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
 
     const coworkingService = await ClientService.findOne({
       serviceName: "Co-working",
@@ -101,6 +119,7 @@ const createCoworkingClient = async (req, res, next) => {
       !sector ||
       !hoCity ||
       !hoState ||
+      !building ||
       !ratePerOpenDesk ||
       !ratePerCabinDesk ||
       !annualIncrement ||
@@ -163,6 +182,7 @@ const createCoworkingClient = async (req, res, next) => {
       service: coworkingService._id,
       sector,
       hoCity,
+      building: unitExists.building,
       hoState,
       unit,
       cabinDesks,
