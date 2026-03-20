@@ -65,15 +65,15 @@ const createMember = async (req, res, next) => {
       return res.status(404).json({ message: "Client not found" });
     }
 
-    const existing = await CoworkingMembers.findOne({ employeeName: name });
-    if (existing) {
-      throw new CustomError(
-        "Client member already exists",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+    // const existing = await CoworkingMembers.findOne({ employeeName: name });
+    // if (existing) {
+    //   throw new CustomError(
+    //     "Client member already exists",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
 
     const newMember = new CoworkingMembers({
       employeeName: name,
@@ -219,7 +219,7 @@ const getAllMembers = async (req, res, next) => {
     }
     s;
 
-    const members = await CoworkingMembers.find({ 
+    const members = await CoworkingMembers.find({
       company,
       client,
     }).populate("client", "clientName service");
