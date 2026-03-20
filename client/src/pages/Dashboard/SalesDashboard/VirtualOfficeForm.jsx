@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { TextField, MenuItem, CircularProgress } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { toast } from "sonner";
 import PageFrame from "../../../components/Pages/PageFrame";
+import useAuth from "../../../hooks/useAuth";
 
 const VirtualOfficeForm = () => {
   const {
@@ -29,6 +30,7 @@ const VirtualOfficeForm = () => {
       sector: "",
       hoCity: "",
       hoState: "",
+      building: "",
       unit: "",
       cabinDesks: "",
       ratePerCabinDesk: "10000",
@@ -50,6 +52,7 @@ const VirtualOfficeForm = () => {
       hOPocPhone: "",
     },
   });
+  const { auth } = useAuth();
   // const clientsData = useSelector((state) => state.sales.clientsData);
   // const [selectedUnit, setSelectedUnit] = useState("");
 
@@ -61,6 +64,7 @@ const VirtualOfficeForm = () => {
 
   const openDesks = useWatch({ control, name: "openDesks" });
   const openDesksRate = useWatch({ control, name: "ratePerOpenDesk" });
+  const selectedBuilding = useWatch({ control, name: "building" });
   const totalOpenDeskCost =
     (parseFloat(openDesks) || 0) * (parseFloat(openDesksRate) || 0);
 
@@ -104,6 +108,19 @@ const VirtualOfficeForm = () => {
     },
   });
 
+  const availableBuildings = auth?.user?.company?.workLocations || [];
+  const filteredUnits = useMemo(() => {
+    if (!selectedBuilding) {
+      return [];
+    }
+
+    return units.filter((item) => item.building?._id === selectedBuilding);
+  }, [selectedBuilding, units]);
+
+  useEffect(() => {
+    setValue("unit", "");
+  }, [selectedBuilding, setValue]);
+
   const { data: services = [], isLoading: isServicesPending } = useQuery({
     queryKey: ["services"],
     queryFn: async () => {
@@ -143,6 +160,7 @@ const VirtualOfficeForm = () => {
         states.find((item) => item.isoCode === data.hoState)?.name ||
         data.hoState,
       city: data.hoCity,
+      building: data.building,
       unit: data.unit,
       termStartDate: data.startDate
         ? dayjs(data.startDate).format("YYYY-MM-DD")
@@ -372,38 +390,76 @@ const VirtualOfficeForm = () => {
                   </span>
                 </div>
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  <Controller
-                    name="unit"
-                    control={control}
-                    rules={{ required: "Unit is required" }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        onClick={fetchUnits}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                          fetchUnits();
-                        }}
-                        size="small"
-                        select
-                        label="Unit"
-                        fullWidth
-                      >
-                        <MenuItem value="">Select a Unit</MenuItem>
-                        {!isUnitsPending ? (
-                          units.map((item) => (
-                            <MenuItem key={item._id} value={item._id}>
-                              {item.unitNo}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <Controller
+                      name="building"
+                      control={control}
+                      rules={{ required: "Building is required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          select
+                          label="Building"
+                          error={!!errors.building}
+                          helperText={errors.building?.message}
+                          fullWidth
+                        >
+                          <MenuItem value="">Select a Building</MenuItem>
+                          {availableBuildings.length > 0 ? (
+                            availableBuildings.map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.buildingName}
+                              </MenuItem>
+                            ))
+                          ) : (
+                            <MenuItem disabled>No Buildings Available</MenuItem>
+                          )}
+                        </TextField>
+                      )}
+                    />
+                    <Controller
+                      name="unit"
+                      control={control}
+                      rules={{ required: "Unit is required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          onClick={fetchUnits}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                            fetchUnits();
+                          }}
+                          size="small"
+                          select
+                          label="Unit"
+                          error={!!errors.unit}
+                          helperText={errors.unit?.message}
+                          fullWidth
+                        >
+                          <MenuItem value="">Select a Unit</MenuItem>
+                          {isUnitsPending ? (
+                            <MenuItem disabled>
+                              <CircularProgress size={20} color="inherit" />
                             </MenuItem>
-                          ))
-                        ) : (
-                          <>
-                            <CircularProgress color="#1E3D73" />
-                          </>
-                        )}
-                      </TextField>
-                    )}
-                  />
+                          ) : filteredUnits.length > 0 ? (
+                            filteredUnits.map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.unitNo}
+                              </MenuItem>
+                            ))
+                          ) : (
+                            <MenuItem disabled>
+                              {selectedBuilding
+                                ? "No units available"
+                                : "Select a building first"}
+                            </MenuItem>
+                          )}
+                        </TextField>
+                      )}
+                    />
+                  </div>
+
 
                   <div className="flex gap-2">
                     <div className="w-1/2">

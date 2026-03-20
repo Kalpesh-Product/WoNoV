@@ -47,6 +47,10 @@ const clientSchema = new mongoose.Schema(
     hoState: {
       type: String,
     },
+    building: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Building",
+    },
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
@@ -83,6 +87,10 @@ const clientSchema = new mongoose.Schema(
     meetingCreditBalance: {
       type: Number,
       default: 0,
+    },
+    lastManualCreditResetAt: {
+      type: Date,
+      default: null,
     },
 
     startDate: {

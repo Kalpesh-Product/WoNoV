@@ -31,6 +31,7 @@ const createVirtualOfficeClient = async (req, res) => {
       "sector",
       "state",
       "city",
+      "building",
       "unit",
       "termStartDate",
       "termEnd",
@@ -54,6 +55,26 @@ const createVirtualOfficeClient = async (req, res) => {
 
     if (clientExists) {
       return res.status(400).json({ message: "Client already exists" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(data.building)) {
+      return res.status(400).json({ message: "Invalid building ID" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(data.unit)) {
+      return res.status(400).json({ message: "Invalid unit ID" });
+    }
+
+    const unit = await Unit.findById(data.unit).lean().exec();
+
+    if (!unit) {
+      return res.status(404).json({ message: "Selected unit not found" });
+    }
+
+    if (String(unit.building) !== String(data.building)) {
+      return res.status(400).json({
+        message: "Selected building does not match the selected unit",
+      });
     }
 
     const service = await ClientService.findOne({
@@ -192,6 +213,7 @@ const createVirtualOfficeClient = async (req, res) => {
 
     const doc = await VirtualOfficeClient.create({
       ...data,
+      building: unit.building,
       cabinDesks,
       cabinDeskRate,
       cabinTotal,
@@ -399,6 +421,35 @@ const updateVirtualOfficeClient = async (req, res) => {
     if (clientExists) {
       return res.status(400).json({ message: "Client already exists" });
     }
+    let selectedUnit = null;
+    if (updates.unit || updates.building) {
+      const nextUnitId = updates.unit || existing.unit;
+      const nextBuildingId = updates.building || existing.building;
+
+      if (!mongoose.Types.ObjectId.isValid(nextUnitId)) {
+        return res.status(400).json({ message: "Invalid unit ID" });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(nextBuildingId)) {
+        return res.status(400).json({ message: "Invalid building ID" });
+      }
+
+      selectedUnit = await Unit.findById(nextUnitId).lean().exec();
+
+      if (!selectedUnit) {
+        return res.status(404).json({ message: "Selected unit not found" });
+      }
+
+      if (String(selectedUnit.building) !== String(nextBuildingId)) {
+        return res.status(400).json({
+          message: "Selected building does not match the selected unit",
+        });
+      }
+
+      updates.unit = selectedUnit._id;
+      updates.building = selectedUnit.building;
+    }
+
 
     // ✅ Basic validations if provided
     if (updates.email && !isValidEmail(updates.email)) {
@@ -670,9 +721,8 @@ const updateVirtualOfficeStatus = async (req, res) => {
     await existing.save();
 
     return res.status(200).json({
-      message: `Client ${
-        clientStatus ? "activated" : "deactivated"
-      } successfully`,
+      message: `Client ${clientStatus ? "activated" : "deactivated"
+        } successfully`,
       data: existing,
     });
   } catch (error) {

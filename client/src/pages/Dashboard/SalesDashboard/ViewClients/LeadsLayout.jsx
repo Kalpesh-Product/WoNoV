@@ -78,9 +78,10 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       const domainCounts = {
         "Coworking": 0,
         "Co-Living": 0,
-        Workations: 0,
+        "Workations": 0,
         "Virtualoffice": 0,
-        "Meeting": 0,
+        "External Meetings": 0,
+        "Open Desk": 0,
       };
 
       groupedByMonth[monthLabel].forEach((client) => {
@@ -103,21 +104,25 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       name: "Co-Working",
       data: transformedData.map((item) => item["Coworking"] || 0),
     },
-    {
-      name: "Co-Living",
-      data: transformedData.map((item) => item["Co-Living"] || 0),
-    },
-    {
-      name: "Workations",
-      data: transformedData.map((item) => item["Workations"] || 0),
-    },
+    // {
+    //   name: "Co-Living",
+    //   data: transformedData.map((item) => item["Co-Living"] || 0),
+    // },
+    // {
+    //   name: "Workations",
+    //   data: transformedData.map((item) => item["Workations"] || 0),
+    // },
     {
       name: "Virtual Office",
       data: transformedData.map((item) => item["Virtualoffice"] || 0),
     },
     {
-      name: "Meetings",
-      data: transformedData.map((item) => item["Meeting"] || 0),
+      name: "External Meetings",
+      data: transformedData.map((item) => item["External Meetings"] || 0),
+    },
+    {
+      name: "Open Desk",
+      data: transformedData.map((item) => item["Open Desk"] || 0),
     },
   ];
   const barChartOptions = {
