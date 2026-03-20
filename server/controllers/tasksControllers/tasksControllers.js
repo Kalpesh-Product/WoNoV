@@ -7,6 +7,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const validateUsers = require("../../utils/validateUsers");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
+const Unit = require("../../models/locations/Unit");
 const emitter = require("../../utils/eventEmitter");
 const {
   toUtcStartOfDay,
@@ -32,6 +33,7 @@ const createTasks = async (req, res, next) => {
       dueTime,
       endDate: dueDate,
       startDate: assignedDate,
+       location,
     } = req.body;
 
     if (
@@ -62,6 +64,35 @@ const createTasks = async (req, res, next) => {
 
     const parsedAssignedDate = new Date(assignedDate);
     const parsedDueDate = new Date(dueDate);
+
+     let validatedLocation = null;
+    if (location) {
+      if (!mongoose.Types.ObjectId.isValid(location)) {
+        throw new CustomError(
+          "Invalid location ID provided",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+
+      validatedLocation = await Unit.findOne({
+        _id: location,
+        company,
+        isActive: true,
+      })
+        .select("_id")
+        .lean();
+
+      if (!validatedLocation) {
+        throw new CustomError(
+          "Selected location does not exist",
+          logPath,
+          logAction,
+          logSourceKey
+        );
+      }
+    }
 
     if (isNaN(parsedAssignedDate.getTime())) {
       throw new CustomError(
@@ -142,6 +173,7 @@ const createTasks = async (req, res, next) => {
       dueDate: parsedDueDate,
       dueTime: dueTime,
       company,
+      location: validatedLocation?._id || null,
     });
 
     await newTask.save();
@@ -391,6 +423,7 @@ const getAllTasks = async (req, res, next) => {
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate("department", "name")
+      .populate({ path: "location", select: "unitNo unitName" })
       .select("-company")
       .lean();
 
@@ -471,6 +504,8 @@ const getTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+        .populate({ path: "location", select: "unitNo unitName" })
+       .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -515,6 +550,8 @@ const getMyTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+       .populate({ path: "location", select: "unitNo unitName" })
+       .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -556,6 +593,7 @@ const getMyAssignedTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+       .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -598,6 +636,7 @@ const getCompletedTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+       .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -617,6 +656,7 @@ const getCompletedTasks = async (req, res, next) => {
         : "";
       return {
         ...task,
+        unitNo: task.location?.unitNo || "N/A",
         dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
         assignedDate: task.assignedDate,
@@ -645,6 +685,7 @@ const getMyCompletedTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+       .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -701,6 +742,7 @@ const getMyTodayTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+       .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -763,6 +805,7 @@ const getTodayDeptTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -956,6 +999,7 @@ const getAssignedTasks = async (req, res, next) => {
     const tasks = await Task.find({ company, assignedBy: user })
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+       .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -1122,6 +1166,7 @@ const getTasksSummary = async (req, res, next) => {
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate("department", "name")
+      .populate({ path: "location", select: "unitNo unitName" })
       .select("-company")
       .lean();
 

@@ -61,8 +61,8 @@ const DepartmentTasks = () => {
       },
     },
     { headerName: "Total Current Month's Tasks", field: "totalTasks", flex: 1 },
-    { headerName: "Open Tasks", field: "pendingTasks" },
-    { headerName: "Closed Tasks", field: "completedTasks" },
+    { headerName: "Pending Tasks", field: "pendingTasks" },
+    { headerName: "Completed Tasks", field: "completedTasks" },
   ];
   return (
     <div className="flex flex-col gap-4">

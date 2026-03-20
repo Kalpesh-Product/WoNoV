@@ -6,7 +6,15 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
-import { Chip, CircularProgress, TextField } from "@mui/material";
+import {
+  Chip,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
@@ -75,6 +83,8 @@ const TasksViewDepartment = () => {
     control,
     formState: { errors },
     reset,
+    watch,
+    setValue,
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -83,8 +93,24 @@ const TasksViewDepartment = () => {
       startDate: null,
       endDate: null,
       dueTime: null,
+      location: "",
+      unit: "",
     },
   });
+
+  const watchLocation = watch("location");
+
+  const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
+    queryKey: ["departmentTaskUnits"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+      return response.data;
+    },
+  });
+
+  useEffect(() => {
+    setValue("unit", "");
+  }, [setValue, watchLocation]);
   //----------function handlers-------------//
   const handleViewTask = (data) => {
     setModalMode("view");
@@ -104,6 +130,7 @@ const TasksViewDepartment = () => {
         description: data.description,
         department: deptId,
         taskType: "Department",
+        location: data.unit,
       });
       return response.data;
     },
@@ -206,6 +233,11 @@ const TasksViewDepartment = () => {
       },
     },
     {
+  headerName: "Unit No",
+  field: "unitNo",
+  width: 150,
+},
+    {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
@@ -282,6 +314,11 @@ const TasksViewDepartment = () => {
     { headerName: "Completed By", field: "completedBy", width: 300 },
     { headerName: "Completed Date", field: "completedDate" },
     {
+  headerName: "Unit No",
+  field: "unitNo",
+  width: 150,
+},
+    {
       headerName: "Completed Time",
       field: "completedTime",
     },
@@ -345,6 +382,8 @@ const TasksViewDepartment = () => {
                       status: item.status,
                       dueDate: item.dueDate,
                       dueTime: item.dueTime,
+                      location: item.location,
+                      unitNo: item.location?.unitNo || "N/A",
                       assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                     }))}
                   dateColumn={"assignedDate"}
@@ -379,9 +418,12 @@ const TasksViewDepartment = () => {
                           description: item.description,
                           dueDate: item.dueDate,
                           dueTime: item.dueTime,
+                           location: item.location,
+                      unitNo: item.location?.unitNo || "N/A",
                           completedDate: item.completedDate,
                           completedDateLabel: humanDate(item.completedDate),
                           completedTime: item.completedDate,
+                          
                           assignedBy:
                             item.assignedBy?.firstName ||
                               item.assignedBy?.lastName
@@ -457,7 +499,62 @@ const TasksViewDepartment = () => {
               />
             )}
           />
+ <Controller
+            name="location"
+            control={control}
+            rules={{ required: "Location is required" }}
+            render={({ field }) => (
+              <FormControl size="small" fullWidth error={!!errors.location}>
+                <InputLabel>Location</InputLabel>
+                <Select {...field} label="Work Location">
+                  <MenuItem value="">Select Location</MenuItem>
+                  {auth.user.company.workLocations.length > 0 ? (
+                    auth.user.company.workLocations.map((loc) => (
+                      <MenuItem key={loc._id} value={loc._id}>
+                        {loc.buildingName}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No Locations Available</MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+            )}
+          />
 
+          <Controller
+            name="unit"
+            control={control}
+            rules={{ required: "Unit is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                size="small"
+                label="Select Unit"
+                disabled={!watchLocation}
+                error={!!errors.unit}
+                helperText={errors.unit?.message}
+              >
+                <MenuItem value="" disabled>
+                  Select Unit
+                </MenuItem>
+                {isUnitsPending ? (
+                  <MenuItem disabled>
+                    <CircularProgress size={20} />
+                  </MenuItem>
+                ) : (
+                  unitsData
+                    .filter((item) => item.building?._id === watchLocation)
+                    .map((item) => (
+                      <MenuItem key={item._id} value={item._id}>
+                        {item.unitNo}
+                      </MenuItem>
+                    ))
+                )}
+              </TextField>
+            )}
+          />
           <Controller
             name="startDate"
             control={control}
@@ -604,6 +701,10 @@ const TasksViewDepartment = () => {
               title={"Added By"}
               detail={selectedTask?.assignedBy}
             />
+              <DetalisFormatted
+              title={"Unit No"}
+              detail={selectedTask?.location?.unitNo || "-"}
+            />
             <DetalisFormatted
               title={"Due Date"}
               detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
@@ -626,6 +727,10 @@ const TasksViewDepartment = () => {
             <DetalisFormatted
               title={"Added By"}
               detail={selectedTask?.assignedBy}
+            />
+              <DetalisFormatted
+              title={"Unit No"}
+              detail={selectedTask?.location?.unitNo || "-"}
             />
             <DetalisFormatted
               title={"Completed Date"}
