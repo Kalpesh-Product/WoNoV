@@ -68,47 +68,47 @@ const ClientDetails = () => {
     },
   });
 
-  useEffect(() => {
-    if (selectedClient) {
-      reset({
-        clientName: selectedClient.clientName,
-        serviceName: selectedClient.service?.serviceName || "",
-        serviceDescription: selectedClient.service?.description || "",
-        sector: selectedClient.sector,
-        hoCity: selectedClient.hoCity,
-        hoState: selectedClient.hoState,
-        building: selectedClient.unit?.building?._id || "",
-        unit: selectedClient.unit?._id || "",
-        unitName: selectedClient.unit?.unitName || "",
-        unitNo: selectedClient.unit?.unitNo || selectedClient.unitNo || "",
-        buildingName: selectedClient.unit?.building?.buildingName || "",
-        buildingAddress: selectedClient.unit?.building?.fullAddress || "",
-        cabinDesks: selectedClient.cabinDesks,
-        openDesks: selectedClient.openDesks,
-        totalDesks: selectedClient.totalDesks,
-        ratePerOpenDesk: selectedClient.ratePerOpenDesk,
-        ratePerCabinDesk: selectedClient.ratePerCabinDesk,
-        annualIncrement: selectedClient.annualIncrement,
-        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
-        totalMeetingCredits: selectedClient.totalMeetingCredits,
-        startDate: selectedClient.startDate,
-        bookingType: selectedClient.bookingType,
-        endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
-        rentDate: selectedClient.rentDate,
-        nextIncrement: selectedClient.nextIncrement,
-        localPocName: selectedClient.localPocName || "",
-        localPocEmail: selectedClient.localPocEmail || "",
-        localPocPhone: selectedClient.localPocPhone || "",
-        hoPocName: selectedClient.hoPocName || "",
-        hoPocEmail: selectedClient.hoPocEmail || "",
-        hoPocPhone: selectedClient.hoPocPhone || "",
-        isActive: selectedClient.isActive,
-        createdAt: selectedClient.createdAt,
-        updatedAt: selectedClient.updatedAt,
-      });
-    }
-  }, [selectedClient, reset]);
+  // useEffect(() => {
+  //   if (selectedClient) {
+  //     reset({
+  //       clientName: selectedClient.clientName,
+  //       serviceName: selectedClient.service?.serviceName || "",
+  //       serviceDescription: selectedClient.service?.description || "",
+  //       sector: selectedClient.sector,
+  //       hoCity: selectedClient.hoCity,
+  //       hoState: selectedClient.hoState,
+  //       building: selectedClient.unit?.building?._id || "",
+  //       unit: selectedClient.unit?._id || "",
+  //       unitName: selectedClient.unit?.unitName || "",
+  //       unitNo: selectedClient.unit?.unitNo || selectedClient.unitNo || "",
+  //       buildingName: selectedClient.unit?.building?.buildingName || "",
+  //       buildingAddress: selectedClient.unit?.building?.fullAddress || "",
+  //       cabinDesks: selectedClient.cabinDesks,
+  //       openDesks: selectedClient.openDesks,
+  //       totalDesks: selectedClient.totalDesks,
+  //       ratePerOpenDesk: selectedClient.ratePerOpenDesk,
+  //       ratePerCabinDesk: selectedClient.ratePerCabinDesk,
+  //       annualIncrement: selectedClient.annualIncrement,
+  //       perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
+  //       totalMeetingCredits: selectedClient.totalMeetingCredits,
+  //       startDate: selectedClient.startDate,
+  //       bookingType: selectedClient.bookingType,
+  //       endDate: selectedClient.endDate,
+  //       lockinPeriod: selectedClient.lockinPeriod,
+  //       rentDate: selectedClient.rentDate,
+  //       nextIncrement: selectedClient.nextIncrement,
+  //       localPocName: selectedClient.localPocName || "",
+  //       localPocEmail: selectedClient.localPocEmail || "",
+  //       localPocPhone: selectedClient.localPocPhone || "",
+  //       hoPocName: selectedClient.hoPocName || "",
+  //       hoPocEmail: selectedClient.hoPocEmail || "",
+  //       hoPocPhone: selectedClient.hoPocPhone || "",
+  //       isActive: selectedClient.isActive,
+  //       createdAt: selectedClient.createdAt,
+  //       updatedAt: selectedClient.updatedAt,
+  //     });
+  //   }
+  // }, [selectedClient, reset]);
 
   const { isLoading: isClientLoading } = useQuery({
     queryKey: ["coWorkingClientByName", normalizedClientName],
@@ -145,6 +145,71 @@ const ClientDetails = () => {
   });
 
   const availableBuildings = auth?.user?.company?.workLocations || [];
+  const selectedUnitDetails = useMemo(() => {
+    const selectedUnit = selectedClient?.unit;
+    const selectedUnitId =
+      typeof selectedUnit === "string" ? selectedUnit : selectedUnit?._id;
+
+    if (!selectedUnitId) {
+      return typeof selectedUnit === "object" && selectedUnit ? selectedUnit : null;
+    }
+
+    return (
+      units.find((item) => item._id === selectedUnitId) ||
+      (typeof selectedUnit === "object" ? selectedUnit : null)
+    );
+  }, [selectedClient?.unit, units]);
+
+  useEffect(() => {
+    if (selectedClient) {
+      reset({
+        clientName: selectedClient.clientName,
+        serviceName: selectedClient.service?.serviceName || "",
+        serviceDescription: selectedClient.service?.description || "",
+        sector: selectedClient.sector,
+        hoCity: selectedClient.hoCity,
+        hoState: selectedClient.hoState,
+        building: selectedUnitDetails?.building?._id || "",
+        unit:
+          selectedUnitDetails?._id ||
+          (typeof selectedClient.unit === "string" ? selectedClient.unit : "") ||
+          "",
+        unitName: selectedUnitDetails?.unitName || selectedClient.unitName || "",
+        unitNo: selectedUnitDetails?.unitNo || selectedClient.unitNo || "",
+        buildingName:
+          selectedUnitDetails?.building?.buildingName ||
+          selectedClient.buildingName ||
+          "",
+        buildingAddress:
+          selectedUnitDetails?.building?.fullAddress ||
+          selectedClient.buildingAddress ||
+          "",
+        cabinDesks: selectedClient.cabinDesks,
+        openDesks: selectedClient.openDesks,
+        totalDesks: selectedClient.totalDesks,
+        ratePerOpenDesk: selectedClient.ratePerOpenDesk,
+        ratePerCabinDesk: selectedClient.ratePerCabinDesk,
+        annualIncrement: selectedClient.annualIncrement,
+        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
+        totalMeetingCredits: selectedClient.totalMeetingCredits,
+        startDate: selectedClient.startDate,
+        bookingType: selectedClient.bookingType,
+        endDate: selectedClient.endDate,
+        lockinPeriod: selectedClient.lockinPeriod,
+        rentDate: selectedClient.rentDate,
+        nextIncrement: selectedClient.nextIncrement,
+        localPocName: selectedClient.localPocName || "",
+        localPocEmail: selectedClient.localPocEmail || "",
+        localPocPhone: selectedClient.localPocPhone || "",
+        hoPocName: selectedClient.hoPocName || "",
+        hoPocEmail: selectedClient.hoPocEmail || "",
+        hoPocPhone: selectedClient.hoPocPhone || "",
+        isActive: selectedClient.isActive,
+        createdAt: selectedClient.createdAt,
+        updatedAt: selectedClient.updatedAt,
+      });
+    }
+  }, [reset, selectedClient, selectedUnitDetails]);
   const filteredUnits = useMemo(() => {
     if (!selectedBuilding) {
       return [];
@@ -274,12 +339,18 @@ const ClientDetails = () => {
         sector: selectedClient.sector,
         hoCity: selectedClient.hoCity,
         hoState: selectedClient.hoState,
-        building: selectedClient.unit?.building?._id || "",
-        unit: selectedClient.unit?._id || "",
-        unitName: selectedClient.unit?.unitName || "",
-        unitNo: selectedClient.unit?.unitNo || selectedClient.unitNo || "",
-        buildingName: selectedClient.unit?.building?.buildingName || "",
-        buildingAddress: selectedClient.unit?.building?.fullAddress || "",
+        building: selectedUnitDetails?.building?._id || "",
+        unit: selectedUnitDetails?._id || (typeof selectedClient.unit === "string" ? selectedClient.unit : "") || "",
+        unitName: selectedUnitDetails?.unitName || selectedClient.unitName || "",
+        unitNo: selectedUnitDetails?.unitNo || selectedClient.unitNo || "",
+        buildingName:
+          selectedUnitDetails?.building?.buildingName ||
+          selectedClient.buildingName ||
+          "",
+        buildingAddress:
+          selectedUnitDetails?.building?.fullAddress ||
+          selectedClient.buildingAddress ||
+          "",
         cabinDesks: selectedClient.cabinDesks,
         openDesks: selectedClient.openDesks,
         totalDesks: selectedClient.totalDesks,
@@ -306,7 +377,6 @@ const ClientDetails = () => {
       });
     }
   };
-
   const renderDatePickerField = (field, label) => (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DatePicker

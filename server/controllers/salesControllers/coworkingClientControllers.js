@@ -151,9 +151,9 @@ const createCoworkingClient = async (req, res, next) => {
 
     const bookedDesks = cabinDesks + openDesks;
     if (
-      bookedDesks < 1 ||
-      ratePerOpenDesk <= 0 ||
-      ratePerCabinDesk <= 0 ||
+      bookedDesks < 0 ||
+      ratePerOpenDesk < 0 ||
+      ratePerCabinDesk < 0 ||
       annualIncrement < 0
     ) {
       throw new CustomError(
