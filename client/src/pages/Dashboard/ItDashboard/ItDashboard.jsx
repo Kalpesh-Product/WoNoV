@@ -910,6 +910,8 @@ const ItDashboard = () => {
       type: "PieChartMui",
       title: "Biometrics Activation Data",
       border: true,
+      Width:500,
+      height:320,
       data: biometricStatusSummary,
       options: biometricPieOptions,
     },
@@ -1248,7 +1250,13 @@ const ItDashboard = () => {
           border={config.border}
           title={config.title}
         >
-          <PieChartMui data={config.data} options={config.options} />
+        <PieChartMui
+          data={config.data}
+          options={config.options} 
+          width={config?.width}
+          height={config?.height}
+          centerAlign
+        />
         </WidgetSection>
       )),
     },

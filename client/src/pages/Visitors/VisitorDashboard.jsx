@@ -190,7 +190,8 @@ const VisitorDashboard = () => {
     // { id: "firstName", label: "First Name", minWidth: 80 }, // Minimum width
     // { id: "lastName", label: "Last Name", minWidth: 120 },
     { id: "name", label: "Name", minWidth: 120 },
-    { id: "registeredClientCompany", label: "Company", minWidth: 120 },
+    //{ id: "registeredClientCompany", label: "Company", minWidth: 120 },
+    { id: "visitorCompany", label: "Company", minWidth: 120 },
 
     {
       id: "purposeOfVisit",
@@ -840,7 +841,8 @@ const VisitorDashboard = () => {
         firstName: item.firstName,
         lastName: item.lastName,
         name: `${item.firstName} ${item.lastName}`,
-        registeredClientCompany: item.registeredClientCompany,
+        // registeredClientCompany: item.registeredClientCompany,
+        visitorCompany: item.visitorCompany,
         address: item.address,
         phoneNumber: item.phoneNumber,
         email: item.email,
