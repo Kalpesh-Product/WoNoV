@@ -145,8 +145,11 @@ const VirtualOfficeClientDetails = () => {
         const response = await axios.get(
           `/api/sales/virtual-office/clients?virtualofficeclientid=${virtualOfficeClientId}`,
         );
-        const clientData =
+        const rawClientData =
           response?.data?.client || response?.data?.data || response?.data;
+        const clientData = Array.isArray(rawClientData)
+          ? rawClientData[0]
+          : rawClientData;
 
         if (clientData?._id) {
           dispatch(setSelectedClient(clientData));
