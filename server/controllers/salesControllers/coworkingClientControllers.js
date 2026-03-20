@@ -680,10 +680,23 @@ const resetCoworkingClientCredits = async (req, res, next) => {
 
     const oldState = existingClient.toObject();
 
-    existingClient.meetingCreditBalance = 0;
-    existingClient.lastManualCreditResetAt = new Date();
+    const resetTimestamp = new Date();
 
-    await existingClient.save();
+    const updatedClient = await CoworkingClient.findOneAndUpdate(
+      {
+        _id: clientId,
+        company,
+      },
+      {
+        $set: {
+          meetingCreditBalance: 0,
+          lastManualCreditResetAt: resetTimestamp,
+        },
+      },
+      {
+        new: true,
+      },
+    );
 
     await createLog({
       path: logPath,
@@ -694,16 +707,16 @@ const resetCoworkingClientCredits = async (req, res, next) => {
       ip,
       company,
       sourceKey: logSourceKey,
-      sourceId: existingClient._id,
+      sourceId: updatedClient._id,
       changes: {
         before: oldState,
-        after: existingClient,
+        after: updatedClient,
       },
     });
 
     return res.status(200).json({
       message: "CoworkingClient credits reset successfully",
-      client: existingClient,
+      client: updatedClient,
     });
   } catch (error) {
     if (error instanceof CustomError) {
