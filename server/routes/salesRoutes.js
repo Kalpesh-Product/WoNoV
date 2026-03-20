@@ -94,7 +94,7 @@ router.post(
   upload.single("clients"),
   bulkInsertCoworkingClients,
 );
-router.post(
+router.patch(
   "/bulk-edit-co-working-clients",
   upload.single("clients"),
   bulkUpdateCoworkingClients,

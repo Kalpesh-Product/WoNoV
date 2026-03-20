@@ -172,7 +172,7 @@ const ExternalClient = () => {
 
     return (
         <div className="flex flex-col gap-4 p-4">
-            <div>
+            {/* <div>
                 {isLoading ? (
                     <div className="flex justify-center p-8">
                         <CircularProgress />
@@ -184,7 +184,7 @@ const ExternalClient = () => {
                         additionalData={`CLIENTS : ${unifiedClients.length}`}
                     />
                 )}
-            </div>
+            </div> */}
             <WidgetSection layout={allowedCards.length <= 3 ? allowedCards.length : 3}>
                 {allowedCards.map((item) => (
                     <DataCard key={item.id} title={item.name} data={item.data || 0} route={item.route} />

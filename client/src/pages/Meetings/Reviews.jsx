@@ -280,7 +280,7 @@ const Reviews = () => {
             </span>
           </div>
 
-          <ThreeDotMenu
+          {/* <ThreeDotMenu
             rowId={`credit-${params.data.clientId}`}
             menuItems={[
               {
@@ -288,7 +288,7 @@ const Reviews = () => {
                 onClick: () => handleOpenModal(params.data, "creditEdit"),
               },
             ]}
-          />
+          /> */}
         </div>
       ),
     },

@@ -221,11 +221,19 @@ const ItDashboard = () => {
     ? []
     : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
 
+  const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
+    queryKey: ["it-biometric-access-clients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return response.data || [];
+    },
+  });
+
   const internetExpense = isHrFinanceLoading
     ? []
     : hrFinance
-        .filter((item) => item.expanseType === "INTERNET EXPENSES")
-        .reduce((sum, item) => sum + item.actualAmount || 0, 0);
+      .filter((item) => item.expanseType === "INTERNET EXPENSES")
+      .reduce((sum, item) => sum + item.actualAmount || 0, 0);
 
   //----------------------Units data-----------------------//
 
@@ -380,8 +388,8 @@ const ItDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData
-               ).toLocaleString("en-IN")}</div>
+          rawData
+        ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -835,6 +843,59 @@ const ItDashboard = () => {
 
   const allowedTables = filterPermissions(tableWidgetConfigs, userPermissions);
 
+  const biometricStatusSummary = useMemo(() => {
+    if (isClientsDataPending || !Array.isArray(clientsData)) {
+      return [];
+    }
+
+    const summary = clientsData
+      .flatMap((client) => client?.members || [])
+      .reduce(
+        (acc, member) => {
+          const biometricStatus = String(
+            member?.biometricStatus || "pending",
+          ).toLowerCase();
+
+          if (biometricStatus === "approved") {
+            acc.approved += 1;
+          } else {
+            acc.pending += 1;
+          }
+
+          return acc;
+        },
+        { approved: 0, pending: 0 },
+      );
+
+    return [
+      { label: `Approved ${summary.approved}`, value: summary.approved },
+      { label: `Pending ${summary.pending}`, value: summary.pending },
+    ].filter((item) => item.value > 0);
+  }, [clientsData, isClientsDataPending]);
+
+  const biometricPieOptions = {
+    labels: biometricStatusSummary.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+      toolbar: false,
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/dashboard/IT-dashboard/mix-bag/biometric-access");
+        },
+      },
+    },
+    colors: ["#0B7A3E", "#E69A00"],
+    legend: {
+      position: "bottom",
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Members`,
+      },
+    },
+  };
+
+
   const pieChartConfig = [
     {
       key: PERMISSIONS.IT_UNIT_WISE_IT_EXPENSES.value,
@@ -849,8 +910,8 @@ const ItDashboard = () => {
       type: "PieChartMui",
       title: "Biometrics Activation Data",
       border: true,
-      data: [],
-      options: [],
+      data: biometricStatusSummary,
+      options: biometricPieOptions,
     },
   ];
   const allowedPieCharts = filterPermissions(pieChartConfig, userPermissions);
