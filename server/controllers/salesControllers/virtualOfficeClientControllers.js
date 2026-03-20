@@ -421,6 +421,35 @@ const updateVirtualOfficeClient = async (req, res) => {
     if (clientExists) {
       return res.status(400).json({ message: "Client already exists" });
     }
+    let selectedUnit = null;
+    if (updates.unit || updates.building) {
+      const nextUnitId = updates.unit || existing.unit;
+      const nextBuildingId = updates.building || existing.building;
+
+      if (!mongoose.Types.ObjectId.isValid(nextUnitId)) {
+        return res.status(400).json({ message: "Invalid unit ID" });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(nextBuildingId)) {
+        return res.status(400).json({ message: "Invalid building ID" });
+      }
+
+      selectedUnit = await Unit.findById(nextUnitId).lean().exec();
+
+      if (!selectedUnit) {
+        return res.status(404).json({ message: "Selected unit not found" });
+      }
+
+      if (String(selectedUnit.building) !== String(nextBuildingId)) {
+        return res.status(400).json({
+          message: "Selected building does not match the selected unit",
+        });
+      }
+
+      updates.unit = selectedUnit._id;
+      updates.building = selectedUnit.building;
+    }
+
 
     // ✅ Basic validations if provided
     if (updates.email && !isValidEmail(updates.email)) {

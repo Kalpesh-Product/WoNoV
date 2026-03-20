@@ -1,10 +1,11 @@
 import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import useAuth from "../../../../hooks/useAuth";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +20,7 @@ import { useParams } from "react-router-dom";
 const VirtualOfficeClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const { clientId } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
@@ -27,7 +29,7 @@ const VirtualOfficeClientDetails = () => {
     [clientId],
   );
 
-  const { control, handleSubmit, reset } = useForm({
+  const { control, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       clientName: "",
       serviceName: "",
@@ -35,6 +37,8 @@ const VirtualOfficeClientDetails = () => {
       sector: "",
       hoCity: "",
       hoState: "",
+      building: "",
+      unit: "",
       unitName: "",
       unitNo: "",
       cabinDesks: 0,
@@ -72,8 +76,10 @@ const VirtualOfficeClientDetails = () => {
         sector: selectedClient.sector,
         hoCity: selectedClient.city || selectedClient.hoCity,
         hoState: selectedClient.state || selectedClient.hoState,
+        building: selectedClient.unit?.building?._id || "",
+        unit: selectedClient.unit?._id || "",
         unitName: selectedClient.unit?.unitName || "",
-        unitNo: selectedClient.unitNo || "",
+        unitNo: selectedClient.unit?.unitNo || selectedClient.unitNo || "",
         buildingName: selectedClient.unit?.building?.buildingName || "",
         buildingAddress: selectedClient.unit?.building?.fullAddress || "",
         cabinDesks: selectedClient.cabinDesks || 0,
@@ -157,6 +163,35 @@ const VirtualOfficeClientDetails = () => {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const selectedBuilding = useWatch({ control, name: "building" });
+
+  const { data: units = [], isLoading: isUnitsLoading } = useQuery({
+    queryKey: ["units", "virtual-office-client-details"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units?deskCalculated=true");
+      return response.data;
+    },
+  });
+
+  const availableBuildings = auth?.user?.company?.workLocations || [];
+  const filteredUnits = useMemo(() => {
+    if (!selectedBuilding) {
+      return [];
+    }
+
+    return units.filter((item) => item.building?._id === selectedBuilding);
+  }, [selectedBuilding, units]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+
+    const currentUnit = control._formValues.unit;
+    if (currentUnit && !filteredUnits.some((item) => item._id === currentUnit)) {
+      setValue("unit", "");
+    }
+  }, [control._formValues.unit, filteredUnits, isEditing, setValue]);
 
   const bookingTypeOptions = React.useMemo(() => {
     const options = new Set();
@@ -191,7 +226,8 @@ const VirtualOfficeClientDetails = () => {
       state: data.hoState,
       clientStatus: data.clientStatus === true || data.clientStatus === "true",
       bookingType: data.bookingType,
-      unitNo: data.unitNo,
+      building: data.building,
+      unit: data.unit,
       cabinDesks: Number(data.cabinDesks) || 0,
       openDesks: Number(data.openDesks) || 0,
       cabinDeskRate: Number(data.cabinDeskRate) || 0,
@@ -289,8 +325,10 @@ const VirtualOfficeClientDetails = () => {
         sector: selectedClient.sector,
         hoCity: selectedClient.city || selectedClient.hoCity,
         hoState: selectedClient.state || selectedClient.hoState,
+        building: selectedClient.unit?.building?._id || "",
+        unit: selectedClient.unit?._id || "",
         unitName: selectedClient.unit?.unitName || "",
-        unitNo: selectedClient.unitNo || "",
+        unitNo: selectedClient.unit?.unitNo || selectedClient.unitNo || "",
         buildingName: selectedClient.unit?.building?.buildingName || "",
         buildingAddress: selectedClient.unit?.building?.fullAddress || "",
         cabinDesks: selectedClient.cabinDesks || 0,
@@ -393,10 +431,7 @@ const VirtualOfficeClientDetails = () => {
                                 fullWidth
                               >
                                 {bookingTypeOptions.map((bookingType) => (
-                                  <MenuItem
-                                    key={bookingType}
-                                    value={bookingType}
-                                  >
+                                  <MenuItem key={bookingType} value={bookingType}>
                                     {bookingType}
                                   </MenuItem>
                                 ))}
@@ -430,8 +465,7 @@ const VirtualOfficeClientDetails = () => {
                               {(fieldKey === "hoCity"
                                 ? selectedClient?.city || selectedClient?.hoCity
                                 : fieldKey === "hoState"
-                                  ? selectedClient?.state ||
-                                  selectedClient?.hoState
+                                  ? selectedClient?.state || selectedClient?.hoState
                                   : selectedClient?.[fieldKey]) || "N/A"}
                             </span>
                           </div>
@@ -450,40 +484,64 @@ const VirtualOfficeClientDetails = () => {
                 </div>
 
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "unitNo",
-                    "cabinDesks",
-                    "cabinDeskRate",
-                    "openDesks",
-                    "openDeskRate",
-                    "totalDesks",
-                    "clientStatus",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
+                  {isEditing ? (
+                    <>
+                      <Controller
+                        name="building"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField {...field} select size="small" label="Building" fullWidth>
+                            <MenuItem value="">Select a Building</MenuItem>
+                            {availableBuildings.map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.buildingName}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                        )}
+                      />
+                      <Controller
+                        name="unit"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField {...field} select size="small" label="Unit" fullWidth>
+                            <MenuItem value="">Select a Unit</MenuItem>
+                            {isUnitsLoading ? (
+                              <MenuItem disabled>Loading units...</MenuItem>
+                            ) : filteredUnits.length > 0 ? (
+                              filteredUnits.map((item) => (
+                                <MenuItem key={item._id} value={item._id}>
+                                  {item.unitNo}
+                                </MenuItem>
+                              ))
+                            ) : (
+                              <MenuItem disabled>
+                                {selectedBuilding ? "No units available" : "Select a building first"}
+                              </MenuItem>
+                            )}
+                          </TextField>
+                        )}
+                      />
+                      {[
+                        "cabinDesks",
+                        "cabinDeskRate",
+                        "openDesks",
+                        "openDeskRate",
+                        "totalDesks",
+                        "clientStatus",
+                      ].map((fieldKey) => (
                         <Controller
+                          key={fieldKey}
                           name={fieldKey}
                           control={control}
                           render={({ field }) =>
                             fieldKey === "clientStatus" ? (
-                              <TextField
-                                {...field}
-                                select
-                                size="small"
-                                label="Status"
-                                fullWidth
-                              >
+                              <TextField {...field} select size="small" label="Status" fullWidth>
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
                             ) : fieldKey === "totalDesks" ? (
-                              <TextField
-                                {...field}
-                                disabled
-                                size="small"
-                                label="Total Desks"
-                                fullWidth
-                              />
+                              <TextField {...field} disabled size="small" label="Total Desks" fullWidth />
                             ) : (
                               <TextField
                                 {...field}
@@ -496,34 +554,48 @@ const VirtualOfficeClientDetails = () => {
                             )
                           }
                         />
-                      ) : (
-                        <div className="py-2 flex justify-between items-start gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey === "clientStatus"
-                                ? "Status"
-                                : fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {fieldKey === "clientStatus"
-                                ? (selectedClient?.clientStatus ??
-                                  selectedClient?.isActive)
-                                  ? "Active"
-                                  : "Inactive"
-                                : selectedClient?.[fieldKey] || "N/A"}
-                            </span>
-                          </div>
+                      ))}
+                    </>
+                  ) : (
+                    [
+                      "buildingName",
+                      "unitNo",
+                      "cabinDesks",
+                      "cabinDeskRate",
+                      "openDesks",
+                      "openDeskRate",
+                      "totalDesks",
+                      "clientStatus",
+                    ].map((fieldKey) => (
+                      <div key={fieldKey} className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            {fieldKey === "clientStatus"
+                              ? "Status"
+                              : fieldKey
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase())}
+                          </span>{" "}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {fieldKey === "clientStatus"
+                              ? (selectedClient?.clientStatus ?? selectedClient?.isActive)
+                                ? "Active"
+                                : "Inactive"
+                              : fieldKey === "buildingName"
+                                ? selectedClient?.unit?.building?.buildingName || control._defaultValues.buildingName || "N/A"
+                                : fieldKey === "unitNo"
+                                  ? selectedClient?.unit?.unitNo || control._defaultValues.unitNo || "N/A"
+                                  : selectedClient?.[fieldKey] || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
               <div>

@@ -421,6 +421,7 @@ const updateCoworkingClient = async (req, res, next) => {
     const {
       clientName,
       service,
+      building,
       unit,
       cabinDesks = 0,
       openDesks = 0,
@@ -458,6 +459,7 @@ const updateCoworkingClient = async (req, res, next) => {
     }
 
     // ✅ Validate unit if changed
+    let unitExists = null;
     if (unit) {
       if (!mongoose.Types.ObjectId.isValid(unit)) {
         throw new CustomError(
@@ -468,7 +470,7 @@ const updateCoworkingClient = async (req, res, next) => {
         );
       }
 
-      const unitExists = await Unit.findById(unit);
+      unitExists = await Unit.findById(unit);
       if (!unitExists) {
         throw new CustomError(
           "Unit doesn't exist",
@@ -476,6 +478,26 @@ const updateCoworkingClient = async (req, res, next) => {
           logAction,
           logSourceKey,
         );
+      }
+
+      if (building) {
+        if (!mongoose.Types.ObjectId.isValid(building)) {
+          throw new CustomError(
+            "Invalid building ID",
+            logPath,
+            logAction,
+            logSourceKey,
+          );
+        }
+
+        if (String(unitExists.building) !== String(building)) {
+          throw new CustomError(
+            "Selected building does not match the selected unit",
+            logPath,
+            logAction,
+            logSourceKey,
+          );
+        }
       }
     }
 
@@ -587,6 +609,7 @@ const updateCoworkingClient = async (req, res, next) => {
       "hoCity",
       "hoState",
       "unit",
+      "building",
       "cabinDesks",
       "openDesks",
       "ratePerOpenDesk",
@@ -611,6 +634,11 @@ const updateCoworkingClient = async (req, res, next) => {
         updateData[field] = req.body[field];
       }
     });
+
+    if (unitExists) {
+      updateData.building = unitExists.building;
+    }
+
 
     updateData.totalDesks = newBookedDesks;
 
