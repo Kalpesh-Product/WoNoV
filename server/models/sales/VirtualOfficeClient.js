@@ -32,6 +32,10 @@ const virtualOfficeSchema = new mongoose.Schema(
 
     channel: { type: String, trim: true },
     // Space & Desks
+    building: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Building",
+    },
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
