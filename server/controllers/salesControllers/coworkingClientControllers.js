@@ -645,6 +645,78 @@ const updateCoworkingClient = async (req, res, next) => {
   }
 };
 
+const resetCoworkingClientCredits = async (req, res, next) => {
+  const logPath = "sales/SalesLog";
+  const logAction = "Reset CoworkingClient Credits";
+  const logSourceKey = "client";
+
+  const { user, ip, company } = req;
+
+  try {
+    const { clientId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      throw new CustomError(
+        "Invalid client ID",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const existingClient = await CoworkingClient.findOne({
+      _id: clientId,
+      company,
+    });
+
+    if (!existingClient) {
+      throw new CustomError(
+        "Client not found",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const oldState = existingClient.toObject();
+
+    existingClient.meetingCreditBalance = 0;
+    existingClient.lastManualCreditResetAt = new Date();
+
+    await existingClient.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "CoworkingClient credits reset successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: existingClient._id,
+      changes: {
+        before: oldState,
+        after: existingClient,
+      },
+    });
+
+    return res.status(200).json({
+      message: "CoworkingClient credits reset successfully",
+      client: existingClient,
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+      );
+    }
+  }
+};
+
+
 const updateClientStatus = async (req, res) => {
   try {
     const { clientId } = req.params;
@@ -1408,6 +1480,7 @@ const onboardedNames = [
 module.exports = {
   createCoworkingClient,
   updateCoworkingClient,
+  resetCoworkingClientCredits,
   updateClientStatus,
   deleteCoworkingClient,
   getCoworkingClients,

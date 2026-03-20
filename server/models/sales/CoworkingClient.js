@@ -84,6 +84,10 @@ const clientSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    lastManualCreditResetAt: {
+      type: Date,
+      default: null,
+    },
 
     startDate: {
       type: Date,
