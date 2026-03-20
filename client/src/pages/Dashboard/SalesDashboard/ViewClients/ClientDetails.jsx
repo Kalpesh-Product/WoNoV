@@ -198,12 +198,12 @@ const ClientDetails = () => {
         lockinPeriod: selectedClient.lockinPeriod,
         rentDate: selectedClient.rentDate,
         nextIncrement: selectedClient.nextIncrement,
-        localPocName: selectedClient.localPocName || "",
-        localPocEmail: selectedClient.localPocEmail || "",
-        localPocPhone: selectedClient.localPocPhone || "",
-        hoPocName: selectedClient.hoPocName || "",
-        hoPocEmail: selectedClient.hoPocEmail || "",
-        hoPocPhone: selectedClient.hoPocPhone || "",
+        localPocName: selectedClient.localPoc?.name || "",
+        localPocEmail: selectedClient.localPoc?.email || "",
+        localPocPhone: selectedClient.localPoc?.phone || "",
+        hoPocName: selectedClient.hOPoc?.name || "",
+        hoPocEmail: selectedClient.hOPoc?.email || "",
+        hoPocPhone: selectedClient.hOPoc?.phone || "",
         isActive: selectedClient.isActive,
         createdAt: selectedClient.createdAt,
         updatedAt: selectedClient.updatedAt,
@@ -294,23 +294,14 @@ const ClientDetails = () => {
 
       const updatedClient = {
         ...selectedClient,
-        ...response?.data?.client,
-        ...payload,
-        localPocName: payload.localPocName,
-        localPocEmail: payload.localPocEmail,
-        localPocPhone: payload.localPocPhone,
-        hoPocName: payload.hOPocName,
-        hoPocEmail: payload.hOPocEmail,
-        hoPocPhone: payload.hOPocPhone,
+        ...(response?.data?.client || payload),
       };
 
       dispatch(setSelectedClient(updatedClient));
       dispatch(
         setClientData(
           clientsData.map((item) =>
-            item._id === selectedClient._id
-              ? { ...item, ...updatedClient }
-              : item,
+            item._id === selectedClient._id ? updatedClient : item,
           ),
         ),
       );
@@ -365,12 +356,12 @@ const ClientDetails = () => {
         lockinPeriod: selectedClient.lockinPeriod,
         rentDate: selectedClient.rentDate,
         nextIncrement: selectedClient.nextIncrement,
-        localPocName: selectedClient.localPocName || "",
-        localPocEmail: selectedClient.localPocEmail || "",
-        localPocPhone: selectedClient.localPocPhone || "",
-        hoPocName: selectedClient.hoPocName || "",
-        hoPocEmail: selectedClient.hoPocEmail || "",
-        hoPocPhone: selectedClient.hoPocPhone || "",
+        localPocName: selectedClient.localPoc?.name || "",
+        localPocEmail: selectedClient.localPoc?.email || "",
+        localPocPhone: selectedClient.localPoc?.phone || "",
+        hoPocName: selectedClient.hOPoc?.name || "",
+        hoPocEmail: selectedClient.hOPoc?.email || "",
+        hoPocPhone: selectedClient.hOPoc?.phone || "",
         isActive: selectedClient.isActive,
         createdAt: selectedClient.createdAt,
         updatedAt: selectedClient.updatedAt,
