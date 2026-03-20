@@ -65,4 +65,37 @@ const getLandlordDocuments = async (req, res, next) => {
   }
 };
 
-module.exports = { getLandlordDocuments, addLandlordDocument };
+const createLandlord = async (req, res, next) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Landlord name is required" });
+    }
+
+    const trimmedName = name.trim();
+    const existingLandlord = await Landlord.findOne({
+      name: { $regex: `^${trimmedName}$`, $options: "i" },
+    })
+      .lean()
+      .exec();
+
+    if (existingLandlord) {
+      return res.status(409).json({ message: "Landlord already exists" });
+    }
+
+    const landlord = await Landlord.create({
+      name: trimmedName,
+      documents: [],
+    });
+
+    res.status(201).json({
+      message: "Landlord created successfully",
+      landlord,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getLandlordDocuments, addLandlordDocument, createLandlord };

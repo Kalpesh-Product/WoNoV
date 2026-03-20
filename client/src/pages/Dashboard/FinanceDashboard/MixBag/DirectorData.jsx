@@ -15,20 +15,20 @@ import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const DirectorData = () => {
   const location = useLocation();
-  const { id } = useParams();
+  const { name: routeName } = useParams();
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
 
   const nameFromState = location?.state?.name;
-  const name = nameFromState || id || "N/A";
+  const name = nameFromState || routeName || "N/A";
   const isCompany = name === "Company";
 
   const {
     control,
     handleSubmit,
     reset,
-    setValue,
+    // setValue,
     formState: { errors },
   } = useForm({
     mode: "onChange",
@@ -80,7 +80,12 @@ const DirectorData = () => {
       toast.success("Document uploaded successfully");
       queryClient.invalidateQueries({ queryKey: ["directorsCompany"] });
       setOpenModal(false);
-      reset();
+      reset({
+        type: isCompany ? "companyKyc" : "directorKyc",
+        nameOfDirector: name,
+        documentName: "",
+        kyc: null,
+      });
     },
     onError: () => {
       toast.error("Upload failed. Try again.");
@@ -97,7 +102,7 @@ const DirectorData = () => {
     if (!isCompany) {
       formData.append("nameOfDirector", nameOfDirector);
     }
-    formData.append("referenceId", id);
+    formData.append("referenceId", routeName);
     formData.append("documentName", documentName);
 
     uploadKycDocument(formData);
@@ -157,7 +162,12 @@ const DirectorData = () => {
         open={openModal}
         onClose={() => {
           setOpenModal(false);
-          reset();
+          reset({
+            type: isCompany ? "companyKyc" : "directorKyc",
+            nameOfDirector: name,
+            documentName: "",
+            kyc: null,
+          });
         }}
         title={"Add Document"}
       >
