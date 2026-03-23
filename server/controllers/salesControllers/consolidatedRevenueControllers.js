@@ -64,11 +64,14 @@ const getConsolidatedRevenue = async (req, res, next) => {
       }
     });
 
-    // Alt Revenues (use invoicePaidDate)
+    // Alt Revenues
     alternateRevenues.forEach((item) => {
-      if (item.invoicePaidDate) {
-        const fy = getFinancialYear(item.invoiceCreationDate);
-        const idx = getFinancialMonthIndex(item.invoiceCreationDate);
+      const alternateRevenueDate =
+        item.invoiceCreationDate || item.invoicePaidDate || item.createdAt;
+
+      if (alternateRevenueDate) {
+        const fy = getFinancialYear(alternateRevenueDate);
+        const idx = getFinancialMonthIndex(alternateRevenueDate);
         categoryMap["Alt. Revenues"].data[fy] ??= initFYData();
         categoryMap["Alt. Revenues"].data[fy][idx] += item.taxableAmount || 0;
       }

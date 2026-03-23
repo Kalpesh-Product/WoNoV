@@ -3,7 +3,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { CircularProgress } from "@mui/material";
 import MonthWiseAgTable from "../../../../components/Tables/MonthWiseAgTable";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
@@ -13,8 +13,6 @@ import FyBarGraphPercentage from "../../../../components/graphs/FyBarGraphPercen
 
 const IncomeDetails = () => {
   const axios = useAxiosPrivate();
-  const [selectedYear, setSelectedYear] = useState("2025-26");
-
   const { data: simpleRevenue = [], isLoading: isTotalLoading } = useQuery({
     queryKey: ["simpleRevenue"],
     queryFn: async () => {
@@ -29,83 +27,70 @@ const IncomeDetails = () => {
     },
   });
 
-  const { data: totalRevenue = [], isLoading } = useQuery({
-    queryKey: ["totalRevenue"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/sales/consolidated-revenue");
-        return response.data;
-      } catch (error) {
-        console.error(error);
-      }
-    },
-  });
+  // const { data: totalRevenue = [], isLoading } = useQuery({
+  //   queryKey: ["totalRevenue"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/sales/consolidated-revenue");
+  //       return response.data;
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   },
+  // });
 
   const unifiedRevenueData = useMemo(() => {
     if (!simpleRevenue) return [];
 
-    const flatten = [];
-
-    simpleRevenue.meetingRevenue?.forEach((item) => {
-      flatten.push({
+    const revenueSources = [
+      {
+        key: "meetingRevenue",
         vertical: "Meeting",
-        revenue: item.taxable,
-        date: item.date,
-      });
-    });
-
-    simpleRevenue.alternateRevenues?.forEach((item) => {
-      flatten.push({
-        vertical: "Alternate",
-        revenue: item.taxableAmount,
-        date: item.invoiceCreationDate,
-      });
-    });
-
-    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
-      flatten.push({
+        revenueKey: "taxable",
+        dateKeys: ["date"],
+      },
+      {
+        key: "alternateRevenues",
+        vertical: "Alternate Revenue",
+        revenueKey: "taxableAmount",
+        dateKeys: ["invoiceCreationDate", "invoicePaidDate", "createdAt"],
+      },
+      {
+        key: "virtualOfficeRevenues",
         vertical: "Virtual Office",
-        revenue: item.taxableAmount,
-        date: item.rentDate,
-      });
-    });
-
-    simpleRevenue.workationRevenues?.forEach((item) => {
-      flatten.push({
+        revenueKey: "taxableAmount",
+        dateKeys: ["rentDate", "createdAt"],
+      },
+      {
+        key: "workationRevenues",
         vertical: "Workation",
-        revenue: item.taxableAmount,
-        date: item.date,
-      });
-    });
-
-    simpleRevenue.coworkingRevenues?.forEach((item) => {
-      flatten.push({
+        revenueKey: "taxableAmount",
+        dateKeys: ["date", "createdAt"],
+      },
+      {
+        key: "coworkingRevenues",
         vertical: "Coworking",
-        revenue: item.revenue,
-        date: item.rentDate,
-      });
-    });
+        revenueKey: "revenue",
+        dateKeys: ["rentDate", "createdAt"],
+      },
+    ];
 
-    return flatten;
+    return revenueSources.flatMap(({ key, vertical, revenueKey, dateKeys }) =>
+      (simpleRevenue[key] || []).flatMap((item) => {
+        const validDateKey = dateKeys.find((dateKey) => item?.[dateKey]);
+
+        if (!validDateKey) {
+          return [];
+        }
+
+        return {
+          vertical,
+          revenue: Number(item?.[revenueKey]) || 0,
+          date: item[validDateKey],
+        };
+      })
+    );
   }, [simpleRevenue]);
-
-  console.log("unified data : ", unifiedRevenueData);
-
-  const filteredByYear = totalRevenue?.map((item) => ({
-    name: item.name,
-    data: item.data[selectedYear] || [],
-  }));
-
-  const normalizedData = filteredByYear?.map((domain) => ({
-    name: domain.name,
-    data: domain.data.map((val, idx) => {
-      const totalThisMonth = filteredByYear.reduce(
-        (sum, item) => sum + item.data[idx],
-        0
-      );
-      return totalThisMonth ? Math.round((val / totalThisMonth) * 100) : 0;
-    }),
-  }));
   const options = {
     colors: [
       "#1E3D73", // Dark Blue (Co-Working)
@@ -115,7 +100,6 @@ const IncomeDetails = () => {
       "#1976D2", // Medium Blue (Alt Revenues)
     ],
   };
-  console.log("unified rev data : ", unifiedRevenueData);
 
   return (
     <div className="flex flex-col gap-4 p-4">
