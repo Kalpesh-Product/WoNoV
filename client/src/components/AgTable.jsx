@@ -28,6 +28,7 @@ const AgTableComponent = React.memo(
     tableTitle,
     handleClick,
     buttonTitle,
+    headerActions,
     tableHeight = 400,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
@@ -206,11 +207,10 @@ const AgTableComponent = React.memo(
       <div className="border-b-[1px] border-borderGray">
         <div className=" flex gap-4 items-center">
           <div
-            className={`flex items-center ${
-              tableTitle
-                ? "justify-between w-full items-center"
-                : "justify-end w-full"
-            } `}
+            className={`flex items-center ${tableTitle
+              ? "justify-between w-full items-center"
+              : "justify-end w-full"
+              } `}
           >
             {!hideTitle && (
               <div className="flex items-center justify-between pb-4">
@@ -243,6 +243,7 @@ const AgTableComponent = React.memo(
               ) : (
                 ""
               )}
+              {headerActions ? headerActions : ""}
 
               {/* {batchButton ? (
                 <div cla>
@@ -262,9 +263,8 @@ const AgTableComponent = React.memo(
         <hr className="my-2" />
 
         <div
-          className={`flex ${
-            search ? "justify-between" : "justify-end"
-          }  items-center py-2`}
+          className={`flex ${search ? "justify-between" : "justify-end"
+            }  items-center py-2`}
         >
           {search ? (
             <TextField
