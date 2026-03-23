@@ -227,37 +227,71 @@ const PerformanceIndividualKra = () => {
             },
         },
         ...(matchingDepartment
-            ? [
-                {
-                    headerName: "Actions",
-                    field: "actions",
-                    cellRenderer: (params) => (
-                        <div className="p-2 flex gap-2 items-center">
-                            <button
-                                type="button"
-                                title="Mark As Done"
-                                disabled={!params.node.selected || isUpdatePending || isDeletePending}
-                                onClick={() => updateDailyKra(params.data.id)}
-                                className="ml-2 disabled:cursor-not-allowed"
-                            >
-                                {isUpdatePending ? "⏳" : <FaCheckSquare size={24} color={!params.node.selected ? "gray" : "green"} />}
-                            </button>
-                            {canDeleteRecurrence && (
-                                <button
-                                    type="button"
-                                    title="Delete Recurrence"
-                                    disabled={!params.node.selected || isDeletePending || isUpdatePending}
-                                    onClick={() => deleteDailyKraRecurrence(params.data.id)}
-                                    className="ml-2 disabled:cursor-not-allowed"
-                                >
-                                    {isDeletePending ? "⏳" : <MdDeleteForever size={26} color={!params.node.selected ? "gray" : "red"} />}
-                                </button>
-                            )}
-                        </div>
-                    ),
-                },
-            ]
-            : []),
+  ? [
+      {
+        headerName: "Actions",
+        pinned: "right",
+        field: "actions",
+        cellRenderer: (params) => {
+          return (
+            <div className="flex items-center">
+              {/* Mark As Done */}
+              <div
+                role="button"
+                onClick={() => {
+                  if (
+                    !params.node.selected ||
+                    isUpdatePending ||
+                    isDeletePending
+                  )
+                    return;
+                  updateDailyKra(params.data.id);
+                }}
+                className="p-2"
+              >
+                <PrimaryButton
+                  title={isUpdatePending ? "⏳" : "Mark As Done"}
+                  disabled={
+                    !params.node.selected ||
+                    isUpdatePending ||
+                    isDeletePending
+                  }
+                  //className="px-2 py-1 text-sm w-28"
+                  //className="px-2 py-1 text-xs w-28"
+                  className="px-2 py-1 text-xs w-28 h-7"
+                />
+              </div>
+
+              {/* Delete Recurrence */}
+              {canDeleteRecurrence && (
+                <button
+                  type="button"
+                  title="Delete Recurrence"
+                  disabled={
+                    !params.node.selected ||
+                    isDeletePending ||
+                    isUpdatePending
+                  }
+                  onClick={() => deleteDailyKraRecurrence(params.data.id)}
+                  // className="ml-2 disabled:cursor-not-allowed"
+                  className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                >
+                  {isDeletePending ? (
+                    "⏳"
+                  ) : (
+                    <MdDeleteForever
+                      size={26}
+                      color={!params.node.selected ? "gray" : "red"}
+                    />
+                  )}
+                </button>
+              )}
+            </div>
+          );
+        },
+      },
+    ]
+  : []),
     ];
 
     const formatDateTime = (value) =>
