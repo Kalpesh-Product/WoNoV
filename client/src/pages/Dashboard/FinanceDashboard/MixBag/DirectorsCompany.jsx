@@ -149,12 +149,12 @@ const DirectorsCompany = () => {
             className="!w-auto"
             padding="px-4 py-2"
           />
-          <PrimaryButton
+          {/* <PrimaryButton
             title="Add New Company KYC"
             handleSubmit={() => openCreateModal("companyKyc")}
             className="!w-auto"
             padding="px-4 py-2"
-          />
+          /> */}
         </div>
         <AgTable
           columns={columns}
