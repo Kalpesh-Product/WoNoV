@@ -115,9 +115,8 @@ const FrontendDashboard = () => {
       const managerName =
         managerByDepartmentName.get(departmentName.toLowerCase()) ||
         "Unassigned";
-      const label = `${managerName} (${departmentName})`;
-      if (!acc[label]) acc[label] = { name: label, tasks: 0 };
-      acc[label].tasks += 1;
+      if (!acc[managerName]) acc[managerName] = { name: managerName, tasks: 0 };
+      acc[managerName].tasks += 1;
       return acc;
     }, {});
     return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
