@@ -32,6 +32,7 @@ const {
   getDepartmentDocuments,
   addCompanyKyc,
   createCompanyKycEntry,
+  updateCompanyKycEntryName,
   updateCompanyKycDocument,
   getCompanyKyc,
   getComplianceDocuments,
@@ -129,6 +130,7 @@ router.post(
 
 // KYC & Compliance
 router.post("/create-kyc-entry", createCompanyKycEntry);
+router.patch("/update-kyc-entry-name", updateCompanyKycEntryName);
 router.post("/add-kyc-document", upload.single("kyc"), addCompanyKyc);
 router.patch("/update-kyc-document", upload.single("kyc"), updateCompanyKycDocument);
 router.get("/get-kyc", getCompanyKyc);

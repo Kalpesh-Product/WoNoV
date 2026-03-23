@@ -968,6 +968,87 @@ const createCompanyKycEntry = async (req, res, next) => {
 };
 
 
+const updateCompanyKycEntryName = async (req, res, next) => {
+  try {
+    const { type, currentName, name } = req.body;
+    const companyId = req.company;
+
+    if (!companyId || !type || !currentName?.trim() || !name?.trim()) {
+      return res.status(400).json({
+        message: "companyId, type, currentName and name are required",
+      });
+    }
+
+    const company = await Company.findById(companyId).exec();
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const trimmedName = name.trim();
+    const trimmedCurrentName = currentName.trim();
+
+    if (type === "companyKyc") {
+      const currentCompanyLabel = company.companyName?.trim() || "Company";
+
+      if (trimmedCurrentName.toLowerCase() !== currentCompanyLabel.toLowerCase() && trimmedCurrentName.toLowerCase() !== "company") {
+        return res.status(404).json({ message: "Company entry not found" });
+      }
+
+      company.companyName = trimmedName;
+      await company.save();
+
+      return res.status(200).json({
+        message: "Company name updated successfully",
+        data: {
+          type,
+          name: trimmedName,
+        },
+      });
+    }
+
+    if (type === "directorKyc") {
+      const directorEntries = company.kycDetails.directorKyc || [];
+      const directorEntry = directorEntries.find(
+        (director) => director.nameOfDirector?.trim().toLowerCase() === trimmedCurrentName.toLowerCase(),
+      );
+
+      if (!directorEntry) {
+        return res.status(404).json({ message: "Director entry not found" });
+      }
+
+      const duplicateEntry = directorEntries.find(
+        (director) => director.nameOfDirector?.trim().toLowerCase() === trimmedName.toLowerCase()
+          && director.nameOfDirector?.trim().toLowerCase() !== trimmedCurrentName.toLowerCase(),
+      );
+
+      if (duplicateEntry) {
+        return res.status(409).json({ message: "Director already exists" });
+      }
+
+      directorEntry.nameOfDirector = trimmedName;
+      await company.save();
+
+      return res.status(200).json({
+        message: "Director name updated successfully",
+        data: {
+          type,
+          name: trimmedName,
+        },
+      });
+    }
+
+    return res.status(400).json({
+      message: "Invalid type: must be either 'companyKyc' or 'directorKyc'",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
 const getCompanyKyc = async (req, res, next) => {
   try {
     const companyId = req.company;
@@ -1389,5 +1470,6 @@ module.exports = {
   handleDepartmentTemplateUpload,
   getDepartmentTemplates,
   deleteDepartmentTemplate,
+  updateCompanyKycEntryName,
   updateDepartmentTemplate,
 };

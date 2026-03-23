@@ -5,6 +5,8 @@ const {
 const Landlord = require("../../models/finance/Landlord");
 const Company = require("../../models/hr/Company");
 
+const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const addLandlordDocument = async (req, res, next) => {
   try {
     const { landLordId, documentName } = req.body;
@@ -141,7 +143,7 @@ const createLandlord = async (req, res, next) => {
 
     const trimmedName = name.trim();
     const existingLandlord = await Landlord.findOne({
-      name: { $regex: `^${trimmedName}$`, $options: "i" },
+      name: { $regex: `^${escapeRegex(trimmedName)}$`, $options: "i" },
     })
       .lean()
       .exec();
@@ -164,9 +166,46 @@ const createLandlord = async (req, res, next) => {
   }
 };
 
+const updateLandlordName = async (req, res, next) => {
+  try {
+    const { landlordId, name } = req.body;
+
+    if (!landlordId || !name?.trim()) {
+      return res.status(400).json({ message: "Landlord id and name are required" });
+    }
+
+    const trimmedName = name.trim();
+    const landlord = await Landlord.findById(landlordId).exec();
+
+    if (!landlord) {
+      return res.status(404).json({ message: "Landlord not found" });
+    }
+
+    const existingLandlord = await Landlord.findOne({
+      _id: { $ne: landlordId },
+      name: { $regex: `^${escapeRegex(trimmedName)}$`, $options: "i" },
+    }).lean().exec();
+
+    if (existingLandlord) {
+      return res.status(409).json({ message: "Landlord already exists" });
+    }
+
+    landlord.name = trimmedName;
+    await landlord.save();
+
+    return res.status(200).json({
+      message: "Landlord updated successfully",
+      landlord,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getLandlordDocuments,
   addLandlordDocument,
   createLandlord,
   updateLandlordDocument,
+  updateLandlordName,
 };

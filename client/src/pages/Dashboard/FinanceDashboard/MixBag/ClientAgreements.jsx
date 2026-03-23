@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -11,17 +11,25 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { queryClient } from "../../../../main";
 import { toast } from "sonner";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 const ClientAgreements = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
     mode: "onChange",
     defaultValues: { name: "" },
   });
+
+  const closeModal = () => {
+    setOpenModal(false);
+    setEditingClient(null);
+    reset({ name: "" });
+  };
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["finance-client-agreements"],
@@ -36,18 +44,48 @@ const ClientAgreements = () => {
       const response = await axios.post("/api/finance/client-agreements/client", payload);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       toast.success("Client created successfully");
       queryClient.invalidateQueries({ queryKey: ["finance-client-agreements"] });
-      setOpenModal(false);
-      reset();
+      closeModal();
+
+      const client = response?.client;
+      if (client?._id) {
+        navigate(
+          location.pathname.includes("mix-bag")
+            ? `/app/dashboard/finance-dashboard/mix-bag/client-agreements/${encodeURIComponent(client.clientName)}`
+            : `/app/client-agreements/${encodeURIComponent(client.clientName)}`,
+          {
+            state: {
+              files: [],
+              name: client.clientName,
+              id: client._id,
+            },
+          }
+        );
+      }
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Failed to create client");
     },
   });
 
-  const tableData = clientsData
+  const { mutate: updateClientName, isPending: isUpdateClientPending } = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axios.patch("/api/finance/client-agreements/client", payload);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Client updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["finance-client-agreements"] });
+      closeModal();
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update client");
+    },
+  });
+
+  const tableData = useMemo(() => clientsData
     .slice()
     .sort((a, b) => (a?.clientName || "").localeCompare(b?.clientName || ""))
     .map((item, index) => ({
@@ -56,7 +94,7 @@ const ClientAgreements = () => {
       documentCount: Array.isArray(item?.documents) ? item.documents.length : 0,
       files: item?.documents || [],
       id: item?._id || "",
-    }));
+    })), [clientsData]);
 
   const columns = [
     { field: "srno", headerName: "Sr No", width: 100 },
@@ -88,6 +126,18 @@ const ClientAgreements = () => {
       ),
     },
     { field: "documentCount", headerName: "No. of Documents", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Action",
+      width: 110,
+      sortable: false,
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.id}
+          menuItems={[{ label: "Edit", onClick: () => { setEditingClient(params.data); reset({ name: params.data.name }); setOpenModal(true); } }]}
+        />
+      ),
+    },
   ];
 
   return (
@@ -102,7 +152,7 @@ const ClientAgreements = () => {
             hideFilter
             search
             buttonTitle="Add New Client"
-            handleClick={() => setOpenModal(true)}
+            handleClick={() => { setEditingClient(null); reset({ name: "" }); setOpenModal(true); }}
           />
         ) : (
           <div className="h-72 place-items-center">
@@ -111,8 +161,15 @@ const ClientAgreements = () => {
         )}
       </PageFrame>
 
-      <MuiModal title="Add New Client" open={openModal} onClose={() => setOpenModal(false)}>
-        <form onSubmit={handleSubmit((data) => createClient({ name: data.name.trim() }))} className="grid grid-cols-1 gap-4">
+      <MuiModal title={editingClient ? "Edit Client" : "Add New Client"} open={openModal} onClose={closeModal}>
+        <form onSubmit={handleSubmit((data) => {
+          const trimmedName = data.name.trim();
+          if (editingClient) {
+            updateClientName({ clientId: editingClient.id, name: trimmedName });
+            return;
+          }
+          createClient({ name: trimmedName });
+        })} className="grid grid-cols-1 gap-4">
           <Controller
             name="name"
             control={control}
@@ -131,7 +188,7 @@ const ClientAgreements = () => {
               />
             )}
           />
-          <PrimaryButton type="submit" title="Add New Client" isLoading={isCreateClientPending} disabled={isCreateClientPending} />
+          <PrimaryButton type="submit" title={editingClient ? "Save Changes" : "Add New Client"} isLoading={isCreateClientPending || isUpdateClientPending} disabled={isCreateClientPending || isUpdateClientPending} />
         </form>
       </MuiModal>
     </div>

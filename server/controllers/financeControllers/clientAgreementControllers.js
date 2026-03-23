@@ -15,6 +15,8 @@ const allowedMimeTypes = [
     "image/webp",
 ];
 
+const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const getClientAgreements = async (req, res, next) => {
     try {
         const clients = await CoworkingClient.find({ isActive: true })
@@ -41,7 +43,7 @@ const createClientAgreementClient = async (req, res, next) => {
         const trimmedName = name.trim();
 
         const existingClient = await CoworkingClient.findOne({
-            clientName: { $regex: `^${trimmedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" },
+            clientName: { $regex: `^${escapeRegex(trimmedName)}$`, $options: "i" },
         })
             .lean()
             .exec();
@@ -198,9 +200,47 @@ const updateClientAgreement = async (req, res, next) => {
     }
 };
 
+const updateClientAgreementClientName = async (req, res, next) => {
+    try {
+        const { clientId, name } = req.body;
+
+        if (!clientId || !name?.trim()) {
+            return res.status(400).json({ message: "Client id and name are required" });
+        }
+
+        const trimmedName = name.trim();
+        const client = await CoworkingClient.findById(clientId).exec();
+
+        if (!client || !client.isActive) {
+            return res.status(404).json({ message: "Client not found" });
+        }
+
+        const existingClient = await CoworkingClient.findOne({
+            _id: { $ne: clientId },
+            isActive: true,
+            clientName: { $regex: `^${escapeRegex(trimmedName)}$`, $options: "i" },
+        }).lean().exec();
+
+        if (existingClient) {
+            return res.status(409).json({ message: "Client already exists" });
+        }
+
+        client.clientName = trimmedName;
+        await client.save();
+
+        return res.status(200).json({
+            message: "Client updated successfully",
+            client,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getClientAgreements,
     createClientAgreementClient,
     addClientAgreement,
     updateClientAgreement,
+    updateClientAgreementClientName,
 };
