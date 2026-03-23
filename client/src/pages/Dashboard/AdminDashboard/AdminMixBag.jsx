@@ -34,11 +34,11 @@ const AdminMixBag = () => {
       route: "/app/dashboard/admin-dashboard/mix-bag/client-members",
       permission: PERMISSIONS.ADMIN_CLIENT_MEMBERS_MIX_BAG.value,
     },
-    {
-      title: "Biometric Access",
-      route: "/app/dashboard/admin-dashboard/mix-bag/biometric-access",
-      permission: PERMISSIONS.ADMIN_BIOMETRIC_ACCESS_MIX_BAG.value,
-    },
+    // {
+    //   title: "Biometric Access",
+    //   route: "/app/dashboard/admin-dashboard/mix-bag/biometric-access",
+    //   permission: PERMISSIONS.ADMIN_BIOMETRIC_ACCESS_MIX_BAG.value,
+    // },
   ];
 
   const handleSearch = (event) => {
