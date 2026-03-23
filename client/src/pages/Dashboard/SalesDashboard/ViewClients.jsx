@@ -95,8 +95,8 @@ const ViewClients = () => {
   );
 
   const clientCounts = {
-    coWorking: data?.coworkingClients?.length || 0,
-    virtualOfficeClients: data?.virtualOfficeClients?.length || 0,
+    coWorking: data?.coworkingClients?.filter((client) => client.isActive).length || 0,
+    virtualOfficeClients: data?.virtualOfficeClients?.filter((client) => client.clientStatus === true).length || 0,
     externalMeetings: meetingVisitorsCount,
     openDesk: openDeskVisitorsCount,
   };
