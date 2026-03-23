@@ -33,6 +33,7 @@ const VirtualOfficeForm = () => {
       building: "",
       unit: "",
       cabinDesks: "",
+      securityDeposit: "",
       ratePerCabinDesk: "10000",
       openDesks: "",
       ratePerOpenDesk: "8000",
@@ -171,6 +172,7 @@ const VirtualOfficeForm = () => {
         ? dayjs(data.rentDate).format("YYYY-MM-DD")
         : null,
       cabinDesks: Number(data.cabinDesks) || 0,
+      securityDeposit: Number(data.securityDeposit) || 0,
       cabinDeskRate: Number(data.ratePerCabinDesk) || 0,
       openDesks: Number(data.openDesks) || 0,
       openDeskRate: Number(data.ratePerOpenDesk) || 0,
@@ -470,7 +472,7 @@ const VirtualOfficeForm = () => {
                   </div>
 
 
-                  <div className="flex gap-2">
+                  {/* <div className="flex gap-2">
                     <div className="w-1/2">
                       <Controller
                         name="cabinDesks"
@@ -485,8 +487,29 @@ const VirtualOfficeForm = () => {
                           />
                         )}
                       />
-                    </div>
-                    <div className="w-1/2">
+                    </div> */}
+                  <div>
+                    <Controller
+                      name="securityDeposit"
+                      control={control}
+                      rules={{ required: "Security Deposit is required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          label="Security Deposit"
+                          error={!!errors.securityDeposit}
+                          helperText={errors.securityDeposit?.message}
+                          fullWidth
+                        />
+                      )}
+                    />
+                  </div>
+                  {/* </div>
+
+                  <div className="flex gap-2">  */}
+                  {/* <div className="w-1/2">
                       <Controller
                         name="ratePerCabinDesk"
                         control={control}
@@ -511,7 +534,7 @@ const VirtualOfficeForm = () => {
                         fullWidth
                       />
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="flex gap-2">
                     <div className="w-1/2">
