@@ -232,16 +232,14 @@ const FinanceDashboard = () => {
       const managerName =
         managerByDepartmentName.get(departmentName.toLowerCase()) ||
         "Unassigned";
-      const label = `${managerName} (${departmentName})`;
-
-      if (!acc[label]) {
-        acc[label] = {
-          name: label,
+      if (!acc[managerName]) {
+        acc[managerName] = {
+          name: managerName,
           tasks: 0,
         };
       }
 
-      acc[label].tasks += 1;
+      acc[managerName].tasks += 1;
       return acc;
     }, {});
 

@@ -19,7 +19,7 @@ const DepartmentTasks = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
-    additionalTopUserIds: ["6961fcd737afa664ab215d10"], //utkarsha
+    additionalTopUserIds: ["6961fcd737afa664ab215d10"], // Kiran 
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/tasks/department-tasks/${currentDepartment}`);

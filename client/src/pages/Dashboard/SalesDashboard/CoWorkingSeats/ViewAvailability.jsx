@@ -10,10 +10,11 @@ import dayjs from "dayjs";
 import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable";
 import DataCard from "../../../../components/DataCard";
 import WidgetSection from "../../../../components/WidgetSection";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import DoubleDataCard from "../../../../components/DoubleDataCard";
+import sortByNumberDesc from "../../../../utils/sortByNumberDesc";
 
 const ViewAvailability = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -33,19 +34,23 @@ const ViewAvailability = () => {
     setTabIndex(newValue);
   };
   const location = useLocation();
-  const { unitId, unitNo, building } = location.state;
+  const { location: encodedBuilding, unit: encodedUnitNo } = useParams();
+  const building =
+    location.state?.building || decodeURIComponent(encodedBuilding || "");
+  const unitNo = location.state?.unitNo || decodeURIComponent(encodedUnitNo || "");
+  // const { unitId, unitNo, building } = location.state;
   const unit = location.state?.unitId || "";
-  const params = new URLSearchParams(location.search);
-  const locationParam = params.get("location") || "Unknown Location";
-  console.log("locations param : ", location);
-  const floorParam = params.get("floor") || "Unknown Floor";
+  // const params = new URLSearchParams(location.search);
+  // const locationParam = params.get("location") || "Unknown Location";
+  // console.log("locations param : ", location);
+  // const floorParam = params.get("floor") || "Unknown Floor";
   const axios = useAxiosPrivate();
-  const formatUnitDisplay = (unitNo, buildingName = "") => {
-    const match = unitNo?.match(/^([\d]+)\(?([A-Za-z]*)\)?$/);
-    if (!match) return `${unitNo || "N/A"} ${buildingName}`;
-    const [_, number, letter] = match;
-    return `${number}${letter ? ` - ${letter}` : ""}`;
-  };
+  // const formatUnitDisplay = (unitNo, buildingName = "") => {
+  //   const match = unitNo?.match(/^([\d]+)\(?([A-Za-z]*)\)?$/);
+  //   if (!match) return `${unitNo || "N/A"} ${buildingName}`;
+  //   const [_, number, letter] = match;
+  //   return `${number}${letter ? ` - ${letter}` : ""}`;
+  // };
 
   const handleViewDetails = (data) => {
     setOpenModal(true);
@@ -61,7 +66,7 @@ const ViewAvailability = () => {
     queryKey: ["unitDetails"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-members", {
-        params: { unitId: unit },
+        params: { unitId: unit, active: true },
       });
       return response.data || {};
     },
@@ -129,16 +134,24 @@ const ViewAvailability = () => {
     );
   }
 
-  const tableData = (unitDetails?.clientDetails || []).map((data, index) => ({
-    id: index + 1,
-    client: data?.client || "-",
-    occupiedDesks: data?.occupiedDesks || 0,
-    occupancyPercent:
-      totalOccupied > 0
-        ? ((data?.occupiedDesks / totalOccupied) * 100).toFixed(0)
-        : "0",
-    memberDetails: data?.memberDetails || [],
-  }));
+  const tableDataRaw = (unitDetails?.clientDetails || [])
+    .filter((data) => Boolean(data?.client))
+    .map((data) => ({
+      client: data?.client || "-",
+      occupiedDesks: data?.occupiedDesks || 0,
+      occupancyPercent:
+        totalOccupied > 0
+          ? ((data?.occupiedDesks / totalOccupied) * 100).toFixed(0)
+          : "0",
+      memberDetails: data?.memberDetails || [],
+    }));
+
+  const tableData = sortByNumberDesc(tableDataRaw, "occupiedDesks").map(
+    (item, index) => ({
+      id: index + 1,
+      ...item,
+    })
+  );
 
   return (
     <div className="p-4 flex flex-col gap-8">
@@ -214,7 +227,13 @@ const ViewAvailability = () => {
           data={totalDesks - totalActualOccupied}
           title="Free Desks"
           secondTitle="Free Occupancy %"
-          secondData={(((totalDesks - totalActualOccupied)/totalDesks)*100).toFixed(0)}
+          secondData={
+            totalDesks
+              ? (((totalDesks - totalActualOccupied) / totalDesks) * 100).toFixed(
+                0
+              )
+              : "0"
+          }
           description="Last Month : Apr-25"
         />
       </WidgetSection>
@@ -273,8 +292,8 @@ const ViewAvailability = () => {
             ...viewDetails,
             date: viewDetails?.date
               ? dayjs(
-                  new Date(viewDetails.date.split("-").reverse().join("-"))
-                ).format("DD-MM-YYYY")
+                new Date(viewDetails.date.split("-").reverse().join("-"))
+              ).format("DD-MM-YYYY")
               : "-",
           }}
           title="member details"

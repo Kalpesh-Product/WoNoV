@@ -701,6 +701,10 @@ const TasksViewDepartment = () => {
               title={"Added By"}
               detail={selectedTask?.assignedBy}
             />
+            <DetalisFormatted
+              title={"Building Name"}
+              detail={selectedTask?.location?.building?.buildingName || "-"}
+            />
               <DetalisFormatted
               title={"Unit No"}
               detail={selectedTask?.location?.unitNo || "-"}
@@ -727,6 +731,10 @@ const TasksViewDepartment = () => {
             <DetalisFormatted
               title={"Added By"}
               detail={selectedTask?.assignedBy}
+            />
+             <DetalisFormatted
+              title={"Building Name"}
+              detail={selectedTask?.location?.building?.buildingName || "-"}
             />
               <DetalisFormatted
               title={"Unit No"}

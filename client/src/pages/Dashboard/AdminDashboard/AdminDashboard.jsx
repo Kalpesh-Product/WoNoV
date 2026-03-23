@@ -687,16 +687,14 @@ const AdminDashboard = () => {
       const managerName =
         managerByDepartmentName.get(departmentName.toLowerCase()) ||
         "Unassigned";
-      const legendLabel = `${managerName} (${departmentName})`;
-
-      if (!acc[legendLabel]) {
-        acc[legendLabel] = {
-          name: legendLabel,
+     if (!acc[managerName]) {
+        acc[managerName] = {
+          name: managerName,
           tasks: 0,
         };
       }
 
-      acc[legendLabel].tasks += 1;
+     acc[managerName].tasks += 1;
       return acc;
     }, {});
 

@@ -456,7 +456,7 @@ const Reviews = () => {
           </>
         ) : activeTabKey === "clientCredit" ? (
           <div className="space-y-4">
-            <div className="flex flex-wrap justify-end gap-3">
+            {/* <div className="flex flex-wrap justify-end gap-3">
               <PrimaryButton
                 title="Export"
                 handleSubmit={() => exportClientCredits()}
@@ -471,7 +471,7 @@ const Reviews = () => {
                 externalStyles="!bg-red-600"
                 padding="px-6 py-2"
               />
-            </div>
+            </div> */}
 
             <PageFrame>
               <AgTable
@@ -481,6 +481,24 @@ const Reviews = () => {
                 data={clientCreditRows}
                 columns={clientCreditColumns}
                 loading={isClientsLoading}
+                headerActions={
+                  <>
+                    <PrimaryButton
+                      title="Export"
+                      handleSubmit={() => exportClientCredits()}
+                      type="button"
+                      externalStyles="!bg-primary"
+                      padding="px-6 py-2"
+                    />
+                    <PrimaryButton
+                      title="Reset"
+                      handleSubmit={() => setIsResetModalOpen(true)}
+                      type="button"
+                      externalStyles="!bg-red-600"
+                      padding="px-6 py-2"
+                    />
+                  </>
+                }
               />
             </PageFrame>
           </div>
