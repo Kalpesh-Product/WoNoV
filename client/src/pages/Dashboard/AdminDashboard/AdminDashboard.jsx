@@ -43,7 +43,10 @@ const AdminDashboard = () => {
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
-
+ const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
+  const isSuperAdminView = roleTitles.some((roleTitle) =>
+    ["Master Admin", "Super Admin"].includes(roleTitle),
+  );
   const userDepartments = auth?.user?.departments || [];
   const departmentIds = useMemo(
     () => userDepartments.map((dept) => dept?._id).filter(Boolean),
@@ -255,6 +258,21 @@ const AdminDashboard = () => {
     : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
 
   //----------------------Units data-----------------------//
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["selectedDepartments"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          "api/company/get-company-data?field=selectedDepartments",
+        );
+        return Array.isArray(response.data?.selectedDepartments)
+          ? response.data.selectedDepartments
+          : [];
+      } catch (error) {
+        throw new Error("Error fetching selected departments");
+      }
+    },
+  });
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -552,7 +570,18 @@ const AdminDashboard = () => {
   //     },
   //   },
   // };
+  const managerByDepartmentName = useMemo(() => {
+    const map = new Map();
 
+    selectedDepartments.forEach((item) => {
+      const departmentName = item?.department?.name?.trim();
+      if (departmentName) {
+        map.set(departmentName.toLowerCase(), item?.admin || "Unassigned");
+      }
+    });
+
+    return map;
+  }, [selectedDepartments]);
 
   const taskData = useMemo(() => {
     const pendingDepartmentTasks = tasks.filter(
@@ -580,8 +609,8 @@ const AdminDashboard = () => {
 
   const totalUnitWiseTask = taskData.reduce((sum, item) => sum + item.tasks, 0);
   const unitWisePieData = taskData.map((item) => ({
-   label: item.unit, // ✅ only unit name
-  value: item.tasks,
+   label: item.unit,
+   value: item.tasks,
   }));
 
   const unitPieChartOptions = {
@@ -603,22 +632,109 @@ const AdminDashboard = () => {
 
 
   //-----------------------------------------------------------------------------------------------------------------//
-  const executiveTasks = [
-    { name: "Mac Parkar", tasks: 30 },
-    { name: "Anne Fernandes", tasks: 10 },
-    { name: "Naaz Bavannawar", tasks: 20 },
-  ];
+   const executiveTasks = useMemo(() => {
+    const pendingTaskCollection = hasMultipleDepartments && !isSuperAdminView
+      ? tasksSummary
+          .filter((dept) => {
+            const deptName =
+              typeof dept?.department === "object"
+                ? dept?.department?.name
+                : dept?.department;
+            const normalizedName =
+              typeof deptName === "string" ? deptName.toLowerCase() : "";
+            const isSalesDepartment = normalizedName.includes("sales");
 
-  const executiveTotalTasks = executiveTasks.reduce(
-    (sum, user) => sum + user.tasks,
-    0,
-  );
-  const pieExecutiveData = executiveTasks.map((user) =>
-    parseFloat(((user.tasks / executiveTotalTasks) * 100).toFixed(1)),
-  );
+            return (
+              !isSalesDepartment &&
+              (!departmentNames.length ||
+                departmentNames.includes(normalizedName))
+            );
+          })
+          .flatMap((dept) =>
+            Array.isArray(dept?.tasks)
+              ? dept.tasks
+                  .filter(
+                    (task) =>
+                      task?.taskType === "Department" &&
+                      task?.status === "Pending",
+                  )
+                  .map((task) => ({
+                    ...task,
+                    department:
+                      typeof task?.department === "object"
+                        ? task?.department?.name
+                        : task?.department ||
+                          (typeof dept?.department === "object"
+                            ? dept?.department?.name
+                            : dept?.department),
+                  }))
+              : [],
+          )
+      : tasks.filter(
+          (task) =>
+            task?.taskType === "Department" && task?.status === "Pending",
+        );
+
+    const groupedTasks = pendingTaskCollection.reduce((acc, task) => {
+      const departmentName =
+        typeof task?.department === "object"
+          ? task?.department?.name
+          : task?.department || department?.name || "Unknown Department";
+
+      if (departmentName?.toLowerCase?.().includes("sales")) {
+        return acc;
+      }
+      const managerName =
+        managerByDepartmentName.get(departmentName.toLowerCase()) ||
+        "Unassigned";
+      const legendLabel = `${managerName} (${departmentName})`;
+
+      if (!acc[legendLabel]) {
+        acc[legendLabel] = {
+          name: legendLabel,
+          tasks: 0,
+        };
+      }
+
+      acc[legendLabel].tasks += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
+  }, [
+    department?.name,
+    departmentNames,
+    hasMultipleDepartments,
+    isSuperAdminView,
+    managerByDepartmentName,
+    tasks,
+    tasksSummary,
+  ]);
+  // const executiveTotalTasks = executiveTasks.reduce(
+  //   (sum, user) => sum + user.tasks,
+  //   0,
+  // );
+  //  const pieExecutiveData =
+  //   executiveTotalTasks > 0
+  //     ? executiveTasks.map((user) =>
+  //         parseFloat(((user.tasks / executiveTotalTasks) * 100).toFixed(1)),
+  //       )
+  //     : [];
   const executiveTasksCount = executiveTasks.map((user) => user.tasks);
   const labels = executiveTasks.map((user) => user.name);
-  const colors = ["#FF5733", "#FFC300", "#28B463"];
+   const currentDepartmentAdminName =
+    managerByDepartmentName.get(department?.name?.toLowerCase?.()) ||
+    "—";
+  const colors = [
+    "#FF5733",
+    "#FFC300",
+    "#28B463",
+    "#5B6CFF",
+    "#9B59B6",
+    "#17A2B8",
+    "#E67E22",
+    "#E91E63",
+  ];
   //-----------------------------------------------------------------------------------------------------------------//
   const companyWiseDesk = [
     { company: "Zomato", desks: "12" },
@@ -872,7 +988,7 @@ const AdminDashboard = () => {
   }, [clientsData, isClientsDataPending]);
 
   const totalDueTasks = useMemo(() => {
-    if (hasMultipleDepartments) {
+    if (hasMultipleDepartments && !isSuperAdminView) {
       if (isTasksSummaryLoading) return 0;
 
       return tasksSummary
@@ -909,6 +1025,7 @@ const AdminDashboard = () => {
     departmentIds,
     departmentNames,
     hasMultipleDepartments,
+    isSuperAdminView,
     isTasksSummaryLoading,
     tasks,
     tasksSummary,
@@ -1123,7 +1240,7 @@ const AdminDashboard = () => {
       key: PERMISSIONS.ADMIN_TOP_EXECUTIVE.value,
       title: "Top Executive",
       data: "",
-      description: "Ms. Utkarsha Palkar",
+      description: currentDepartmentAdminName,
       route: "admin-executive-expense",
     },
   ];
@@ -1219,10 +1336,12 @@ const AdminDashboard = () => {
       chartType: "DonutChart",
       border: true,
       centerLabel: "Tasks",
-      labels: [],
+      labels,
       colors,
-      series: [],
+      series: executiveTasksCount,
       tooltipValue: executiveTasksCount,
+      tooltipFormatter: (label, value) =>
+        `${label}: ${value || 0} pending tasks`,
     },
   ];
 
@@ -1361,6 +1480,7 @@ const AdminDashboard = () => {
               colors={config.colors}
               series={config.series}
               tooltipValue={config.tooltipValue}
+              tooltipFormatter={config.tooltipFormatter}
             />
           </WidgetSection>
         )),

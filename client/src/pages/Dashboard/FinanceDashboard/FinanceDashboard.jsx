@@ -11,7 +11,7 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../../context/SideBarContext";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
@@ -25,10 +25,12 @@ import {
 import humanDate from "../../../utils/humanDateForamt";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useAuth from "../../../hooks/useAuth";
+import usePageDepartment from "../../../hooks/usePageDepartment";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const dispatch = useDispatch();
+  const department = usePageDepartment();
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -86,6 +88,29 @@ const FinanceDashboard = () => {
   //------------------------PAGE ACCESS CARD END-------------------//
 
   const axios = useAxiosPrivate();
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["finance-selectedDepartments"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments",
+      );
+      return Array.isArray(response.data?.selectedDepartments)
+        ? response.data.selectedDepartments
+        : [];
+    },
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["finance-dashboard-tasks", department?._id],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/tasks/get-tasks?dept=${department?._id}`,
+      );
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: Boolean(department?._id),
+  });
+
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
     useQuery({
       queryKey: ["revenueExpenseData"],
@@ -135,6 +160,106 @@ const FinanceDashboard = () => {
     .flatMap((item) => item.units);
 
   const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
+   const managerByDepartmentName = useMemo(() => {
+    const map = new Map();
+
+    selectedDepartments.forEach((item) => {
+      const departmentName = item?.department?.name?.trim();
+      if (departmentName) {
+        map.set(departmentName.toLowerCase(), item?.admin || "Unassigned");
+      }
+    });
+
+    return map;
+  }, [selectedDepartments]);
+
+  const pendingDepartmentTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) => task?.taskType === "Department" && task?.status === "Pending",
+      ),
+    [tasks],
+  );
+
+  const unitWiseTaskData = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const unitName = task?.location?.unitNo || "Unassigned";
+
+      if (!acc[unitName]) {
+        acc[unitName] = {
+          unit: unitName,
+          tasks: 0,
+        };
+      }
+
+      acc[unitName].tasks += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) =>
+      a.unit.localeCompare(b.unit, undefined, { numeric: true }),
+    );
+  }, [pendingDepartmentTasks]);
+
+  const unitWisePieData = unitWiseTaskData.map((item) => ({
+    label: item.unit,
+    value: item.tasks,
+  }));
+
+  const unitPieChartOptions = {
+    labels: unitWisePieData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => {
+          navigate("/app/tasks");
+        },
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Due tasks`,
+      },
+    },
+  };
+
+  const executiveTasks = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const departmentName =
+        typeof task?.department === "object"
+          ? task?.department?.name
+          : task?.department || department?.name || "Unknown Department";
+      const managerName =
+        managerByDepartmentName.get(departmentName.toLowerCase()) ||
+        "Unassigned";
+      const label = `${managerName} (${departmentName})`;
+
+      if (!acc[label]) {
+        acc[label] = {
+          name: label,
+          tasks: 0,
+        };
+      }
+
+      acc[label].tasks += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
+  }, [department?.name, managerByDepartmentName, pendingDepartmentTasks]);
+
+  const executiveTaskLabels = executiveTasks.map((item) => item.name);
+  const executiveTasksCount = executiveTasks.map((item) => item.tasks);
+  const executiveTaskColors = [
+    "#FF5733",
+    "#FFC300",
+    "#28B463",
+    "#5B6CFF",
+    "#9B59B6",
+    "#17A2B8",
+    "#E67E22",
+    "#E91E63",
+  ];
 
   const yearCategories = {
     "FY 2024-25": [
@@ -1194,6 +1319,37 @@ const FinanceDashboard = () => {
     //     />,
     //   ],
     // },
+
+     {
+      layout: 2,
+      widgets: [
+        <WidgetSection key="finance-unit-wise-due-tasks" border title="Unit Wise Due Tasks">
+          <PieChartMui
+            data={unitWisePieData}
+            options={unitPieChartOptions}
+            centerAlign
+            height={320}
+            width={500}
+          />
+        </WidgetSection>,
+        <WidgetSection
+          key="finance-executive-wise-due-tasks"
+          border
+          title="Executive Wise Due Tasks"
+        >
+          <DonutChart
+            centerLabel="Tasks"
+            labels={executiveTaskLabels}
+            colors={executiveTaskColors}
+            series={executiveTasksCount}
+            tooltipValue={executiveTasksCount}
+            tooltipFormatter={(label, value) =>
+              `${label}: ${value || 0} pending tasks`
+            }
+          />
+        </WidgetSection>,
+      ],
+    },
 
     {
       layout: allowedMuiTables.length,
