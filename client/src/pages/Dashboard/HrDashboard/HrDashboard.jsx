@@ -10,6 +10,7 @@ import { MdMiscellaneousServices } from "react-icons/md";
 import PayRollExpenseGraph from "../../../components/HrDashboardGraph/PayRollExpenseGraph";
 import MuiTable from "../../../components/Tables/MuiTable";
 import PieChartMui from "../../../components/graphs/PieChartMui";
+import DonutChart from "../../../components/graphs/DonutChart";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../../hooks/useAuth";
@@ -30,6 +31,7 @@ import {
 } from "../../../redux/slices/hrSlice";
 import dateToHyphen from "../../../utils/dateToHyphen";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
+import usePageDepartment from "../../../hooks/usePageDepartment";
 
 import { PERMISSIONS } from "./../../../constants/permissions";
 
@@ -39,6 +41,7 @@ const HrDashboard = () => {
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const [selectedHrFiscalYear, setSelectedHrFiscalYear] =
     useState("FY 2025-26");
+  const department = usePageDepartment();
 
   const [budgetData, setBudgetData] = useState({});
   const [totalSalary, setTotalSalary] = useState({});
@@ -98,8 +101,107 @@ const HrDashboard = () => {
   //------------------------PAGE ACCESS END-------------------//
 
   const axios = useAxiosPrivate();
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["hr-selectedDepartments"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments",
+      );
+      return Array.isArray(response.data?.selectedDepartments)
+        ? response.data.selectedDepartments
+        : [];
+    },
+  });
+
+  const { data: dashboardTasks = [] } = useQuery({
+    queryKey: ["hr-dashboard-tasks", department?._id],
+    queryFn: async () => {
+      const response = await axios.get(`/api/tasks/get-tasks?dept=${department?._id}`);
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: Boolean(department?._id),
+  });
 
   const navigate = useNavigate();
+   const managerByDepartmentName = useMemo(() => {
+    const map = new Map();
+
+    selectedDepartments.forEach((item) => {
+      const departmentName = item?.department?.name?.trim();
+      if (departmentName) {
+        map.set(departmentName.toLowerCase(), item?.admin || "Unassigned");
+      }
+    });
+
+    return map;
+  }, [selectedDepartments]);
+
+  const pendingDepartmentTasks = useMemo(
+    () =>
+      dashboardTasks.filter(
+        (task) => task?.taskType === "Department" && task?.status === "Pending",
+      ),
+    [dashboardTasks],
+  );
+
+  const unitWisePieData = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const unitName = task?.location?.unitNo || "Unassigned";
+      if (!acc[unitName]) acc[unitName] = { label: unitName, value: 0 };
+      acc[unitName].value += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { numeric: true }),
+    );
+  }, [pendingDepartmentTasks]);
+
+  const unitPieChartOptions = {
+    labels: unitWisePieData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => navigate("/app/tasks"),
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Due tasks`,
+      },
+    },
+  };
+
+  const executiveTasks = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const departmentName =
+        typeof task?.department === "object"
+          ? task?.department?.name
+          : task?.department || department?.name || "Unknown Department";
+      const managerName =
+        managerByDepartmentName.get(departmentName.toLowerCase()) ||
+        "Unassigned";
+      const label = `${managerName} (${departmentName})`;
+      if (!acc[label]) acc[label] = { name: label, tasks: 0 };
+      acc[label].tasks += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
+  }, [department?.name, managerByDepartmentName, pendingDepartmentTasks]);
+
+  const executiveTaskLabels = executiveTasks.map((item) => item.name);
+  const executiveTasksCount = executiveTasks.map((item) => item.tasks);
+  const executiveTaskColors = [
+    "#FF5733",
+    "#FFC300",
+    "#28B463",
+    "#5B6CFF",
+    "#9B59B6",
+    "#17A2B8",
+    "#E67E22",
+    "#E91E63",
+  ];
 
   const usersQuery = useQuery({
     queryKey: ["users"],
@@ -1394,6 +1496,32 @@ const HrDashboard = () => {
           />
         </WidgetSection>
       )),
+    },
+    {
+      layout: 2,
+      widgets: [
+        <WidgetSection key="hr-unit-wise-due-tasks" border title="Unit Wise Due Tasks">
+          <PieChartMui
+            data={unitWisePieData}
+            options={unitPieChartOptions}
+            width={500}
+            height={320}
+            centerAlign
+          />
+        </WidgetSection>,
+        <WidgetSection key="hr-executive-wise-due-tasks" border title="Executive Wise Due Tasks">
+          <DonutChart
+            centerLabel="Tasks"
+            labels={executiveTaskLabels}
+            colors={executiveTaskColors}
+            series={executiveTasksCount}
+            tooltipValue={executiveTasksCount}
+            tooltipFormatter={(label, value) =>
+              `${label}: ${value || 0} pending tasks`
+            }
+          />
+        </WidgetSection>,
+      ],
     },
     {
       layout: 2,

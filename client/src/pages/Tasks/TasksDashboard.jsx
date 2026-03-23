@@ -24,7 +24,10 @@ const TasksDashboard = () => {
   const [selectedFY, setSelectedFY] = useState(null);
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
-
+  const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
+  const isSuperAdminView = roleTitles.some((roleTitle) =>
+    ["Master Admin", "Super Admin"].includes(roleTitle),
+  );
   //------------------------PAGE ACCESS START-------------------//
   const cardsConfig = [
     {
@@ -478,9 +481,7 @@ const TasksDashboard = () => {
     }, {});
 
     return Object.entries(departmentMap).map(([department, data]) => ({
-      label: `${department} (${((data.pending / data.total) * 100).toFixed(
-        1
-      )}%)`,
+       label: department,
       value: data.pending,
     }));
   };
@@ -733,7 +734,9 @@ const TasksDashboard = () => {
     },
   ];
   const allowedPieCharts = pieChartConfigs.filter(
-    (card) => !card.key || userPermissions.includes(card.key)
+    //(card) => !card.key || userPermissions.includes(card.key)
+     (card) =>
+      isSuperAdminView || !card.key || userPermissions.includes(card.key),
   );
 
   //---------------------------------------------

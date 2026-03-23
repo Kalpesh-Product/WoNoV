@@ -248,7 +248,7 @@ const ViewClients = () => {
         />
       </div>
       <WidgetSection
-        layout={verticalsData.length <= 3 ? verticalsData.length : 3}
+        layout={verticalsData.length <= 2 ? verticalsData.length : 2}
       >
         {verticalsData.map((item) => (
           <DataCard

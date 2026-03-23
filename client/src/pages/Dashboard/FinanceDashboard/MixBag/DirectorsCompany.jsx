@@ -10,6 +10,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 const DirectorsCompany = () => {
   const location = useLocation();
@@ -18,6 +19,7 @@ const DirectorsCompany = () => {
   const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
   const [createType, setCreateType] = useState("directorKyc");
+  const [editTarget, setEditTarget] = useState(null);
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
     mode: "onChange",
@@ -28,11 +30,22 @@ const DirectorsCompany = () => {
 
   const closeModal = () => {
     setOpenModal(false);
-    reset();
+    setEditTarget(null);
+    setCreateType("directorKyc");
+    reset({ name: "" });
   };
 
   const openCreateModal = (type) => {
+    setEditTarget(null);
     setCreateType(type);
+    reset({ name: "" });
+    setOpenModal(true);
+  };
+
+  const openEditModal = (row) => {
+    setEditTarget(row);
+    setCreateType(row.type);
+    reset({ name: row.name });
     setOpenModal(true);
   };
 
@@ -61,8 +74,8 @@ const DirectorsCompany = () => {
       const targetName = variables.type === "directorKyc" ? variables.nameOfDirector : "Company";
       navigate(
         location.pathname.includes("mix-bag")
-          ? `/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC/${targetName}`
-          : `/app/company-KYC/${targetName}`,
+          ? `/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC/${encodeURIComponent(targetName)}`
+          : `/app/company-KYC/${encodeURIComponent(targetName)}`,
         {
           state: {
             files: [],
@@ -76,6 +89,21 @@ const DirectorsCompany = () => {
     },
   });
 
+  const { mutate: updateKycEntryName, isPending: isUpdating } = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axios.patch("/api/company/update-kyc-entry-name", payload);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["directorsCompany"] });
+      closeModal();
+      toast.success(variables.type === "companyKyc" ? "Company name updated successfully" : "Director name updated successfully");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update name");
+    },
+  });
+
   const tableData = useMemo(() => {
     if (!kycDetails) return [];
 
@@ -84,7 +112,9 @@ const DirectorsCompany = () => {
     result.push({
       id: "company",
       srno: 1,
-      name: "Company",
+      name: kycDetails.companyName || "Company",
+      routeName: "Company",
+      type: "companyKyc",
       files: kycDetails.companyKyc || [],
       documentCount: kycDetails.companyKyc?.length || 0,
     });
@@ -94,6 +124,8 @@ const DirectorsCompany = () => {
         id: `director-${index}`,
         srno: index + 2,
         name: director.nameOfDirector,
+        routeName: director.nameOfDirector,
+        type: "directorKyc",
         files: director.documents || [],
         documentCount: director.documents?.length || 0,
       });
@@ -113,12 +145,12 @@ const DirectorsCompany = () => {
           onClick={() =>
             navigate(
               location.pathname.includes("mix-bag")
-                ? `/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC/${params.data.name}`
-                : `/app/company-KYC/${params.data.name}`,
+                ? `/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC/${encodeURIComponent(params.data.routeName)}`
+                : `/app/company-KYC/${encodeURIComponent(params.data.routeName)}`,
               {
                 state: {
                   files: params.data.files,
-                  name: params.data.name,
+                  name: params.data.routeName,
                 },
               }
             )
@@ -129,10 +161,32 @@ const DirectorsCompany = () => {
       ),
     },
     { field: "documentCount", headerName: "No. of Documents", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Action",
+      width: 110,
+      sortable: false,
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.id}
+          menuItems={[{ label: "Edit", onClick: () => openEditModal(params.data) }]}
+        />
+      ),
+    },
   ];
 
   const onSubmit = ({ name }) => {
     const trimmedName = name.trim();
+
+    if (editTarget) {
+      updateKycEntryName({
+        type: editTarget.type,
+        currentName: editTarget.name,
+        name: trimmedName,
+      });
+      return;
+    }
+
     createKycEntry({
       type: createType,
       ...(createType === "directorKyc" ? { nameOfDirector: trimmedName } : { companyName: trimmedName }),
@@ -146,12 +200,6 @@ const DirectorsCompany = () => {
           <PrimaryButton
             title="Add New Director KYC"
             handleSubmit={() => openCreateModal("directorKyc")}
-            className="!w-auto"
-            padding="px-4 py-2"
-          />
-          <PrimaryButton
-            title="Add New Company KYC"
-            handleSubmit={() => openCreateModal("companyKyc")}
             className="!w-auto"
             padding="px-4 py-2"
           />
@@ -169,7 +217,7 @@ const DirectorsCompany = () => {
       <MuiModal
         open={openModal}
         onClose={closeModal}
-        title={createType === "directorKyc" ? "Add New Director KYC" : "Add New Company KYC"}
+        title={editTarget ? (editTarget.type === "companyKyc" ? "Edit Company Name" : "Edit Director Name") : (createType === "directorKyc" ? "Add New Director KYC" : "Add New Company KYC")}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4">
           <Controller
@@ -185,7 +233,7 @@ const DirectorsCompany = () => {
             render={({ field }) => (
               <TextField
                 {...field}
-                label={createType === "directorKyc" ? "Director Name" : "Company Name"}
+                label={editTarget ? (editTarget.type === "companyKyc" ? "Company Name" : "Director Name") : (createType === "directorKyc" ? "Director Name" : "Company Name")}
                 fullWidth
                 size="small"
                 error={!!errors.name}
@@ -196,9 +244,9 @@ const DirectorsCompany = () => {
 
           <PrimaryButton
             type="submit"
-            title="Create"
-            disabled={isCreating}
-            isLoading={isCreating}
+            title={editTarget ? "Save Changes" : "Create"}
+            disabled={isCreating || isUpdating}
+            isLoading={isCreating || isUpdating}
           />
         </form>
       </MuiModal>

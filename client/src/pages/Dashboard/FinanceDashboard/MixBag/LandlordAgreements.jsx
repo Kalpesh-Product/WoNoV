@@ -10,6 +10,7 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 const LandlordAgreements = () => {
   const location = useLocation();
@@ -17,6 +18,7 @@ const LandlordAgreements = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
+  const [editingLandlord, setEditingLandlord] = useState(null);
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
     mode: "onChange",
@@ -27,7 +29,8 @@ const LandlordAgreements = () => {
 
   const closeModal = () => {
     setOpenModal(false);
-    reset();
+    setEditingLandlord(null);
+    reset({ name: "" });
   };
 
   const { data: landlordData = [], isLoading } = useQuery({
@@ -59,8 +62,8 @@ const LandlordAgreements = () => {
       if (landlord?._id) {
         navigate(
           location.pathname.includes("mix-bag")
-            ? `/app/dashboard/finance-dashboard/mix-bag/landlord-agreements/${landlord.name}`
-            : `/app/landlord-agreements/${landlord.name}`,
+            ? `/app/dashboard/finance-dashboard/mix-bag/landlord-agreements/${encodeURIComponent(landlord.name)}`
+            : `/app/landlord-agreements/${encodeURIComponent(landlord.name)}`,
           {
             state: {
               files: [],
@@ -76,26 +79,36 @@ const LandlordAgreements = () => {
     },
   });
 
+  const { mutate: updateLandlord, isPending: isUpdating } = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axios.patch("/api/finance/landlord", payload);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["landlord-agreements"] });
+      closeModal();
+      toast.success("Landlord updated successfully");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update landlord");
+    },
+  });
+
   const tableData = useMemo(
     () =>
       Array.isArray(landlordData)
         ? landlordData
           .slice()
           .sort((a, b) => (a?.name || "").localeCompare(b?.name))
-          .map((item, index) => {
-            const rawName = item?.name || "Unnamed";
-            const safeName = rawName.replace(/\//g, "");
-
-            return {
-              srno: index + 1,
-              name: safeName,
-              documentCount: Array.isArray(item?.documents)
-                ? item.documents.length
-                : 0,
-              files: item?.documents || [],
-              id: item?._id || "",
-            };
-          })
+          .map((item, index) => ({
+            srno: index + 1,
+            name: item?.name || "Unnamed",
+            documentCount: Array.isArray(item?.documents)
+              ? item.documents.length
+              : 0,
+            files: item?.documents || [],
+            id: item?._id || "",
+          }))
         : [],
     [landlordData]
   );
@@ -112,8 +125,8 @@ const LandlordAgreements = () => {
           onClick={() =>
             navigate(
               location.pathname.includes("mix-bag")
-                ? `/app/dashboard/finance-dashboard/mix-bag/landlord-agreements/${params.data.name}`
-                : `/app/landlord-agreements/${params.data.name}`,
+                ? `/app/dashboard/finance-dashboard/mix-bag/landlord-agreements/${encodeURIComponent(params.data.name)}`
+                : `/app/landlord-agreements/${encodeURIComponent(params.data.name)}`,
               {
                 state: {
                   files: params.data.files || [],
@@ -130,10 +143,29 @@ const LandlordAgreements = () => {
       ),
     },
     { field: "documentCount", headerName: "No. of Documents", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Action",
+      width: 110,
+      sortable: false,
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.id}
+          menuItems={[{ label: "Edit", onClick: () => { setEditingLandlord(params.data); reset({ name: params.data.name }); setOpenModal(true); } }]}
+        />
+      ),
+    },
   ];
 
   const onSubmit = ({ name }) => {
-    createLandlord({ name: name.trim() });
+    const trimmedName = name.trim();
+
+    if (editingLandlord) {
+      updateLandlord({ landlordId: editingLandlord.id, name: trimmedName });
+      return;
+    }
+
+    createLandlord({ name: trimmedName });
   };
 
   return (
@@ -142,7 +174,7 @@ const LandlordAgreements = () => {
         <div className="flex justify-end pb-4">
           <PrimaryButton
             title="Add New Landlord"
-            handleSubmit={() => setOpenModal(true)}
+            handleSubmit={() => { setEditingLandlord(null); reset({ name: "" }); setOpenModal(true); }}
             className="!w-auto"
             padding="px-4 py-2"
           />
@@ -164,7 +196,7 @@ const LandlordAgreements = () => {
         )}
       </PageFrame>
 
-      <MuiModal title={"Add New Landlord"} open={openModal} onClose={closeModal}>
+      <MuiModal title={editingLandlord ? "Edit Landlord" : "Add New Landlord"} open={openModal} onClose={closeModal}>
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4">
           <Controller
             name="name"
@@ -189,9 +221,9 @@ const LandlordAgreements = () => {
           />
           <PrimaryButton
             type="submit"
-            title="Create"
-            isLoading={isCreating}
-            disabled={isCreating}
+            title={editingLandlord ? "Save Changes" : "Create"}
+            isLoading={isCreating || isUpdating}
+            disabled={isCreating || isUpdating}
           />
         </form>
       </MuiModal>

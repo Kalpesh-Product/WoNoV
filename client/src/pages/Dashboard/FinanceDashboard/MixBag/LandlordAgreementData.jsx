@@ -1,10 +1,11 @@
-import { useLocation } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import humanDate from "../../../../utils/humanDateForamt";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
-import { TextField } from "@mui/material";
+import { IconButton, Menu, MenuItem, TextField } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import UploadFileInput from "../../../../components/UploadFileInput";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -14,68 +15,64 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
+const ActionMenu = ({ onEdit }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  return (
+    <>
+      <IconButton size="small" onClick={(event) => setAnchorEl(event.currentTarget)}>
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null);
+            onEdit();
+          }}
+        >
+          Edit
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
+
 const LandlordAgreementData = () => {
   const location = useLocation();
+  const { name: routeName } = useParams();
   const axios = useAxiosPrivate();
-
-  // Fallbacks if state is missing or malformed
-
-  const name = location.state?.name || "Unknown";
-  const id = location.state?.id || "Unknown";
+  const name = decodeURIComponent(routeName || location.state?.name || "Unknown");
+  const routeId = location.state?.id;
   const [openModal, setOpenModal] = useState(false);
-  const [selectedLanlordId, setSelectedLanlordId] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
 
   const { data: landlordData = [], isLoading } = useQuery({
     queryKey: ["landlord-agreements"],
     queryFn: async () => {
-      try {
-        const response = await axios.get(
-          "/api/finance/get-landlord-agreements"
-        );
-        return response.data.filter((item) => item._id === id);
-      } catch (error) {
-        console.error("Failed to fetch landlord agreements:", error);
-        return [];
-      }
+      const response = await axios.get("/api/finance/get-landlord-agreements");
+      return Array.isArray(response.data) ? response.data : [];
     },
   });
 
-  const files = Array.isArray(landlordData?.[0]?.documents)
-    ? landlordData[0].documents
-    : [];
+  const selectedLandlord = useMemo(() => {
+    if (routeId) {
+      const byId = landlordData.find((item) => item._id === routeId);
+      if (byId) return byId;
+    }
 
-  const landlordId = landlordData.map((item) => item._id);
+    return landlordData.find(
+      (item) => (item?.name || "").trim().toLowerCase() === name.trim().toLowerCase()
+    );
+  }, [landlordData, name, routeId]);
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (formData) => {
-      const response = await axios.post(
-        "/api/finance/add-landlord-agreement",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      toast.success("Agreement uploaded successfully");
-      queryClient.invalidateQueries({ queryKey: [] });
-      setOpenModal(false);
-      reset(); // clear form
-      // Optional: refetch query or update local state if needed
-    },
-    onError: (err) => {
-      console.error("Upload failed:", err);
-      toast.error("Failed to upload agreement");
-    },
-  });
+  const files = Array.isArray(selectedLandlord?.documents) ? selectedLandlord.documents : [];
 
-  const onSubmit = (data) => {
-    const formData = new FormData();
-    formData.append("landLordId", landlordId[0]);
-    formData.append("documentName", data.documentName);
-    formData.append("agreement", data.agreement);
-    mutate(formData);
+  const defaultValues = {
+    landLordId: "",
+    documentName: "",
+    currentDocumentName: "",
+    agreement: null,
   };
 
   const {
@@ -86,15 +83,80 @@ const LandlordAgreementData = () => {
     formState: { errors },
   } = useForm({
     mode: "onChange",
-    defaultValues: {
-      landLordId: "",
-      documentName: "",
+    defaultValues,
+  });
+
+  const resetModal = () => {
+    setOpenModal(false);
+    setIsEditMode(false);
+    setSelectedDocument(null);
+    reset({ ...defaultValues, landLordId: selectedLandlord?._id || routeId || "" });
+  };
+
+  useEffect(() => {
+    setValue("landLordId", selectedLandlord?._id || routeId || "");
+  }, [routeId, selectedLandlord?._id, setValue]);
+
+  const openAddModal = () => {
+    setIsEditMode(false);
+    setSelectedDocument(null);
+    reset({ ...defaultValues, landLordId: selectedLandlord?._id || routeId || "" });
+    setOpenModal(true);
+  };
+
+  const openEditModal = (documentRow) => {
+    setIsEditMode(true);
+    setSelectedDocument(documentRow);
+    reset({
+      landLordId: selectedLandlord?._id || routeId || "",
+      documentName: documentRow.document,
+      currentDocumentName: documentRow.document,
+      agreement: null,
+    });
+    setOpenModal(true);
+  };
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (formData) => {
+      if (isEditMode) {
+        const response = await axios.patch("/api/finance/landlord-agreements/document", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        return response.data;
+      }
+
+      const response = await axios.post("/api/finance/add-landlord-agreement", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success(isEditMode ? "Agreement updated successfully" : "Agreement uploaded successfully");
+      queryClient.invalidateQueries({ queryKey: ["landlord-agreements"] });
+      resetModal();
+    },
+    onError: (err) => {
+      console.error(isEditMode ? "Update failed:" : "Upload failed:", err);
+      toast.error(err?.response?.data?.message || (isEditMode ? "Failed to update agreement" : "Failed to upload agreement"));
     },
   });
 
-  useEffect(() => {
-    setValue("landLordId", id);
-  }, [id]);
+  const onSubmit = (data) => {
+    const formData = new FormData();
+    formData.append("landLordId", selectedLandlord?._id || routeId || "");
+    formData.append("documentName", data.documentName.trim());
+
+    if (isEditMode) {
+      formData.append("currentDocumentName", data.currentDocumentName || selectedDocument?.document || "");
+      if (data.agreement) {
+        formData.append("agreement", data.agreement);
+      }
+    } else {
+      formData.append("agreement", data.agreement);
+    }
+
+    mutate(formData);
+  };
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
@@ -112,10 +174,15 @@ const LandlordAgreementData = () => {
         </span>
       ),
     },
-
-    { field: "createdAt", headerName: "Created At" },
-    { field: "updatedAt", headerName: "Updated At" },
-    { field: "actions", headerName: "Actions" }, // Placeholder, if needed
+    { field: "createdAt", headerName: "Uploaded Date", flex: 1 },
+    { field: "updatedAt", headerName: "Last Modified", flex: 1 },
+    {
+      field: "actions",
+      headerName: "Action",
+      width: 120,
+      sortable: false,
+      cellRenderer: (params) => <ActionMenu onEdit={() => openEditModal(params.data)} />,
+    },
   ];
 
   const tableData = files.map((item, index) => ({
@@ -124,7 +191,6 @@ const LandlordAgreementData = () => {
     createdAt: item?.createdAt ? humanDate(item.createdAt) : "N/A",
     updatedAt: item?.updatedAt ? humanDate(item.updatedAt) : "N/A",
     url: item?.url || "",
-    actions: "-", // Add actual actions like view/download buttons here if needed
   }));
 
   return (
@@ -135,21 +201,16 @@ const LandlordAgreementData = () => {
           data={tableData}
           tableTitle={`AGREEMENTS -  ${name.toUpperCase()}`}
           buttonTitle={"Add Agreement"}
-          handleClick={() => setOpenModal(true)}
+          handleClick={openAddModal}
           hideFilter
+          loading={isLoading}
+          disabled={!selectedLandlord}
         />
       </PageFrame>
 
-      <MuiModal
-        title={"Add Agreement"}
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-      >
+      <MuiModal title={isEditMode ? "Edit Agreement" : "Add Agreement"} open={openModal} onClose={resetModal}>
         <div className="flex flex-col gap-4">
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="grid grid-cols-1 gap-4"
-          >
+          <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4">
             <Controller
               name="documentName"
               control={control}
@@ -174,21 +235,27 @@ const LandlordAgreementData = () => {
             <Controller
               name="agreement"
               control={control}
-              rules={{ required: "Agreement is Required" }}
+              rules={{ required: isEditMode ? false : "Agreement is Required" }}
               render={({ field }) => (
                 <UploadFileInput
                   onChange={field.onChange}
                   value={field.value}
                   allowedExtensions={["pdf"]}
                   previewType="pdf"
+                  label={isEditMode ? "Replace Agreement" : "Upload Agreement"}
                 />
               )}
             />
+            {isEditMode ? (
+              <p className="text-xs text-gray-500">
+                Uploaded Date remains unchanged. Replacing the file updates Last Modified automatically.
+              </p>
+            ) : null}
             <PrimaryButton
               type={"submit"}
-              title={"Add Agreement"}
+              title={isEditMode ? "Save Changes" : "Add Agreement"}
               isLoading={isPending}
-              disabled={isPending}
+              disabled={isPending || !selectedLandlord}
             />
           </form>
         </div>

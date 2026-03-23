@@ -127,6 +127,7 @@ const createVirtualOfficeClient = async (req, res) => {
 
     // Desk numbers validation
     const cabinDesks = Number(data.cabinDesks || 0);
+    const securityDeposit = Number(data.securityDeposit || 0);
     const cabinDeskRate = Number(data.cabinDeskRate || 0);
     const openDesks = Number(data.openDesks || 0);
     const openDeskRate = Number(data.openDeskRate || 0);
@@ -136,6 +137,7 @@ const createVirtualOfficeClient = async (req, res) => {
     const numericFields = [
       ["cabinDesks", cabinDesks],
       ["cabinDeskRate", cabinDeskRate],
+      ["securityDeposit", securityDeposit],
       ["openDesks", openDesks],
       ["openDeskRate", openDeskRate],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
@@ -215,6 +217,7 @@ const createVirtualOfficeClient = async (req, res) => {
       ...data,
       building: unit.building,
       cabinDesks,
+      securityDeposit,
       cabinDeskRate,
       cabinTotal,
       openDesks,
@@ -590,6 +593,11 @@ const updateVirtualOfficeClient = async (req, res) => {
         ? updates.cabinDesks
         : existing.cabinDesks || 0,
     );
+    const securityDeposit = Number(
+      typeof updates.securityDeposit !== "undefined"
+        ? updates.securityDeposit
+        : existing.securityDeposit || 0,
+    );
     const cabinDeskRate = Number(
       typeof updates.cabinDeskRate !== "undefined"
         ? updates.cabinDeskRate
@@ -613,6 +621,7 @@ const updateVirtualOfficeClient = async (req, res) => {
 
     const numericChecks = [
       ["cabinDesks", cabinDesks],
+      ["securityDeposit", securityDeposit],
       ["cabinDeskRate", cabinDeskRate],
       ["openDesks", openDesks],
       ["openDeskRate", openDeskRate],
@@ -628,6 +637,7 @@ const updateVirtualOfficeClient = async (req, res) => {
     }
 
     updates.cabinDesks = cabinDesks;
+    updates.securityDeposit = securityDeposit;
     updates.cabinDeskRate = cabinDeskRate;
     updates.openDesks = openDesks;
     updates.openDeskRate = openDeskRate;
