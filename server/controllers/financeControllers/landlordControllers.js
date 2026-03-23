@@ -1,4 +1,7 @@
-const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const {
+  handleDocumentUpload,
+  handleDocumentDelete,
+} = require("../../config/cloudinaryConfig");
 const Landlord = require("../../models/finance/Landlord");
 const Company = require("../../models/hr/Company");
 
@@ -17,25 +20,26 @@ const addLandlordDocument = async (req, res, next) => {
       .lean()
       .exec();
 
-    // Define Cloudinary folder path
+    if (!company || !foundLandlord) {
+      return res.status(404).json({ message: "Landlord not found" });
+    }
+
     const uploadPath = `${company.companyName}/landlords/documents/${foundLandlord.name}`;
 
-    // Upload document to Cloudinary
     const uploadResult = await handleDocumentUpload(
       file.buffer,
       uploadPath,
       file.originalname
     );
 
-    // Update landlord document with uploaded file info
     const updatedLandlord = await Landlord.findByIdAndUpdate(
       landLordId,
       {
         $push: {
           documents: {
-            name: documentName,
+            name: documentName.trim(),
             url: uploadResult.secure_url,
-            documentId: uploadResult.public_id, // Storing public_id as documentId
+            documentId: uploadResult.public_id,
           },
         },
       },
@@ -45,6 +49,68 @@ const addLandlordDocument = async (req, res, next) => {
     res.status(200).json({
       message: "Document uploaded successfully",
       landlord: updatedLandlord,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateLandlordDocument = async (req, res, next) => {
+  try {
+    const { landLordId, currentDocumentName, documentName } = req.body;
+    const companyId = req.company;
+    const file = req.file;
+
+    if (!landLordId || !currentDocumentName?.trim() || !documentName?.trim()) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const [company, landlord] = await Promise.all([
+      Company.findById(companyId).lean().exec(),
+      Landlord.findById(landLordId).exec(),
+    ]);
+
+    if (!company || !landlord) {
+      return res.status(404).json({ message: "Landlord not found" });
+    }
+
+    const existingDocument = landlord.documents.find(
+      (doc) => doc.name?.trim() === currentDocumentName.trim()
+    );
+
+    if (!existingDocument) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    let nextUrl = existingDocument.url;
+    let nextDocumentId = existingDocument.documentId;
+
+    if (file) {
+      if (existingDocument.documentId) {
+        await handleDocumentDelete(existingDocument.documentId);
+      }
+
+      const uploadPath = `${company.companyName}/landlords/documents/${landlord.name}`;
+      const uploadResult = await handleDocumentUpload(
+        file.buffer,
+        uploadPath,
+        file.originalname
+      );
+
+      nextUrl = uploadResult.secure_url;
+      nextDocumentId = uploadResult.public_id;
+    }
+
+    existingDocument.name = documentName.trim();
+    existingDocument.url = nextUrl;
+    existingDocument.documentId = nextDocumentId;
+    existingDocument.updatedAt = new Date();
+
+    await landlord.save();
+
+    return res.status(200).json({
+      message: "Landlord document updated successfully",
+      document: existingDocument,
     });
   } catch (error) {
     next(error);
@@ -98,4 +164,9 @@ const createLandlord = async (req, res, next) => {
   }
 };
 
-module.exports = { getLandlordDocuments, addLandlordDocument, createLandlord };
+module.exports = {
+  getLandlordDocuments,
+  addLandlordDocument,
+  createLandlord,
+  updateLandlordDocument,
+};

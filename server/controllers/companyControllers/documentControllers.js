@@ -792,6 +792,108 @@ const addCompanyKyc = async (req, res, next) => {
   }
 };
 
+const updateCompanyKycDocument = async (req, res, next) => {
+  try {
+    const { type, currentDocumentName, documentName, nameOfDirector } = req.body;
+    const companyId = req.company;
+
+    if (!companyId || !type || !currentDocumentName?.trim() || !documentName?.trim()) {
+      return res.status(400).json({
+        message: "companyId, type, currentDocumentName and documentName are required",
+      });
+    }
+
+    const company = await Company.findById(companyId).exec();
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const now = new Date();
+
+    if (type === "companyKyc") {
+      const kycDocs = company.kycDetails.companyKyc || [];
+      const existingDoc = kycDocs.find((doc) => doc.name === currentDocumentName);
+
+      if (!existingDoc) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      existingDoc.name = documentName.trim();
+
+      if (req.file) {
+        if (existingDoc.documentId) {
+          await handleDocumentDelete(existingDoc.documentId);
+        }
+
+        const uploadResult = await handleDocumentUpload(
+          req.file.buffer,
+          `${company.companyName}/kyc/${type}/${documentName?.trim()}`,
+          req.file.originalname,
+        );
+
+        existingDoc.documentLink = uploadResult.secure_url;
+        existingDoc.documentId = uploadResult.public_id;
+      }
+
+      existingDoc.updatedDate = now;
+    } else if (type === "directorKyc") {
+      if (!nameOfDirector) {
+        return res
+          .status(400)
+          .json({ message: "nameOfDirector is required for directorKyc" });
+      }
+
+      const directorEntry = (company.kycDetails.directorKyc || []).find(
+        (director) => director.nameOfDirector === nameOfDirector,
+      );
+
+      if (!directorEntry) {
+        return res.status(404).json({ message: "Director entry not found" });
+      }
+
+      const existingDoc = (directorEntry.documents || []).find(
+        (doc) => doc.name === currentDocumentName,
+      );
+
+      if (!existingDoc) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      existingDoc.name = documentName.trim();
+
+      if (req.file) {
+        if (existingDoc.documentId) {
+          await handleDocumentDelete(existingDoc.documentId);
+        }
+
+        const uploadResult = await handleDocumentUpload(
+          req.file.buffer,
+          `${company.companyName}/kyc/${type}/${nameOfDirector}/${documentName?.trim()}`,
+          req.file.originalname,
+        );
+
+        existingDoc.documentLink = uploadResult.secure_url;
+        existingDoc.documentId = uploadResult.public_id;
+      }
+
+      existingDoc.updatedDate = now;
+    } else {
+      return res.status(400).json({
+        message: "Invalid type: must be either 'companyKyc' or 'directorKyc'",
+      });
+    }
+
+    await company.save();
+
+    return res.status(200).json({
+      message: "KYC document updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const createCompanyKycEntry = async (req, res, next) => {
   try {
     const { type, nameOfDirector } = req.body;
@@ -1276,6 +1378,7 @@ module.exports = {
   getDepartmentDocuments,
   addCompanyKyc,
   createCompanyKycEntry,
+  updateCompanyKycDocument,
   getCompanyKyc,
   getComplianceDocuments,
   uploadComplianceDocument,

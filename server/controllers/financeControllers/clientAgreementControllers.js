@@ -1,6 +1,9 @@
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const Company = require("../../models/hr/Company");
-const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const {
+    handleDocumentUpload,
+    handleDocumentDelete,
+} = require("../../config/cloudinaryConfig");
 
 const allowedMimeTypes = [
     "application/pdf",
@@ -124,8 +127,80 @@ const addClientAgreement = async (req, res, next) => {
     }
 };
 
+const updateClientAgreement = async (req, res, next) => {
+    try {
+        const companyId = req.company;
+        const { clientId, currentDocumentName, documentName } = req.body;
+        const file = req.file;
+
+        if (!clientId || !currentDocumentName?.trim() || !documentName?.trim()) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+
+        if (file && !allowedMimeTypes.includes(file.mimetype)) {
+            return res.status(400).json({
+                message: "Only PDF, DOC, DOCX, JPG, JPEG, PNG and WEBP files are allowed",
+            });
+        }
+
+        const [company, client] = await Promise.all([
+            Company.findById(companyId).lean().exec(),
+            CoworkingClient.findById(clientId).exec(),
+        ]);
+
+        if (!company || !client) {
+            return res.status(404).json({ message: "Client not found" });
+        }
+
+        const existingDocument = client.documents.find(
+            (doc) => doc.name?.trim() === currentDocumentName.trim()
+        );
+
+        if (!existingDocument) {
+            return res.status(404).json({ message: "Document not found" });
+        }
+
+        let nextUrl = existingDocument.url;
+        let nextDocumentId = existingDocument.documentId;
+        let nextFileType = existingDocument.fileType;
+
+        if (file) {
+            if (existingDocument.documentId) {
+                await handleDocumentDelete(existingDocument.documentId);
+            }
+
+            const uploadPath = `${company.companyName}/clients/agreements/${client.clientName}`;
+            const uploadResult = await handleDocumentUpload(
+                file.buffer,
+                uploadPath,
+                file.originalname,
+            );
+
+            nextUrl = uploadResult.secure_url;
+            nextDocumentId = uploadResult.public_id;
+            nextFileType = file.mimetype;
+        }
+
+        existingDocument.name = documentName.trim();
+        existingDocument.url = nextUrl;
+        existingDocument.documentId = nextDocumentId;
+        existingDocument.fileType = nextFileType;
+        existingDocument.updatedAt = new Date();
+
+        await client.save();
+
+        return res.status(200).json({
+            message: "Agreement updated successfully",
+            document: existingDocument,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getClientAgreements,
     createClientAgreementClient,
     addClientAgreement,
+    updateClientAgreement,
 };
