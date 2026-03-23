@@ -173,7 +173,7 @@ const CheckAvailability = () => {
 
   //-------------  Remove Duplicates----------------------//
 
-  const { control, handleSubmit, watch } = useForm({
+  const { control, handleSubmit, watch, setValue } = useForm({
     defaultValues: {
       location: "",
       floor: "",
@@ -182,6 +182,10 @@ const CheckAvailability = () => {
 
   const selectedLocation = watch("location");
   const selectedUnit = watch("floor");
+
+  useEffect(() => {
+    setValue("floor", "");
+  }, [selectedLocation, setValue]);
 
   const {
     data: workLocations = [],
@@ -199,8 +203,12 @@ const CheckAvailability = () => {
   const selectedUnitId = locationsLoading
     ? []
     : workLocations
-        .filter((item) => item.unitNo === selectedUnit)
-        .map((item) => item._id);
+      .filter(
+        (item) =>
+          item.unitNo === selectedUnit &&
+          item.building?.buildingName === selectedLocation
+      )
+      .map((item) => item._id);
 
   // const uniqueBuildings = Array.from(
   //   new Map(
@@ -217,11 +225,11 @@ const CheckAvailability = () => {
     new Map(
       workLocations.length > 0
         ? workLocations
-            .filter(
-              (loc) =>
-                loc.building && loc.building._id && loc.building.buildingName
-            ) // ✅ safeguard
-            .map((loc) => [loc.building._id, loc.building.buildingName])
+          .filter(
+            (loc) =>
+              loc.building && loc.building._id && loc.building.buildingName
+          ) // ✅ safeguard
+          .map((loc) => [loc.building._id, loc.building.buildingName])
         : []
     ).entries()
   );
@@ -264,13 +272,25 @@ const CheckAvailability = () => {
     const { location, floor } = data;
     address.pathname?.includes("mix-bag")
       ? navigate(
-          `/app/dashboard/sales-dashboard/mix-bag/inventory/${location}/${floor}`,
-          { state: { unitId: selectedUnitId[0] } }
-        )
+        `/app/dashboard/sales-dashboard/mix-bag/inventory/${location}/${floor}`,
+        {
+          state: {
+            unitId: selectedUnitId[0],
+            unitNo: floor,
+            building: location,
+          },
+        }
+      )
       : navigate(
-          `/app/dashboard/sales-dashboard/inventory/${location}/${floor}`,
-          { state: { unitId: selectedUnitId[0] } }
-        );
+        `/app/dashboard/sales-dashboard/inventory/${location}/${floor}`,
+        {
+          state: {
+            unitId: selectedUnitId[0],
+            unitNo: floor,
+            building: location,
+          },
+        }
+      );
   };
 
   const inventoryStats = {
@@ -335,7 +355,7 @@ const CheckAvailability = () => {
         title: "Total Inventory",
         value: String(
           (Number(inventoryStats.ST?.total) || 0) +
-            (Number(inventoryStats.DTC?.total) || 0)
+          (Number(inventoryStats.DTC?.total) || 0)
         ),
         route: "#",
       },
@@ -359,7 +379,7 @@ const CheckAvailability = () => {
         title: "Total Occupancy",
         value: String(
           (Number(inventoryStats.ST?.occupied) || 0) +
-            (Number(inventoryStats.DTC?.occupied) || 0)
+          (Number(inventoryStats.DTC?.occupied) || 0)
         ),
         route: "#",
       },
@@ -369,7 +389,7 @@ const CheckAvailability = () => {
         title: "ST Free Inventory",
         value: String(
           (Number(inventoryStats.ST?.total) || 0) -
-            (Number(inventoryStats.ST?.occupied) || 0)
+          (Number(inventoryStats.ST?.occupied) || 0)
         ),
         route:
           "/app/dashboard/sales-dashboard/mix-bag/inventory/Sunteck%20Kanaka",
@@ -379,7 +399,7 @@ const CheckAvailability = () => {
         title: "DTC Free Inventory",
         value: String(
           (Number(inventoryStats.DTC?.total) || 0) -
-            (Number(inventoryStats.DTC?.occupied) || 0)
+          (Number(inventoryStats.DTC?.occupied) || 0)
         ),
         route:
           "/app/dashboard/sales-dashboard/mix-bag/inventory/Dempo%20Trade%20Centre",
@@ -389,9 +409,9 @@ const CheckAvailability = () => {
         title: "Total Free Inventory",
         value: String(
           (Number(inventoryStats.ST?.total) || 0) -
-            (Number(inventoryStats.ST?.occupied) || 0) +
-            (Number(inventoryStats.DTC?.total) || 0) -
-            (Number(inventoryStats.DTC?.occupied) || 0)
+          (Number(inventoryStats.ST?.occupied) || 0) +
+          (Number(inventoryStats.DTC?.total) || 0) -
+          (Number(inventoryStats.DTC?.occupied) || 0)
         ),
         route: "#",
       },

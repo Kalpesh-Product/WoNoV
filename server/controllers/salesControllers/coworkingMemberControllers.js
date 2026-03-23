@@ -277,13 +277,21 @@ const getMembersByUnit = async (req, res, next) => {
       .lean()
       .exec();
 
-    const clearImage = clients[0].unit.clearImage;
-    const occupiedImage = clients[0].unit.occupiedImage;
-    const totalDesks = clients[0].unit?.openDesks + clients[0].unit?.cabinDesks;
+    const unitDetails =
+      clients[0]?.unit ||
+      (await Unit.findOne({ _id: unitId, company })
+        .select("openDesks cabinDesks clearImage occupiedImage")
+        .lean()
+        .exec());
+
+    const clearImage = unitDetails?.clearImage || null;
+    const occupiedImage = unitDetails?.occupiedImage || null;
+    const totalDesks =
+      (unitDetails?.openDesks || 0) + (unitDetails?.cabinDesks || 0);
 
     const clientDetails = clients.map((client) => {
       let transformedMembers = [];
-      if (members || members.length > 0) {
+      if (members && members.length > 0) {
         const memberDetails = members.find((member) => {
           return member.client._id.toString() === client._id.toString();
         });
