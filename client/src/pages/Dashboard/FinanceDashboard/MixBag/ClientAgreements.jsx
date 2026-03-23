@@ -1,49 +1,62 @@
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, TextField } from "@mui/material";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import MuiModal from "../../../../components/MuiModal";
+import { Controller, useForm } from "react-hook-form";
+import PrimaryButton from "../../../../components/PrimaryButton";
+import { queryClient } from "../../../../main";
+import { toast } from "sonner";
+import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
 const ClientAgreements = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+  const [openModal, setOpenModal] = useState(false);
+
+  const { control, handleSubmit, reset, formState: { errors } } = useForm({
+    mode: "onChange",
+    defaultValues: { name: "" },
+  });
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
-    queryKey: ["clientsData"],
+    queryKey: ["finance-client-agreements"],
     queryFn: async () => {
-      try {
-        const response = await axios.get("/api/sales/co-working-clients");
-        const data = response.data.filter((item) => item.isActive);
-        return data;
-      } catch (error) {
-        console.error("Error fetching clients data:", error);
-      }
+      const response = await axios.get("/api/finance/client-agreements");
+      return Array.isArray(response.data) ? response.data : [];
     },
   });
 
-  const tableData = Array.isArray(clientsData)
-    ? clientsData
-        .slice()
-        .sort((a, b) =>
-          (a?.clientName || "").localeCompare(b?.clientName || "")
-        )
-        .map((item, index) => {
-          const rawName = item?.clientName || "Unnamed";
-          const safeName = rawName.replace(/\//g, ""); // Remove all slashes
+  const { mutate: createClient, isPending: isCreateClientPending } = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axios.post("/api/finance/client-agreements/client", payload);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Client created successfully");
+      queryClient.invalidateQueries({ queryKey: ["finance-client-agreements"] });
+      setOpenModal(false);
+      reset();
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to create client");
+    },
+  });
 
-          return {
-            srno: index + 1,
-            name: safeName,
-            documentCount: Array.isArray(item?.documents)
-              ? item.documents.length
-              : 0,
-            files: item?.documents || [],
-            id: item?.id || "",
-          };
-        })
-    : [];
+  const tableData = clientsData
+    .slice()
+    .sort((a, b) => (a?.clientName || "").localeCompare(b?.clientName || ""))
+    .map((item, index) => ({
+      srno: index + 1,
+      name: item?.clientName || "Unnamed",
+      documentCount: Array.isArray(item?.documents) ? item.documents.length : 0,
+      files: item?.documents || [],
+      id: item?._id || "",
+    }));
 
   const columns = [
     { field: "srno", headerName: "Sr No", width: 100 },
@@ -57,12 +70,13 @@ const ClientAgreements = () => {
           onClick={() =>
             navigate(
               location.pathname.includes("mix-bag")
-                ? `/app/dashboard/finance-dashboard/mix-bag/client-agreements/${params.data.name}`
-                : `/app/client-agreements/${params.data.name}`,
+                ? `/app/dashboard/finance-dashboard/mix-bag/client-agreements/${encodeURIComponent(params.data.name)}`
+                : `/app/client-agreements/${encodeURIComponent(params.data.name)}`,
               {
                 state: {
                   files: params.data.files || [],
                   name: params.data.name || "Unnamed",
+                  id: params.data.id,
                 },
               }
             )
@@ -80,22 +94,46 @@ const ClientAgreements = () => {
     <div className="p-4">
       <PageFrame>
         {!isClientsDataPending ? (
-          <>
-            <AgTable
-              columns={columns}
-              data={tableData}
-              tableTitle="Client Agreements"
-              tableHeight={400}
-              hideFilter
-              search
-            />
-          </>
+          <AgTable
+            columns={columns}
+            data={tableData}
+            tableTitle="Client Agreements"
+            tableHeight={400}
+            hideFilter
+            search
+            buttonTitle="Add New Client"
+            handleClick={() => setOpenModal(true)}
+          />
         ) : (
           <div className="h-72 place-items-center">
             <CircularProgress />
           </div>
         )}
       </PageFrame>
+
+      <MuiModal title="Add New Client" open={openModal} onClose={() => setOpenModal(false)}>
+        <form onSubmit={handleSubmit((data) => createClient({ name: data.name.trim() }))} className="grid grid-cols-1 gap-4">
+          <Controller
+            name="name"
+            control={control}
+            rules={{
+              required: "Client name is required",
+              validate: { isAlphanumeric, noOnlyWhitespace },
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Client Name"
+                fullWidth
+                size="small"
+                error={!!errors.name}
+                helperText={errors?.name?.message}
+              />
+            )}
+          />
+          <PrimaryButton type="submit" title="Add New Client" isLoading={isCreateClientPending} disabled={isCreateClientPending} />
+        </form>
+      </MuiModal>
     </div>
   );
 };

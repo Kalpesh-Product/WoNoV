@@ -10,6 +10,11 @@ const {
   getLandlordDocuments,
   createLandlord,
 } = require("../controllers/financeControllers/landlordControllers");
+const {
+  getClientAgreements,
+  createClientAgreementClient,
+  addClientAgreement,
+} = require("../controllers/financeControllers/clientAgreementControllers");
 const upload = require("../config/multerConfig");
 
 router.get("/income-expense", getIncomeAndExpanse);
@@ -27,4 +32,11 @@ router.post(
   addLandlordDocument
 );
 router.get("/get-landlord-agreements", getLandlordDocuments);
+router.get("/client-agreements", getClientAgreements);
+router.post("/client-agreements/client", createClientAgreementClient);
+router.post(
+  "/client-agreements/agreement",
+  upload.single("agreement"),
+  addClientAgreement
+);
 module.exports = router;

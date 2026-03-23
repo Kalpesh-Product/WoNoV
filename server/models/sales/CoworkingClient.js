@@ -106,6 +106,29 @@ const clientSchema = new mongoose.Schema(
       imageId: String,
       imageUrl: String,
     },
+    documents: [
+      new mongoose.Schema(
+        {
+          name: {
+            type: String,
+            trim: true,
+          },
+          url: {
+            type: String,
+            trim: true,
+          },
+          documentId: {
+            type: String,
+            trim: true,
+          },
+          fileType: {
+            type: String,
+            trim: true,
+          },
+        },
+        { _id: false, timestamps: true }
+      ),
+    ],
     // rentDate: { type: Date },
     // rentDate: { type: String },
     rentDate: {
