@@ -167,7 +167,7 @@ const Projections = () => {
   };
 
   const monthlyProfitLossColumns = [
-    { field: "id", headerName: "Sr No", flex: 1 },
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "projectedAmount", headerName: "Projected (INR)", flex: 1 },
     { field: "actualAmount", headerName: "Actual (INR)", flex: 1 },
     { field: "pnl", headerName: "P&L (INR)", flex: 1 },
@@ -191,14 +191,13 @@ const Projections = () => {
     () =>
       budgetData
         .filter((item) => getFiscalYear(item.dueDate) === selectedFY)
-        .map((item, index) => {
+        .map((item) => {
           const projectedAmount = Number(item.projectedAmount) || 0;
           const actualAmount = Number(item.actualAmount) || 0;
           const pnl = projectedAmount - actualAmount;
 
           return {
             ...item,
-            id: index + 1,
             projectedAmount: inrFormat(projectedAmount),
             actualAmount: inrFormat(actualAmount),
             pnl: inrFormat(pnl),

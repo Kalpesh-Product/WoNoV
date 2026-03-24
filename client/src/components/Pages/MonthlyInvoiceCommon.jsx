@@ -180,9 +180,8 @@ const MonthlyInvoiceCommon = () => {
             dropdownColumns={["department"]}
             columns={invoiceCreationColumns}
             search
-            tableTitle={`${
-              department?.name || ""
-            } Department - Invoice Reports`}
+            tableTitle={`${department?.name || ""
+              } Department - Invoice Reports`}
             dateColumn="dueDate"
             formatDate={true}
             tableHeight={450}
@@ -257,13 +256,13 @@ const MonthlyInvoiceCommon = () => {
               detail={
                 viewDetails?.invoiceDate
                   ? new Date(viewDetails.invoiceDate).toLocaleDateString(
-                      "en-IN",
-                      {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      }
-                    )
+                    "en-IN",
+                    {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    }
+                  )
                   : "-"
               }
             />
@@ -312,12 +311,12 @@ const MonthlyInvoiceCommon = () => {
                   detail={
                     viewDetails.finance.chequeDate
                       ? new Date(
-                          viewDetails.finance.chequeDate
-                        ).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })
+                        viewDetails.finance.chequeDate
+                      ).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
                       : "-"
                   }
                 />
@@ -344,12 +343,12 @@ const MonthlyInvoiceCommon = () => {
                   detail={
                     viewDetails.finance.expectedDateInvoice
                       ? new Date(
-                          viewDetails.finance.expectedDateInvoice
-                        ).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })
+                        viewDetails.finance.expectedDateInvoice
+                      ).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })
                       : "-"
                   }
                 />
@@ -378,9 +377,8 @@ const MonthlyInvoiceCommon = () => {
                   <div key={idx} className="border-t pt-2">
                     <DetalisFormatted
                       title={`Particular ${idx + 1}`}
-                      detail={`${p.particularName || "-"} — ₹${
-                        p.particularAmount || 0
-                      }`}
+                      detail={`${p.particularName || "-"} — ₹${p.particularAmount || 0
+                        }`}
                     />
                   </div>
                 ))}

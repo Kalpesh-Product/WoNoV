@@ -34,7 +34,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import PageFrame from "../../../components/Pages/PageFrame";
 // import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { noOnlyWhitespace } from "../../../utils/validators";
-
+import { MdDeleteForever } from "react-icons/md";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
 
@@ -53,17 +53,17 @@ const TasksViewDepartment = () => {
   ];
 
   const isEmployee = auth?.user?.role?.some((role) =>
-    role?.roleTitle?.toLowerCase().includes("employee")
+    role?.roleTitle?.toLowerCase().includes("employee"),
   );
 
   // Check if the selected department is in user's list
   const isUserDepartment = auth?.user?.departments?.some(
-    (dept) => dept._id === deptId
+    (dept) => dept._id === deptId,
   );
 
   // Check if the user has any department that is exceptional
   const isExceptionalDepartment = auth?.user?.departments?.some((dept) =>
-    EXCEPTIONAL_DEPARTMENT_IDS.includes(dept._id)
+    EXCEPTIONAL_DEPARTMENT_IDS.includes(dept._id),
   );
 
   const hasAccess = isUserDepartment || isExceptionalDepartment;
@@ -148,11 +148,33 @@ const TasksViewDepartment = () => {
     addDailyKra(data);
   };
 
+  const isManagerLevel = !isEmployee;
+
+  const { mutate: deleteDepartmentTask, isPending: isDeletePending } =
+    useMutation({
+      mutationKey: ["deleteDepartmentTask"],
+      mutationFn: async (taskId) => {
+        const response = await axios.patch(`/api/tasks/delete-task/${taskId}`);
+        return response.data;
+      },
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
+        queryClient.invalidateQueries({
+          queryKey: ["fetchedDepartmentsTasks"],
+        });
+        queryClient.invalidateQueries({ queryKey: ["fetchedCompletedTasks"] });
+        toast.success(data.message || "Task deleted");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Error deleting task");
+      },
+    });
+
   const { mutate: updateDailyKra, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateDailyTasks"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/tasks/update-task-status/${data}`
+        `/api/tasks/update-task-status/${data}`,
       );
       return response.data;
     },
@@ -181,7 +203,7 @@ const TasksViewDepartment = () => {
   const fetchCompletedTasks = async () => {
     try {
       const response = await axios.get(
-        `api/tasks/get-completed-tasks/${deptId}`
+        `api/tasks/get-completed-tasks/${deptId}`,
       );
       return response.data;
     } catch (error) {
@@ -200,7 +222,7 @@ const TasksViewDepartment = () => {
       queryFn: fetchCompletedTasks,
     });
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskName",
@@ -233,10 +255,10 @@ const TasksViewDepartment = () => {
       },
     },
     {
-  headerName: "Unit No",
-  field: "unitNo",
-  width: 150,
-},
+      headerName: "Unit No",
+      field: "unitNo",
+      width: 150,
+    },
     {
       field: "status",
       headerName: "Status",
@@ -272,22 +294,54 @@ const TasksViewDepartment = () => {
       field: "actions",
       cellRenderer: (params) => {
         return (
-          <div
-            role="button"
-            onClick={() => updateDailyKra(params.data.id)}
-            className="p-2"
-          >
-            <PrimaryButton
-              title={"Mark As Done"}
-              disabled={!params.node.selected}
-            />
+          <div className="flex items-center">
+            {/* Mark As Done */}
+            <div
+              role="button"
+              onClick={() => {
+                if (!params.node.selected || isUpdatePending || isDeletePending)
+                  return;
+                updateDailyKra(params.data.id);
+              }}
+              className="p-2"
+            >
+              <PrimaryButton
+                title={isUpdatePending ? "⏳" : "Mark As Done"}
+                disabled={
+                  !params.node.selected || isUpdatePending || isDeletePending
+                }
+                className="px-2 py-1 text-xs w-28 h-7"
+              />
+            </div>
+
+            {/* Delete Button */}
+            {isManagerLevel && (
+              <button
+                type="button"
+                title="Delete Task"
+                disabled={
+                  !params.node.selected || isDeletePending || isUpdatePending
+                }
+                onClick={() => deleteDepartmentTask(params.data.id)}
+                className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+              >
+                {isDeletePending ? (
+                  "⏳"
+                ) : (
+                  <MdDeleteForever
+                    size={26}
+                    color={!params.node.selected ? "gray" : "red"}
+                  />
+                )}
+              </button>
+            )}
           </div>
         );
       },
     },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srNo", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskName",
@@ -314,10 +368,10 @@ const TasksViewDepartment = () => {
     { headerName: "Completed By", field: "completedBy", width: 300 },
     { headerName: "Completed Date", field: "completedDate" },
     {
-  headerName: "Unit No",
-  field: "unitNo",
-  width: 150,
-},
+      headerName: "Unit No",
+      field: "unitNo",
+      width: 150,
+    },
     {
       headerName: "Completed Time",
       field: "completedTime",
@@ -371,7 +425,7 @@ const TasksViewDepartment = () => {
                     .filter(
                       (item) =>
                         item.taskType === "Department" &&
-                        item.status !== "Completed"
+                        item.status !== "Completed",
                     )
                     .map((item, index) => ({
                       srno: index + 1,
@@ -418,12 +472,12 @@ const TasksViewDepartment = () => {
                           description: item.description,
                           dueDate: item.dueDate,
                           dueTime: item.dueTime,
-                           location: item.location,
-                      unitNo: item.location?.unitNo || "N/A",
+                          location: item.location,
+                          unitNo: item.location?.unitNo || "N/A",
                           completedDate: item.completedDate,
                           completedDateLabel: humanDate(item.completedDate),
                           completedTime: item.completedDate,
-                          
+
                           assignedBy:
                             item.assignedBy?.firstName ||
                               item.assignedBy?.lastName
@@ -499,7 +553,7 @@ const TasksViewDepartment = () => {
               />
             )}
           />
- <Controller
+          <Controller
             name="location"
             control={control}
             rules={{ required: "Location is required" }}
@@ -705,7 +759,7 @@ const TasksViewDepartment = () => {
               title={"Building Name"}
               detail={selectedTask?.location?.building?.buildingName || "-"}
             />
-              <DetalisFormatted
+            <DetalisFormatted
               title={"Unit No"}
               detail={selectedTask?.location?.unitNo || "-"}
             />
@@ -732,11 +786,11 @@ const TasksViewDepartment = () => {
               title={"Added By"}
               detail={selectedTask?.assignedBy}
             />
-             <DetalisFormatted
+            <DetalisFormatted
               title={"Building Name"}
               detail={selectedTask?.location?.building?.buildingName || "-"}
             />
-              <DetalisFormatted
+            <DetalisFormatted
               title={"Unit No"}
               detail={selectedTask?.location?.unitNo || "-"}
             />

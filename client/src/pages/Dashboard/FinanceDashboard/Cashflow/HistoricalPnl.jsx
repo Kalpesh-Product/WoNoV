@@ -9,7 +9,7 @@ import { CircularProgress } from "@mui/material";
 import { useMemo } from "react";
 
 const yearCategories = {
-  "FY 2024-25": [
+  "FY 2024-2025": [
     "Apr-24",
     "May-24",
     "Jun-24",
@@ -23,7 +23,7 @@ const yearCategories = {
     "Feb-25",
     "Mar-25",
   ],
-  "FY 2025-26": [
+  "FY 2025-2026": [
     "Apr-25",
     "May-25",
     "Jun-25",
