@@ -340,10 +340,10 @@ const RaiseTicket = () => {
                               )
                               .map((dept) => (
                                 <MenuItem
-                                  key={dept.department._id}
-                                  value={dept.department._id}
+                                  key={dept?.department?._id}
+                                  value={dept?.department?._id}
                                 >
-                                  {dept.department.name}
+                                  {dept?.department?.name}
                                 </MenuItem>
                               ))
                           )}
