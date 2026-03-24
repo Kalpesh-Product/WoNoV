@@ -200,7 +200,7 @@ const TasksViewDepartment = () => {
       queryFn: fetchCompletedTasks,
     });
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskName",
@@ -233,10 +233,10 @@ const TasksViewDepartment = () => {
       },
     },
     {
-  headerName: "Unit No",
-  field: "unitNo",
-  width: 150,
-},
+      headerName: "Unit No",
+      field: "unitNo",
+      width: 150,
+    },
     {
       field: "status",
       headerName: "Status",
@@ -287,7 +287,7 @@ const TasksViewDepartment = () => {
     },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srNo", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskName",
@@ -314,10 +314,10 @@ const TasksViewDepartment = () => {
     { headerName: "Completed By", field: "completedBy", width: 300 },
     { headerName: "Completed Date", field: "completedDate" },
     {
-  headerName: "Unit No",
-  field: "unitNo",
-  width: 150,
-},
+      headerName: "Unit No",
+      field: "unitNo",
+      width: 150,
+    },
     {
       headerName: "Completed Time",
       field: "completedTime",
@@ -418,12 +418,12 @@ const TasksViewDepartment = () => {
                           description: item.description,
                           dueDate: item.dueDate,
                           dueTime: item.dueTime,
-                           location: item.location,
-                      unitNo: item.location?.unitNo || "N/A",
+                          location: item.location,
+                          unitNo: item.location?.unitNo || "N/A",
                           completedDate: item.completedDate,
                           completedDateLabel: humanDate(item.completedDate),
                           completedTime: item.completedDate,
-                          
+
                           assignedBy:
                             item.assignedBy?.firstName ||
                               item.assignedBy?.lastName
@@ -499,7 +499,7 @@ const TasksViewDepartment = () => {
               />
             )}
           />
- <Controller
+          <Controller
             name="location"
             control={control}
             rules={{ required: "Location is required" }}
@@ -705,7 +705,7 @@ const TasksViewDepartment = () => {
               title={"Building Name"}
               detail={selectedTask?.location?.building?.buildingName || "-"}
             />
-              <DetalisFormatted
+            <DetalisFormatted
               title={"Unit No"}
               detail={selectedTask?.location?.unitNo || "-"}
             />
@@ -732,11 +732,11 @@ const TasksViewDepartment = () => {
               title={"Added By"}
               detail={selectedTask?.assignedBy}
             />
-             <DetalisFormatted
+            <DetalisFormatted
               title={"Building Name"}
               detail={selectedTask?.location?.building?.buildingName || "-"}
             />
-              <DetalisFormatted
+            <DetalisFormatted
               title={"Unit No"}
               detail={selectedTask?.location?.unitNo || "-"}
             />

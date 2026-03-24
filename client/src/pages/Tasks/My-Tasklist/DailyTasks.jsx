@@ -147,7 +147,7 @@ const DailyTasks = () => {
     value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
   const departmentColumns = [
-    { headerName: "SR no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskList",
@@ -248,7 +248,7 @@ const DailyTasks = () => {
     // },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskList",

@@ -29,48 +29,48 @@ const PerformanceAnnual = () => {
     queryFn: fetchDepartments,
   });
   const departmentColumns = [
-    { headerName: "Sr no", field: "srno",width:100 },
-    { headerName: "KPA List", field: "taskName", flex : 1 },
+    { headerName: "Sr No", field: "srNo", width: 100 },
+    { headerName: "KPA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
     { headerName: "Due Date", field: "dueDate" },
     {
-        field: "status",
-        headerName: "Status",
-        cellRenderer: (params) => {
-          const statusColorMap = {
-            Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
-            "InProgress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
-            resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-            open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
-            Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
-          };
-  
-          const { backgroundColor, color } = statusColorMap[params.value] || {
-            backgroundColor: "gray",
-            color: "white",
-          };
-          return (
-            <>
-              <Chip
-                label={params.value}
-                style={{
-                  backgroundColor,
-                  color,
-                }}
-              />
-            </>
-          );
-        },
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => {
+        const statusColorMap = {
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
+          "InProgress": { backgroundColor: "#ADD8E6", color: "#00008B" }, // Light blue bg, dark blue font
+          resolved: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          open: { backgroundColor: "#E6E6FA", color: "#4B0082" }, // Light purple bg, dark purple font
+          Completed: { backgroundColor: "#16f8062c", color: "#00731b" }, // Light gray bg, dark gray font
+        };
+
+        const { backgroundColor, color } = statusColorMap[params.value] || {
+          backgroundColor: "gray",
+          color: "white",
+        };
+        return (
+          <>
+            <Chip
+              label={params.value}
+              style={{
+                backgroundColor,
+                color,
+              }}
+            />
+          </>
+        );
       },
+    },
   ];
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection padding layout={1}>
         <YearWiseTable
-        tableTitle={`${department} DEPARTMENT - ANNUAL KPA`}
-        // checkbox={true}
+          tableTitle={`${department} DEPARTMENT - ANNUAL KPA`}
+          // checkbox={true}
           data={[
-            ...departmentKra.map((item,index) => ({
+            ...departmentKra.map((item, index) => ({
               srno: index + 1,
               taskName: item.taskName,
               assignedDate: item.assignedDate,

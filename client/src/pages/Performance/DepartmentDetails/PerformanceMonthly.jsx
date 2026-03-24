@@ -197,7 +197,7 @@ const PerformanceMonthly = () => {
     value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
   const departmentColumns = [
-    { headerName: "Sr no", field: "srNo", width: 100 },
+    { headerName: "Sr No", field: "srNo", width: 100 },
     { headerName: "KPA List", field: "taskName", flex: 1 },
     {
       headerName: "Start Date",
@@ -239,76 +239,76 @@ const PerformanceMonthly = () => {
       },
     },
     ...(matchingDepartment
-  ? [
-      {
-        headerName: "Actions",
-        pinned: "right",
-        field: "actions",
-        cellRenderer: (params) => {
-          return (
-            <div className="flex items-center">
-              
-              {/* Mark As Done */}
-              <div
-                role="button"
-                onClick={() => {
-                  if (
-                    !params.node.selected ||
-                    isUpdatePending ||
-                    isDeletePending
-                  )
-                    return;
+      ? [
+        {
+          headerName: "Actions",
+          pinned: "right",
+          field: "actions",
+          cellRenderer: (params) => {
+            return (
+              <div className="flex items-center">
 
-                  updateMonthlyKpa(params.data.mongoId);
-                }}
-                className="p-2"
-              >
-                <PrimaryButton
-                  title={isUpdatePending ? "⏳" : "Mark As Done"}
-                  disabled={
-                    !params.node.selected ||
-                    isUpdatePending ||
-                    isDeletePending
-                  }
-                  className="px-2 py-1 text-xs w-28 h-7"
-                />
-              </div>
+                {/* Mark As Done */}
+                <div
+                  role="button"
+                  onClick={() => {
+                    if (
+                      !params.node.selected ||
+                      isUpdatePending ||
+                      isDeletePending
+                    )
+                      return;
 
-              {/* Delete Recurrence */}
-              {canDeleteRecurrence && (
-                <button
-                  type="button"
-                  title="Delete Recurrence"
-                  disabled={
-                    !params.node.selected ||
-                    isDeletePending ||
-                    isUpdatePending
-                  }
-                  onClick={() =>
-                    deleteMonthlyKpaRecurrence(params.data.mongoId)
-                  }
-                  className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                    updateMonthlyKpa(params.data.mongoId);
+                  }}
+                  className="p-2"
                 >
-                  {isDeletePending ? (
-                    "⏳"
-                  ) : (
-                    <MdDeleteForever
-                      size={26}
-                      color={!params.node.selected ? "gray" : "red"}
-                    />
-                  )}
-                </button>
-              )}
-            </div>
-          );
+                  <PrimaryButton
+                    title={isUpdatePending ? "⏳" : "Mark As Done"}
+                    disabled={
+                      !params.node.selected ||
+                      isUpdatePending ||
+                      isDeletePending
+                    }
+                    className="px-2 py-1 text-xs w-28 h-7"
+                  />
+                </div>
+
+                {/* Delete Recurrence */}
+                {canDeleteRecurrence && (
+                  <button
+                    type="button"
+                    title="Delete Recurrence"
+                    disabled={
+                      !params.node.selected ||
+                      isDeletePending ||
+                      isUpdatePending
+                    }
+                    onClick={() =>
+                      deleteMonthlyKpaRecurrence(params.data.mongoId)
+                    }
+                    className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                  >
+                    {isDeletePending ? (
+                      "⏳"
+                    ) : (
+                      <MdDeleteForever
+                        size={26}
+                        color={!params.node.selected ? "gray" : "red"}
+                      />
+                    )}
+                  </button>
+                )}
+              </div>
+            );
+          },
         },
-      },
-    ]
-  : [])
+      ]
+      : [])
   ];
 
   const completedColumns = [
-    { headerName: "Sr no", field: "srNo", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", width: 300 },
 
     { headerName: "Completed By", field: "completedBy" },
