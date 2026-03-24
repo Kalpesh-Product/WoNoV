@@ -391,11 +391,13 @@ const TasksDashboard = () => {
 
   const completedTasks = allTasksQuery.isLoading
     ? 0
-    : allTasksQuery.data.filter((task) => task.status === "Completed").length;
+    : departmentTasks.filter((task) => task.status === "Completed").length; //Only Department Task
+    // : allTasksQuery.data.filter((task) => task.status === "Completed").length; (For My Task + Department task)
 
   const pendingTasks = allTasksQuery.isLoading
     ? 0
-    : allTasksQuery.data.filter((task) => task.status === "Pending").length;
+    : departmentTasks.filter((task) => task.status === "Pending").length;
+    //: allTasksQuery.data.filter((task) => task.status === "Pending").length;
 
   const totalTasks = completedTasks + pendingTasks;
 
@@ -488,7 +490,8 @@ const TasksDashboard = () => {
 
   const departmentPendingStats = allTasksQuery.isLoading
     ? []
-    : calculateDepartmentPendingStats(allTasksQuery.data);
+   // : calculateDepartmentPendingStats(allTasksQuery.data);
+   : calculateDepartmentPendingStats(departmentTasks);
 
   const tasks = allTasksQuery.isLoading ? [] : allTasksQuery.data;
 
