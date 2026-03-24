@@ -7,7 +7,7 @@ const CustomError = require("../../utils/customErrorlogs");
 const {
   handleFileUpload,
   handleFileDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const sharp = require("sharp");
 const Unit = require("../../models/locations/Unit");
 const Building = require("../../models/locations/Building");

@@ -12,7 +12,7 @@ const Company = require("../../models/hr/Company");
 const emitter = require("../../utils/eventEmitter");
 const Department = require("../../models/Departments");
 const { PDFDocument } = require("pdf-lib");
-const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const { handleDocumentUpload } = require("../../config/s3Config");
 const Building = require("../../models/locations/Building");
 
 const fetchVisitors = async (req, res, next) => {

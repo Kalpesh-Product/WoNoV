@@ -10,7 +10,7 @@ const { PDFDocument } = require("pdf-lib");
 const {
   handleDocumentUpload,
   handleFileDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const Invoice = require("../../models/finance/Invoice");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");

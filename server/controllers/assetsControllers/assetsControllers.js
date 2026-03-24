@@ -8,7 +8,7 @@ const {
   handleFileUpload,
   handleFileDelete,
   handleDocumentUpload,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const Department = require("../../models/Departments");
