@@ -34,44 +34,29 @@ const MeetingRevenue = () => {
   const hasData = Array.isArray(meetingsData) && meetingsData.length > 0;
 
   const options = {
-    dataLabels: {
-      enabled: true,
-      formatter: (val) => `${inrFormat(val)}`,
-      style: {
-        fontSize: "10px",
-        fontWeight: "bold",
-        colors: ["#000"],
-      },
-      offsetY: -22,
-    },
-    xaxis: {
-      categories: meetingsData.map((item) => item.month ?? "N/A"),
-    },
     yaxis: {
-      title: { text: "Amount In Lakhs (INR)" },
+      title: { text: "Amount (INR)" },
       labels: {
-        formatter: (val) => `${(val / 100000).toLocaleString()}`,
+        formatter: (val) => inrFormat(val),
       },
     },
     tooltip: {
-      enabled: false,
       y: {
-        formatter: (val) => `INR ${val.toLocaleString()}`,
+        formatter: (val) => `INR ${inrFormat(val)}`,
       },
     },
     plotOptions: {
       bar: {
         columnWidth: "40%",
         borderRadius: 5,
-        dataLabels: { position: "top" },
       },
     },
-    colors: ["#2196F3"],
+    colors: ["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
   };
 
 
-  const tableData = meetingsData.map((monthData, index) => ({
-    revenue: monthData?.revenue?.map((client, i) => ({
+  const tableData = meetingsData.map((monthData) => ({
+    revenue: monthData?.revenue?.map((client) => ({
       ...client,
       particulars: client.particulars || "-",
       unitsOrHours: client.unitsOrHours ?? "-",
