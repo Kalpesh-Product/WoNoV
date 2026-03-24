@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const {
   handleFileUpload,
   handleFileDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Unit = require("../../models/locations/Unit");

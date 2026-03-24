@@ -10,7 +10,7 @@ const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const {
   handleFileDelete,
   handleFileUpload,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const sharp = require("sharp");
 const ClientService = require("../../models/sales/ClientService");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");

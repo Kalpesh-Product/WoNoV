@@ -23,7 +23,7 @@ const emitter = require("../../utils/eventEmitter");
 const { isValid } = require("date-fns/isValid");
 const Role = require("../../models/roles/Roles");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
-const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const { handleDocumentUpload } = require("../../config/s3Config");
 const { resetMeetingCreditsIfNeeded } = require("../../utils/resetCredits");
 
 const addMeetings = async (req, res, next) => {
