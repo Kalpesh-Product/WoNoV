@@ -3,7 +3,7 @@ const WebsiteTemplate = require("../../models/website/WebsiteTemplate");
 const {
   handleFileUpload,
   handleFileDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const Company = require("../../models/hr/Company");
 const mongoose = require("mongoose");
 const axios = require("axios");

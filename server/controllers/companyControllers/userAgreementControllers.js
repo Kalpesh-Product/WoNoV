@@ -1,5 +1,5 @@
 const Agreements = require("../../models/hr/Agreements");
-const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const { handleDocumentUpload } = require("../../config/s3Config");
 const { PDFDocument } = require("pdf-lib");
 const { default: mongoose } = require("mongoose");
 const UserData = require("../../models/hr/UserData");

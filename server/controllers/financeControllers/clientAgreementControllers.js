@@ -3,7 +3,7 @@ const Company = require("../../models/hr/Company");
 const {
     handleDocumentUpload,
     handleDocumentDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 
 const allowedMimeTypes = [
     "application/pdf",

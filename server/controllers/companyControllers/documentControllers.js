@@ -3,7 +3,7 @@ const User = require("../../models/hr/UserData");
 const {
   handleDocumentUpload,
   handleDocumentDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const { PDFDocument } = require("pdf-lib");
 const path = require("path");
 const Department = require("../../models/Departments");

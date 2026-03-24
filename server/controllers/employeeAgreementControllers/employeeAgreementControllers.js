@@ -1,5 +1,5 @@
 const EmploymentAgreement = require("../../models/EmploymentAgreements");
-const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const { handleDocumentUpload } = require("../../config/s3Config");
 const { PDFDocument } = require("pdf-lib");
 
 const multer = require("multer");

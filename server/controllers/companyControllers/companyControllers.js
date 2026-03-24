@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const {
   handleFileUpload,
   handleFileDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const Company = require("../../models/hr/Company");
 const {
   updateWorkLocationStatus,

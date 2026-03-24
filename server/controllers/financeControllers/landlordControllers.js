@@ -1,7 +1,7 @@
 const {
   handleDocumentUpload,
   handleDocumentDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const Landlord = require("../../models/finance/Landlord");
 const Company = require("../../models/hr/Company");
 
