@@ -528,7 +528,7 @@ const fetchSimpleUnits = async (req, res, next) => {
         ...unit,
         coworkingClientsCount:
           coworkingClients.filter(
-            (client) => client.unit._id.toString() === unit._id.toString(),
+            (client) => client.unit?._id.toString() === unit?._id.toString(),
           ).length || 0,
       };
     });
