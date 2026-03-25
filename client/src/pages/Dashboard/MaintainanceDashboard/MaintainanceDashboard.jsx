@@ -373,8 +373,8 @@ const MaintainanceDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData
-               ).toLocaleString("en-IN")}</div>
+          rawData
+        ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -398,7 +398,7 @@ const MaintainanceDashboard = () => {
   }, []); // Empty dependency array ensures this runs once on mount
 
   const navigate = useNavigate();
-   const managerByDepartmentName = useMemo(() => {
+  const managerByDepartmentName = useMemo(() => {
     const map = new Map();
     selectedDepartments.forEach((item) => {
       const departmentName = item?.department?.name?.trim();
@@ -453,7 +453,7 @@ const MaintainanceDashboard = () => {
       const managerName =
         managerByDepartmentName.get(departmentName.toLowerCase()) ||
         "Unassigned";
-     if (!acc[managerName]) acc[managerName] = { name: managerName, tasks: 0 };
+      if (!acc[managerName]) acc[managerName] = { name: managerName, tasks: 0 };
       acc[managerName].tasks += 1;
       return acc;
     }, {});
@@ -542,7 +542,7 @@ const MaintainanceDashboard = () => {
       "#64B5F6",
       "#90CAF9", // Lightest
     ],
-       tooltip: {
+    tooltip: {
       y: {
         formatter: (val) => `${val} Due tasks`,
       },
@@ -570,9 +570,9 @@ const MaintainanceDashboard = () => {
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
-          navigate(
-            "/app/dashboard/admin-dashboard/client-members/client-members-data"
-          );
+          // navigate(
+          //   "/app/dashboard/admin-dashboard/client-members/client-members-data"
+          // );
         },
       },
     },
@@ -1172,7 +1172,7 @@ const MaintainanceDashboard = () => {
 
     {
       layout: 2,
-      widgets: allowedMaintenanceTables.map((config)=>(
+      widgets: allowedMaintenanceTables.map((config) => (
 
         <MuiTable
           {...config}
@@ -1208,35 +1208,35 @@ const MaintainanceDashboard = () => {
 
     {
       layout: 2,
-      widgets:allowedPieDonut.map((config) => {
-      if (config.type === "PieChartMui") {
-        return (
-          <WidgetSection key={config.key} border={config.border} title={config.title}>
-            <PieChartMui data={config.data} options={config.options} />
-          </WidgetSection>
-        );
-      } else if (config.type === "Donut") {
-        return (
-          <WidgetSection key={config.key} border={config.border} title={config.title}>
-            <DonutChart
-              centerLabel={config.centerLabel}
-              labels={config.labels}
-              series={config.series}
-              tooltipValue={config.tooltipValue}
-            />
-          </WidgetSection>
-        );
-      }
-    }),
+      widgets: allowedPieDonut.map((config) => {
+        if (config.type === "PieChartMui") {
+          return (
+            <WidgetSection key={config.key} border={config.border} title={config.title}>
+              <PieChartMui data={config.data} options={config.options} />
+            </WidgetSection>
+          );
+        } else if (config.type === "Donut") {
+          return (
+            <WidgetSection key={config.key} border={config.border} title={config.title}>
+              <DonutChart
+                centerLabel={config.centerLabel}
+                labels={config.labels}
+                series={config.series}
+                tooltipValue={config.tooltipValue}
+              />
+            </WidgetSection>
+          );
+        }
+      }),
     },
     {
       layout: 2,
-      widgets: allowedPieChartConfig.map((config)=>(
-         <WidgetSection border={config.border} title={config.title}>
+      widgets: allowedPieChartConfig.map((config) => (
+        <WidgetSection border={config.border} title={config.title}>
           <PieChartMui data={config.data} options={config.options} />
         </WidgetSection>
       ))
-    
+
     },
   ];
 

@@ -453,7 +453,6 @@ const updateVirtualOfficeClient = async (req, res) => {
       updates.building = selectedUnit.building;
     }
 
-
     // ✅ Basic validations if provided
     if (updates.email && !isValidEmail(updates.email)) {
       return res.status(400).json({ message: "Invalid client email format" });
@@ -703,10 +702,11 @@ const updateVirtualOfficeClient = async (req, res) => {
 const updateVirtualOfficeStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { clientStatus } = req.body;
+    const { isActive } = req.body;
 
     // Validate boolean explicitly
-    if (typeof clientStatus !== "boolean") {
+
+    if (typeof isActive !== "boolean") {
       return res.status(400).json({
         message: "clientStatus must be a boolean value (true or false)",
       });
@@ -720,19 +720,18 @@ const updateVirtualOfficeStatus = async (req, res) => {
     }
 
     // Optional: Prevent unnecessary DB write
-    if (existing.clientStatus === clientStatus) {
+    if (existing.clientStatus === isActive) {
       return res.status(200).json({
         message: "Client status is already updated",
         data: existing,
       });
     }
 
-    existing.clientStatus = clientStatus;
+    existing.clientStatus = isActive;
     await existing.save();
 
     return res.status(200).json({
-      message: `Client ${clientStatus ? "activated" : "deactivated"
-        } successfully`,
+      message: `Client marked as${isActive ? "active" : "inactive"} successfully`,
       data: existing,
     });
   } catch (error) {

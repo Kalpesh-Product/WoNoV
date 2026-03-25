@@ -236,15 +236,16 @@ const ItDashboard = () => {
     queryKey: ["it-biometric-access-clients"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
-      return response.data || [];
+      const data = response.data.filter((item) => item.isActive);
+      return data || [];
     },
   });
 
   const internetExpense = isHrFinanceLoading
     ? []
     : hrFinance
-        .filter((item) => item.expanseType === "INTERNET EXPENSES")
-        .reduce((sum, item) => sum + item.actualAmount || 0, 0);
+      .filter((item) => item.expanseType === "INTERNET EXPENSES")
+      .reduce((sum, item) => sum + item.actualAmount || 0, 0);
 
   //----------------------Units data-----------------------//
 
@@ -412,8 +413,8 @@ const ItDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData,
-               ).toLocaleString("en-IN")}</div>
+          rawData,
+        ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -803,12 +804,12 @@ const ItDashboard = () => {
     //   formatter: (seriesName) => seriesName, // this line issue show
     // },
 
-     legend: {
+    legend: {
       formatter: function (seriesName, opts) {
         const value = opts.w.globals.series[opts.seriesIndex]; // this line value show
         return `${value}`;
       },
-     },
+    },
     tooltip: {
       custom: ({ series, seriesIndex, w }) => {
         const issueType = w?.globals?.labels?.[seriesIndex] || "Other";
@@ -1027,7 +1028,7 @@ const ItDashboard = () => {
       toolbar: false,
       events: {
         dataPointSelection: () => {
-          navigate("/app/dashboard/IT-dashboard/mix-bag/biometric-access");
+          // navigate("/app/dashboard/IT-dashboard/mix-bag/biometric-access");
         },
       },
     },

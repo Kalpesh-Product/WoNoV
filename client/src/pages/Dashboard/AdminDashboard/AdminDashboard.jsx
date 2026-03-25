@@ -43,7 +43,7 @@ const AdminDashboard = () => {
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
- const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
+  const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
   const isSuperAdminView = roleTitles.some((roleTitle) =>
     ["Master Admin", "Super Admin"].includes(roleTitle),
   );
@@ -175,8 +175,8 @@ const AdminDashboard = () => {
   const electrictyExpense = isHrFinanceLoading
     ? 0
     : hrFinance
-        .filter((item) => item.expanseType === "ELECTRICITY")
-        .reduce((sum, item) => sum + item.actualAmount || 0, 0);
+      .filter((item) => item.expanseType === "ELECTRICITY")
+      .reduce((sum, item) => sum + item.actualAmount || 0, 0);
   console.log("electric : ", electrictyExpense);
   //----------------------Electricity expense-----------------------//
   //----------------------Monthly average-----------------------//
@@ -454,8 +454,8 @@ const AdminDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData,
-               ).toLocaleString("en-IN")}</div>
+          rawData,
+        ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -609,8 +609,8 @@ const AdminDashboard = () => {
 
   const totalUnitWiseTask = taskData.reduce((sum, item) => sum + item.tasks, 0);
   const unitWisePieData = taskData.map((item) => ({
-   label: item.unit,
-   value: item.tasks,
+    label: item.unit,
+    value: item.tasks,
   }));
 
   const unitPieChartOptions = {
@@ -632,48 +632,48 @@ const AdminDashboard = () => {
 
 
   //-----------------------------------------------------------------------------------------------------------------//
-   const executiveTasks = useMemo(() => {
+  const executiveTasks = useMemo(() => {
     const pendingTaskCollection = hasMultipleDepartments && !isSuperAdminView
       ? tasksSummary
-          .filter((dept) => {
-            const deptName =
-              typeof dept?.department === "object"
-                ? dept?.department?.name
-                : dept?.department;
-            const normalizedName =
-              typeof deptName === "string" ? deptName.toLowerCase() : "";
-            const isSalesDepartment = normalizedName.includes("sales");
+        .filter((dept) => {
+          const deptName =
+            typeof dept?.department === "object"
+              ? dept?.department?.name
+              : dept?.department;
+          const normalizedName =
+            typeof deptName === "string" ? deptName.toLowerCase() : "";
+          const isSalesDepartment = normalizedName.includes("sales");
 
-            return (
-              !isSalesDepartment &&
-              (!departmentNames.length ||
-                departmentNames.includes(normalizedName))
-            );
-          })
-          .flatMap((dept) =>
-            Array.isArray(dept?.tasks)
-              ? dept.tasks
-                  .filter(
-                    (task) =>
-                      task?.taskType === "Department" &&
-                      task?.status === "Pending",
-                  )
-                  .map((task) => ({
-                    ...task,
-                    department:
-                      typeof task?.department === "object"
-                        ? task?.department?.name
-                        : task?.department ||
-                          (typeof dept?.department === "object"
-                            ? dept?.department?.name
-                            : dept?.department),
-                  }))
-              : [],
-          )
+          return (
+            !isSalesDepartment &&
+            (!departmentNames.length ||
+              departmentNames.includes(normalizedName))
+          );
+        })
+        .flatMap((dept) =>
+          Array.isArray(dept?.tasks)
+            ? dept.tasks
+              .filter(
+                (task) =>
+                  task?.taskType === "Department" &&
+                  task?.status === "Pending",
+              )
+              .map((task) => ({
+                ...task,
+                department:
+                  typeof task?.department === "object"
+                    ? task?.department?.name
+                    : task?.department ||
+                    (typeof dept?.department === "object"
+                      ? dept?.department?.name
+                      : dept?.department),
+              }))
+            : [],
+        )
       : tasks.filter(
-          (task) =>
-            task?.taskType === "Department" && task?.status === "Pending",
-        );
+        (task) =>
+          task?.taskType === "Department" && task?.status === "Pending",
+      );
 
     const groupedTasks = pendingTaskCollection.reduce((acc, task) => {
       const departmentName =
@@ -687,14 +687,14 @@ const AdminDashboard = () => {
       const managerName =
         managerByDepartmentName.get(departmentName.toLowerCase()) ||
         "Unassigned";
-     if (!acc[managerName]) {
+      if (!acc[managerName]) {
         acc[managerName] = {
           name: managerName,
           tasks: 0,
         };
       }
 
-     acc[managerName].tasks += 1;
+      acc[managerName].tasks += 1;
       return acc;
     }, {});
 
@@ -720,7 +720,7 @@ const AdminDashboard = () => {
   //     : [];
   const executiveTasksCount = executiveTasks.map((user) => user.tasks);
   const labels = executiveTasks.map((user) => user.name);
-   const currentDepartmentAdminName =
+  const currentDepartmentAdminName =
     managerByDepartmentName.get(department?.name?.toLowerCase?.()) ||
     "—";
   const colors = [
@@ -738,9 +738,9 @@ const AdminDashboard = () => {
   const clientMembersData = isClientsDataPending
     ? []
     : clientsData
-        .filter((item) => item.members?.length > 0)
-        .map((item) => item.members)
-        .flat();
+      .filter((item) => item.members?.length > 0)
+      .map((item) => item.members)
+      .flat();
 
   const genderCounts = clientMembersData.reduce(
     (acc, member) => {
@@ -768,9 +768,9 @@ const AdminDashboard = () => {
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
-          navigate(
-            "/app/dashboard/admin-dashboard/client-members/client-members-data",
-          );
+          // navigate(
+          //   "/app/dashboard/admin-dashboard/client-members/client-members-data",
+          // );
         },
       },
     },
@@ -790,7 +790,7 @@ const AdminDashboard = () => {
     colors: ["#1E3D73", "#54C4A7"],
   };
   //-----------------------------------------------------------------------------------------------------------------//
-   function getLocationWiseData(data) {
+  function getLocationWiseData(data) {
     const locationMap = {};
 
     // Count companies per state from coworkingclient table.
@@ -1149,7 +1149,7 @@ const AdminDashboard = () => {
       toolbar: false,
       events: {
         dataPointSelection: () => {
-          navigate("/app/dashboard/admin-dashboard/mix-bag/biometric-access");
+          // navigate("/app/dashboard/admin-dashboard/mix-bag/biometric-access");
         },
       },
     },
@@ -1169,7 +1169,7 @@ const AdminDashboard = () => {
       fontFamily: "Poppins-Regular",
       toolbar: false,
     },
-    
+
     colors: [
       "#0F172A", // deep navy blue
       "#1E293B", // dark slate blue
@@ -1182,18 +1182,18 @@ const AdminDashboard = () => {
       "#3A60B5", // bold steel blue
       "#4C51BF", // indigo-tinged blue
     ],
-    
+
 
     tooltip: {
-         custom: function ({ series, seriesIndex, w }) {
-           const name = w.globals.labels[seriesIndex] || "";
-           const value = series[seriesIndex];
-           const color = w.globals.colors[seriesIndex];
+      custom: function ({ series, seriesIndex, w }) {
+        const name = w.globals.labels[seriesIndex] || "";
+        const value = series[seriesIndex];
+        const color = w.globals.colors[seriesIndex];
 
-           const shortName =
-             name.length > 15 ? name.slice(0, 15) + "..." : name;
+        const shortName =
+          name.length > 15 ? name.slice(0, 15) + "..." : name;
 
-           return `<div style="
+        return `<div style="
                      padding:7px 10px;
                      background:${color};
                      border-radius:5px;
@@ -1201,8 +1201,8 @@ const AdminDashboard = () => {
                    ">
                      ${shortName}: ${value} Desks
                    </div>`;
-         },
-        },
+      },
+    },
     legend: {
       position: "bottom",
       horizontalAlign: "center",
@@ -1536,11 +1536,11 @@ const AdminDashboard = () => {
         allowedUnitWise.map((config) => (
           <WidgetSection border={config.border} title={config.title}>
             <PieChartMui
-            data={config.data}
-            options={config.options}
-            width={config?.width}
-            height={config?.height}
-            centerAlign
+              data={config.data}
+              options={config.options}
+              width={config?.width}
+              height={config?.height}
+              centerAlign
             />
           </WidgetSection>
         )),
