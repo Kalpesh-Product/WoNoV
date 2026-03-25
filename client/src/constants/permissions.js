@@ -1928,9 +1928,9 @@ export const PERMISSIONS = {
     title: "UNIT WISE IT EXPENSES",
     type: "read",
   },
-  IT_BIOMETRICS_GENDER_DATA: {
-    value: "it_biometrics_gender_data_chart",
-    title: "BIOMETRICS GENDER DATA",
+  IT_BIOMETRICS_DATA: {
+    value: "it_biometrics_data_chart",
+    title: "BIOMETRICS DATA",
     type: "read",
   },
   IT_CLIENT_WISE_COMPLAINTS: {
