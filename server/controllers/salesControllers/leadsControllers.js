@@ -5,6 +5,7 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const fs = require("fs");
 const path = require("path");
+const ClientService = require("../../models/sales/ClientService");
 
 const createLead = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -479,17 +480,19 @@ const bulkInsertLeads = async (req, res, next) => {
     const unitsMap = new Map(units.map((u) => [u.unitNo, u._id]));
 
     const services = await ClientService.find().lean();
+
     const servicesMap = new Map(
-      services.map((s) => [s.name.toLowerCase(), s._id]),
+      services.map((s) => [s.serviceName.toLowerCase(), s._id]),
     );
 
     const newLeads = [];
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
-
+    let rowCount = 0;
     stream
       .pipe(csvParser())
       .on("data", async (row) => {
         try {
+          rowCount++;
           const proposedLocationsRaw = row["Proposed Location"] || "";
           const proposedLocations = proposedLocationsRaw
             .split(/[,/]/)
@@ -500,6 +503,14 @@ const bulkInsertLeads = async (req, res, next) => {
 
           const rawService = row["Sales Category"]?.trim().toLowerCase();
           const serviceCategoryId = rawService && servicesMap.get(rawService);
+          const rawBudget = row["Client Budget"]?.trim();
+
+          let clientBudget = 0;
+
+          if (rawBudget && rawBudget !== "-") {
+            const parsed = parseFloat(rawBudget);
+            clientBudget = isNaN(parsed) ? 0 : parsed;
+          }
 
           const lead = {
             company,
@@ -530,11 +541,7 @@ const bulkInsertLeads = async (req, res, next) => {
             totalDesks: row["Total Desks"]?.trim()
               ? parseInt(row["Total Desks"], 10)
               : null,
-            clientBudget:
-              row["Client Budget"]?.trim() === "-" ||
-              !row["Client Budget"]?.trim().length
-                ? null
-                : parseFloat(row["Client Budget"]),
+            clientBudget: clientBudget,
             remarksComments: row["Remarks/Comments"] || "",
             startDate:
               row["Start Date"]?.trim() &&
@@ -543,13 +550,15 @@ const bulkInsertLeads = async (req, res, next) => {
                 ? new Date(row["Start Date"])
                 : null,
             lastFollowUpDate:
-              row["Last Follup Date"]?.trim() && row["Last Follup Date"] !== "-"
-                ? new Date(row["Last Follup Date"])
+              row["Last Follow-up Date"]?.trim() &&
+              row["Last Follow-up Date"] !== "-"
+                ? new Date(row["Last Follow-up Date"])
                 : null,
           };
 
           newLeads.push(lead);
         } catch (err) {
+          console.error("Row Count 1st", rowCount);
           console.error("Error processing row:", err);
           return res
             .status(400)
@@ -564,6 +573,7 @@ const bulkInsertLeads = async (req, res, next) => {
             count: newLeads.length,
           });
         } catch (error) {
+          console.error("Row Count 2nd", rowCount);
           console.error("Insert error:", error);
           res.status(500).json({ message: "Error inserting leads" });
         }
