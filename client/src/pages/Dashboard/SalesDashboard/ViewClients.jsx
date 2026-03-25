@@ -68,11 +68,38 @@ const ViewClients = () => {
 
 
   console.log("data ", unifiedClients);
+  const externalVisitors = useMemo(
+    () =>
+      unifiedClients.filter(
+        (client) => (client.visitorFlag || "").trim().toLowerCase() === "client"
+      ),
+    [unifiedClients]
+  );
+
+  const meetingVisitorsCount = useMemo(
+    () =>
+      externalVisitors.filter((visitor) => {
+        const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
+        return purpose === "meeting room booking";
+      }).length,
+    [externalVisitors]
+  );
+
+  const openDeskVisitorsCount = useMemo(
+    () =>
+      externalVisitors.filter((visitor) => {
+        const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
+        return purpose === "half-day pass" || purpose === "full-day pass";
+      }).length,
+    [externalVisitors]
+  );
+
   const clientCounts = {
-    coWorking: data?.coworkingClients?.length,
-    virtualOfficeClients: data?.virtualOfficeClients?.length,
-    meetingClients: meetings.filter((meeting) => meeting.meetingType === "Internal").length,
-  }
+    coWorking: data?.coworkingClients?.filter((client) => client.isActive).length || 0,
+    virtualOfficeClients: data?.virtualOfficeClients?.filter((client) => client.clientStatus === true).length || 0,
+    externalMeetings: meetingVisitorsCount,
+    openDesk: openDeskVisitorsCount,
+  };
 
   const verticalsData = [
     {
@@ -87,11 +114,25 @@ const ViewClients = () => {
       value: clientCounts.virtualOfficeClients,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office",
     },
+    // {
+    //   id: 3,
+    //   name: "External Client",
+    //   value: clientCounts.externalClients,
+    //   route: "/app/dashboard/sales-dashboard/mix-bag/external-client",
+    // },
     {
       id: 3,
-      name: "Internal Meetings",
-      value: clientCounts.meetingClients,
-      route: "/app/dashboard/sales-dashboard/mix-bag/clients/internal-meetings",
+      name: "External Meetings",
+      value: clientCounts.externalMeetings,
+      route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
+      // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
+    },
+    {
+      id: 4,
+      name: "Open Desk",
+      value: clientCounts.openDesk,
+      route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
+      // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
     },
   ];
 
@@ -109,7 +150,8 @@ const ViewClients = () => {
     const serviceMapping = {
       coworking: "Coworking",
       virtualOffice: "Virtualoffice",
-      meeting: "Meeting",
+      externalMeeting: "External Meetings",
+      openDesk: "Open Desk",
       workation: "Workations",
       coliving: "Co-Living",
     };
@@ -118,6 +160,15 @@ const ViewClients = () => {
       let rawServiceName = client.clientType || "Unknown";
 
       // Dynamically detect type from serviceName if it's under coworkingClients
+      if (rawServiceName === "meeting") {
+        const purpose = (client.purposeOfVisit || "").trim().toLowerCase();
+        if (purpose === "meeting room booking") {
+          rawServiceName = "externalMeeting";
+        } else if (purpose === "half-day pass" || purpose === "full-day pass") {
+          rawServiceName = "openDesk";
+        }
+      }
+
       if (rawServiceName === "coworking" && client.service?.serviceName) {
         const sName = client.service.serviceName.toLowerCase();
         if (sName.includes("workation")) {
@@ -137,17 +188,20 @@ const ViewClients = () => {
         date = client.termStartDate
           ? new Date(client.termStartDate)
           : client.rentDate
-          ? new Date(client.rentDate)
-          : null;
-      } else if (rawServiceName === "meeting") {
+            ? new Date(client.rentDate)
+            : null;
+      } else if (
+        rawServiceName === "externalMeeting" ||
+        rawServiceName === "openDesk"
+      ) {
         date = client.dateOfVisit
           ? new Date(client.dateOfVisit)
           : client.scheduledDate
-          ? new Date(client.scheduledDate)
-          : null;
+            ? new Date(client.scheduledDate)
+            : null;
       } else {
-        date = client.startDate || client.dateOfVisit || client.termStartDate 
-          ? new Date(client.startDate || client.dateOfVisit || client.termStartDate) 
+        date = client.startDate || client.dateOfVisit || client.termStartDate
+          ? new Date(client.startDate || client.dateOfVisit || client.termStartDate)
           : null;
       }
 
@@ -194,7 +248,7 @@ const ViewClients = () => {
         />
       </div>
       <WidgetSection
-        layout={verticalsData.length <= 3 ? verticalsData.length : 3}
+        layout={verticalsData.length <= 2 ? verticalsData.length : 2}
       >
         {verticalsData.map((item) => (
           <DataCard

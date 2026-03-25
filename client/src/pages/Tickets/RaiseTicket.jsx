@@ -166,7 +166,7 @@ const RaiseTicket = () => {
 
     // Find the selected department and get its ticketIssues
     const selectedDept = fetchedDepartments.find(
-      (dept) => dept.department._id === deptId,
+      (dept) => dept?.department?._id === deptId,
     );
 
     setTicketIssues(selectedDept?.ticketIssues || []);
@@ -325,25 +325,25 @@ const RaiseTicket = () => {
                             fetchedDepartments
                               ?.filter(
                                 (dept) =>
-                                  dept.department.name !== "Sales" &&
-                                  dept.department.name !== "HR" &&
-                                  dept.department.name !== "Finance" &&
-                                  dept.department.name !== "IT" &&
-                                  dept.department.name !== "Maintainance" &&
-                                  dept.department.name !== "Top Management" &&
-                                  dept.department.name !== "Test Dept 1" &&
-                                  dept.department.name !== "Cafe" &&
-                                  dept.department.name !== "Marketing" &&
-                                  dept.department.name !== "Expansion" &&
-                                  dept.department.name !== "Compliance" &&
-                                  dept.department.name !== "Legal",
+                                  dept?.department?.name !== "Sales" &&
+                                  dept?.department?.name !== "HR" &&
+                                  dept?.department?.name !== "Finance" &&
+                                  // dept.department.name !== "IT" &&
+                                  dept?.department?.name !== "Maintenance" &&
+                                  dept?.department?.name !== "Top Management" &&
+                                  dept?.department?.name !== "Test Dept 1" &&
+                                  dept?.department?.name !== "Cafe" &&
+                                  dept?.department?.name !== "Marketing" &&
+                                  dept?.department?.name !== "Expansion" &&
+                                  dept?.department?.name !== "Compliance" &&
+                                  dept?.department?.name !== "Legal",
                               )
                               .map((dept) => (
                                 <MenuItem
-                                  key={dept.department._id}
-                                  value={dept.department._id}
+                                  key={dept?.department?._id}
+                                  value={dept?.department?._id}
                                 >
-                                  {dept.department.name}
+                                  {dept?.department?.name}
                                 </MenuItem>
                               ))
                           )}
@@ -356,18 +356,15 @@ const RaiseTicket = () => {
                           <MenuItem value="Finance" disabled>
                             Finance
                           </MenuItem>
-                          <MenuItem value="IT" disabled>
+                          {/* <MenuItem value="IT" disabled>
                             IT
-                          </MenuItem>
+                          </MenuItem> */}
                           {/* <MenuItem value="Maintainance" disabled>
                             Maintainance
                           </MenuItem> */}
                           <MenuItem value="Top Management" disabled>
                             Top Management
                           </MenuItem>
-                          {/* <MenuItem value="Test Dept 1" disabled>
-                            Test Dept 1
-                          </MenuItem> */}
                           <MenuItem value="Cafe" disabled>
                             Cafe
                           </MenuItem>
@@ -595,21 +592,21 @@ const RaiseTicket = () => {
               dropdownColumns={["status", "priority"]}
               data={tickets?.map((ticket, index) => {
                 return {
-                  raisedBy: ticket.raisedBy.firstName,
-                  raisedTo: ticket.raisedToDepartment.name,
-                  description: ticket.description,
-                  ticketTitle: ticket.ticket,
-                  status: ticket.status,
-                  closingRemark: ticket.closingRemark,
+                  raisedBy: ticket?.raisedBy?.firstName || "Unknown",
+                  raisedTo: ticket?.raisedToDepartment?.name || "Unknown",
+                  description: ticket?.description,
+                  ticketTitle: ticket?.ticket,
+                  status: ticket?.status,
+                  closingRemark: ticket?.closingRemark,
                   acceptedBy: ticket?.acceptedBy
                     ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
                     : "None",
                   closedBy: ticket?.closedBy
                     ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
                     : "None",
-                  acceptedAt: ticket.acceptedAt ? ticket.acceptedAt : "N/A",
-                  closedAt: ticket.closedAt ? ticket.closedAt : "N/A",
-                  priority: ticket.priority,
+                  acceptedAt: ticket?.acceptedAt ? ticket.acceptedAt : "N/A",
+                  closedAt: ticket?.closedAt ? ticket.closedAt : "N/A",
+                  priority: ticket?.priority,
                   ...(() => {
                     const { assignedToDisplay, assignmentDetails } =
                       formatAssignments(ticket.assignedTo);

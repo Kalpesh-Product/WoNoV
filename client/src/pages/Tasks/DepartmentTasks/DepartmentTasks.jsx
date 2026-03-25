@@ -19,7 +19,7 @@ const DepartmentTasks = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
 
   useTopDepartment({
-    additionalTopUserIds: ["67b83885daad0f7bab2f1888"], //utkarsha
+    additionalTopUserIds: ["6961fcd737afa664ab215d10"], // Kiran 
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/tasks/department-tasks/${currentDepartment}`);
@@ -61,8 +61,8 @@ const DepartmentTasks = () => {
       },
     },
     { headerName: "Total Current Month's Tasks", field: "totalTasks", flex: 1 },
-    { headerName: "Open Tasks", field: "pendingTasks" },
-    { headerName: "Closed Tasks", field: "completedTasks" },
+    { headerName: "Pending Tasks", field: "pendingTasks" },
+    { headerName: "Completed Tasks", field: "completedTasks" },
   ];
   return (
     <div className="flex flex-col gap-4">

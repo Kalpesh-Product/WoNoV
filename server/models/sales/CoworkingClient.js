@@ -47,6 +47,10 @@ const clientSchema = new mongoose.Schema(
     hoState: {
       type: String,
     },
+    building: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Building",
+    },
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
@@ -84,6 +88,10 @@ const clientSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    lastManualCreditResetAt: {
+      type: Date,
+      default: null,
+    },
 
     startDate: {
       type: Date,
@@ -98,6 +106,29 @@ const clientSchema = new mongoose.Schema(
       imageId: String,
       imageUrl: String,
     },
+    documents: [
+      new mongoose.Schema(
+        {
+          name: {
+            type: String,
+            trim: true,
+          },
+          url: {
+            type: String,
+            trim: true,
+          },
+          documentId: {
+            type: String,
+            trim: true,
+          },
+          fileType: {
+            type: String,
+            trim: true,
+          },
+        },
+        { _id: false, timestamps: true }
+      ),
+    ],
     // rentDate: { type: Date },
     // rentDate: { type: String },
     rentDate: {

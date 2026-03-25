@@ -1,10 +1,11 @@
 import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import useAuth from "../../../../hooks/useAuth";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +20,7 @@ import { useParams } from "react-router-dom";
 const ClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
@@ -26,7 +28,7 @@ const ClientDetails = () => {
     () => decodeURIComponent(clientName || "").trim().toLowerCase(),
     [clientName],
   );
-  const { control, handleSubmit, reset } = useForm({
+  const { control, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       clientName: "",
       serviceName: "",
@@ -35,6 +37,8 @@ const ClientDetails = () => {
       hoCity: "",
       hoState: "",
       unitName: "",
+      building: "",
+      unit: "",
       unitNo: "",
       buildingName: "",
       buildingAddress: "",
@@ -64,45 +68,47 @@ const ClientDetails = () => {
     },
   });
 
-  useEffect(() => {
-    if (selectedClient) {
-      reset({
-        clientName: selectedClient.clientName,
-        serviceName: selectedClient.service?.serviceName || "",
-        serviceDescription: selectedClient.service?.description || "",
-        sector: selectedClient.sector,
-        hoCity: selectedClient.hoCity,
-        hoState: selectedClient.hoState,
-        unitName: selectedClient.unit?.unitName || "",
-        unitNo: selectedClient.unitNo || "",
-        buildingName: selectedClient.unit?.building?.buildingName || "",
-        buildingAddress: selectedClient.unit?.building?.fullAddress || "",
-        cabinDesks: selectedClient.cabinDesks,
-        openDesks: selectedClient.openDesks,
-        totalDesks: selectedClient.totalDesks,
-        ratePerOpenDesk: selectedClient.ratePerOpenDesk,
-        ratePerCabinDesk: selectedClient.ratePerCabinDesk,
-        annualIncrement: selectedClient.annualIncrement,
-        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
-        totalMeetingCredits: selectedClient.totalMeetingCredits,
-        startDate: selectedClient.startDate,
-        bookingType: selectedClient.bookingType,
-        endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
-        rentDate: selectedClient.rentDate,
-        nextIncrement: selectedClient.nextIncrement,
-        localPocName: selectedClient.localPocName || "",
-        localPocEmail: selectedClient.localPocEmail || "",
-        localPocPhone: selectedClient.localPocPhone || "",
-        hoPocName: selectedClient.hoPocName || "",
-        hoPocEmail: selectedClient.hoPocEmail || "",
-        hoPocPhone: selectedClient.hoPocPhone || "",
-        isActive: selectedClient.isActive,
-        createdAt: selectedClient.createdAt,
-        updatedAt: selectedClient.updatedAt,
-      });
-    }
-  }, [selectedClient, reset]);
+  // useEffect(() => {
+  //   if (selectedClient) {
+  //     reset({
+  //       clientName: selectedClient.clientName,
+  //       serviceName: selectedClient.service?.serviceName || "",
+  //       serviceDescription: selectedClient.service?.description || "",
+  //       sector: selectedClient.sector,
+  //       hoCity: selectedClient.hoCity,
+  //       hoState: selectedClient.hoState,
+  //       building: selectedClient.unit?.building?._id || "",
+  //       unit: selectedClient.unit?._id || "",
+  //       unitName: selectedClient.unit?.unitName || "",
+  //       unitNo: selectedClient.unit?.unitNo || selectedClient.unitNo || "",
+  //       buildingName: selectedClient.unit?.building?.buildingName || "",
+  //       buildingAddress: selectedClient.unit?.building?.fullAddress || "",
+  //       cabinDesks: selectedClient.cabinDesks,
+  //       openDesks: selectedClient.openDesks,
+  //       totalDesks: selectedClient.totalDesks,
+  //       ratePerOpenDesk: selectedClient.ratePerOpenDesk,
+  //       ratePerCabinDesk: selectedClient.ratePerCabinDesk,
+  //       annualIncrement: selectedClient.annualIncrement,
+  //       perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
+  //       totalMeetingCredits: selectedClient.totalMeetingCredits,
+  //       startDate: selectedClient.startDate,
+  //       bookingType: selectedClient.bookingType,
+  //       endDate: selectedClient.endDate,
+  //       lockinPeriod: selectedClient.lockinPeriod,
+  //       rentDate: selectedClient.rentDate,
+  //       nextIncrement: selectedClient.nextIncrement,
+  //       localPocName: selectedClient.localPocName || "",
+  //       localPocEmail: selectedClient.localPocEmail || "",
+  //       localPocPhone: selectedClient.localPocPhone || "",
+  //       hoPocName: selectedClient.hoPocName || "",
+  //       hoPocEmail: selectedClient.hoPocEmail || "",
+  //       hoPocPhone: selectedClient.hoPocPhone || "",
+  //       isActive: selectedClient.isActive,
+  //       createdAt: selectedClient.createdAt,
+  //       updatedAt: selectedClient.updatedAt,
+  //     });
+  //   }
+  // }, [selectedClient, reset]);
 
   const { isLoading: isClientLoading } = useQuery({
     queryKey: ["coWorkingClientByName", normalizedClientName],
@@ -127,6 +133,101 @@ const ClientDetails = () => {
 
 
   const [isEditing, setIsEditing] = useState(false);
+
+  const selectedBuilding = useWatch({ control, name: "building" });
+
+  const { data: units = [], isLoading: isUnitsLoading } = useQuery({
+    queryKey: ["units", "client-details"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units?deskCalculated=true");
+      return response.data;
+    },
+  });
+
+  const availableBuildings = auth?.user?.company?.workLocations || [];
+  const selectedUnitDetails = useMemo(() => {
+    const selectedUnit = selectedClient?.unit;
+    const selectedUnitId =
+      typeof selectedUnit === "string" ? selectedUnit : selectedUnit?._id;
+
+    if (!selectedUnitId) {
+      return typeof selectedUnit === "object" && selectedUnit ? selectedUnit : null;
+    }
+
+    return (
+      units.find((item) => item._id === selectedUnitId) ||
+      (typeof selectedUnit === "object" ? selectedUnit : null)
+    );
+  }, [selectedClient?.unit, units]);
+
+  useEffect(() => {
+    if (selectedClient) {
+      reset({
+        clientName: selectedClient.clientName,
+        serviceName: selectedClient.service?.serviceName || "",
+        serviceDescription: selectedClient.service?.description || "",
+        sector: selectedClient.sector,
+        hoCity: selectedClient.hoCity,
+        hoState: selectedClient.hoState,
+        building: selectedUnitDetails?.building?._id || "",
+        unit:
+          selectedUnitDetails?._id ||
+          (typeof selectedClient.unit === "string" ? selectedClient.unit : "") ||
+          "",
+        unitName: selectedUnitDetails?.unitName || selectedClient.unitName || "",
+        unitNo: selectedUnitDetails?.unitNo || selectedClient.unitNo || "",
+        buildingName:
+          selectedUnitDetails?.building?.buildingName ||
+          selectedClient.buildingName ||
+          "",
+        buildingAddress:
+          selectedUnitDetails?.building?.fullAddress ||
+          selectedClient.buildingAddress ||
+          "",
+        cabinDesks: selectedClient.cabinDesks,
+        openDesks: selectedClient.openDesks,
+        totalDesks: selectedClient.totalDesks,
+        ratePerOpenDesk: selectedClient.ratePerOpenDesk,
+        ratePerCabinDesk: selectedClient.ratePerCabinDesk,
+        annualIncrement: selectedClient.annualIncrement,
+        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
+        totalMeetingCredits: selectedClient.totalMeetingCredits,
+        startDate: selectedClient.startDate,
+        bookingType: selectedClient.bookingType,
+        endDate: selectedClient.endDate,
+        lockinPeriod: selectedClient.lockinPeriod,
+        rentDate: selectedClient.rentDate,
+        nextIncrement: selectedClient.nextIncrement,
+        localPocName: selectedClient.localPoc?.name || "",
+        localPocEmail: selectedClient.localPoc?.email || "",
+        localPocPhone: selectedClient.localPoc?.phone || "",
+        hoPocName: selectedClient.hOPoc?.name || "",
+        hoPocEmail: selectedClient.hOPoc?.email || "",
+        hoPocPhone: selectedClient.hOPoc?.phone || "",
+        isActive: selectedClient.isActive,
+        createdAt: selectedClient.createdAt,
+        updatedAt: selectedClient.updatedAt,
+      });
+    }
+  }, [reset, selectedClient, selectedUnitDetails]);
+  const filteredUnits = useMemo(() => {
+    if (!selectedBuilding) {
+      return [];
+    }
+
+    return units.filter((item) => item.building?._id === selectedBuilding);
+  }, [selectedBuilding, units]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+
+    const currentUnit = control._formValues.unit;
+    if (currentUnit && !filteredUnits.some((item) => item._id === currentUnit)) {
+      setValue("unit", "");
+    }
+  }, [control._formValues.unit, filteredUnits, isEditing, setValue]);
 
   const bookingTypeOptions = React.useMemo(() => {
     const options = new Set();
@@ -161,7 +262,8 @@ const ClientDetails = () => {
       hoState: data.hoState,
       isActive: data.isActive === true || data.isActive === "true",
       bookingType: data.bookingType,
-      unitNo: data.unitNo,
+      building: data.building,
+      unit: data.unit,
       cabinDesks: Number(data.cabinDesks) || 0,
       openDesks: Number(data.openDesks) || 0,
       totalDesks:
@@ -192,23 +294,14 @@ const ClientDetails = () => {
 
       const updatedClient = {
         ...selectedClient,
-        ...response?.data?.client,
-        ...payload,
-        localPocName: payload.localPocName,
-        localPocEmail: payload.localPocEmail,
-        localPocPhone: payload.localPocPhone,
-        hoPocName: payload.hOPocName,
-        hoPocEmail: payload.hOPocEmail,
-        hoPocPhone: payload.hOPocPhone,
+        ...(response?.data?.client || payload),
       };
 
       dispatch(setSelectedClient(updatedClient));
       dispatch(
         setClientData(
           clientsData.map((item) =>
-            item._id === selectedClient._id
-              ? { ...item, ...updatedClient }
-              : item,
+            item._id === selectedClient._id ? updatedClient : item,
           ),
         ),
       );
@@ -237,10 +330,18 @@ const ClientDetails = () => {
         sector: selectedClient.sector,
         hoCity: selectedClient.hoCity,
         hoState: selectedClient.hoState,
-        unitName: selectedClient.unit?.unitName || "",
-        unitNo: selectedClient.unitNo || "",
-        buildingName: selectedClient.unit?.building?.buildingName || "",
-        buildingAddress: selectedClient.unit?.building?.fullAddress || "",
+        building: selectedUnitDetails?.building?._id || "",
+        unit: selectedUnitDetails?._id || (typeof selectedClient.unit === "string" ? selectedClient.unit : "") || "",
+        unitName: selectedUnitDetails?.unitName || selectedClient.unitName || "",
+        unitNo: selectedUnitDetails?.unitNo || selectedClient.unitNo || "",
+        buildingName:
+          selectedUnitDetails?.building?.buildingName ||
+          selectedClient.buildingName ||
+          "",
+        buildingAddress:
+          selectedUnitDetails?.building?.fullAddress ||
+          selectedClient.buildingAddress ||
+          "",
         cabinDesks: selectedClient.cabinDesks,
         openDesks: selectedClient.openDesks,
         totalDesks: selectedClient.totalDesks,
@@ -255,19 +356,18 @@ const ClientDetails = () => {
         lockinPeriod: selectedClient.lockinPeriod,
         rentDate: selectedClient.rentDate,
         nextIncrement: selectedClient.nextIncrement,
-        localPocName: selectedClient.localPocName || "",
-        localPocEmail: selectedClient.localPocEmail || "",
-        localPocPhone: selectedClient.localPocPhone || "",
-        hoPocName: selectedClient.hoPocName || "",
-        hoPocEmail: selectedClient.hoPocEmail || "",
-        hoPocPhone: selectedClient.hoPocPhone || "",
+        localPocName: selectedClient.localPoc?.name || "",
+        localPocEmail: selectedClient.localPoc?.email || "",
+        localPocPhone: selectedClient.localPoc?.phone || "",
+        hoPocName: selectedClient.hOPoc?.name || "",
+        hoPocEmail: selectedClient.hOPoc?.email || "",
+        hoPocPhone: selectedClient.hOPoc?.phone || "",
         isActive: selectedClient.isActive,
         createdAt: selectedClient.createdAt,
         updatedAt: selectedClient.updatedAt,
       });
     }
   };
-
   const renderDatePickerField = (field, label) => (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DatePicker
@@ -339,10 +439,7 @@ const ClientDetails = () => {
                                 fullWidth
                               >
                                 {bookingTypeOptions.map((bookingType) => (
-                                  <MenuItem
-                                    key={bookingType}
-                                    value={bookingType}
-                                  >
+                                  <MenuItem key={bookingType} value={bookingType}>
                                     {bookingType}
                                   </MenuItem>
                                 ))}
@@ -391,28 +488,58 @@ const ClientDetails = () => {
                 </div>
 
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                  {[
-                    "unitNo",
-                    "cabinDesks",
-                    "ratePerCabinDesk",
-                    "openDesks",
-                    "ratePerOpenDesk",
-                    "isActive",
-                  ].map((fieldKey) => (
-                    <div key={fieldKey}>
-                      {isEditing ? (
+                  {isEditing ? (
+                    <>
+                      <Controller
+                        name="building"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField {...field} select size="small" label="Building" fullWidth>
+                            <MenuItem value="">Select a Building</MenuItem>
+                            {availableBuildings.map((item) => (
+                              <MenuItem key={item._id} value={item._id}>
+                                {item.buildingName}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                        )}
+                      />
+                      <Controller
+                        name="unit"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField {...field} select size="small" label="Unit" fullWidth>
+                            <MenuItem value="">Select a Unit</MenuItem>
+                            {isUnitsLoading ? (
+                              <MenuItem disabled>Loading units...</MenuItem>
+                            ) : filteredUnits.length > 0 ? (
+                              filteredUnits.map((item) => (
+                                <MenuItem key={item._id} value={item._id}>
+                                  {item.unitNo}
+                                </MenuItem>
+                              ))
+                            ) : (
+                              <MenuItem disabled>
+                                {selectedBuilding ? "No units available" : "Select a building first"}
+                              </MenuItem>
+                            )}
+                          </TextField>
+                        )}
+                      />
+                      {[
+                        "cabinDesks",
+                        "ratePerCabinDesk",
+                        "openDesks",
+                        "ratePerOpenDesk",
+                        "isActive",
+                      ].map((fieldKey) => (
                         <Controller
+                          key={fieldKey}
                           name={fieldKey}
                           control={control}
                           render={({ field }) =>
                             fieldKey === "isActive" ? (
-                              <TextField
-                                {...field}
-                                select
-                                size="small"
-                                label="Status"
-                                fullWidth
-                              >
+                              <TextField {...field} select size="small" label="Status" fullWidth>
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
@@ -428,33 +555,43 @@ const ClientDetails = () => {
                             )
                           }
                         />
-                      ) : (
-                        <div className="py-2 flex justify-between items-start gap-2">
-                          <div className="w-[100%] justify-start flex">
-                            <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey === "isActive"
-                                ? "Status"
-                                : fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                            </span>{" "}
-                          </div>
-                          <div className="">
-                            <span>:</span>
-                          </div>
-                          <div className="w-full">
-                            <span className="text-gray-500">
-                              {fieldKey === "isActive"
-                                ? control._defaultValues.isActive
-                                  ? "Active"
-                                  : "Inactive"
-                                : control._defaultValues[fieldKey] || "N/A"}
-                            </span>
-                          </div>
+                      ))}
+                    </>
+                  ) : (
+                    [
+                      "buildingName",
+                      "unitNo",
+                      "cabinDesks",
+                      "ratePerCabinDesk",
+                      "openDesks",
+                      "ratePerOpenDesk",
+                      "isActive",
+                    ].map((fieldKey) => (
+                      <div key={fieldKey} className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            {fieldKey === "isActive"
+                              ? "Status"
+                              : fieldKey
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase())}
+                          </span>{" "}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {fieldKey === "isActive"
+                              ? control._defaultValues.isActive
+                                ? "Active"
+                                : "Inactive"
+                              : control._defaultValues[fieldKey] || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
               <div>

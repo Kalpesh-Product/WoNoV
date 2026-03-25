@@ -31,6 +31,7 @@ const Reviews = () => {
   const [modalType, setModalType] = useState("creditView");
   const [selectedData, setSelectedData] = useState({});
   const [creditEdits, setCreditEdits] = useState({});
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   const userPermissions = useMemo(
     () => auth?.user?.permissions?.permissions || [],
@@ -161,6 +162,25 @@ const Reviews = () => {
     },
   });
 
+  const { mutate: resetClientCredits, isPending: isResetCreditsPending } = useMutation({
+    mutationFn: async () => {
+      await Promise.all(
+        clientsData.map((client) =>
+          axios.patch(`/api/sales/co-working-clients/${client._id}/reset-credits`)
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
+      setCreditEdits({});
+      setIsResetModalOpen(false);
+      toast.success("Client credits reset successfully");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || error.message);
+    },
+  });
+
   const submitCreditEdit = (formValues) => {
     const monthlyCredit = Number(formValues.monthlyCredit);
     const consumedCredit = Number(formValues.consumedCredit);
@@ -233,6 +253,66 @@ const Reviews = () => {
       ),
     },
   ];
+  const formatExportDate = (date = new Date()) =>
+    new Intl.DateTimeFormat("en-IN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(date);
+
+  const buildClientCreditExportRows = (rows, exportDate) =>
+    rows.map((row) => ({
+      "Export Date": exportDate,
+      "Sr No": row.srNo,
+      "Client Name": row.clientName,
+      "Monthly Credit": row.monthlyCredit,
+      "Consumed Credit": row.consumedCredit,
+      "Remaining Credit": row.remainingCredit,
+    }));
+
+  const exportClientCredits = (rows = clientCreditRows) => {
+    if (!rows.length) {
+      toast.error("No client credit data available to export");
+      return false;
+    }
+
+    const exportDate = formatExportDate();
+    const exportRows = buildClientCreditExportRows(rows, exportDate);
+    const headers = Object.keys(exportRows[0]);
+    const csvContent = [
+      headers.join(","),
+      ...exportRows.map((row) =>
+        headers
+          .map((header) => `"${String(row[header] ?? "").replace(/"/g, '""')}"`)
+          .join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const downloadLink = document.createElement("a");
+    const fileDate = exportDate.replace(/[/:,\s]/g, "-");
+
+    downloadLink.href = URL.createObjectURL(blob);
+    downloadLink.download = `client-credit-export-${fileDate}.csv`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(downloadLink.href);
+
+    toast.success("Client credit exported successfully");
+    return true;
+  };
+
+  const handleResetCredits = () => {
+    const exported = exportClientCredits();
+    if (!exported) return;
+    resetClientCredits();
+  };
+
 
   const clientCreditRows = useMemo(
     () =>
@@ -240,11 +320,17 @@ const Reviews = () => {
         const clientId = client?._id;
         const fallbackMonthly = Number(client?.totalMeetingCredits || 0);
         const fallbackBalance = Number(client?.meetingCreditBalance || 0);
-        const fallbackConsumed = Math.max(fallbackMonthly - fallbackBalance, 0);
+        const wasManuallyReset = Boolean(client?.lastManualCreditResetAt);
+        const fallbackConsumed = wasManuallyReset
+          ? 0
+          : Math.max(fallbackMonthly - fallbackBalance, 0);
 
         const editedValues = creditEdits[clientId];
         const monthlyCredit = editedValues?.monthlyCredit ?? fallbackMonthly;
         const consumedCredit = editedValues?.consumedCredit ?? fallbackConsumed;
+        const remainingCredit = wasManuallyReset
+          ? 0
+          : Math.max(monthlyCredit - consumedCredit, 0);
 
         return {
           id: index + 1,
@@ -253,7 +339,7 @@ const Reviews = () => {
           clientName: client?.clientName || "-",
           monthlyCredit: Number(monthlyCredit).toFixed(2),
           consumedCredit: Number(consumedCredit).toFixed(2),
-          remainingCredit: Math.max(monthlyCredit - consumedCredit).toFixed(2),
+          remainingCredit: Number(remainingCredit).toFixed(2),
         };
       }),
     [clientsData, creditEdits]
@@ -369,16 +455,53 @@ const Reviews = () => {
             </div>
           </>
         ) : activeTabKey === "clientCredit" ? (
-          <PageFrame>
-            <AgTable
-              search={true}
-              tableTitle="Client Credits"
-              searchColumn={"clientName"}
-              data={clientCreditRows}
-              columns={clientCreditColumns}
-              loading={isClientsLoading}
-            />
-          </PageFrame>
+          <div className="space-y-4">
+            {/* <div className="flex flex-wrap justify-end gap-3">
+              <PrimaryButton
+                title="Export"
+                handleSubmit={() => exportClientCredits()}
+                type="button"
+                externalStyles="!bg-primary"
+                padding="px-6 py-2"
+              />
+              <PrimaryButton
+                title="Reset"
+                handleSubmit={() => setIsResetModalOpen(true)}
+                type="button"
+                externalStyles="!bg-red-600"
+                padding="px-6 py-2"
+              />
+            </div> */}
+
+            <PageFrame>
+              <AgTable
+                search={true}
+                tableTitle="Client Credits"
+                searchColumn={"clientName"}
+                data={clientCreditRows}
+                columns={clientCreditColumns}
+                loading={isClientsLoading}
+                headerActions={
+                  <>
+                    <PrimaryButton
+                      title="Export"
+                      handleSubmit={() => exportClientCredits()}
+                      type="button"
+                      externalStyles="!bg-primary"
+                      padding="px-6 py-2"
+                    />
+                    <PrimaryButton
+                      title="Reset"
+                      handleSubmit={() => setIsResetModalOpen(true)}
+                      type="button"
+                      externalStyles="!bg-red-600"
+                      padding="px-6 py-2"
+                    />
+                  </>
+                }
+              />
+            </PageFrame>
+          </div>
         ) : null}
       </div>
 
@@ -502,6 +625,35 @@ const Reviews = () => {
             <PrimaryButton title={"Save"} type={"submit"} />
           </form>
         )}
+      </MuiModal>
+
+      <MuiModal
+        open={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        title="Reset Client Credit"
+      >
+        <div className="space-y-6">
+          <p className="text-content text-gray-700">
+            are you really want to reset creadit
+          </p>
+
+          <div className="flex justify-end gap-3">
+            <PrimaryButton
+              title="No"
+              type="button"
+              handleSubmit={() => setIsResetModalOpen(false)}
+              externalStyles="!bg-gray-500"
+              padding="px-6 py-2"
+            />
+            <PrimaryButton
+              title="Yes"
+              type="button"
+              handleSubmit={handleResetCredits}
+              externalStyles="!bg-red-600"
+              padding="px-6 py-2"
+            />
+          </div>
+        </div>
       </MuiModal>
     </div>
   );

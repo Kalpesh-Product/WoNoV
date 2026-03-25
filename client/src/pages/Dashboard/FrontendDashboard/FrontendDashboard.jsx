@@ -1,6 +1,6 @@
 import Card from "../../../components/Card";
 import React, { Suspense, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../components/WidgetSection";
 import { MdRebaseEdit } from "react-icons/md";
@@ -12,8 +12,8 @@ import { SiGoogleadsense } from "react-icons/si";
 import { MdMiscellaneousServices } from "react-icons/md";
 import BarGraph from "../../../components/graphs/BarGraph";
 import PieChartMui from "../../../components/graphs/PieChartMui";
+import DonutChart from "../../../components/graphs/DonutChart";
 import LineGraph from "../../../components/graphs/LineGraph";
-import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
@@ -25,6 +25,7 @@ import dayjs from "dayjs";
 import { filterPermissions } from "../../../utils/accessConfig";
 import useAuth from "../../../hooks/useAuth";
 import { PERMISSIONS } from "../../../constants/permissions";
+import usePageDepartment from "../../../hooks/usePageDepartment"
 
 const FrontendDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -32,15 +33,128 @@ const FrontendDashboard = () => {
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const department = usePageDepartment();
 
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+
+  
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["frontend-selectedDepartments"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments",
+      );
+      return Array.isArray(response.data?.selectedDepartments)
+        ? response.data.selectedDepartments
+        : [];
+    },
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["frontend-dashboard-tasks", department?._id],
+    queryFn: async () => {
+      const response = await axios.get(`/api/tasks/get-tasks?dept=${department?._id}`);
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: Boolean(department?._id),
+  });
+
+  const managerByDepartmentName = useMemo(() => {
+    const map = new Map();
+    selectedDepartments.forEach((item) => {
+      const departmentName = item?.department?.name?.trim();
+      if (departmentName) {
+        map.set(departmentName.toLowerCase(), item?.admin || "Unassigned");
+      }
+    });
+    return map;
+  }, [selectedDepartments]);
+
+  const pendingDepartmentTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) => task?.taskType === "Department" && task?.status === "Pending",
+      ),
+    [tasks],
+  );
+
+  const unitWisePieData = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const unitName = task?.location?.unitNo || "Unassigned";
+      if (!acc[unitName]) acc[unitName] = { label: unitName, value: 0 };
+      acc[unitName].value += 1;
+      return acc;
+    }, {});
+    return Object.values(groupedTasks).sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { numeric: true }),
+    );
+  }, [pendingDepartmentTasks]);
+
+  const unitPieChartOptions = {
+    labels: unitWisePieData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => navigate("/app/tasks"),
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Due tasks`,
+      },
+    },
+  };
+
+  const executiveTasks = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const departmentName =
+        typeof task?.department === "object"
+          ? task?.department?.name
+          : task?.department || department?.name || "Unknown Department";
+      const managerName =
+        managerByDepartmentName.get(departmentName.toLowerCase()) ||
+        "Unassigned";
+      if (!acc[managerName]) acc[managerName] = { name: managerName, tasks: 0 };
+      acc[managerName].tasks += 1;
+      return acc;
+    }, {});
+    return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
+  }, [department?.name, managerByDepartmentName, pendingDepartmentTasks]);
+
+  const executiveTaskLabels = executiveTasks.map((item) => item.name);
+  const executiveTasksCount = executiveTasks.map((item) => item.tasks);
+  const executiveTaskColors = [
+    "#FF5733",
+    "#FFC300",
+    "#28B463",
+    "#5B6CFF",
+    "#9B59B6",
+    "#17A2B8",
+    "#E67E22",
+    "#E91E63",
+  ];
+
 
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
 
   //--------------------Frontend budget-graph-----------------------//
+      const { data: tickets = [], isLoading: isTicketsLoading } = useQuery({
+    queryKey: ["frontend-ticket-issues", department?._id],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${department._id}`
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error("Error fetching ticket data");
+      }
+    },
+    enabled: !!department?._id,
+  });
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["frontendBudget"],
     queryFn: async () => {
@@ -436,6 +550,65 @@ const FrontendDashboard = () => {
       0
     ) || 0;
 
+     const currentDepartmentComplaints = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return null;
+
+    const issueCounts = tickets.reduce((acc, ticket) => {
+      const issueTitle = ticket?.ticket?.trim() || "Other";
+      acc[issueTitle] = (acc[issueTitle] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedIssues = Object.entries(issueCounts)
+      .map(([issue, count]) => ({ issue, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const topIssue = sortedIssues[0];
+
+    if (!topIssue) return null;
+
+    return {
+      label: topIssue.issue,
+      departmentLabel: department?.name?.trim() || "Unknown",
+      value: topIssue.count,
+      issues: sortedIssues,
+    };
+  }, [department?.name, isTicketsLoading, tickets]);
+
+  const departmentWiseComplaintData = currentDepartmentComplaints
+    ? [currentDepartmentComplaints]
+    : [];
+
+  const departmentWiseComplaintOptions = {
+    labels: departmentWiseComplaintData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    tooltip: {
+      custom: () => {
+        if (!currentDepartmentComplaints) return "";
+
+        const issuesHtml = currentDepartmentComplaints.issues
+          .map(
+            ({ issue, count }) => `
+              <div style="display: flex; justify-content: space-between; gap: 16px; margin-top: 4px;">
+                <span>${issue}</span>
+                <span>${count}</span>
+              </div>
+            `
+          )
+          .join("");
+
+        return `
+          <div style="padding: 8px 10px; font-size: 13px; font-family: Poppins-Regular; min-width: 180px;">
+            ${issuesHtml}
+          </div>
+        `;
+      },
+    },
+  };
+
+
   //---------------ACCESS-------------//
 
   const techSalesGraphConfig = [
@@ -530,6 +703,23 @@ const FrontendDashboard = () => {
     userPermissions
   );
 
+    const frontendComplaintLayoutConfig = [
+    {
+      type: "PieChartMui",
+      title: "Department-Wise Complaints",
+      border: true,
+      data: departmentWiseComplaintData,
+      options: departmentWiseComplaintOptions,
+    },
+    {
+      type: "PieChartMui",
+      title: "Department-Wise Complaints-1",
+      border: true,
+      data: departmentWiseComplaintData,
+      options: departmentWiseComplaintOptions,
+    },
+  ];
+
   const pieChartConfig = [
   {
     key: PERMISSIONS.FRONTEND_NATION_WISE_SITE_VISITORS.value,
@@ -593,6 +783,42 @@ const FrontendDashboard = () => {
           />
         </WidgetSection>)
     },
+     {
+      layout: 2,
+      widgets: [
+        <WidgetSection key="frontend-unit-wise-due-tasks" layout={1} border title="Unit Wise Due Tasks">
+          <PieChartMui
+            data={unitWisePieData}
+            options={unitPieChartOptions}
+            width={500}
+            height={320}
+            centerAlign
+          />
+        </WidgetSection>,
+        <WidgetSection key="frontend-executive-wise-due-tasks" layout={1} border title="Executive Wise Due Tasks">
+          <DonutChart
+            centerLabel="Tasks"
+            labels={executiveTaskLabels}
+            colors={executiveTaskColors}
+            series={executiveTasksCount}
+            tooltipValue={executiveTasksCount}
+            tooltipFormatter={(label, value) =>
+              `${label}: ${value || 0} pending tasks`
+            }
+          />
+        </WidgetSection>,
+      ],
+    },
+
+     {
+      layout: 2,
+      widgets: frontendComplaintLayoutConfig.map((config) => (
+        <WidgetSection layout={1} border title={config.title}>
+          <PieChartMui data={config.data} options={config.options} centerAlign />
+        </WidgetSection>
+      )),
+    },
+
     {
       layout: allowedExpenseGraph.length,
       widgets: [
@@ -618,6 +844,7 @@ const FrontendDashboard = () => {
         </Suspense>,
       ],
     },
+
 
     {
       layout: allowedIssuesGraph.length,

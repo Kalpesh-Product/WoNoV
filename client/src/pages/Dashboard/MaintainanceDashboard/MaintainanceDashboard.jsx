@@ -36,6 +36,17 @@ const MaintainanceDashboard = () => {
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["maintenance-selectedDepartments"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments",
+      );
+      return Array.isArray(response.data?.selectedDepartments)
+        ? response.data.selectedDepartments
+        : [];
+    },
+  });
 
   //------------------------PAGE ACCESS START-------------------//
   const cardsConfig = [
@@ -387,19 +398,81 @@ const MaintainanceDashboard = () => {
   }, []); // Empty dependency array ensures this runs once on mount
 
   const navigate = useNavigate();
+   const managerByDepartmentName = useMemo(() => {
+    const map = new Map();
+    selectedDepartments.forEach((item) => {
+      const departmentName = item?.department?.name?.trim();
+      if (departmentName) {
+        map.set(departmentName.toLowerCase(), item?.admin || "Unassigned");
+      }
+    });
+    return map;
+  }, [selectedDepartments]);
 
-  const taskData = [
-    { unit: "ST-701A", tasks: 25 },
-    { unit: "ST-701B", tasks: 30 },
+  const pendingDepartmentTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) => task?.taskType === "Department" && task?.status === "Pending",
+      ),
+    [tasks],
+  );
+  const unitWisePieData = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const unitName = task?.location?.unitNo || "Unassigned";
+      if (!acc[unitName]) acc[unitName] = { label: unitName, value: 0 };
+      acc[unitName].value += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { numeric: true }),
+    );
+  }, [pendingDepartmentTasks]);
+
+  const unitPieChartOptions = {
+    labels: unitWisePieData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => navigate("/app/tasks"),
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Due tasks`,
+      },
+    },
+  };
+
+  const executiveTasks = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const departmentName =
+        typeof task?.department === "object"
+          ? task?.department?.name
+          : task?.department || department?.name || "Unknown Department";
+      const managerName =
+        managerByDepartmentName.get(departmentName.toLowerCase()) ||
+        "Unassigned";
+     if (!acc[managerName]) acc[managerName] = { name: managerName, tasks: 0 };
+      acc[managerName].tasks += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
+  }, [department?.name, managerByDepartmentName, pendingDepartmentTasks]);
+
+  const executiveTaskLabels = executiveTasks.map((item) => item.name);
+  const executiveTasksCount = executiveTasks.map((item) => item.tasks);
+  const executiveTaskColors = [
+    "#FF5733",
+    "#FFC300",
+    "#28B463",
+    "#5B6CFF",
+    "#9B59B6",
+    "#17A2B8",
+    "#E67E22",
+    "#E91E63",
   ];
-
-  const totalUnitWiseTask = taskData.reduce((sum, item) => sum + item.tasks, 0);
-  const unitWisePieData = taskData.map((item) => ({
-    label: `${item.unit} (${((item.tasks / totalUnitWiseTask) * 100).toFixed(
-      1
-    )}%)`,
-    value: item.tasks,
-  }));
 
   // ------------------------------------------------------------------------------------------------------------------//
   // ------------------------------------------------------------------------------------------------------------------//
@@ -469,9 +542,9 @@ const MaintainanceDashboard = () => {
       "#64B5F6",
       "#90CAF9", // Lightest
     ],
-    toolTip: {
+       tooltip: {
       y: {
-        formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
+        formatter: (val) => `${val} Due tasks`,
       },
     },
   };
@@ -1077,8 +1150,33 @@ const MaintainanceDashboard = () => {
           {...config}
         />
       ))
-        
-      
+    },
+
+    {
+      layout: 2,
+      widgets: [
+        <WidgetSection key="maintenance-unit-wise-due-tasks" border title="Unit Wise Due Tasks">
+          <PieChartMui
+          data={unitWisePieData}
+          options={unitPieChartOptions}
+          width={500} 
+          height={320} 
+          centerAlign 
+          />
+        </WidgetSection>,
+        <WidgetSection key="maintenance-executive-wise-due-tasks" border title="Executive Wise Due Tasks">
+          <DonutChart
+            centerLabel="Tasks"
+            labels={executiveTaskLabels}
+            colors={executiveTaskColors}
+            series={executiveTasksCount}
+            tooltipValue={executiveTasksCount}
+            tooltipFormatter={(label, value) =>
+              `${label}: ${value || 0} pending tasks`
+            }
+          />
+        </WidgetSection>,
+      ],
     },
 
     {

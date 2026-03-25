@@ -2,10 +2,11 @@ import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import MuiModal from "../../../../components/MuiModal";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
-import { TextField } from "@mui/material";
+import { IconButton, Menu, MenuItem, TextField } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import UploadFileInput from "../../../../components/UploadFileInput";
 import { toast } from "sonner";
@@ -13,32 +14,65 @@ import humanDate from "../../../../utils/humanDateForamt";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 
+const ActionMenu = ({ onEdit }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  return (
+    <>
+      <IconButton size="small" onClick={(event) => setAnchorEl(event.currentTarget)}>
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null);
+            onEdit();
+          }}
+        >
+          Edit
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
+
 const DirectorData = () => {
   const location = useLocation();
-  const { id } = useParams();
+  const { name: routeName } = useParams();
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
 
   const nameFromState = location?.state?.name;
-  const name = nameFromState || id || "N/A";
+  const name = nameFromState || routeName || "N/A";
   const isCompany = name === "Company";
+
+  const emptyFormValues = {
+    type: isCompany ? "companyKyc" : "directorKyc",
+    nameOfDirector: name,
+    documentName: "",
+    currentDocumentName: "",
+    kyc: null,
+  };
 
   const {
     control,
     handleSubmit,
     reset,
-    setValue,
     formState: { errors },
   } = useForm({
     mode: "onChange",
-    defaultValues: {
-      type: isCompany ? "companyKyc" : "directorKyc",
-      nameOfDirector: name,
-      documentName: "",
-      kyc: null,
-    },
+    defaultValues: emptyFormValues,
   });
+
+  const resetModal = () => {
+    setOpenModal(false);
+    setIsEditMode(false);
+    setSelectedDocument(null);
+    reset(emptyFormValues);
+  };
 
   const { data: kycDetails = {}, isLoading } = useQuery({
     queryKey: ["directorsCompany"],
@@ -53,11 +87,28 @@ const DirectorData = () => {
 
     if (isCompany) return kycDetails.companyKyc || [];
 
-    const match = kycDetails.directorKyc?.find(
-      (d) => d.nameOfDirector === name
-    );
+    const match = kycDetails.directorKyc?.find((d) => d.nameOfDirector === name);
     return match?.documents || [];
   }, [kycDetails, name, isCompany]);
+
+  const openAddModal = () => {
+    setIsEditMode(false);
+    setSelectedDocument(null);
+    reset(emptyFormValues);
+    setOpenModal(true);
+  };
+
+  const openEditModal = (documentRow) => {
+    setIsEditMode(true);
+    setSelectedDocument(documentRow);
+    reset({
+      ...emptyFormValues,
+      documentName: documentRow.label,
+      currentDocumentName: documentRow.label,
+      kyc: null,
+    });
+    setOpenModal(true);
+  };
 
   const fileRows = files.map((file, index) => ({
     srno: index + 1,
@@ -67,40 +118,50 @@ const DirectorData = () => {
     lastModified: file?.updatedDate || null,
   }));
 
-  const { mutate: uploadKycDocument, isPending: isUploading } = useMutation({
+  const { mutate: saveKycDocument, isPending: isSaving } = useMutation({
     mutationFn: async (formData) => {
+      if (isEditMode) {
+        const res = await axios.patch("/api/company/update-kyc-document", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        return res.data;
+      }
+
       const res = await axios.post("/api/company/add-kyc-document", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data;
     },
     onSuccess: () => {
-      toast.success("Document uploaded successfully");
+      toast.success(isEditMode ? "Document updated successfully" : "Document uploaded successfully");
       queryClient.invalidateQueries({ queryKey: ["directorsCompany"] });
-      setOpenModal(false);
-      reset();
+      resetModal();
     },
-    onError: () => {
-      toast.error("Upload failed. Try again.");
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || (isEditMode ? "Update failed. Try again." : "Upload failed. Try again."));
     },
   });
 
   const onSubmit = (formValues) => {
-    const { nameOfDirector, type, kyc, documentName } = formValues;
-    if (!kyc) return toast.error("Please upload a document");
+    const { nameOfDirector, type, kyc, documentName, currentDocumentName } = formValues;
+    if (!isEditMode && !kyc) return toast.error("Please upload a document");
 
     const formData = new FormData();
     formData.append("type", type);
-    formData.append("kyc", kyc);
+    if (kyc) {
+      formData.append("kyc", kyc);
+    }
     if (!isCompany) {
       formData.append("nameOfDirector", nameOfDirector);
     }
-    formData.append("referenceId", id);
-    formData.append("documentName", documentName);
+    formData.append("referenceId", routeName || "");
+    formData.append("documentName", documentName.trim());
 
-    uploadKycDocument(formData);
+    if (isEditMode) {
+      formData.append("currentDocumentName", currentDocumentName || selectedDocument?.label || "");
+    }
+
+    saveKycDocument(formData);
   };
 
   const columns = [
@@ -135,6 +196,13 @@ const DirectorData = () => {
       flex: 1,
       cellRenderer: (params) => humanDate(params.value),
     },
+    {
+      field: "actions",
+      headerName: "Action",
+      width: 120,
+      sortable: false,
+      cellRenderer: (params) => <ActionMenu onEdit={() => openEditModal(params.data)} />,
+    },
   ];
 
   return (
@@ -149,18 +217,11 @@ const DirectorData = () => {
           hideFilter
           search={fileRows.length >= 10}
           loading={isLoading}
-          handleClick={() => setOpenModal(true)}
+          handleClick={openAddModal}
         />
       </PageFrame>
 
-      <MuiModal
-        open={openModal}
-        onClose={() => {
-          setOpenModal(false);
-          reset();
-        }}
-        title={"Add Document"}
-      >
+      <MuiModal open={openModal} onClose={resetModal} title={isEditMode ? "Edit Document" : "Add Document"}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 gap-4">
             {!isCompany && (
@@ -184,15 +245,7 @@ const DirectorData = () => {
             <Controller
               name="type"
               control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label={"Type"}
-                  fullWidth
-                  size="small"
-                  disabled
-                />
-              )}
+              render={({ field }) => <TextField {...field} label={"Type"} fullWidth size="small" disabled />}
             />
             <Controller
               name="documentName"
@@ -218,21 +271,27 @@ const DirectorData = () => {
             <Controller
               name="kyc"
               control={control}
-              rules={{ required: "Document is required" }}
+              rules={{ required: isEditMode ? false : "Document is required" }}
               render={({ field }) => (
                 <UploadFileInput
                   onChange={field.onChange}
                   value={field.value}
                   allowedExtensions={["jpg", "jpeg", "png", "pdf"]}
+                  label={isEditMode ? "Replace Document" : "Upload Document"}
                 />
               )}
             />
+            {isEditMode ? (
+              <p className="text-xs text-gray-500">
+                Uploaded Date will stay the same. If you replace the file, Last Modified will update automatically.
+              </p>
+            ) : null}
 
             <PrimaryButton
               type="submit"
-              title={"Submit"}
-              disabled={isUploading}
-              isLoading={isUploading}
+              title={isEditMode ? "Save Changes" : "Submit"}
+              disabled={isSaving}
+              isLoading={isSaving}
             />
           </div>
         </form>

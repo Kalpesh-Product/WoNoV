@@ -14,7 +14,7 @@ const CustomError = require("../../utils/customErrorlogs");
 const {
   handleFileUpload,
   handleFileDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const sharp = require("sharp");
 const Agreements = require("../../models/hr/Agreements");
 const TestUserData = require("../../models/hr/TestUserData");

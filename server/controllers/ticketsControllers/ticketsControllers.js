@@ -3,7 +3,7 @@ const User = require("../../models/hr/UserData");
 const mongoose = require("mongoose");
 const Department = require("../../models/Departments");
 const NewTicketIssue = require("../../models/tickets/NewTicketIssue");
-const { handleFileUpload } = require("../../config/cloudinaryConfig");
+const { handleFileUpload } = require("../../config/s3Config");
 // const sharp = require("sharp");
 const {
   filterCloseTickets,

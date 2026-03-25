@@ -11,7 +11,7 @@ const { PDFDocument } = require("pdf-lib");
 const {
   handleDocumentUpload,
   handleFileDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const emitter = require("../../utils/eventEmitter");

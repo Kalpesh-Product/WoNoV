@@ -32,6 +32,10 @@ const virtualOfficeSchema = new mongoose.Schema(
 
     channel: { type: String, trim: true },
     // Space & Desks
+    building: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Building",
+    },
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
@@ -49,6 +53,7 @@ const virtualOfficeSchema = new mongoose.Schema(
 
     // Desks & Credits
     cabinDesks: { type: Number, default: 0 },
+    securityDeposit: { type: Number, default: 0 },
     cabinDeskRate: { type: Number, default: 0 },
     cabinTotal: { type: Number, default: 0 },
     openDesks: { type: Number, default: 0 },

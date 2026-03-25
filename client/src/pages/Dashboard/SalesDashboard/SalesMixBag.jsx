@@ -40,8 +40,8 @@ const SalesMixBag = () => {
       permission: PERMISSIONS.SALES_MANAGE_UNITS_MIX_BAG.value,
     },
     {
-      title: "External Client",
-      route: "/app/dashboard/sales-dashboard/mix-bag/external-client",
+      title: "Internal Meetings Credits Report",
+      route: "/app/dashboard/sales-dashboard/mix-bag/clients/internal-meetings",
       permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MIX_BAG.value,
     },
   ];
