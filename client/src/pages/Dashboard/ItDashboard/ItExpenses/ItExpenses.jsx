@@ -35,6 +35,10 @@ const ItExpenses = () => {
   const { auth } = useAuth();
   const location = useLocation();
   const department = usePageDepartment();
+  const IT_DEPARTMENT_ID = "6798baa8e469e809084e2497";
+  const activeDepartmentId = location.pathname.includes("/IT-dashboard/")
+    ? IT_DEPARTMENT_ID
+    : department?._id;
   const queryClient = useQueryClient();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const departmentAccess = [
@@ -63,15 +67,15 @@ const ItExpenses = () => {
   const selectedBuilding = watch("building");
 
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["departmentBudget", department?._id],
+    queryKey: ["departmentBudget", activeDepartmentId],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/budget/company-budget?departmentId=${department._id}`
+        `/api/budget/company-budget?departmentId=${activeDepartmentId}`
       );
       const budgets = response.data.allBudgets;
       return Array.isArray(budgets) ? budgets : [];
     },
-    enabled: !!department?._id, // <- ✅ prevents firing until department is ready
+    enabled: !!activeDepartmentId, // <- ✅ prevents firing until department is ready
   });
 
   const {
@@ -101,8 +105,8 @@ const ItExpenses = () => {
     new Map(
       units.length > 0
         ? units
-            .filter((loc) => loc.building && loc.building._id)
-            .map((loc) => [loc.building._id, loc.building.buildingName])
+          .filter((loc) => loc.building && loc.building._id)
+          .map((loc) => [loc.building._id, loc.building.buildingName])
         : []
     ).entries()
   );
@@ -111,7 +115,7 @@ const ItExpenses = () => {
     useMutation({
       mutationFn: async (data) => {
         const response = await axios.post(
-          `/api/budget/request-budget/${department._id}`,
+          `/api/budget/request-budget/${activeDepartmentId}`,
           {
             ...data,
           }
@@ -337,8 +341,8 @@ const ItExpenses = () => {
                    <div><strong>Finance Expense:</strong></div>
                    <div style="width: 10px;"></div>
                 <div style="text-align: left;">INR ${Math.round(
-                  rawData
-                ).toLocaleString("en-IN")}</div>
+          rawData
+        ).toLocaleString("en-IN")}</div>
    
                  </div>
         
@@ -452,10 +456,10 @@ const ItExpenses = () => {
                   {locationsLoading
                     ? []
                     : uniqueBuildings.map((building) => (
-                        <MenuItem key={building[0]} value={building[1]}>
-                          {building[1]}
-                        </MenuItem>
-                      ))}
+                      <MenuItem key={building[0]} value={building[1]}>
+                        {building[1]}
+                      </MenuItem>
+                    ))}
                 </Select>
               </FormControl>
             )}
@@ -475,14 +479,14 @@ const ItExpenses = () => {
                   {locationsLoading
                     ? []
                     : units.map((unit) =>
-                        unit.building.buildingName === selectedBuilding ? (
-                          <MenuItem key={unit._id} value={unit._id}>
-                            {unit.unitNo}
-                          </MenuItem>
-                        ) : (
-                          <></>
-                        )
-                      )}
+                      unit.building.buildingName === selectedBuilding ? (
+                        <MenuItem key={unit._id} value={unit._id}>
+                          {unit.unitNo}
+                        </MenuItem>
+                      ) : (
+                        <></>
+                      )
+                    )}
                 </Select>
               </FormControl>
             )}

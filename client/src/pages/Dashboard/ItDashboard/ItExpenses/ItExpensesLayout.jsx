@@ -10,18 +10,18 @@ const ItExpensesLayout = () => {
 
   // Map routes to tabs
   const tabs = [
-    { label: "Occupied", path: "it-expenses-occupied" },
-    { label: "Clear", path: "it-expenses-clear" },
+    { label: "Occupied", path: "IT-expenses-occupied" },
+    { label: "Clear", path: "IT-expenses-clear" },
   ];
 
   // Redirect to "view-employees" if the current path is "/hr-dashboard/compliances"
   useEffect(() => {
     if (
       location.pathname ===
-      `/app/dashboard/it-dashboard/it-expenses/it-expenses-layout/${client}`
+      `/app/dashboard/IT-dashboard/IT-expenses/IT-expenses-layout/${client}`
     ) {
       navigate(
-        `/app/dashboard/it-dashboard/it-expenses/it-expenses-layout/${client}/it-expenses-occupied`,
+        `/app/dashboard/IT-dashboard/IT-expenses/IT-expenses-layout/${client}/IT-expenses-occupied`,
         {
           replace: true,
         }
@@ -30,7 +30,7 @@ const ItExpensesLayout = () => {
   }, [location, navigate]);
 
   // Determine whether to show the tabs
-  const showTabs = !location.pathname.includes("it-expenses-occupied/");
+  const showTabs = !location.pathname.includes("IT-expenses-occupied/");
 
   // Determine active tab based on location
   const activeTab = tabs.findIndex((tab) =>
