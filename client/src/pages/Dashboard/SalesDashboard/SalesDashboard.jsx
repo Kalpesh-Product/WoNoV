@@ -66,7 +66,7 @@ const SalesDashboard = () => {
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
-   const { data: selectedDepartments = [] } = useQuery({
+  const { data: selectedDepartments = [] } = useQuery({
     queryKey: ["sales-selectedDepartments"],
     queryFn: async () => {
       const response = await axios.get(
@@ -88,7 +88,6 @@ const SalesDashboard = () => {
     },
     enabled: Boolean(department?._id),
   });
-
 
   //------------------------PAGE ACCESS START-------------------//
   const cardsConfig = [
@@ -125,10 +124,10 @@ const SalesDashboard = () => {
   ];
 
   const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
+    (card) => !card.permission || userPermissions.includes(card.permission),
   );
 
- const managerByDepartmentName = useMemo(() => {
+  const managerByDepartmentName = useMemo(() => {
     const map = new Map();
 
     selectedDepartments.forEach((item) => {
@@ -258,7 +257,7 @@ const SalesDashboard = () => {
 
   const revenueByFiscalYear = useMemo(
     () => aggregateMonthlyRevenueByYear(totalRevenue),
-    [totalRevenue]
+    [totalRevenue],
   );
 
   const incomeExpenseData = useMemo(
@@ -270,11 +269,11 @@ const SalesDashboard = () => {
           group: `FY ${year}`,
           data,
         })),
-    [revenueByFiscalYear]
+    [revenueByFiscalYear],
   );
 
   const selectedSeries = incomeExpenseData.find(
-    (item) => item.group === selectedFiscalYear
+    (item) => item.group === selectedFiscalYear,
   );
 
   const totalValue = useMemo(() => {
@@ -284,24 +283,24 @@ const SalesDashboard = () => {
 
   const selectedFiscalYearShort = selectedSeries?.group?.replace("FY ", "");
   const selectedFiscalYearStart = Number(
-    selectedFiscalYearShort?.split("-")?.[0]
+    selectedFiscalYearShort?.split("-")?.[0],
   );
   const incomeExpenseCategories =
     Number.isFinite(selectedFiscalYearStart) && selectedFiscalYearStart > 0
       ? [
-        `Apr-${String(selectedFiscalYearStart).slice(-2)}`,
-        `May-${String(selectedFiscalYearStart).slice(-2)}`,
-        `Jun-${String(selectedFiscalYearStart).slice(-2)}`,
-        `Jul-${String(selectedFiscalYearStart).slice(-2)}`,
-        `Aug-${String(selectedFiscalYearStart).slice(-2)}`,
-        `Sep-${String(selectedFiscalYearStart).slice(-2)}`,
-        `Oct-${String(selectedFiscalYearStart).slice(-2)}`,
-        `Nov-${String(selectedFiscalYearStart).slice(-2)}`,
-        `Dec-${String(selectedFiscalYearStart).slice(-2)}`,
-        `Jan-${String(selectedFiscalYearStart + 1).slice(-2)}`,
-        `Feb-${String(selectedFiscalYearStart + 1).slice(-2)}`,
-        `Mar-${String(selectedFiscalYearStart + 1).slice(-2)}`,
-      ]
+          `Apr-${String(selectedFiscalYearStart).slice(-2)}`,
+          `May-${String(selectedFiscalYearStart).slice(-2)}`,
+          `Jun-${String(selectedFiscalYearStart).slice(-2)}`,
+          `Jul-${String(selectedFiscalYearStart).slice(-2)}`,
+          `Aug-${String(selectedFiscalYearStart).slice(-2)}`,
+          `Sep-${String(selectedFiscalYearStart).slice(-2)}`,
+          `Oct-${String(selectedFiscalYearStart).slice(-2)}`,
+          `Nov-${String(selectedFiscalYearStart).slice(-2)}`,
+          `Dec-${String(selectedFiscalYearStart).slice(-2)}`,
+          `Jan-${String(selectedFiscalYearStart + 1).slice(-2)}`,
+          `Feb-${String(selectedFiscalYearStart + 1).slice(-2)}`,
+          `Mar-${String(selectedFiscalYearStart + 1).slice(-2)}`,
+        ]
       : [];
   const incomeExpenseOptions = {
     chart: {
@@ -401,9 +400,9 @@ const SalesDashboard = () => {
   const graphData = isLeadsPending
     ? []
     : leadsData.map((item) => ({
-      ...item,
-      category: item.serviceCategory?.serviceName,
-    }));
+        ...item,
+        category: item.serviceCategory?.serviceName,
+      }));
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -439,7 +438,7 @@ const SalesDashboard = () => {
         sum +
         (item.openDesks ? item.openDesks : 0) +
         (item.cabinDesks ? item.cabinDesks : 0),
-      0
+      0,
     );
 
   const totalSqft = unitsData
@@ -455,10 +454,11 @@ const SalesDashboard = () => {
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
-        title: `March ${Number.isFinite(selectedFiscalYearStart)
+        title: `March ${
+          Number.isFinite(selectedFiscalYearStart)
             ? selectedFiscalYearStart + 1
             : ""
-          }`,
+        }`,
         value: `INR ${inrFormat(selectedSeries?.data?.[11] || 0)}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
@@ -597,7 +597,7 @@ const SalesDashboard = () => {
           const selectedMonthAbbr = financialYearMonths[config.dataPointIndex];
           const selectedMonthFull = monthShortToFull[selectedMonthAbbr];
           navigate(
-            `unique-leads?month=${encodeURIComponent(selectedMonthAbbr)}`
+            `unique-leads?month=${encodeURIComponent(selectedMonthAbbr)}`,
           );
         },
       },
@@ -660,10 +660,12 @@ const SalesDashboard = () => {
   }));
   //-----------------------------------------------Conversion of Sources into graph-----------------------------------------------------------//
   //-----------------------------------------------Conversion of Clients into Pie-graph-----------------------------------------------------------//
-  let simplifiedClientsPie = [];
+  const simplifiedClientsPie = useMemo(() => {
+    if (isClientsDataPending || !Array.isArray(clientsData)) {
+      return [];
+    }
 
-  if (!isClientsDataPending && Array.isArray(clientsData)) {
-    const normalizedClientDeskData = clientsData
+    const sortedClients = clientsData
       .map((item) => ({
         companyName: item?.clientName || "Unknown",
         totalDesks: Number(item?.totalDesks) || 0,
@@ -671,42 +673,31 @@ const SalesDashboard = () => {
       .filter((item) => item.totalDesks > 0)
       .sort((a, b) => b.totalDesks - a.totalDesks);
 
-    const totalClientsDesks = normalizedClientDeskData.reduce(
-      (sum, item) => sum + item.totalDesks,
-      0
-    );
-    let otherTotalDesks = 0;
-    simplifiedClientsPie = normalizedClientDeskData.reduce((acc, item) => {
-      const clientOccupancyPercent =
-        totalClientsDesks > 0 ? (item.totalDesks / totalClientsDesks) * 100 : 0;
-
-      if (clientOccupancyPercent < 4) {
-        otherTotalDesks += item.totalDesks;
-        return acc;
-      }
-
-      acc.push(item);
-      return acc;
-    }, []);
+    const topClients = sortedClients.slice(0, 6);
+    const otherTotalDesks = sortedClients
+      .slice(6)
+      .reduce((sum, item) => sum + item.totalDesks, 0);
 
     if (otherTotalDesks > 0) {
-      simplifiedClientsPie.push({
+      topClients.push({
         companyName: "Other",
         totalDesks: otherTotalDesks,
       });
     }
-  }
+    return topClients;
+  }, [clientsData, isClientsDataPending]);
 
   const totalClientsDesks = simplifiedClientsPie.reduce(
     (sum, item) => sum + item.totalDesks,
-    0
+    0,
   );
 
   const totalDeskPercent = simplifiedClientsPie.map((item) => ({
-    label: `${item.companyName} ${totalClientsDesks > 0
-      ? ((item.totalDesks / totalClientsDesks) * 100).toFixed(1)
-      : 0
-      }%`,
+    label: `${item.companyName} ${
+      totalClientsDesks > 0
+        ? ((item.totalDesks / totalClientsDesks) * 100).toFixed(1)
+        : 0
+    }%`,
     value: item.totalDesks,
   }));
   const clientsDesksPieOptions = {
@@ -748,9 +739,9 @@ const SalesDashboard = () => {
 
   const sectorwiseData = Array.isArray(clientsData)
     ? clientsData.map((item) => ({
-      clientName: item.clientName,
-      sector: item.sector,
-    }))
+        clientName: item.clientName,
+        sector: item.sector,
+      }))
     : [];
 
   const totalClients = sectorwiseData.length;
@@ -765,7 +756,7 @@ const SalesDashboard = () => {
     ([sector, count]) => ({
       label: sector,
       count,
-    })
+    }),
   );
 
   // Step 3: Sort descending by count
@@ -830,7 +821,7 @@ const SalesDashboard = () => {
 
     legend: {
       position: "bottom",
-     fontSize: "12px",
+      fontSize: "12px",
     },
   };
 
@@ -839,52 +830,53 @@ const SalesDashboard = () => {
   const clientMembersData = isClientsDataPending
     ? []
     : clientsData
-      .filter((item) => item.members?.length > 0)
-      .map((item) => item.members)
-      .flat();
+        .filter((item) => item.members?.length > 0)
+        .map((item) => item.members)
+        .flat();
   const genderCounts = clientMembersData.reduce(
-  (acc, member) => {
-    const value = String(member?.gender || "").trim().toLowerCase();
+    (acc, member) => {
+      const value = String(member?.gender || "")
+        .trim()
+        .toLowerCase();
 
-    if (value.startsWith("m")) acc.Male += 1;
-    else if (value.startsWith("f")) acc.Female += 1;
+      if (value.startsWith("m")) acc.Male += 1;
+      else if (value.startsWith("f")) acc.Female += 1;
 
-    return acc;
-  },
-  { Male: 0, Female: 0 }
-);
+      return acc;
+    },
+    { Male: 0, Female: 0 },
+  );
 
   const genderWiseData = [
-  { label: "Male", value: genderCounts.Male || 0 },
-  { label: "Female", value: genderCounts.Female || 0 },
-];
+    { label: "Male", value: genderCounts.Male || 0 },
+    { label: "Female", value: genderCounts.Female || 0 },
+  ];
 
   const genderPieChartOptions = {
-  chart: {
-    type: "pie",
-    fontFamily: "Poppins-Regular",
-  },
-  labels: genderWiseData.map((item) => item.label),
-  series: genderWiseData.map((item) => item.value),
-  tooltip: {
-    y: {
-      formatter: (val) => `${val} Members`,
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
     },
-  },
-  legend: {
-    position: "right",
-  },
-  colors: ["#1E3D73", "#54C4A7"],
-};
+    labels: genderWiseData.map((item) => item.label),
+    series: genderWiseData.map((item) => item.value),
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Members`,
+      },
+    },
+    legend: {
+      position: "right",
+    },
+    colors: ["#1E3D73", "#54C4A7"],
+  };
 
-// console.log(clientsData);
-// console.log(clientMembersData);
-//console.log(genderCounts);
-// console.log(config.data);
-// console.log(genderWiseData);
-// console.log(clientMembersData);
+  // console.log(clientsData);
+  // console.log(clientMembersData);
+  //console.log(genderCounts);
+  // console.log(config.data);
+  // console.log(genderWiseData);
+  // console.log(clientMembersData);
 
-  
   //-----------------------------------------------Conversion of Gender-wise Pie-graph-----------------------------------------------------------//
   //-----------------------------------------------Client Anniversary-----------------------------------------------------------//
   const companyTableColumns = [
@@ -926,7 +918,7 @@ const SalesDashboard = () => {
           const thisYearBirthday = new Date(
             currentYear,
             dob.getMonth(),
-            dob.getDate()
+            dob.getDate(),
           );
 
           const birthdayThisYear =
@@ -935,7 +927,7 @@ const SalesDashboard = () => {
               : thisYearBirthday;
 
           const diffDays = Math.ceil(
-            (birthdayThisYear - today) / (1000 * 60 * 60 * 24)
+            (birthdayThisYear - today) / (1000 * 60 * 60 * 24),
           );
           return diffDays >= 0 && diffDays <= 7;
         })
@@ -944,7 +936,7 @@ const SalesDashboard = () => {
           const birthdayThisYear = new Date(
             currentYear,
             dob.getMonth(),
-            dob.getDate()
+            dob.getDate(),
           );
           const finalBirthday =
             birthdayThisYear < today
@@ -952,7 +944,7 @@ const SalesDashboard = () => {
               : birthdayThisYear;
 
           const daysLeft = Math.ceil(
-            (finalBirthday - today) / (1000 * 60 * 60 * 24)
+            (finalBirthday - today) / (1000 * 60 * 60 * 24),
           );
 
           return {
@@ -974,38 +966,43 @@ const SalesDashboard = () => {
 
   //-----------------------------------------------Conversion of Sector-wise Pie-graph-----------------------------------------------------------//
   //-----------------------------------------------Conversion of India-wise Pie-graph-----------------------------------------------------------//
+  // India-wise Members Graph
   function getLocationWiseData(data) {
     const locationMap = {};
 
-    // Step 1: Count companies per hoState
+    // Count companies per state from coworkingclient table.
     data.forEach((client) => {
-      const state = client.hoState || "Unknown";
-      if (!locationMap[state]) {
-        locationMap[state] = 0;
-      }
-      locationMap[state] += 1;
+      const state =
+        client?.hostate?.trim() || client?.hoState?.trim() || "Unknown";
+      locationMap[state] = (locationMap[state] || 0) + 1;
     });
 
-    const processed = [];
-    let othersCount = 0;
+    const sortedLocations = Object.entries(locationMap)
+      .map(([state, count]) => ({ label: state, value: count }))
+      .sort((a, b) => b.value - a.value);
 
-    // Step 2: Split into main locations and 'Others'
-    for (const [location, count] of Object.entries(locationMap)) {
-      if (count >= 2) {
-        processed.push({ label: location, value: count });
-      } else {
-        othersCount += count;
-      }
-    }
+    const topStates = sortedLocations.slice(0, 6);
+    const othersCount = sortedLocations
+      .slice(6)
+      .reduce((sum, item) => sum + item.value, 0);
 
     if (othersCount > 0) {
-      processed.push({ label: "Others", value: othersCount });
+      topStates.push({ label: "Others", value: othersCount });
     }
 
-    return processed;
+    return topStates;
   }
 
   const locationWiseData = getLocationWiseData(clientsData);
+  const locationChartColors = [
+    "#1E3D73",
+    "#FF6B6B",
+    "#4ECDC4",
+    "#F7B801",
+    "#8E44AD",
+    "#2ECC71",
+    "#FF8C42",
+  ];
 
   const locationPieChartOptions = {
     chart: {
@@ -1014,13 +1011,30 @@ const SalesDashboard = () => {
     },
     labels: locationWiseData.map((item) => item.label),
     tooltip: {
-      y: {
-        formatter: (val) => `${val} Companies`, // Show as count
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const state = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const companies = series?.[seriesIndex] ?? 0;
+
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          locationChartColors[seriesIndex % locationChartColors.length];
+
+        return `<div style="
+      padding:8px 12px;
+      font-size:12px;
+      background:${color};
+      color:#fff;
+      border-radius:6px;
+    ">
+      ${state}: ${companies} companies
+    </div>`;
       },
     },
     legend: {
       position: "right",
     },
+    colors: locationChartColors,
   };
   //-----------------------------------------------Conversion of India-wise Pie-graph-----------------------------------------------------------//
 
@@ -1034,7 +1048,7 @@ const SalesDashboard = () => {
     incomeExpenseOptions,
     "BIZ Nest SALES DEPARTMENT REVENUES",
     `INR ${inrFormat(totalValue)}`,
-    setSelectedFiscalYear
+    setSelectedFiscalYear,
   );
 
   const allowedGraph = salesFilterPermissions(yearlyGraph, userPermissions);
@@ -1048,7 +1062,7 @@ const SalesDashboard = () => {
 
   const allowedFinanceCards = salesFilterPermissions(
     FinanceCardConfig,
-    userPermissions
+    userPermissions,
   );
 
   //Unique Leads Graph
@@ -1073,7 +1087,7 @@ const SalesDashboard = () => {
 
   const allowedGraphs = salesFilterPermissions(
     graphCountConfig,
-    userPermissions
+    userPermissions,
   );
 
   const pieChartConfigs = [
@@ -1084,8 +1098,8 @@ const SalesDashboard = () => {
       layout: 1,
       data: sectorPieData,
       options: sectorPieChartOptions,
-      height:320,
-      width:500,
+      height: 320,
+      width: 500,
     },
     {
       key: PERMISSIONS.SALES_CLIENT_WISE_OCCUPANCY.value,
@@ -1094,13 +1108,13 @@ const SalesDashboard = () => {
       layout: 1,
       data: totalDeskPercent,
       options: clientsDesksPieOptions,
-      height:320,
-      width:500,
+      height: 320,
+      width: 500,
     },
   ];
   const allowedPieCharts = salesFilterPermissions(
     pieChartConfigs,
-    userPermissions
+    userPermissions,
   );
 
   const pieChartLocalConfigs = [
@@ -1109,8 +1123,8 @@ const SalesDashboard = () => {
       title: "Client Member Gender Wise Data",
       border: true,
       layout: 1,
-      height:320,
-      width:500,
+      height: 320,
+      width: 500,
       data: genderWiseData,
       options: genderPieChartOptions,
     },
@@ -1119,19 +1133,18 @@ const SalesDashboard = () => {
       title: "India-wise Members",
       border: true,
       layout: 1,
-      height:320,
-      width:500,
+      height: 320,
+      width: 500,
       data: locationWiseData,
       options: locationPieChartOptions,
     },
   ];
   const allowedLocalPieCharts = salesFilterPermissions(
     pieChartLocalConfigs,
-    userPermissions
+    userPermissions,
   );
 
   const muiTableConfigs = [
-    
     {
       Title: "Client Member Birthday",
       columns: upcomingBirthdaysColumns,
@@ -1158,7 +1171,7 @@ const SalesDashboard = () => {
   ];
   const allowedMuiTableConfigs = salesFilterPermissions(
     muiTableConfigs,
-    userPermissions
+    userPermissions,
   );
 
   const meetingsWidgets = [
@@ -1284,7 +1297,7 @@ const SalesDashboard = () => {
           title={config.title}
           border={config.border}
         >
-            <PieChartMui
+          <PieChartMui
             data={config.data}
             options={config.options}
             width={config?.width}
@@ -1294,11 +1307,15 @@ const SalesDashboard = () => {
         </WidgetSection>
       )),
     },
-    
+
     {
       layout: 2,
       widgets: [
-        <WidgetSection key="sales-unit-wise-due-tasks" border title="Unit Wise Due Tasks">
+        <WidgetSection
+          key="sales-unit-wise-due-tasks"
+          border
+          title="Unit Wise Due Tasks"
+        >
           <PieChartMui
             data={unitWisePieData}
             options={unitPieChartOptions}
