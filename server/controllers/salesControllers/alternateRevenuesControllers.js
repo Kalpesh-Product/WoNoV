@@ -141,7 +141,7 @@ const bulkInsertAlternateRevenue = async (req, res, next) => {
           invoiceAmount: parseAmount(row["Invoice Amount"]) || 0,
           invoiceCreationDate: new Date(row["Invoice Creation Date"]),
           invoicePaidDate: new Date(row["Paid Date"]),
-          company: company._id,
+          company: company,
         };
         records.push(record);
       })

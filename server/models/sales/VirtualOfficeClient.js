@@ -24,7 +24,12 @@ const virtualOfficeSchema = new mongoose.Schema(
     email: { type: String, trim: true, lowercase: true },
     phone: { type: String, trim: true },
 
-    service: { type: String, required: true, trim: true },
+    service: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClientService",
+      required: true,
+      trim: true,
+    },
     sector: { type: String, trim: true },
     state: { type: String, trim: true },
     city: { type: String, trim: true },
