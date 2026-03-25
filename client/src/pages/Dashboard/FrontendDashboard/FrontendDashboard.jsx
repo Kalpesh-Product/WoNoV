@@ -575,35 +575,68 @@ const FrontendDashboard = () => {
     };
   }, [department?.name, isTicketsLoading, tickets]);
 
-  const departmentWiseComplaintData = currentDepartmentComplaints
-    ? [currentDepartmentComplaints]
-    : [];
+// Department wise complaint
+   const departmentIssueSummary = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return [];
+
+    const issueCounts = tickets.reduce((acc, ticket) => {
+      const issueTitle = ticket?.ticket?.trim() || "Other";
+      acc[issueTitle] = (acc[issueTitle] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(issueCounts)
+      .map(([issue, count]) => ({
+        issue,
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [isTicketsLoading, tickets]);
+
+  const departmentWiseComplaintData = departmentIssueSummary.map(
+    ({ issue, count }) => ({
+      label: issue,
+      value: count,
+    }),
+  );
 
   const departmentWiseComplaintOptions = {
     labels: departmentWiseComplaintData.map((item) => item.label),
     chart: {
       fontFamily: "Poppins-Regular",
     },
-    tooltip: {
-      custom: () => {
-        if (!currentDepartmentComplaints) return "";
-
-        const issuesHtml = currentDepartmentComplaints.issues
-          .map(
-            ({ issue, count }) => `
-              <div style="display: flex; justify-content: space-between; gap: 16px; margin-top: 4px;">
-                <span>${issue}</span>
-                <span>${count}</span>
-              </div>
-            `
-          )
-          .join("");
+    // legend: {
+    //   //formatter: (seriesName) => seriesName},  //  this line issue show   
+    legend: {
+      formatter: function (seriesName, opts) {
+        const value = opts.w.globals.series[opts.seriesIndex]; // //  this line Value show   
+        return `${value}`;
+      },
+     },
+      tooltip: {
+      custom: ({ series, seriesIndex, w }) => {
+        const issueType = w?.globals?.labels?.[seriesIndex] || "Other";
+        const count = series?.[seriesIndex] || 0;
+        const issueColor = w?.globals?.colors?.[seriesIndex] || "#64748b";
 
         return `
-          <div style="padding: 8px 10px; font-size: 13px; font-family: Poppins-Regular; min-width: 180px;">
-            ${issuesHtml}
-          </div>
-        `;
+      <div style="
+        padding: 8px 10px;
+        font-size: 12px;
+        font-family: Poppins-Regular;
+        background: ${issueColor};
+        color: #fff;
+        border-radius: 6px;
+        display: inline-block;
+      ">
+        <div style="display: flex; justify-content: space-between; gap: 8px;">
+          <span>${issueType} : ${count}</span>
+        </div>
+      </div>
+    `;
+      },
+      y: {
+        formatter: (value) => `${value}`,
       },
     },
   };

@@ -325,10 +325,10 @@ const assignPrimaryUnit = async (req, res, next) => {
       departmentName === "Administration"
         ? "adminLead"
         : departmentName === "Maintenance"
-        ? "maintenanceLead"
-        : departmentName === "IT"
-        ? "itLead"
-        : "";
+          ? "maintenanceLead"
+          : departmentName === "IT"
+            ? "itLead"
+            : "";
 
     const updatedUnit = await Unit.findByIdAndUpdate(
       { _id: unitId },
@@ -506,19 +506,30 @@ const fetchUnits = async (req, res, next) => {
 
 const fetchSimpleUnits = async (req, res, next) => {
   try {
-    const units = await Unit.find()
+    const companyId = req.company;
+    const units = await Unit.find({ company: companyId })
       .populate([{ path: "building", select: "buildingName" }])
       .lean()
       .exec();
 
-    const coworkingClients = await CoworkingClient.find().lean().exec();
+    const coworkingClients = await CoworkingClient.find({
+      company: companyId,
+      unit: { $exists: true, $ne: null },
+    })
+      .select("unit")
+      .lean()
+      .exec();
+
+    const unitClientCountMap = coworkingClients.reduce((acc, client) => {
+      const unitId = client?.unit?.toString?.();
+      if (!unitId) return acc;
+      acc[unitId] = (acc[unitId] || 0) + 1;
+      return acc;
+    }, {});
     const newResponse = units.map((unit) => {
       return {
         ...unit,
-        coworkingClientsCount:
-          coworkingClients.filter(
-            (client) => client.unit._id.toString() === unit._id.toString()
-          ).length || 0,
+        coworkingClientsCount: unitClientCountMap[unit._id.toString()] || 0,
       };
     });
 

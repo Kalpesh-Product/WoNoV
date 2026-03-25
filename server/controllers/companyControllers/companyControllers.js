@@ -542,62 +542,8 @@ const updateCompanySubItem = async (req, res) => {
   }
 };
 
-// const addDepartmentTicketIssues = async (req, res) => {
-//   try {
-//     const { company } = req;
-//     const { departments } = req.body;
 
-//     if (!departments || !Array.isArray(departments)) {
-//       return res.status(400).json({
-//         message: "Departments array is required",
-//       });
-//     }
-
-//     const companyDoc = await Company.findById(company);
-
-//     if (!companyDoc) {
-//       return res.status(404).json({ message: "Company not found" });
-//     }
-
-//     for (const deptPayload of departments) {
-//       const { departmentId, issues } = deptPayload;
-
-//       if (!departmentId || !Array.isArray(issues)) continue;
-
-//       const dept = companyDoc.selectedDepartments.find(
-//         (d) => d.department.toString() === departmentId,
-//       );
-
-//       if (!dept) continue;
-
-//       for (const issue of issues) {
-//         const exists = dept.ticketIssues.some(
-//           (existing) =>
-//             existing.title.toLowerCase() === issue.title.toLowerCase(),
-//         );
-
-//         if (!exists) {
-//           dept.ticketIssues.push({
-//             title: issue.title,
-//             priority: issue.priority || "High",
-//           });
-//         }
-//       }
-//     }
-
-//     await companyDoc.save();
-
-//     return res.status(200).json({
-//       message: "Ticket issues added successfully",
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({
-//       message: "Something went wrong",
-//     });
-//   }
-// };
-
+//Appends departmnet ticket issues
 const addDepartmentTicketIssues = async (req, res) => {
   try {
     const { company } = req;
@@ -626,17 +572,25 @@ const addDepartmentTicketIssues = async (req, res) => {
 
       if (!dept) continue;
 
-      // 🔥 Replace existing ticket issues completely
-      dept.ticketIssues = issues.map((issue) => ({
-        title: issue.title,
-        priority: issue.priority || "High",
-      }));
+      for (const issue of issues) {
+        const exists = dept.ticketIssues.some(
+          (existing) =>
+            existing.title.toLowerCase() === issue.title.toLowerCase(),
+        );
+
+        if (!exists) {
+          dept.ticketIssues.push({
+            title: issue.title,
+            priority: issue.priority || "High",
+          });
+        }
+      }
     }
 
     await companyDoc.save();
 
     return res.status(200).json({
-      message: "Ticket issues replaced successfully",
+      message: "Ticket issues added successfully",
     });
   } catch (error) {
     console.error(error);
@@ -645,6 +599,55 @@ const addDepartmentTicketIssues = async (req, res) => {
     });
   }
 };
+
+//Replaces departmnet ticket issues completely
+// const addDepartmentTicketIssues = async (req, res) => {
+//   try {
+//     const { company } = req;
+//     const { departments } = req.body;
+
+//     if (!departments || !Array.isArray(departments)) {
+//       return res.status(400).json({
+//         message: "Departments array is required",
+//       });
+//     }
+
+//     const companyDoc = await Company.findById(company);
+
+//     if (!companyDoc) {
+//       return res.status(404).json({ message: "Company not found" });
+//     }
+
+//     for (const deptPayload of departments) {
+//       const { departmentId, issues } = deptPayload;
+
+//       if (!departmentId || !Array.isArray(issues)) continue;
+
+//       const dept = companyDoc.selectedDepartments.find(
+//         (d) => d.department.toString() === departmentId,
+//       );
+
+//       if (!dept) continue;
+
+//       // 🔥 Replace existing ticket issues completely
+//       dept.ticketIssues = issues.map((issue) => ({
+//         title: issue.title,
+//         priority: issue.priority || "High",
+//       }));
+//     }
+
+//     await companyDoc.save();
+
+//     return res.status(200).json({
+//       message: "Ticket issues replaced successfully",
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       message: "Something went wrong",
+//     });
+//   }
+// };
 
 module.exports = {
   addCompany,
