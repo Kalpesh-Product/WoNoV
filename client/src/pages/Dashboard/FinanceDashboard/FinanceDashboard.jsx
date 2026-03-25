@@ -1120,6 +1120,36 @@ const FinanceDashboard = () => {
   );
   //------------------------PAGE ACCESS FINANCE CARDS END-------------------//
 
+ const dueTasksConfigs = [
+    {
+      key: PERMISSIONS.FINANCE_UNIT_WISE_DUE_TASKS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Unit Wise Due Tasks",
+      data: unitWisePieData,
+      options: unitPieChartOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+    {
+      key: PERMISSIONS.FINANCE_EXECUTIVE_WISE_DUE_TASKS.value,
+      type: "DonutChart",
+      border: true,
+      title: "Executive Wise Due Tasks",
+      centerLabel: "Tasks",
+      labels: executiveTaskLabels,
+      colors: executiveTaskColors,
+      series: executiveTasksCount,
+      tooltipValue: executiveTasksCount,
+      tooltipFormatter: (label, value) => `${label}: ${value || 0} pending tasks`,
+    },
+  ];
+
+  const allowedDueTasks = dueTasksConfigs.filter(
+    (widget) => !widget.key || userPermissions.includes(widget.key)
+  );
+
   //------------------------PAGE ACCESS FINANCE DATA CARD END-------------------//
 
   // LIST OF WIDGETS
@@ -1319,34 +1349,29 @@ const FinanceDashboard = () => {
     // },
 
      {
-      layout: 2,
-      widgets: [
-        <WidgetSection key="finance-unit-wise-due-tasks" border title="Unit Wise Due Tasks">
-          <PieChartMui
-            data={unitWisePieData}
-            options={unitPieChartOptions}
-            centerAlign
-            height={320}
-            width={500}
-          />
-        </WidgetSection>,
-        <WidgetSection
-          key="finance-executive-wise-due-tasks"
-          border
-          title="Executive Wise Due Tasks"
-        >
-          <DonutChart
-            centerLabel="Tasks"
-            labels={executiveTaskLabels}
-            colors={executiveTaskColors}
-            series={executiveTasksCount}
-            tooltipValue={executiveTasksCount}
-            tooltipFormatter={(label, value) =>
-              `${label}: ${value || 0} pending tasks`
-            }
-          />
-        </WidgetSection>,
-      ],
+      layout: allowedDueTasks.length,
+      widgets: allowedDueTasks.map((config) => (
+        <WidgetSection key={config.key} border title={config.title}>
+          {config.type === "PieChartMui" ? (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              centerAlign={config.centerAlign}
+              height={config.height}
+              width={config.width}
+            />
+          ) : (
+            <DonutChart
+              centerLabel={config.centerLabel}
+              labels={config.labels}
+              colors={config.colors}
+              series={config.series}
+              tooltipValue={config.tooltipValue}
+              tooltipFormatter={config.tooltipFormatter}
+            />
+          )}
+        </WidgetSection>
+      )),
     },
 
     {

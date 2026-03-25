@@ -1052,7 +1052,7 @@ const ItDashboard = () => {
       // height: 320,
       // data: pieUnitWiseExpenseData,
       // options: pieUnitWiseExpenseOptions,
-      key: PERMISSIONS.IT_CLIENT_WISE_COMPLAINTS.value,
+      key: PERMISSIONS.IT_DEPARTMENT_WISE_COMPLAINTS.value,
       type: "PieChartMui",
       title: "Department-Wise Complaints",
       border: true,
@@ -1062,7 +1062,7 @@ const ItDashboard = () => {
       options: departmentWiseComplaintOptions,
     },
     {
-      key: PERMISSIONS.IT_BIOMETRICS_GENDER_DATA.value,
+      key: PERMISSIONS.IT_BIOMETRICS_ACTIVATION_DATA.value,
       type: "PieChartMui",
       title: "Biometrics Activation Data",
       border: true,

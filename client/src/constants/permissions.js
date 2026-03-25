@@ -284,6 +284,11 @@ export const PERMISSIONS = {
     title: "VISITOR CATEGORIES",
     type: "read",
   },
+  VISITORS_INTERNAL_AND_EXTERNAL_CATEGORIES:{
+    value: "visitor_internal_and_external_categories_chart",
+    title: "INTERNAL_AND_EXTERNAL_CATEGORIES",
+    type: "read",
+  },
   VISITORS_CHECKED_IN_VS_YET_TO_CHECK_OUT: {
     value: "visitor_checked_in_vs_yet_to_check_out",
     title: "VISITOR CHECKED IN VS YET TO CHECK OUT",
@@ -613,6 +618,17 @@ export const PERMISSIONS = {
     type: "read",
   },
 
+   FINANCE_UNIT_WISE_DUE_TASKS: {
+    value: "finance_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  FINANCE_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "finance_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+
   // Finance Tabs
   FINANCE_CASHFLOW_PROJECTIONS: {
     value: "finance_cashflow_projections_tab",
@@ -878,35 +894,46 @@ export const PERMISSIONS = {
 
   // 🔷 Sales Chart Permissions
   SALES_SECTOR_WISE_OCCUPANCY: {
-    value: "sales_sector_wise_occupancy_card",
+    value: "sales_sector_wise_occupancy_cart",
     title: "SECTOR WISE OCCUPANCY",
     type: "read",
   },
   SALES_CLIENT_WISE_OCCUPANCY: {
-    value: "sales_client_wise_occupancy_card",
+    value: "sales_client_wise_occupancy_cart",
     title: "CLIENT WISE OCCUPANCY",
     type: "read",
   },
-  SALES_CLIENT_GENDER_WISE_DATA: {
-    value: "sales_client_gender_wise_data_card",
-    title: "CLIENT GENDER WISE DATA",
+  SALES_CLIENT_MEMBER_GENDER_WISE_DATA: {
+    value: "sales_client_member_gender_wise_data_cart",
+    title: "CLIENT MEMBER GENDER WISE DATA",
     type: "read",
   },
   SALES_INDIA_WISE_MEMBERS: {
-    value: "sales_india_wise_members_card",
+    value: "sales_india_wise_members_cart",
     title: "INDIA WISE MEMBERS",
     type: "read",
   },
   SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY: {
-    value: "sales_current_month_client_anniversary_card",
+    value: "sales_current_month_client_anniversary_cart",
     title: "CURRENT MONTH CLIENT ANNIVERSARY",
     type: "read",
   },
   SALES_CLIENT_MEMBER_BIRTHDAY: {
-    value: "sales_client_member_birthday_card",
+    value: "sales_client_member_birthday_cart",
     title: "CLIENT MEMBER BIRTHDAY",
     type: "read",
   },
+   SALES_UNIT_WISE_DUE_TASKS: {
+    value: "sales_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  SALES_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "sales_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+
 
   //Finance
   SALES_BUDGET: {
@@ -1083,6 +1110,16 @@ export const PERMISSIONS = {
   HR_CURRENT_MONTH_HOLIDAY_LIST: {
     value: "hr_current_month_holiday_list_chart",
     title: "CURRENT MONTH HOLIDAY LIST",
+    type: "read",
+  },
+  HR_UNIT_WISE_DUE_TASKS: {
+    value: "hr_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  HR_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "hr_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
 
@@ -1516,9 +1553,9 @@ export const PERMISSIONS = {
     title: "BIOMETRICS GENDER DATA",
     type: "read",
   },
-  ADMIN_CLIENT_GENDER_WISE_DATA: {
-    value: "admin_client_gender_wise_data_cart",
-    title: "CLIENT GENDER WISE DATA",
+  ADMIN_CLIENT_MEMBER_GENDER_WISE_DATA: {
+    value: "admin_client_member_gender_wise_data_cart",
+    title: "CLIENT MEMBER GENDER WISE DATA",
     type: "read",
   },
   ADMIN_INDIA_WISE_MEMBERS: {
@@ -1739,6 +1776,16 @@ export const PERMISSIONS = {
     title: "AVERAGE YEARLY DUE",
     type: "read",
   },
+  MAINTENANCE_UNIT_WISE_DUE_TASKS: {
+    value: "maintenance_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  MAINTENANCE_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "maintenance_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
 
   //Finance
   MAINTENANCE_BUDGET: {
@@ -1928,14 +1975,14 @@ export const PERMISSIONS = {
     title: "UNIT WISE IT EXPENSES",
     type: "read",
   },
-  IT_BIOMETRICS_GENDER_DATA: {
-    value: "it_biometrics_gender_data_chart",
-    title: "BIOMETRICS GENDER DATA",
+  IT_BIOMETRICS_ACTIVATION_DATA: {
+    value: "it_biometrics_activation_data_chart",
+    title: "BIOMETRICS ACTIVATION DATA",
     type: "read",
   },
-  IT_CLIENT_WISE_COMPLAINTS: {
-    value: "it_client_wise_complaints_chart",
-    title: "CLIENT WISE COMPLAINTS",
+  IT_DEPARTMENT_WISE_COMPLAINTS: {
+    value: "it_department_wise_complaints_chart",
+    title: "DEPARTMENT WISE COMPLAINTS",
     type: "read",
   },
   IT_TYPE_OF_IT_COMPLAINTS: {
@@ -2029,6 +2076,27 @@ export const PERMISSIONS = {
   FRONTEND_WEBSITE_ISSUES_RAISED: {
     value: "frontend_website_issues_raised_chart",
     title: "WEBSITE ISSUES RAISED",
+    type: "read",
+  },
+
+  FRONTEND_DEPARTMENT_WISE_COMPLAINTS: {
+    value: "frontend_department_wise_complaints_chart",
+    title: "DEPARTMENT-WISE COMPLAINTS",
+    type: "read",
+  },
+  FRONTEND_DEPARTMENT_WISE_COMPLAINTS_1: {
+    value: "frontend_department_wise_complaints_1_chart",
+    title: "DEPARTMENT-WISE COMPLAINTS-1",
+    type: "read",
+  },
+  FRONTEND_UNIT_WISE_DUE_TASKS: {
+    value: "frontend_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  FRONTEND_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "frontend_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
 
