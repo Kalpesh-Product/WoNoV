@@ -1028,7 +1028,7 @@ const ItDashboard = () => {
       toolbar: false,
       events: {
         dataPointSelection: () => {
-          navigate("/app/dashboard/IT-dashboard/mix-bag/biometric-access");
+          // navigate("/app/dashboard/IT-dashboard/mix-bag/biometric-access");
         },
       },
     },
