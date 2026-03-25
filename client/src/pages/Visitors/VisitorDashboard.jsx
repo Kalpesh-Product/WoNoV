@@ -744,7 +744,7 @@ const VisitorDashboard = () => {
         `${externalClientsCount} visitor${externalClientsCount !== 1 ? "s" : ""}`,
       ],
       // isMonetary: true,
-      //permission: PERMISSIONS.VISITORS_VISITOR_CATEGORIES.value,
+      permission: PERMISSIONS.VISITORS_INTERNAL_AND_EXTERNAL_CATEGORIES.value,
     },
   ];
 

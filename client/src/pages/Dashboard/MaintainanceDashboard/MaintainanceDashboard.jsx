@@ -1054,6 +1054,34 @@ const MaintainanceDashboard = () => {
     userPermissions
   );
 
+   const dueTasksConfigs = [
+    {
+      key: PERMISSIONS.MAINTENANCE_UNIT_WISE_DUE_TASKS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Unit Wise Due Tasks",
+      data: unitWisePieData,
+      options: unitPieChartOptions,
+      width: 500,
+      height: 320,
+      centerAlign: true,
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_EXECUTIVE_WISE_DUE_TASKS.value,
+      type: "DonutChart",
+      border: true,
+      title: "Executive Wise Due Tasks",
+      centerLabel: "Tasks",
+      labels: executiveTaskLabels,
+      colors: executiveTaskColors,
+      series: executiveTasksCount,
+      tooltipValue: executiveTasksCount,
+      tooltipFormatter: (label, value) =>
+        `${label}: ${value || 0} pending tasks`,
+    },
+  ];
+  const allowedDueTasks = filterPermissions(dueTasksConfigs, userPermissions);
+
   const techWidgets = [
     {
       layout: 1,
@@ -1153,30 +1181,29 @@ const MaintainanceDashboard = () => {
     },
 
     {
-      layout: 2,
-      widgets: [
-        <WidgetSection key="maintenance-unit-wise-due-tasks" border title="Unit Wise Due Tasks">
-          <PieChartMui
-            data={unitWisePieData}
-            options={unitPieChartOptions}
-            width={500}
-            height={320}
-            centerAlign
-          />
-        </WidgetSection>,
-        <WidgetSection key="maintenance-executive-wise-due-tasks" border title="Executive Wise Due Tasks">
-          <DonutChart
-            centerLabel="Tasks"
-            labels={executiveTaskLabels}
-            colors={executiveTaskColors}
-            series={executiveTasksCount}
-            tooltipValue={executiveTasksCount}
-            tooltipFormatter={(label, value) =>
-              `${label}: ${value || 0} pending tasks`
-            }
-          />
-        </WidgetSection>,
-      ],
+      layout: allowedDueTasks.length,
+      widgets: allowedDueTasks.map((config) => (
+        <WidgetSection key={config.key} border title={config.title}>
+          {config.type === "PieChartMui" ? (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={config.width}
+              height={config.height}
+              centerAlign={config.centerAlign}
+            />
+          ) : (
+            <DonutChart
+              centerLabel={config.centerLabel}
+              labels={config.labels}
+              colors={config.colors}
+              series={config.series}
+              tooltipValue={config.tooltipValue}
+              tooltipFormatter={config.tooltipFormatter}
+            />
+          )}
+        </WidgetSection>
+      )),
     },
 
     {

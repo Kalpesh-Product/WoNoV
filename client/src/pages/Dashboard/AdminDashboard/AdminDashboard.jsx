@@ -838,14 +838,20 @@ const AdminDashboard = () => {
       custom: ({ series, seriesIndex, w }) => {
         const state = w?.globals?.labels?.[seriesIndex] || "Unknown";
         const companies = series?.[seriesIndex] ?? 0;
+
         const color =
-          w?.config?.colors?.[seriesIndex] ||
+          w?.globals?.colors?.[seriesIndex] ||
           locationChartColors[seriesIndex % locationChartColors.length];
 
-        return `<div style="padding:8px 10px; font-size:12px;">
-          <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${color}; margin-right:6px; vertical-align:middle;"></span>
-          <span style="vertical-align:middle;">${state}: ${companies} companies</span>
-        </div>`;
+        return `<div style="
+      padding:8px 12px;
+      font-size:12px;
+      background:${color};
+      color:#fff;
+      border-radius:6px;
+    ">
+      ${state}: ${companies} companies
+    </div>`;
       },
     },
     legend: {
@@ -1418,7 +1424,7 @@ const AdminDashboard = () => {
       loadingFallback: <CircularProgress color="#1E3D73" />,
     },
     {
-      key: PERMISSIONS.ADMIN_CLIENT_GENDER_WISE_DATA.value,
+      key: PERMISSIONS.ADMIN_CLIENT_MEMBER_GENDER_WISE_DATA.value,
       layout: 2,
       title: "Client Member Gender Wise Data",
       chartType: "PieChartMui",

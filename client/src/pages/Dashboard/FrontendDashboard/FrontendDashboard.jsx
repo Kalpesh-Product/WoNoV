@@ -25,7 +25,7 @@ import dayjs from "dayjs";
 import { filterPermissions } from "../../../utils/accessConfig";
 import useAuth from "../../../hooks/useAuth";
 import { PERMISSIONS } from "../../../constants/permissions";
-import usePageDepartment from "../../../hooks/usePageDepartment"
+import usePageDepartment from "../../../hooks/usePageDepartment";
 
 const FrontendDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -38,7 +38,6 @@ const FrontendDashboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
 
-  
   const { data: selectedDepartments = [] } = useQuery({
     queryKey: ["frontend-selectedDepartments"],
     queryFn: async () => {
@@ -54,7 +53,9 @@ const FrontendDashboard = () => {
   const { data: tasks = [] } = useQuery({
     queryKey: ["frontend-dashboard-tasks", department?._id],
     queryFn: async () => {
-      const response = await axios.get(`/api/tasks/get-tasks?dept=${department?._id}`);
+      const response = await axios.get(
+        `/api/tasks/get-tasks?dept=${department?._id}`,
+      );
       return Array.isArray(response.data) ? response.data : [];
     },
     enabled: Boolean(department?._id),
@@ -135,18 +136,17 @@ const FrontendDashboard = () => {
     "#E91E63",
   ];
 
-
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
 
   //--------------------Frontend budget-graph-----------------------//
-      const { data: tickets = [], isLoading: isTicketsLoading } = useQuery({
+  const { data: tickets = [], isLoading: isTicketsLoading } = useQuery({
     queryKey: ["frontend-ticket-issues", department?._id],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/department-tickets/${department._id}`
+          `/api/tickets/department-tickets/${department._id}`,
         );
         return response.data;
       } catch (error) {
@@ -160,7 +160,7 @@ const FrontendDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798ba9de469e809084e2494`
+          `/api/budget/company-budget?departmentId=6798ba9de469e809084e2494`,
         );
         const budgets = response.data.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
@@ -183,7 +183,7 @@ const FrontendDashboard = () => {
     }
   }, [isHrLoading]);
 
-    const expenseRawSeries = useMemo(() => {
+  const expenseRawSeries = useMemo(() => {
     const fyData = {
       "FY 2024-25": Array(12).fill(0),
       "FY 2025-26": Array(12).fill(0),
@@ -288,7 +288,7 @@ const FrontendDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData
+                 rawData,
                ).toLocaleString("en-IN")}</div>
   
                 </div>
@@ -547,10 +547,10 @@ const FrontendDashboard = () => {
   const totalUtilised =
     budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
       (acc, val) => acc + val,
-      0
+      0,
     ) || 0;
 
-     const currentDepartmentComplaints = useMemo(() => {
+  const currentDepartmentComplaints = useMemo(() => {
     if (isTicketsLoading || !Array.isArray(tickets)) return null;
 
     const issueCounts = tickets.reduce((acc, ticket) => {
@@ -575,8 +575,8 @@ const FrontendDashboard = () => {
     };
   }, [department?.name, isTicketsLoading, tickets]);
 
-// Department wise complaint
-   const departmentIssueSummary = useMemo(() => {
+  // Department wise complaint
+  const departmentIssueSummary = useMemo(() => {
     if (isTicketsLoading || !Array.isArray(tickets)) return [];
 
     const issueCounts = tickets.reduce((acc, ticket) => {
@@ -606,14 +606,14 @@ const FrontendDashboard = () => {
       fontFamily: "Poppins-Regular",
     },
     // legend: {
-    //   //formatter: (seriesName) => seriesName},  //  this line issue show   
+    //   //formatter: (seriesName) => seriesName},  //  this line issue show
     legend: {
       formatter: function (seriesName, opts) {
-        const value = opts.w.globals.series[opts.seriesIndex]; // //  this line Value show   
+        const value = opts.w.globals.series[opts.seriesIndex]; // //  this line Value show
         return `${value}`;
       },
-     },
-      tooltip: {
+    },
+    tooltip: {
       custom: ({ series, seriesIndex, w }) => {
         const issueType = w?.globals?.labels?.[seriesIndex] || "Other";
         const count = series?.[seriesIndex] || 0;
@@ -641,7 +641,6 @@ const FrontendDashboard = () => {
     },
   };
 
-
   //---------------ACCESS-------------//
 
   const techSalesGraphConfig = [
@@ -658,52 +657,49 @@ const FrontendDashboard = () => {
 
   const allowedSalesGraph = filterPermissions(
     techSalesGraphConfig,
-    userPermissions
+    userPermissions,
   );
 
   const cardsConfigFrontend = [
     {
-    key: PERMISSIONS.FRONTEND_CREATE_WEBSITE.value,
-    route: "create-website",
-    title: "Create Website",
-    icon: <LuHardDriveUpload />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_EDIT_WEBSITE.value,
-    route: "websites",
-    title: "Edit website",
-    icon: <LuHardDriveUpload />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_NEW_THEMES.value,
-    route: "select-theme",
-    title: "New Themes",
-    icon: <CgWebsite />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_FINANCE.value,
-    route: "finance",
-    title: "Finance",
-    icon: <SiCashapp />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_DATA.value,
-    route: "data",
-    title: "Data",
-    icon: <SiGoogleadsense />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_SETTINGS.value,
-    route: "settings",
-    title: "Settings",
-    icon: <MdMiscellaneousServices />,
-  },
-];
+      key: PERMISSIONS.FRONTEND_CREATE_WEBSITE.value,
+      route: "create-website",
+      title: "Create Website",
+      icon: <LuHardDriveUpload />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_EDIT_WEBSITE.value,
+      route: "websites",
+      title: "Edit website",
+      icon: <LuHardDriveUpload />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_NEW_THEMES.value,
+      route: "select-theme",
+      title: "New Themes",
+      icon: <CgWebsite />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_FINANCE.value,
+      route: "finance",
+      title: "Finance",
+      icon: <SiCashapp />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_DATA.value,
+      route: "data",
+      title: "Data",
+      icon: <SiGoogleadsense />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_SETTINGS.value,
+      route: "settings",
+      title: "Settings",
+      icon: <MdMiscellaneousServices />,
+    },
+  ];
 
-  const allowedCards = filterPermissions(
-    cardsConfigFrontend,
-    userPermissions
-  );
+  const allowedCards = filterPermissions(cardsConfigFrontend, userPermissions);
 
   const techExpenseGraphConfig = [
     {
@@ -718,7 +714,7 @@ const FrontendDashboard = () => {
 
   const allowedExpenseGraph = filterPermissions(
     techExpenseGraphConfig,
-    userPermissions
+    userPermissions,
   );
   const techIssuesGraphConfig = [
     {
@@ -733,11 +729,12 @@ const FrontendDashboard = () => {
 
   const allowedIssuesGraph = filterPermissions(
     techIssuesGraphConfig,
-    userPermissions
+    userPermissions,
   );
 
-    const frontendComplaintLayoutConfig = [
+  const frontendComplaintLayoutConfig = [
     {
+      key: PERMISSIONS.FRONTEND_DEPARTMENT_WISE_COMPLAINTS.value,
       type: "PieChartMui",
       title: "Department-Wise Complaints",
       border: true,
@@ -745,6 +742,7 @@ const FrontendDashboard = () => {
       options: departmentWiseComplaintOptions,
     },
     {
+      key: PERMISSIONS.FRONTEND_DEPARTMENT_WISE_COMPLAINTS_1.value,
       type: "PieChartMui",
       title: "Department-Wise Complaints-1",
       border: true,
@@ -752,35 +750,61 @@ const FrontendDashboard = () => {
       options: departmentWiseComplaintOptions,
     },
   ];
+  const allowedFrontendComplaints = filterPermissions(
+    frontendComplaintLayoutConfig,
+    userPermissions,
+  );
 
   const pieChartConfig = [
-  {
-    key: PERMISSIONS.FRONTEND_NATION_WISE_SITE_VISITORS.value,
-    layout: 1,
-    border: true,
-    title: "Nation-wise site Visitors",
-    percent: true,
-    data: [],
-    options: [],
-    width: 500,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_STATE_WISE_SITE_VISITORS.value,
-    layout: 1,
-    border: true,
-    title: "State-wise site Visitors",
-    percent: true,
-    data: [],
-    options: [],
-    width: 500,
-  },
-];
+    {
+      key: PERMISSIONS.FRONTEND_NATION_WISE_SITE_VISITORS.value,
+      layout: 1,
+      border: true,
+      title: "Nation-wise site Visitors",
+      percent: true,
+      data: [],
+      options: [],
+      width: 500,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_STATE_WISE_SITE_VISITORS.value,
+      layout: 1,
+      border: true,
+      title: "State-wise site Visitors",
+      percent: true,
+      data: [],
+      options: [],
+      width: 500,
+    },
+  ];
 
+  const allowedPieCharts = filterPermissions(pieChartConfig, userPermissions);
 
-  const allowedPieCharts = filterPermissions(
-    pieChartConfig,
-    userPermissions
-  );
+  const dueTasksConfigs = [
+    {
+      key: PERMISSIONS.FRONTEND_UNIT_WISE_DUE_TASKS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Unit Wise Due Tasks",
+      data: unitWisePieData,
+      options: unitPieChartOptions,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_EXECUTIVE_WISE_DUE_TASKS.value,
+      type: "DonutChart",
+      border: true,
+      title: "Executive Wise Due Tasks",
+      centerLabel: "Tasks",
+      labels: executiveTaskLabels,
+      colors: executiveTaskColors,
+      series: executiveTasksCount,
+      tooltipValue: executiveTasksCount,
+      tooltipFormatter: (label, value) =>
+        `${label}: ${value || 0} pending tasks`,
+    },
+  ];
+
+  const allowedDueTasks = filterPermissions(dueTasksConfigs, userPermissions);
 
   const techWidgets = [
     {
@@ -798,60 +822,61 @@ const FrontendDashboard = () => {
     },
     {
       layout: allowedCards.length,
-      widgets: allowedCards.map((config)=>  <Card
-          icon={config.icon}
-          title={config.title}
-          route={config.route}
-        />)
+      widgets: allowedCards.map((config) => (
+        <Card icon={config.icon} title={config.title} route={config.route} />
+      )),
     },
     {
       layout: allowedPieCharts.length,
-      widgets: allowedPieCharts.map((config)=>
-       <WidgetSection layout={1} border title={config.title}>
+      widgets: allowedPieCharts.map((config) => (
+        <WidgetSection layout={1} border title={config.title}>
           <PieChartMui
             percent={config.percent} // Enable percentage display
             data={config.data} // Pass processed data
             options={config.options}
             width={config.width}
           />
-        </WidgetSection>)
+        </WidgetSection>
+      )),
     },
-     {
-      layout: 2,
-      widgets: [
-        <WidgetSection key="frontend-unit-wise-due-tasks" layout={1} border title="Unit Wise Due Tasks">
-          <PieChartMui
-            data={unitWisePieData}
-            options={unitPieChartOptions}
-            width={500}
-            height={320}
-            centerAlign
-          />
-        </WidgetSection>,
-        <WidgetSection key="frontend-executive-wise-due-tasks" layout={1} border title="Executive Wise Due Tasks">
-          <DonutChart
-            centerLabel="Tasks"
-            labels={executiveTaskLabels}
-            colors={executiveTaskColors}
-            series={executiveTasksCount}
-            tooltipValue={executiveTasksCount}
-            tooltipFormatter={(label, value) =>
-              `${label}: ${value || 0} pending tasks`
-            }
-          />
-        </WidgetSection>,
-      ],
-    },
-
-     {
-      layout: 2,
-      widgets: frontendComplaintLayoutConfig.map((config) => (
-        <WidgetSection layout={1} border title={config.title}>
-          <PieChartMui data={config.data} options={config.options} centerAlign />
+    {
+      layout: allowedDueTasks.length,
+      widgets: allowedDueTasks.map((config) => (
+        <WidgetSection key={config.key} layout={1} border title={config.title}>
+          {config.type === "PieChartMui" ? (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={500}
+              height={320}
+              centerAlign
+            />
+          ) : (
+            <DonutChart
+              centerLabel={config.centerLabel}
+              labels={config.labels}
+              colors={config.colors}
+              series={config.series}
+              tooltipValue={config.tooltipValue}
+              tooltipFormatter={config.tooltipFormatter}
+            />
+          )}
         </WidgetSection>
       )),
     },
 
+    {
+      layout: allowedFrontendComplaints.length,
+      widgets: allowedFrontendComplaints.map((config) => (
+        <WidgetSection key={config.key} layout={1} border title={config.title}>
+          <PieChartMui
+            data={config.data}
+            options={config.options}
+            centerAlign
+          />
+        </WidgetSection>
+      )),
+    },
     {
       layout: allowedExpenseGraph.length,
       widgets: [
@@ -864,28 +889,25 @@ const FrontendDashboard = () => {
             </Box>
           }
         >
-          {
-            allowedExpenseGraph.map((config)=>
+          {allowedExpenseGraph.map((config) => (
             <YearlyGraph
-            data={config.data}
-            options={config.options}
-            title={config.title}
-            onYearChange={config.onYearChange}
-            titleAmount={config.titleAmount}
-          />)
-          }
+              data={config.data}
+              options={config.options}
+              title={config.title}
+              onYearChange={config.onYearChange}
+              titleAmount={config.titleAmount}
+            />
+          ))}
         </Suspense>,
       ],
     },
-
-
     {
       layout: allowedIssuesGraph.length,
-      widgets: allowedIssuesGraph.map((config)=>
-       <WidgetSection layout={config.layout} title={config.title} border>
+      widgets: allowedIssuesGraph.map((config) => (
+        <WidgetSection layout={config.layout} title={config.title} border>
           <LineGraph options={config.options} data={config.data} />
-        </WidgetSection>,
-        ),
+        </WidgetSection>
+      )),
     },
   ];
 
@@ -901,5 +923,3 @@ const FrontendDashboard = () => {
 };
 
 export default FrontendDashboard;
-
-

@@ -1379,6 +1379,36 @@ const HrDashboard = () => {
   const holidayTableConfig = {
     permission: PERMISSIONS.HR_CURRENT_MONTH_HOLIDAY_LIST.value,
   };
+// unit wise due task , executive wise due taska
+   const dueTasksConfigs = [
+    {
+      key: PERMISSIONS.HR_UNIT_WISE_DUE_TASKS.value,
+      title: "Unit Wise Due Tasks",
+      type: "PieChartMui",
+      border: true,
+      data: unitWisePieData,
+      options: unitPieChartOptions,
+      width: 500,
+      height: 320,
+      centerAlign: true,
+    },
+    {
+      key: PERMISSIONS.HR_EXECUTIVE_WISE_DUE_TASKS.value,
+      title: "Executive Wise Due Tasks",
+      type: "DonutChart",
+      border: true,
+      centerLabel: "Tasks",
+      labels: executiveTaskLabels,
+      colors: executiveTaskColors,
+      series: executiveTasksCount,
+      tooltipValue: executiveTasksCount,
+      tooltipFormatter: (label, value) => `${label}: ${value || 0} pending tasks`,
+    },
+  ];
+
+  const allowedDueTasks = dueTasksConfigs.filter((widget) =>
+    userPermissions.includes(widget.key)
+  );
 
   const hrWidgets = [
     {
@@ -1497,30 +1527,29 @@ const HrDashboard = () => {
       )),
     },
     {
-      layout: 2,
-      widgets: [
-        <WidgetSection key="hr-unit-wise-due-tasks" border title="Unit Wise Due Tasks">
-          <PieChartMui
-            data={unitWisePieData}
-            options={unitPieChartOptions}
-            width={500}
-            height={320}
-            centerAlign
-          />
-        </WidgetSection>,
-        <WidgetSection key="hr-executive-wise-due-tasks" border title="Executive Wise Due Tasks">
-          <DonutChart
-            centerLabel="Tasks"
-            labels={executiveTaskLabels}
-            colors={executiveTaskColors}
-            series={executiveTasksCount}
-            tooltipValue={executiveTasksCount}
-            tooltipFormatter={(label, value) =>
-              `${label}: ${value || 0} pending tasks`
-            }
-          />
-        </WidgetSection>,
-      ],
+       layout: allowedDueTasks.length,
+      widgets: allowedDueTasks.map((config) => (
+        <WidgetSection key={config.key} border title={config.title}>
+          {config.type === "PieChartMui" ? (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={config.width}
+              height={config.height}
+              centerAlign={config.centerAlign}
+            />
+          ) : (
+            <DonutChart
+              centerLabel={config.centerLabel}
+              labels={config.labels}
+              colors={config.colors}
+              series={config.series}
+              tooltipValue={config.tooltipValue}
+              tooltipFormatter={config.tooltipFormatter}
+            />
+          )}
+        </WidgetSection>
+      )),
     },
     {
       layout: 2,
