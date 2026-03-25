@@ -734,63 +734,37 @@ const AdminDashboard = () => {
     "#E91E63",
   ];
   //-----------------------------------------------------------------------------------------------------------------//
-  const companyWiseDesk = [
-    { company: "Zomato", desks: "12" },
-    { company: "SquadStack", desks: "10" },
-    { company: "Zimetrics", desks: "15" },
-    { company: "Others", desks: "16" },
-  ];
-  const totalCompanyDesks = companyWiseDesk.reduce(
-    (sum, item) => sum + item.desks,
-    0,
+  // India - Wise Client Members
+  const clientMembersData = isClientsDataPending
+    ? []
+    : clientsData
+        .filter((item) => item.members?.length > 0)
+        .map((item) => item.members)
+        .flat();
+
+  const genderCounts = clientMembersData.reduce(
+    (acc, member) => {
+      const value = String(member?.gender || "")
+        .trim()
+        .toLowerCase();
+
+      if (value.startsWith("m")) acc.Male += 1;
+      else if (value.startsWith("f")) acc.Female += 1;
+
+      return acc;
+    },
+    { Male: 0, Female: 0 },
   );
-  const pieCompanyWiseDeskData = companyWiseDesk.map((item) => ({
-    label: `${item.company} (${((item.desks / totalCompanyDesks) * 100).toFixed(
-      1,
-    )}%)`,
-    value: item.desks,
-  }));
-  const pieCompanyWiseDeskOptions = {
-    labels: companyWiseDesk.map((item) => item.company),
-    chart: {
-      fontFamily: "Poppins-Regular",
-      events: {
-        dataPointSelection: () => {
-          navigate(
-            "/app/dashboard/admin-dashboard/client-members/client-members-data",
-          );
-        },
-      },
-    },
-    stroke: {
-      show: true,
-      width: 6, // Increase for more "gap"
-      colors: ["#ffffff"], // Or match background color
-    },
-    toolTip: {
-      y: {
-        formatter: (val) => `${((val / totalCompanyDesks) * 100).toFixed(1)}%`,
-      },
-    },
-  };
-  //-----------------------------------------------------------------------------------------------------------------//
-  const genderData = [
-    { gender: "Male", count: "45" },
-    { gender: "Female", count: "40" },
+
+  const pieGenderData = [
+    { label: "Male", value: genderCounts.Male || 0 },
+    { label: "Female", value: genderCounts.Female || 0 },
   ];
-  const totalGenderCount = genderData.reduce(
-    (sum, item) => sum + item.count,
-    0,
-  );
-  const pieGenderData = genderData.map((item) => ({
-    label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(
-      1,
-    )}%`,
-    value: item.count,
-  }));
+
   const pieGenderOptions = {
-    labels: genderData.map((item) => item.gender),
+    labels: pieGenderData.map((item) => item.label),
     chart: {
+      type: "pie",
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
@@ -807,9 +781,77 @@ const AdminDashboard = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `${val}`,
+        formatter: (val) => `${val} Members`,
       },
     },
+    legend: {
+      position: "right",
+    },
+    colors: ["#1E3D73", "#54C4A7"],
+  };
+  //-----------------------------------------------------------------------------------------------------------------//
+   function getLocationWiseData(data) {
+    const locationMap = {};
+
+    // Count companies per state from coworkingclient table.
+    data.forEach((client) => {
+      const state =
+        client?.hostate?.trim() || client?.hoState?.trim() || "Unknown";
+      locationMap[state] = (locationMap[state] || 0) + 1;
+    });
+
+    const sortedLocations = Object.entries(locationMap)
+      .map(([state, count]) => ({ label: state, value: count }))
+      .sort((a, b) => b.value - a.value);
+
+    const topStates = sortedLocations.slice(0, 6);
+    const othersCount = sortedLocations
+      .slice(6)
+      .reduce((sum, item) => sum + item.value, 0);
+
+    if (othersCount > 0) {
+      topStates.push({ label: "Others", value: othersCount });
+    }
+
+    return topStates;
+  }
+
+  const locationWiseData = getLocationWiseData(clientsData);
+  const locationChartColors = [
+    "#1E3D73",
+    "#FF6B6B",
+    "#4ECDC4",
+    "#F7B801",
+    "#8E44AD",
+    "#2ECC71",
+    "#FF8C42",
+  ];
+
+  const locationPieChartOptions = {
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
+    },
+    labels: locationWiseData.map((item) => item.label),
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const state = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const companies = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.config?.colors?.[seriesIndex] ||
+          locationChartColors[seriesIndex % locationChartColors.length];
+
+        return `<div style="padding:8px 10px; font-size:12px;">
+          <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${color}; margin-right:6px; vertical-align:middle;"></span>
+          <span style="vertical-align:middle;">${state}: ${companies} companies</span>
+        </div>`;
+      },
+    },
+    legend: {
+      position: "right",
+    },
+    colors: locationChartColors,
   };
   //-----------------------------------------------------------------------------------------------------------------//
   const houseKeepingMemberColumns = [
@@ -1357,6 +1399,32 @@ const AdminDashboard = () => {
       border: true,
       data: totalDeskPercent,
       options: clientsDesksPieOptions,
+      height: 320,
+      width: 500,
+      isLoading: isClientsDataPending,
+      loadingFallback: <CircularProgress color="#1E3D73" />,
+    },
+    {
+      key: PERMISSIONS.ADMIN_INDIA_WISE_MEMBERS.value,
+      layout: 2,
+      title: "India-wise Members",
+      chartType: "PieChartMui",
+      border: true,
+      data: locationWiseData,
+      options: locationPieChartOptions,
+      height: 320,
+      width: 500,
+      isLoading: isClientsDataPending,
+      loadingFallback: <CircularProgress color="#1E3D73" />,
+    },
+    {
+      key: PERMISSIONS.ADMIN_CLIENT_GENDER_WISE_DATA.value,
+      layout: 2,
+      title: "Client Member Gender Wise Data",
+      chartType: "PieChartMui",
+      border: true,
+      data: pieGenderData,
+      options: pieGenderOptions,
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,

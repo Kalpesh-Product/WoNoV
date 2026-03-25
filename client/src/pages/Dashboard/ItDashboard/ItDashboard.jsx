@@ -88,7 +88,7 @@ const ItDashboard = () => {
   ];
 
   const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
+    (card) => !card.permission || userPermissions.includes(card.permission),
   );
   //------------------------PAGE ACCESS END-------------------//
 
@@ -98,7 +98,7 @@ const ItDashboard = () => {
       try {
         const response = await axios.get(
           `/api/budget/company-budget?departmentId=6798baa8e469e809084e2497
-            `
+            `,
         );
         return response.data?.allBudgets;
       } catch (error) {
@@ -121,7 +121,7 @@ const ItDashboard = () => {
   });
 
   const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
-    amounts.reduce((sum, val) => sum + val, 0)
+    amounts.reduce((sum, val) => sum + val, 0),
   );
 
   const averageMonthlyExpense = monthlyTotals.length
@@ -132,7 +132,7 @@ const ItDashboard = () => {
   const expenseSeries = useMemo(() => {
     // Initialize monthly buckets
     const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+      dayjs(`2024-04-01`).add(index, "month").format("MMM"),
     );
 
     const fyData = {
@@ -177,7 +177,7 @@ const ItDashboard = () => {
   }, [hrFinance]);
 
   const maxExpenseValue = Math.max(
-    ...expenseSeries.flatMap((series) => series.data)
+    ...expenseSeries.flatMap((series) => series.data),
   );
   const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
   //------------------------Graph round functions-------------------//
@@ -185,7 +185,7 @@ const ItDashboard = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${department?._id}&type=KPA`
+        `api/performance/get-tasks?dept=${department?._id}&type=KPA`,
       );
       return response.data;
     } catch (error) {
@@ -203,7 +203,7 @@ const ItDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tasks/get-tasks?dept=${department._id}`
+          `/api/tasks/get-tasks?dept=${department._id}`,
         );
         return response.data;
       } catch (error) {
@@ -220,7 +220,7 @@ const ItDashboard = () => {
       try {
         const response = await axios.get(
           `/api/company/fetch-simple-units
-          `
+          `,
         );
         return response.data;
       } catch (error) {
@@ -243,8 +243,8 @@ const ItDashboard = () => {
   const internetExpense = isHrFinanceLoading
     ? []
     : hrFinance
-      .filter((item) => item.expanseType === "INTERNET EXPENSES")
-      .reduce((sum, item) => sum + item.actualAmount || 0, 0);
+        .filter((item) => item.expanseType === "INTERNET EXPENSES")
+        .reduce((sum, item) => sum + item.actualAmount || 0, 0);
 
   //----------------------Units data-----------------------//
 
@@ -254,7 +254,7 @@ const ItDashboard = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/weekly-unit/fetch-weekly-unit/${department._id}`
+            `/api/weekly-unit/fetch-weekly-unit/${department._id}`,
           );
           return response.data;
         } catch (error) {
@@ -264,11 +264,11 @@ const ItDashboard = () => {
     });
 
   const { data: tickets = [], isLoading: isTicketsLoading } = useQuery({
-       queryKey: ["ticketIssues", department?._id],
+    queryKey: ["ticketIssues", department?._id],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/department-tickets/${department._id}`
+          `/api/tickets/department-tickets/${department._id}`,
         );
         return response.data;
       } catch (error) {
@@ -277,7 +277,7 @@ const ItDashboard = () => {
     },
     enabled: !!department?._id,
   });
-   const { data: allRaisedTickets = [], isLoading: isAllRaisedTicketsLoading } =
+  const { data: allRaisedTickets = [], isLoading: isAllRaisedTicketsLoading } =
     useQuery({
       queryKey: ["all-raised-tickets"],
       queryFn: async () => {
@@ -293,13 +293,13 @@ const ItDashboard = () => {
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
-    0
+    0,
   );
 
   const expenseRawSeries = useMemo(() => {
     // Initialize monthly buckets
     const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+      dayjs(`2024-04-01`).add(index, "month").format("MMM"),
     );
 
     const fyData = {
@@ -412,8 +412,8 @@ const ItDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-          rawData
-        ).toLocaleString("en-IN")}</div>
+                 rawData,
+               ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -429,7 +429,7 @@ const ItDashboard = () => {
   const totalUtilised =
     budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
       (acc, val) => acc + val,
-      0
+      0,
     ) || 0;
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -562,7 +562,6 @@ const ItDashboard = () => {
     );
   }, [hrFinance, isHrFinanceLoading]);
 
-
   // Label shows % but value used for actual data
   const pieUnitWiseExpenseData = unitWiseExpense.map((item) => ({
     label: item.unit,
@@ -595,13 +594,13 @@ const ItDashboard = () => {
   // Calculate total for reference
   const totalGenderCount = genderData.reduce(
     (sum, item) => sum + item.count,
-    0
+    0,
   );
 
   // Prepare pie chart data with labels showing % but values are actual
   const pieGenderData = genderData.map((item) => ({
     label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(
-      1
+      1,
     )}%`,
     value: item.count,
   }));
@@ -762,9 +761,9 @@ const ItDashboard = () => {
   //     },
   //   },
   // };
-
-    const currentDepartmentComplaints = useMemo(() => {
-    if (isTicketsLoading || !Array.isArray(tickets)) return null;
+  //  Department-Wise Complaints graph
+  const departmentIssueSummary = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return [];
 
     const issueCounts = tickets.reduce((acc, ticket) => {
       const issueTitle = ticket?.ticket?.trim() || "Other";
@@ -772,55 +771,71 @@ const ItDashboard = () => {
       return acc;
     }, {});
 
-    const sortedIssues = Object.entries(issueCounts)
-      .map(([issue, count]) => ({ issue, count }))
+    return Object.entries(issueCounts)
+      .map(([issue, count]) => ({
+        issue,
+        count,
+      }))
       .sort((a, b) => b.count - a.count);
+  }, [isTicketsLoading, tickets]);
 
-    const topIssue = sortedIssues[0];
-
-    if (!topIssue) return null;
-
-    return {
-      label: topIssue.issue,
-      departmentLabel: department?.name?.trim() || "Unknown",
-      value: topIssue.count,
-      issues: sortedIssues,
-    };
-  }, [department?.name, isTicketsLoading, tickets]);
-
-  const departmentWiseComplaintData = currentDepartmentComplaints
-    ? [currentDepartmentComplaints]
-    : [];
+  const departmentWiseComplaintData = departmentIssueSummary.map(
+    ({ issue, count }) => ({
+      label: issue,
+      value: count,
+    }),
+  );
+  const departmentWiseComplaintColors = useMemo(
+    () =>
+      departmentWiseComplaintData.map(
+        (_, index) => `hsl(${(index * 137.508) % 360}, 65%, 50%)`,
+      ),
+    [departmentWiseComplaintData],
+  );
 
   const departmentWiseComplaintOptions = {
     labels: departmentWiseComplaintData.map((item) => item.label),
+    colors: departmentWiseComplaintColors,
     chart: {
       fontFamily: "Poppins-Regular",
     },
-    tooltip: {
-      custom: () => {
-        if (!currentDepartmentComplaints) return "";
+    // legend: {
+    //   formatter: (seriesName) => seriesName, // this line issue show
+    // },
 
-        const issuesHtml = currentDepartmentComplaints.issues
-          .map(
-            ({ issue, count }) => `
-              <div style="display: flex; justify-content: space-between; gap: 16px; margin-top: 4px;">
-                <span>${issue}</span>
-                <span>${count}</span>
-              </div>
-            `
-          )
-          .join("");
+     legend: {
+      formatter: function (seriesName, opts) {
+        const value = opts.w.globals.series[opts.seriesIndex]; // this line value show
+        return `${value}`;
+      },
+     },
+    tooltip: {
+      custom: ({ series, seriesIndex, w }) => {
+        const issueType = w?.globals?.labels?.[seriesIndex] || "Other";
+        const count = series?.[seriesIndex] || 0;
+        const issueColor = w?.globals?.colors?.[seriesIndex] || "#64748b";
 
         return `
-          <div style="padding: 8px 10px; font-size: 13px; font-family: Poppins-Regular; min-width: 180px;">
-            ${issuesHtml}
-          </div>
-        `;
+      <div style="
+        padding: 8px 10px;
+        font-size: 12px;
+        font-family: Poppins-Regular;
+        background: ${issueColor};
+        color: #fff;
+        border-radius: 6px;
+        display: inline-block;
+      ">
+        <div style="display: flex; justify-content: space-between; gap: 8px;">
+          <span>${issueType} : ${count}</span>
+        </div>
+      </div>
+    `;
+      },
+      y: {
+        formatter: (value) => `${value}`,
       },
     },
   };
-
 
   //----------------------------------------------------------------------------------------------------------//
   // const complaintTypes = [
@@ -849,10 +864,10 @@ const ItDashboard = () => {
 
   const totalComplaintTypes = complaintTypes.reduce(
     (sum, item) => sum + item.count,
-    0
+    0,
   );
   const donutComplaintTypeData = complaintTypes.map((item) =>
-    parseFloat(((item.count / totalComplaintTypes) * 100).toFixed(1))
+    parseFloat(((item.count / totalComplaintTypes) * 100).toFixed(1)),
   );
   const complaintCounts = complaintTypes.map((item) => item.count);
   const complaintTypeLabels = complaintTypes.map((item) => item.type);
@@ -899,7 +914,7 @@ const ItDashboard = () => {
 
   const allowedYearlyGraph = filterPermissions(
     yearlyGraphConfig,
-    userPermissions
+    userPermissions,
   );
 
   //data cards
@@ -950,7 +965,7 @@ const ItDashboard = () => {
 
   const allowedITDataCards = filterPermissions(
     dataCardConfigs,
-    userPermissions
+    userPermissions,
   );
 
   //MUI Tables
@@ -1027,7 +1042,6 @@ const ItDashboard = () => {
     },
   };
 
-
   const pieChartConfig = [
     {
       // key: PERMISSIONS.IT_UNIT_WISE_IT_EXPENSES.value,
@@ -1038,21 +1052,22 @@ const ItDashboard = () => {
       // height: 320,
       // data: pieUnitWiseExpenseData,
       // options: pieUnitWiseExpenseOptions,
-       key: PERMISSIONS.IT_CLIENT_WISE_COMPLAINTS.value,
+      key: PERMISSIONS.IT_CLIENT_WISE_COMPLAINTS.value,
       type: "PieChartMui",
       title: "Department-Wise Complaints",
       border: true,
+      height: 320,
+      width: 500,
       data: departmentWiseComplaintData,
       options: departmentWiseComplaintOptions,
-
     },
     {
       key: PERMISSIONS.IT_BIOMETRICS_GENDER_DATA.value,
       type: "PieChartMui",
       title: "Biometrics Activation Data",
       border: true,
-      Width:500,
-      height:320,
+      height: 320,
+      Width: 500,
       data: biometricStatusSummary,
       options: biometricPieOptions,
     },
@@ -1081,7 +1096,7 @@ const ItDashboard = () => {
       tooltipFormatter: (label, value) =>
         `${label}: ${value || 0} pending tasks`,
       width: 500,
-      height:320,
+      height: 320,
     },
   ];
   const allowedDueTasks = filterPermissions(dueTasksConfigs, userPermissions);
@@ -1094,7 +1109,7 @@ const ItDashboard = () => {
       // title: "Department-Wise Complaints",
       // data: [],
       // options: [],
-          // key: PERMISSIONS.IT_UNIT_WISE_IT_EXPENSES.value,
+      // key: PERMISSIONS.IT_UNIT_WISE_IT_EXPENSES.value,
       // type: "PieChartMui",
       // title: "Unit Wise IT Expenses",
       // border: true,
@@ -1363,7 +1378,7 @@ const ItDashboard = () => {
         />
       )),
     },
-    
+
     {
       layout: allowedPieCharts.length,
       widgets: allowedPieCharts.map((config) => (
@@ -1372,19 +1387,19 @@ const ItDashboard = () => {
           border={config.border}
           title={config.title}
         >
-        <PieChartMui
-          data={config.data}
-          options={config.options} 
-          width={config?.width}
-          height={config?.height}
-          centerAlign
-        />
+          <PieChartMui
+            data={config.data}
+            options={config.options}
+            width={config?.width}
+            height={config?.height}
+            centerAlign
+          />
         </WidgetSection>
       )),
     },
-    
+
     {
-       layout: allowedDueTasks.length,
+      layout: allowedDueTasks.length,
       widgets: allowedDueTasks.map((config) => {
         if (config.type === "PieChartMui") {
           return (
@@ -1393,11 +1408,11 @@ const ItDashboard = () => {
               border={config.border}
               title={config.title}
             >
-              <PieChartMui 
-              data={config.data}
-              options={config.options}
-              centerAlign
-               />
+              <PieChartMui
+                data={config.data}
+                options={config.options}
+                centerAlign
+              />
             </WidgetSection>
           );
         } else if (config.type === "DonutChart") {

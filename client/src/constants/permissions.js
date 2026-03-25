@@ -1516,6 +1516,16 @@ export const PERMISSIONS = {
     title: "BIOMETRICS GENDER DATA",
     type: "read",
   },
+  ADMIN_CLIENT_GENDER_WISE_DATA: {
+    value: "admin_client_gender_wise_data_cart",
+    title: "CLIENT GENDER WISE DATA",
+    type: "read",
+  },
+  ADMIN_INDIA_WISE_MEMBERS: {
+    value: "admin_india_wise_members_cart",
+    title: "INDIA WISE MEMBERS",
+    type: "read",
+  },
   // Finance
   ADMIN_BUDGET: {
     value: "admin_budget_tab",
