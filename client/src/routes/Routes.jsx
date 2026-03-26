@@ -329,6 +329,8 @@ import HrTasksLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrTasksLayout"
 import PerformanceLayout from "../pages/Performance/PerformanceLayout";
 import PerformanceHome from "../pages/Performance/PerformanceHome";
 import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerformanceLayout";
+import PerformanceOverallKPA from "../pages/Performance/PerformanceOverallKPA";
+import PerformanceDepartmentKPA from "../pages/Performance/PerformanceDepartmentKPA";
 import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKra";
 import PerformanceIndividualKra from "../pages/Performance/DepartmentDetails/PerformanceIndividualKra";
 import PerformanceIndividualKpa from "../pages/Performance/DepartmentDetails/PerformanceIndividualKpa";
@@ -2348,6 +2350,20 @@ export const routes = createBrowserRouter([
                     path: "",
                     element: <PerformanceHome />,
                     index: true,
+                  },
+                  {
+                    path: "overall-KPA",
+                    children: [
+                      {
+                        path: "department-KPA",
+                        element: <PerformanceOverallKPA />,
+                        index: true,
+                      },
+                      {
+                        path: "department-KPA/:department",
+                        element: <PerformanceDepartmentKPA />,
+                      },
+                    ],
                   },
                   {
                     path: ":department",

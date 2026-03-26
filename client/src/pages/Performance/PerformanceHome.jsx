@@ -113,6 +113,16 @@ const PerformanceHome = () => {
       animations: { enabled: false },
       fontFamily: "Poppins-Regular",
       toolbar: { show: false },
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const clickedMonth =
+            config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
+
+          navigate("/app/performance/overall-KPA/department-KPA", {
+            state: { month: clickedMonth },
+          });
+        },
+      },
     },
     plotOptions: {
       bar: {
@@ -196,54 +206,53 @@ const PerformanceHome = () => {
   });
 
   return (
-    <PageFrame>
-      <div className="flex flex-col gap-4">
-        <YearlyGraph
-          data={annualKpaGraphData}
-          options={annualKpaChartOptions}
-          title="ANNUAL KPA VS ACHIEVEMENTS"
-          titleAmount={`TOTAL KPA : ${kpaPieData[0].value + kpaPieData[1].value}`}
-          secondParam
-          currentYear
-        />
+    <div className="flex flex-col gap-4">
+      <YearlyGraph
+        data={annualKpaGraphData}
+        options={annualKpaChartOptions}
+        title="ANNUAL KPA VS ACHIEVEMENTS"
+        titleAmount={`TOTAL KPA : ${kpaPieData[0].value + kpaPieData[1].value}`}
+        secondParam
+        currentYear
+      />
 
-        <WidgetSection border title="Departments">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-2">
-            {totalsByDepartment.map((department) => (
-              <button
-                key={department._id || department.name}
-                type="button"
-                onClick={() => openDepartment({ _id: department._id, name: department.name })}
-                className="text-left rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-primary transition-all"
-              >
-                <h3 className="font-semibold text-primary text-subtitle">{department.name}</h3>
-                <div className="mt-2 text-content text-gray-600">Total: {department.total}</div>
-                <div className="text-content text-wonoGreen">Completed: {department.completed}</div>
-                <div className="text-content text-red-500">Pending: {department.pending}</div>
-              </button>
-            ))}
-          </div>
+      <WidgetSection border title="Departments">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-2">
+          {totalsByDepartment.map((department) => (
+            <button
+              key={department._id || department.name}
+              type="button"
+              onClick={() => openDepartment({ _id: department._id, name: department.name })}
+              className="text-left rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-primary transition-all"
+            >
+              <h3 className="font-semibold text-primary text-subtitle">{department.name}</h3>
+              <div className="mt-2 text-content text-gray-600">Total: {department.total}</div>
+              <div className="text-content text-wonoGreen">Completed: {department.completed}</div>
+              <div className="text-content text-red-500">Pending: {department.pending}</div>
+            </button>
+          ))}
+        </div>
+      </WidgetSection>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <WidgetSection border title="KRA - Pending vs Completed">
+          <PieChartMui
+            data={kraPieData}
+            options={pieOptions(kraPieData.map((item) => item.label))}
+            centerAlign
+          />
         </WidgetSection>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <WidgetSection border title="KRA - Pending vs Completed">
-            <PieChartMui
-              data={kraPieData}
-              options={pieOptions(kraPieData.map((item) => item.label))}
-              centerAlign
-            />
-          </WidgetSection>
-
-          <WidgetSection border title="KPA - Pending vs Completed">
-            <PieChartMui
-              data={kpaPieData}
-              options={pieOptions(kpaPieData.map((item) => item.label))}
-              centerAlign
-            />
-          </WidgetSection>
-        </div>
+        <WidgetSection border title="KPA - Pending vs Completed">
+          <PieChartMui
+            data={kpaPieData}
+            options={pieOptions(kpaPieData.map((item) => item.label))}
+            centerAlign
+          />
+        </WidgetSection>
       </div>
-    </PageFrame>
+    </div>
+
   );
 };
 
