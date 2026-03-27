@@ -1437,7 +1437,7 @@ const AdminDashboard = () => {
       loadingFallback: <CircularProgress color="#1E3D73" />,
     },
     {
-      key: PERMISSIONS.ADMIN_BIOMETRICS_GENDER_DATA.value,
+      key: PERMISSIONS.ADMIN_BIOMETRICS_ACTIVATION_DATA.value,
       layout: 2,
       title: "Biometrics Activation Data",
       chartType: "PieChartMui",

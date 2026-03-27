@@ -105,6 +105,7 @@ const createInventory = async (req, res, next) => {
       department,
       itemName: itemName.trim(),
       category,
+      addedBy: user,
       openingInventoryUnits,
       openingPerUnitPrice,
       openingInventoryValue,
@@ -149,7 +150,9 @@ const getInventories = async (req, res) => {
       const inventory = await Inventory.findOne({
         _id: id,
         company: req.company,
-      }).populate("department");
+       })
+        .populate("department category")
+        .populate("addedBy", "firstName middleName lastName");
 
       if (!inventory) {
         return res.status(404).json({ message: "Inventory not found" });
@@ -164,9 +167,9 @@ const getInventories = async (req, res) => {
     if (department) query.department = department;
     if (category) query.category = category;
 
-    const inventories = await Inventory.find(query).populate(
-      "department category",
-    );
+     const inventories = await Inventory.find(query)
+      .populate("department category")
+      .populate("addedBy", "firstName middleName lastName");
     return res.status(200).json(inventories);
   } catch (error) {
     console.error("Fetch Inventory Error:", error);

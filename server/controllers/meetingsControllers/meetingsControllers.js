@@ -756,6 +756,7 @@ const getMyMeetings = async (req, res, next) => {
       return {
         _id: meeting._id,
         receptionist: receptionist,
+        bookedById: meeting?.bookedBy?._id || null,
         bookedBy: bookedBy,
         clientBookedBy: meeting.clientBookedBy,
         department: meeting?.bookedBy?.departments,

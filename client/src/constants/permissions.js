@@ -894,32 +894,32 @@ export const PERMISSIONS = {
 
   // 🔷 Sales Chart Permissions
   SALES_SECTOR_WISE_OCCUPANCY: {
-    value: "sales_sector_wise_occupancy_cart",
+    value: "sales_sector_wise_occupancy_chart",
     title: "SECTOR WISE OCCUPANCY",
     type: "read",
   },
   SALES_CLIENT_WISE_OCCUPANCY: {
-    value: "sales_client_wise_occupancy_cart",
+    value: "sales_client_wise_occupancy_chart",
     title: "CLIENT WISE OCCUPANCY",
     type: "read",
   },
   SALES_CLIENT_MEMBER_GENDER_WISE_DATA: {
-    value: "sales_client_member_gender_wise_data_cart",
+    value: "sales_client_member_gender_wise_data_chart",
     title: "CLIENT MEMBER GENDER WISE DATA",
     type: "read",
   },
   SALES_INDIA_WISE_MEMBERS: {
-    value: "sales_india_wise_members_cart",
+    value: "sales_india_wise_members_chart",
     title: "INDIA WISE MEMBERS",
     type: "read",
   },
   SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY: {
-    value: "sales_current_month_client_anniversary_cart",
+    value: "sales_current_month_client_anniversary_chart",
     title: "CURRENT MONTH CLIENT ANNIVERSARY",
     type: "read",
   },
   SALES_CLIENT_MEMBER_BIRTHDAY: {
-    value: "sales_client_member_birthday_cart",
+    value: "sales_client_member_birthday_chart",
     title: "CLIENT MEMBER BIRTHDAY",
     type: "read",
   },
@@ -1548,18 +1548,18 @@ export const PERMISSIONS = {
     title: "TOTAL DESKS COMPANY WISE",
     type: "read",
   },
-  ADMIN_BIOMETRICS_GENDER_DATA: {
-    value: "admin_biometrics_gender_data_chart",
-    title: "BIOMETRICS GENDER DATA",
+  ADMIN_BIOMETRICS_ACTIVATION_DATA: {
+    value: "admin_biometrics_activation_data_chart",
+    title: "BIOMETRICS ACTIVATION DATA",
     type: "read",
   },
   ADMIN_CLIENT_MEMBER_GENDER_WISE_DATA: {
-    value: "admin_client_member_gender_wise_data_cart",
+    value: "admin_client_member_gender_wise_data_chart",
     title: "CLIENT MEMBER GENDER WISE DATA",
     type: "read",
   },
   ADMIN_INDIA_WISE_MEMBERS: {
-    value: "admin_india_wise_members_cart",
+    value: "admin_india_wise_members_chart",
     title: "INDIA WISE MEMBERS",
     type: "read",
   },

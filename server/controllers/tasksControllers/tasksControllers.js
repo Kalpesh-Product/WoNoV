@@ -1202,7 +1202,7 @@ const getTasksSummary = async (req, res, next) => {
   try {
     const { company, departments, roles } = req;
 
-    const tasks = await Task.find({ company })
+    const tasks = await Task.find({ company, isDeleted: { $ne: true } })
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate("department", "name")
