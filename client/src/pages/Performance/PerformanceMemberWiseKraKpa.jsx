@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AgTable from "../../components/AgTable";
 import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
@@ -14,6 +14,7 @@ import {
 } from "../../redux/slices/performanceSlice";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
+import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 
 const DEFAULT_COUNTS = {
     dailyKra: 0,
@@ -28,6 +29,7 @@ const PerformanceMemberWiseKraKpa = () => {
     const dispatch = useDispatch();
     const axios = useAxiosPrivate();
     const navigate = useNavigate();
+    const location = useLocation();
     const { department } = useParams();
     const { auth } = useAuth();
     const currentDepartmentId = auth.user?.departments?.[0]?._id;
@@ -38,6 +40,11 @@ const PerformanceMemberWiseKraKpa = () => {
     );
     const loggedInUserId = auth?.user?._id?.toString();
     const userPermissions = auth?.user?.permissions?.permissions || [];
+    const selectedMonth =
+        location.state?.month ||
+        new Date().toLocaleString("en-US", {
+            month: "long",
+        });
     const canManageTeam =
         userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) ||
         userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value);
@@ -195,9 +202,60 @@ const PerformanceMemberWiseKraKpa = () => {
         { headerName: "Team Monthly KPA", field: "teamMonthlyKpa" },
     ];
 
+    const graphData = [
+        {
+            name: "KRA",
+            group: `KRA/KPA - ${selectedMonth}`,
+            data: rowData.map((item) => ({
+                x: item.member,
+                y: item.dailyKra + item.individualDailyKra + item.teamDailyKra,
+            })),
+        },
+        {
+            name: "KPA",
+            group: `KRA/KPA - ${selectedMonth}`,
+            data: rowData.map((item) => ({
+                x: item.member,
+                y: item.monthlyKpa + item.individualMonthlyKpa + item.teamMonthlyKpa,
+            })),
+        },
+    ];
+
+    const graphOptions = {
+        chart: {
+            type: "bar",
+            stacked: false,
+            animations: { enabled: false },
+            toolbar: { show: false },
+            fontFamily: "Poppins-Regular",
+        },
+        plotOptions: {
+            bar: { horizontal: false, columnWidth: "24%", borderRadius: 3 },
+        },
+        dataLabels: { enabled: false },
+        stroke: { show: true, width: 1, colors: ["#fff"] },
+        xaxis: {
+            title: { text: "Members" },
+            categories: rowData.map((item) => item.member),
+        },
+        yaxis: {
+            title: { text: "Count" },
+        },
+        colors: ["#5A9BD5", "#54C4A7"],
+        fill: { opacity: 1 },
+        legend: { position: "top" },
+    };
+
     return (
         <div className="flex flex-col gap-4">
             <PageFrame>
+                <WidgetSection
+                    title={`${selectedDepartmentName || department || "Department"} KRA/KPA overview - ${selectedMonth}`}
+                    border
+                    padding
+                >
+                    <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
+                </WidgetSection>
                 <WidgetSection layout={1} padding>
                     <AgTable
                         data={rowData}

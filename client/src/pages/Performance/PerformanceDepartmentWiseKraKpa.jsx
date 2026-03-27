@@ -120,7 +120,8 @@ const PerformanceDepartmentWiseKraKpa = () => {
                         dispatch(setSelectedDepartment(departmentData.department?._id));
                         dispatch(setSelectedDepartmentName(departmentData.department?.name));
                         navigate(
-                            `/app/performance/overall-KPA/department-wise-KPA/member-wise-kra-kpa/${departmentData.department?.name}`
+                            `/app/performance/overall-KPA/department-wise-KPA/member-wise-kra-kpa/${departmentData.department?.name}`,
+                            { state: { month: selectedMonth } }
                         );
                     }
                 },
@@ -156,7 +157,8 @@ const PerformanceDepartmentWiseKraKpa = () => {
                         dispatch(setSelectedDepartment(params.data.mongoId));
                         dispatch(setSelectedDepartmentName(params.data.department));
                         navigate(
-                            `/app/performance/overall-KPA/department-wise-KPA/member-wise-kra-kpa/${params.value}`
+                            `/app/performance/overall-KPA/department-wise-KPA/member-wise-kra-kpa/${params.value}`,
+                            { state: { month: selectedMonth } }
                         );
                     }}
                     className="text-primary font-pregular hover:underline cursor-pointer"
