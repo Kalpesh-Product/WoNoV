@@ -186,25 +186,26 @@ const VisitorDashboard = () => {
   //---------------------------------------------------Visitors Table Data---------------------------------------------------//
 
   const visitorsColumns = [
-    { id: "id", label: "Sr No", minWidth: 100 }, // Fixed width
+    { id: "id", label: "Sr No", minWidth: 72, width: 72 }, // Fixed width
     // { id: "firstName", label: "First Name", minWidth: 80 }, // Minimum width
     // { id: "lastName", label: "Last Name", minWidth: 120 },
-    { id: "name", label: "Name", minWidth: 120 },
+    { id: "name", label: "Name", minWidth: 150, width: 180 },
     //{ id: "registeredClientCompany", label: "Company", minWidth: 120 },
-    { id: "visitorCompany", label: "Company", minWidth: 120 },
+     { id: "visitorCompany", label: "Company", minWidth: 150, width: 180 },
 
     {
       id: "purposeOfVisit",
       label: "Purpose",
       align: "left",
-      minWidth: 300,
+      minWidth: 180,
+      width: 220,
     },
-    { id: "toMeet", label: "To Meet", align: "left", minWidth: 150 },
-    { id: "email", label: "Email", minWidth: 80 },
-    { id: "phoneNumber", label: "Phone No", minWidth: 100 },
-    { id: "dateOfVisit", label: "Date of Visit", minWidth: 120 },
-    { id: "checkIn", label: "Check In", minWidth: 120 },
-    { id: "checkOut", label: "Checkout", width: 80 },
+    { id: "toMeet", label: "To Meet", align: "left", minWidth: 150, width: 180 },
+    { id: "email", label: "Email", minWidth: 180, width: 220 },
+    { id: "phoneNumber", label: "Phone No", minWidth: 130, width: 150 },
+    { id: "dateOfVisit", label: "Date of Visit", minWidth: 130, width: 150 },
+    { id: "checkIn", label: "Check In", minWidth: 110, width: 130 },
+    { id: "checkOut", label: "Checkout", minWidth: 110, width: 130 },
   ];
   //---------------------------------------------------Visitors Table Data---------------------------------------------------//
 

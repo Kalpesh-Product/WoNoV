@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -22,7 +22,9 @@ import humanDate from "../../utils/humanDateForamt";
 import { useSelector } from "react-redux";
 import { setMeetings } from "../../redux/slices/meetingSlice";
 import humanTime from "../../utils/humanTime";
+import useAuth from "../../hooks/useAuth";
 const Calender = () => {
+  const { auth } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState(""); // 'view' or 'add'
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -51,28 +53,154 @@ const Calender = () => {
     },
   });
 
-  const transformedMeetings = isMeetingsLoading
-    ? []
-    : meetings.map((meeting) => {
-        const formattedStart = meeting.startTime.split("/").reverse().join("-");
-        const formattedEnd = meeting.endTime.split("/").reverse().join("-");
+  // const transformedMeetings = isMeetingsLoading
+  //   ? []
+  //   : meetings.map((meeting) => {
+  //       const formattedStart = meeting.startTime.split("/").reverse().join("-");
+  //       const formattedEnd = meeting.endTime.split("/").reverse().join("-");
 
-        const status = meeting.meetingStatus.toLowerCase();
-        const colors = {
-          upcoming: "#3BACFF",
-          completed: "#5EFE1F",
-        };
+  //       const status = meeting.meetingStatus.toLowerCase();
+  //       const colors = {
+  //         upcoming: "#3BACFF",
+  //         completed: "#5EFE1F",
+  //       };
 
-        return {
-          id: meeting._id,
-          title: meeting.subject,
-          start: formattedStart,
-          end: formattedEnd,
-          backgroundColor: colors[status] || undefined, // ✅ Add background color here
-          borderColor: colors[status] || undefined,
-          extendedProps: { ...meeting },
-        };
-      });
+  //       return {
+  //         id: meeting._id,
+  //         title: meeting.subject,
+  //         start: formattedStart,
+  //         end: formattedEnd,
+  //         backgroundColor: colors[status] || undefined, // ✅ Add background color here
+  //         borderColor: colors[status] || undefined,
+  //         extendedProps: { ...meeting },
+  //       };
+  //     });
+
+ const roleTitles = useMemo(
+    () =>
+      (auth?.user?.role || [])
+        .map((role) => role?.roleTitle?.toLowerCase?.())
+        .filter(Boolean),
+    [auth?.user?.role]
+  );
+
+  const roleIds = useMemo(
+    () =>
+      (auth?.user?.role || [])
+        .map((role) => role?.roleID?.toUpperCase?.())
+        .filter(Boolean),
+    [auth?.user?.role]
+  );
+
+  const isFinanceAdmin = useMemo(
+    () =>
+      roleIds.includes("ROLE_FINANCE_ADMIN") ||
+      roleTitles.some((role) => role.includes("finance admin")),
+    [roleIds, roleTitles]
+  );
+
+  const isPrivilegedAdmin = useMemo(
+    () =>
+      roleTitles.some(
+        (role) =>
+          role === "super admin" ||
+          role === "master admin" ||
+          role.includes("admin")
+      ) && !isFinanceAdmin,
+    [roleTitles, isFinanceAdmin]
+  );
+
+  const isFinanceManager = useMemo(
+    () =>
+      roleTitles.some(
+        (role) => role.includes("finance") && role.includes("manager")
+      ),
+    [roleTitles]
+  );
+
+  const isFinanceEmployee = useMemo(
+    () =>
+      roleIds.includes("ROLE_FINANCE_EMPLOYEE") ||
+      roleTitles.some(
+        (role) => role.includes("finance") && role.includes("employee")
+      ),
+    [roleTitles, roleIds]
+  );
+
+  const isManager = useMemo(
+    () => roleTitles.some((role) => role.includes("manager")),
+    [roleTitles]
+  );
+
+  const userDepartmentIds = useMemo(
+    () => (auth?.user?.departments || []).map((dept) => dept?._id?.toString()),
+    [auth?.user?.departments]
+  );
+
+  const currentUserId = auth?.user?._id?.toString();
+
+  const visibleMeetings = useMemo(() => {
+    if (!Array.isArray(meetings)) return [];
+
+    return meetings.filter((meeting) => {
+      const bookedById =
+        (typeof meeting?.bookedBy === "object"
+          ? meeting?.bookedBy?._id
+          : meeting?.bookedBy) || null;
+
+      const meetingDepartmentIds = (meeting?.department || [])
+        .map((dept) => dept?._id?.toString())
+        .filter(Boolean);
+
+      if (isFinanceEmployee) {
+        return bookedById?.toString() === currentUserId;
+      }
+
+      if (isFinanceAdmin || isFinanceManager || isManager) {
+        return meetingDepartmentIds.some((deptId) =>
+          userDepartmentIds.includes(deptId)
+        ) || bookedById?.toString() === currentUserId;
+      }
+
+      if (isPrivilegedAdmin) return true;
+
+      return bookedById?.toString() === currentUserId;
+    });
+  }, [
+    meetings,
+    isPrivilegedAdmin,
+    isFinanceAdmin,
+    isFinanceManager,
+    isFinanceEmployee,
+    isManager,
+    userDepartmentIds,
+    currentUserId,
+  ]);
+
+  const transformedMeetings = useMemo(() => {
+    if (isMeetingsLoading) return [];
+
+    return visibleMeetings.map((meeting) => {
+      const formattedStart = meeting.startTime.split("/").reverse().join("-");
+      const formattedEnd = meeting.endTime.split("/").reverse().join("-");
+
+      const status = meeting.meetingStatus.toLowerCase();
+      const colors = {
+        upcoming: "#3BACFF",
+        completed: "#5EFE1F",
+      };
+
+      return {
+        id: meeting._id,
+        title: meeting.subject,
+        start: formattedStart,
+        end: formattedEnd,
+        backgroundColor: colors[status] || undefined, // ✅ Add background color here
+        borderColor: colors[status] || undefined,
+        extendedProps: { ...meeting },
+      };
+    });
+  }, [isMeetingsLoading, visibleMeetings]);
 
   useEffect(() => {
     if (eventFilter.length === 0) {
@@ -83,7 +211,7 @@ const Calender = () => {
       );
       setFilteredEvents(filtered);
     }
-  }, [eventFilter, meetings]);
+  }, [eventFilter, transformedMeetings]);
 
   const getTodaysEvents = () => {
     const today = dayjs().startOf("day");

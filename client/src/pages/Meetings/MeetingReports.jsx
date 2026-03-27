@@ -53,9 +53,9 @@ const MeetingReports = () => {
   const loggedDeptIds = auth.user?.departments?.map((d) => d._id) || [];
   const currentUserId = auth?.user?._id;
   const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
-
+  const isTechEmployee = roleTitles.includes("Tech Employee"); // With Tech Employee and show report only own Department
   const hasGlobalReportsAccess =
-    isTop ||
+    isTop && !isTechEmployee ||
     roleTitles.some((roleTitle) =>
       [
         "Super Admin",
@@ -65,6 +65,24 @@ const MeetingReports = () => {
         "Admin Manager",
       ].includes(roleTitle),
     );
+
+// Without Tech Employee and show report All Derpartment
+
+  // const loggedDeptIds = auth.user?.departments?.map((d) => d._id) || [];
+  // const currentUserId = auth?.user?._id;
+  // const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
+
+  // const hasGlobalReportsAccess =
+  //   isTop ||
+  //   roleTitles.some((roleTitle) =>
+  //     [
+  //       "Super Admin",
+  //       "Master Admin",
+  //       "Admin",
+  //       "Top Management",
+  //       "Admin Manager",
+  //     ].includes(roleTitle),
+  //   );
 
   const isEmployeeLevelUser = roleTitles.some((roleTitle) =>
     roleTitle?.toLowerCase().includes("employee"),
@@ -117,8 +135,16 @@ const MeetingReports = () => {
     setOpenModal(true);
   };
 
-  const meetingReportsData = hasGlobalReportsAccess
+  // const meetingReportsData = hasGlobalReportsAccess  // Without Tech Employee and show report All Derpartment
+  //   ? meetings
+  //   : isEmployeeLevelUser
+  //     ? employeeOwnMeetings
+  //     : filteredMeetings;
+
+  const meetingReportsData = hasGlobalReportsAccess // With Tech Employee and show report only own Department (Self Booking)
     ? meetings
+    : isTechEmployee
+      ? employeeOwnMeetings
     : isEmployeeLevelUser
       ? employeeOwnMeetings
       : filteredMeetings;

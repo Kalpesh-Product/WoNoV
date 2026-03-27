@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -19,8 +19,10 @@ import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanDate from "../utils/humanDateForamt";
 import humanTime from "../utils/humanTime";
+import useAuth from "../hooks/useAuth";
 
 const Calender = () => {
+  const { auth } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState(""); // 'view' or 'add'
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -61,68 +63,125 @@ const Calender = () => {
     },
   });
 
-  const transformedMeetings = meetings.map((meeting) => ({
-    id: meeting._id,
-    title: meeting.subject || "Meeting",
-    start: meeting.startTime,
-    end: meeting.endTime,
-    allDay: false,
-    backgroundColor: "#2196f3", // blue for meetings
-    extendedProps: {
-      type: "meeting", // so it can be filtered
-      agenda: meeting.agenda,
-      roomName: meeting.roomName,
-      bookedBy: meeting.bookedBy,
-      receptionist: meeting.receptionist,
-      client: meeting.client,
-      meetingType: meeting.meetingType,
-      duration: meeting.duration,
-      startTime: meeting.startTime,
-      endTime: meeting.endTime,
-      subject: meeting.subject,
-      department: meeting.department,
-      participants: meeting.participants?.map(
-        (p) => `${p.firstName} ${p.lastName}`
+  // const transformedMeetings = meetings.map((meeting) => ({
+  //   id: meeting._id,
+  //   title: meeting.subject || "Meeting",
+  //   start: meeting.startTime,
+  //   end: meeting.endTime,
+  //   allDay: false,
+  //   backgroundColor: "#2196f3", // blue for meetings
+  //   extendedProps: {
+  //     type: "meeting", // so it can be filtered
+  //     agenda: meeting.agenda,
+  //     roomName: meeting.roomName,
+  //     bookedBy: meeting.bookedBy,
+  //     receptionist: meeting.receptionist,
+  //     client: meeting.client,
+  //     meetingType: meeting.meetingType,
+  //     duration: meeting.duration,
+  //     startTime: meeting.startTime,
+  //     endTime: meeting.endTime,
+  //     subject: meeting.subject,
+  //     department: meeting.department,
+  //     participants: meeting.participants?.map(
+  //       (p) => `${p.firstName} ${p.lastName}`
+  //     ),
+  //     meetingStatus: meeting.meetingStatus,
+  //     housekeepingStatus: meeting.housekeepingStatus,
+  //     location: meeting.location,
+  //   },
+  // }));
+
+  // const transformedEvents = events.map((event) => {
+  //   const type = event?.extendedProps?.type?.toLowerCase?.() || "event";
+  //   const colorMap = {
+  //     holiday: "#4caf50",
+  //     event: "#ff9800",
+  //     meeting: "#2196f3",
+  //   };
+
+  //   return {
+  //     ...event,
+  //     backgroundColor: colorMap[type] || "#757575", // default gray if unknown
+  //   };
+  // });
+
+  const currentUserId = auth?.user?._id?.toString();
+
+  const ownMeetings = useMemo(
+    () =>
+      meetings.filter(
+        (meeting) => meeting?.bookedById?.toString() === currentUserId
       ),
-      meetingStatus: meeting.meetingStatus,
-      housekeepingStatus: meeting.housekeepingStatus,
-      location: meeting.location,
-    },
-  }));
+    [meetings, currentUserId]
+  );
 
-  const transformedEvents = events.map((event) => {
-    const type = event?.extendedProps?.type?.toLowerCase?.() || "event";
-    const colorMap = {
-      holiday: "#4caf50",
-      event: "#ff9800",
-      meeting: "#2196f3",
-    };
+  const transformedMeetings = useMemo(
+    () =>
+      ownMeetings.map((meeting) => ({
+        id: meeting._id,
+        title: meeting.subject || "Meeting",
+        start: meeting.startTime,
+        end: meeting.endTime,
+        allDay: false,
+        backgroundColor: "#2196f3", // blue for meetings
+        extendedProps: {
+          type: "meeting", // so it can be filtered
+          agenda: meeting.agenda,
+          roomName: meeting.roomName,
+          bookedBy: meeting.bookedBy,
+          receptionist: meeting.receptionist,
+          client: meeting.client,
+          meetingType: meeting.meetingType,
+          duration: meeting.duration,
+          startTime: meeting.startTime,
+          endTime: meeting.endTime,
+          subject: meeting.subject,
+          department: meeting.department,
+          participants: meeting.participants?.map(
+            (p) => `${p.firstName} ${p.lastName}`
+          ),
+          meetingStatus: meeting.meetingStatus,
+          housekeepingStatus: meeting.housekeepingStatus,
+          location: meeting.location,
+        },
+      })),
+    [ownMeetings]
+  );
 
-    return {
-      ...event,
-      backgroundColor: colorMap[type] || "#757575", // default gray if unknown
-    };
-  });
+  const transformedEvents = useMemo(
+    () =>
+      events.map((event) => {
+        const type = event?.extendedProps?.type?.toLowerCase?.() || "event";
+        const colorMap = {
+          holiday: "#4caf50",
+          event: "#ff9800",
+          meeting: "#2196f3",
+        };
+
+        return {
+          ...event,
+          backgroundColor: colorMap[type] || "#757575", // default gray if unknown
+        };
+      }),
+    [events]
+  );
+
 
   //---------------------------------API------------------------------------------//
 
-  useEffect(() => {
-    const allCombinedEvents = [...transformedEvents, ...transformedMeetings];
-
-    if (eventFilter.length === 0) {
-      setFilteredEvents([]); // ✅ Show nothing if no filter selected
-    } else {
-      const filtered = allCombinedEvents.filter((event) =>
-        eventFilter.includes(event.extendedProps?.type?.toLowerCase())
-      );
-      setFilteredEvents(filtered);
-    }
-  }, [eventFilter, events, meetings]);
+   const allCombinedEvents = [...transformedEvents, ...transformedMeetings];
+  const visibleEvents =
+    eventFilter.length === 0
+      ? []
+      : allCombinedEvents.filter((event) =>
+          eventFilter.includes(event.extendedProps?.type?.toLowerCase())
+        );
 
   const getTodaysEvents = () => {
     const today = dayjs().startOf("day");
 
-    return filteredEvents.filter((event) => {
+     return visibleEvents.filter((event) => {
       const start = dayjs(event.start).startOf("day");
       const end = event.end ? dayjs(event.end).startOf("day") : start;
 
@@ -134,7 +193,7 @@ const Calender = () => {
     });
   };
 
-  console.log("filtered events : ", filteredEvents);
+  console.log("filtered events : ", visibleEvents);
   const todaysEvents = getTodaysEvents();
 
   const handleEventClick = (clickInfo) => {
@@ -165,7 +224,7 @@ const Calender = () => {
     });
   };
 
-  console.log("selected : ", filteredEvents);
+ console.log("selected : ", visibleEvents);
   return (
     <div className="flex w-[70%] md:w-full">
       {!isMeetingsLoading && !isEventsPending ? (
@@ -287,7 +346,7 @@ const Calender = () => {
                 contentHeight={520}
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
-                events={filteredEvents}
+                events={visibleEvents}
               />
             </div>
           </div>
