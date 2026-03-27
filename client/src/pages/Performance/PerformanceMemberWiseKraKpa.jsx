@@ -59,15 +59,8 @@ const PerformanceMemberWiseKraKpa = () => {
             }
 
             if (!departmentId) return [];
-
-            const [
-                kraResponse,
-                kpaResponse,
-                individualKraResponse,
-                individualKpaResponse,
-                teamKraResponse,
-                teamKpaResponse,
-            ] = await Promise.all([
+            const settledResponses = await Promise.allSettled([
+                axios.get(`/api/users/assignees?deptId=${departmentId}`),
                 axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
                 axios.get(
                     `/api/performance/get-tasks?dept=${departmentId}&type=KPA&duration=Monthly`
@@ -84,7 +77,33 @@ const PerformanceMemberWiseKraKpa = () => {
                 ),
             ]);
 
+            const [
+                assigneesResponse,
+                kraResponse,
+                kpaResponse,
+                individualKraResponse,
+                individualKpaResponse,
+                teamKraResponse,
+                teamKpaResponse,
+            ] = settledResponses;
+
+            const getResponseData = (response) =>
+                response?.status === "fulfilled" ? response.value?.data || [] : [];
+
             const map = new Map();
+
+            const assignees = getResponseData(assigneesResponse);
+
+            assignees.forEach((member) => {
+                const memberId = member?.id?.toString();
+                if (!memberId) return;
+
+                map.set(memberId, {
+                    memberId,
+                    member: member?.name || "Unknown",
+                    ...DEFAULT_COUNTS,
+                });
+            });
             const upsert = (task, field) => {
                 const userId = task.assignToId || task.assignedTo || "unassigned";
                 const userName = task.assignedTo || "Unassigned";
@@ -100,12 +119,16 @@ const PerformanceMemberWiseKraKpa = () => {
                 map.get(userId)[field] += 1;
             };
 
-            kraResponse.data?.forEach((task) => upsert(task, "dailyKra"));
-            kpaResponse.data?.forEach((task) => upsert(task, "monthlyKpa"));
-            individualKraResponse.data?.forEach((task) => upsert(task, "individualDailyKra"));
-            individualKpaResponse.data?.forEach((task) => upsert(task, "individualMonthlyKpa"));
-            teamKraResponse.data?.forEach((task) => upsert(task, "teamDailyKra"));
-            teamKpaResponse.data?.forEach((task) => upsert(task, "teamMonthlyKpa"));
+            getResponseData(kraResponse).forEach((task) => upsert(task, "dailyKra"));
+            getResponseData(kpaResponse).forEach((task) => upsert(task, "monthlyKpa"));
+            getResponseData(individualKraResponse).forEach((task) =>
+                upsert(task, "individualDailyKra")
+            );
+            getResponseData(individualKpaResponse).forEach((task) =>
+                upsert(task, "individualMonthlyKpa")
+            );
+            getResponseData(teamKraResponse).forEach((task) => upsert(task, "teamDailyKra"));
+            getResponseData(teamKpaResponse).forEach((task) => upsert(task, "teamMonthlyKpa"));
 
             return Array.from(map.values());
         },
