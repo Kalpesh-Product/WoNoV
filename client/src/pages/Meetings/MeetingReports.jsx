@@ -51,14 +51,59 @@ const MeetingReports = () => {
   });
 
   const loggedDeptIds = auth.user?.departments?.map((d) => d._id) || [];
+  const currentUserId = auth?.user?._id;
+  const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
+  const isTechEmployee = roleTitles.includes("Tech Employee"); // With Tech Employee and show report only own Department
+  const hasGlobalReportsAccess =
+    isTop && !isTechEmployee ||
+    roleTitles.some((roleTitle) =>
+      [
+        "Super Admin",
+        "Master Admin",
+        "Admin",
+        "Top Management",
+        "Admin Manager",
+      ].includes(roleTitle),
+    );
 
+// Without Tech Employee and show report All Derpartment
+
+  // const loggedDeptIds = auth.user?.departments?.map((d) => d._id) || [];
+  // const currentUserId = auth?.user?._id;
+  // const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
+
+  // const hasGlobalReportsAccess =
+  //   isTop ||
+  //   roleTitles.some((roleTitle) =>
+  //     [
+  //       "Super Admin",
+  //       "Master Admin",
+  //       "Admin",
+  //       "Top Management",
+  //       "Admin Manager",
+  //     ].includes(roleTitle),
+  //   );
+
+  const isEmployeeLevelUser = roleTitles.some((roleTitle) =>
+    roleTitle?.toLowerCase().includes("employee"),
+  );
   const filteredMeetings = isMeetingsPending
     ? []
     : meetings.filter((meeting) => {
-      const bookedByDepts =
-        meeting.bookedBy?.departments?.map((d) => d._id) || [];
-      return bookedByDepts.some((deptId) => loggedDeptIds.includes(deptId));
-    });
+        const bookedByDepts =
+          meeting.bookedBy?.departments?.map((d) => d._id) || [];
+        return bookedByDepts.some((deptId) => loggedDeptIds.includes(deptId));
+      });
+
+   const employeeOwnMeetings = isMeetingsPending
+    ? []
+    : meetings.filter((meeting) => {
+      const bookedById =
+        typeof meeting?.bookedBy === "object"
+          ? meeting?.bookedBy?._id
+          : meeting?.bookedBy;
+      return bookedById?.toString() === currentUserId?.toString();
+    });    
 
   const getEffectiveEndTime = (meeting) => {
     const extendTime = meeting?.extendTime;
@@ -90,19 +135,31 @@ const MeetingReports = () => {
     setOpenModal(true);
   };
 
-  const meetingReportsData = isTop ? meetings : filteredMeetings;
+  // const meetingReportsData = hasGlobalReportsAccess  // Without Tech Employee and show report All Derpartment
+  //   ? meetings
+  //   : isEmployeeLevelUser
+  //     ? employeeOwnMeetings
+  //     : filteredMeetings;
+
+  const meetingReportsData = hasGlobalReportsAccess // With Tech Employee and show report only own Department (Self Booking)
+    ? meetings
+    : isTechEmployee
+      ? employeeOwnMeetings
+    : isEmployeeLevelUser
+      ? employeeOwnMeetings
+      : filteredMeetings;
+
 
   const displayMeetings = useMemo(() => {
     if (sourceFilter === "biz-nest") {
       return meetingReportsData.filter(
         (meeting) =>
-          meeting?.meetingType === "Internal" && meeting?.client === "BIZ Nest"
+          meeting?.meetingType === "Internal" && meeting?.client === "BIZ Nest",
       );
     }
 
     return meetingReportsData;
   }, [meetingReportsData, sourceFilter]);
-
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
@@ -203,9 +260,9 @@ const MeetingReports = () => {
                     // department: item.department,
                     department: item.department?.length
                       ? item.department
-                        .map((dept) => dept?.name)
-                        .filter(Boolean)
-                        .join(", ")
+                          .map((dept) => dept?.name)
+                          .filter(Boolean)
+                          .join(", ")
                       : "",
                     roomName: item.roomName,
                     location: item.location?.unitNo,
@@ -237,8 +294,9 @@ const MeetingReports = () => {
                     participants: item.participants
                       ?.map((participant) => {
                         if (participant?.firstName) {
-                          return `${participant.firstName || ""} ${participant.lastName || ""
-                            }`.trim();
+                          return `${participant.firstName || ""} ${
+                            participant.lastName || ""
+                          }`.trim();
                         }
                         if (participant?.employeeName) {
                           return participant.employeeName;
@@ -344,9 +402,9 @@ const MeetingReports = () => {
               detail={
                 Array.isArray(selectedMeeting?.department)
                   ? selectedMeeting.department
-                    .map((item) => item.name)
-                    .filter(Boolean)
-                    .join(", ") || ""
+                      .map((item) => item.name)
+                      .filter(Boolean)
+                      .join(", ") || ""
                   : selectedMeeting?.department || ""
               }
             />
@@ -371,48 +429,48 @@ const MeetingReports = () => {
             {selectedMeeting?.meetingType
               ?.toLowerCase()
               ?.includes("external") && (
-                <>
-                  <br />
-                  <div className="font-bold">Payment Details</div>
+              <>
+                <br />
+                <div className="font-bold">Payment Details</div>
+                <DetalisFormatted
+                  title="Amount"
+                  detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
+                />
+                <DetalisFormatted
+                  title="Discount"
+                  detail={`INR ${inrFormat(
+                    selectedMeeting?.paymnetDiscountAmount,
+                  )}`}
+                />
+                <DetalisFormatted
+                  title="Mode"
+                  detail={selectedMeeting?.paymentMode || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
+                />
+                <DetalisFormatted
+                  title="Verification"
+                  detail={selectedMeeting?.paymentVerification || "N/A"}
+                />
+                {selectedMeeting?.paymentProofUrl && (
                   <DetalisFormatted
-                    title="Amount"
-                    detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
+                    title="Proof"
+                    detail={
+                      <a
+                        href={selectedMeeting.paymentProofUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        View File
+                      </a>
+                    }
                   />
-                  <DetalisFormatted
-                    title="Discount"
-                    detail={`INR ${inrFormat(
-                      selectedMeeting?.paymnetDiscountAmount,
-                    )}`}
-                  />
-                  <DetalisFormatted
-                    title="Mode"
-                    detail={selectedMeeting?.paymentMode || "N/A"}
-                  />
-                  <DetalisFormatted
-                    title="Status"
-                    detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
-                  />
-                  <DetalisFormatted
-                    title="Verification"
-                    detail={selectedMeeting?.paymentVerification || "N/A"}
-                  />
-                  {selectedMeeting?.paymentProofUrl && (
-                    <DetalisFormatted
-                      title="Proof"
-                      detail={
-                        <a
-                          href={selectedMeeting.paymentProofUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 underline"
-                        >
-                          View File
-                        </a>
-                      }
-                    />
-                  )}
-                </>
-              )}
+                )}
+              </>
+            )}
           </div>
         ) : (
           <CircularProgress />

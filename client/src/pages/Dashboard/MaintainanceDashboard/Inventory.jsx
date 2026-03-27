@@ -101,7 +101,13 @@ const Inventory = () => {
     setValue("closingInventoryUnits", selectedAsset?.closingInventoryUnits);
     setValue("categoryName", selectedAsset?.categoryName || "");
     setValue("categoryId", selectedAsset?.categoryId || null);
-    setValue("category", selectedAsset?.category || selectedAsset?.Category);
+     setValue(
+      "category",
+      selectedAsset?.category?._id ||
+        selectedAsset?.categoryId ||
+        selectedAsset?.category ||
+        "",
+    );
   }, [selectedAsset]);
 
   const openingUnits = useWatch({ control, name: "openingInventoryUnits" });
@@ -173,24 +179,25 @@ const Inventory = () => {
       );
 
       return response.data.map((item) => {
-        // const safeDate =
-        //   item.date ||
-        //   item.createdAt ||
-        //   item.updatedAt ||
-        //   new Date().toISOString(); // last-resort fallback
-
-        const safeDate = item.date || item.createdAt || item.updatedAt;
-
-        console.log("dept", department._id);
-        console.log("name", item.Category || item.category.categoryName);
+       const safeDate =
+          item.date || item.createdAt || item.updatedAt || new Date().toISOString();
 
         return {
           ...item,
           date: safeDate,
           dateRaw: safeDate,
-          categoryId: item.category._id,
-          categoryName: item.Category || item.category.categoryName,
-          // categoryName: item.category?.categoryName || "N/A",
+          categoryId: item.category?._id || null,
+          categoryName: item.Category || item.category?.categoryName || "N/A",
+          addedByName: item.addedBy
+            ? [
+                item.addedBy.firstName,
+                item.addedBy.middleName,
+                item.addedBy.lastName,
+              ]
+                .filter(Boolean)
+                .join(" ")
+            : "N/A",
+          addedOn: item.createdAt || item.date || item.updatedAt || null,
         };
       });
     },
@@ -303,28 +310,23 @@ const Inventory = () => {
     setIsCategoryModalOpen(true);
   };
   const handleFormSubmit = (data) => {
-    const formData = new FormData();
+     if (!department?._id) {
+      toast.error("Department not found. Please refresh and try again.");
+      return;
+    }
 
-    // const openingInventoryValue =
-    //   (data.openingInventoryUnits || 0) * (data.openingPerUnitPrice || 0);
-    // const newPurchaseInventoryValue =
-    //   (data.newPurchaseUnits || 0) * (data.newPurchasePerUnitPrice || 0);
-
-    formData.append("itemName", data.itemName);
-    formData.append("department", department._id);
-    formData.append("openingInventoryUnits", data.openingInventoryUnits);
-    formData.append("openingPerUnitPrice", data.openingPerUnitPrice);
-    formData.append("openingInventoryValue", data.openingInventoryValue);
-    formData.append("newPurchaseUnits", data.newPurchaseUnits);
-    formData.append("newPurchasePerUnitPrice", data.newPurchasePerUnitPrice);
-    formData.append(
-      "newPurchaseInventoryValue",
-      data.newPurchaseInventoryValue,
-    );
-    formData.append("closingInventoryUnits", data.closingInventoryUnits);
-    formData.append("category", data.category);
-
-    addAsset(formData);
+    addAsset({
+      itemName: data.itemName,
+      department: department._id,
+      openingInventoryUnits: Number(data.openingInventoryUnits),
+      openingPerUnitPrice: Number(data.openingPerUnitPrice),
+      openingInventoryValue: Number(data.openingInventoryValue),
+      newPurchaseUnits: Number(data.newPurchaseUnits),
+      newPurchasePerUnitPrice: Number(data.newPurchasePerUnitPrice),
+      newPurchaseInventoryValue: Number(data.newPurchaseInventoryValue),
+      closingInventoryUnits: Number(data.closingInventoryUnits),
+      category: data.category,
+    });
   };
 
   const handleCategoryFormSubmit = (data) => {
@@ -727,6 +729,7 @@ const Inventory = () => {
               detail={selectedAsset.categoryName || "N/A"}
             />
             <br />
+            
             <div className="font-bold">Inventory Units</div>
 
             <DetalisFormatted
@@ -772,7 +775,16 @@ const Inventory = () => {
                 inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
               }`}
             />
-
+          <br />
+          <div className="font-bold">Inventory Added By</div>
+            <DetalisFormatted
+              title="Name"
+              detail={selectedAsset.addedByName || "N/A"}
+            />
+            {/* <DetalisFormatted
+              title="Added On"
+              detail={formatDateTime(selectedAsset.addedOn || selectedAsset.dateRaw)}
+            /> */}
             {/* <DetalisFormatted
               title="Purchase Date"
               detail={formatDateTime(selectedAsset.purchaseDate)}

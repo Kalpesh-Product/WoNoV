@@ -756,6 +756,7 @@ const getMyMeetings = async (req, res, next) => {
       return {
         _id: meeting._id,
         receptionist: receptionist,
+        bookedById: meeting?.bookedBy?._id || null,
         bookedBy: bookedBy,
         clientBookedBy: meeting.clientBookedBy,
         department: meeting?.bookedBy?.departments,
@@ -1092,10 +1093,45 @@ const cancelMeeting = async (req, res, next) => {
       );
     }
 
+    const meetingToCancel = await Meeting.findById(meetingId).select(
+      "status meetingType creditsUsed client clientBookedBy internalParticipants bookedBy",
+    );
+
+    if (!meetingToCancel) {
+      throw new CustomError(
+        "Meeting not found, please check the ID",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    if (meetingToCancel.status === "Cancelled") {
+      throw new CustomError(
+        "Meeting is already cancelled",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    // Refund used credits only for internal meetings
+    if (meetingToCancel.meetingType === "Internal") {
+      const creditsToRefund = Number(meetingToCancel.creditsUsed || 0);
+      const BookingModel = meetingToCancel.clientBookedBy
+        ? CoworkingClient
+        : Company;
+
+      if (meetingToCancel.client && creditsToRefund > 0) {
+        await BookingModel.findByIdAndUpdate(meetingToCancel.client, {
+          $inc: { meetingCreditBalance: creditsToRefund },
+        });
+      }
+    }
+
     const cancelledMeeting = await Meeting.findByIdAndUpdate(
       meetingId,
-      { status: "Cancelled" },
-      { reason },
+      { $set: { status: "Cancelled", reason } },
       { new: true },
     ).populate({ path: "bookedBy", select: "firstName lastName" });
 
