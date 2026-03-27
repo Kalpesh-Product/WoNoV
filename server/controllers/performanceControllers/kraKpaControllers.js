@@ -618,7 +618,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
 const getAllDeptTasks = async (req, res, next) => {
   try {
     const { roles, company, departments } = req;
-    const { duration, taskType } = req.query;
+    const { duration, taskType, month } = req.query;
 
     let departmentMap = new Map();
     let query = { company };
@@ -634,6 +634,29 @@ const getAllDeptTasks = async (req, res, next) => {
     }
     if (taskType) {
       query.taskType = taskType;
+    }
+
+    if (month) {
+      const monthIndex = [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+      ].indexOf(String(month).trim().toLowerCase());
+
+      if (monthIndex !== -1) {
+        query.$expr = {
+          $eq: [{ $month: "$assignedDate" }, monthIndex + 1],
+        };
+      }
     }
 
     if (!isHrOrSuperAdmin) {
@@ -663,7 +686,7 @@ const getAllDeptTasks = async (req, res, next) => {
     });
 
     const tasks = await kraKpaRole
-      .find({ ...query })
+      .find({ ...query, isDeleted: false })
       .populate([{ path: "department", select: "name" }])
       .select("-company")
       .lean();

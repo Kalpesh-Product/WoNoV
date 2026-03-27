@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../components/AgTable";
 import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
@@ -14,7 +14,7 @@ import {
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 const fiscalMonths = [
     "April",
@@ -36,6 +36,9 @@ const PerformanceDepartmentWiseKraKpa = () => {
     const { auth } = useAuth();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
+    const clickedMonth = location.state?.month;
+    const [selectedMonth, setSelectedMonth] = useState(clickedMonth || fiscalMonths[0]);
     const userDepartmentIds =
         auth?.user?.departments?.map((dept) => dept?._id?.toString()).filter(Boolean) || [];
 
@@ -44,43 +47,58 @@ const PerformanceDepartmentWiseKraKpa = () => {
     });
 
     const { data: fetchedDepartments = [] } = useQuery({
-        queryKey: ["fetchedDepartments"],
+        queryKey: ["fetchedDepartments", selectedMonth],
         queryFn: async () => {
-            const response = await axios.get("/api/performance/get-depts-tasks");
+            const response = await axios.get("/api/performance/get-depts-tasks", {
+                params: { month: selectedMonth },
+            });
             return response.data || [];
         },
     });
-    const clickedMonth = location.state?.month;
-    const [selectedMonth, setSelectedMonth] = useState(clickedMonth || fiscalMonths[0]);
 
     const currentMonthIndex = fiscalMonths.findIndex(
         (month) => month.toLowerCase() === selectedMonth.toLowerCase()
     );
 
-    const totalCompleted = fetchedDepartments.reduce(
-        (sum, item) => sum + item.completedTasks,
+    const getDepartmentKraTotal = (departmentData) =>
+        (departmentData?.dailyKRA || 0) +
+        (departmentData?.individualDailyKRA || 0) +
+        (departmentData?.teamDailyKRA || 0);
+
+    const getDepartmentKpaTotal = (departmentData) =>
+        (departmentData?.monthlyKPA || 0) +
+        (departmentData?.individualMonthlyKPA || 0) +
+        (departmentData?.teamMonthlyKPA || 0);
+
+    const visibleDepartments = fetchedDepartments.filter((item) => {
+        if (isTop) return true;
+        return userDepartmentIds.includes(item?.department?._id?.toString());
+    });
+
+    const totalKra = visibleDepartments.reduce(
+        (sum, item) => sum + getDepartmentKraTotal(item),
         0
     );
-    const totalRemaining = fetchedDepartments.reduce(
-        (sum, item) => sum + item.remainingTasks,
+    const totalKpa = visibleDepartments.reduce(
+        (sum, item) => sum + getDepartmentKpaTotal(item),
         0
     );
 
     const graphData = [
         {
-            name: "Completed KPA",
-            group: `KPA - ${selectedMonth}`,
-            data: fetchedDepartments.map((item) => ({
+            name: "KRA",
+            group: `KRA/KPA - ${selectedMonth}`,
+            data: visibleDepartments.map((item) => ({
                 x: item.department?.name,
-                y: item.completedTasks,
+                y: getDepartmentKraTotal(item),
             })),
         },
         {
-            name: "Remaining KPA",
-            group: `KPA - ${selectedMonth}`,
-            data: fetchedDepartments.map((item) => ({
+            name: "KPA",
+            group: `KRA/KPA - ${selectedMonth}`,
+            data: visibleDepartments.map((item) => ({
                 x: item.department?.name,
-                y: item.remainingTasks,
+                y: getDepartmentKpaTotal(item),
             })),
         },
     ];
@@ -88,14 +106,14 @@ const PerformanceDepartmentWiseKraKpa = () => {
     const graphOptions = {
         chart: {
             type: "bar",
-            stacked: true,
+            stacked: false,
             animations: { enabled: false },
             toolbar: { show: false },
             fontFamily: "Poppins-Regular",
             events: {
                 dataPointSelection: (event, chartContext, config) => {
                     const clickedDepartment = config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
-                    const departmentData = fetchedDepartments.find(
+                    const departmentData = visibleDepartments.find(
                         (item) => item.department?.name === clickedDepartment
                     );
                     if (departmentData) {
@@ -115,12 +133,12 @@ const PerformanceDepartmentWiseKraKpa = () => {
         stroke: { show: true, width: 1, colors: ["#fff"] },
         xaxis: {
             title: { text: "Departments" },
-            categories: fetchedDepartments.map((item) => item.department?.name),
+            categories: visibleDepartments.map((item) => item.department?.name),
         },
         yaxis: {
             title: { text: "Count" },
         },
-        colors: ["#54C4A7", "#EB5C45"],
+        colors: ["#5A9BD5", "#54C4A7"],
         fill: { opacity: 1 },
         legend: { position: "top" },
     };
@@ -155,22 +173,17 @@ const PerformanceDepartmentWiseKraKpa = () => {
         { headerName: "Team Monthly KPA", field: "teamMonthlyKpa" },
     ];
 
-    const visibleDepartments = fetchedDepartments.filter((item) => {
-        if (isTop) return true;
-        return userDepartmentIds.includes(item?.department?._id?.toString());
-    });
-
     return (
         <div className="flex flex-col gap-4">
             <PageFrame>
                 <WidgetSection
-                    title={`KPA overview - ${selectedMonth}`}
+                    title={`KRA/KPA overview - ${selectedMonth}`}
                     border
                     padding
-                    greenTitle="completed"
-                    TitleAmountGreen={totalCompleted}
-                    redTitle="remaining"
-                    TitleAmountRed={totalRemaining}
+                    greenTitle="kpa"
+                    TitleAmountGreen={totalKpa}
+                    redTitle="kra"
+                    TitleAmountRed={totalKra}
                 >
                     <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
 
