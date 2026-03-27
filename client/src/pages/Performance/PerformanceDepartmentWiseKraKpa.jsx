@@ -11,6 +11,25 @@ import {
     setSelectedDepartment,
     setSelectedDepartmentName,
 } from "../../redux/slices/performanceSlice";
+import NormalBarGraph from "../../components/graphs/NormalBarGraph";
+import SecondaryButton from "../../components/SecondaryButton";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import { useMemo, useState } from "react";
+
+const fiscalMonths = [
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+    "January",
+    "February",
+    "March",
+];
 
 const PerformanceDepartmentWiseKraKpa = () => {
     const axios = useAxiosPrivate();
@@ -31,6 +50,80 @@ const PerformanceDepartmentWiseKraKpa = () => {
             return response.data || [];
         },
     });
+    const clickedMonth = location.state?.month;
+    const [selectedMonth, setSelectedMonth] = useState(clickedMonth || fiscalMonths[0]);
+
+    const currentMonthIndex = fiscalMonths.findIndex(
+        (month) => month.toLowerCase() === selectedMonth.toLowerCase()
+    );
+
+    const totalCompleted = fetchedDepartments.reduce(
+        (sum, item) => sum + item.completedTasks,
+        0
+    );
+    const totalRemaining = fetchedDepartments.reduce(
+        (sum, item) => sum + item.remainingTasks,
+        0
+    );
+
+    const graphData = [
+        {
+            name: "Completed KPA",
+            group: `KPA - ${selectedMonth}`,
+            data: fetchedDepartments.map((item) => ({
+                x: item.department?.name,
+                y: item.completedTasks,
+            })),
+        },
+        {
+            name: "Remaining KPA",
+            group: `KPA - ${selectedMonth}`,
+            data: fetchedDepartments.map((item) => ({
+                x: item.department?.name,
+                y: item.remainingTasks,
+            })),
+        },
+    ];
+
+    const graphOptions = {
+        chart: {
+            type: "bar",
+            stacked: true,
+            animations: { enabled: false },
+            toolbar: { show: false },
+            fontFamily: "Poppins-Regular",
+            events: {
+                dataPointSelection: (event, chartContext, config) => {
+                    const clickedDepartment = config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
+                    const departmentData = fetchedDepartments.find(
+                        (item) => item.department?.name === clickedDepartment
+                    );
+                    if (departmentData) {
+                        dispatch(setSelectedDepartment(departmentData.department?._id));
+                        dispatch(setSelectedDepartmentName(departmentData.department?.name));
+                        navigate(
+                            `/app/performance/overall-KPA/department-wise-KPA/member-wise-kra-kpa/${departmentData.department?.name}`
+                        );
+                    }
+                },
+            },
+        },
+        plotOptions: {
+            bar: { horizontal: false, columnWidth: "20%", borderRadius: 3 },
+        },
+        dataLabels: { enabled: false },
+        stroke: { show: true, width: 1, colors: ["#fff"] },
+        xaxis: {
+            title: { text: "Departments" },
+            categories: fetchedDepartments.map((item) => item.department?.name),
+        },
+        yaxis: {
+            title: { text: "Count" },
+        },
+        colors: ["#54C4A7", "#EB5C45"],
+        fill: { opacity: 1 },
+        legend: { position: "top" },
+    };
 
     const departmentColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -70,6 +163,39 @@ const PerformanceDepartmentWiseKraKpa = () => {
     return (
         <div className="flex flex-col gap-4">
             <PageFrame>
+                <WidgetSection
+                    title={`KPA overview - ${selectedMonth}`}
+                    border
+                    padding
+                    greenTitle="completed"
+                    TitleAmountGreen={totalCompleted}
+                    redTitle="remaining"
+                    TitleAmountRed={totalRemaining}
+                >
+                    <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
+
+                    <div className="flex justify-center items-center pb-4">
+                        <div className="flex items-center">
+                            <SecondaryButton
+                                title={<MdNavigateBefore />}
+                                handleSubmit={() => {
+                                    if (currentMonthIndex > 0) {
+                                        setSelectedMonth(fiscalMonths[currentMonthIndex - 1]);
+                                    }
+                                }}
+                            />
+                            <div className="text-sm min-w-[120px] text-center">{selectedMonth}</div>
+                            <SecondaryButton
+                                title={<MdNavigateNext />}
+                                handleSubmit={() => {
+                                    if (currentMonthIndex < fiscalMonths.length - 1) {
+                                        setSelectedMonth(fiscalMonths[currentMonthIndex + 1]);
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+                </WidgetSection>
                 <WidgetSection layout={1} padding>
                     <AgTable
                         data={visibleDepartments.map((item, index) => ({
