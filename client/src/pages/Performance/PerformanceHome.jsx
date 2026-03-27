@@ -34,7 +34,6 @@ const toCount = (value) => Number(value) || 0;
 
 const PerformanceHome = () => {
   const axios = useAxiosPrivate();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const { data: fetchedDepartments = [] } = useQuery({
@@ -53,19 +52,6 @@ const PerformanceHome = () => {
     },
   });
 
-  const { data: departmentMembers = [] } = useQuery({
-    queryKey: ["performanceAccessibleDepartments"],
-    queryFn: async () => {
-      const response = await axios.get("/api/access/department-wise-employees");
-      return response.data?.data || [];
-    },
-  });
-
-  const openDepartment = (department) => {
-    dispatch(setSelectedDepartment(department?._id));
-    dispatch(setSelectedDepartmentName(department?.name));
-    navigate(`/app/performance/${department?.name}`);
-  };
 
   const annualKpaGraphData = useMemo(() => {
     const monthlyTotals = {};
@@ -159,29 +145,6 @@ const PerformanceHome = () => {
     colors: PIE_COLORS,
   };
 
-  const totalsByDepartment = useMemo(
-    () =>
-      fetchedDepartments.map((item) => ({
-        _id: item.department?._id,
-        name: item.department?.name || "Unknown",
-        total:
-          toCount(item.totalTasks) ||
-          toCount(item.dailyKRA) +
-          toCount(item.monthlyKPA) +
-          toCount(item.annualKPA) +
-          toCount(item.teamDailyKRA) +
-          toCount(item.teamMonthlyKPA) +
-          toCount(item.individualDailyKRA) +
-          toCount(item.individualMonthlyKPA),
-        pending:
-          toCount(item.pendingTasks) ||
-          toCount(item.dailyKRA) +
-          toCount(item.teamDailyKRA) +
-          toCount(item.individualDailyKRA),
-        completed: toCount(item.completedTasks),
-      })),
-    [fetchedDepartments]
-  );
 
   const kpaPieData = useMemo(() => {
     const completed = kpaTasksRaw.reduce((acc, dept) => acc + (dept.achieved || 0), 0);
@@ -243,80 +206,22 @@ const PerformanceHome = () => {
         secondParam
         currentYear
       />
-      <WidgetSection>
+      <WidgetSection layout={3}>
         <Card
           icon={<CgWebsite />}
           title="DEPARTMENT WISE KRA/KPA"
           route="/app/performance/overall-KPA/department-wise-KPA"
         />
-      </WidgetSection>
-      <WidgetSection>
         <Card
           icon={<CgWebsite />}
           title="ASSIGN KRA/KPA"
-          route="/app/performance/overall-KPA/department-wise-KPA"
+          route="/app/performance/assign-kra-kpa"
         />
-      </WidgetSection>
-      <WidgetSection>
         <Card
           icon={<CgWebsite />}
           title="Report KRA/KPA"
-          route="/app/performance/overall-KPA/department-wise-KPA"
+          route="/app/performance/report-kra-kpa"
         />
-      </WidgetSection>
-      <WidgetSection border title="DEPARTMENT">
-        {departmentMembers.length === 0 ? (
-          <p className="text-sm text-gray-500">No departments found.</p>
-        ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {departmentMembers.map((department) => {
-              const members = department?.employees || [];
-
-              return (
-                <div
-                  key={department?._id || department?.name}
-                  className="rounded-xl border border-gray-200 p-4 bg-white"
-                >
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <h3 className="text-base font-semibold text-gray-800">
-                      {department?.name || "Unknown Department"}
-                    </h3>
-                    <span className="text-xs font-medium text-gray-500">
-                      {members.length} member{members.length === 1 ? "" : "s"}
-                    </span>
-                  </div>
-
-                  {members.length === 0 ? (
-                    <p className="text-sm text-gray-500">
-                      No active members in this department.
-                    </p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {members.map((member) => {
-                        const fullName =
-                          `${member?.firstName || ""} ${member?.lastName || ""}`.trim();
-
-                        return (
-                          <li
-                            key={member?._id || `${department?._id}-${fullName}`}
-                            className="text-sm text-gray-700 text-primary font-pregular hover:underline cursor-pointer"
-                            onClick={() => {
-                              navigate(
-                                `/app/performance/${department?.name}/team-Daily-KRA`
-                              );
-                            }}
-                          >
-                            • {fullName || member?.email || "Unknown member"}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
       </WidgetSection>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
