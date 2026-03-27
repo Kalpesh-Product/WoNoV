@@ -243,24 +243,6 @@ const PerformanceHome = () => {
         />
       </WidgetSection>
 
-      <WidgetSection border title="Departments">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-2">
-          {totalsByDepartment.map((department) => (
-            <button
-              key={department._id || department.name}
-              type="button"
-              onClick={() => openDepartment({ _id: department._id, name: department.name })}
-              className="text-left rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-primary transition-all"
-            >
-              <h3 className="font-semibold text-primary text-subtitle">{department.name}</h3>
-              <div className="mt-2 text-content text-gray-600">Total: {department.total}</div>
-              <div className="text-content text-wonoGreen">Completed: {department.total - department.pending}</div>
-              <div className="text-content text-red-500">Pending: {department.pending}</div>
-            </button>
-          ))}
-        </div>
-      </WidgetSection>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <WidgetSection border title="KRA - Pending vs Completed">
           <PieChartMui
