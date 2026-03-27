@@ -328,6 +328,8 @@ import HrDepartmentTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartme
 import HrTasksLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrTasksLayout";
 import PerformanceLayout from "../pages/Performance/PerformanceLayout";
 import PerformanceHome from "../pages/Performance/PerformanceHome";
+import PerformanceDepartmentWiseKraKpa from "../pages/Performance/PerformanceDepartmentWiseKraKpa";
+import PerformanceMemberWiseKraKpa from "../pages/Performance/PerformanceMemberWiseKraKpa";
 import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerformanceLayout";
 import PerformanceOverallKPA from "../pages/Performance/PerformanceOverallKPA";
 import PerformanceDepartmentKPA from "../pages/Performance/PerformanceDepartmentKPA";
@@ -2362,6 +2364,18 @@ export const routes = createBrowserRouter([
                       {
                         path: "department-KPA/:department",
                         element: <PerformanceDepartmentKPA />,
+                      },
+                      {
+                        path: "department-wise-KPA",
+                        element: <PerformanceDepartmentWiseKraKpa />,
+                      },
+                      {
+                        path: "department-wise-kra-kpa",
+                        element: <PerformanceDepartmentWiseKraKpa />,
+                      },
+                      {
+                        path: "department-wise-kpa/member-wise-kra-kpa/:department",
+                        element: <PerformanceMemberWiseKraKpa />,
                       },
                     ],
                   },

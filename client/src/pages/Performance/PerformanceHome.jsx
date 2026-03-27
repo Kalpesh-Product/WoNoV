@@ -7,6 +7,8 @@ import PieChartMui from "../../components/graphs/PieChartMui";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import Card from "../../components/Card";
+import { CgWebsite } from "react-icons/cg";
 import {
   setSelectedDepartment,
   setSelectedDepartmentName,
@@ -28,6 +30,7 @@ const FISCAL_MONTHS = [
 ];
 
 const PIE_COLORS = ["#54C4A7", "#EB5C45"];
+const toCount = (value) => Number(value) || 0;
 
 const PerformanceHome = () => {
   const axios = useAxiosPrivate();
@@ -153,9 +156,21 @@ const PerformanceHome = () => {
       fetchedDepartments.map((item) => ({
         _id: item.department?._id,
         name: item.department?.name || "Unknown",
-        total: item.totalTasks || 0,
-        pending: item.pendingTasks || 0,
-        completed: item.completedTasks || 0,
+        total:
+          toCount(item.totalTasks) ||
+          toCount(item.dailyKRA) +
+          toCount(item.monthlyKPA) +
+          toCount(item.annualKPA) +
+          toCount(item.teamDailyKRA) +
+          toCount(item.teamMonthlyKPA) +
+          toCount(item.individualDailyKRA) +
+          toCount(item.individualMonthlyKPA),
+        pending:
+          toCount(item.pendingTasks) ||
+          toCount(item.dailyKRA) +
+          toCount(item.teamDailyKRA) +
+          toCount(item.individualDailyKRA),
+        completed: toCount(item.completedTasks),
       })),
     [fetchedDepartments]
   );
@@ -173,11 +188,16 @@ const PerformanceHome = () => {
 
   const kraPieData = useMemo(() => {
     const completed = fetchedDepartments.reduce(
-      (acc, dept) => acc + (dept.completedTasks || 0),
+      (acc, dept) => acc + toCount(dept.completedTasks),
       0
     );
     const pending = fetchedDepartments.reduce(
-      (acc, dept) => acc + (dept.pendingTasks || 0),
+      (acc, dept) =>
+        acc +
+        (toCount(dept.pendingTasks) ||
+          toCount(dept.dailyKRA) +
+          toCount(dept.teamDailyKRA) +
+          toCount(dept.individualDailyKRA)),
       0
     );
 
@@ -215,6 +235,13 @@ const PerformanceHome = () => {
         secondParam
         currentYear
       />
+      <WidgetSection>
+        <Card
+          icon={<CgWebsite />}
+          title="DEPARTMENT WISE KRA/KPA"
+          route="/app/performance/overall-KPA/department-wise-KPA"
+        />
+      </WidgetSection>
 
       <WidgetSection border title="Departments">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-2">
@@ -227,7 +254,7 @@ const PerformanceHome = () => {
             >
               <h3 className="font-semibold text-primary text-subtitle">{department.name}</h3>
               <div className="mt-2 text-content text-gray-600">Total: {department.total}</div>
-              <div className="text-content text-wonoGreen">Completed: {department.completed}</div>
+              <div className="text-content text-wonoGreen">Completed: {department.total - department.pending}</div>
               <div className="text-content text-red-500">Pending: {department.pending}</div>
             </button>
           ))}
