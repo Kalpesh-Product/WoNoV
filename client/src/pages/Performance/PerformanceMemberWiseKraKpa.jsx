@@ -12,6 +12,8 @@ import {
     setSelectedDepartment,
     setSelectedDepartmentName,
 } from "../../redux/slices/performanceSlice";
+import { PERMISSIONS } from "../../constants/permissions";
+import { useTopDepartment } from "../../hooks/useTopDepartment";
 
 const DEFAULT_COUNTS = {
     dailyKra: 0,
@@ -34,6 +36,14 @@ const PerformanceMemberWiseKraKpa = () => {
     const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
     );
+    const loggedInUserId = auth?.user?._id?.toString();
+    const userPermissions = auth?.user?.permissions?.permissions || [];
+    const canManageTeam =
+        userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) ||
+        userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value);
+    const { isTop } = useTopDepartment({
+        additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
+    });
 
     const { data: memberWiseData = [] } = useQuery({
         queryKey: ["performanceMemberWiseKraKpa", selectedDepartment, department],
@@ -114,21 +124,45 @@ const PerformanceMemberWiseKraKpa = () => {
         { headerName: "Sr No", field: "srNo", width: 100 },
         {
             headerName: "Member", field: "member", flex: 1,
-            cellRenderer: (params) => (
-                <span
-                    role="button"
-                    onClick={() => {
-                        dispatch(setSelectedDepartment(currentDepartmentId));
-                        dispatch(setSelectedDepartmentName(currentDepartmentName));
-                        navigate(
-                            `/app/performance/${currentDepartmentName}`
-                        );
-                    }}
-                    className="text-primary font-pregular hover:underline cursor-pointer"
-                >
-                    {params.value}
-                </span>
-            ),
+            cellRenderer: (params) => {
+                const memberId = params?.data?.memberId?.toString();
+                const isOwnRow = memberId && loggedInUserId === memberId;
+                const isClickable = canManageTeam || isOwnRow;
+
+                const handleMemberNavigation = () => {
+                    if (!isClickable) return;
+
+                    const targetDepartmentId = selectedDepartment || currentDepartmentId;
+                    const targetDepartmentName =
+                        selectedDepartmentName || department || currentDepartmentName;
+
+                    dispatch(setSelectedDepartment(targetDepartmentId));
+                    dispatch(setSelectedDepartmentName(targetDepartmentName));
+
+                    let firstTab = "individual-Daily-KRA";
+
+                    if (canManageTeam && !isOwnRow) {
+                        firstTab = "team-Daily-KRA";
+                    } else if (isTop && isOwnRow) {
+                        firstTab = "individual-Daily-KRA";
+                    }
+
+                    navigate(`/app/performance/${targetDepartmentName}/${firstTab}`);
+                };
+
+                return (
+                    <span
+                        role={isClickable ? "button" : undefined}
+                        onClick={handleMemberNavigation}
+                        className={`font-pregular ${isClickable
+                            ? "text-primary hover:underline cursor-pointer"
+                            : "text-gray-500 cursor-not-allowed"
+                            }`}
+                    >
+                        {params.value}
+                    </span>
+                );
+            },
         },
         { headerName: "Daily KRA", field: "dailyKra" },
         { headerName: "Monthly KPA", field: "monthlyKpa" },

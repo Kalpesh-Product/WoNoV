@@ -17,17 +17,11 @@ const PerformanceDepartmentWiseKraKpa = () => {
     const { auth } = useAuth();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const userDepartmentIds =
+        auth?.user?.departments?.map((dept) => dept?._id?.toString()).filter(Boolean) || [];
 
-    const currentDepartmentId = auth.user?.departments?.[0]?._id;
-    const currentDepartmentName = auth.user?.departments?.[0]?.name;
-
-    useTopDepartment({
+    const { isTop } = useTopDepartment({
         additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
-        onNotTop: () => {
-            dispatch(setSelectedDepartment(currentDepartmentId));
-            dispatch(setSelectedDepartmentName(currentDepartmentName));
-            navigate(`/app/performance/${currentDepartmentName}`);
-        },
     });
 
     const { data: fetchedDepartments = [] } = useQuery({
@@ -68,12 +62,17 @@ const PerformanceDepartmentWiseKraKpa = () => {
         { headerName: "Team Monthly KPA", field: "teamMonthlyKpa" },
     ];
 
+    const visibleDepartments = fetchedDepartments.filter((item) => {
+        if (isTop) return true;
+        return userDepartmentIds.includes(item?.department?._id?.toString());
+    });
+
     return (
         <div className="flex flex-col gap-4">
             <PageFrame>
                 <WidgetSection layout={1} padding>
                     <AgTable
-                        data={fetchedDepartments.map((item, index) => ({
+                        data={visibleDepartments.map((item, index) => ({
                             srNo: index + 1,
                             mongoId: item.department?._id,
                             department: item.department?.name,
