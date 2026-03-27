@@ -6,6 +6,12 @@ import AgTable from "../../components/AgTable";
 import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import useAuth from "../../hooks/useAuth";
+import { useDispatch } from "react-redux";
+import {
+    setSelectedDepartment,
+    setSelectedDepartmentName,
+} from "../../redux/slices/performanceSlice";
 
 const DEFAULT_COUNTS = {
     dailyKra: 0,
@@ -17,9 +23,13 @@ const DEFAULT_COUNTS = {
 };
 
 const PerformanceMemberWiseKraKpa = () => {
+    const dispatch = useDispatch();
     const axios = useAxiosPrivate();
     const navigate = useNavigate();
     const { department } = useParams();
+    const { auth } = useAuth();
+    const currentDepartmentId = auth.user?.departments?.[0]?._id;
+    const currentDepartmentName = auth.user?.departments?.[0]?.name;
     const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
     const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
@@ -102,7 +112,24 @@ const PerformanceMemberWiseKraKpa = () => {
 
     const columns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
-        { headerName: "Member", field: "member", flex: 1 },
+        {
+            headerName: "Member", field: "member", flex: 1,
+            cellRenderer: (params) => (
+                <span
+                    role="button"
+                    onClick={() => {
+                        dispatch(setSelectedDepartment(currentDepartmentId));
+                        dispatch(setSelectedDepartmentName(currentDepartmentName));
+                        navigate(
+                            `/app/performance/${currentDepartmentName}`
+                        );
+                    }}
+                    className="text-primary font-pregular hover:underline cursor-pointer"
+                >
+                    {params.value}
+                </span>
+            ),
+        },
         { headerName: "Daily KRA", field: "dailyKra" },
         { headerName: "Monthly KPA", field: "monthlyKpa" },
         { headerName: "Individual Daily KRA", field: "individualDailyKra" },
