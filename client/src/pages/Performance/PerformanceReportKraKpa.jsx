@@ -88,52 +88,51 @@ const PerformanceReportKraKpa = () => {
     ];
 
     return (
-        <PageFrame>
-            <WidgetSection border title="REPORT KRA/KPA" normalCase>
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
-                    <Tabs
-                        value={activeTab}
-                        onChange={(_, newValue) => setActiveTab(newValue)}
-                        variant="fullWidth"
-                        TabIndicatorProps={{ style: { display: "none" } }}
-                        sx={{
-                            backgroundColor: "white",
-                            borderRadius: 2,
-                            border: "1px solid #d1d5db",
-                            "& .MuiTab-root": {
-                                textTransform: "none",
-                                fontWeight: "medium",
-                                color: "#1E3D73",
-                                padding: "12px 16px",
-                                borderRight: "0.1px solid #d1d5db",
-                            },
-                            "& .MuiTab-root:last-of-type": {
-                                borderRight: "0",
-                            },
-                            "& .Mui-selected": {
-                                backgroundColor: "#1E3D73",
-                                color: "white !important",
-                            },
-                        }}
-                    >
-                        <Tab label="Completed KRA" value="KRA" />
-                        <Tab label="Completed KPA" value="KPA" />
-                    </Tabs>
+        <WidgetSection border title="REPORT KRA/KPA" normalCase>
+            <div>
+                <Tabs
+                    value={activeTab}
+                    onChange={(_, newValue) => setActiveTab(newValue)}
+                    variant="fullWidth"
+                    TabIndicatorProps={{ style: { display: "none" } }}
+                    sx={{
+                        backgroundColor: "white",
+                        borderRadius: 2,
+                        border: "1px solid #d1d5db",
+                        "& .MuiTab-root": {
+                            textTransform: "none",
+                            fontWeight: "medium",
+                            color: "#1E3D73",
+                            padding: "12px 16px",
+                            borderRight: "0.1px solid #d1d5db",
+                        },
+                        "& .MuiTab-root:last-of-type": {
+                            borderRight: "0",
+                        },
+                        "& .Mui-selected": {
+                            backgroundColor: "#1E3D73",
+                            color: "white !important",
+                        },
+                    }}
+                >
+                    <Tab label="Completed KRA" value="KRA" />
+                    <Tab label="Completed KPA" value="KPA" />
+                </Tabs>
 
-                    <div className="pt-4">
-                        <AgTable
-                            data={completedReport.map((item, index) => ({
-                                ...item,
-                                srNo: index + 1,
-                            }))}
-                            columns={reportColumns}
-                            loading={isPending}
-                            hideFilter
-                        />
-                    </div>
+                <div className="pt-4">
+                    <AgTable
+                        data={completedReport.map((item, index) => ({
+                            ...item,
+                            srNo: index + 1,
+                        }))}
+                        columns={reportColumns}
+                        loading={isPending}
+                        hideFilter
+                        exportData
+                    />
                 </div>
-            </WidgetSection>
-        </PageFrame>
+            </div>
+        </WidgetSection>
     );
 };
 

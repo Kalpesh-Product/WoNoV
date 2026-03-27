@@ -208,7 +208,7 @@ const PerformanceMemberWiseKraKpa = () => {
             group: `KRA/KPA - ${selectedMonth}`,
             data: rowData.map((item) => ({
                 x: item.member,
-                y: item.dailyKra + item.individualDailyKra + item.teamDailyKra,
+                y: item.dailyKra + item.individualDailyKra,
             })),
         },
         {
@@ -216,7 +216,7 @@ const PerformanceMemberWiseKraKpa = () => {
             group: `KRA/KPA - ${selectedMonth}`,
             data: rowData.map((item) => ({
                 x: item.member,
-                y: item.monthlyKpa + item.individualMonthlyKpa + item.teamMonthlyKpa,
+                y: item.monthlyKpa + item.individualMonthlyKpa,
             })),
         },
     ];
