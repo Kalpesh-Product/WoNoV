@@ -253,9 +253,14 @@ const addAsset = async (req, res, next) => {
 
     let assetImage = null;
 
-    if (req.file) {
+    const imageFile =
+      req?.files?.["asset-image"]?.[0] ||
+      req?.files?.assetImage?.[0] ||
+      req.file;
+
+    if (imageFile) {
       try {
-        const buffer = await sharp(req.file.buffer)
+        const buffer = await sharp(imageFile.buffer)
           .resize(1262, 284, { fit: "contain" })
           .webp({ quality: 80 })
           .toBuffer();
@@ -299,6 +304,7 @@ const addAsset = async (req, res, next) => {
       const assetData = {
         assetType,
         assetId: uniqueAssetId,
+        departmentAssetId: uniqueAssetId,
         rentedMonths: ownershipType === "Rental" ? rentedMonths : undefined,
         tangable,
         ownershipType,
@@ -646,6 +652,7 @@ const bulkInsertAssets = async (req, res, next) => {
             assets.push({
               assetType: assetType === "Digital" ? "Digital" : "Physical",
               assetId: uniqueAssetId,
+              departmentAssetId: uniqueAssetId,
               tangable: tangible,
               ownershipType,
               vendor: vendorId,

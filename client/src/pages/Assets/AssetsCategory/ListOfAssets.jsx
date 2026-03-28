@@ -144,8 +144,8 @@ const ListOfAssets = () => {
   const filteredSubCategories = !selectedCategory
     ? []
     : assetSubCategories?.filter(
-        (item) => item.category?._id === selectedCategory,
-      ) || [];
+      (item) => item.category?._id === selectedCategory,
+    ) || [];
 
   const { data: vendorDetails = [], isPending: isVendorDetails } = useQuery({
     queryKey: ["vendorDetails"],
@@ -182,6 +182,9 @@ const ListOfAssets = () => {
       formData.append("rentedMonths", Number(data.rentedMonths));
       formData.append("tangable", data.tangable);
       formData.append("locationId", data.floor);
+      if (data.assetImage) {
+        formData.append("assetImage", data.assetImage);
+      }
       if (data.warrantyDocument) {
         formData.append("warrantyDocument", data.warrantyDocument);
       }
@@ -341,9 +344,9 @@ const ListOfAssets = () => {
     new Map(
       units.length > 0
         ? units.map((loc) => [
-            loc.building?._id ?? (loc.unitNo ? `unknown-${loc.unitNo}` : `unknown-${Math.random()}`),
-            loc.building?.buildingName ?? "Unknown Building",
-          ])
+          loc.building?._id ?? (loc.unitNo ? `unknown-${loc.unitNo}` : `unknown-${Math.random()}`),
+          loc.building?.buildingName ?? "Unknown Building",
+        ])
         : [],
     ).entries(),
   );
@@ -405,16 +408,16 @@ const ListOfAssets = () => {
   const tableData = isAssetsListPending || !Array.isArray(assetsList)
     ? []
     : assetsList.map((item) => {
-        return {
-          ...item,
-          assetMongoId: item?.asset?._id,
-          department: item?.department?.name || "N/A",
-          subCategory: item?.subCategory?.subCategoryName || "N/A",
-          subCatId: item?.subCategory?._id,
-          categoryId: item?.subCategory?.category?._id,
-          category: item?.subCategory?.category?.categoryName || "N/A",
-        };
-      });
+      return {
+        ...item,
+        assetMongoId: item?.asset?._id,
+        department: item?.department?.name || "N/A",
+        subCategory: item?.subCategory?.subCategoryName || "N/A",
+        subCatId: item?.subCategory?._id,
+        categoryId: item?.subCategory?.category?._id,
+        category: item?.subCategory?.category?.categoryName || "N/A",
+      };
+    });
   //-----------------------Table Data----------------------//
 
   return (
@@ -465,10 +468,10 @@ const ListOfAssets = () => {
                   {isCategoriesPending
                     ? []
                     : assetCategories.map((item) => (
-                        <MenuItem key={item._id} value={item._id}>
-                          {item.categoryName}
-                        </MenuItem>
-                      ))}
+                      <MenuItem key={item._id} value={item._id}>
+                        {item.categoryName}
+                      </MenuItem>
+                    ))}
                 </TextField>
               )}
             />
@@ -509,6 +512,8 @@ const ListOfAssets = () => {
                   size="small"
                   fullWidth
                   label="Vendor"
+                  error={!!errors.vendorId}
+                  helperText={errors?.vendorId?.message}
                 >
                   <MenuItem value="" disabled>
                     <em>Select a Vendor</em>
@@ -516,10 +521,10 @@ const ListOfAssets = () => {
                   {isVendorDetails
                     ? []
                     : vendorDetails.map((item) => (
-                        <MenuItem key={item._id} value={item._id}>
-                          {item.companyName || item.name}
-                        </MenuItem>
-                      ))}
+                      <MenuItem key={item._id} value={item._id}>
+                        {item.companyName || item.name}
+                      </MenuItem>
+                    ))}
                 </TextField>
               )}
             />
@@ -626,6 +631,8 @@ const ListOfAssets = () => {
                   size="small"
                   fullWidth
                   label="Asset Type"
+                  error={!!errors.assetType}
+                  helperText={errors?.assetType?.message}
                 >
                   <MenuItem value="" disabled>
                     <em>Select an Asset Type</em>
@@ -662,6 +669,8 @@ const ListOfAssets = () => {
                   size="small"
                   fullWidth
                   label="Ownership Type"
+                  error={!!errors.ownershipType}
+                  helperText={errors?.ownershipType?.message}
                 >
                   <MenuItem value="" disabled>
                     <em>Select an Ownership Type</em>
@@ -674,7 +683,12 @@ const ListOfAssets = () => {
             <Controller
               name="rentedMonths"
               control={control}
-              rules={{ required: "Rented Months is required" }}
+              rules={{
+                validate: (value) =>
+                  watch("ownershipType") !== "Rental" ||
+                  Number(value) > 0 ||
+                  "Rented Months is required for Rental assets",
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -682,6 +696,7 @@ const ListOfAssets = () => {
                   fullWidth
                   type="number"
                   label="Rented Months"
+                  disabled={watch("ownershipType") !== "Rental"}
                   error={!!errors.rentedMonths}
                   helperText={errors?.rentedMonths?.message}
                 />
@@ -698,6 +713,8 @@ const ListOfAssets = () => {
                   size="small"
                   fullWidth
                   label="Tangible"
+                  error={!!errors.tangable}
+                  helperText={errors?.tangable?.message}
                 >
                   <MenuItem value="" disabled>
                     <em>Select Tangable</em>
