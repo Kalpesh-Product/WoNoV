@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { RiPagesLine } from "react-icons/ri";
 import { MdFormatListBulleted, MdMiscellaneousServices } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
@@ -26,7 +26,7 @@ import usePageDepartment from "../../hooks/usePageDepartment";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import NormalBarGraph from "../../components/graphs/NormalBarGraph";
+import YearlyGraph from "../../components/graphs/YearlyGraph";
 import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
 import humanDate from "../../utils/humanDateForamt";
@@ -82,7 +82,7 @@ const AssetsDashboard = () => {
     },
     {
       title: "Mix Bag",
-      route: "#",
+      route: "/app/assets/mix-bag",
       icon: <MdFormatListBulleted />,
       permission: PERMISSIONS.ASSETS_VIEW_GRAPHS,
     },
@@ -361,84 +361,113 @@ const AssetsDashboard = () => {
 
   //Assets Value Graph
 
-  // Define current financial year months
-  const financialYearMonths = [
-    "Apr-24",
-    "May-24",
-    "Jun-24",
-    "Jul-24",
-    "Aug-24",
-    "Sep-24",
-    "Oct-24",
-    "Nov-24",
-    "Dec-24",
-    "Jan-25",
-    "Feb-25",
-    "Mar-25",
-    "Jul-25",
-  ];
+  const getFiscalYearFromDate = (dateInput) => {
+    const date = new Date(dateInput);
 
-  // Initialize tracking objects
-  let totalAssetValues = {};
-  let usedAssetValues = {};
-  let assetsUnderMaintenance = {};
-  let assetsDamaged = {};
+    if (Number.isNaN(date.getTime())) return null;
 
-  // Initialize months with 0
-  financialYearMonths.forEach((month) => {
-    totalAssetValues[month] = 0;
-    usedAssetValues[month] = 0;
-    assetsUnderMaintenance[month] = 0;
-    assetsDamaged[month] = 0;
-  });
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const fyStartYear = month >= 3 ? year : year - 1;
 
-  // Helper to convert purchase date to FY month
-  const getMonthKey = (purchaseDate) => {
-    const date = new Date(purchaseDate);
-    const month = date.toLocaleString("en-US", { month: "short" });
-    const year = date.getFullYear().toString().slice(-2);
-    return `${month}-${year}`;
+    return `FY ${fyStartYear}-${String(fyStartYear + 1).slice(-2)}`;
   };
 
-  // Aggregate data from all departments
-  assetsDept?.forEach((dept) => {
-    dept.assets?.forEach((asset) => {
-      const monthKey = getMonthKey(asset.purchaseDate);
+  const getCurrentFiscalYear = () => {
+    const now = new Date();
+    const startYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
 
-      if (financialYearMonths.includes(monthKey)) {
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  };
+
+  const getFinancialYearMonths = (fiscalYear) => {
+    const [startYearText] = fiscalYear.replace("FY ", "").split("-");
+    const startYear = Number(startYearText);
+
+    if (!startYear) return [];
+
+    const months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+
+    return months.map((month, index) => {
+      const year = index < 9 ? startYear : startYear + 1;
+      return `${month}-${String(year).slice(-2)}`;
+    });
+  };
+
+  const currentFiscalYear = getCurrentFiscalYear();
+  const currentStartYear = Number(currentFiscalYear.match(/\d{4}/)?.[0] || new Date().getFullYear());
+  const previousFiscalYear = `FY ${currentStartYear - 1}-${String(currentStartYear).slice(-2)}`;
+  const fiscalYears = [previousFiscalYear, currentFiscalYear];
+
+  const [selectedAssetValueFY, setSelectedAssetValueFY] = useState(currentFiscalYear);
+
+  const monthlyAssetStatsByFY = useMemo(() => {
+    const initialStats = fiscalYears.reduce((acc, fy) => {
+      const months = getFinancialYearMonths(fy);
+
+      acc[fy] = {
+        months,
+        totalAssetValues: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
+        usedAssetValues: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
+        assetsUnderMaintenance: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
+        assetsDamaged: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
+      };
+
+      return acc;
+    }, {});
+
+    assetsDept?.forEach((dept) => {
+      dept.assets?.forEach((asset) => {
+        const fiscalYear = getFiscalYearFromDate(asset.purchaseDate);
+
+        if (!fiscalYear || !initialStats[fiscalYear]) return;
+
+        const month = new Date(asset.purchaseDate).toLocaleString("en-US", {
+          month: "short",
+          year: "2-digit",
+        });
+
+        const monthKey = month.replace(" ", "-");
+
+        if (!initialStats[fiscalYear].totalAssetValues[monthKey] && initialStats[fiscalYear].totalAssetValues[monthKey] !== 0) {
+          return;
+        }
+
         const price = asset.price || 0;
 
-        totalAssetValues[monthKey] += price;
+        initialStats[fiscalYear].totalAssetValues[monthKey] += price;
 
         if (asset.isAssigned) {
-          usedAssetValues[monthKey] += price;
+          initialStats[fiscalYear].usedAssetValues[monthKey] += price;
         }
 
         if (asset.isUnderMaintenance) {
-          assetsUnderMaintenance[monthKey] += 1;
+          initialStats[fiscalYear].assetsUnderMaintenance[monthKey] += 1;
         }
 
         if (asset.isDamaged) {
-          assetsDamaged[monthKey] += 1;
+          initialStats[fiscalYear].assetsDamaged[monthKey] += 1;
         }
-      }
+      });
     });
+
+    return initialStats;
+  }, [assetsDept, currentFiscalYear, previousFiscalYear]);
+
+  const assetUtilizationSeries = fiscalYears.map((fiscalYear) => {
+    const months = monthlyAssetStatsByFY[fiscalYear]?.months || [];
+
+    return {
+      group: fiscalYear,
+      name: fiscalYear,
+      data: months.map((month) => {
+        const total = monthlyAssetStatsByFY[fiscalYear]?.totalAssetValues[month] || 0;
+        const used = monthlyAssetStatsByFY[fiscalYear]?.usedAssetValues[month] || 0;
+
+        return total ? Number(((used / total) * 100).toFixed(2)) : 0;
+      }),
+    };
   });
-
-  // Calculate utilization
-  const assetUtilizationData = financialYearMonths.map((month) => {
-    const total = totalAssetValues[month];
-    const used = usedAssetValues[month];
-
-    return total ? ((used / total) * 100).toFixed(2) : 0;
-  });
-
-  const assetUtilizationSeries = [
-    {
-      name: "Asset Utilization",
-      data: assetUtilizationData,
-    },
-  ];
 
   // ApexCharts configuration
   const assetUtilizationOptions = {
@@ -446,9 +475,6 @@ const AssetsDashboard = () => {
       type: "bar",
       fontFamily: "Poppins-Regular",
       toolbar: false,
-    },
-    xaxis: {
-      categories: financialYearMonths,
     },
     yaxis: {
       max: 100,
@@ -470,22 +496,26 @@ const AssetsDashboard = () => {
     tooltip: {
       enabled: true,
       shared: false,
-      custom: ({ seriesIndex, dataPointIndex, w }) => {
-        const month = financialYearMonths[dataPointIndex];
-        const total = totalAssetValues[month].toFixed(2);
-        const used = usedAssetValues[month].toFixed(2);
-        const underMaintenance = assetsUnderMaintenance[month];
-        const damaged = assetsDamaged[month];
+      custom: ({ dataPointIndex }) => {
+        const months = monthlyAssetStatsByFY[selectedAssetValueFY]?.months || [];
+        const month = months[dataPointIndex];
+
+        if (!month) return "";
+
+        const total = monthlyAssetStatsByFY[selectedAssetValueFY]?.totalAssetValues[month] || 0;
+        const used = monthlyAssetStatsByFY[selectedAssetValueFY]?.usedAssetValues[month] || 0;
+        const underMaintenance = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetsUnderMaintenance[month] || 0;
+        const damaged = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetsDamaged[month] || 0;
 
         return `
         <div style="padding: 10px; background: white; border-radius: 5px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);">
           <div style="padding-bottom: 5px; border-bottom: 1px solid gray; margin-bottom:10px">
             <strong>${month}</strong><br>
-          </div> 
+          </div>
           Total Assets Value: INR ${inrFormat(total)}<br>
           Asset Value Used: INR ${inrFormat(used)}<br>
           Under Maintenance: ${underMaintenance} <br>
-          Assets Damaged: ${damaged} 
+          Assets Damaged: ${damaged}
         </div>
       `;
       },
@@ -505,25 +535,28 @@ const AssetsDashboard = () => {
         columnWidth: "40%",
       },
     },
-    colors: ["#3B82F6"], // fixed color instead of random
+    colors: ["#3B82F6"],
+  };
+
+  const assetsValueGraph = {
+    titleAmount: `ASSET VALUE UTILIZATION (${selectedAssetValueFY})`,
+    title: "Assets Value",
+    data: assetUtilizationSeries,
+    options: assetUtilizationOptions,
+    onYearChange: setSelectedAssetValueFY,
   };
 
   const meetingsWidgets = [
     {
       layout: 1,
       widgets: [
-        <WidgetSection
-          layout={1}
-          border
-          title={"Assets Value"}
-          titleLabel={"FY 2025-26"}
-        >
-          <NormalBarGraph
-            height={400}
-            data={assetUtilizationSeries}
-            options={assetUtilizationOptions}
-          />
-        </WidgetSection>,
+        <YearlyGraph
+          titleAmount={assetsValueGraph.titleAmount}
+          title={assetsValueGraph.title}
+          data={assetsValueGraph.data}
+          options={assetsValueGraph.options}
+          onYearChange={assetsValueGraph.onYearChange}
+        />,
       ],
     },
     {

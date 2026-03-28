@@ -27,7 +27,15 @@ const {
 } = require("../controllers/assetsControllers/assignAssetController");
 
 // Asset Management Routes
-router.post("/create-asset", upload.single("asset-image"), addAsset);
+router.post(
+  "/create-asset",
+  upload.fields([
+    { name: "asset-image", maxCount: 1 },
+    { name: "assetImage", maxCount: 1 },
+    { name: "warrantyDocument", maxCount: 1 },
+  ]),
+  addAsset,
+);
 router.patch(
   "/update-asset/:assetId",
   upload.fields([

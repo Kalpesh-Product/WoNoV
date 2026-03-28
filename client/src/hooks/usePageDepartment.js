@@ -37,6 +37,23 @@ const usePageDepartment = () => {
 
   // Fallback for undefined section
   if (!section) {
+    const isAssetsModule = pathSegments.includes("assets");
+
+    if (isAssetsModule) {
+      const userDepartments = auth?.user?.departments || [];
+      const preferredDepartment =
+        userDepartments.find(
+          (dept) => dept?.name?.toLowerCase() !== "top management",
+        ) || userDepartments[0];
+
+      if (preferredDepartment) {
+        return preferredDepartment;
+      }
+
+      if (Array.isArray(fetchedDepartments) && fetchedDepartments[0]?.department) {
+        return fetchedDepartments[0].department;
+      }
+    }
     console.warn("usePageDepartment: Unable to determine section from path.");
     return null;
   }

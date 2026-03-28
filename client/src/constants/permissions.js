@@ -1691,6 +1691,19 @@ export const PERMISSIONS = {
     title: "INVENTORY",
     type: "read",
   },
+ MAINTENANCE_INVENTORY_SUNTECK_UNITS: {
+    value: "maintenance_inventory_sunteck_units",
+    title: "SUNTECK KANAKA UNITS",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+  MAINTENANCE_INVENTORY_DEMPO_UNITS: {
+    value: "maintenance_inventory_dempo_trade_centre_units",
+    title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+
   MAINTENANCE_FINANCE: { value: "maintenance_finance_card", title: "FINANCE", type: "read" },
   MAINTENANCE_MIX_BAG: { value: "maintenance_mix_bag_card", title: "MIX BAG", type: "read" },
   MAINTENANCE_TEAM_MEMBERS_SCHEDULE: {
