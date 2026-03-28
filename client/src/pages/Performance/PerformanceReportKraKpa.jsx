@@ -6,6 +6,7 @@ import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
+import YearWiseTable from "../../components/Tables/YearWiseTable";
 
 const tabSx = {
     backgroundColor: "white",
@@ -95,9 +96,6 @@ const PerformanceReportKraKpa = () => {
         },
     });
 
-    const formatDateTime = (value) =>
-        value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
-
     const reportColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
         { headerName: `${activeTypeTab} Name`, field: "taskName", flex: 1 },
@@ -110,19 +108,19 @@ const PerformanceReportKraKpa = () => {
         {
             headerName: "Assigned Date",
             field: "assignedDate",
-            cellRenderer: (params) => formatDateTime(params.value),
+            includeTime: true,
         },
         {
             headerName: "Due Date",
             field: "dueDate",
-            cellRenderer: (params) => formatDateTime(params.value),
+            includeTime: true,
         },
         ...(activeStatusTab === "Completed"
             ? [
                 {
                     headerName: "Completed On",
                     field: "completionDate",
-                    cellRenderer: (params) => formatDateTime(params.value),
+                    includeTime: true,
                 },
             ]
             : []),
@@ -152,54 +150,56 @@ const PerformanceReportKraKpa = () => {
     }));
 
     return (
-        <WidgetSection border title="REPORT KRA/KPA" normalCase>
-            <div className="flex flex-col gap-4">
-                <Tabs
-                    value={activeDepartmentId}
-                    onChange={(_, newValue) => setActiveDepartmentId(newValue)}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                    TabIndicatorProps={{ style: { display: "none" } }}
-                    sx={tabSx}
-                >
-                    {departments.map((department) => (
-                        <Tab key={department.id} label={department.name} value={department.id} />
-                    ))}
-                </Tabs>
+        <div className="flex flex-col gap-4">
+            <Tabs
+                value={activeDepartmentId}
+                onChange={(_, newValue) => setActiveDepartmentId(newValue)}
+                variant="scrollable"
+                scrollButtons="auto"
+                TabIndicatorProps={{ style: { display: "none" } }}
+                sx={tabSx}
+            >
+                {departments.map((department) => (
+                    <Tab key={department.id} label={department.name} value={department.id} />
+                ))}
+            </Tabs>
 
-                <Tabs
-                    value={activeStatusTab}
-                    onChange={(_, newValue) => setActiveStatusTab(newValue)}
-                    variant="fullWidth"
-                    TabIndicatorProps={{ style: { display: "none" } }}
-                    sx={tabSx}
-                >
-                    <Tab label="Completed" value="Completed" />
-                    <Tab label="Pending" value="Pending" />
-                </Tabs>
+            <Tabs
+                value={activeStatusTab}
+                onChange={(_, newValue) => setActiveStatusTab(newValue)}
+                variant="fullWidth"
+                TabIndicatorProps={{ style: { display: "none" } }}
+                sx={tabSx}
+            >
+                <Tab label="Completed" value="Completed" />
+                <Tab label="Pending" value="Pending" />
+            </Tabs>
 
-                <Tabs
-                    value={activeTypeTab}
-                    onChange={(_, newValue) => setActiveTypeTab(newValue)}
-                    variant="fullWidth"
-                    TabIndicatorProps={{ style: { display: "none" } }}
-                    sx={tabSx}
-                >
-                    <Tab label="KRA" value="KRA" />
-                    <Tab label="KPA" value="KPA" />
-                </Tabs>
+            <Tabs
+                value={activeTypeTab}
+                onChange={(_, newValue) => setActiveTypeTab(newValue)}
+                variant="fullWidth"
+                TabIndicatorProps={{ style: { display: "none" } }}
+                sx={tabSx}
+            >
+                <Tab label="KRA" value="KRA" />
+                <Tab label="KPA" value="KPA" />
+            </Tabs>
 
+            <WidgetSection border title="REPORT KRA/KPA" normalCase>
                 <div className="pt-2">
-                    <AgTable
+                    <YearWiseTable
                         data={tableData}
                         columns={reportColumns}
-                        loading={isPending}
-                        hideFilter
+                        dateColumn="assignedDate"
+                        search
+                        tableTitle={`${activeStatusTab} ${selectedDepartment?.name} ${activeTypeTab} REPORT`}
                         exportData
+                        loading={isPending}
                     />
                 </div>
-            </div>
-        </WidgetSection>
+            </WidgetSection>
+        </div>
     );
 };
 
