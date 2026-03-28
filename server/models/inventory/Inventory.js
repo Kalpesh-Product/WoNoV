@@ -55,9 +55,28 @@ const inventorySchema = new mongoose.Schema(
       required: false,
       default: 0,
     },
+    consumedNewPurchaseInventoryUnits: {
+      type: Number,
+      required: false,
+      default: 0,
+    },
+    consumedOpenInventoryUnits: {
+      type: Number,
+      required: false,
+      default: 0,
+    },
+    remainingInventoryUnits: {
+      type: Number,
+      required: false,
+      default: 0,
+    },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
+    },
+    unit: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Unit",
     },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
