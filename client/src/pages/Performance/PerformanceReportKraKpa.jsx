@@ -1,16 +1,37 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Chip, Tab, Tabs } from "@mui/material";
 import AgTable from "../../components/AgTable";
-import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 
+const tabSx = {
+    backgroundColor: "white",
+    borderRadius: 2,
+    border: "1px solid #d1d5db",
+    "& .MuiTab-root": {
+        textTransform: "none",
+        fontWeight: "medium",
+        color: "#1E3D73",
+        padding: "12px 16px",
+        borderRight: "0.1px solid #d1d5db",
+    },
+    "& .MuiTab-root:last-of-type": {
+        borderRight: "0",
+    },
+    "& .Mui-selected": {
+        backgroundColor: "#1E3D73",
+        color: "white !important",
+    },
+};
+
 const PerformanceReportKraKpa = () => {
     const axios = useAxiosPrivate();
-    const [activeTab, setActiveTab] = useState("KRA");
+    const [activeTypeTab, setActiveTypeTab] = useState("KRA");
+    const [activeStatusTab, setActiveStatusTab] = useState("Completed");
+    const [activeDepartmentId, setActiveDepartmentId] = useState("");
 
     const { data: departmentMembers = [] } = useQuery({
         queryKey: ["performanceAccessibleDepartments"],
@@ -20,32 +41,57 @@ const PerformanceReportKraKpa = () => {
         },
     });
 
-    const departmentIds = useMemo(
+    const departments = useMemo(
         () =>
             departmentMembers
-                .map((department) => department?._id?.toString())
-                .filter(Boolean),
+                .map((department) => ({
+                    id: department?._id?.toString(),
+                    name: department?.name || "Unknown Department",
+                }))
+                .filter((department) => department.id),
         [departmentMembers]
     );
 
-    const { data: completedReport = [], isPending } = useQuery({
-        queryKey: ["performanceCompletedReport", activeTab, departmentIds],
-        enabled: departmentIds.length > 0,
-        queryFn: async () => {
-            const allResponses = await Promise.all(
-                departmentIds.map((departmentId) =>
-                    axios.get("/api/performance/get-completed-tasks", {
-                        params: {
-                            dept: departmentId,
-                            type: activeTab,
-                        },
-                    })
-                )
-            );
+    useEffect(() => {
+        if (!departments.length) {
+            setActiveDepartmentId("");
+            return;
+        }
 
-            return allResponses
-                .flatMap((response) => response.data || [])
-                .sort((a, b) => new Date(b.completionDate) - new Date(a.completionDate));
+        if (!activeDepartmentId || !departments.some((dept) => dept.id === activeDepartmentId)) {
+            setActiveDepartmentId(departments[0].id);
+        }
+    }, [departments, activeDepartmentId]);
+
+    const selectedDepartment = useMemo(
+        () => departments.find((department) => department.id === activeDepartmentId),
+        [departments, activeDepartmentId]
+    );
+
+    const endpoint =
+        activeStatusTab === "Completed"
+            ? "/api/performance/get-completed-tasks"
+            : "/api/performance/get-tasks";
+
+    const { data: reportData = [], isPending } = useQuery({
+        queryKey: [
+            "performanceReport",
+            activeTypeTab,
+            activeStatusTab,
+            activeDepartmentId,
+        ],
+        enabled: Boolean(activeDepartmentId),
+        queryFn: async () => {
+            const response = await axios.get(endpoint, {
+                params: {
+                    dept: activeDepartmentId,
+                    type: activeTypeTab,
+                },
+            });
+
+            return (response.data || []).sort(
+                (a, b) => new Date(b.completionDate || b.assignedDate) - new Date(a.completionDate || a.assignedDate)
+            );
         },
     });
 
@@ -54,9 +100,13 @@ const PerformanceReportKraKpa = () => {
 
     const reportColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
-        { headerName: `${activeTab} Name`, field: "taskName", flex: 1 },
+        { headerName: `${activeTypeTab} Name`, field: "taskName", flex: 1 },
         { headerName: "Department", field: "department", flex: 1 },
-        { headerName: "Completed By", field: "completedBy", flex: 1 },
+        {
+            headerName: activeStatusTab === "Completed" ? "Completed By" : "Assigned To",
+            field: activeStatusTab === "Completed" ? "completedBy" : "assignedTo",
+            flex: 1,
+        },
         {
             headerName: "Assigned Date",
             field: "assignedDate",
@@ -67,64 +117,81 @@ const PerformanceReportKraKpa = () => {
             field: "dueDate",
             cellRenderer: (params) => formatDateTime(params.value),
         },
-        {
-            headerName: "Completed On",
-            field: "completionDate",
-            cellRenderer: (params) => formatDateTime(params.value),
-        },
+        ...(activeStatusTab === "Completed"
+            ? [
+                {
+                    headerName: "Completed On",
+                    field: "completionDate",
+                    cellRenderer: (params) => formatDateTime(params.value),
+                },
+            ]
+            : []),
         {
             headerName: "Status",
             field: "status",
-            cellRenderer: (params) => (
-                <Chip
-                    label={params.value}
-                    style={{
-                        backgroundColor: "#16f8062c",
-                        color: "#00731b",
-                    }}
-                />
-            ),
+            cellRenderer: (params) => {
+                const isCompleted = params.value === "Completed";
+                return (
+                    <Chip
+                        label={params.value || "Pending"}
+                        style={{
+                            backgroundColor: isCompleted ? "#16f8062c" : "#fff3cd",
+                            color: isCompleted ? "#00731b" : "#8a6d3b",
+                        }}
+                    />
+                );
+            },
         },
     ];
 
+    const tableData = reportData.map((item, index) => ({
+        ...item,
+        srNo: index + 1,
+        department: item?.department || selectedDepartment?.name || "N/A",
+        status: item?.status || activeStatusTab,
+    }));
+
     return (
         <WidgetSection border title="REPORT KRA/KPA" normalCase>
-            <div>
+            <div className="flex flex-col gap-4">
                 <Tabs
-                    value={activeTab}
-                    onChange={(_, newValue) => setActiveTab(newValue)}
-                    variant="fullWidth"
+                    value={activeDepartmentId}
+                    onChange={(_, newValue) => setActiveDepartmentId(newValue)}
+                    variant="scrollable"
+                    scrollButtons="auto"
                     TabIndicatorProps={{ style: { display: "none" } }}
-                    sx={{
-                        backgroundColor: "white",
-                        borderRadius: 2,
-                        border: "1px solid #d1d5db",
-                        "& .MuiTab-root": {
-                            textTransform: "none",
-                            fontWeight: "medium",
-                            color: "#1E3D73",
-                            padding: "12px 16px",
-                            borderRight: "0.1px solid #d1d5db",
-                        },
-                        "& .MuiTab-root:last-of-type": {
-                            borderRight: "0",
-                        },
-                        "& .Mui-selected": {
-                            backgroundColor: "#1E3D73",
-                            color: "white !important",
-                        },
-                    }}
+                    sx={tabSx}
                 >
-                    <Tab label="Completed KRA" value="KRA" />
-                    <Tab label="Completed KPA" value="KPA" />
+                    {departments.map((department) => (
+                        <Tab key={department.id} label={department.name} value={department.id} />
+                    ))}
                 </Tabs>
 
-                <div className="pt-4">
+                <Tabs
+                    value={activeStatusTab}
+                    onChange={(_, newValue) => setActiveStatusTab(newValue)}
+                    variant="fullWidth"
+                    TabIndicatorProps={{ style: { display: "none" } }}
+                    sx={tabSx}
+                >
+                    <Tab label="Completed" value="Completed" />
+                    <Tab label="Pending" value="Pending" />
+                </Tabs>
+
+                <Tabs
+                    value={activeTypeTab}
+                    onChange={(_, newValue) => setActiveTypeTab(newValue)}
+                    variant="fullWidth"
+                    TabIndicatorProps={{ style: { display: "none" } }}
+                    sx={tabSx}
+                >
+                    <Tab label="KRA" value="KRA" />
+                    <Tab label="KPA" value="KPA" />
+                </Tabs>
+
+                <div className="pt-2">
                     <AgTable
-                        data={completedReport.map((item, index) => ({
-                            ...item,
-                            srNo: index + 1,
-                        }))}
+                        data={tableData}
                         columns={reportColumns}
                         loading={isPending}
                         hideFilter
