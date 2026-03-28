@@ -1,6 +1,11 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { RiPagesLine } from "react-icons/ri";
-import { MdFormatListBulleted, MdMiscellaneousServices } from "react-icons/md";
+import {
+  MdFormatListBulleted,
+  MdMiscellaneousServices,
+  MdNavigateBefore,
+  MdNavigateNext,
+} from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
 import Card from "../../components/Card";
 import DonutChart from "../../components/graphs/DonutChart";
@@ -31,12 +36,19 @@ import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
 import humanDate from "../../utils/humanDateForamt";
 import { PERMISSIONS } from "../../constants/permissions";
+import SecondaryButton from "../../components/SecondaryButton";
 
 const AssetsDashboard = () => {
   const { auth } = useAuth();
   const departments = auth.user.departments;
 
   const axios = useAxiosPrivate();
+  const today = new Date();
+  const currentFinancialYearStart =
+    today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  const [selectedFinancialYearStart, setSelectedFinancialYearStart] = useState(
+    currentFinancialYearStart,
+  );
   //-----------------------MAIN API CALL------------------------------------//
   const { data: departmentAssets, isLoading: isDepartmentLoading } = useQuery({
     queryKey: ["assets"],
@@ -123,8 +135,8 @@ const AssetsDashboard = () => {
   const totalAssets = (isDepartmentLoading || !Array.isArray(assetsDept))
     ? []
     : assetsDept
-        .filter((dept) => dept?.assets && Array.isArray(dept.assets))
-        .flatMap((dept) => dept.assets);
+      .filter((dept) => dept?.assets && Array.isArray(dept.assets))
+      .flatMap((dept) => dept.assets);
 
   const totalOwnedAssets = totalAssets.filter((asset) => {
     return asset.ownershipType === "Owned";
@@ -260,8 +272,8 @@ const AssetsDashboard = () => {
   const assetCategoriesData = {
     labels: !isCategoriesLoading
       ? departmentCategories.map((cat) => {
-          return cat.categoryName;
-        })
+        return cat.categoryName;
+      })
       : [],
     series: !isCategoriesLoading && Array.isArray(departmentCategories)
       ? departmentCategories.map((cat) => cat.subCategories?.length || 0)
@@ -333,56 +345,51 @@ const AssetsDashboard = () => {
   const recentAssets = isDepartmentLoading
     ? []
     : totalAssets
-        .filter((asset) => {
-          const currDate = new Date();
-          const assetDate = new Date(asset.createdAt);
+      .filter((asset) => {
+        const currDate = new Date();
+        const assetDate = new Date(asset.createdAt);
 
-          return (
-            assetDate.getMonth() === currDate.getMonth() &&
-            assetDate.getFullYear() === currDate.getFullYear()
-          );
-        })
-        .map((item, index) => {
-          const data = {
-            ...item,
-            srNo: index + 1,
-            assetId: item.assetId,
-            department: item?.department?.name,
-            subCategory: item?.subCategory?.subCategoryName,
-            category: item?.subCategory?.category.categoryName,
-            brand: item?.brand,
-            warranty: item?.warranty,
-            purchaseDate: humanDate(item?.purchaseDate),
-            price: `INR ${item?.price}`,
-          };
+        return (
+          assetDate.getMonth() === currDate.getMonth() &&
+          assetDate.getFullYear() === currDate.getFullYear()
+        );
+      })
+      .map((item, index) => {
+        const data = {
+          ...item,
+          srNo: index + 1,
+          assetId: item.assetId,
+          department: item?.department?.name,
+          subCategory: item?.subCategory?.subCategoryName,
+          category: item?.subCategory?.category.categoryName,
+          brand: item?.brand,
+          warranty: item?.warranty,
+          purchaseDate: humanDate(item?.purchaseDate),
+          price: `INR ${item?.price}`,
+        };
 
-          return data;
-        });
+        return data;
+      });
 
   //Assets Value Graph
 
   // Define current financial year months
-  const financialYearMonths = [
-    "Apr-24",
-    "May-24",
-    "Jun-24",
-    "Jul-24",
-    "Aug-24",
-    "Sep-24",
-    "Oct-24",
-    "Nov-24",
-    "Dec-24",
-    "Jan-25",
-    "Feb-25",
-    "Mar-25",
-    "Jul-25",
-  ];
+  const financialYearMonths = useMemo(() => {
+    const months = [];
+    for (let month = 3; month <= 14; month += 1) {
+      const date = new Date(selectedFinancialYearStart, month, 1);
+      const monthLabel = date.toLocaleString("en-US", { month: "short" });
+      const yearLabel = date.getFullYear().toString().slice(-2);
+      months.push(`${monthLabel}-${yearLabel}`);
+    }
+    return months;
+  }, [selectedFinancialYearStart]);
 
   // Initialize tracking objects
-  let totalAssetValues = {};
-  let usedAssetValues = {};
-  let assetsUnderMaintenance = {};
-  let assetsDamaged = {};
+  const totalAssetValues = {};
+  const usedAssetValues = {};
+  const assetsUnderMaintenance = {};
+  const assetsDamaged = {};
 
   // Initialize months with 0
   financialYearMonths.forEach((month) => {
@@ -508,6 +515,10 @@ const AssetsDashboard = () => {
     colors: ["#3B82F6"], // fixed color instead of random
   };
 
+  const financialYearLabel = `FY ${selectedFinancialYearStart}-${String(
+    selectedFinancialYearStart + 1,
+  ).slice(-2)}`;
+
   const meetingsWidgets = [
     {
       layout: 1,
@@ -516,8 +527,24 @@ const AssetsDashboard = () => {
           layout={1}
           border
           title={"Assets Value"}
-          titleLabel={"FY 2025-26"}
+          titleLabel={financialYearLabel}
         >
+          <div className="flex justify-end items-center gap-2 px-4">
+            <SecondaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={() =>
+                setSelectedFinancialYearStart((prev) => prev - 1)
+              }
+              externalStyles="!px-4"
+            />
+            <SecondaryButton
+              title={<MdNavigateNext />}
+              handleSubmit={() =>
+                setSelectedFinancialYearStart((prev) => prev + 1)
+              }
+              externalStyles="!px-4"
+            />
+          </div>
           <NormalBarGraph
             height={400}
             data={assetUtilizationSeries}
