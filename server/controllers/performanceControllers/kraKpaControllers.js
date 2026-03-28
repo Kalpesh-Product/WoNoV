@@ -55,7 +55,7 @@ const createDeptBasedTask = async (req, res, next) => {
       parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 1
         ? "Monthly"
         : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
-            parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
+          parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
           ? "Annually"
           : "No match";
 
@@ -83,8 +83,8 @@ const createDeptBasedTask = async (req, res, next) => {
       assignedDate: parsedAssignedDate,
       dueDate:
         taskType === "KRA" ||
-        taskType === "TEAMKRA" ||
-        taskType === "INDIVIDUALKRA"
+          taskType === "TEAMKRA" ||
+          taskType === "INDIVIDUALKRA"
           ? currDate
           : parsedDueDate,
       dueTime,
@@ -555,60 +555,59 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
       completedTasks.length < 0
         ? []
         : completedTasks
-            .filter((task) => {
-              if (!task.task || task.task.isDeleted) return false;
-              if (duration && duration !== task.task.kpaDuration) return;
-              if (empId && task.completedBy.empId !== empId) return;
-              if (task.task.department._id.toString() !== dept) return false;
+          .filter((task) => {
+            if (!task.task || task.task.isDeleted) return false;
+            if (duration && duration !== task.task.kpaDuration) return;
+            if (empId && task.completedBy.empId !== empId) return;
+            if (task.task.department._id.toString() !== dept) return false;
 
-              // Department KRA/KPA
-              if (type === "KRA" || type === "KPA") {
-                return task.task.taskType === type;
+            // Department KRA/KPA
+            if (type === "KRA" || type === "KPA") {
+              return task.task.taskType === type;
+            }
+
+            // Team KRA/KPA
+            if (type === "TEAMKRA" || type === "TEAMKPA") {
+              return task.task.taskType === type;
+            }
+
+            // Individual KRA/KPA also includes own Team assignments
+            if (type === "INDIVIDUALKRA" || type === "INDIVIDUALKPA") {
+              const isOwnTask =
+                task.task.assignTo?._id.toString() === req.user.toString();
+
+              if (task.task.taskType === type) {
+                if (isManager) return true;
+                return isOwnTask;
               }
 
-              // Team KRA/KPA
-              if (type === "TEAMKRA" || type === "TEAMKPA") {
-                return task.task.taskType === type;
+              const mappedType =
+                type === "INDIVIDUALKRA" ? "TEAMKRA" : "TEAMKPA";
+              if (task.task.taskType === mappedType) {
+                return isOwnTask;
               }
+            }
 
-              // Individual KRA/KPA also includes own Team assignments
-              if (type === "INDIVIDUALKRA" || type === "INDIVIDUALKPA") {
-                const isOwnTask =
-                  task.task.assignTo?._id.toString() === req.user.toString();
-
-                if (task.task.taskType === type) {
-                  if (isManager) return true;
-                  return isOwnTask;
-                }
-
-                const mappedType =
-                  type === "INDIVIDUALKRA" ? "TEAMKRA" : "TEAMKPA";
-                if (task.task.taskType === mappedType) {
-                  return isOwnTask;
-                }
-              }
-
-              return false;
-            })
-            .map((task) => {
-              const completedBy = `${task.completedBy.firstName} ${
-                task.completedBy.middleName || ""
+            return false;
+          })
+          .map((task) => {
+            const completedBy = `${task.completedBy.firstName} ${task.completedBy.middleName || ""
               } ${task.completedBy.lastName}`;
 
-              return {
-                id: task._id,
-                taskName: task.task.task,
-                department: task.task.department.name,
-                completedBy: completedBy,
-                assignedDate: task.task.assignedDate,
-                dueDate: task.task.dueDate,
-                dueTime: "6:30 PM",
-                completionDate: task.completionDate
-                  ? task.completionDate
-                  : "N/A",
-                status: task.status,
-              };
-            });
+            return {
+              id: task._id,
+              taskName: task.task.task,
+              department: task.task.department.name,
+              completedBy: completedBy,
+              assignedDate: task.task.assignedDate,
+              dueDate: task.task.dueDate,
+              dueTime: "6:30 PM",
+              completionDate: task.completionDate
+                ? task.completionDate
+                : "N/A",
+              status: task.status,
+            };
+          });
 
     return res.status(200).json(transformedCompletedTasks);
   } catch (error) {
@@ -619,7 +618,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
 const getAllDeptTasks = async (req, res, next) => {
   try {
     const { roles, company, departments } = req;
-    const { duration, taskType } = req.query;
+    const { duration, taskType, month } = req.query;
 
     let departmentMap = new Map();
     let query = { company };
@@ -635,6 +634,29 @@ const getAllDeptTasks = async (req, res, next) => {
     }
     if (taskType) {
       query.taskType = taskType;
+    }
+
+    if (month) {
+      const monthIndex = [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+      ].indexOf(String(month).trim().toLowerCase());
+
+      if (monthIndex !== -1) {
+        query.$expr = {
+          $eq: [{ $month: "$assignedDate" }, monthIndex + 1],
+        };
+      }
     }
 
     if (!isHrOrSuperAdmin) {
@@ -664,7 +686,7 @@ const getAllDeptTasks = async (req, res, next) => {
     });
 
     const tasks = await kraKpaRole
-      .find({ ...query })
+      .find({ ...query, isDeleted: false })
       .populate([{ path: "department", select: "name" }])
       .select("-company")
       .lean();
@@ -718,7 +740,7 @@ const getAllKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
 
-    const pendingTasks = await kraKpaRole.find({ company }).populate(
+    const pendingTasks = await kraKpaRole.find({ company, isDeleted: false }).populate(
       { path: "department", select: "name" },
       // { path: "assignedBy", select: "firstName middleName lastName" },
     );
@@ -742,15 +764,18 @@ const getAllKpaTasks = async (req, res, next) => {
       .lean();
 
     const transformedByDepartment = {};
+    const completedTaskIds = new Set();
 
     // Step 1: Handle Completed Tasks
     completedTasks.forEach((task) => {
-      if (task.task.taskType !== "KPA") return;
+      if (task?.task?.taskType !== "KPA") return;
+      if (!task?.task?._id || !task?.task?.department?.name) return;
+
+      completedTaskIds.add(String(task.task._id));
 
       const departmentName = task.task.department.name;
-      const assignee = `${task.completedBy.firstName} ${
-        task.completedBy.middleName || ""
-      } ${task.completedBy.lastName}`.trim();
+      const assignee = `${task.completedBy.firstName} ${task.completedBy.middleName || ""
+        } ${task.completedBy.lastName}`.trim();
 
       const transformedTask = {
         taskName: task.task.task,
@@ -780,6 +805,8 @@ const getAllKpaTasks = async (req, res, next) => {
     // Step 2: Handle Pending Tasks
     pendingTasks.forEach((task) => {
       if (task.taskType !== "KPA") return;
+      if (!task?.department?.name) return;
+      if (completedTaskIds.has(String(task._id))) return;
 
       const departmentName = task.department.name;
 

@@ -163,6 +163,8 @@ const TasksViewDepartment = () => {
           queryKey: ["fetchedDepartmentsTasks"],
         });
         queryClient.invalidateQueries({ queryKey: ["fetchedCompletedTasks"] });
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        queryClient.invalidateQueries({ queryKey: ["tasks-summary"] });
         toast.success(data.message || "Task deleted");
       },
       onError: (error) => {

@@ -1,103 +1,248 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import AgTable from "../../components/AgTable";
+import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
+import YearlyGraph from "../../components/graphs/YearlyGraph";
+import PieChartMui from "../../components/graphs/PieChartMui";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import Card from "../../components/Card";
+import { CgWebsite } from "react-icons/cg";
 import {
   setSelectedDepartment,
   setSelectedDepartmentName,
 } from "../../redux/slices/performanceSlice";
-import { useTopDepartment } from "../../hooks/useTopDepartment";
-import useAuth from "../../hooks/useAuth";
-import PageFrame from "../../components/Pages/PageFrame";
+
+const FISCAL_MONTHS = [
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+  "January",
+  "February",
+  "March",
+];
+
+const PIE_COLORS = ["#54C4A7", "#EB5C45"];
+const toCount = (value) => Number(value) || 0;
 
 const PerformanceHome = () => {
   const axios = useAxiosPrivate();
-  const { auth } = useAuth();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const currentDepartmentId = auth.user?.departments?.[0]?._id;
-  const currentDepartment = auth.user?.departments?.[0]?.name;
 
-  useTopDepartment({
-    additionalTopUserIds: ["67b83885daad0f7bab2f1888"], //utkarsha
-    onNotTop: () => {
-      dispatch(setSelectedDepartment(currentDepartmentId));
-      dispatch(setSelectedDepartmentName(currentDepartment));
-      navigate(`/app/performance/${currentDepartment}`);
+  const { data: fetchedDepartments = [] } = useQuery({
+    queryKey: ["performanceDepartments"],
+    queryFn: async () => {
+      const response = await axios.get("/api/performance/get-depts-tasks");
+      return response.data || [];
     },
   });
 
-  const fetchDepartments = async () => {
-    try {
-      const response = await axios.get("/api/performance/get-depts-tasks");
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-  const { data: fetchedDepartments = [], isPending: departmentLoading } =
-    useQuery({
-      queryKey: ["fetchedDepartments"],
-      queryFn: fetchDepartments,
+  const { data: kpaTasksRaw = [] } = useQuery({
+    queryKey: ["performanceKpaTasks"],
+    queryFn: async () => {
+      const response = await axios.get("/api/performance/get-kpa-tasks");
+      return response.data || [];
+    },
+  });
+
+
+  const annualKpaGraphData = useMemo(() => {
+    const monthlyTotals = {};
+    const monthlyAchieved = {};
+
+    FISCAL_MONTHS.forEach((month) => {
+      monthlyTotals[month] = 0;
+      monthlyAchieved[month] = 0;
     });
-  //console.log(fetchedDepartments)
-  const departmentColumns = [
-    { headerName: "Sr No", field: "srNo", width: 100 },
-    {
-      headerName: "Department",
-      field: "department",
-      flex: 1,
-      cellRenderer: (params) => {
-        return (
-          <span
-            role="button"
-            onClick={() => {
-              dispatch(setSelectedDepartment(params.data.mongoId));
-              dispatch(setSelectedDepartmentName(params.data.department));
-              navigate(`${params.value}`);
-            }}
-            className="text-primary font-pregular hover:underline cursor-pointer"
-          >
-            {params.value}
-          </span>
-        );
+
+    kpaTasksRaw.forEach((departmentTasks) => {
+      departmentTasks?.tasks?.forEach((task) => {
+        if (!task?.assignedDate) return;
+
+        const taskDate = new Date(task.assignedDate);
+        if (Number.isNaN(taskDate.getTime())) return;
+
+        const fiscalMonth = FISCAL_MONTHS[(taskDate.getMonth() + 9) % 12];
+        monthlyTotals[fiscalMonth] += 1;
+
+        if (task.status === "Completed") {
+          monthlyAchieved[fiscalMonth] += 1;
+        }
+      });
+    });
+
+    return [
+      {
+        name: "Completed KPA",
+        group: "FY 2025-26",
+        data: FISCAL_MONTHS.map((month) => {
+          const total = monthlyTotals[month];
+          const achieved = monthlyAchieved[month];
+          const percent = total > 0 ? (achieved / total) * 100 : 0;
+          return { x: month, y: +percent.toFixed(1), raw: achieved };
+        }),
+      },
+      {
+        name: "Remaining KPA",
+        group: "FY 2025-26",
+        data: FISCAL_MONTHS.map((month) => {
+          const total = monthlyTotals[month];
+          const achieved = monthlyAchieved[month];
+          const remaining = total - achieved;
+          const percent = total > 0 ? (remaining / total) * 100 : 0;
+          return { x: month, y: +percent.toFixed(1), raw: remaining };
+        }),
+      },
+    ];
+  }, [kpaTasksRaw]);
+
+  const annualKpaChartOptions = {
+    chart: {
+      type: "bar",
+      stacked: true,
+      animations: { enabled: false },
+      fontFamily: "Poppins-Regular",
+      toolbar: { show: false },
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const clickedMonth =
+            config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
+
+          navigate("/app/performance/overall-KPA/department-KPA", {
+            state: { month: clickedMonth },
+          });
+        },
       },
     },
-    { headerName: "Daily KRA", field: "dailyKra" },
-    { headerName: "Monthly KPA", field: "monthlyKpa" },
-    { headerName: "Individual Daily KRA", field: "individualDailyKra" },
-    { headerName: "Individual Monthly KPA", field: "individualMonthlyKpa" },
-    { headerName: "Team Daily KRA", field: "teamDailyKra" },
-    { headerName: "Team Monthly KPA", field: "teamMonthlyKpa" },
-  ];
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+      },
+    },
+    dataLabels: { enabled: false },
+    stroke: {
+      show: true,
+      width: 1,
+      colors: ["#fff"],
+    },
+    yaxis: {
+      title: { text: "Completion (%)" },
+      max: 100,
+      labels: { formatter: (val) => `${val.toFixed(0)}%` },
+    },
+    legend: {
+      position: "top",
+    },
+    colors: PIE_COLORS,
+  };
+
+
+  const kpaPieData = useMemo(() => {
+    const completed = kpaTasksRaw.reduce((acc, dept) => acc + (dept.achieved || 0), 0);
+    const total = kpaTasksRaw.reduce((acc, dept) => acc + (dept.total || 0), 0);
+    const pending = Math.max(total - completed, 0);
+
+    return [
+      { label: "Completed KPA", value: completed },
+      { label: "Pending KPA", value: pending },
+    ];
+  }, [kpaTasksRaw]);
+
+  const kraPieData = useMemo(() => {
+    const completed = fetchedDepartments.reduce(
+      (acc, dept) => acc + toCount(dept.completedTasks),
+      0
+    );
+    const pending = fetchedDepartments.reduce(
+      (acc, dept) =>
+        acc +
+        (toCount(dept.pendingTasks) ||
+          toCount(dept.dailyKRA) +
+          toCount(dept.teamDailyKRA) +
+          toCount(dept.individualDailyKRA)),
+      0
+    );
+
+    return [
+      { label: "Completed KRA", value: completed },
+      { label: "Pending KRA", value: pending },
+    ];
+  }, [fetchedDepartments]);
+
+  const pieOptions = (labels) => ({
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
+      toolbar: { show: false },
+    },
+    labels,
+    colors: PIE_COLORS,
+    stroke: {
+      show: true,
+      width: 1,
+      colors: ["#ffffff"],
+    },
+    legend: {
+      position: "bottom",
+    },
+  });
+
   return (
     <div className="flex flex-col gap-4">
-      <PageFrame>
-        <WidgetSection layout={1} padding>
-          <AgTable
-            data={[
-              ...fetchedDepartments.map((item, index) => ({
-                srNo: index + 1,
-                mongoId: item.department?._id,
-                department: item.department?.name,
-                dailyKra: item.dailyKRA,
-                monthlyKpa: item.monthlyKPA,
-                individualDailyKra: item.individualDailyKRA,               
-                individualMonthlyKpa: item.individualMonthlyKPA,
-                teamDailyKra: item.teamDailyKRA,               
-                teamMonthlyKpa: item.teamMonthlyKPA,
-                annualKpa: item.annualKPA,
-              })),
-            ]}
-            columns={departmentColumns}
-            tableTitle={"DEPARTMENT WISE KRA/KPA"}
-            hideFilter
+      <YearlyGraph
+        data={annualKpaGraphData}
+        options={annualKpaChartOptions}
+        title="ANNUAL KPA VS ACHIEVEMENTS"
+        titleAmount={`TOTAL KPA : ${kpaPieData[0].value + kpaPieData[1].value}`}
+        secondParam
+        currentYear
+      />
+      <WidgetSection layout={3}>
+        <Card
+          icon={<CgWebsite />}
+          title="DEPARTMENT WISE KRA/KPA"
+          route="/app/performance/overall-KPA/department-wise-KPA"
+        />
+        <Card
+          icon={<CgWebsite />}
+          title="ASSIGN KRA/KPA"
+          route="/app/performance/assign-kra-kpa"
+        />
+        <Card
+          icon={<CgWebsite />}
+          title="Report KRA/KPA"
+          route="/app/performance/report-kra-kpa"
+        />
+      </WidgetSection>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <WidgetSection border title="KRA - Pending vs Completed">
+          <PieChartMui
+            data={kraPieData}
+            options={pieOptions(kraPieData.map((item) => item.label))}
+            centerAlign
           />
         </WidgetSection>
-      </PageFrame>
+
+        <WidgetSection border title="KPA - Pending vs Completed">
+          <PieChartMui
+            data={kpaPieData}
+            options={pieOptions(kpaPieData.map((item) => item.label))}
+            centerAlign
+          />
+        </WidgetSection>
+      </div>
     </div>
+
   );
 };
 

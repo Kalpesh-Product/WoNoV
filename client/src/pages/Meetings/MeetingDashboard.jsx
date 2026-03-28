@@ -364,7 +364,7 @@ const MeetingDashboard = () => {
   // 🔁 Transform API response into availabilityRooms format
   const availabilityRooms = useMemo(
     () =>
-       roomsData
+      roomsData
         .filter((room) => room.isActive)
         .map((room, index) => {
           const roomName = room.name;
@@ -623,7 +623,7 @@ const MeetingDashboard = () => {
     },
     xaxis: { categories: BookingMonths },
     yaxis: {
-      max: 100,
+      max: 200,
       title: { text: "Utilization (%)" },
       labels: {
         formatter: (value) => Math.round(value),
@@ -1265,37 +1265,37 @@ const MeetingDashboard = () => {
       ),
     },
     {
-     layout: 2,
-widgets: [
-  ...allowedPieCharts.map((item) => (
-    <WidgetSection
-      key={item.key}
-      layout={item.layout}
-      title={item.title}
-      border={item.border}
-    >
-      <div className="relative flex items-center justify-center">
+      layout: 2,
+      widgets: [
+        ...allowedPieCharts.map((item) => (
+          <WidgetSection
+            key={item.key}
+            layout={item.layout}
+            title={item.title}
+            border={item.border}
+          >
+            <div className="relative flex items-center justify-center">
 
-        {/* CHART – perfectly centered */}
-        <div className="w-[400px] h-[320px]">
-          <PieChartMui
-            data={item.data}
-            options={item.options}
-            width={320}
-            height={320}
-          />
-        </div>
+              {/* CHART – perfectly centered */}
+              <div className="w-[400px] h-[320px]">
+                <PieChartMui
+                  data={item.data}
+                  options={item.options}
+                  width={320}
+                  height={320}
+                />
+              </div>
 
-        {/* LEGEND – stays on right */}
-        {item.customLegend && (
-          <div className="absolute right-0 max-h-[320px] overflow-y-auto">
-            {item.customLegend}
-          </div>
-        )}
+              {/* LEGEND – stays on right */}
+              {item.customLegend && (
+                <div className="absolute right-0 max-h-[320px] overflow-y-auto">
+                  {item.customLegend}
+                </div>
+              )}
 
-      </div>
-    </WidgetSection>
-  )),
+            </div>
+          </WidgetSection>
+        )),
         ...allowedDonutCharts.map((item) => (
           <WidgetSection
             key={item.key} // Add a key if possible!
