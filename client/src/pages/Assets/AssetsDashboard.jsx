@@ -109,23 +109,21 @@ const AssetsDashboard = () => {
   );
   const deptNames = departments.map((dept) => dept.name);
 
-  let assetsDept = !isDepartmentLoading ? departmentAssets : [];
+  let assetsDept = Array.isArray(departmentAssets) ? departmentAssets : [];
 
   if (!isTopManagement) {
-    assetsDept = !isDepartmentLoading
-      ? departmentAssets.filter((dept) =>
-          deptNames.includes(dept.departmentName),
-        )
-      : [];
+    assetsDept = assetsDept.filter((dept) =>
+      deptNames.includes(dept.departmentName),
+    );
   }
 
   const totalCategories = !isCategoriesLoading
     ? departmentCategories.length
     : 0;
-  const totalAssets = isDepartmentLoading
+  const totalAssets = (isDepartmentLoading || !Array.isArray(assetsDept))
     ? []
     : assetsDept
-        ?.filter((dept) => dept.assets.length > 0)
+        .filter((dept) => dept?.assets && Array.isArray(dept.assets))
         .flatMap((dept) => dept.assets);
 
   const totalOwnedAssets = totalAssets.filter((asset) => {
@@ -141,7 +139,7 @@ const AssetsDashboard = () => {
   ).length;
 
   const totalAssetsPrice = totalAssets.reduce(
-    (acc, asset) => acc + asset?.price,
+    (acc, asset) => acc + (asset?.price || 0),
     0,
   );
 
@@ -149,12 +147,12 @@ const AssetsDashboard = () => {
   const assetAvailabilityData = [
     {
       label: "Assigned Assets",
-      value: ((totalAssignedAssets / totalAssets.length) * 100).toFixed(1),
+      value: totalAssets.length > 0 ? ((totalAssignedAssets / totalAssets.length) * 100).toFixed(1) : 0,
       count: totalAssignedAssets,
     },
     {
       label: "Unassigned Assets",
-      value: ((totalUnassignedAssets / totalAssets.length) * 100).toFixed(1),
+      value: totalAssets.length > 0 ? ((totalUnassignedAssets / totalAssets.length) * 100).toFixed(1) : 0,
       count: totalUnassignedAssets,
     },
   ];
@@ -192,12 +190,12 @@ const AssetsDashboard = () => {
   const physicalDigitalPieData = [
     {
       label: "Physical Assets",
-      value: ((physicalAssets / totalAssets.length) * 100).toFixed(1),
+      value: totalAssets.length > 0 ? ((physicalAssets / totalAssets.length) * 100).toFixed(1) : 0,
       count: physicalAssets,
     },
     {
       label: "Digital Assets",
-      value: ((digitalAssets / totalAssets.length) * 100).toFixed(1),
+      value: totalAssets.length > 0 ? ((digitalAssets / totalAssets.length) * 100).toFixed(1) : 0,
       count: digitalAssets,
     },
   ];
@@ -265,13 +263,13 @@ const AssetsDashboard = () => {
           return cat.categoryName;
         })
       : [],
-    series: !isCategoriesLoading
-      ? departmentCategories.map((cat) => cat.subCategories.length)
+    series: !isCategoriesLoading && Array.isArray(departmentCategories)
+      ? departmentCategories.map((cat) => cat.subCategories?.length || 0)
       : [], // Example metric
-    tooltipValue: !isCategoriesLoading
-      ? departmentCategories.map((cat) => cat.subCategories.length)
+    tooltipValue: !isCategoriesLoading && Array.isArray(departmentCategories)
+      ? departmentCategories.map((cat) => cat.subCategories?.length || 0)
       : [], // Can customize
-    colors: !isCategoriesLoading
+    colors: !isCategoriesLoading && Array.isArray(departmentCategories)
       ? departmentCategories.map(() => getRandomColor())
       : [],
     centerLabel: "Assets",
@@ -292,7 +290,7 @@ const AssetsDashboard = () => {
 
   const departmentPieData = departmentWiseAssets.map((dept) => ({
     label: `${dept.label} Department`,
-    value: ((dept.value / totalDepartmentAssets) * 100).toFixed(1),
+    value: totalDepartmentAssets > 0 ? ((dept.value / totalDepartmentAssets) * 100).toFixed(1) : 0,
     count: dept.value,
   }));
 
@@ -403,8 +401,8 @@ const AssetsDashboard = () => {
   };
 
   // Aggregate data from all departments
-  assetsDept.forEach((dept) => {
-    dept.assets.forEach((asset) => {
+  assetsDept?.forEach((dept) => {
+    dept.assets?.forEach((asset) => {
       const monthKey = getMonthKey(asset.purchaseDate);
 
       if (financialYearMonths.includes(monthKey)) {

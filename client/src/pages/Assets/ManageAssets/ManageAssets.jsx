@@ -1,10 +1,13 @@
 import { useSelector } from "react-redux";
-import TabLayout from "../../../components/Tabs/TabLayout"; // Adjust the path as per your structure
+import { useParams } from "react-router-dom";
+import TabLayout from "../../../components/Tabs/TabLayout";
 
 const ManageAssets = () => {
-  const departmentName = useSelector(
+  const { department: urlDept } = useParams();
+  const reduxDeptName = useSelector(
     (state) => state.assets.selectedDepartmentName
   );
+  const departmentName = reduxDeptName || urlDept;
   const basePath = `/app/assets/manage-assets/${departmentName}`;
 
   const tabs = [
