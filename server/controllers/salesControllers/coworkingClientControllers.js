@@ -193,6 +193,14 @@ const createCoworkingClient = async (req, res, next) => {
       annualIncrement,
       perDeskMeetingCredits,
       totalMeetingCredits,
+      meetingCreditBalance: Number(totalMeetingCredits) || 0,
+      meetingCreditBalanceHistory: [
+        {
+          monthStartDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          remainingCredit: Number(totalMeetingCredits) || 0,
+          consumedCredit: 0,
+        },
+      ],
       startDate,
       endDate,
       lockinPeriod,
@@ -746,6 +754,40 @@ const resetCoworkingClientCredits = async (req, res, next) => {
 
     const resetTimestamp = new Date();
 
+    const currentMonthStart = new Date(
+      resetTimestamp.getFullYear(),
+      resetTimestamp.getMonth(),
+      1,
+    );
+
+    const existingHistory = Array.isArray(existingClient.meetingCreditBalanceHistory)
+      ? [...existingClient.meetingCreditBalanceHistory]
+      : [];
+
+    const existingMonthIndex = existingHistory.findIndex((entry) => {
+      if (!entry?.monthStartDate) return false;
+      const entryDate = new Date(entry.monthStartDate);
+      return (
+        entryDate.getFullYear() === currentMonthStart.getFullYear() &&
+        entryDate.getMonth() === currentMonthStart.getMonth()
+      );
+    });
+
+    if (existingMonthIndex >= 0) {
+      existingHistory[existingMonthIndex] = {
+        ...existingHistory[existingMonthIndex],
+        monthStartDate: currentMonthStart,
+        remainingCredit: 0,
+        consumedCredit: 0,
+      };
+    } else {
+      existingHistory.push({
+        monthStartDate: currentMonthStart,
+        remainingCredit: 0,
+        consumedCredit: 0,
+      });
+    }
+
     const updatedClient = await CoworkingClient.findOneAndUpdate(
       {
         _id: clientId,
@@ -754,6 +796,7 @@ const resetCoworkingClientCredits = async (req, res, next) => {
       {
         $set: {
           meetingCreditBalance: 0,
+          meetingCreditBalanceHistory: existingHistory,
           lastManualCreditResetAt: resetTimestamp,
         },
       },

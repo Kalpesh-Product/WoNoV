@@ -11,10 +11,7 @@ const yup = require("yup");
 const { Readable } = require("stream");
 const { formatDate } = require("../../utils/formatDateTime");
 const CustomError = require("../../utils/customErrorlogs");
-const {
-  handleFileUpload,
-  handleFileDelete,
-} = require("../../config/s3Config");
+const { handleFileUpload, handleFileDelete } = require("../../config/s3Config");
 const sharp = require("sharp");
 const Agreements = require("../../models/hr/Agreements");
 const TestUserData = require("../../models/hr/TestUserData");
@@ -811,8 +808,8 @@ const updateProfile = async (req, res, next) => {
     });
   } catch (error) {
     if (error instanceof CustomError) {
-      next(error);               // ← already has correct log values inside
-      return;                    // optional: prevents falling through
+      next(error); // ← already has correct log values inside
+      return; // optional: prevents falling through
     }
 
     // Generic error → wrap it with our logging context
@@ -822,8 +819,8 @@ const updateProfile = async (req, res, next) => {
         logPath,
         logAction,
         logSourceKey,
-        500
-      )
+        500,
+      ),
     );
   }
 };
@@ -957,7 +954,7 @@ const bulkInsertUsers = async (req, res, next) => {
                   // dateOfExit: new Date(row["Date of Exit"]) || null,
                   dateOfExit:
                     row["Date of Exit"] &&
-                      !isNaN(Date.parse(row["Date of Exit"]))
+                    !isNaN(Date.parse(row["Date of Exit"]))
                       ? new Date(row["Date of Exit"])
                       : null,
 
@@ -1010,7 +1007,7 @@ const bulkInsertUsers = async (req, res, next) => {
                 if (isNaN(userObj.startDate?.getTime())) {
                   console.log("Invalid DOJ Row:", row);
                 }
-                console.log("New User", userObj);
+
                 newUsers.push(userObj);
 
                 //Agreements Bulk Insertion
@@ -1030,7 +1027,7 @@ const bulkInsertUsers = async (req, res, next) => {
                       url: row[p].startsWith("https") ? row[p] : undefined,
                       type:
                         p === "Work Schedule Policy" &&
-                          !row[p].startsWith("https")
+                        !row[p].startsWith("https")
                           ? row[p]
                           : undefined,
                       isActive: row["Date of Exit"] ? false : true,

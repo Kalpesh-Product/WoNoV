@@ -138,7 +138,7 @@ const VisitorDashboard = () => {
       fontFamily: "Poppins-Regular",
     },
     yaxis: {
-      max: 50, // ✅ Add this line
+      max: 300, // ✅ Add this line
       title: {
         text: "No. of Visitors",
       },
@@ -191,7 +191,7 @@ const VisitorDashboard = () => {
     // { id: "lastName", label: "Last Name", minWidth: 120 },
     { id: "name", label: "Name", minWidth: 150, width: 180 },
     //{ id: "registeredClientCompany", label: "Company", minWidth: 120 },
-     { id: "visitorCompany", label: "Company", minWidth: 150, width: 180 },
+    { id: "visitorCompany", label: "Company", minWidth: 150, width: 180 },
 
     {
       id: "purposeOfVisit",
