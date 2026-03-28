@@ -87,6 +87,7 @@ import FrontendSettings from "../pages/Dashboard/FrontendDashboard/FrontendSetti
 import FrontendBulkUpload from "../pages/Dashboard/FrontendDashboard/FrontendSettings/BulkUpload";
 import AssetsLayout from "../pages/Assets/AssetsLayout";
 import AssetsDashboard from "../pages/Assets/AssetsDashboard";
+import AssetsMixBag from "../pages/Assets/AssetsMixBag";
 import AssignAssets from "../pages/Assets/ManageAssets/AssignAssets";
 import ManageAssets from "../pages/Assets/ManageAssets/ManageAssets";
 import AssignedAssets from "../pages/Assets/ManageAssets/AssignedAssets";
@@ -2325,7 +2326,10 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
-
+                  {
+                    path: "mix-bag",
+                    element: <AssetsMixBag />,
+                  },
                   {
                     path: "reports",
                     element: <AssetReports />,

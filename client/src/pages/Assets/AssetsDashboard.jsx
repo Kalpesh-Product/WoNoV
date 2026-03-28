@@ -82,7 +82,7 @@ const AssetsDashboard = () => {
     },
     {
       title: "Mix Bag",
-      route: "#",
+      route: "/app/assets/mix-bag",
       icon: <MdFormatListBulleted />,
       permission: PERMISSIONS.ASSETS_VIEW_GRAPHS,
     },
