@@ -8,6 +8,139 @@ const Category = require("../../models/category/Category");
 
 // Create Inventory Item
 
+// const createInventory = async (req, res, next) => {
+//   const logPath = "inventory/InventoryLog";
+//   const logAction = "Add inventory";
+//   const logSourceKey = "inventory";
+//   const { user, ip, company } = req;
+
+//   try {
+//     const {
+//       department,
+//       itemName,
+//       openingInventoryUnits = 0,
+//       openingPerUnitPrice = 0,
+//       openingInventoryValue,
+//       newPurchaseUnits = 0,
+//       newPurchasePerUnitPrice = 0,
+//       newPurchaseInventoryValue,
+//       closingInventoryUnits,
+//       category,
+//     } = req.body;
+
+//     /* ------------------ Basic validations ------------------ */
+
+//     if (!itemName?.trim()) {
+//       throw new CustomError(
+//         "Item name is required",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//         400,
+//       );
+//     }
+
+//     if (!mongoose.Types.ObjectId.isValid(department)) {
+//       throw new CustomError(
+//         "Invalid department Id provided",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//         400,
+//       );
+//     }
+
+//     if (!mongoose.Types.ObjectId.isValid(category)) {
+//       throw new CustomError(
+//         "Invalid category Id provided",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//         400,
+//       );
+//     }
+
+//     /* ------------------ Category validation ------------------ */
+
+//     const validCategory = await Category.findOne({
+//       _id: category,
+//       company,
+//       appliesTo: "inventory",
+//       isActive: true,
+//     }).lean();
+
+//     if (!validCategory) {
+//       throw new CustomError(
+//         "Category is not valid for inventory",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//         400,
+//       );
+//     }
+
+//     /* ------------------ Numeric sanity checks ------------------ */
+
+//     const numbers = [
+//       Number(openingInventoryUnits),
+//       Number(openingPerUnitPrice),
+//       Number(newPurchaseUnits),
+//       Number(newPurchasePerUnitPrice),
+//     ];
+
+//     if (numbers.some((n) => typeof n !== "number" || n < 0)) {
+//       throw new CustomError(
+//         "Inventory values must be non-negative numbers",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//         400,
+//       );
+//     }
+
+//     /* ------------------ Create inventory ------------------ */
+
+//     const inventory = await Inventory.create({
+//       company,
+//       department,
+//       itemName: itemName.trim(),
+//       category,
+//       addedBy: user,
+//       openingInventoryUnits,
+//       openingPerUnitPrice,
+//       openingInventoryValue,
+//       newPurchaseUnits,
+//       newPurchasePerUnitPrice,
+//       newPurchaseInventoryValue,
+//       closingInventoryUnits,
+//       date: new Date(),
+//     });
+
+//     /* ------------------ Logging ------------------ */
+
+//     await createLog({
+//       path: logPath,
+//       action: logAction,
+//       remarks: "Inventory added successfully",
+//       status: "Success",
+//       user,
+//       ip,
+//       company,
+//       sourceKey: logSourceKey,
+//       sourceId: inventory._id,
+//       changes: inventory,
+//     });
+
+//     return res.status(201).json(inventory);
+//   } catch (error) {
+//     return next(
+//       error instanceof CustomError
+//         ? error
+//         : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+//     );
+//   }
+// };
+
 const createInventory = async (req, res, next) => {
   const logPath = "inventory/InventoryLog";
   const logAction = "Add inventory";
@@ -17,22 +150,44 @@ const createInventory = async (req, res, next) => {
   try {
     const {
       department,
-      itemName,
+      itemName, // now ObjectId
       openingInventoryUnits = 0,
       openingPerUnitPrice = 0,
       openingInventoryValue,
       newPurchaseUnits = 0,
       newPurchasePerUnitPrice = 0,
       newPurchaseInventoryValue,
-      closingInventoryUnits,
+      consumedOpenInventoryUnits,
+      consumedNewPurchaseInventoryUnits = 0,
       category,
+      unit,
     } = req.body;
 
     /* ------------------ Basic validations ------------------ */
 
-    if (!itemName?.trim()) {
+    if (!itemName) {
       throw new CustomError(
-        "Item name is required",
+        "Item is required",
+        logPath,
+        logAction,
+        logSourceKey,
+        400,
+      );
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(itemName)) {
+      throw new CustomError(
+        "Invalid item id provided",
+        logPath,
+        logAction,
+        logSourceKey,
+        400,
+      );
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(unit)) {
+      throw new CustomError(
+        "Invalid unit Id provided",
         logPath,
         logAction,
         logSourceKey,
@@ -60,7 +215,18 @@ const createInventory = async (req, res, next) => {
       );
     }
 
-    /* ------------------ Category validation ------------------ */
+    /* ------------------ Existence validation ------------------ */
+
+    const itemExists = await Item.exists({ _id: itemName, isActive: true });
+    if (!itemExists) {
+      throw new CustomError(
+        "Item not found or inactive",
+        logPath,
+        logAction,
+        logSourceKey,
+        400,
+      );
+    }
 
     const validCategory = await Category.findOne({
       _id: category,
@@ -86,7 +252,16 @@ const createInventory = async (req, res, next) => {
       Number(openingPerUnitPrice),
       Number(newPurchaseUnits),
       Number(newPurchasePerUnitPrice),
+      Number(consumedOpenInventoryUnits),
+      Number(consumedNewPurchaseInventoryUnits),
     ];
+
+    const remainingInventoryUnits =
+      openingInventoryUnits - consumedOpenInventoryUnits;
+    const closingInventoryUnits =
+      newPurchaseUnits +
+      remainingInventoryUnits -
+      consumedNewPurchaseInventoryUnits;
 
     if (numbers.some((n) => typeof n !== "number" || n < 0)) {
       throw new CustomError(
@@ -103,54 +278,79 @@ const createInventory = async (req, res, next) => {
     const inventory = await Inventory.create({
       company,
       department,
-      itemName: itemName.trim(),
+      itemName, // ✅ ObjectId directly
       category,
       addedBy: user,
       openingInventoryUnits,
       openingPerUnitPrice,
       openingInventoryValue,
+      consumedOpenInventoryUnits,
+      remainingInventoryUnits,
       newPurchaseUnits,
       newPurchasePerUnitPrice,
       newPurchaseInventoryValue,
+      consumedNewPurchaseInventoryUnits,
       closingInventoryUnits,
+      unit,
       date: new Date(),
     });
 
     /* ------------------ Logging ------------------ */
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Inventory added successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: inventory._id,
-      changes: inventory,
-    });
-
     return res.status(201).json(inventory);
   } catch (error) {
-    return next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-    );
+    next(error);
   }
 };
+
+// const getInventories = async (req, res) => {
+//   try {
+//     const { department, category, id } = req.query;
+
+//     if (id) {
+//       // Fetch a single inventory item by ID
+//       const inventory = await Inventory.findOne({
+//         _id: id,
+//         company: req.company,
+//        })
+//         .populate("department category")
+//         .populate("addedBy", "firstName middleName lastName");
+
+//       if (!inventory) {
+//         return res.status(404).json({ message: "Inventory not found" });
+//       }
+
+//       return res.status(200).json(inventory);
+//     }
+
+//     // Build dynamic query for filtering
+//     const query = { company: req.company };
+
+//     if (department) query.department = department;
+//     if (category) query.category = category;
+
+//      const inventories = await Inventory.find(query)
+//       .populate("department category")
+//       .populate("addedBy", "firstName middleName lastName");
+//     return res.status(200).json(inventories);
+//   } catch (error) {
+//     console.error("Fetch Inventory Error:", error);
+//     next(error)
+//   }
+// };
+
+// Update Inventory
 
 const getInventories = async (req, res) => {
   try {
     const { department, category, id } = req.query;
 
     if (id) {
-      // Fetch a single inventory item by ID
       const inventory = await Inventory.findOne({
         _id: id,
         company: req.company,
-       })
+      })
+        .populate("itemName", "name") // ✅ important
         .populate("department category")
         .populate("addedBy", "firstName middleName lastName");
 
@@ -161,32 +361,73 @@ const getInventories = async (req, res) => {
       return res.status(200).json(inventory);
     }
 
-    // Build dynamic query for filtering
     const query = { company: req.company };
 
     if (department) query.department = department;
     if (category) query.category = category;
 
-     const inventories = await Inventory.find(query)
+    const inventories = await Inventory.find(query)
+      .populate("itemName", "name") // ✅ important
       .populate("department category")
       .populate("addedBy", "firstName middleName lastName");
+
     return res.status(200).json(inventories);
   } catch (error) {
     console.error("Fetch Inventory Error:", error);
-    res.status(500).json({ message: "Failed to fetch inventory", error });
+    next(error);
   }
 };
 
-// Update Inventory
+// const updateInventory = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const updated = await Inventory.findOneAndUpdate(
+//       { _id: id, company: req.company },
+//       req.body,
+//       { new: true, runValidators: true },
+//     );
+
+//     if (!updated) {
+//       return res
+//         .status(404)
+//         .json({ message: "Inventory not found or unauthorized" });
+//     }
+
+//     res.status(200).json(updated);
+//   } catch (error) {
+//     console.error("Update Inventory Error:", error);
+//     res.status(500).json({ message: "Failed to update inventory", error });
+//   }
+// };
+
 const updateInventory = async (req, res) => {
   try {
     const { id } = req.params;
+    const { itemName } = req.body;
+
+    if (itemName && !mongoose.Types.ObjectId.isValid(itemName)) {
+      return res.status(400).json({
+        message: "Invalid item id",
+      });
+    }
+
+    if (itemName) {
+      const itemExists = await Item.exists({ _id: itemName, isActive: true });
+      if (!itemExists) {
+        return res.status(400).json({
+          message: "Item not found or inactive",
+        });
+      }
+    }
 
     const updated = await Inventory.findOneAndUpdate(
       { _id: id, company: req.company },
       req.body,
       { new: true, runValidators: true },
-    );
+    )
+      .populate("itemName", "name")
+      .populate("department category");
 
     if (!updated) {
       return res
