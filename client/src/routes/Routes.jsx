@@ -2327,6 +2327,18 @@ export const routes = createBrowserRouter([
                     ],
                   },
                   {
+                    path: "mix-bag/vender",
+                    element: <VendorTable />,
+                  },
+                  {
+                    path: "mix-bag/vender/vendor-onboard",
+                    element: <Vendor />,
+                  },
+                  {
+                    path: "mix-bag/vender/:id",
+                    element: <ViewVendor />,
+                  },
+                  {
                     path: "mix-bag",
                     element: <AssetsMixBag />,
                   },
