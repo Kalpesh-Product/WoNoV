@@ -69,6 +69,15 @@ const addCompany = async (req, res, next) => {
       websiteURL,
       linkedinURL,
       employeeType,
+      totalMeetingCredits: 0,
+      meetingCreditBalance: 0,
+      meetingCreditBalanceHistory: [
+        {
+          monthStartDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          remainingCredit: 0,
+          consumedCredit: 0,
+        },
+      ],
     });
 
     // Save the company to the database

@@ -240,12 +240,25 @@ const addMeetings = async (req, res, next) => {
     const bookingUser = bookedBy ? await User.findById(bookedBy) : null;
 
     if (meetingType === "Internal") {
-      // const updateQuery = { _id: client };
       const BookingModel = isClient ? CoworkingClient : Company;
+
+      const meetingDate = new Date(startTime);
+      const meetingMonthStart = new Date(
+        meetingDate.getFullYear(),
+        meetingDate.getMonth(),
+        1,
+      );
+
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const isCurrentMonth =
+        meetingMonthStart.getTime() === currentMonthStart.getTime();
 
       const creditRecord = await resetMeetingCreditsIfNeeded(
         BookingModel,
         client,
+        meetingDate,
       );
 
       if (!creditRecord) {
@@ -257,18 +270,24 @@ const addMeetings = async (req, res, next) => {
         );
       }
 
-      await BookingModel.findByIdAndUpdate(client, {
-        $inc: { meetingCreditBalance: -totalCreditsUsed },
-      });
+      const updateFields = {
+        $inc: {
+          "meetingCreditBalanceHistory.$.remainingCredit": -totalCreditsUsed,
+          "meetingCreditBalanceHistory.$.consumedCredit": totalCreditsUsed,
+        },
+      };
 
-      // const updatedUser = await BookingModel.findOneAndUpdate(
-      //   {
-      //     ...updateQuery,
-      //     meetingCreditBalance: { $gte: totalCreditsUsed },
-      //   },
-      //   { $inc: { meetingCreditBalance: -totalCreditsUsed } },
-      //   { new: true },
-      // );
+      if (isCurrentMonth) {
+        updateFields.$inc.meetingCreditBalance = -totalCreditsUsed;
+      }
+
+      await BookingModel.findOneAndUpdate(
+        {
+          _id: client,
+          "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
+        },
+        updateFields,
+      );
     }
 
     const meeting = new Meeting({
