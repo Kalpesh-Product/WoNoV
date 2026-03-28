@@ -88,23 +88,25 @@ const AssetsSubCategories = () => {
           const response = await axios.get(
             `/api/assets/get-subcategory?departmentId=${departmentId}`,
           );
-          return response.data;
+          return Array.isArray(response.data) ? response.data : [];
         } catch (error) {
-          console.error(error.message);
+          console.error(error.response?.data?.message || error.message);
+          return [];
         }
       },
     });
 
-  const { data: assetCategories, isPending: isCategoriesPending } = useQuery({
+  const { data: assetCategories = [], isPending: isCategoriesPending } = useQuery({
     queryKey: ["assetCategories"],
     queryFn: async () => {
       try {
         const response = await axios.get(
           `/api/category/get-category?departmentId=${departmentId}`,
         );
-        return response.data;
+        return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
-        console.error(error.message);
+        console.error(error.response?.data?.message || error.message);
+        return [];
       }
     },
   });
@@ -206,7 +208,7 @@ const AssetsSubCategories = () => {
       },
     },
   ];
-  const tableData = isSubCategoriesPending
+  const tableData = isSubCategoriesPending || !Array.isArray(assetSubCategories)
     ? []
     : assetSubCategories.map((item, index) => {
         const status = item.isActive ? "Active" : "Inactive";
@@ -215,7 +217,7 @@ const AssetsSubCategories = () => {
           _id: item._id,
           srNo: index + 1,
           status: status,
-          categoryName: item?.category?.categoryName,
+          categoryName: item?.category?.categoryName || "N/A",
         };
       });
   //--------------------Table Data------------------------------//

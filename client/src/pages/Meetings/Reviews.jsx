@@ -20,6 +20,12 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import PrimaryButton from "../../components/PrimaryButton";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useLocation, useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+import { DateRangePicker } from "react-date-range";
+import { Popover } from "@mui/material";
+import { MdCalendarToday } from "react-icons/md";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 const Reviews = () => {
   const axios = useAxiosPrivate();
@@ -31,7 +37,23 @@ const Reviews = () => {
   const [modalType, setModalType] = useState("creditView");
   const [selectedData, setSelectedData] = useState({});
   const [creditEdits, setCreditEdits] = useState({});
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState([
+    {
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    },
+  ]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openCalendar = Boolean(anchorEl);
+
+  const handleOpenCalendar = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseCalendar = () => {
+    setAnchorEl(null);
+  };
 
   const userPermissions = useMemo(
     () => auth?.user?.permissions?.permissions || [],
@@ -162,24 +184,6 @@ const Reviews = () => {
     },
   });
 
-  const { mutate: resetClientCredits, isPending: isResetCreditsPending } = useMutation({
-    mutationFn: async () => {
-      await Promise.all(
-        clientsData.map((client) =>
-          axios.patch(`/api/sales/co-working-clients/${client._id}/reset-credits`)
-        )
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
-      setCreditEdits({});
-      setIsResetModalOpen(false);
-      toast.success("Client credits reset successfully");
-    },
-    onError: (error) => {
-      toast.error(error?.response?.data?.message || error.message);
-    },
-  });
 
   const submitCreditEdit = (formValues) => {
     const monthlyCredit = Number(formValues.monthlyCredit);
@@ -269,6 +273,7 @@ const Reviews = () => {
       "Export Date": exportDate,
       "Sr No": row.srNo,
       "Client Name": row.clientName,
+      Month: row.monthLabel,
       "Monthly Credit": row.monthlyCredit,
       "Consumed Credit": row.consumedCredit,
       "Remaining Credit": row.remainingCredit,
@@ -307,47 +312,85 @@ const Reviews = () => {
     return true;
   };
 
-  const handleResetCredits = () => {
-    const exported = exportClientCredits();
-    if (!exported) return;
-    resetClientCredits();
-  };
+  const clientCreditRows = useMemo(() => {
+    const { startDate, endDate } = dateRange[0] || {};
+    if (!startDate || !endDate || !clientsData.length) return [];
 
+    const startMonth = dayjs(startDate).startOf("month");
+    const endMonth = dayjs(endDate).startOf("month");
 
-  const clientCreditRows = useMemo(
-    () =>
-      clientsData.map((client, index) => {
-        const clientId = client?._id;
-        const fallbackMonthly = Number(client?.totalMeetingCredits || 0);
-        const fallbackBalance = Number(client?.meetingCreditBalance || 0);
-        const wasManuallyReset = Boolean(client?.lastManualCreditResetAt);
-        const fallbackConsumed = wasManuallyReset
-          ? 0
-          : Math.max(fallbackMonthly - fallbackBalance, 0);
+    // Generate all months in selected range
+    const monthsArray = [];
+    let tempMonth = startMonth;
+    while (tempMonth.isBefore(endMonth) || tempMonth.isSame(endMonth, "month")) {
+      monthsArray.push(tempMonth);
+      tempMonth = tempMonth.add(1, "month");
+    }
 
-        const editedValues = creditEdits[clientId];
-        const monthlyCredit = editedValues?.monthlyCredit ?? fallbackMonthly;
-        const consumedCredit = editedValues?.consumedCredit ?? fallbackConsumed;
-        const remainingCredit = wasManuallyReset
-          ? 0
-          : Math.max(monthlyCredit - consumedCredit, 0);
+    const rows = clientsData.flatMap((client) => {
+      const clientId = client?._id;
+      const clientName = client?.clientName || "-";
+      const totalMonthlyCredit = Number(client?.totalMeetingCredits || 0);
+
+      return monthsArray.map((month) => {
+        const monthLabel = month.format("MMM YYYY");
+        const monthId = month.format("YYYY-MM");
+
+        // Try to find historical entry for this month
+        const historyEntry = client?.meetingCreditBalanceHistory?.find((h) =>
+          dayjs(h.monthStartDate).isSame(month, "month"),
+        );
+
+        let consumed = 0;
+        let remaining = totalMonthlyCredit;
+
+        if (historyEntry) {
+          consumed = Number(historyEntry.consumedCredit || 0);
+          remaining = Number(historyEntry.remainingCredit || 0);
+        } else if (month.isSame(dayjs(), "month")) {
+          // Current month fallback if no history entry exists yet
+          remaining = Number(client?.meetingCreditBalance || 0);
+          consumed = Math.max(totalMonthlyCredit - remaining, 0);
+        } else if (month.isAfter(dayjs(), "month")) {
+          // Future months are "Fresh Start"
+          consumed = 0;
+          remaining = totalMonthlyCredit;
+        } else {
+          // Past months with no history
+          consumed = 0;
+          remaining = totalMonthlyCredit;
+        }
 
         return {
-          id: index + 1,
-          srNo: index + 1,
+          id: `${clientId}-${monthId}`,
           clientId,
-          clientName: client?.clientName || "-",
-          monthlyCredit: Number(monthlyCredit).toFixed(2),
-          consumedCredit: Number(consumedCredit).toFixed(2),
-          remainingCredit: Number(remainingCredit).toFixed(2),
+          clientName,
+          monthLabel,
+          monthlyCredit: totalMonthlyCredit.toFixed(2),
+          consumedCredit: consumed.toFixed(2),
+          remainingCredit: remaining.toFixed(2),
+          monthDate: month.toDate(),
         };
-      }),
-    [clientsData, creditEdits]
-  );
+      });
+    });
+
+    return rows
+      .sort((a, b) => {
+        if (a.clientName !== b.clientName)
+          return a.clientName.localeCompare(b.clientName);
+        return a.monthDate.getTime() - b.monthDate.getTime();
+      })
+      .map((row, index) => ({
+        ...row,
+        srNo: index + 1,
+      }));
+  }, [clientsData, dateRange]);
+
 
   const clientCreditColumns = [
     { field: "srNo", headerName: "Sr No", width: 90 },
     { field: "clientName", headerName: "Client Name", flex: 1 },
+    { field: "monthLabel", headerName: "Month", flex: 1 },
     { field: "monthlyCredit", headerName: "Monthly Credit", flex: 1 },
     { field: "consumedCredit", headerName: "Consumed Credit", flex: 1 },
     { field: "remainingCredit", headerName: "Remaining Credit", flex: 1 },
@@ -456,33 +499,35 @@ const Reviews = () => {
           </>
         ) : activeTabKey === "clientCredit" ? (
           <div className="space-y-4">
-            {/* <div className="flex flex-wrap justify-end gap-3">
-              <PrimaryButton
-                title="Export"
-                handleSubmit={() => exportClientCredits()}
-                type="button"
-                externalStyles="!bg-primary"
-                padding="px-6 py-2"
-              />
-              <PrimaryButton
-                title="Reset"
-                handleSubmit={() => setIsResetModalOpen(true)}
-                type="button"
-                externalStyles="!bg-red-600"
-                padding="px-6 py-2"
-              />
-            </div> */}
-
             <PageFrame>
-              <AgTable
-                search={true}
-                tableTitle="Client Credits"
-                searchColumn={"clientName"}
-                data={clientCreditRows}
-                columns={clientCreditColumns}
-                loading={isClientsLoading}
-                headerActions={
-                  <>
+              <div className="flex flex-col gap-4 pb-4">
+                <div className="grid grid-cols-12 items-center w-full pb-4">
+                  <div className="col-span-4">
+                    <span className="text-title text-primary font-pmedium uppercase">
+                      Client Credits
+                    </span>
+                  </div>
+                  <div className="col-span-4 flex justify-center">
+                    <div className="flex items-center gap-2">
+                      <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                        <span className="text-gray-600 text-content font-pregular">
+                          {dayjs(dateRange[0]?.startDate).format("DD MMM YYYY")}
+                        </span>
+                      </div>
+                      <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                        <span className="text-gray-600 text-content font-pregular">
+                          {dayjs(dateRange[0]?.endDate).format("DD MMM YYYY")}
+                        </span>
+                      </div>
+                      <div
+                        className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+                        onClick={handleOpenCalendar}
+                      >
+                        <MdCalendarToday size={19} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-span-4 flex justify-end">
                     <PrimaryButton
                       title="Export"
                       handleSubmit={() => exportClientCredits()}
@@ -490,15 +535,34 @@ const Reviews = () => {
                       externalStyles="!bg-primary"
                       padding="px-6 py-2"
                     />
-                    <PrimaryButton
-                      title="Reset"
-                      handleSubmit={() => setIsResetModalOpen(true)}
-                      type="button"
-                      externalStyles="!bg-red-600"
-                      padding="px-6 py-2"
-                    />
-                  </>
-                }
+                  </div>
+                </div>
+
+                <Popover
+                  open={openCalendar}
+                  anchorEl={anchorEl}
+                  onClose={handleCloseCalendar}
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "left",
+                  }}
+                >
+                  <DateRangePicker
+                    ranges={dateRange}
+                    onChange={(item) => setDateRange([item.selection])}
+                    moveRangeOnFirstSelection={false}
+                  />
+                </Popover>
+              </div>
+
+              <AgTable
+                search={true}
+                tableTitle="Client Credits"
+                searchColumn={"clientName"}
+                data={clientCreditRows}
+                columns={clientCreditColumns}
+                loading={isClientsLoading}
+                hideTitle={true}
               />
             </PageFrame>
           </div>
@@ -582,6 +646,7 @@ const Reviews = () => {
         {modalType === "creditView" && (
           <div className="space-y-4">
             <DetalisFormatted title="Client Name" detail={selectedData.clientName} />
+            <DetalisFormatted title="Month" detail={selectedData.monthLabel} />
             <DetalisFormatted title="Monthly Credit" detail={selectedData.monthlyCredit} />
             <DetalisFormatted title="Consumed Credit" detail={selectedData.consumedCredit} />
             <DetalisFormatted title="Remaining Credit" detail={selectedData.remainingCredit} />
@@ -627,34 +692,6 @@ const Reviews = () => {
         )}
       </MuiModal>
 
-      <MuiModal
-        open={isResetModalOpen}
-        onClose={() => setIsResetModalOpen(false)}
-        title="Reset Client Credit"
-      >
-        <div className="space-y-6">
-          <p className="text-content text-gray-700">
-            are you really want to reset creadit
-          </p>
-
-          <div className="flex justify-end gap-3">
-            <PrimaryButton
-              title="No"
-              type="button"
-              handleSubmit={() => setIsResetModalOpen(false)}
-              externalStyles="!bg-gray-500"
-              padding="px-6 py-2"
-            />
-            <PrimaryButton
-              title="Yes"
-              type="button"
-              handleSubmit={handleResetCredits}
-              externalStyles="!bg-red-600"
-              padding="px-6 py-2"
-            />
-          </div>
-        </div>
-      </MuiModal>
     </div>
   );
 };

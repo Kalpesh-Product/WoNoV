@@ -1,5 +1,24 @@
 const mongoose = require("mongoose");
 
+const meetingCreditBalanceHistorySchema = new mongoose.Schema(
+  {
+    monthStartDate: {
+      type: Date,
+      required: true,
+    },
+    remainingCredit: {
+      type: Number,
+      default: 0,
+    },
+    consumedCredit: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { _id: false },
+);
+
+
 const clientSchema = new mongoose.Schema(
   {
     company: {
@@ -87,6 +106,10 @@ const clientSchema = new mongoose.Schema(
     meetingCreditBalance: {
       type: Number,
       default: 0,
+    },
+    meetingCreditBalanceHistory: {
+      type: [meetingCreditBalanceHistorySchema],
+      default: [],
     },
     lastManualCreditResetAt: {
       type: Date,

@@ -48,11 +48,11 @@ const AssetsHome = () => {
     },
   });
 
-  const assetsRaw = isLoading
+  const assetsRaw = isLoading || !Array.isArray(departmentAssets)
     ? []
-    : departmentAssets.flatMap((item) => item.assets);
+    : departmentAssets.flatMap((item) => item?.assets || []);
   console.log("flat : ", assetsRaw);
-  const totalAssetValue = assetsRaw.reduce((sum, item) => sum + item.price, 0);
+  const totalAssetValue = assetsRaw.reduce((sum, item) => sum + (item?.price || 0), 0);
   console.log("flat : ", totalAssetValue);
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100 },
@@ -87,11 +87,11 @@ const AssetsHome = () => {
     { headerName: "Under Maintenance", field: "underMaintenance" },
   ];
 
-  const tableData = isLoading
+  const tableData = isLoading || !Array.isArray(departmentAssets)
     ? []
     : departmentAssets.map((item, index) => {
-        const assets = item.assets;
-        const assetValue = assets.reduce((sum, a) => sum + a.price, 0);
+        const assets = item?.assets || [];
+        const assetValue = assets.reduce((sum, a) => sum + (a?.price || 0), 0);
         return {
           ...item,
           srNo: index + 1,

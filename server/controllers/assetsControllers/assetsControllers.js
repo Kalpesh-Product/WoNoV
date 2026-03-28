@@ -67,17 +67,18 @@ const getAssetsWithDepartments = async (req, res, next) => {
 const getAssets = async (req, res, next) => {
   try {
     const userId = req.user;
-    const userDepartments = req.departments;
-    const user = await User.findById(userId).lean().exec();
+    const user = await User.findById(userId).populate("departments").lean().exec();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userDepartments = req.departments || user.departments || [];
 
     const isTopManagement = userDepartments.some(
       (dept) => dept.name === "Top Management",
     );
     const userDepartmentIds = userDepartments.map((dept) => dept._id);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
 
     const companyId = user.company;
     let { assigned, departmentId, vendorId, sortBy, order } = req.query;

@@ -118,10 +118,10 @@ const ListOfAssets = () => {
         const response = await axios.get(
           `/api/assets/get-assets?departmentId=${departmentId}`,
         );
-        const filtered = response.data.flatMap((item) => item.assets);
+        const filtered = Array.isArray(response.data) ? response.data.flatMap((item) => item?.assets || []) : [];
         return filtered;
       } catch (error) {
-        throw new Error(error.response.data.message);
+        throw new Error(error.response?.data?.message || error.message);
       }
     },
   });
@@ -134,9 +134,10 @@ const ListOfAssets = () => {
           const response = await axios.get(
             `/api/assets/get-subcategory?departmentId=${departmentId}`,
           );
-          return response.data;
+          return Array.isArray(response.data) ? response.data : [];
         } catch (error) {
-          console.error(error.message);
+          console.error(error.response?.data?.message || error.message);
+          return [];
         }
       },
     });
@@ -153,9 +154,9 @@ const ListOfAssets = () => {
         const response = await axios.get(
           `/api/vendors/get-vendors/${departmentId}`,
         );
-        return response.data;
+        return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
-        throw new Error(error.response.data.message);
+        throw new Error(error.response?.data?.message || error.message);
       }
     },
   });
@@ -301,9 +302,10 @@ const ListOfAssets = () => {
           const response = await axios.get(
             `/api/category/get-category?departmentId=${departmentId}`,
           );
-          return response.data;
+          return Array.isArray(response.data) ? response.data : [];
         } catch (error) {
-          console.error(error.message);
+          console.error(error.response?.data?.message || error.message);
+          return [];
         }
       },
     });
@@ -315,9 +317,13 @@ const ListOfAssets = () => {
   } = useQuery({
     queryKey: ["units"],
     queryFn: async () => {
-      const response = await axios.get("/api/company/fetch-simple-units");
-
-      return response.data;
+      try {
+        const response = await axios.get("/api/company/fetch-simple-units");
+        return Array.isArray(response.data) ? response.data : [];
+      } catch (error) {
+        console.error(error.response?.data?.message || error.message);
+        return [];
+      }
     },
   });
 
@@ -335,7 +341,7 @@ const ListOfAssets = () => {
     new Map(
       units.length > 0
         ? units.map((loc) => [
-            loc.building?._id ?? `unknown-${loc.unitNo}`,
+            loc.building?._id ?? (loc.unitNo ? `unknown-${loc.unitNo}` : `unknown-${Math.random()}`),
             loc.building?.buildingName ?? "Unknown Building",
           ])
         : [],
@@ -396,17 +402,17 @@ const ListOfAssets = () => {
     },
   ];
 
-  const tableData = isAssetsListPending
+  const tableData = isAssetsListPending || !Array.isArray(assetsList)
     ? []
     : assetsList.map((item) => {
         return {
           ...item,
           assetMongoId: item?.asset?._id,
-          department: item?.department?.name,
-          subCategory: item?.subCategory?.subCategoryName,
+          department: item?.department?.name || "N/A",
+          subCategory: item?.subCategory?.subCategoryName || "N/A",
           subCatId: item?.subCategory?._id,
           categoryId: item?.subCategory?.category?._id,
-          category: item?.subCategory?.category.categoryName,
+          category: item?.subCategory?.category?.categoryName || "N/A",
         };
       });
   //-----------------------Table Data----------------------//
