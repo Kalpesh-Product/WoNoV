@@ -5,7 +5,7 @@ const AssetsMixBag = () => {
     const routes = [
         {
             title: "vender",
-            route: "#",
+            route: "/app/assets/mix-bag/vender",
         },
     ];
 
