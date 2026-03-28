@@ -138,7 +138,7 @@ const VisitorDashboard = () => {
       fontFamily: "Poppins-Regular",
     },
     yaxis: {
-      max: 300, // ✅ Add this line
+      max: 100, // ✅ Add this line
       title: {
         text: "No. of Visitors",
       },
