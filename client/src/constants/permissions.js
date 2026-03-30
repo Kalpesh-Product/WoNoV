@@ -9,14 +9,44 @@ export const PERMISSIONS = {
     title: "MANAGE ASSETS",
     type: "read",
   },
+  ASSETS_MIX_BAG: {
+    value: "mix_bag",
+    title: "MIX BAG",
+    type: "read",
+  },
+  ASSETS_REPORTS: {
+    value: "reports",
+    title: "REPORTS",
+    type: "read",
+  },
   ASSETS_ASSIGNED_UNASSIGNED: {
     value: "assigned_unassigned",
     title: "ASSIGNED UNASSIGNED",
     type: "read",
   },
+  ASSETS_PHYSICAL_DIGITAL: {
+    value: "physical_digital",
+    title: "PHYSICAL DIGITAL",
+    type: "read",
+  },
+  ASSETS_ASSIGN_ASSETS: {
+    value: "assign_assets",
+    title: "ASSIGN ASSETS",
+    type: "read",
+  },
   ASSETS_ASSIGNED_ASSETS: {
     value: "assigned_assets",
     title: "ASSIGNED ASSETS",
+    type: "read",
+  },
+  ASSETS_APPROVALS: {
+    value: "approvals",
+    title: "APPROVALS",
+    type: "read",
+  },
+  ASSETS_MIX_BAG_VENDER: {
+    value: "mix_bag_vender",
+    title: "MIX BAG VENDER",
     type: "read",
   },
 
@@ -284,7 +314,7 @@ export const PERMISSIONS = {
     title: "VISITOR CATEGORIES",
     type: "read",
   },
-  VISITORS_INTERNAL_AND_EXTERNAL_CATEGORIES:{
+  VISITORS_INTERNAL_AND_EXTERNAL_CATEGORIES: {
     value: "visitor_internal_and_external_categories_chart",
     title: "INTERNAL_AND_EXTERNAL_CATEGORIES",
     type: "read",
@@ -618,7 +648,7 @@ export const PERMISSIONS = {
     type: "read",
   },
 
-   FINANCE_UNIT_WISE_DUE_TASKS: {
+  FINANCE_UNIT_WISE_DUE_TASKS: {
     value: "finance_unit_wise_due_tasks_chart",
     title: "UNIT WISE DUE TASKS",
     type: "read",
@@ -923,7 +953,7 @@ export const PERMISSIONS = {
     title: "CLIENT MEMBER BIRTHDAY",
     type: "read",
   },
-   SALES_UNIT_WISE_DUE_TASKS: {
+  SALES_UNIT_WISE_DUE_TASKS: {
     value: "sales_unit_wise_due_tasks_chart",
     title: "UNIT WISE DUE TASKS",
     type: "read",
@@ -1691,7 +1721,7 @@ export const PERMISSIONS = {
     title: "INVENTORY",
     type: "read",
   },
- MAINTENANCE_INVENTORY_SUNTECK_UNITS: {
+  MAINTENANCE_INVENTORY_SUNTECK_UNITS: {
     value: "maintenance_inventory_sunteck_units",
     title: "SUNTECK KANAKA UNITS",
     type: "read",

@@ -84,13 +84,13 @@ const AssetsDashboard = () => {
       title: "Mix Bag",
       route: "/app/assets/mix-bag",
       icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.ASSETS_VIEW_GRAPHS,
+      permission: PERMISSIONS.ASSETS_MIX_BAG.value,
     },
     {
       title: "Reports",
       route: "/app/assets/reports",
       icon: <CgProfile />,
-      permission: null, // no restriction
+      permission: PERMISSIONS.ASSETS_REPORTS.value,
     },
     // {
     //   title: "Settings",
@@ -240,6 +240,7 @@ const AssetsDashboard = () => {
       data: physicalDigitalPieData,
       options: physicalDigitalOptions,
       width: 475,
+      permission: PERMISSIONS.ASSETS_PHYSICAL_DIGITAL.value,
     },
   ];
 
