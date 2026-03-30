@@ -22,6 +22,13 @@ const PerformanceAssignKraKpa = () => {
         },
     });
 
+    // Sort departments by number of members in descending order
+    const sortedDepartments = [...departmentMembers].sort((a, b) => {
+        const countA = a?.employees?.length || 0;
+        const countB = b?.employees?.length || 0;
+        return countB - countA; // Descending order
+    });
+
     const handleMemberClick = (department) => {
         dispatch(setSelectedDepartment(department?._id));
         dispatch(setSelectedDepartmentName(department?.name));
@@ -30,12 +37,13 @@ const PerformanceAssignKraKpa = () => {
 
     return (
         <WidgetSection border title="DEPARTMENT">
-            {departmentMembers.length === 0 ? (
+            {sortedDepartments.length === 0 ? (
                 <p className="text-sm text-gray-500">No departments found.</p>
             ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    {departmentMembers.map((department) => {
+                    {sortedDepartments.map((department) => {
                         const members = department?.employees || [];
+                        const memberCount = members.length;
 
                         return (
                             <div
@@ -47,11 +55,11 @@ const PerformanceAssignKraKpa = () => {
                                         {department?.name || "Unknown Department"}
                                     </h3>
                                     <span className="text-xs font-medium text-gray-500">
-                                        {members.length} member{members.length === 1 ? "" : "s"}
+                                        {memberCount} member{memberCount === 1 ? "" : "s"}
                                     </span>
                                 </div>
 
-                                {members.length === 0 ? (
+                                {memberCount === 0 ? (
                                     <p className="text-sm text-gray-500">
                                         No active members in this department.
                                     </p>
