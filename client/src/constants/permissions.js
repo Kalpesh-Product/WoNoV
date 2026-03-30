@@ -49,6 +49,26 @@ export const PERMISSIONS = {
     title: "MIX BAG VENDER",
     type: "read",
   },
+  ASSETS_ASSET_VALUE_UTILIZATION: {
+    value: "asset_value_utilization",
+    title: "ASSET VALUE UTILIZATION",
+    type: "read",
+  },
+  ASSETS_DEPARTMENT_WISE_ASSET_USAGE: {
+    value: "department_wise_asset_usage",
+    title: "DEPARTMENT WISE ASSET USAGE",
+    type: "read",
+  },
+  ASSETS_ASSET_CATEGORIES: {
+    value: "asset_categories",
+    title: "ASSET CATEGORIES",
+    type: "read",
+  },
+  ASSETS_RECENTLY_ADDED_ASSETS: {
+    value: "recently_added_assets",
+    title: "RECENTLY ADDED ASSETS",
+    type: "read",
+  },
 
   // Tickets Module
   TICKETS_RAISE_TICKET: {

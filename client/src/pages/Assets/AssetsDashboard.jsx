@@ -545,19 +545,22 @@ const AssetsDashboard = () => {
     data: assetUtilizationSeries,
     options: assetUtilizationOptions,
     onYearChange: setSelectedAssetValueFY,
+    permission: PERMISSIONS.ASSETS_ASSET_VALUE_UTILIZATION.value,
   };
 
   const meetingsWidgets = [
     {
       layout: 1,
       widgets: [
-        <YearlyGraph
-          titleAmount={assetsValueGraph.titleAmount}
-          title={assetsValueGraph.title}
-          data={assetsValueGraph.data}
-          options={assetsValueGraph.options}
-          onYearChange={assetsValueGraph.onYearChange}
-        />,
+        userPermissions.includes(assetsValueGraph.permission) && (
+          <YearlyGraph
+            titleAmount={assetsValueGraph.titleAmount}
+            title={assetsValueGraph.title}
+            data={assetsValueGraph.data}
+            options={assetsValueGraph.options}
+            onYearChange={assetsValueGraph.onYearChange}
+          />
+        )
       ],
     },
     {
