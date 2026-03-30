@@ -54,16 +54,21 @@ const MainLayout = () => {
       (perm) => perm.route
     );
 
-    const currentRoutePermission = guardedRoutes.find((perm) =>
+    // const currentRoutePermission = guardedRoutes.find((perm) =>
+    const currentRoutePermissions = guardedRoutes.filter((perm) =>
       pathname.includes(perm.route)
     );
 
-    if (currentRoutePermission) {
-      const userHasPermission = rawPermissions.includes(
-        currentRoutePermission.value
+    // if (currentRoutePermission) {
+    //   const userHasPermission = rawPermissions.includes(
+    //     currentRoutePermission.value
+    //   );
+     if (currentRoutePermissions.length > 0) {
+      const userHasPermission = currentRoutePermissions.some((perm) =>
+        rawPermissions.includes(perm.value)
       );
       // console.log("🛡️ User permission check:", {
-      //   requiredPermission: currentRoutePermission.value,
+      //     requiredPermissions: currentRoutePermissions.map((perm) => perm.value),
       //   userPermissions: rawPermissions,
       //   isAllowed: userHasPermission,
       // });

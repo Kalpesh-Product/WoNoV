@@ -51,7 +51,8 @@ const TabLayout = ({
   const tabPercent = 100 / filteredTabs.length;
 
   const showTabs =
-    !hideTabsCondition(location.pathname) &&
+    //!hideTabsCondition(location.pathname) &&
+    !hideTabsCondition(location.pathname, location) &&
     !hideTabsOnPaths.some((path) => location.pathname.includes(path));
 
   if (!isAuthorized) {
