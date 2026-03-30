@@ -24,6 +24,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
+import useAuth from "../../../hooks/useAuth";
 
 const Approvals = () => {
   const axios = useAxiosPrivate();
@@ -31,6 +32,9 @@ const Approvals = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  const { auth } = useAuth();
+  const userRoles = auth?.user?.role?.map((item) => item?.roleTitle) || [];
+  const isEmployeeRole = userRoles.some((role) => role?.includes("Employee"));
   //-----------------------API----------------------//
   const { data: assignedAssets = [], isLoading: isAssignedPending } = useQuery({
     queryKey: ["assignedAssets"],
@@ -48,41 +52,41 @@ const Approvals = () => {
 
   //-----------------------API----------------------//
 
-   const { mutate: approveAsset, isPending: isApproving } = useMutation({
-      mutationFn: async (data) => {
-        console.log("approve",data)
-        const response = await axios.patch("/api/assets/process-asset-request", {
-          requestedAssetId: data?._id,
-          action:"Approved"
-        });
-        return response.data;
-      },
-      onSuccess: (data) => {
-        toast.success(data.message || "Approved");
-        queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
-      },
-      onError: (error) => {
-        toast.error(error.message || "Failed to approve asset");
-      },
-    });
+  const { mutate: approveAsset, isPending: isApproving } = useMutation({
+    mutationFn: async (data) => {
+      console.log("approve", data)
+      const response = await axios.patch("/api/assets/process-asset-request", {
+        requestedAssetId: data?._id,
+        action: "Approved"
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Approved");
+      queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to approve asset");
+    },
+  });
 
-   const { mutate: rejectAsset, isPending: isRejecting } = useMutation({
-      mutationFn: async (data) => {
-        console.log("reject",data)
-        const response = await axios.patch("/api/assets/process-asset-request", {
-          requestedAssetId: data?._id,
-          action:"Rejected"
-        });
-        return response.data;
-      },
-      onSuccess: (data) => {
-        toast.success(data.message || "Rejected");
-        queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
-      },
-      onError: (error) => {
-        toast.error(error.message || "Failed to reject asset");
-      },
-    });
+  const { mutate: rejectAsset, isPending: isRejecting } = useMutation({
+    mutationFn: async (data) => {
+      console.log("reject", data)
+      const response = await axios.patch("/api/assets/process-asset-request", {
+        requestedAssetId: data?._id,
+        action: "Rejected"
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Rejected");
+      queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to reject asset");
+    },
+  });
 
   //-----------------------Event handlers----------------------//
   const handleView = (data) => {
@@ -115,47 +119,56 @@ const Approvals = () => {
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
-  field: "actions",
-  headerName: "Actions",
-  pinned: "right",
-  cellRenderer: (params) => {
-
-
-    return (
-      <ThreeDotMenu
-        rowId={params.data.assetId}
-        menuItems={[
+      field: "actions",
+      headerName: "Actions",
+      pinned: "right",
+      cellRenderer: (params) => {
+        const menuItems = [
           { label: "View", onClick: () => handleView(params.data) },
-          params.data.status === "Pending" &&  
-            { label: "Approve", onClick: () => approveAsset(params.data) },
-            { label: "Reject", onClick: () => rejectAsset(params.data) }
-        ]}
-      />
-    );
-  },
-}
+        ];
+
+        if (!isEmployeeRole && params.data.status === "Pending") {
+          menuItems.push({
+            label: "Approve",
+            onClick: () => approveAsset(params.data),
+          });
+        }
+
+        menuItems.push({
+          label: "Reject",
+          onClick: () => rejectAsset(params.data),
+        });
+
+        return (
+          <ThreeDotMenu
+            rowId={params.data.assetId}
+            menuItems={menuItems}
+          />
+        );
+      },
+    }
 
   ];
 
   const tableData = isAssignedPending
     ? []
     : assignedAssets.map((item, index) => {
-        const assets = item.asset;
-        const category = assets?.subCategory?.category?.categoryName;
-        console.log("assets inside data", category);
-        return {
-          ...assets,
-          ...item,
-          srNo: index + 1,
-          assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
-          assetId: item._id,
-          assetNumber: item?.asset?.assetId,
-          department: item?.fromDepartment?.name,
-          category: category,
-          brand: assets?.brand,
-        };
-      });
-  
+      const assets = item.asset;
+      const category = assets?.subCategory?.category?.categoryName;
+      console.log("assets inside data", category);
+      return {
+        ...assets,
+        ...item,
+        srNo: index + 1,
+        assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
+        assetId: item._id,
+        assetNumber: item?.asset?.assetId,
+        department: item?.fromDepartment?.name,
+        category: category,
+        brand: assets?.brand,
+      };
+    });
+
   //-----------------------Table Data----------------------//
 
   return (

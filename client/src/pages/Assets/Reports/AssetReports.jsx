@@ -1,7 +1,27 @@
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../../components/AgTable";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import useAuth from "../../../hooks/useAuth";
+import humanDate from "../../../utils/humanDateForamt";
+import { inrFormat } from "../../../utils/currencyFormat";
 
 const AssetReports = () => {
+  const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+
+  const userDepartmentIds = (auth?.user?.departments || []).map((department) =>
+    department?._id?.toString(),
+  );
+
+  const { data: groupedAssets = [], isLoading } = useQuery({
+    queryKey: ["asset-reports", userDepartmentIds],
+    queryFn: async () => {
+      const response = await axios.get("/api/assets/get-assets");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
   const assetsColumns = [
     { field: "id", headerName: "ID", flex: 1 },
     { field: "department", headerName: "Department", flex: 1 },
@@ -15,56 +35,24 @@ const AssetReports = () => {
     { field: "location", headerName: "Location", flex: 1 },
   ];
 
-  const rows = [
-    {
-      id: 1,
-      department: "HR",
-      assetNumber: "0001",
-      category: "Laptop",
-      brand: "Dell",
-      price: "₹55,000",
-      quantity: 2,
-      purchaseDate: "02/01/2025",
-      warranty: 12,
-      location: "ST-701B",
-      modelName: "Dell",
-      status: "Active",
-      assignmentDate: "02/03/2025",
-      assignmentTime: "11:36 AM",
-    },
-    {
-      id: 2,
-      department: "IT",
-      assetNumber: "0002",
-      category: "Printer",
-      brand: "HP",
-      price: "₹15,000",
-      quantity: 1,
-      purchaseDate: "15/02/2025",
-      warranty: 24,
-      location: "ST-601",
-      modelName: "HP",
-      status: "Active",
-      assignmentDate: "02/03/2025",
-      assignmentTime: "12:00 PM",
-    },
-    {
-      id: 3,
-      department: "Finance",
-      assetNumber: "0003",
-      category: "Chair",
-      brand: "Godrej",
-      price: "₹5,000",
-      quantity: 4,
-      purchaseDate: "10/03/2025",
-      warranty: 36,
-      location: "ST-701",
-      modelName: "Godrej",
-      status: "Active",
-      assignmentDate: "02/03/2025",
-      assignmentTime: "10:30 AM",
-    },
-  ];
+  const rows = (Array.isArray(groupedAssets) ? groupedAssets : [])
+    .filter((departmentGroup) =>
+      userDepartmentIds.includes(departmentGroup?.departmentId?.toString()),
+    )
+    .flatMap((departmentGroup) =>
+      (departmentGroup?.assets || []).map((asset) => ({
+        id: asset?._id,
+        department: departmentGroup?.departmentName || "N/A",
+        assetNumber: asset?.assetId || "N/A",
+        category: asset?.subCategory?.category?.categoryName || "N/A",
+        brand: asset?.brand || "N/A",
+        price: inrFormat(asset?.price || 0),
+        quantity: asset?.quantity || 0,
+        purchaseDate: asset?.purchaseDate ? humanDate(asset.purchaseDate) : "N/A",
+        warranty: asset?.warranty ?? "N/A",
+        location: asset?.location?.unitNo || asset?.location?.unitName || "N/A",
+      })),
+    );
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -72,9 +60,9 @@ const AssetReports = () => {
         <AgTable
           search={true}
           tableTitle={"Reports"}
-          data={rows}
+          data={isLoading ? [] : rows}
           columns={assetsColumns}
-          dropdownColumns={["department", "category", "brand"]} // Specify which columns should be dropdowns
+          dropdownColumns={["department", "category", "brand"]}
           buttonTitle={"Export"}
         />
       </div>
