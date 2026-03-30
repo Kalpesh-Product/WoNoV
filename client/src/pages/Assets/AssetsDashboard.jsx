@@ -632,35 +632,42 @@ const AssetsDashboard = () => {
       )),
     },
     {
-      layout: 2,
+      layout: userPermissions.includes(PERMISSIONS.ASSETS_DEPARTMENT_WISE_ASSET_USAGE.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) ? 2 : 1,
       widgets: [
-        <WidgetSection layout={1} title={"Department Wise Asset Usage"} border>
-          <PieChartMui
-            data={departmentPieData}
-            options={departmentPieOptions}
-            width={550}
-          />
-        </WidgetSection>,
-        <WidgetSection layout={1} title={"Asset Categories"} border>
-          <div className="flex justify-center">
-            <DonutChart {...assetCategoriesData} width={440} />
-          </div>
-        </WidgetSection>,
+        userPermissions.includes(PERMISSIONS.ASSETS_DEPARTMENT_WISE_ASSET_USAGE.value) && (
+          <WidgetSection layout={1} title={"Department Wise Asset Usage"} border>
+            <PieChartMui
+              data={departmentPieData}
+              options={departmentPieOptions}
+              width={550}
+            />
+          </WidgetSection>
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
+          <WidgetSection layout={1} title={"Asset Categories"} border>
+            <div className="flex justify-center">
+              <DonutChart {...assetCategoriesData} width={440} />
+            </div>
+          </WidgetSection>
+        ),
       ],
     },
     {
-      layout: 1,
+      layout: userPermissions.includes(PERMISSIONS.ASSETS_RECENTLY_ADDED_ASSETS.value) ? 1 : 0,
       widgets: [
-        <WidgetSection layout={1} padding>
-          <MuiTable
-            Title="Recently Added Assets"
-            columns={assetColumns}
-            rows={recentAssets}
-            rowKey="id"
-            rowsToDisplay={8}
-            className="h-full"
-          />
-        </WidgetSection>,
+        userPermissions.includes(PERMISSIONS.ASSETS_RECENTLY_ADDED_ASSETS.value) && (
+          <WidgetSection layout={1} padding>
+            <MuiTable
+              Title="Recently Added Assets"
+              columns={assetColumns}
+              rows={recentAssets}
+              rowKey="id"
+              rowsToDisplay={8}
+              className="h-full"
+            />
+          </WidgetSection>
+        ),
       ],
     },
   ];
