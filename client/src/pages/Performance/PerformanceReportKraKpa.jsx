@@ -7,6 +7,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const tabSx = {
     backgroundColor: "white",
@@ -167,16 +168,7 @@ const PerformanceReportKraKpa = () => {
                 ))}
             </Tabs>
 
-            <Tabs
-                value={activeStatusTab}
-                onChange={(_, newValue) => setActiveStatusTab(newValue)}
-                variant="fullWidth"
-                TabIndicatorProps={{ style: { display: "none" } }}
-                sx={tabSx}
-            >
-                <Tab label="Completed" value="Completed" />
-                <Tab label="Pending" value="Pending" />
-            </Tabs>
+
 
             <Tabs
                 value={activeTypeTab}
@@ -189,8 +181,18 @@ const PerformanceReportKraKpa = () => {
                 <Tab label="KPA" value="KPA" />
             </Tabs>
 
-            <WidgetSection border title="REPORT KRA/KPA" normalCase>
+            <PageFrame>
                 <div className="pt-2">
+                    <Tabs
+                        value={activeStatusTab}
+                        onChange={(_, newValue) => setActiveStatusTab(newValue)}
+                        variant="fullWidth"
+                        TabIndicatorProps={{ style: { display: "none" } }}
+                        sx={tabSx}
+                    >
+                        <Tab label="Completed" value="Completed" />
+                        <Tab label="Pending" value="Pending" />
+                    </Tabs>
                     <YearWiseTable
                         data={tableData}
                         columns={reportColumns}
@@ -201,7 +203,7 @@ const PerformanceReportKraKpa = () => {
                         loading={isPending}
                     />
                 </div>
-            </WidgetSection>
+            </PageFrame>
         </div>
     );
 };

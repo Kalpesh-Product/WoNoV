@@ -177,40 +177,41 @@ const PerformanceDepartmentWiseKraKpa = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <PageFrame>
-                <WidgetSection
-                    title={`KRA/KPA overview - ${selectedMonth}`}
-                    border
-                    padding
-                    greenTitle="kpa"
-                    TitleAmountGreen={totalKpa}
-                    redTitle="kra"
-                    TitleAmountRed={totalKra}
-                >
-                    <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
 
-                    <div className="flex justify-center items-center pb-4">
-                        <div className="flex items-center">
-                            <SecondaryButton
-                                title={<MdNavigateBefore />}
-                                handleSubmit={() => {
-                                    if (currentMonthIndex > 0) {
-                                        setSelectedMonth(fiscalMonths[currentMonthIndex - 1]);
-                                    }
-                                }}
-                            />
-                            <div className="text-sm min-w-[120px] text-center">{selectedMonth}</div>
-                            <SecondaryButton
-                                title={<MdNavigateNext />}
-                                handleSubmit={() => {
-                                    if (currentMonthIndex < fiscalMonths.length - 1) {
-                                        setSelectedMonth(fiscalMonths[currentMonthIndex + 1]);
-                                    }
-                                }}
-                            />
-                        </div>
+            <WidgetSection
+                title={`KRA/KPA overview - ${selectedMonth}`}
+                border
+                padding
+                greenTitle="kpa"
+                TitleAmountGreen={totalKpa}
+                redTitle="kra"
+                TitleAmountRed={totalKra}
+            >
+                <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
+
+                <div className="flex justify-center items-center pb-4">
+                    <div className="flex items-center">
+                        <SecondaryButton
+                            title={<MdNavigateBefore />}
+                            handleSubmit={() => {
+                                if (currentMonthIndex > 0) {
+                                    setSelectedMonth(fiscalMonths[currentMonthIndex - 1]);
+                                }
+                            }}
+                        />
+                        <div className="text-sm min-w-[120px] text-center">{selectedMonth}</div>
+                        <SecondaryButton
+                            title={<MdNavigateNext />}
+                            handleSubmit={() => {
+                                if (currentMonthIndex < fiscalMonths.length - 1) {
+                                    setSelectedMonth(fiscalMonths[currentMonthIndex + 1]);
+                                }
+                            }}
+                        />
                     </div>
-                </WidgetSection>
+                </div>
+            </WidgetSection>
+            <PageFrame>
                 <WidgetSection layout={1} padding>
                     <AgTable
                         data={visibleDepartments.map((item, index) => ({
