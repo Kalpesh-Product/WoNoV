@@ -39,7 +39,7 @@ const PerformanceReportKraKpa = () => {
         queryKey: ["performanceAccessibleDepartments"],
         queryFn: async () => {
             const response = await axios.get("/api/access/department-wise-employees");
-            return response.data?.data || [];
+            return response.data?.data.filter((item) => item.isActive) || [];
         },
     });
 
@@ -189,6 +189,7 @@ const PerformanceReportKraKpa = () => {
                         variant="fullWidth"
                         TabIndicatorProps={{ style: { display: "none" } }}
                         sx={tabSx}
+                        className="mb-4"
                     >
                         <Tab label="Completed" value="Completed" />
                         <Tab label="Pending" value="Pending" />
