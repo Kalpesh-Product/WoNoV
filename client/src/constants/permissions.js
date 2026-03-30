@@ -9,14 +9,89 @@ export const PERMISSIONS = {
     title: "MANAGE ASSETS",
     type: "read",
   },
+  ASSETS_MIX_BAG: {
+    value: "mix_bag",
+    title: "MIX BAG",
+    type: "read",
+  },
+  ASSETS_REPORTS: {
+    value: "reports",
+    title: "REPORTS",
+    type: "read",
+  },
   ASSETS_ASSIGNED_UNASSIGNED: {
     value: "assigned_unassigned",
     title: "ASSIGNED UNASSIGNED",
     type: "read",
   },
+  ASSETS_PHYSICAL_DIGITAL: {
+    value: "physical_digital",
+    title: "PHYSICAL DIGITAL",
+    type: "read",
+  },
+  ASSETS_ASSIGN_ASSETS: {
+    value: "assign_assets",
+    title: "ASSIGN ASSETS",
+    type: "read",
+  },
   ASSETS_ASSIGNED_ASSETS: {
     value: "assigned_assets",
     title: "ASSIGNED ASSETS",
+    type: "read",
+  },
+  ASSETS_APPROVALS: {
+    value: "approvals",
+    title: "APPROVALS",
+    type: "read",
+  },
+  ASSETS_MIX_BAG_VENDER: {
+    value: "mix_bag_vender",
+    title: "MIX BAG VENDER",
+    type: "read",
+  },
+  ASSETS_ASSET_VALUE_UTILIZATION: {
+    value: "asset_value_utilization",
+    title: "ASSET VALUE UTILIZATION",
+    type: "read",
+  },
+  ASSETS_DEPARTMENT_WISE_ASSET_USAGE: {
+    value: "department_wise_asset_usage",
+    title: "DEPARTMENT WISE ASSET USAGE",
+    type: "read",
+  },
+  ASSETS_ASSET_CATEGORIES: {
+    value: "asset_categories",
+    title: "ASSET CATEGORIES",
+    type: "read",
+  },
+  ASSETS_RECENTLY_ADDED_ASSETS: {
+    value: "recently_added_assets",
+    title: "RECENTLY ADDED ASSETS",
+    type: "read",
+  },
+  ASSETS_ASSETS_OWNED: {
+    value: "assets_owned",
+    title: "ASSETS OWNED",
+    type: "read",
+  },
+  ASSETS_ASSET_VALUE: {
+    value: "asset_value",
+    title: "ASSET VALUE",
+    type: "read",
+  },
+  ASSETS_ASSETS_IN_USE: {
+    value: "assets_in_use",
+    title: "ASSETS IN USE",
+    type: "read",
+  },
+  ASSETS_UNASSIGNED_ASSETS: {
+    value: "unassigned_assets",
+    title: "UNASSIGNED ASSETS",
+    type: "read",
+  },
+  ASSETS_ASSETS_UNDER_MAINTENANCE: {
+    value: "assets_under_maintenance",
+    title: "ASSETS UNDER MAINTENANCE",
     type: "read",
   },
 
@@ -284,7 +359,7 @@ export const PERMISSIONS = {
     title: "VISITOR CATEGORIES",
     type: "read",
   },
-  VISITORS_INTERNAL_AND_EXTERNAL_CATEGORIES:{
+  VISITORS_INTERNAL_AND_EXTERNAL_CATEGORIES: {
     value: "visitor_internal_and_external_categories_chart",
     title: "INTERNAL_AND_EXTERNAL_CATEGORIES",
     type: "read",
@@ -618,7 +693,7 @@ export const PERMISSIONS = {
     type: "read",
   },
 
-   FINANCE_UNIT_WISE_DUE_TASKS: {
+  FINANCE_UNIT_WISE_DUE_TASKS: {
     value: "finance_unit_wise_due_tasks_chart",
     title: "UNIT WISE DUE TASKS",
     type: "read",
@@ -923,7 +998,7 @@ export const PERMISSIONS = {
     title: "CLIENT MEMBER BIRTHDAY",
     type: "read",
   },
-   SALES_UNIT_WISE_DUE_TASKS: {
+  SALES_UNIT_WISE_DUE_TASKS: {
     value: "sales_unit_wise_due_tasks_chart",
     title: "UNIT WISE DUE TASKS",
     type: "read",
@@ -1423,6 +1498,18 @@ export const PERMISSIONS = {
     type: "read",
   },
   ADMIN_INVENTORY: { value: "admin_inventory_page", title: "INVENTORY", type: "read" },
+   ADMIN_INVENTORY_SUNTECK_UNITS: {
+    value: "admin_inventory_sunteck_units",
+    title: "SUNTECK KANAKA UNITS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
+  ADMIN_INVENTORY_DEMPO_UNITS: {
+    value: "admin_inventory_dempo_trade_centre_units",
+    title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
   ADMIN_FINANCE: { value: "admin_finance_card", title: "FINANCE", type: "read" },
   ADMIN_MIX_BAG: { value: "admin_mix_bag_card", title: "MIX BAG", type: "read" },
   ADMIN_TEAM_MEMBERS_SCHEDULE_MIX_BAG: {
@@ -1691,7 +1778,7 @@ export const PERMISSIONS = {
     title: "INVENTORY",
     type: "read",
   },
- MAINTENANCE_INVENTORY_SUNTECK_UNITS: {
+  MAINTENANCE_INVENTORY_SUNTECK_UNITS: {
     value: "maintenance_inventory_sunteck_units",
     title: "SUNTECK KANAKA UNITS",
     type: "read",
@@ -1897,6 +1984,18 @@ export const PERMISSIONS = {
     title: "IT INVENTORY",
     type: "read",
     access: "page",
+  },
+   IT_INVENTORY_SUNTECK_UNITS: {
+    value: "it_inventory_sunteck_units",
+    title: "SUNTECK KANAKA UNITS",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
+  IT_INVENTORY_DEMPO_UNITS: {
+    value: "it_inventory_dempo_trade_centre_units",
+    title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
   },
   IT_FINANCE: {
     value: "it_finance_card",

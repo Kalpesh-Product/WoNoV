@@ -96,9 +96,9 @@ const AssignAssets = () => {
     new Map(
       units.length > 0
         ? units.map((loc) => [
-            loc.building?._id ?? `unknown-${loc.unitNo}`,
-            loc.building?.buildingName ?? "Unknown Building",
-          ])
+          loc.building?._id ?? `unknown-${loc.unitNo}`,
+          loc.building?.buildingName ?? "Unknown Building",
+        ])
         : []
     ).entries()
   );
@@ -184,12 +184,12 @@ const AssignAssets = () => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => {
-        const  isAssigned  = params.data.isAssigned !== "Available" ? true : false;
+        const isAssignable = params.data.isAssigned === "Available";
         const menuItems = [
           { label: "View", onClick: () => handleViewAsset(params.data) },
         ];
 
-        if (!isAssigned) {
+        if (isAssignable) {
           menuItems.push({
             label: "Assign",
             onClick: () => handleAssignAsset(params.data),
@@ -204,12 +204,13 @@ const AssignAssets = () => {
   const tableData = isAssetsListPending
     ? []
     : assetsList.map((item, index) => ({
-        ...item,
-        srNo: index + 1,
-        department: item?.department?.name,
-        subCategory: item?.subCategory?.subCategoryName,
-        isAssigned: item?.isAssigned ? "Assigned" : "Available",
-      }));
+      ...item,
+      srNo: index + 1,
+      department: item?.department?.name,
+      subCategory: item?.subCategory?.subCategoryName,
+      isAssigned:
+        item?.assignmentState || (item?.isAssigned ? "Assigned" : "Available"),
+    }));
 
   //-----------------------Table Data----------------------//
 

@@ -205,6 +205,7 @@ import AdminPolicies from "../pages/Dashboard/AdminDashboard/AdminSettings/Admin
 import MaintenanceAnnualExpenses from "../pages/Dashboard/MaintainanceDashboard/MaintenanceAnnualExpenses";
 import Inventory from "../pages/Dashboard/MaintainanceDashboard/Inventory";
 import MaintenanceFinance from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceFinance";
+import MaintenanceInventoryTabs from "../pages/Dashboard/MaintainanceDashboard/MaintenanceInventoryTabs";
 import MaintenanceBudget from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceBudget";
 import MaintenancePayment from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenancePayment";
 import MaintenanceData from "../pages/Dashboard/MaintainanceDashboard/MaintenanceData/MaintenanceData";
@@ -862,7 +863,26 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "inventory",
-                        element: <Inventory />,
+                        //element: <Inventory />,
+                         element: <MaintenanceInventoryTabs />,
+                        children: [
+                          {
+                            path: "sunteck-kanaka-units",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "dempo-trade-center",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                        ],
                       },
                       {
                         path: "finance",
@@ -1082,7 +1102,36 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "inventory",
-                        element: <Inventory />,
+                        element: <MaintenanceInventoryTabs />,
+                        children: [
+                          {
+                            path: "sunteck-kanaka-units",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "dempo-trade-center",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                        ],
+                        //   element: <MaintenanceInventoryTabs />,
+                        // children: [
+                        //   {
+                        //     path: "sunteck-kanaka-units",
+                        //     element: <Inventory forcedBuildingTab="sunteck" />,
+                        //   },
+                        //   {
+                        //     path: "dempo-trade-center",
+                        //     element: <Inventory forcedBuildingTab="dempo" />,
+                        //   },
+                        // ],
                       },
                       {
                         path: "finance",
@@ -1232,7 +1281,26 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "inventory",
-                        element: <Inventory />,
+                        //element: <Inventory />,
+                         element: <MaintenanceInventoryTabs />,
+                        children: [
+                          {
+                            path: "sunteck-kanaka-units",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "dempo-trade-center",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                        ],
                       },
                       {
                         path: "finance",

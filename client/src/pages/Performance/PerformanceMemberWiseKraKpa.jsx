@@ -248,14 +248,14 @@ const PerformanceMemberWiseKraKpa = () => {
 
     return (
         <div className="flex flex-col gap-4">
+            <WidgetSection
+                title={`${selectedDepartmentName || department || "Department"} KRA/KPA overview - ${selectedMonth}`}
+                border
+                padding
+            >
+                <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
+            </WidgetSection>
             <PageFrame>
-                <WidgetSection
-                    title={`${selectedDepartmentName || department || "Department"} KRA/KPA overview - ${selectedMonth}`}
-                    border
-                    padding
-                >
-                    <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
-                </WidgetSection>
                 <WidgetSection layout={1} padding>
                     <AgTable
                         data={rowData}

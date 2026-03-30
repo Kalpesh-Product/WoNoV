@@ -84,20 +84,20 @@ const AssetsDashboard = () => {
       title: "Mix Bag",
       route: "/app/assets/mix-bag",
       icon: <MdFormatListBulleted />,
-      permission: PERMISSIONS.ASSETS_VIEW_GRAPHS,
+      permission: PERMISSIONS.ASSETS_MIX_BAG.value,
     },
     {
       title: "Reports",
       route: "/app/assets/reports",
       icon: <CgProfile />,
-      permission: null, // no restriction
+      permission: PERMISSIONS.ASSETS_REPORTS.value,
     },
-    {
-      title: "Settings",
-      route: "/app/assets/settings",
-      icon: <MdMiscellaneousServices />,
-      permission: null, // no restriction
-    },
+    // {
+    //   title: "Settings",
+    //   route: "/app/assets/settings",
+    //   icon: <MdMiscellaneousServices />,
+    //   permission: null, // no restriction
+    // },
   ];
   const allowedCards = cardsConfig.filter(
     (card) => !card.permission || userPermissions.includes(card.permission),
@@ -240,6 +240,7 @@ const AssetsDashboard = () => {
       data: physicalDigitalPieData,
       options: physicalDigitalOptions,
       width: 475,
+      permission: PERMISSIONS.ASSETS_PHYSICAL_DIGITAL.value,
     },
   ];
 
@@ -544,19 +545,22 @@ const AssetsDashboard = () => {
     data: assetUtilizationSeries,
     options: assetUtilizationOptions,
     onYearChange: setSelectedAssetValueFY,
+    permission: PERMISSIONS.ASSETS_ASSET_VALUE_UTILIZATION.value,
   };
 
   const meetingsWidgets = [
     {
       layout: 1,
       widgets: [
-        <YearlyGraph
-          titleAmount={assetsValueGraph.titleAmount}
-          title={assetsValueGraph.title}
-          data={assetsValueGraph.data}
-          options={assetsValueGraph.options}
-          onYearChange={assetsValueGraph.onYearChange}
-        />,
+        userPermissions.includes(assetsValueGraph.permission) && (
+          <YearlyGraph
+            titleAmount={assetsValueGraph.titleAmount}
+            title={assetsValueGraph.title}
+            data={assetsValueGraph.data}
+            options={assetsValueGraph.options}
+            onYearChange={assetsValueGraph.onYearChange}
+          />
+        )
       ],
     },
     {
@@ -571,43 +575,59 @@ const AssetsDashboard = () => {
       )),
     },
     {
-      layout: 3,
+      layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) ? 3 : 1,
       widgets: [
-        <DataCard
-          title={"Total"}
-          data={totalOwnedAssets}
-          description={"Assets Owned"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={totalCategories}
-          description={"Assets Categories"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={`INR ${inrFormat(totalAssetsPrice)}`}
-          description={"Assets Value"}
-        />,
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalOwnedAssets}
+            description={"Assets Owned"}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalCategories}
+            description={"Assets Categories"}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
+          <DataCard
+            title={"Total"}
+            data={`INR ${inrFormat(totalAssetsPrice)}`}
+            description={"Assets Value"}
+          />
+        ),
       ],
     },
     {
-      layout: 3,
+      layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) ? 3 : 1,
       widgets: [
-        <DataCard
-          title={"Total"}
-          data={totalAssignedAssets}
-          description={"Assets In Use"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={totalUnassignedAssets}
-          description={"Unassigned Assets"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={totalAssetsUnderMaintenance}
-          description={"Assets Under Maintenance"}
-        />,
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalAssignedAssets}
+            description={"Assets In Use"}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalUnassignedAssets}
+            description={"Unassigned Assets"}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalAssetsUnderMaintenance}
+            description={"Assets Under Maintenance"}
+          />
+        ),
       ],
     },
     {
@@ -623,38 +643,49 @@ const AssetsDashboard = () => {
             data={item.data}
             options={item.options}
             width={item.width}
+            centerAlign
           />
         </WidgetSection>
       )),
     },
     {
-      layout: 2,
+      layout: userPermissions.includes(PERMISSIONS.ASSETS_DEPARTMENT_WISE_ASSET_USAGE.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) ? 2 : 1,
       widgets: [
-        <WidgetSection layout={1} title={"Department Wise Asset Usage"} border>
-          <PieChartMui
-            data={departmentPieData}
-            options={departmentPieOptions}
-            width={550}
-          />
-        </WidgetSection>,
-        <WidgetSection layout={1} title={"Asset Categories"} border>
-          <DonutChart {...assetCategoriesData} width={440} />
-        </WidgetSection>,
+        userPermissions.includes(PERMISSIONS.ASSETS_DEPARTMENT_WISE_ASSET_USAGE.value) && (
+          <WidgetSection layout={1} title={"Department Wise Asset Usage"} border>
+            <PieChartMui
+              data={departmentPieData}
+              options={departmentPieOptions}
+              width={550}
+              centerAlign
+            />
+          </WidgetSection>
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
+          <WidgetSection layout={1} title={"Asset Categories"} border>
+            <div className="flex justify-center">
+              <DonutChart {...assetCategoriesData} width={440} />
+            </div>
+          </WidgetSection>
+        ),
       ],
     },
     {
-      layout: 1,
+      layout: userPermissions.includes(PERMISSIONS.ASSETS_RECENTLY_ADDED_ASSETS.value) ? 1 : 0,
       widgets: [
-        <WidgetSection layout={1} padding>
-          <MuiTable
-            Title="Recently Added Assets"
-            columns={assetColumns}
-            rows={recentAssets}
-            rowKey="id"
-            rowsToDisplay={8}
-            className="h-full"
-          />
-        </WidgetSection>,
+        userPermissions.includes(PERMISSIONS.ASSETS_RECENTLY_ADDED_ASSETS.value) && (
+          <WidgetSection layout={1} padding>
+            <MuiTable
+              Title="Recently Added Assets"
+              columns={assetColumns}
+              rows={recentAssets}
+              rowKey="id"
+              rowsToDisplay={8}
+              className="h-full"
+            />
+          </WidgetSection>
+        ),
       ],
     },
   ];
