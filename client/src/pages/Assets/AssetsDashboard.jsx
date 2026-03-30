@@ -638,7 +638,9 @@ const AssetsDashboard = () => {
           />
         </WidgetSection>,
         <WidgetSection layout={1} title={"Asset Categories"} border>
-          <DonutChart {...assetCategoriesData} width={440} />
+          <div className="flex justify-center">
+            <DonutChart {...assetCategoriesData} width={440} />
+          </div>
         </WidgetSection>,
       ],
     },
