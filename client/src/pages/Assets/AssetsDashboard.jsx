@@ -92,12 +92,12 @@ const AssetsDashboard = () => {
       icon: <CgProfile />,
       permission: null, // no restriction
     },
-    {
-      title: "Settings",
-      route: "/app/assets/settings",
-      icon: <MdMiscellaneousServices />,
-      permission: null, // no restriction
-    },
+    // {
+    //   title: "Settings",
+    //   route: "/app/assets/settings",
+    //   icon: <MdMiscellaneousServices />,
+    //   permission: null, // no restriction
+    // },
   ];
   const allowedCards = cardsConfig.filter(
     (card) => !card.permission || userPermissions.includes(card.permission),
