@@ -70,8 +70,6 @@ const PerformanceReportKraKpa = () => {
         [departments, activeDepartmentId]
     );
 
-    const departmentTabsVariant =
-        departments.length > 0 && departments.length <= 3 ? "fullWidth" : "scrollable";
 
     const endpoint =
         activeStatusTab === "Completed"
@@ -158,8 +156,7 @@ const PerformanceReportKraKpa = () => {
             <Tabs
                 value={activeDepartmentId}
                 onChange={(_, newValue) => setActiveDepartmentId(newValue)}
-                variant={departmentTabsVariant}
-                scrollButtons={departmentTabsVariant === "scrollable" ? "auto" : false}
+                variant="fullWidth"
                 TabIndicatorProps={{ style: { display: "none" } }}
                 sx={tabSx}
             >

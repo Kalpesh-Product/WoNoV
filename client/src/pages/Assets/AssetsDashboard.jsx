@@ -643,6 +643,7 @@ const AssetsDashboard = () => {
             data={item.data}
             options={item.options}
             width={item.width}
+            centerAlign
           />
         </WidgetSection>
       )),
@@ -657,6 +658,7 @@ const AssetsDashboard = () => {
               data={departmentPieData}
               options={departmentPieOptions}
               width={550}
+              centerAlign
             />
           </WidgetSection>
         ),
