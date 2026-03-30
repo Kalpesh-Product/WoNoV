@@ -13,6 +13,7 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const Department = require("../../models/Departments");
 const AssetSubCategory = require("../../models/category/SubCategories");
+const AssignAsset = require("../../models/assets/AssignAsset");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 
@@ -119,9 +120,32 @@ const getAssets = async (req, res, next) => {
       .select("-company")
       .sort({ [sortField]: sortOrder });
 
+    const assetIds = assets.map((asset) => asset._id);
+    const pendingRequests = await AssignAsset.find({
+      asset: { $in: assetIds },
+      status: "Pending",
+    })
+      .select("asset")
+      .lean()
+      .exec();
+
+    const pendingAssetIds = new Set(
+      pendingRequests.map((request) => request.asset?.toString()),
+    );
+
+    const assetsWithAssignmentState = assets.map((asset) => {
+      const parsedAsset = asset.toObject();
+      parsedAsset.assignmentState = pendingAssetIds.has(asset._id.toString())
+        ? "Pending"
+        : asset.isAssigned
+          ? "Assigned"
+          : "Available";
+      return parsedAsset;
+    });
+
     // Group assets by department ID
     const assetMap = {};
-    for (const asset of assets) {
+    for (const asset of assetsWithAssignmentState) {
       const deptId = asset.department?._id?.toString();
       if (!assetMap[deptId]) assetMap[deptId] = [];
       assetMap[deptId].push(asset);

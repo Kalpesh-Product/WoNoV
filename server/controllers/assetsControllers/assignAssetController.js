@@ -239,6 +239,21 @@ const assignAsset = async (req, res, next) => {
       return res.status(400).json({ message: "Asset is already assigned" });
     }
 
+    const pendingRequest = await AssignAsset.findOne({
+      asset: assetId,
+      status: "Pending",
+    })
+      .select("_id")
+      .lean()
+      .exec();
+
+    if (pendingRequest) {
+      return res.status(400).json({
+        message: "Asset assignment is already pending approval",
+      });
+    }
+
+
     if (asset.status === "Inactive") {
       throw new CustomError(
         "Asset is currently inactive",
