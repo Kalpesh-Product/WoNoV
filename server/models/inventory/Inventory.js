@@ -12,8 +12,8 @@ const inventorySchema = new mongoose.Schema(
       ref: "Department",
     },
     itemName: {
-      type: String,
-      required: true,
+       type: mongoose.Schema.Types.ObjectId,
+      ref: "Item",
     },
     // Opening inventory
     openingInventoryUnits: {

@@ -5,6 +5,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const Category = require("../../models/category/Category");
+const Item = require("../../models/Item");
 
 // Create Inventory Item
 
@@ -246,24 +247,63 @@ const createInventory = async (req, res, next) => {
     }
 
     /* ------------------ Numeric sanity checks ------------------ */
+    // const numbers = [
+    //   Number(openingInventoryUnits),
+    //   Number(openingPerUnitPrice),
+    //   Number(newPurchaseUnits),
+    //   Number(newPurchasePerUnitPrice),
+    //   Number(consumedOpenInventoryUnits),
+    //   Number(consumedNewPurchaseInventoryUnits),
+    // ];
 
+    // const remainingInventoryUnits =
+    //   openingInventoryUnits - consumedOpenInventoryUnits;
+    // const closingInventoryUnits =
+    //   newPurchaseUnits +
+    //   remainingInventoryUnits -
+    //   consumedNewPurchaseInventoryUnits;
+
+    // if (numbers.some((n) => typeof n !== "number" || n < 0)) {
+    //   throw new CustomError(
+    //     "Inventory values must be non-negative numbers",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //     400,
+    //   );
+    // }
+
+ const normalizedOpeningInventoryUnits = Number(openingInventoryUnits ?? 0);
+    const normalizedOpeningPerUnitPrice = Number(openingPerUnitPrice ?? 0);
+    const normalizedOpeningInventoryValue = Number(openingInventoryValue ?? 0);
+    const normalizedNewPurchaseUnits = Number(newPurchaseUnits ?? 0);
+    const normalizedNewPurchasePerUnitPrice = Number(newPurchasePerUnitPrice ?? 0);
+    const normalizedNewPurchaseInventoryValue = Number(newPurchaseInventoryValue ?? 0);
+    const normalizedConsumedOpenInventoryUnits = Number(
+      consumedOpenInventoryUnits ?? req.body?.consumedUnitValue ?? 0,
+    );
+    const normalizedConsumedNewPurchaseInventoryUnits = Number(
+      consumedNewPurchaseInventoryUnits ?? 0,
+    );
     const numbers = [
-      Number(openingInventoryUnits),
-      Number(openingPerUnitPrice),
-      Number(newPurchaseUnits),
-      Number(newPurchasePerUnitPrice),
-      Number(consumedOpenInventoryUnits),
-      Number(consumedNewPurchaseInventoryUnits),
+      normalizedOpeningInventoryUnits,
+      normalizedOpeningPerUnitPrice,
+      normalizedOpeningInventoryValue,
+      normalizedNewPurchaseUnits,
+      normalizedNewPurchasePerUnitPrice,
+      normalizedNewPurchaseInventoryValue,
+      normalizedConsumedOpenInventoryUnits,
+      normalizedConsumedNewPurchaseInventoryUnits,
     ];
 
     const remainingInventoryUnits =
-      openingInventoryUnits - consumedOpenInventoryUnits;
+      normalizedOpeningInventoryUnits - normalizedConsumedOpenInventoryUnits;
     const closingInventoryUnits =
-      newPurchaseUnits +
+      normalizedNewPurchaseUnits +
       remainingInventoryUnits -
-      consumedNewPurchaseInventoryUnits;
+      normalizedConsumedNewPurchaseInventoryUnits;
 
-    if (numbers.some((n) => typeof n !== "number" || n < 0)) {
+     if (numbers.some((n) => !Number.isFinite(n) || n < 0)) {
       throw new CustomError(
         "Inventory values must be non-negative numbers",
         logPath,
@@ -275,24 +315,35 @@ const createInventory = async (req, res, next) => {
 
     /* ------------------ Create inventory ------------------ */
 
+    
     const inventory = await Inventory.create({
       company,
       department,
       itemName, // ✅ ObjectId directly
       category,
       addedBy: user,
-      openingInventoryUnits,
-      openingPerUnitPrice,
-      openingInventoryValue,
-      consumedOpenInventoryUnits,
+      openingInventoryUnits: normalizedOpeningInventoryUnits,
+      openingPerUnitPrice: normalizedOpeningPerUnitPrice,
+      openingInventoryValue: normalizedOpeningInventoryValue,
+      consumedOpenInventoryUnits: normalizedConsumedOpenInventoryUnits,
       remainingInventoryUnits,
-      newPurchaseUnits,
-      newPurchasePerUnitPrice,
-      newPurchaseInventoryValue,
-      consumedNewPurchaseInventoryUnits,
+      newPurchaseUnits: normalizedNewPurchaseUnits,
+      newPurchasePerUnitPrice: normalizedNewPurchasePerUnitPrice,
+      newPurchaseInventoryValue: normalizedNewPurchaseInventoryValue,
+      consumedNewPurchaseInventoryUnits:
+        normalizedConsumedNewPurchaseInventoryUnits,
       closingInventoryUnits,
       unit,
       date: new Date(),
+      //  openingInventoryUnits,
+      // openingPerUnitPrice,
+      // openingInventoryValue,
+      // consumedOpenInventoryUnits,
+      // remainingInventoryUnits,
+      // newPurchaseUnits,
+      // newPurchasePerUnitPrice,
+      // newPurchaseInventoryValue,
+      // consumedNewPurchaseInventoryUnits,
     });
 
     /* ------------------ Logging ------------------ */
@@ -351,6 +402,14 @@ const getInventories = async (req, res) => {
         company: req.company,
       })
         .populate("itemName", "name") // ✅ important
+         .populate({
+        path: "unit",
+        select: "unitNo unitName building",
+        populate: {
+          path: "building",
+          select: "buildingName",
+        },
+      })
         .populate("department category")
         .populate("addedBy", "firstName middleName lastName");
 
@@ -368,6 +427,14 @@ const getInventories = async (req, res) => {
 
     const inventories = await Inventory.find(query)
       .populate("itemName", "name") // ✅ important
+       .populate({
+          path: "unit",
+          select: "unitNo unitName building",
+          populate: {
+            path: "building",
+            select: "buildingName",
+          },
+        })
       .populate("department category")
       .populate("addedBy", "firstName middleName lastName");
 

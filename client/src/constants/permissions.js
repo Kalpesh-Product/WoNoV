@@ -1498,6 +1498,18 @@ export const PERMISSIONS = {
     type: "read",
   },
   ADMIN_INVENTORY: { value: "admin_inventory_page", title: "INVENTORY", type: "read" },
+   ADMIN_INVENTORY_SUNTECK_UNITS: {
+    value: "admin_inventory_sunteck_units",
+    title: "SUNTECK KANAKA UNITS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
+  ADMIN_INVENTORY_DEMPO_UNITS: {
+    value: "admin_inventory_dempo_trade_centre_units",
+    title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
   ADMIN_FINANCE: { value: "admin_finance_card", title: "FINANCE", type: "read" },
   ADMIN_MIX_BAG: { value: "admin_mix_bag_card", title: "MIX BAG", type: "read" },
   ADMIN_TEAM_MEMBERS_SCHEDULE_MIX_BAG: {
@@ -1972,6 +1984,18 @@ export const PERMISSIONS = {
     title: "IT INVENTORY",
     type: "read",
     access: "page",
+  },
+   IT_INVENTORY_SUNTECK_UNITS: {
+    value: "it_inventory_sunteck_units",
+    title: "SUNTECK KANAKA UNITS",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
+  IT_INVENTORY_DEMPO_UNITS: {
+    value: "it_inventory_dempo_trade_centre_units",
+    title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
   },
   IT_FINANCE: {
     value: "it_finance_card",
