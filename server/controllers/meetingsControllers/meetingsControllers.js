@@ -1113,7 +1113,7 @@ const cancelMeeting = async (req, res, next) => {
     }
 
     const meetingToCancel = await Meeting.findById(meetingId).select(
-      "status meetingType creditsUsed client clientBookedBy internalParticipants bookedBy",
+      "status meetingType creditsUsed client clientBookedBy internalParticipants bookedBy startTime",
     );
 
     if (!meetingToCancel) {
@@ -1142,9 +1142,51 @@ const cancelMeeting = async (req, res, next) => {
         : Company;
 
       if (meetingToCancel.client && creditsToRefund > 0) {
-        await BookingModel.findByIdAndUpdate(meetingToCancel.client, {
-          $inc: { meetingCreditBalance: creditsToRefund },
-        });
+        const meetingDate = new Date(meetingToCancel.startTime || new Date());
+        const meetingMonthStart = new Date(
+          meetingDate.getFullYear(),
+          meetingDate.getMonth(),
+          1,
+        );
+
+        const now = new Date();
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const isCurrentMonth =
+          meetingMonthStart.getTime() === currentMonthStart.getTime();
+
+        const creditRecord = await resetMeetingCreditsIfNeeded(
+          BookingModel,
+          meetingToCancel.client,
+          meetingDate,
+        );
+
+        if (!creditRecord) {
+          throw new CustomError(
+            "Booking client/company not found",
+            logPath,
+            logAction,
+            logSourceKey,
+          );
+        }
+
+        const updateFields = {
+          $inc: {
+            "meetingCreditBalanceHistory.$.remainingCredit": creditsToRefund,
+            "meetingCreditBalanceHistory.$.consumedCredit": -creditsToRefund,
+          },
+        };
+
+        if (isCurrentMonth) {
+          updateFields.$inc.meetingCreditBalance = creditsToRefund;
+        }
+
+        await BookingModel.findOneAndUpdate(
+          {
+            _id: meetingToCancel.client,
+            "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
+          },
+          updateFields,
+        );
       }
     }
 
