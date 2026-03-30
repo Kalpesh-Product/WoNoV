@@ -1,169 +1,77 @@
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../components/AgTable";
-import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import useAuth from "../../hooks/useAuth";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
 import PageFrame from "../../components/Pages/PageFrame";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import humanDate from "../../utils/humanDateForamt";
 
 const DepartmentAssetCommon = (disabled) => {
-  const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
-  const [modalMode, setModalMode] = useState("add");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
+
+  const { data: assignedAssets = [], isLoading } = useQuery({
+    queryKey: ["departmentAssignedAssets", department?._id],
+    enabled: Boolean(department?._id),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/assets/get-asset-requests?departmentId=${department._id}&status=Approved`
+      );
+      return response.data;
+    },
+  });
 
   const assetColumns = [
-    { field: "id", headerName: "Sr No", width: 100 },
-    { field: "department", headerName: "Department" },
-    { field: "inventoryNumber", headerName: "Inventory Number" },
-    { field: "category", headerName: "Category" },
-    { field: "brand", headerName: "Brand" },
-    { field: "price", headerName: "Price" },
-    { field: "quantity", headerName: "Quantity" },
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
-    {
-      field: "actions",
-      headerName: "Actions",
-      cellRenderer: (params) => (
-        <div
-          onClick={() => {
-            handleDetailsClick(params.data);
-          }}
-          className="hover:bg-gray-200 cursor-pointer p-2 px-0 rounded-full transition-all w-1/4 flex justify-center"
-        >
-          <span className="text-subtitle">
-            <MdOutlineRemoveRedEye />
-          </span>
-        </div>
-      ),
-    },
+    { field: "id", headerName: "Sr No", width: 90 },
+    { field: "assetNumber", headerName: "Asset Id", width: 130 },
+    { field: "assetName", headerName: "Asset Name", minWidth: 160, flex: 1 },
+    { field: "category", headerName: "Category", minWidth: 140, flex: 1 },
+    { field: "brand", headerName: "Brand", minWidth: 120, flex: 1 },
+    { field: "assignedBy", headerName: "Assigned By", minWidth: 170, flex: 1 },
+    { field: "assignedTo", headerName: "Assigned To", minWidth: 170, flex: 1 },
+    { field: "fromDepartment", headerName: "Assigned From", minWidth: 150, flex: 1 },
+    { field: "toDepartment", headerName: "Assigned Department", minWidth: 170, flex: 1 },
+    { field: "assignedDate", headerName: "Assigned Date", minWidth: 130, flex: 1 },
   ];
 
-  const assetsList = [
-    {
-      department: "Maintenance",
-      inventoryNumber: "0001",
-      category: "Chair",
-      brand: "Ergosphere",
-      price: 45000,
-      quantity: 2,
-      purchaseDate: "11-11-2024",
-      warranty: 12,
-    },
-    {
-      department: "Maintenance",
-      inventoryNumber: "0002",
-      category: "Chair",
-      brand: "Ergosphere",
-      price: 50000,
-      quantity: 3,
-      purchaseDate: "10-10-2024",
-      warranty: 24,
-    },
-    {
-      department: "Maintenance",
-      inventoryNumber: "0003",
-      category: "Chair",
-      brand: "Ergosphere",
-      price: 120000,
-      quantity: 1,
-      purchaseDate: "12-09-2024",
-      warranty: 36,
-    },
-    {
-      department: "Maintenance",
-      inventoryNumber: "0004",
-      category: "Chair",
-      brand: "Ergosphere",
-      price: 40000,
-      quantity: 4,
-      purchaseDate: "01-08-2024",
-      warranty: 12,
-    },
-    {
-      department: "Maintenance",
-      inventoryNumber: "0005",
-      category: "Chair",
-      brand: "Ergosphere",
-      price: 60000,
-      quantity: 5,
-      purchaseDate: "15-07-2024",
-      warranty: 18,
-    },
-    {
-      department: "Maintenance",
-      inventoryNumber: "0001",
-      category: "Chair",
-      brand: "Ergosphere",
-      price: 65000,
-      quantity: 2,
-      purchaseDate: "27-11-2024",
-      warranty: 12,
-    },
-    {
-      department: "Maintenance",
-      inventoryNumber: "0001",
-      category: "Chair",
-      brand: "Ergosphere",
-      price: 65000,
-      quantity: 2,
-      purchaseDate: "21-11-2024",
-      warranty: 12,
-    },
-    {
-      department: "IT",
-      inventoryNumber: "0006",
-      category: "Laptop",
-      brand: "Dell",
-      price: 75000,
-      quantity: 5,
-      purchaseDate: "05-12-2024",
-      warranty: 36,
-    },
-    {
-      department: "Finance",
-      inventoryNumber: "0007",
-      category: "Printer",
-      brand: "HP",
-      price: 25000,
-      quantity: 2,
-      purchaseDate: "18-11-2024",
-      warranty: 12,
-    },
-  ];
+  const tableData = isLoading
+    ? []
+    : assignedAssets.map((item, index) => {
+      const assignedToName = [item?.assignee?.firstName, item?.assignee?.lastName]
+        .filter(Boolean)
+        .join(" ");
+      const assignedByName = [item?.approvedBy?.firstName, item?.approvedBy?.lastName]
+        .filter(Boolean)
+        .join(" ");
 
-  const handleDetailsClick = (asset) => {
-    setSelectedAsset(asset);
-    setModalMode("view");
-    setIsModalOpen(true);
-  };
-
-  const handleAddAsset = () => {
-    setModalMode("add");
-    setSelectedAsset(null);
-    setIsModalOpen(true);
-  };
+      return {
+        id: index + 1,
+        assetNumber: item?.asset?.assetId || "--",
+        assetName: item?.asset?.name || "--",
+        category:
+          item?.asset?.subCategory?.category?.categoryName ||
+          item?.asset?.subCategory?.subCategoryName ||
+          "--",
+        brand: item?.asset?.brand || "--",
+        assignedBy: assignedByName || "--",
+        assignedTo: assignedToName || "--",
+        fromDepartment: item?.fromDepartment?.name || "--",
+        toDepartment: item?.toDepartment?.name || department?.name || "--",
+        assignedDate: item?.updatedAt ? humanDate(item.updatedAt) : "--",
+      };
+    });
 
   return (
-    <>
-      <PageFrame>
-        <AgTable
-          key={assetsList.length}
-          search={true}
-          searchColumn={"Asset Number"}
-          tableTitle={"Department Asset List"}
-          buttonTitle={"Add Asset"}
-          disabled={disabled}
-          data={[]}
-          columns={assetColumns}
-          handleClick={handleAddAsset}
-        />
-      </PageFrame>
-    </>
+    <PageFrame>
+      <AgTable
+        key={tableData.length}
+        search
+        searchColumn={"assetNumber"}
+        tableTitle={`${department?.name || "Department"} Assigned Asset List`}
+        disabled={disabled}
+        data={tableData}
+        columns={assetColumns}
+      />
+    </PageFrame>
   );
 };
 

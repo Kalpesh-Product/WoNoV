@@ -62,6 +62,7 @@ const getAssetRequests = async (req, res, next) => {
           populate: { path: "building" },
         },
         { path: "assignee", select: "firstName lastName empId" },
+        { path: "approvedBy", select: "firstName lastName empId" },
       ])
       .sort({ dateOfAssigning: -1 }); // Sort by latest assignments
 
