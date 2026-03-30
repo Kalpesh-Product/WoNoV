@@ -53,6 +53,45 @@ const PerformanceHome = () => {
   });
 
 
+  const { data: completedKraByDepartment = {} } = useQuery({
+    queryKey: [
+      "performanceCompletedKraByDepartment",
+      fetchedDepartments.map((item) => item?.department?._id).filter(Boolean),
+    ],
+    enabled: fetchedDepartments.length > 0,
+    queryFn: async () => {
+      const departmentIds = fetchedDepartments
+        .map((item) => item?.department?._id)
+        .filter(Boolean);
+
+      const completedByDeptEntries = await Promise.all(
+        departmentIds.map(async (departmentId) => {
+          const [kraRes, teamKraRes, individualKraRes] = await Promise.all([
+            axios.get("/api/performance/get-completed-tasks", {
+              params: { dept: departmentId, type: "KRA" },
+            }),
+            axios.get("/api/performance/get-completed-tasks", {
+              params: { dept: departmentId, type: "TEAMKRA" },
+            }),
+            axios.get("/api/performance/get-completed-tasks", {
+              params: { dept: departmentId, type: "INDIVIDUALKRA" },
+            }),
+          ]);
+
+          const completedCount =
+            (kraRes.data?.length || 0) +
+            (teamKraRes.data?.length || 0) +
+            (individualKraRes.data?.length || 0);
+
+          return [departmentId, completedCount];
+        })
+      );
+
+      return Object.fromEntries(completedByDeptEntries);
+    },
+  });
+
+
   const annualKpaGraphData = useMemo(() => {
     const monthlyTotals = {};
     const monthlyAchieved = {};
@@ -159,24 +198,25 @@ const PerformanceHome = () => {
 
   const kraPieData = useMemo(() => {
     const completed = fetchedDepartments.reduce(
-      (acc, dept) => acc + toCount(dept.completedTasks),
+      (acc, dept) =>
+        acc + toCount(completedKraByDepartment[dept?.department?._id]),
       0
     );
-    const pending = fetchedDepartments.reduce(
+    const assigned = fetchedDepartments.reduce(
       (acc, dept) =>
         acc +
-        (toCount(dept.pendingTasks) ||
-          toCount(dept.dailyKRA) +
+        (toCount(dept.dailyKRA) +
           toCount(dept.teamDailyKRA) +
           toCount(dept.individualDailyKRA)),
       0
     );
+    const pending = Math.max(assigned - completed, 0);
 
     return [
       { label: "Completed KRA", value: completed },
       { label: "Pending KRA", value: pending },
     ];
-  }, [fetchedDepartments]);
+  }, [fetchedDepartments, completedKraByDepartment]);
 
   const pieOptions = (labels) => ({
     chart: {
