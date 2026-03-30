@@ -69,6 +69,31 @@ export const PERMISSIONS = {
     title: "RECENTLY ADDED ASSETS",
     type: "read",
   },
+  ASSETS_ASSETS_OWNED: {
+    value: "assets_owned",
+    title: "ASSETS OWNED",
+    type: "read",
+  },
+  ASSETS_ASSET_VALUE: {
+    value: "asset_value",
+    title: "ASSET VALUE",
+    type: "read",
+  },
+  ASSETS_ASSETS_IN_USE: {
+    value: "assets_in_use",
+    title: "ASSETS IN USE",
+    type: "read",
+  },
+  ASSETS_UNASSIGNED_ASSETS: {
+    value: "unassigned_assets",
+    title: "UNASSIGNED ASSETS",
+    type: "read",
+  },
+  ASSETS_ASSETS_UNDER_MAINTENANCE: {
+    value: "assets_under_maintenance",
+    title: "ASSETS UNDER MAINTENANCE",
+    type: "read",
+  },
 
   // Tickets Module
   TICKETS_RAISE_TICKET: {

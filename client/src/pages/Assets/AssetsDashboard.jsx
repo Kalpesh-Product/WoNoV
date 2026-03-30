@@ -575,43 +575,59 @@ const AssetsDashboard = () => {
       )),
     },
     {
-      layout: 3,
+      layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) ? 3 : 1,
       widgets: [
-        <DataCard
-          title={"Total"}
-          data={totalOwnedAssets}
-          description={"Assets Owned"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={totalCategories}
-          description={"Assets Categories"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={`INR ${inrFormat(totalAssetsPrice)}`}
-          description={"Assets Value"}
-        />,
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalOwnedAssets}
+            description={"Assets Owned"}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalCategories}
+            description={"Assets Categories"}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
+          <DataCard
+            title={"Total"}
+            data={`INR ${inrFormat(totalAssetsPrice)}`}
+            description={"Assets Value"}
+          />
+        ),
       ],
     },
     {
-      layout: 3,
+      layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) &&
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) ? 3 : 1,
       widgets: [
-        <DataCard
-          title={"Total"}
-          data={totalAssignedAssets}
-          description={"Assets In Use"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={totalUnassignedAssets}
-          description={"Unassigned Assets"}
-        />,
-        <DataCard
-          title={"Total"}
-          data={totalAssetsUnderMaintenance}
-          description={"Assets Under Maintenance"}
-        />,
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalAssignedAssets}
+            description={"Assets In Use"}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalUnassignedAssets}
+            description={"Unassigned Assets"}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalAssetsUnderMaintenance}
+            description={"Assets Under Maintenance"}
+          />
+        ),
       ],
     },
     {
