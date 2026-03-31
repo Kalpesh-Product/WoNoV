@@ -1,5 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const Item = require("../models/Item");
+const Inventory = require("../models/inventory/Inventory");
+const Category = require("../models/category/Category");
 
 const addItem = async (req, res) => {
   try {
@@ -97,7 +99,7 @@ const getItems = async (req, res) => {
     const items = await Item.find(filter)
       .select("name department category")
       .populate("department", "name")
-      .populate("category", "name")
+      .populate("category", "categoryName")
       .sort({ name: 1 })
       .lean();
 
@@ -113,18 +115,5 @@ const getItems = async (req, res) => {
     });
   }
 };
-
-// const items = await Inventory.find();
-
-// for (const inv of items) {
-//   let item = await Item.findOne({ name: inv.itemNameText });
-
-//   if (!item) {
-//     item = await Item.create({ name: inv.itemNameText });
-//   }
-
-//   inv.itemName = item._id;
-//   await inv.save();
-// }
 
 module.exports = { addItem, getItems };
