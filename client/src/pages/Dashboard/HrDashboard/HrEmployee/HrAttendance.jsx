@@ -154,10 +154,10 @@ const HrAttendance = () => {
 
         const startDate = dayjs(userInfo?.startDate);
 
-        for (let day = 1; day <= daysInMonth; day++) {
+        for (let day = 1; day < daysInMonth; day++) {
           const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
-          const isWeekend = date.day() === 0 || date.day() === 6;
+          const isWeekend = date.day() === 0 || date.day() === 7;
           const beforeJoining =
             startDate.isValid() && date.isBefore(startDate, "day");
 
