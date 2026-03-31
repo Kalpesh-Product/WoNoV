@@ -443,8 +443,15 @@ const getHierarchy = async (req, res, next) => {
 const getCompanyAttandances = async (req, res, next) => {
   try {
     const { company } = req;
+    const activeEmployees = await UserData.find({ company, isActive: true })
+      .select("firstName lastName empId startDate isActive")
+      .lean()
+      .exec();
     const companyAttandances = await Attandance.find({ company })
-      .populate({ path: "user", select: "firstName lastName empId startDate" })
+      .populate({
+        path: "user",
+        select: "firstName lastName empId startDate isActive",
+      })
       .lean()
       .exec();
 
@@ -464,14 +471,20 @@ const getCompanyAttandances = async (req, res, next) => {
     const allLeaves = await Leaves.find({ company })
       .populate({
         path: "takenBy",
-        select: "firstName lastName startDate",
+        select: "firstName lastName empId startDate isActive",
       })
       .lean()
       .exec();
     const workingDays = 365 - (holidays.length + sundays);
     res
       .status(200)
-      .json({ companyAttandances, workingDays, holidays, allLeaves });
+      .json({
+        activeEmployees,
+        companyAttandances,
+        workingDays,
+        holidays,
+        allLeaves,
+      });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);

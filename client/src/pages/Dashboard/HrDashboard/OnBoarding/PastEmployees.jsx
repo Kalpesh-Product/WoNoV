@@ -15,7 +15,9 @@ export default function PastEmployees() {
     queryKey: ["past-employees"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/users/fetch-users");
+        const response = await axios.get("/api/users/fetch-users", {
+          params: { status: "false" },
+        });
         const filteredData = response.data.filter(
           (employee) => employee.isActive === false
         );
@@ -62,10 +64,10 @@ export default function PastEmployees() {
       headerName: "Status",
       sort: "desc",
       cellRenderer: (params) => {
-        const statusText = params.value ? "Active" : "In Active";
+        const statusText = params.value ? "Active" : "Inactive";
         const statusColorMap = {
           Active: { backgroundColor: "#90EE90", color: "#006400" },
-          "In Active": { backgroundColor: "#F8D7DA", color: "#721C24" },
+          Inactive: { backgroundColor: "#F8D7DA", color: "#721C24" },
         };
 
         const { backgroundColor, color } = statusColorMap[statusText] || {

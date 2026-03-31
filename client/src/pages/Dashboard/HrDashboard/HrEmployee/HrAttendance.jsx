@@ -78,8 +78,27 @@ const HrAttendance = () => {
     const groupedUsers = {};
     const attendanceMap = {};
 
+    const activeUsersMap = new Map(
+      (attendanceData?.activeEmployees || []).map((employee) => [
+        employee?._id?.toString(),
+        employee,
+      ])
+    );
+
+    (attendanceData?.activeEmployees || []).forEach((employee) => {
+      const userId = employee?._id?.toString();
+      if (!userId) return;
+
+      groupedUsers[userId] = {
+        empId: employee.empId || "",
+        empName: `${employee.firstName || ""} ${employee.lastName || ""}`.trim(),
+        startDate: employee.startDate,
+      };
+    });
+
     attendanceData?.companyAttandances?.forEach((entry) => {
-      const userId = entry.user?._id;
+      const userId = entry.user?._id?.toString();
+      if (!userId || !activeUsersMap.has(userId)) return;
       const dateKey = dayjs(entry.inTime).format("YYYY-MM-DD");
       const inTime = dayjs(entry.inTime);
       const outTime = dayjs(entry.outTime);
@@ -92,13 +111,15 @@ const HrAttendance = () => {
           empId: entry.user?.empId,
           empName: `${entry.user?.firstName || ""} ${entry.user?.lastName || ""
             }`.trim(),
+          startDate: entry.user?.startDate,
         };
       }
     });
 
     const leaveMap = {};
     attendanceData?.allLeaves?.forEach((leave) => {
-      const userId = leave.takenBy?._id;
+      const userId = leave.takenBy?._id?.toString();
+      if (!userId || !activeUsersMap.has(userId)) return;
       const leaveType = leave.leaveType?.toLowerCase().includes("sick")
         ? "SL"
         : "PL";
@@ -116,6 +137,7 @@ const HrAttendance = () => {
           empId: leave.takenBy?.empId || "",
           empName: `${leave.takenBy?.firstName || ""} ${leave.takenBy?.lastName || ""
             }`.trim(),
+          startDate: leave.takenBy?.startDate,
         };
       }
     });
@@ -130,15 +152,12 @@ const HrAttendance = () => {
         let totalWorkedHours = 0;
         let hasData = false;
 
-        const userAttendance = attendanceData.companyAttandances?.find(
-          (entry) => entry.user?._id === userId && entry.user?.startDate
-        );
-        const startDate = dayjs(userAttendance?.user?.startDate);
+        const startDate = dayjs(userInfo?.startDate);
 
-        for (let day = 1; day < daysInMonth; day++) {
+        for (let day = 1; day <= daysInMonth; day++) {
           const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
-          const isWeekend = date.day() === 0 || date.day() === 7;
+          const isWeekend = date.day() === 0 || date.day() === 6;
           const beforeJoining =
             startDate.isValid() && date.isBefore(startDate, "day");
 
