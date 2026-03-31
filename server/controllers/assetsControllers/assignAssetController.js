@@ -62,6 +62,7 @@ const getAssetRequests = async (req, res, next) => {
           populate: { path: "building" },
         },
         { path: "assignee", select: "firstName lastName empId" },
+        { path: "approvedBy", select: "firstName lastName empId" },
       ])
       .sort({ dateOfAssigning: -1 }); // Sort by latest assignments
 
@@ -238,6 +239,21 @@ const assignAsset = async (req, res, next) => {
     if (asset.isAssigned) {
       return res.status(400).json({ message: "Asset is already assigned" });
     }
+
+    const pendingRequest = await AssignAsset.findOne({
+      asset: assetId,
+      status: "Pending",
+    })
+      .select("_id")
+      .lean()
+      .exec();
+
+    if (pendingRequest) {
+      return res.status(400).json({
+        message: "Asset assignment is already pending approval",
+      });
+    }
+
 
     if (asset.status === "Inactive") {
       throw new CustomError(
