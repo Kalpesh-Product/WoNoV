@@ -362,7 +362,6 @@ const createInventory = async (req, res, next) => {
       });
     }
 
-    /* ------------------ Create inventory ------------------ */
     /* ------------------ Create ------------------ */
 
     const inventory = await Inventory.create({
@@ -467,7 +466,6 @@ const getInventories = async (req, res, next) => {
     const query = { company };
     if (department) query.department = department;
     if (category) query.category = category;
-    console.log("query", query);
 
     const inventories = await Inventory.aggregate([
       {
@@ -700,6 +698,7 @@ const getInventories = async (req, res, next) => {
 
           newPurchaseUnits: 1,
           newPurchasePerUnitPrice: 1,
+          newPurchaseInventoryValue: 1,
           consumedNewPurchaseInventoryUnits: 1,
           openingInventoryUnits: 1,
           openingPerUnitPrice: 1,

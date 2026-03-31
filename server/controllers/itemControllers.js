@@ -116,4 +116,98 @@ const getItems = async (req, res) => {
   }
 };
 
-module.exports = { addItem, getItems };
+const updateItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, isActive, department, category } = req.body;
+
+    /* ------------------ Validate ID ------------------ */
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid item id",
+      });
+    }
+
+    /* ------------------ Fetch existing ------------------ */
+
+    const existingItem = await Item.findById(id);
+
+    if (!existingItem) {
+      return res.status(404).json({
+        success: false,
+        message: "Item not found",
+      });
+    }
+
+    /* ------------------ Validate name ------------------ */
+
+    if (name && !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Item name cannot be empty",
+      });
+    }
+
+    /* ------------------ Validate ObjectIds ------------------ */
+
+    if (department && !mongoose.Types.ObjectId.isValid(department)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid department id",
+      });
+    }
+
+    if (category && !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category id",
+      });
+    }
+
+    /* ------------------ Duplicate check ------------------ */
+
+    if (name) {
+      const normalizedName = name.trim().toLowerCase();
+
+      const duplicate = await Item.findOne({
+        _id: { $ne: id }, // exclude current item
+        name: { $regex: new RegExp(`^${normalizedName}$`, "i") },
+        department: department ?? existingItem.department ?? null,
+        category: category ?? existingItem.category ?? null,
+      });
+
+      if (duplicate) {
+        return res.status(400).json({
+          success: false,
+          message: "Item with same name already exists",
+        });
+      }
+    }
+
+    /* ------------------ Update ------------------ */
+
+    const updated = await Item.findByIdAndUpdate(
+      id,
+      {
+        ...(name && { name: name.trim() }),
+        ...(typeof isActive === "boolean" && { isActive }),
+      },
+      { new: true, runValidators: true },
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Item updated successfully",
+      data: updated,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Something went wrong",
+    });
+  }
+};
+
+module.exports = { addItem, getItems, updateItem };
