@@ -9,14 +9,17 @@ const itemSchema = new mongoose.Schema(
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
+      required: true,
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
+      required: true,
     },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
+      required: true,
     },
     isActive: {
       type: Boolean,
