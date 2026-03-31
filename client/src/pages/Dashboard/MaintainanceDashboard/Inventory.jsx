@@ -22,6 +22,12 @@ import useAuth from "../../../hooks/useAuth";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const Inventory = ({ forcedBuildingTab = null }) => {
+  const normalizeUnitNo = (value) =>
+    String(value || "")
+      .trim()
+      .toUpperCase()
+      .replace(/^ST\s*/i, "")
+      .replace(/\s+/g, " ");
   const { auth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -540,11 +546,21 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           item.updatedAt ||
           new Date().toISOString();
 
+        // Fix: Check if addedBy has actual name properties
+        const hasAddedByName =
+          item.addedBy &&
+          (item.addedBy.firstName ||
+            item.addedBy.lastName ||
+            item.addedBy.name ||
+            item.addedBy.email);
+
         return {
           ...item,
           itemName: item?.itemName?.name || item?.itemName || "N/A",
           itemId: item?.itemName?._id || null,
-          unitId: item?.unit?._id || item?.unit || null,
+          unitId:
+            item?.unit?._id ||
+            (typeof item?.unit === "string" ? item.unit : null),
           unitNo: item?.unit?.unitNo || item?.unitNo || "",
           unitName: item?.unit?.unitName || "",
           buildingName:
@@ -555,15 +571,25 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           date: safeDate,
           dateRaw: safeDate,
           categoryId: item.category?._id || null,
-          categoryName: item.Category || item.category?.categoryName || "N/A",
-          addedByName: item.addedBy
+          // Fix: Handle both string and object category
+          categoryName:
+            item.Category ||
+            (typeof item.category === "string"
+              ? item.category
+              : item.category?.categoryName) ||
+            "N/A",
+          // Fix: Properly check for addedBy name
+          addedByName: hasAddedByName
             ? [
                 item.addedBy.firstName,
                 item.addedBy.middleName,
                 item.addedBy.lastName,
               ]
                 .filter(Boolean)
-                .join(" ")
+                .join(" ") ||
+              item.addedBy.name ||
+              item.addedBy.email ||
+              "N/A"
             : "N/A",
           addedOn: item.createdAt || item.date || item.updatedAt || null,
         };
@@ -593,7 +619,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const inventoryTableData = useMemo(() => {
     if (!Array.isArray(inventoryData)) return [];
-    return inventoryData.filter((item) => !isItemMasterRecord(item));
+    return inventoryData;
   }, [inventoryData]);
 
   const { data: inventoryCategories = [] } = useQuery({
@@ -618,33 +644,28 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   });
 
   const { data: inventoryItems = [] } = useQuery({
-    queryKey: ["inventory-items", department?._id],
-    // queryKey: [
-    //   "inventory-items",
-    //   department?._id,
-    //   selectedCategoryForAdd || "",
-    // ],
+    queryKey: [
+      "inventory-items",
+      department?._id,
+      selectedCategoryForAdd || "",
+    ],
     enabled: Boolean(department?._id),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (department?._id) {
         searchParams.set("department", department._id);
       }
-      // if (selectedCategoryForAdd) {
-      //   searchParams.set("category", selectedCategoryForAdd);
-      // }
+      if (selectedCategoryForAdd) {
+        searchParams.set("category", selectedCategoryForAdd);
+      }
 
       const query = searchParams.toString();
       const response = await axios.get(`/api/items${query ? `?${query}` : ""}`);
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-
-      if (Array.isArray(response.data?.data)) {
-        return response.data.data;
-      }
-
-      return [];
+      return Array.isArray(response.data?.data)
+        ? response.data.data
+        : Array.isArray(response.data)
+          ? response.data
+          : [];
     },
   });
 
@@ -1133,18 +1154,18 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       headerName: "New Purchase Value",
       cellRenderer: (params) => inrFormat(params.value),
     },
+    // {
+    //   field: "consumedOpenInventoryUnits",
+    //   headerName: "Consumed Unit Value",
+    //   cellRenderer: (params) => inrFormat(params.value),
+    // },
+    // {
+    //   field: "remainingInventoryUnits",
+    //   headerName: "Remaining Unit Value",
+    //   cellRenderer: (params) => inrFormat(params.value),
+    // },
     {
-      field: "consumedOpenInventoryUnits",
-      headerName: "Consumed Unit Value",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "remainingInventoryUnits",
-      headerName: "Remaining Unit Value",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "closingInventoryUnits",
+      field: "remainingNewPurchaseInventoryUnits",
       headerName: "Closing Units",
       cellRenderer: (params) => inrFormat(params.value),
     },
@@ -1235,8 +1256,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
       const linkedInventory = inventoryTableData?.find((inv) => {
         const matchesUnit =
-          String(inv?.unitNo || "").trim() ===
-          String(unit?.unitNo || "").trim();
+          normalizeUnitNo(inv?.unitNo) === normalizeUnitNo(unit?.unitNo);
 
         if (!matchesUnit) return false;
 
@@ -1305,24 +1325,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   ];
 
   const selectedUnitInventoryRows = useMemo(() => {
-    if (!selectedUnit) return [];
-
-    const buildingAliases =
-      selectedTabConfig?.buildingAliases?.map((alias) => alias.toLowerCase()) ||
-      [];
+    if (!selectedUnit) return inventoryTableData;
 
     return (inventoryTableData || []).filter((item) => {
       const matchesUnit =
-        String(item?.unitNo || "").trim() ===
-        String(selectedUnit?.unitNo || "").trim();
-      if (!matchesUnit) return false;
+        normalizeUnitNo(item?.unitNo) === normalizeUnitNo(selectedUnit?.unitNo);
 
-      const itemBuildingName = String(item?.buildingName || "").toLowerCase();
-      if (buildingAliases.length === 0) return true;
-
-      return buildingAliases.some((alias) => itemBuildingName.includes(alias));
+      return matchesUnit;
     });
-  }, [inventoryTableData, selectedTabConfig?.buildingAliases, selectedUnit]);
+  }, [inventoryTableData, selectedUnit]);
 
   const projectShortName =
     selectedBuildingTab === "dempo"
@@ -1357,11 +1368,17 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   };
 
   const categoryColumns = [
-    { field: "srNo", headerName: "Sr. No", width: 110 },
+    {
+      field: "srNo",
+      headerName: "Sr. No",
+      flex: 0.5,
+      minWidth: 80,
+    },
     {
       field: "categoryName",
       headerName: "Category Name",
-      flex: 1,
+      flex: 2,
+      minWidth: 200,
       cellRenderer: (params) => (
         <span
           role="button"
@@ -1375,13 +1392,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     {
       field: "status",
       headerName: "Status",
-      width: 150,
+      flex: 1,
+      minWidth: 120,
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
       field: "action",
       headerName: "Action",
-      width: 110,
+      flex: 0.8,
+      minWidth: 100,
       cellRenderer: (params) => (
         <ThreeDotMenu
           rowId={params.data._id}
@@ -2510,7 +2529,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 <Controller
                   name="lastConsumedUnitValue"
                   control={updateControl}
-                  rules={{ required: "Last consumed unit value is required" }}
+                 // rules={{ required: "Last consumed unit value is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2518,8 +2537,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="number"
                       size="small"
                       fullWidth
-                      error={!!updateErrors.lastConsumedUnitValue}
-                      helperText={updateErrors.lastConsumedUnitValue?.message}
+                      disabled
+                      // error={!!updateErrors.lastConsumedUnitValue}
+                      // helperText={updateErrors.lastConsumedUnitValue?.message}
                     />
                   )}
                 />
