@@ -522,7 +522,7 @@ const ListOfAssets = () => {
                     ? []
                     : vendorDetails.map((item) => (
                       <MenuItem key={item._id} value={item._id} disabled={!item.isActive}>
-                        {item.isActive ? (item.companyName || item.name) : (item.companyName || item.name) + "(Inactive)"}
+                        {item.companyName || item.name}
                       </MenuItem>
                     ))}
                 </TextField>
