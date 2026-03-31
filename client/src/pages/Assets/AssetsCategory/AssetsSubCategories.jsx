@@ -183,6 +183,7 @@ const AssetsSubCategories = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
@@ -211,15 +212,15 @@ const AssetsSubCategories = () => {
   const tableData = isSubCategoriesPending || !Array.isArray(assetSubCategories)
     ? []
     : assetSubCategories.map((item, index) => {
-        const status = item.isActive ? "Active" : "Inactive";
-        return {
-          ...item,
-          _id: item._id,
-          srNo: index + 1,
-          status: status,
-          categoryName: item?.category?.categoryName || "N/A",
-        };
-      });
+      const status = item.isActive ? "Active" : "Inactive";
+      return {
+        ...item,
+        _id: item._id,
+        srNo: index + 1,
+        status: status,
+        categoryName: item?.category?.categoryName || "N/A",
+      };
+    });
   //--------------------Table Data------------------------------//
 
   return (
@@ -236,7 +237,7 @@ const AssetsSubCategories = () => {
         data={tableData}
         columns={categoriesColumn}
         tableHeight={350}
-        // getRowStyle={getRowStyle}
+      // getRowStyle={getRowStyle}
       />
 
       <MuiModal

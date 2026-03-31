@@ -65,6 +65,7 @@ const ViewEmployees = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => {
         const statusText = params.value ? "Active" : "InActive";
         const statusColorMap = {
@@ -100,21 +101,20 @@ const ViewEmployees = () => {
               isLoading
                 ? []
                 : [
-                    ...employees.map((employee, index) => ({
-                      id: employee._id,
-                      srno: index + 1,
-                      employeeName: `${
-                        employee.firstName ? employee.firstName : ""
+                  ...employees.map((employee, index) => ({
+                    id: employee._id,
+                    srno: index + 1,
+                    employeeName: `${employee.firstName ? employee.firstName : ""
                       } ${employee.lastName ? employee.lastName : ""}`,
-                      employmentID: employee.empId,
-                      email: employee.email,
-                      department: employee.departments?.map(
-                        (item) => item.name
-                      ),
-                      role: employee.role?.map((r) => r.roleTitle),
-                      status: employee.isActive,
-                    })),
-                  ]
+                    employmentID: employee.empId,
+                    email: employee.email,
+                    department: employee.departments?.map(
+                      (item) => item.name
+                    ),
+                    role: employee.role?.map((r) => r.roleTitle),
+                    status: employee.isActive,
+                  })),
+                ]
             }
             columns={viewEmployeeColumns}
           />

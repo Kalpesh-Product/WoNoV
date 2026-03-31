@@ -109,6 +109,7 @@ const VirtualOfficeClients = () => {
     {
       field: "rentStatus",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => {
         const status = params.data?.isActive ? "Active" : "Inactive";
         return <StatusChip status={status} />;

@@ -173,6 +173,7 @@ const HrSOP = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive";
         const styles = {
@@ -231,8 +232,8 @@ const HrSOP = () => {
           modalType === "edit"
             ? "Edit SOP"
             : modalType === "inactive"
-            ? "Mark SOP As Inactive"
-            : "Add New SOP"
+              ? "Mark SOP As Inactive"
+              : "Add New SOP"
         }
       >
         {modalType === "inactive" ? (

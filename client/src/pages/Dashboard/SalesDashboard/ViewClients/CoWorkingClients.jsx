@@ -66,6 +66,7 @@ const CoWorkingClients = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: 'desc',
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive";
         const statusColorMap = {
