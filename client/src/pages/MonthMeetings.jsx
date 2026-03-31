@@ -41,6 +41,7 @@ const MonthMeetings = () => {
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
+      sort: "desc",
       cellRenderer: (params) => (
         <Chip
           label={params.value || ""}

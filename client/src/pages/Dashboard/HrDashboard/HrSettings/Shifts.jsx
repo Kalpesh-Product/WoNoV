@@ -172,6 +172,7 @@ const Shifts = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       flex: 1,
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive"; // Map boolean to string status

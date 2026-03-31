@@ -216,6 +216,7 @@ const AdminClientMembers = () => {
     {
       field: "biometricStatus",
       headerName: "Biometric Status",
+      sort: "desc",
       flex: 1,
       cellRenderer: (params) => {
         const status = params.value || "Pending";
@@ -240,6 +241,7 @@ const AdminClientMembers = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive";
         const statusColorMap = {

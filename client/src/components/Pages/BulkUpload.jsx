@@ -104,6 +104,7 @@ export default function BulkUpload() {
     {
       headerName: "Status",
       field: "isActive",
+      sort: "desc",
       cellRenderer: () => {
         const statusColorMap = {
           Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -197,10 +198,10 @@ export default function BulkUpload() {
                     {isTemplatesPending
                       ? []
                       : departmentDrop?.map((item) => (
-                          <MenuItem key={item.name} value={item.route}>
-                            {item.name}
-                          </MenuItem>
-                        ))}
+                        <MenuItem key={item.name} value={item.route}>
+                          {item.name}
+                        </MenuItem>
+                      ))}
                   </TextField>
                 )}
               />

@@ -576,7 +576,7 @@ const ExternalMeetingCLients = () => {
   //---------------------------------Event handlers----------------------------------------//
 
   const columns = [
-    { field: "srNo", headerName: "Sr No", sort: "desc" },
+    { field: "srNo", headerName: "Sr No" },
     { field: "bookedBy", headerName: "Booked By" },
     { field: "building", headerName: "Building" },
     { field: "roomName", headerName: "Room Name" },
@@ -627,6 +627,7 @@ const ExternalMeetingCLients = () => {
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
+      sort: "desc",
       cellRenderer: (params) => (
         <Chip
           label={params.value || ""}

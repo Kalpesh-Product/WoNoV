@@ -181,6 +181,7 @@ const HrSettingsPolicies = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       flex: 1,
       cellRenderer: (params) => {
         const label = params.value ? "Active" : "Inactive";
