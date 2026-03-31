@@ -6,7 +6,6 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const Category = require("../../models/category/Category");
 const Item = require("../../models/Item");
-const Item = require("../../models/Item");
 
 // Create Inventory Item
 
@@ -392,7 +391,7 @@ const createInventory = async (req, res, next) => {
 //       const inventory = await Inventory.findOne({
 //         _id: id,
 //         company: req.company,
-//        })
+//       })
 //         .populate("department category")
 //         .populate("addedBy", "firstName middleName lastName");
 
@@ -409,13 +408,13 @@ const createInventory = async (req, res, next) => {
 //     if (department) query.department = department;
 //     if (category) query.category = category;
 
-//      const inventories = await Inventory.find(query)
+//     const inventories = await Inventory.find(query)
 //       .populate("department category")
 //       .populate("addedBy", "firstName middleName lastName");
 //     return res.status(200).json(inventories);
 //   } catch (error) {
 //     console.error("Fetch Inventory Error:", error);
-//     next(error)
+//     next(error);
 //   }
 // };
 
@@ -458,7 +457,7 @@ const createInventory = async (req, res, next) => {
 //   }
 // };
 
-////// GET Inventories with Aggregation (for complex derived fields and optimized lookups)
+// //// GET Inventories with Aggregation (for complex derived fields and optimized lookups)
 const getInventories = async (req, res, next) => {
   try {
     const { department, category } = req.query;
@@ -561,6 +560,33 @@ const getInventories = async (req, res, next) => {
 
       /* ------------------ Lookup (populate replacement) ------------------ */
 
+      // {
+      //   $addFields: {
+      //     originalItemName: "$itemName",
+      //   },
+      // },
+
+      // {
+      //   $lookup: {
+      //     from: "items",
+      //     localField: "itemName",
+      //     foreignField: "_id",
+      //     as: "itemName",
+      //   },
+      // },
+      // { $unwind: { path: "$itemName", preserveNullAndEmptyArrays: true } },
+      // {
+      //   $addFields: {
+      //     itemName: {
+      //       $ifNull: [
+      //         "$itemName.name",
+      //         "$originalItemName", // fallback for old string data
+      //       ],
+      //     },
+      //   },
+      // },
+
+      // lookup first
       {
         $lookup: {
           from: "items",
@@ -658,7 +684,7 @@ const getInventories = async (req, res, next) => {
         $project: {
           itemName: "$itemName.name",
 
-          department: "$department._id",
+          department: { _id: "$department._id", name: "$department.name" },
 
           unit: {
             unitNo: "$unit.unitNo",

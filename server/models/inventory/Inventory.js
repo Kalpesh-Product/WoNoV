@@ -11,10 +11,9 @@ const inventorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
     },
-    // itemName: {
-    //   type: String,
-    //   required: true,
-    // },
+    itemName: {
+      type: String,
+    },
     itemName: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Item",
@@ -51,11 +50,11 @@ const inventorySchema = new mongoose.Schema(
     },
 
     // Closing inventory
-    remainingNewPurchaseInventoryUnits: {
-      type: Number,
-      required: false,
-      default: 0,
-    },
+    // remainingNewPurchaseInventoryUnits: {
+    //   type: Number,
+    //   required: false,
+    //   default: 0,
+    // },
     consumedNewPurchaseInventoryUnits: {
       type: Number,
       required: false,
@@ -75,11 +74,11 @@ const inventorySchema = new mongoose.Schema(
         addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
       },
     ],
-    remainingOpeningInventoryUnits: {
-      type: Number,
-      required: false,
-      default: 0,
-    },
+    // remainingOpeningInventoryUnits: {
+    //   type: Number,
+    //   required: false,
+    //   default: 0,
+    // },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
