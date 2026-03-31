@@ -13,6 +13,7 @@ import usePageDepartment from "../../../hooks/usePageDepartment";
 import { queryClient } from "../../../main";
 import { inrFormat } from "../../../utils/currencyFormat";
 import AgTable from "../../../components/AgTable";
+import StatusChip from "../../../components/StatusChip";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
@@ -24,27 +25,36 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const { auth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { unitNo: unitNoParam } = useParams();
-  const userPermissions = auth?.user?.permissions?.permissions || [];
+  //const { unitNo: unitNoParam } = useParams();
+  const { unitNo: unitNoParam, inventoryTab: inventoryTabParam } = useParams();
+  const userPermissions = useMemo(
+    () => auth?.user?.permissions?.permissions || [],
+    [auth?.user?.permissions?.permissions],
+  );
+  //const userPermissions = auth?.user?.permissions?.permissions || [];
   const department = usePageDepartment();
 
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [categoryModalMode, setCategoryModalMode] = useState("add");
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+  const [itemModalMode, setItemModalMode] = useState("add");
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [selectedBuildingTab, setSelectedBuildingTab] = useState(
-    forcedBuildingTab || "sunteck"
+    forcedBuildingTab || "sunteck",
   );
 
   const isAdminInventoryPath = location.pathname.includes(
-    "/app/dashboard/admin-dashboard/inventory"
+    "/app/dashboard/admin-dashboard/inventory",
   );
 
   const isItInventoryPath = location.pathname.includes(
-    "/app/dashboard/IT-dashboard/inventory"
+    "/app/dashboard/IT-dashboard/inventory",
   );
 
   const inventoryTabPermissions = useMemo(() => {
@@ -69,11 +79,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   }, [isAdminInventoryPath, isItInventoryPath]);
 
   const canViewSunteckUnits = userPermissions.includes(
-    inventoryTabPermissions.sunteck
+    inventoryTabPermissions.sunteck,
   );
 
   const canViewDempoUnits = userPermissions.includes(
-    inventoryTabPermissions.dempo
+    inventoryTabPermissions.dempo,
   );
 
   const blockedUnitsByTab = useMemo(
@@ -81,7 +91,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       sunteck: ["601 B", "ST 601 B"],
       dempo: ["605 A", "603 A"],
     }),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -108,7 +118,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         isAllowed: canViewDempoUnits,
       },
     ],
-    [canViewDempoUnits, canViewSunteckUnits]
+    [canViewDempoUnits, canViewSunteckUnits],
   );
 
   useEffect(() => {
@@ -117,7 +127,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
     if (
       !tabOptions.some(
-        (tab) => tab.key === selectedBuildingTab && tab.isAllowed
+        (tab) => tab.key === selectedBuildingTab && tab.isAllowed,
       )
     ) {
       setSelectedBuildingTab(firstAllowedTab.key);
@@ -163,6 +173,19 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   });
 
   const {
+    handleSubmit: handleCategoryEditSubmit,
+    control: categoryEditControl,
+    formState: { errors: categoryEditErrors },
+    reset: resetCategoryEditForm,
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      categoryName: "",
+      status: "true",
+    },
+  });
+
+  const {
     handleSubmit: handleAddItemSubmit,
     control: addItemControl,
     formState: { errors: addItemErrors },
@@ -172,6 +195,20 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     defaultValues: {
       category: "",
       itemName: "",
+    },
+  });
+
+  const {
+    handleSubmit: handleItemEditSubmit,
+    control: itemEditControl,
+    formState: { errors: itemEditErrors },
+    reset: resetItemEditForm,
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      category: "",
+      itemName: "",
+      status: "true",
     },
   });
 
@@ -242,8 +279,57 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const selectedTabConfig = useMemo(
     () => tabOptions.find((tab) => tab.key === selectedBuildingTab),
-    [selectedBuildingTab, tabOptions]
+    [selectedBuildingTab, tabOptions],
   );
+
+  const unitTabPermissions = useMemo(() => {
+    if (isAdminInventoryPath) {
+      return {
+        category: PERMISSIONS.ADMIN_INVENTORY_CATEGORY_TAB.value,
+        item: PERMISSIONS.ADMIN_INVENTORY_ITEM_TAB.value,
+        inventory: PERMISSIONS.ADMIN_INVENTORY_LIST_TAB.value,
+      };
+    }
+
+    if (isItInventoryPath) {
+      return {
+        category: PERMISSIONS.IT_INVENTORY_CATEGORY_TAB.value,
+        item: PERMISSIONS.IT_INVENTORY_ITEM_TAB.value,
+        inventory: PERMISSIONS.IT_INVENTORY_LIST_TAB.value,
+      };
+    }
+
+    return {
+      category: PERMISSIONS.MAINTENANCE_INVENTORY_CATEGORY_TAB.value,
+      item: PERMISSIONS.MAINTENANCE_INVENTORY_ITEM_TAB.value,
+      inventory: PERMISSIONS.MAINTENANCE_INVENTORY_LIST_TAB.value,
+    };
+  }, [isAdminInventoryPath, isItInventoryPath]);
+
+  const unitTabOptions = useMemo(
+    () =>
+      [
+        {
+          key: "category",
+          label: "Category",
+          permission: unitTabPermissions.category,
+        },
+        { key: "item", label: "Item", permission: unitTabPermissions.item },
+        {
+          key: "inventory",
+          label: "Inventory",
+          permission: unitTabPermissions.inventory,
+        },
+      ].filter((tab) => userPermissions.includes(tab.permission)),
+    [unitTabPermissions, userPermissions],
+  );
+
+  const defaultUnitTab = unitTabOptions[0]?.key || "category";
+  const activeUnitTab = unitTabOptions.some(
+    (tab) => tab.key === inventoryTabParam,
+  )
+    ? inventoryTabParam
+    : defaultUnitTab;
 
   useEffect(() => {
     setValue("itemName", selectedAsset?.itemName);
@@ -253,36 +339,36 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue("openingInventoryValue", selectedAsset?.openingInventoryValue);
     setValue(
       "lastConsumedUnitValue",
-      selectedAsset?.consumedOpenInventoryUnits ?? ""
+      selectedAsset?.consumedOpenInventoryUnits ?? "",
     );
     setValue(
       "lastRemainingUnitValue",
-      selectedAsset?.remainingInventoryUnits ?? 0
+      selectedAsset?.remainingInventoryUnits ?? 0,
     );
     setValue("newPurchaseUnits", selectedAsset?.newPurchaseUnits);
     setValue("newPurchasePerUnitPrice", selectedAsset?.newPurchasePerUnitPrice);
     setValue(
       "newPurchaseInventoryValue",
-      selectedAsset?.newPurchaseInventoryValue
+      selectedAsset?.newPurchaseInventoryValue,
     );
     setValue(
       "newConsumedUnitValue",
-      selectedAsset?.consumedNewPurchaseInventoryUnits ?? ""
+      selectedAsset?.consumedNewPurchaseInventoryUnits ?? "",
     );
     setValue(
       "newRemainingUnitValue",
-      selectedAsset?.closingInventoryUnits ?? 0
+      selectedAsset?.closingInventoryUnits ?? 0,
     );
     setValue(
       "closingInventoryUnits",
-      selectedAsset?.closingInventoryUnits ?? 0
+      selectedAsset?.closingInventoryUnits ?? 0,
     );
     setValue("addedByName", selectedAsset?.addedByName || currentUserName);
     setValue(
       "date",
       selectedAsset?.dateRaw
         ? new Date(selectedAsset.dateRaw).toISOString().split("T")[0]
-        : currentDate
+        : currentDate,
     );
     setValue(
       "buildingName",
@@ -290,11 +376,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         selectedUnit?.building?.buildingName ||
         selectedUnit?.buildingName ||
         selectedTabConfig?.buildingName ||
-        defaultBuildingName
+        defaultBuildingName,
     );
     setValue(
       "unitNo",
-      selectedAsset?.unitNo || selectedUnit?.unitNo || defaultUnitNo
+      selectedAsset?.unitNo || selectedUnit?.unitNo || defaultUnitNo,
     );
     setValue("categoryName", selectedAsset?.categoryName || "");
     setValue("categoryId", selectedAsset?.categoryId || null);
@@ -303,7 +389,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       selectedAsset?.category?._id ||
         selectedAsset?.categoryId ||
         selectedAsset?.category ||
-        ""
+        "",
     );
   }, [
     currentDate,
@@ -400,14 +486,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       {
         shouldDirty: true,
         shouldValidate: true,
-      }
+      },
     );
   }, [setValue, updateLastConsumedUnits, updateOpeningUnits]);
 
   useEffect(() => {
     const lastRemainingUnits = Number(
       (Number(updateOpeningUnits) || 0) -
-        (Number(updateLastConsumedUnits) || 0)
+        (Number(updateLastConsumedUnits) || 0),
     );
     const newPurchaseUnitsValue = Number(updateNewPurchaseUnits) || 0;
     const newConsumedUnits = Number(updateNewConsumedUnits) || 0;
@@ -421,7 +507,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       {
         shouldDirty: true,
         shouldValidate: true,
-      }
+      },
     );
     setValue(
       "closingInventoryUnits",
@@ -429,7 +515,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       {
         shouldDirty: true,
         shouldValidate: true,
-      }
+      },
     );
   }, [
     setValue,
@@ -444,7 +530,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     enabled: Boolean(department?._id),
     queryFn: async () => {
       const response = await axios.get(
-        `/api/inventory/get-inventories?department=${department._id}`
+        `/api/inventory/get-inventories?department=${department._id}`,
       );
 
       return response.data.map((item) => {
@@ -517,7 +603,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         return [];
       }
       const response = await axios.get(
-        `/api/category/get-category?departmentId=${department._id}&appliesTo=inventory`
+        `/api/category/get-category?departmentId=${department._id}&appliesTo=inventory`,
       );
       return response.data;
     },
@@ -532,20 +618,21 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   });
 
   const { data: inventoryItems = [] } = useQuery({
-    queryKey: [
-      "inventory-items",
-      department?._id,
-      selectedCategoryForAdd || "",
-    ],
+    queryKey: ["inventory-items", department?._id],
+    // queryKey: [
+    //   "inventory-items",
+    //   department?._id,
+    //   selectedCategoryForAdd || "",
+    // ],
     enabled: Boolean(department?._id),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (department?._id) {
         searchParams.set("department", department._id);
       }
-      if (selectedCategoryForAdd) {
-        searchParams.set("category", selectedCategoryForAdd);
-      }
+      // if (selectedCategoryForAdd) {
+      //   searchParams.set("category", selectedCategoryForAdd);
+      // }
 
       const query = searchParams.toString();
       const response = await axios.get(`/api/items${query ? `?${query}` : ""}`);
@@ -565,22 +652,28 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     if (!Array.isArray(inventoryItems)) return [];
     const uniqueById = new Map();
 
-    inventoryItems.forEach((item) => {
-      const itemId = item?._id;
-      const itemName = item?.name?.trim();
+    inventoryItems
+      .filter((item) =>
+        selectedCategoryForAdd
+          ? String(item?.category?._id) === String(selectedCategoryForAdd)
+          : true,
+      )
+      .forEach((item) => {
+        const itemId = item?._id;
+        const itemName = item?.name?.trim();
 
-      if (!itemId || !itemName || uniqueById.has(itemId)) {
-        return;
-      }
+        if (!itemId || !itemName || uniqueById.has(itemId)) {
+          return;
+        }
 
-      uniqueById.set(itemId, {
-        id: itemId,
-        name: itemName,
+        uniqueById.set(itemId, {
+          id: itemId,
+          name: itemName,
+        });
       });
-    });
 
     return Array.from(uniqueById.values());
-  }, [inventoryItems]);
+  }, [inventoryItems, selectedCategoryForAdd]);
 
   useEffect(() => {
     setAddValue("itemName", "");
@@ -593,7 +686,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
       try {
         const res = await axios.get(
-          `/api/inventory/get-inventories?department=${department._id}`
+          `/api/inventory/get-inventories?department=${department._id}`,
         );
 
         const data = res.data || [];
@@ -602,11 +695,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           .filter(
             (item) =>
               String(item?.itemName?._id) === String(selectedItemForAdd) &&
-              String(item?.category?._id) === String(selectedCategoryForAdd)
+              String(item?.category?._id) === String(selectedCategoryForAdd),
           )
           .sort(
             (a, b) =>
-              new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+              new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date),
           )[0];
 
         if (matched) {
@@ -635,7 +728,13 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     };
 
     fetchOpeningData();
-  }, [selectedItemForAdd, selectedCategoryForAdd, department?._id, axios, setAddValue]);
+  }, [
+    selectedItemForAdd,
+    selectedCategoryForAdd,
+    department?._id,
+    axios,
+    setAddValue,
+  ]);
 
   useEffect(() => {
     const activeBuildingName =
@@ -668,7 +767,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       return response.data;
     },
@@ -688,30 +787,58 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     },
   });
 
-  const { mutate: createCategory, isPending: isCreatingCategory } = useMutation({
-    mutationFn: async (data) => {
-      const response = await axios.post("/api/category/create-category", {
-        assetCategoryName: data.categoryName,
-        departmentId: department._id,
-        appliesTo: "inventory",
-      });
-      return response.data;
+  const { mutate: createCategory, isPending: isCreatingCategory } = useMutation(
+    {
+      mutationFn: async (data) => {
+        const response = await axios.post("/api/category/create-category", {
+          assetCategoryName: data.categoryName,
+          departmentId: department._id,
+          appliesTo: "inventory",
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Category added successfully!");
+        queryClient.invalidateQueries({
+          queryKey: ["inventory-categories", department?._id],
+        });
+        setIsCategoryModalOpen(false);
+        resetCategoryForm();
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message || "Failed to add category.",
+        );
+        console.error(error);
+      },
     },
-    onSuccess: (data) => {
-      toast.success(data.message || "Category added successfully!");
-      queryClient.invalidateQueries({
-        queryKey: ["inventory-categories", department?._id],
-      });
-      setIsCategoryModalOpen(false);
-      resetCategoryForm();
+  );
+
+  const { mutate: updateCategory, isPending: isUpdatingCategory } = useMutation(
+    {
+      mutationFn: async (data) => {
+        const response = await axios.patch(
+          "/api/category/update-category",
+          data,
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data?.message || "Category updated successfully!");
+        queryClient.invalidateQueries({
+          queryKey: ["inventory-categories", department?._id],
+        });
+        setIsCategoryModalOpen(false);
+        setSelectedCategory(null);
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message || "Failed to update category.",
+        );
+        console.error(error);
+      },
     },
-    onError: (error) => {
-      toast.error(
-        error?.response?.data?.message || "Failed to add category."
-      );
-      console.error(error);
-    },
-  });
+  );
 
   const { mutate: createItem, isPending: isCreatingItem } = useMutation({
     mutationFn: async (data) => {
@@ -734,6 +861,31 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     },
   });
 
+  const { mutate: updateItem, isPending: isUpdatingItem } = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.patch(
+        `/api/items/${selectedItem?._id}`,
+        data,
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Item updated successfully!");
+      queryClient.invalidateQueries({
+        queryKey: ["inventory-items", department?._id],
+      });
+      setIsAddItemModalOpen(false);
+      setSelectedItem(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update item.");
+      console.error(error);
+    },
+  });
+
   const { mutate: updateAsset, isPending: isUpdatingAsset } = useMutation({
     mutationFn: async (formData) => {
       const response = await axios.patch(
@@ -743,7 +895,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       return response.data;
     },
@@ -796,17 +948,56 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       selectedUnit?.building?.buildingName ||
         selectedUnit?.buildingName ||
         selectedTabConfig?.buildingName ||
-        defaultBuildingName
+        defaultBuildingName,
     );
     setAddValue("unitNo", selectedUnit?.unitNo || defaultUnitNo);
     setIsModalOpen(true);
   };
 
   const handleOpenCategoryModal = () => {
+    setCategoryModalMode("add");
+    setSelectedCategory(null);
+    resetCategoryForm({ categoryName: "" });
     setIsCategoryModalOpen(true);
   };
 
   const handleOpenAddItemModal = () => {
+    setItemModalMode("add");
+    setSelectedItem(null);
+    resetAddItemForm({ category: "", itemName: "" });
+    setIsAddItemModalOpen(true);
+  };
+
+  const handleCategoryDetailsClick = (category) => {
+    setSelectedCategory(category);
+    setCategoryModalMode("view");
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleCategoryEditOpen = (category) => {
+    setSelectedCategory(category);
+    setCategoryModalMode("edit");
+    resetCategoryEditForm({
+      categoryName: category?.categoryName || "",
+      status: String(category?.isActive ?? true),
+    });
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleItemDetailsClick = (item) => {
+    setSelectedItem(item);
+    setItemModalMode("view");
+    setIsAddItemModalOpen(true);
+  };
+
+  const handleItemEditOpen = (item) => {
+    setSelectedItem(item);
+    setItemModalMode("edit");
+    resetItemEditForm({
+      itemName: item?.name || "",
+      category: item?.category?._id || "",
+      status: String(item?.isActive ?? true),
+    });
     setIsAddItemModalOpen(true);
   };
 
@@ -843,6 +1034,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const handleCategoryFormSubmit = (data) => {
     createCategory(data);
   };
+  const handleCategoryEditFormSubmit = (data) => {
+    if (!selectedCategory?._id) return;
+    updateCategory({
+      assetCategoryId: selectedCategory._id,
+      categoryName: data.categoryName,
+      status: data.status === "true",
+    });
+  };
 
   const handleAddItemFormSubmit = (data) => {
     if (!department?._id) {
@@ -854,6 +1053,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       name: data.itemName,
       department: department._id,
       category: data.category,
+    });
+  };
+
+  const handleItemEditFormSubmit = (data) => {
+    if (!selectedItem?._id) return;
+    updateItem({
+      name: data.itemName,
+      category: data.category,
+      status: data.status === "true",
     });
   };
 
@@ -995,7 +1203,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       const matchesBuilding =
         aliases.length === 0
           ? unitBuildingName.includes(
-              selectedTabConfig.buildingName.toLowerCase()
+              selectedTabConfig.buildingName.toLowerCase(),
             )
           : aliases.some((alias) => unitBuildingName.includes(alias));
 
@@ -1018,11 +1226,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         unit?.buildingName ||
           unit?.building?.buildingName ||
           unit?.building ||
-          ""
+          "",
       ).toLowerCase();
       const buildingAliases =
         selectedTabConfig?.buildingAliases?.map((alias) =>
-          alias.toLowerCase()
+          alias.toLowerCase(),
         ) || [];
 
       const linkedInventory = inventoryTableData?.find((inv) => {
@@ -1034,7 +1242,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
         const invBuildingName = String(inv?.buildingName || "").toLowerCase();
         const matchesByAlias = buildingAliases.some((alias) =>
-          invBuildingName.includes(alias)
+          invBuildingName.includes(alias),
         );
 
         return (
@@ -1070,7 +1278,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     const decodedUnitNo = decodeURIComponent(unitNoParam);
     const matchedUnit = unitListingRows.find(
       (row) =>
-        String(row?.rawUnit?.unitNo || "").trim() === decodedUnitNo.trim()
+        String(row?.rawUnit?.unitNo || "").trim() === decodedUnitNo.trim(),
     );
 
     setSelectedUnit(matchedUnit?.rawUnit || null);
@@ -1116,12 +1324,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     });
   }, [inventoryTableData, selectedTabConfig?.buildingAliases, selectedUnit]);
 
-  const dynamicInventoryTitle = selectedUnit
-    ? `List Of Inventory - ${selectedTabConfig?.label || ""} - ${
-        selectedUnit?.unitNo || ""
-      }`
-    : "List Of Inventory";
-
+  const projectShortName =
+    selectedBuildingTab === "dempo"
+      ? "Dempo Trade Center"
+      : "Sunteck Kanaka Units";
+  const selectedUnitHeadingName = selectedUnit?.unitNo || "Unit";
+  const dynamicCategoryTitle = `List of Category - ${projectShortName} - ${selectedUnitHeadingName}`;
+  const dynamicItemTitle = `List of Item - ${projectShortName} - ${selectedUnitHeadingName}`;
+  const dynamicInventoryTitle = `List of Inventory - ${projectShortName} - ${selectedUnitHeadingName}`;
   const unitWiseHeading = `Unit Wise Inventory - ${selectedTabConfig?.label || ""}`;
 
   const handleTabChange = (value) => {
@@ -1132,51 +1342,171 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const handleUnitOpen = (unit) => {
     if (forcedBuildingTab && unit?.unitNo) {
-      navigate(`${location.pathname}/${encodeURIComponent(unit.unitNo)}`);
+      navigate(
+        `${location.pathname}/${encodeURIComponent(unit.unitNo)}/category`,
+      );
       return;
     }
     setSelectedUnit(unit);
   };
 
+  const handleUnitTabChange = (tabPath) => {
+    if (!forcedBuildingTab || !selectedUnit?.unitNo) return;
+    const rootPath = location.pathname.split("/").slice(0, -1).join("/");
+    navigate(`${rootPath}/${tabPath}`);
+  };
+
+  const categoryColumns = [
+    { field: "srNo", headerName: "Sr. No", width: 110 },
+    {
+      field: "categoryName",
+      headerName: "Category Name",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => handleCategoryDetailsClick(params.data)}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 150,
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      width: 110,
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data._id}
+          menuItems={[
+            {
+              label: "Edit",
+              onClick: () => handleCategoryEditOpen(params.data),
+            },
+          ]}
+        />
+      ),
+    },
+  ];
+
+  const categoryRows = (inventoryCategories || []).map((category, index) => ({
+    ...category,
+    srNo: index + 1,
+    categoryName: category?.categoryName || "-",
+    status: category?.isActive ? "Active" : "Inactive",
+    itemName:
+      (category?.subCategories || [])
+        .map((item) => item?.subCategoryName)
+        .filter(Boolean)
+        .join(", ") || "-",
+  }));
+
+  const itemColumns = [
+    { field: "srNo", headerName: "Sr. No", width: 110 },
+    {
+      field: "itemName",
+      headerName: "Item Name",
+      flex: 1,
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => handleItemDetailsClick(params.data)}
+          className="text-primary underline cursor-pointer"
+        >
+          {params.value}
+        </span>
+      ),
+    },
+    { field: "categoryName", headerName: "Category", flex: 1 },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 150,
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      width: 130,
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data._id}
+          menuItems={[
+            {
+              label: "Edit",
+              onClick: () => handleItemEditOpen(params.data),
+            },
+          ]}
+        />
+      ),
+    },
+  ];
+
+  const itemRows = (inventoryItems || []).map((item, index) => ({
+    ...item,
+    srNo: index + 1,
+    itemName: item?.name || "-",
+    categoryName: item?.category?.categoryName || item?.category?.name || "-",
+    status: item?.isActive ? "Active" : "Inactive",
+  }));
+
+  useEffect(() => {
+    if (!forcedBuildingTab || !unitNoParam || inventoryTabParam) return;
+    navigate(`${location.pathname}/${defaultUnitTab}`, { replace: true });
+  }, [
+    defaultUnitTab,
+    forcedBuildingTab,
+    inventoryTabParam,
+    location.pathname,
+    navigate,
+    unitNoParam,
+  ]);
   return (
     <div className={forcedBuildingTab ? "" : "p-4"}>
-      <PageFrame>
-        {!selectedUnit ? (
-          <>
-            {!forcedBuildingTab && (
-              <Box
-                sx={{
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  overflow: "hidden",
-                  mb: 3,
-                  display: "flex",
-                }}
-              >
-                {tabOptions
-                  .filter((tab) => tab.isAllowed)
-                  .map((tab, index, arr) => {
-                    const isActive = selectedBuildingTab === tab.key;
-                    return (
-                      <button
-                        key={tab.key}
-                        type="button"
-                        disabled={isActive}
-                        onClick={() => handleTabChange(tab.key)}
-                        className={`py-3 px-4 text-center font-normal text-[18px] transition-colors ${
-                          arr.length === 1 ? "w-full" : "flex-1"
-                        } ${
-                          isActive
-                            ? "bg-primary text-white cursor-default"
-                            : "bg-white text-primary"
-                        } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
-                      >
-                        {tab.label}
-                      </button>
-                    );
-                  })}
-              </Box>
-            )}
+      {!selectedUnit ? (
+        <>
+          {!forcedBuildingTab && (
+            <Box
+              sx={{
+                border: "1px solid #d1d5db",
+                borderRadius: "8px",
+                overflow: "hidden",
+                mb: 3,
+                display: "flex",
+              }}
+            >
+              {tabOptions
+                .filter((tab) => tab.isAllowed)
+                .map((tab, index, arr) => {
+                  const isActive = selectedBuildingTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      disabled={isActive}
+                      onClick={() => handleTabChange(tab.key)}
+                      className={`py-3 px-4 text-center font-normal text-[16px] transition-colors ${
+                        arr.length === 1 ? "w-full" : "flex-1"
+                      } ${
+                        isActive
+                          ? "bg-primary text-white cursor-default"
+                          : "bg-white text-primary"
+                      } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+            </Box>
+          )}
+          <PageFrame>
             <AgTable
               data={unitListingRows}
               columns={unitColumns}
@@ -1185,68 +1515,243 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               tableTitle={unitWiseHeading}
               tableHeight={440}
             />
-          </>
-        ) : (
-          <YearWiseTable
-            key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
-            search={true}
-            tableTitle={dynamicInventoryTitle}
-            hideTitle={true}
-            buttonTitle={"Add Inventory"}
-            secondaryButtonTitle={"Add Category"}
-            middleButtonTitle={"Add Item"}
-            handleSecondarySubmit={handleOpenCategoryModal}
-            handleMiddleSubmit={handleOpenAddItemModal}
-            data={selectedUnitInventoryRows || []}
-            tableHeight={450}
-            dateColumn={"date"}
-            columns={inventoryColumns}
-            handleSubmit={handleAddAsset}
-          />
-        )}
-      </PageFrame>
+          </PageFrame>
+        </>
+      ) : (
+        // <YearWiseTable
+        //   key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+        //   search={true}
+        //   tableTitle={dynamicInventoryTitle}
+        //   hideTitle={true}
+        //   buttonTitle={"Add Inventory"}
+        //   secondaryButtonTitle={"Add Category"}
+        //   middleButtonTitle={"Add Item"}
+        //   handleSecondarySubmit={handleOpenCategoryModal}
+        //   handleMiddleSubmit={handleOpenAddItemModal}
+        //   data={selectedUnitInventoryRows || []}
+        //   tableHeight={450}
+        //   dateColumn={"date"}
+        //   columns={inventoryColumns}
+        //   handleSubmit={handleAddAsset}
+        // />
+        <>
+          {forcedBuildingTab && (
+            <Box
+              sx={{
+                border: "1px solid #d1d5db",
+                borderRadius: "8px",
+                overflow: "hidden",
+                mb: 3,
+                display: "flex",
+              }}
+            >
+              {unitTabOptions.map((tab, index) => {
+                const isActive = activeUnitTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    disabled={isActive}
+                    onClick={() => handleUnitTabChange(tab.key)}
+                    className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${
+                      isActive
+                        ? "bg-primary text-white cursor-default"
+                        : "bg-white text-primary"
+                    } ${index !== unitTabOptions.length - 1 ? "border-r border-borderGray" : ""}`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </Box>
+          )}
+
+          {activeUnitTab === "category" && (
+            <PageFrame>
+              <AgTable
+                data={categoryRows}
+                columns={categoryColumns}
+                search={true}
+                tableTitle={dynamicCategoryTitle}
+                buttonTitle={"Add Category"}
+                handleClick={handleOpenCategoryModal}
+                tableHeight={450}
+              />
+            </PageFrame>
+          )}
+          {activeUnitTab === "item" && (
+            <PageFrame>
+              <AgTable
+                data={itemRows}
+                columns={itemColumns}
+                search={true}
+                tableTitle={dynamicItemTitle}
+                buttonTitle={"Add Item"}
+                handleClick={handleOpenAddItemModal}
+                tableHeight={450}
+              />
+            </PageFrame>
+          )}
+          {activeUnitTab === "inventory" && (
+            <PageFrame>
+              <YearWiseTable
+                key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+                search={true}
+                tableTitle={dynamicInventoryTitle}
+                hideTitle={true}
+                buttonTitle={"Add Inventory"}
+                data={selectedUnitInventoryRows || []}
+                tableHeight={450}
+                dateColumn={"date"}
+                columns={inventoryColumns}
+                handleSubmit={handleAddAsset}
+              />
+            </PageFrame>
+          )}
+        </>
+      )}
+      {/* </PageFrame> */}
 
       <MuiModal
         open={isCategoryModalOpen}
-        onClose={() => setIsCategoryModalOpen(false)}
-        title="Add Category"
+        onClose={() => {
+          setIsCategoryModalOpen(false);
+          setCategoryModalMode("add");
+        }}
+        title={
+          categoryModalMode === "add"
+            ? "Add Inventory Category"
+            : categoryModalMode === "edit"
+              ? "Edit Inventory Category"
+              : "View Inventory Category"
+        }
       >
-        <form
-          onSubmit={handleCategorySubmit(handleCategoryFormSubmit)}
-          className="grid grid-cols-1 gap-4"
-        >
-          <Controller
-            name="categoryName"
-            control={categoryControl}
-            rules={{
-              required: "Category name is required",
-            }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Category Name"
-                size="small"
-                fullWidth
-                error={!!categoryErrors.categoryName}
-                helperText={categoryErrors.categoryName?.message}
+        {categoryModalMode === "add" && (
+          <form
+            onSubmit={handleCategorySubmit(handleCategoryFormSubmit)}
+            className="grid grid-cols-1 gap-4"
+          >
+            <Controller
+              name="categoryName"
+              control={categoryControl}
+              rules={{
+                required: "Category name is required",
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Category Name"
+                  size="small"
+                  fullWidth
+                  error={!!categoryErrors.categoryName}
+                  helperText={categoryErrors.categoryName?.message}
+                />
+              )}
+            />
+            <PrimaryButton
+              title={
+                isCreatingCategory ? "Adding..." : "Add Inventory Category"
+              }
+              className="w-full"
+              type="submit"
+              disabled={isCreatingCategory}
+            />
+          </form>
+        )}
+        {categoryModalMode === "view" && selectedCategory && (
+          <div className="space-y-4">
+            <div>
+              <DetalisFormatted
+                title="Category Name"
+                detail={selectedCategory?.categoryName || "N/A"}
               />
-            )}
-          />
-          <PrimaryButton
-            title={isCreatingCategory ? "Adding..." : "Add Category"}
-            className="w-full"
-            type="submit"
-            disabled={isCreatingCategory}
-          />
-        </form>
+              {/* <DetalisFormatted
+                label="Item Name"
+                detail={
+                  selectedCategory?.itemName ||
+                  (selectedCategory?.subCategories || [])
+                    .map((item) => item?.subCategoryName)
+                    .filter(Boolean)
+                    .join(", ") ||
+                  "N/A"
+                }
+              /> */}
+              <br />
+              <DetalisFormatted
+                title="Status"
+                detail={selectedCategory?.isActive ? "Active" : "Inactive"}
+              />
+            </div>
+            {/* <div>
+              <div className="font-semibold mb-2">Action</div>
+              <PrimaryButton
+                title="Edit"
+                handleSubmit={() => handleCategoryEditOpen(selectedCategory)}
+              />
+            </div> */}
+          </div>
+        )}
+        {categoryModalMode === "edit" && (
+          <form
+            onSubmit={handleCategoryEditSubmit(handleCategoryEditFormSubmit)}
+            className="grid grid-cols-1 gap-4"
+          >
+            <Controller
+              name="categoryName"
+              control={categoryEditControl}
+              rules={{ required: "Category name is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Category Name"
+                  size="small"
+                  fullWidth
+                  error={!!categoryEditErrors.categoryName}
+                  helperText={categoryEditErrors.categoryName?.message}
+                />
+              )}
+            />
+            <Controller
+              name="status"
+              control={categoryEditControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Status"
+                  size="small"
+                  fullWidth
+                >
+                  <MenuItem value="true">Active</MenuItem>
+                  <MenuItem value="false">Inactive</MenuItem>
+                </TextField>
+              )}
+            />
+            <PrimaryButton
+              title={isUpdatingCategory ? "Updating..." : "Update Category"}
+              className="w-full"
+              type="submit"
+              disabled={isUpdatingCategory}
+            />
+          </form>
+        )}
       </MuiModal>
 
       <MuiModal
         open={isAddItemModalOpen}
-        onClose={() => setIsAddItemModalOpen(false)}
-        title="Add Item"
+        onClose={() => {
+          setIsAddItemModalOpen(false);
+          setItemModalMode("add");
+        }}
+        title={
+          itemModalMode === "add"
+            ? "Add item"
+            : itemModalMode === "edit"
+              ? "Edit Inventory Item"
+              : "View Inventory Item"
+        }
       >
-        <form
+        {/* <form
           onSubmit={handleAddItemSubmit(handleAddItemFormSubmit)}
           className="grid grid-cols-1 gap-4"
         >
@@ -1302,7 +1807,166 @@ const Inventory = ({ forcedBuildingTab = null }) => {
             type="submit"
             disabled={isCreatingItem}
           />
-        </form>
+        </form> */}
+        {itemModalMode === "add" && (
+          <form
+            onSubmit={handleAddItemSubmit(handleAddItemFormSubmit)}
+            className="grid grid-cols-1 gap-4"
+          >
+            <Controller
+              name="category"
+              control={addItemControl}
+              rules={{ required: "Category required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Category"
+                  size="small"
+                  fullWidth
+                  select
+                  error={!!addItemErrors.category}
+                  helperText={addItemErrors.category?.message}
+                >
+                  <MenuItem value="">Select category</MenuItem>
+                  {inventoryCategories
+                    .filter((category) => category.isActive)
+                    .map((category) => (
+                      <MenuItem key={category._id} value={category._id}>
+                        {category.categoryName}
+                      </MenuItem>
+                    ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="itemName"
+              control={addItemControl}
+              rules={{
+                required: "Item name is required",
+                validate: {
+                  isAlphanumeric,
+                  noOnlyWhitespace,
+                },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Item Name"
+                  fullWidth
+                  size="small"
+                  error={!!addItemErrors.itemName}
+                  helperText={addItemErrors.itemName?.message}
+                />
+              )}
+            />
+            <PrimaryButton
+              title={isCreatingItem ? "Adding..." : "Add Item"}
+              className="w-full"
+              type="submit"
+              disabled={isCreatingItem}
+            />
+          </form>
+        )}
+        {itemModalMode === "view" && selectedItem && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <DetalisFormatted
+                title="Category"
+                detail={
+                  selectedItem?.category?.categoryName ||
+                  selectedItem?.category?.name ||
+                  "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="Item Name"
+                detail={selectedItem?.name || "N/A"}
+              />
+              <DetalisFormatted
+                title="Status"
+                detail={selectedCategory?.isActive ? "Active" : "Inactive"}
+              />
+            </div>
+            {/* <div>
+              <div className="font-semibold mb-2">Action</div>
+              <PrimaryButton
+                title="Edit"
+                handleSubmit={() => handleItemEditOpen(selectedItem)}
+              />
+            </div> */}
+          </div>
+        )}
+        {itemModalMode === "edit" && (
+          <form
+            onSubmit={handleItemEditSubmit(handleItemEditFormSubmit)}
+            className="grid grid-cols-1 gap-4"
+          >
+            <Controller
+              name="category"
+              control={itemEditControl}
+              rules={{ required: "Category required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Category"
+                  size="small"
+                  fullWidth
+                  select
+                  disabled
+                  error={!!itemEditErrors.category}
+                  helperText={itemEditErrors.category?.message}
+                >
+                  <MenuItem value="">Select category</MenuItem>
+                  {inventoryCategories.map((category) => (
+                    <MenuItem key={category._id} value={category._id}>
+                      {category.categoryName}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="itemName"
+              control={itemEditControl}
+              rules={{
+                required: "Item name is required",
+                validate: { isAlphanumeric, noOnlyWhitespace },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Item Name"
+                  fullWidth
+                  size="small"
+                  error={!!itemEditErrors.itemName}
+                  helperText={itemEditErrors.itemName?.message}
+                />
+              )}
+            />
+            <Controller
+              name="status"
+              control={itemEditControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Status"
+                  size="small"
+                  fullWidth
+                >
+                  <MenuItem value="true">Active</MenuItem>
+                  <MenuItem value="false">Inactive</MenuItem>
+                </TextField>
+              )}
+            />
+            <PrimaryButton
+              title={isUpdatingItem ? "Updating..." : "Update Item"}
+              className="w-full"
+              type="submit"
+              disabled={isUpdatingItem}
+            />
+          </form>
+        )}
       </MuiModal>
 
       <MuiModal
@@ -1747,7 +2411,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="number"
                       size="small"
                       fullWidth
-                       disabled
+                      disabled
                       // error={!!updateErrors.openingInventoryUnits}
                       // helperText={updateErrors.openingInventoryUnits?.message}
                     />
@@ -1757,7 +2421,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 <Controller
                   name="openingPerUnitPrice"
                   control={updateControl}
-                 // rules={{ required: "Per unit price required" }}
+                  // rules={{ required: "Per unit price required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1765,7 +2429,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="number"
                       size="small"
                       fullWidth
-                       disabled
+                      disabled
                       // error={!!updateErrors.openingPerUnitPrice}
                       // helperText={updateErrors.openingPerUnitPrice?.message}
                     />
@@ -1793,7 +2457,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 <Controller
                   name="newPurchaseUnits"
                   control={updateControl}
-                 // rules={{ required: "New purchase units required" }}
+                  // rules={{ required: "New purchase units required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1801,7 +2465,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="number"
                       size="small"
                       fullWidth
-                       disabled
+                      disabled
                       // error={!!updateErrors.newPurchaseUnits}
                       // helperText={updateErrors.newPurchaseUnits?.message}
                     />
@@ -1811,7 +2475,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 <Controller
                   name="newPurchasePerUnitPrice"
                   control={updateControl}
-                 // rules={{ required: "New per unit price required" }}
+                  // rules={{ required: "New per unit price required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}

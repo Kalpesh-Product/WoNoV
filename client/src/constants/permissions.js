@@ -1510,6 +1510,24 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
   },
+   ADMIN_INVENTORY_CATEGORY_TAB: {
+    value: "admin_inventory_category_tab",
+    title: "INVENTORY CATEGORY TAB",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
+  ADMIN_INVENTORY_ITEM_TAB: {
+    value: "admin_inventory_item_tab",
+    title: "INVENTORY ITEM TAB",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
+  ADMIN_INVENTORY_LIST_TAB: {
+    value: "admin_inventory_list_tab",
+    title: "INVENTORY LIST TAB",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
   ADMIN_FINANCE: { value: "admin_finance_card", title: "FINANCE", type: "read" },
   ADMIN_MIX_BAG: { value: "admin_mix_bag_card", title: "MIX BAG", type: "read" },
   ADMIN_TEAM_MEMBERS_SCHEDULE_MIX_BAG: {
@@ -1791,6 +1809,26 @@ export const PERMISSIONS = {
     route: "/app/dashboard/maintenance-dashboard/inventory",
   },
 
+   MAINTENANCE_INVENTORY_CATEGORY_TAB: {
+    value: "maintenance_inventory_category_tab",
+    title: "INVENTORY CATEGORY TAB",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+  MAINTENANCE_INVENTORY_ITEM_TAB: {
+    value: "maintenance_inventory_item_tab",
+    title: "INVENTORY ITEM TAB",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+  MAINTENANCE_INVENTORY_LIST_TAB: {
+    value: "maintenance_inventory_list_tab",
+    title: "INVENTORY LIST TAB",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+
+
   MAINTENANCE_FINANCE: { value: "maintenance_finance_card", title: "FINANCE", type: "read" },
   MAINTENANCE_MIX_BAG: { value: "maintenance_mix_bag_card", title: "MIX BAG", type: "read" },
   MAINTENANCE_TEAM_MEMBERS_SCHEDULE: {
@@ -1994,6 +2032,25 @@ export const PERMISSIONS = {
   IT_INVENTORY_DEMPO_UNITS: {
     value: "it_inventory_dempo_trade_centre_units",
     title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
+
+   IT_INVENTORY_CATEGORY_TAB: {
+    value: "it_inventory_category_tab",
+    title: "INVENTORY CATEGORY TAB",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
+  IT_INVENTORY_ITEM_TAB: {
+    value: "it_inventory_item_tab",
+    title: "INVENTORY ITEM TAB",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
+  IT_INVENTORY_LIST_TAB: {
+    value: "it_inventory_list_tab",
+    title: "INVENTORY LIST TAB",
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
   },
