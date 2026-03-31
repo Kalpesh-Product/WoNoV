@@ -28,7 +28,7 @@ const HrLeaves = () => {
   ];
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
-  const [currentMonth, setCurrentMonth] = useState(selectedFY.start);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const { data: attendanceData = {}, isLoading } = useQuery({
     queryKey: ["attendance"],
@@ -85,9 +85,8 @@ const HrLeaves = () => {
       if (!groupedUsers[userId]) {
         groupedUsers[userId] = {
           empId: entry.user?.empId,
-          empName: `${entry.user?.firstName || ""} ${
-            entry.user?.lastName || ""
-          }`.trim(),
+          empName: `${entry.user?.firstName || ""} ${entry.user?.lastName || ""
+            }`.trim(),
         };
       }
     });
@@ -99,8 +98,8 @@ const HrLeaves = () => {
       const leaveType = leave.leaveType?.toLowerCase().includes("sick")
         ? "SL"
         : leave.leaveType?.toLowerCase().includes("comp")
-        ? "CO"
-        : "PL";
+          ? "CO"
+          : "PL";
 
       const from = dayjs(leave.fromDate);
       const to = dayjs(leave.toDate);
@@ -113,9 +112,8 @@ const HrLeaves = () => {
       if (!groupedUsers[userId]) {
         groupedUsers[userId] = {
           empId: leave.takenBy?.empId || "",
-          empName: `${leave.takenBy?.firstName || ""} ${
-            leave.takenBy?.lastName || ""
-          }`.trim(),
+          empName: `${leave.takenBy?.firstName || ""} ${leave.takenBy?.lastName || ""
+            }`.trim(),
         };
       }
     });
@@ -139,10 +137,10 @@ const HrLeaves = () => {
 
         const startDate = dayjs(userAttendance?.user?.startDate);
 
-        for (let day = 1; day <= daysInMonth; day++) {
+        for (let day = 1; day < daysInMonth; day++) {
           const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
-          const isWeekend = date.day() === 0 || date.day() === 6;
+          const isWeekend = date.day() === 0 || date.day() === 7;
 
           const beforeJoining =
             startDate.isValid() && date.isBefore(startDate, "day");
@@ -157,10 +155,10 @@ const HrLeaves = () => {
             row[`day${day}`] = leaveMap[key];
             hasData = true;
           } else if (!isWeekend) {
-            row[`day${day}`] = "H";
+            row[`day${day}`] = "A";
             hasData = true;
           } else {
-            row[`day${day}`] = "";
+            row[`day${day}`] = "H";
           }
         }
 
@@ -195,6 +193,12 @@ const HrLeaves = () => {
         let tooltip = "";
 
         switch (value) {
+          case "A":
+            bgColor = "#fee2e2"; // light red
+            textColor = "#991b1b"; // dark red
+            label = "A";
+            tooltip = "Absent";
+            break;
           case "✅":
             bgColor = "#d1fae5"; // light green
             textColor = "#065f46"; // dark green

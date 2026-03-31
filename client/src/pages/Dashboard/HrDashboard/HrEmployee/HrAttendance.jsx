@@ -26,7 +26,7 @@ const HrAttendance = () => {
   ];
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
-  const [currentMonth, setCurrentMonth] = useState(selectedFY.start);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const { data: attendanceData = {}, isLoading } = useQuery({
     queryKey: ["attendance"],
@@ -90,9 +90,8 @@ const HrAttendance = () => {
       if (!groupedUsers[userId]) {
         groupedUsers[userId] = {
           empId: entry.user?.empId,
-          empName: `${entry.user?.firstName || ""} ${
-            entry.user?.lastName || ""
-          }`.trim(),
+          empName: `${entry.user?.firstName || ""} ${entry.user?.lastName || ""
+            }`.trim(),
         };
       }
     });
@@ -115,9 +114,8 @@ const HrAttendance = () => {
       if (!groupedUsers[userId]) {
         groupedUsers[userId] = {
           empId: leave.takenBy?.empId || "",
-          empName: `${leave.takenBy?.firstName || ""} ${
-            leave.takenBy?.lastName || ""
-          }`.trim(),
+          empName: `${leave.takenBy?.firstName || ""} ${leave.takenBy?.lastName || ""
+            }`.trim(),
         };
       }
     });
@@ -137,10 +135,10 @@ const HrAttendance = () => {
         );
         const startDate = dayjs(userAttendance?.user?.startDate);
 
-        for (let day = 1; day <= daysInMonth; day++) {
+        for (let day = 1; day < daysInMonth; day++) {
           const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
-          const isWeekend = date.day() === 0 || date.day() === 6;
+          const isWeekend = date.day() === 0 || date.day() === 7;
           const beforeJoining =
             startDate.isValid() && date.isBefore(startDate, "day");
 
@@ -155,10 +153,10 @@ const HrAttendance = () => {
             row[`day${day}`] = leaveMap[key];
             hasData = true;
           } else if (!isWeekend) {
-            row[`day${day}`] = "H";
+            row[`day${day}`] = "A";
             hasData = true;
           } else {
-            row[`day${day}`] = "";
+            row[`day${day}`] = "H";
           }
         }
 
@@ -175,12 +173,12 @@ const HrAttendance = () => {
   const dayColumns = Array.from({ length: daysInMonth }, (_, i) => {
     const date = dayjs(new Date(currentYearNum, currentMonthNum, i + 1));
     const dayOfWeek = date.format("ddd");
-    const isSaturday = dayOfWeek === "Sat";
+    // const isSaturday = dayOfWeek === "Sat";
     const isSunday = dayOfWeek === "Sun";
 
     return {
       field: `day${i + 1}`,
-      headerName: isSaturday ? "SAT" : isSunday ? "SUN" : `${i + 1}`,
+      headerName: isSunday ? "SUN" : `${i + 1}`,
       width: 80,
       cellStyle: { textAlign: "center" },
       headerClass: "ag-center-header",
@@ -222,6 +220,12 @@ const HrAttendance = () => {
         let tooltip = "";
 
         switch (value) {
+          case "A":
+            bgColor = "#fee2e2";
+            textColor = "#991b1b";
+            label = "A";
+            tooltip = "Absent";
+            break;
           case "PL":
             bgColor = "#fee2e2";
             textColor = "#991b1b";
