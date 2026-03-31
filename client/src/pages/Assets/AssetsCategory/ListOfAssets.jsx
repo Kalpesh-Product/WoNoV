@@ -160,6 +160,9 @@ const ListOfAssets = () => {
       }
     },
   });
+  const activeVendorDetails = vendorDetails.filter(
+    (item) => item?.status === "Active",
+  );
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -520,7 +523,7 @@ const ListOfAssets = () => {
                   </MenuItem>
                   {isVendorDetails
                     ? []
-                    : vendorDetails.map((item) => (
+                    : activeVendorDetails.map((item) => (
                       <MenuItem key={item._id} value={item._id}>
                         {item.companyName || item.name}
                       </MenuItem>
