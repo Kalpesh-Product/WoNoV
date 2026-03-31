@@ -513,7 +513,7 @@ const ManageMeetings = () => {
   };
 
   const columns = [
-    { field: "srNo", headerName: "Sr No", sort: "desc" },
+    { field: "srNo", headerName: "Sr No" },
     { field: "client", headerName: "Company" },
     { field: "bookedBy", headerName: "Booked By" },
     { field: "building", headerName: "Building" },
@@ -546,6 +546,7 @@ const ManageMeetings = () => {
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
+      sort: "desc",
       cellRenderer: (params) => (
         <Chip
           label={params.value || ""}
