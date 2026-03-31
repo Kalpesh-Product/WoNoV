@@ -151,6 +151,7 @@ const HrSettingsDepartments = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive";
         const statusColorMap = {
@@ -273,7 +274,7 @@ const HrSettingsDepartments = () => {
             <PrimaryButton
               title="Add Department"
               type="submit"
-              handleSubmit={() => {}}
+              handleSubmit={() => { }}
               isLoading={isAddingDepartment}
               padding="px-4 py-2"
             />

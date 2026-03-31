@@ -115,6 +115,7 @@ const VendorOnboard = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       width: 130,
       cellRenderer: (params) => (
         <Chip

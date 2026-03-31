@@ -71,7 +71,7 @@ const Collections = () => {
   };
 
   const kraColumn = [
-    { field: "srno", headerName: "Sr No", width: 100 },
+    { field: "srNo", headerName: "Sr No", width: 100 },
     {
       field: "clientName",
       headerName: "Client",

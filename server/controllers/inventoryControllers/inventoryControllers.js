@@ -314,8 +314,6 @@ const createInventory = async (req, res, next) => {
     }
 
     /* ------------------ Create inventory ------------------ */
-
-    
     const inventory = await Inventory.create({
       company,
       department,

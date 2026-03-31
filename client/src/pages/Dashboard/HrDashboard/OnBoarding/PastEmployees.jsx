@@ -15,7 +15,9 @@ export default function PastEmployees() {
     queryKey: ["past-employees"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/users/fetch-users");
+        const response = await axios.get("/api/users/fetch-users", {
+          params: { status: "false" },
+        });
         const filteredData = response.data.filter(
           (employee) => employee.isActive === false
         );
@@ -60,11 +62,12 @@ export default function PastEmployees() {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => {
-        const statusText = params.value ? "Active" : "In Active";
+        const statusText = params.value ? "Active" : "Inactive";
         const statusColorMap = {
-          Active: { backgroundColor: "#90EE90", color: "#006400" }, 
-          "In Active": { backgroundColor: "#F8D7DA", color: "#721C24" }, 
+          Active: { backgroundColor: "#90EE90", color: "#006400" },
+          Inactive: { backgroundColor: "#F8D7DA", color: "#721C24" },
         };
 
         const { backgroundColor, color } = statusColorMap[statusText] || {
@@ -95,21 +98,20 @@ export default function PastEmployees() {
               isLoading
                 ? []
                 : [
-                    ...employees.map((employee, index) => ({
-                      id: employee._id,
-                      srno: index + 1,
-                      employeeName: `${
-                        employee.firstName ? employee.firstName : ""
+                  ...employees.map((employee, index) => ({
+                    id: employee._id,
+                    srno: index + 1,
+                    employeeName: `${employee.firstName ? employee.firstName : ""
                       } ${employee.lastName ? employee.lastName : ""}`,
-                      employmentID: employee.empId,
-                      email: employee.email || "N/A",
-                      department: employee.departments?.map(
-                        (item) => item.name 
-                      ) || "N/A",
-                      role: employee.role?.map((r) => r.roleTitle) || "N/A",
-                      status: employee.isActive,
-                    })),
-                  ]
+                    employmentID: employee.empId,
+                    email: employee.email || "N/A",
+                    department: employee.departments?.map(
+                      (item) => item.name
+                    ) || "N/A",
+                    role: employee.role?.map((r) => r.roleTitle) || "N/A",
+                    status: employee.isActive,
+                  })),
+                ]
             }
             columns={viewEmployeeColumns}
           />

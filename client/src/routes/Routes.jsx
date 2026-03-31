@@ -874,12 +874,20 @@ export const routes = createBrowserRouter([
                             path: "sunteck-kanaka-units/:unitNo",
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
+                           {
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
                           {
                             path: "dempo-trade-center",
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
                             path: "dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                           {
+                            path: "dempo-trade-center/:unitNo/:inventoryTab",
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                         ],
@@ -1112,12 +1120,20 @@ export const routes = createBrowserRouter([
                             path: "sunteck-kanaka-units/:unitNo",
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
+                           {
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
                           {
                             path: "dempo-trade-center",
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
                             path: "dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                           {
+                            path: "dempo-trade-center/:unitNo/:inventoryTab",
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                         ],
@@ -1292,12 +1308,20 @@ export const routes = createBrowserRouter([
                             path: "sunteck-kanaka-units/:unitNo",
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
+                           {
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
                           {
                             path: "dempo-trade-center",
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
                             path: "dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                           {
+                            path: "dempo-trade-center/:unitNo/:inventoryTab",
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                         ],

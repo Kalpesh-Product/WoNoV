@@ -26,7 +26,7 @@ const HrAttendance = () => {
   ];
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
-  const [currentMonth, setCurrentMonth] = useState(selectedFY.start);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const { data: attendanceData = {}, isLoading } = useQuery({
     queryKey: ["attendance"],
@@ -78,8 +78,27 @@ const HrAttendance = () => {
     const groupedUsers = {};
     const attendanceMap = {};
 
+    const activeUsersMap = new Map(
+      (attendanceData?.activeEmployees || []).map((employee) => [
+        employee?._id?.toString(),
+        employee,
+      ])
+    );
+
+    (attendanceData?.activeEmployees || []).forEach((employee) => {
+      const userId = employee?._id?.toString();
+      if (!userId) return;
+
+      groupedUsers[userId] = {
+        empId: employee.empId || "",
+        empName: `${employee.firstName || ""} ${employee.lastName || ""}`.trim(),
+        startDate: employee.startDate,
+      };
+    });
+
     attendanceData?.companyAttandances?.forEach((entry) => {
-      const userId = entry.user?._id;
+      const userId = entry.user?._id?.toString();
+      if (!userId || !activeUsersMap.has(userId)) return;
       const dateKey = dayjs(entry.inTime).format("YYYY-MM-DD");
       const inTime = dayjs(entry.inTime);
       const outTime = dayjs(entry.outTime);
@@ -90,16 +109,17 @@ const HrAttendance = () => {
       if (!groupedUsers[userId]) {
         groupedUsers[userId] = {
           empId: entry.user?.empId,
-          empName: `${entry.user?.firstName || ""} ${
-            entry.user?.lastName || ""
-          }`.trim(),
+          empName: `${entry.user?.firstName || ""} ${entry.user?.lastName || ""
+            }`.trim(),
+          startDate: entry.user?.startDate,
         };
       }
     });
 
     const leaveMap = {};
     attendanceData?.allLeaves?.forEach((leave) => {
-      const userId = leave.takenBy?._id;
+      const userId = leave.takenBy?._id?.toString();
+      if (!userId || !activeUsersMap.has(userId)) return;
       const leaveType = leave.leaveType?.toLowerCase().includes("sick")
         ? "SL"
         : "PL";
@@ -115,9 +135,9 @@ const HrAttendance = () => {
       if (!groupedUsers[userId]) {
         groupedUsers[userId] = {
           empId: leave.takenBy?.empId || "",
-          empName: `${leave.takenBy?.firstName || ""} ${
-            leave.takenBy?.lastName || ""
-          }`.trim(),
+          empName: `${leave.takenBy?.firstName || ""} ${leave.takenBy?.lastName || ""
+            }`.trim(),
+          startDate: leave.takenBy?.startDate,
         };
       }
     });
@@ -132,10 +152,7 @@ const HrAttendance = () => {
         let totalWorkedHours = 0;
         let hasData = false;
 
-        const userAttendance = attendanceData.companyAttandances?.find(
-          (entry) => entry.user?._id === userId && entry.user?.startDate
-        );
-        const startDate = dayjs(userAttendance?.user?.startDate);
+        const startDate = dayjs(userInfo?.startDate);
 
         for (let day = 1; day <= daysInMonth; day++) {
           const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
@@ -155,10 +172,10 @@ const HrAttendance = () => {
             row[`day${day}`] = leaveMap[key];
             hasData = true;
           } else if (!isWeekend) {
-            row[`day${day}`] = "H";
+            row[`day${day}`] = "A";
             hasData = true;
           } else {
-            row[`day${day}`] = "";
+            row[`day${day}`] = "H";
           }
         }
 
@@ -175,12 +192,12 @@ const HrAttendance = () => {
   const dayColumns = Array.from({ length: daysInMonth }, (_, i) => {
     const date = dayjs(new Date(currentYearNum, currentMonthNum, i + 1));
     const dayOfWeek = date.format("ddd");
-    const isSaturday = dayOfWeek === "Sat";
+    // const isSaturday = dayOfWeek === "Sat";
     const isSunday = dayOfWeek === "Sun";
 
     return {
       field: `day${i + 1}`,
-      headerName: isSaturday ? "SAT" : isSunday ? "SUN" : `${i + 1}`,
+      headerName: isSunday ? "SUN" : `${i + 1}`,
       width: 80,
       cellStyle: { textAlign: "center" },
       headerClass: "ag-center-header",
@@ -222,6 +239,12 @@ const HrAttendance = () => {
         let tooltip = "";
 
         switch (value) {
+          case "A":
+            bgColor = "#fee2e2";
+            textColor = "#991b1b";
+            label = "A";
+            tooltip = "Absent";
+            break;
           case "PL":
             bgColor = "#fee2e2";
             textColor = "#991b1b";

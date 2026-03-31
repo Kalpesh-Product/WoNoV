@@ -52,10 +52,14 @@ const MaintenanceInventoryTabs = () => {
       defaultTabPath="sunteck-kanaka-units"
       tabs={tabs}
       hideTabsCondition={(pathname) =>
-        /\/inventory\/(sunteck-kanaka-units|dempo-trade-center)\/[^/]+$/i.test(
+         /\/inventory\/(sunteck-kanaka-units|dempo-trade-center)\/[^/]+(\/[^/]+)?$/i.test(
           pathname,
         )
       }
+      hideTabsOnPaths={[
+        "/inventory/sunteck-kanaka-units/",
+        "/inventory/dempo-trade-center/",
+      ]}
     />
   );
 };
