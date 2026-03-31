@@ -1,4 +1,4 @@
-import React, { useMemo }  from "react";
+import React, { useMemo } from "react";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../../components/AgTable";
@@ -18,8 +18,8 @@ const formatCurrencyWithDecimals = (value = 0) =>
 // const AdminPerSqFtExpense = () => {
 //   const axios = useAxiosPrivate();
 //     const navigate = useNavigate();
-    
-  
+
+
 //     const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
 //       queryKey: ["clientsData"],
 //       queryFn: async () => {
@@ -32,11 +32,11 @@ const formatCurrencyWithDecimals = (value = 0) =>
 //         }
 //       },
 //     });
-  
+
 //     // Group by Unit Number
 //     const groupedByUnits = clientsData.reduce((acc, item) => {
 //       const unitNo = item.unit?.unitNo || "-";
-  
+
 //       if (!acc[unitNo]) {
 //         acc[unitNo] = {
 //           unitNo,
@@ -46,12 +46,12 @@ const formatCurrencyWithDecimals = (value = 0) =>
 //           buildingName: item.unit?.building?.buildingName,
 //         };
 //       }
-  
+
 //       acc[unitNo].clients.push(item);
-  
+
 //       return acc;
 //     }, {});
-  
+
 //     const tableData = Object.values(groupedByUnits)
 //       .sort((a, b) =>
 //         a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true })
@@ -65,7 +65,7 @@ const formatCurrencyWithDecimals = (value = 0) =>
 //         clientsCount: group.clients.length,
 //         rawClients: group.clients,
 //       }));
-  
+
 //     const columns = [
 //       { headerName: "SR NO", field: "srNo", width: 100 },
 //       {
@@ -90,20 +90,20 @@ const formatCurrencyWithDecimals = (value = 0) =>
 //       { headerName: "Building", field: "buildingName", flex: 1 },
 //       { headerName: "Expense", field: "expense" },
 //     ];
-  
+
 //     // Step 1: Prepare chartData
 //     const chartData = tableData.map((unit) => ({
 //       unitNo: unit.unitNo,
 //       occupied: unit.clientsCount,
 //     }));
-  
-  
+
+
 //     const maxY = Math.max(...chartData.map((item) => item.occupied), 5);
 //     const roundedMax = Math.ceil(maxY / 5) * 5;
-  
-  
+
+
 //     const inrFormat = (val) => val.toLocaleString("en-IN");
-  
+
 //     const barGraphSeries = [
 //       {
 //         name: "Clients",
@@ -111,7 +111,7 @@ const formatCurrencyWithDecimals = (value = 0) =>
 //       },
 //     ];
 //     const totalOffices = chartData.reduce((sum,item)=>(item.occupied + sum),0)
-  
+
 //     const expenseOptions = {
 //       chart: {
 //         type: "bar",
@@ -149,7 +149,7 @@ const formatCurrencyWithDecimals = (value = 0) =>
 //         position: "top",
 //       },
 //     };
-  
+
 //     return (
 //       <div className="p-4 flex flex-col gap-4">
 //         <WidgetSection layout={1} border padding title={"Admin Expense Per Sq. ft"} TitleAmount={`INR 0`}>
@@ -169,10 +169,10 @@ const formatCurrencyWithDecimals = (value = 0) =>
 
 const AdminPerSqFtExpense = () => {
   const axios = useAxiosPrivate();
-    const navigate = useNavigate();
-    
-  
-   const department = usePageDepartment();
+  const navigate = useNavigate();
+
+
+  const department = usePageDepartment();
 
   const { data: hrFinance = [], isPending: isBudgetLoading } = useQuery({
     queryKey: ["departmentBudget", department?._id],
@@ -194,28 +194,28 @@ const AdminPerSqFtExpense = () => {
       if (!unit?._id) return acc;
 
       const unitNo = unit.unitNo || "-";
-  
+
       if (!acc[unitNo]) {
         acc[unitNo] = {
           unitNo,
-            unitName: unit.unitName || "-",
+          unitName: unit.unitName || "-",
           unitId: unit._id,
           buildingName: unit.building?.buildingName || "-",
           sqft: Number(unit.sqft) || 0,
           totalExpense: 0,
         };
       }
-  
+
       acc[unitNo].totalExpense += Number(item.actualAmount) || 0;
-  
+
       return acc;
     }, {});
-  
-    return  Object.values(groupedByUnits)
+
+    return Object.values(groupedByUnits)
       .sort((a, b) =>
         a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true })
       )
-        .map((group, index) => {
+      .map((group, index) => {
         const expensePerSqFt = group.sqft
           ? group.totalExpense / group.sqft
           : 0;
@@ -229,7 +229,7 @@ const AdminPerSqFtExpense = () => {
       });
   }, [hrFinance, isBudgetLoading]);
 
-   const perSqFtTotals = useMemo(() => {
+  const perSqFtTotals = useMemo(() => {
     if (!tableData.length) return { totalSqFt: 0, totalExpense: 0 };
 
     return tableData.reduce(
@@ -237,11 +237,11 @@ const AdminPerSqFtExpense = () => {
         acc.totalExpense += Number(item.totalExpense) || 0;
         acc.totalSqFt += Number(item.sqft) || 0;
         return acc;
-              },
+      },
       { totalSqFt: 0, totalExpense: 0 })
-       }, [tableData]);
-  
-   const expensePerSqFtTotal =
+  }, [tableData]);
+
+  const expensePerSqFtTotal =
     perSqFtTotals.totalSqFt > 0
       ? perSqFtTotals.totalExpense / perSqFtTotals.totalSqFt
       : 0;
@@ -257,11 +257,11 @@ const AdminPerSqFtExpense = () => {
     { headerName: "Expense (INR/sq.ft)", field: "expense" },
   ];
 
-  const maxY = Math.max(
-    ...tableData.map((item) => item.expensePerSqFt),
-    0
-  );
-  const roundedMax = Math.max(5, Math.ceil(maxY / 5) * 5);
+  // const maxY = Math.max(
+  //   ...tableData.map((item) => item.expensePerSqFt),
+  //   0
+  // );
+  // const roundedMax = Math.max(5, Math.ceil(maxY / 5) * 5);
 
   const expenseOptions = {
     chart: {
@@ -286,11 +286,11 @@ const AdminPerSqFtExpense = () => {
       offsetY: -22,
     },
     yaxis: {
-      max: roundedMax,
+      // max: roundedMax,
       title: { text: "Expense per Sq. Ft." },
-       labels: {
-          formatter: (value) => `${Math.round(value)}`,
-        },
+      labels: {
+        formatter: (value) => `${Math.round(value)}`,
+      },
     },
     xaxis: {
       categories: tableData.map((item) => item.unitNo),
