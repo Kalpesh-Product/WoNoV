@@ -521,7 +521,7 @@ const ListOfAssets = () => {
                   {isVendorDetails
                     ? []
                     : vendorDetails.map((item) => (
-                      <MenuItem key={item._id} value={item._id} disabled={!item.isActive}>
+                      <MenuItem key={item._id} value={item._id}>
                         {item.companyName || item.name}
                       </MenuItem>
                     ))}
