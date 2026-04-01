@@ -639,6 +639,40 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     },
   });
 
+  useEffect(() => {
+    if (modalMode !== "edit" || !selectedAsset || !inventoryCategories.length) {
+      return;
+    }
+
+    const selectedCategoryId =
+      selectedAsset?.category?._id ||
+      selectedAsset?.categoryId ||
+      (typeof selectedAsset?.category === "string"
+        ? selectedAsset.category
+        : "");
+
+    const selectedCategoryName =
+      selectedAsset?.categoryName ||
+      selectedAsset?.category?.categoryName ||
+      (typeof selectedAsset?.category === "string"
+        ? selectedAsset.category
+        : "");
+
+    const matchedCategory = inventoryCategories.find((category) => {
+      const categoryId = String(category?._id || "");
+      const categoryName = String(category?.categoryName || "");
+
+      return (
+        categoryId === String(selectedCategoryId || "") ||
+        categoryName.toLowerCase() === String(selectedCategoryName).toLowerCase()
+      );
+    });
+
+    if (matchedCategory?._id) {
+      setValue("category", matchedCategory._id);
+    }
+  }, [inventoryCategories, modalMode, selectedAsset, setValue]);
+
   const { data: unitsData = [] } = useQuery({
     queryKey: ["inventory-units-list"],
     queryFn: async () => {
@@ -1282,11 +1316,16 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     //   headerName: "Remaining Unit Value",
     //   cellRenderer: (params) => inrFormat(params.value),
     // },
-    {
-      field: "remainingNewPurchaseInventoryUnits",
-      headerName: "Closing Units",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
+{
+  headerName: "Closing Units",
+  cellRenderer: (params) => {
+    const value =
+      (params.data.remainingOpeningInventoryUnits || 0) +
+      (params.data.remainingNewPurchaseInventoryUnits || 0);
+
+    return inrFormat(value);
+  },
+},
     {
       field: "categoryName",
       headerName: "Category",
@@ -2452,10 +2491,13 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   : "N/A"
               }
             />
-            <DetalisFormatted
+           <DetalisFormatted
               title="Closing Units"
-              detail={selectedAsset.closingInventoryUnits ?? "N/A"}
-            />
+              detail={
+                (selectedAsset?.remainingOpeningInventoryUnits || 0) +
+                (selectedAsset?.remainingNewPurchaseInventoryUnits || 0)
+              }
+              />
             <br />
             <div className="font-bold">Inventory Value</div>
             <DetalisFormatted
