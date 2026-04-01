@@ -56,6 +56,12 @@ const assetsSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    warrantyExpiryDate: {
+      type: Date,
+    },
+    rentedExpirationDate: {
+      type: Date,
+    },
     warrantyDocument: {
       link: String,
       documentId: String,

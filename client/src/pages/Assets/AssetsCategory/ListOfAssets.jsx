@@ -48,6 +48,7 @@ const ListOfAssets = () => {
     control,
     formState: { errors },
     watch,
+    setValue: setAddValue,
     reset,
   } = useForm({
     defaultValues: {
@@ -62,10 +63,13 @@ const ListOfAssets = () => {
       quantity: 0,
       price: 0,
       brand: "",
+      totalPrice: 0,
       assetType: "",
       warranty: 0,
+      warrantyExpiryDate: null,
       ownershipType: "",
       rentedMonths: 0,
+      rentedExpirationDate: null,
       tangable: "",
       locationId: "",
       location: "",
@@ -94,10 +98,13 @@ const ListOfAssets = () => {
       quantity: 0,
       price: 0,
       brand: "",
+      totalPrice: 0,
       assetType: "",
       warranty: 0,
+      warrantyExpiryDate: null,
       ownershipType: "",
       rentedMonths: 0,
+      rentedExpirationDate: null,
       tangable: "",
       locationId: "",
       location: "",
@@ -113,6 +120,12 @@ const ListOfAssets = () => {
   const selectedCategory = watch("categoryId");
   const selectedLocation = watch("location");
   const selectedUnit = watch("floor");
+  const watchedPurchaseDate = watch("purchaseDate");
+  const watchedQuantity = watch("quantity");
+  const watchedPrice = watch("price");
+  const watchedWarranty = watch("warranty");
+  const watchedOwnershipType = watch("ownershipType");
+  const watchedRentedMonths = watch("rentedMonths");
 
   //---------------------Forms----------------------//
 
@@ -213,6 +226,45 @@ const ListOfAssets = () => {
       toast.error(error.message);
     },
   });
+  useEffect(() => {
+    const totalPrice = (Number(watchedQuantity) || 0) * (Number(watchedPrice) || 0);
+    setAddValue("totalPrice", totalPrice, { shouldValidate: true });
+
+    if (watchedPurchaseDate && Number(watchedWarranty) > 0) {
+      setAddValue(
+        "warrantyExpiryDate",
+        dayjs(watchedPurchaseDate).add(Number(watchedWarranty), "month").toISOString(),
+        { shouldValidate: true },
+      );
+    } else {
+      setAddValue("warrantyExpiryDate", null, { shouldValidate: true });
+    }
+
+    if (
+      watchedOwnershipType === "Rental" &&
+      watchedPurchaseDate &&
+      Number(watchedRentedMonths) > 0
+    ) {
+      setAddValue(
+        "rentedExpirationDate",
+        dayjs(watchedPurchaseDate)
+          .add(Number(watchedRentedMonths), "month")
+          .toISOString(),
+        { shouldValidate: true },
+      );
+    } else {
+      setAddValue("rentedExpirationDate", null, { shouldValidate: true });
+    }
+  }, [
+    watchedQuantity,
+    watchedPrice,
+    watchedPurchaseDate,
+    watchedWarranty,
+    watchedOwnershipType,
+    watchedRentedMonths,
+    setAddValue,
+  ]);
+
   useEffect(() => {
     const selected = assetsList.find((item) => item._id === selectedAsset?._id);
     if (selected) {
@@ -399,6 +451,16 @@ const ListOfAssets = () => {
     },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
+    {
+      field: "warrantyExpiryDate",
+      headerName: "Warranty Expiry Date",
+      cellRenderer: (params) => humanDate(params.value),
+    },
+    {
+      field: "rentedExpirationDate",
+      headerName: "Rental Expiry Date",
+      cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -711,7 +773,6 @@ const ListOfAssets = () => {
             <Controller
               name="warrantyExpiryDate"
               control={control}
-              rules={{ required: "Warranty Expiry Date is required" }}
               render={({ field }) => (
                 <DatePicker
                   {...field}
@@ -802,22 +863,13 @@ const ListOfAssets = () => {
             <Controller
               name="rentedExpirationDate"
               control={control}
-              rules={{
-                validate: (value) =>
-                  watch("ownershipType") !== "Rental" ||
-                  !!value ||
-                  "Rented Expiration Date is required for Rental assets",
-              }}
               render={({ field }) => (
                 <DatePicker
                   {...field}
                   format="DD-MM-YYYY"
                   label="Rented Expiration Date"
-                  disabled={watch("ownershipType") !== "Rental"}
+                  disabled
                   value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) => {
-                    field.onChange(date ? date.toISOString() : null);
-                  }}
                   slotProps={{
                     textField: {
                       size: "small",
@@ -898,17 +950,19 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
-            <Controller
-              name="assetImage"
-              control={control}
-              render={({ field }) => (
-                <UploadFileInput
-                  value={field.value}
-                  label="Asset Image"
-                  onChange={field.onChange}
-                />
-              )}
-            />
+            <div className="col-span-1">
+              <Controller
+                name="assetImage"
+                control={control}
+                render={({ field }) => (
+                  <UploadFileInput
+                    value={field.value}
+                    label="Asset Image"
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
 
             <PrimaryButton
               title={"Add Asset"}
@@ -1277,6 +1331,14 @@ const ListOfAssets = () => {
             <DetalisFormatted
               title={"Purchase Date"}
               detail={humanDate(selectedAsset?.purchaseDate)}
+            />
+            <DetalisFormatted
+              title={"Warranty Expiry Date"}
+              detail={selectedAsset?.warrantyExpiryDate ? humanDate(selectedAsset?.warrantyExpiryDate) : "N/A"}
+            />
+            <DetalisFormatted
+              title={"Rental Expiry Date"}
+              detail={selectedAsset?.rentedExpirationDate ? humanDate(selectedAsset?.rentedExpirationDate) : "N/A"}
             />
             <DetalisFormatted
               title={"Category"}

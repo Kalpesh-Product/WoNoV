@@ -25,6 +25,11 @@ const HrLeaves = () => {
       start: new Date(2025, 3, 1),
       end: new Date(2026, 2, 31),
     },
+    {
+      label: "FY 2026–27",
+      start: new Date(2026, 3, 1),
+      end: new Date(2027, 2, 31),
+    },
   ];
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);

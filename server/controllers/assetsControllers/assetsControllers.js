@@ -17,6 +17,23 @@ const AssignAsset = require("../../models/assets/AssignAsset");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 
+const calculateFutureDateByMonths = (baseDate, monthsToAdd) => {
+  const parsedBaseDate = new Date(baseDate);
+  const parsedMonths = Number(monthsToAdd);
+
+  if (
+    Number.isNaN(parsedBaseDate.getTime()) ||
+    !Number.isFinite(parsedMonths) ||
+    parsedMonths <= 0
+  ) {
+    return null;
+  }
+
+  const calculatedDate = new Date(parsedBaseDate);
+  calculatedDate.setMonth(calculatedDate.getMonth() + parsedMonths);
+  return calculatedDate;
+};
+
 const getAssetsWithDepartments = async (req, res, next) => {
   try {
     const user = req.user;
@@ -353,6 +370,15 @@ const addAsset = async (req, res, next) => {
       const assetNumber = existingAssetsCount + i + 1; // incremental
       const uniqueAssetId = `${ownershipPrefix}-${deptPrefix}-${subCatPrefix}-${assetNumber}`;
 
+      const warrantyExpiryDate = calculateFutureDateByMonths(
+        purchaseDate,
+        warranty,
+      );
+      const rentedExpirationDate =
+        ownershipType === "Rental"
+          ? calculateFutureDateByMonths(purchaseDate, rentedMonths)
+          : null;
+
       const assetData = {
         assetType,
         assetId: uniqueAssetId,
@@ -367,6 +393,8 @@ const addAsset = async (req, res, next) => {
         purchaseDate,
         price,
         warranty,
+        warrantyExpiryDate,
+        rentedExpirationDate,
         brand,
         department: departmentId,
         location: locationId || null,
@@ -579,6 +607,7 @@ const editAsset = async (req, res, next) => {
       assetImage,
       status: assetStatus,
       secondaryId: normalizedSecondaryId || null,
+      warrantyExpiryDate: calculateFutureDateByMonths(purchaseDate, warranty),
     };
 
     if (normalizedSecondaryId) {
@@ -603,7 +632,12 @@ const editAsset = async (req, res, next) => {
     // Handle rental logic
     if (ownershipType === "Rental") {
       updatePayload.rentedMonths = rentedMonths;
+      updatePayload.rentedExpirationDate = calculateFutureDateByMonths(
+        purchaseDate,
+        warranty,
+      );
     } else {
+      updatePayload.rentedExpirationDate = null;
       updatePayload.rentedMonths = null;
     }
 
@@ -736,11 +770,16 @@ const bulkInsertAssets = async (req, res, next) => {
               purchaseDate,
               price: pricePerUnit,
               warranty,
+              warrantyExpiryDate: calculateFutureDateByMonths(
+                purchaseDate,
+                warranty,
+              ),
               brand,
               isDamaged: false,
               department,
               status: status === "Inactive" ? "Inactive" : "Active",
               subCategory: subCategoryId,
+              rentedExpirationDate: null,
             });
           }
         }
