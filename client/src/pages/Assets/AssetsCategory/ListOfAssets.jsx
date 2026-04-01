@@ -29,6 +29,7 @@ import { queryClient } from "../../../main";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
+import { useNavigate } from "react-router-dom";
 
 const ListOfAssets = () => {
   const { auth } = useAuth();
@@ -39,6 +40,7 @@ const ListOfAssets = () => {
   const [selectedForEdit, setSelectedForEdit] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  const navigate = useNavigate();
 
   //---------------------Forms----------------------//
   const {
@@ -54,6 +56,8 @@ const ListOfAssets = () => {
       subCategoryId: "",
       vendorId: "",
       name: "",
+      assetId: "",
+      secondaryId: "",
       purchaseDate: null,
       quantity: 0,
       price: 0,
@@ -84,6 +88,8 @@ const ListOfAssets = () => {
       subCategoryId: "",
       vendorId: "",
       name: "",
+      assetId: "",
+      secondaryId: "",
       purchaseDate: null,
       quantity: 0,
       price: 0,
@@ -172,6 +178,8 @@ const ListOfAssets = () => {
       formData.append("subCategoryId", data.subCategoryId);
       formData.append("vendorId", data.vendorId);
       formData.append("name", data.name);
+      formData.append("assetId", data.assetId);
+      formData.append("secondaryId", data.secondaryId || "");
       formData.append("isDamaged", data.isDamaged);
       formData.append("isUnderMaintenance", data.isUnderMaintenance);
       formData.append("status", data.status);
@@ -223,6 +231,8 @@ const ListOfAssets = () => {
         subCatId: selectedForEdit?.subCategory?._id || "",
         vendorId: selectedForEdit?.vendor?._id || "",
         name: selectedForEdit?.name || "",
+        assetId: selectedForEdit?.assetId || "",
+        secondaryId: selectedForEdit?.secondaryId || "",
         purchaseDate: selectedForEdit?.purchaseDate || null,
         quantity: selectedForEdit?.quantity || 0,
         price: selectedForEdit?.price || 0,
@@ -262,6 +272,8 @@ const ListOfAssets = () => {
       formData.append("subCategoryId", data.subCatId);
       formData.append("vendorId", data.vendorId);
       formData.append("name", data.name);
+      formData.append("assetId", data.assetId);
+      formData.append("secondaryId", data.secondaryId || "");
       formData.append("purchaseDate", data.purchaseDate);
       formData.append("quantity", Number(data.quantity));
       formData.append("price", Number(data.price));
@@ -374,8 +386,9 @@ const ListOfAssets = () => {
   //-----------------------Event handlers----------------------//
   //-----------------------Table Data----------------------//
   const assetColumns = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "assetId", headerName: "Asset Id" },
+    { field: "secondaryId", headerName: "Secondary Id" },
     { field: "department", headerName: "Department" },
     { field: "subCategory", headerName: "Sub-Category" },
     { field: "brand", headerName: "Brand" },
@@ -512,14 +525,31 @@ const ListOfAssets = () => {
                 <TextField
                   select
                   {...field}
+                  onChange={(event) => {
+                    const selectedValue = event.target.value;
+
+                    if (selectedValue === "add_vendor") {
+                      // Open in new tab (blank page)
+                      window.open("/app/assets/mix-bag/vender/vendor-onboard", "_blank");
+
+                      // Reset the dropdown after navigation
+                      setTimeout(() => {
+                        event.target.value = "";
+                      }, 0);
+
+                      return;
+                    }
+
+                    field.onChange(event);
+                  }}
                   size="small"
                   fullWidth
                   label="Vendor"
                   error={!!errors.vendorId}
                   helperText={errors?.vendorId?.message}
                 >
-                  <MenuItem value="" disabled>
-                    <em>Select a Vendor</em>
+                  <MenuItem value="add_vendor">
+                    <em>Add Vendor</em>
                   </MenuItem>
                   {isVendorDetails
                     ? []
@@ -599,9 +629,26 @@ const ListOfAssets = () => {
                   size="small"
                   fullWidth
                   type="number"
-                  label="Price"
+                  label="Per Quantity Price"
                   error={!!errors.price}
                   helperText={errors?.price?.message}
+                />
+              )}
+            />
+            <Controller
+              name="totalPrice"
+              control={control}
+              rules={{ required: "Price is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Total Price"
+                  disabled
+                  error={!!errors.totalPrice}
+                  helperText={errors?.totalPrice?.message}
                 />
               )}
             />
@@ -655,9 +702,34 @@ const ListOfAssets = () => {
                   size="small"
                   fullWidth
                   type="number"
-                  label="Warranty (Months)"
+                  label="Warranty in Months"
                   error={!!errors.warranty}
                   helperText={errors?.warranty?.message}
+                />
+              )}
+            />
+            <Controller
+              name="warrantyExpiryDate"
+              control={control}
+              rules={{ required: "Warranty Expiry Date is required" }}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  format="DD-MM-YYYY"
+                  label="Warranty Expiry Date"
+                  disabled
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                      error: !!errors.warrantyExpiryDate,
+                      helperText: errors?.warrantyExpiryDate?.message,
+                    },
+                  }}
                 />
               )}
             />
@@ -684,28 +756,6 @@ const ListOfAssets = () => {
               )}
             />
             <Controller
-              name="rentedMonths"
-              control={control}
-              rules={{
-                validate: (value) =>
-                  watch("ownershipType") !== "Rental" ||
-                  Number(value) > 0 ||
-                  "Rented Months is required for Rental assets",
-              }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  fullWidth
-                  type="number"
-                  label="Rented Months"
-                  disabled={watch("ownershipType") !== "Rental"}
-                  error={!!errors.rentedMonths}
-                  helperText={errors?.rentedMonths?.message}
-                />
-              )}
-            />
-            <Controller
               name="tangable"
               control={control}
               rules={{ required: "Tangible is required" }}
@@ -727,7 +777,58 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
-
+            <Controller
+              name="rentedMonths"
+              control={control}
+              rules={{
+                validate: (value) =>
+                  watch("ownershipType") !== "Rental" ||
+                  Number(value) > 0 ||
+                  "Rented Months is required for Rental assets",
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Rented for Months"
+                  disabled={watch("ownershipType") !== "Rental"}
+                  error={!!errors.rentedMonths}
+                  helperText={errors?.rentedMonths?.message}
+                />
+              )}
+            />
+            <Controller
+              name="rentedExpirationDate"
+              control={control}
+              rules={{
+                validate: (value) =>
+                  watch("ownershipType") !== "Rental" ||
+                  !!value ||
+                  "Rented Expiration Date is required for Rental assets",
+              }}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  format="DD-MM-YYYY"
+                  label="Rented Expiration Date"
+                  disabled={watch("ownershipType") !== "Rental"}
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                      error: !!errors.rentedExpirationDate,
+                      helperText: errors?.rentedExpirationDate?.message,
+                    },
+                  }}
+                />
+              )}
+            />
             <Controller
               name="location"
               control={control}
@@ -830,6 +931,39 @@ const ListOfAssets = () => {
             )}
             className="grid grid-cols-2 gap-4"
           >
+            <Controller
+              name="assetId"
+              control={editControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Asset ID"
+                  disabled
+                  error={!!editErrors.assetId}
+                  helperText={editErrors?.assetId?.message}
+                />
+              )}
+            />
+            <Controller
+              name="secondaryId"
+              control={editControl}
+              rules={{
+                validate: (value) =>
+                  !value || noOnlyWhitespace(value) === true || "Enter a valid Secondary ID",
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Secondary ID"
+                  error={!!editErrors.secondaryId}
+                  helperText={editErrors?.secondaryId?.message}
+                />
+              )}
+            />
             <Controller
               name="name"
               control={editControl}
@@ -1107,6 +1241,10 @@ const ListOfAssets = () => {
             <DetalisFormatted
               title={"Asset ID"}
               detail={selectedAsset?.assetId || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Secondary ID"}
+              detail={selectedAsset?.secondaryId || "N/A"}
             />
             <DetalisFormatted
               title={"Asset Name"}

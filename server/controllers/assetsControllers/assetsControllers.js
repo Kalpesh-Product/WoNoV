@@ -191,8 +191,10 @@ const addAsset = async (req, res, next) => {
       rentedMonths,
       tangable,
       locationId,
+      secondaryId,
     } = req.body;
 
+    const normalizedSecondaryId = secondaryId?.trim();
     const foundUser = await User.findOne({ _id: user })
       .select("company departments role")
       .populate([{ path: "role", select: "roleTitle" }])
@@ -321,6 +323,32 @@ const addAsset = async (req, res, next) => {
     const subCatPrefix = subCategoryName.slice(0, 2).toUpperCase();
 
     const assetsToInsert = [];
+    if (normalizedSecondaryId && Number(quantity) > 1) {
+      throw new CustomError(
+        "Secondary ID can only be set when quantity is 1",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    if (normalizedSecondaryId) {
+      const existingSecondaryId = await Asset.findOne({
+        secondaryId: normalizedSecondaryId,
+      })
+        .select("_id")
+        .lean()
+        .exec();
+
+      if (existingSecondaryId) {
+        throw new CustomError(
+          "Secondary ID already exists",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
     for (let i = 0; i < Number(quantity); i++) {
       const assetNumber = existingAssetsCount + i + 1; // incremental
       const uniqueAssetId = `${ownershipPrefix}-${deptPrefix}-${subCatPrefix}-${assetNumber}`;
@@ -328,6 +356,7 @@ const addAsset = async (req, res, next) => {
       const assetData = {
         assetType,
         assetId: uniqueAssetId,
+        secondaryId: i === 0 ? normalizedSecondaryId : undefined,
         departmentAssetId: uniqueAssetId,
         rentedMonths: ownershipType === "Rental" ? rentedMonths : undefined,
         tangable,
@@ -392,8 +421,10 @@ const editAsset = async (req, res, next) => {
       tangable,
       locationId,
       status,
+      secondaryId,
     } = req.body;
 
+    const normalizedSecondaryId = secondaryId?.trim();
     const assetImageFile = req.files?.assetImage?.[0];
     const warrantyDocumentFile = req.files?.warrantyDocument?.[0];
 
@@ -547,7 +578,27 @@ const editAsset = async (req, res, next) => {
       subCategory: subCategoryId,
       assetImage,
       status: assetStatus,
+      secondaryId: normalizedSecondaryId || null,
     };
+
+    if (normalizedSecondaryId) {
+      const existingSecondaryId = await Asset.findOne({
+        secondaryId: normalizedSecondaryId,
+        _id: { $ne: assetId },
+      })
+        .select("_id")
+        .lean()
+        .exec();
+
+      if (existingSecondaryId) {
+        throw new CustomError(
+          "Secondary ID already exists",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
 
     // Handle rental logic
     if (ownershipType === "Rental") {

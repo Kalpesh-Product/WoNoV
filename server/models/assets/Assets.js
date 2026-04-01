@@ -11,6 +11,12 @@ const assetsSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    secondaryId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
     departmentAssetId: {
       type: String,
       unique: true,
