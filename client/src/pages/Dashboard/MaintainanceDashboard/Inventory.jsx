@@ -981,7 +981,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       );
       return response.data;
     },
-    onSuccess: () => {            // for item
+    onSuccess: () => {
+      // for item
       toast.success("Item updated successfully!");
       queryClient.setQueriesData(
         { queryKey: ["inventory-items", department?._id] },
@@ -1195,8 +1196,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     if (!selectedItem?._id) return;
     updateItem({
       name: data.itemName,
-      category: data.category,
-      status: data.status === "true",
+      //category: data.category,
+      isActive: data.status === "true",
     });
   };
 
