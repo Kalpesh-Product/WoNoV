@@ -209,6 +209,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     control: itemEditControl,
     formState: { errors: itemEditErrors },
     reset: resetItemEditForm,
+    getValues: getItemEditValues,
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -679,6 +680,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           ? String(item?.category?._id) === String(selectedCategoryForAdd)
           : true,
       )
+      .filter((item) => item?.isActive)
       .forEach((item) => {
         const itemId = item?._id;
         const itemName = item?.name?.trim();
@@ -893,11 +895,30 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       );
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: () => {            // for item
       toast.success("Item updated successfully!");
-      queryClient.invalidateQueries({
-        queryKey: ["inventory-items", department?._id],
-      });
+      queryClient.setQueriesData(
+        { queryKey: ["inventory-items", department?._id] },
+        (oldData) => {
+          if (!Array.isArray(oldData) || !selectedItem?._id) return oldData;
+
+          return oldData.map((item) =>
+            String(item?._id) === String(selectedItem._id)
+              ? {
+                  ...item,
+                  name: getItemEditValues("itemName")?.trim() || item.name,
+                  category:
+                    inventoryCategories.find(
+                      (cat) =>
+                        String(cat?._id) ===
+                        String(getItemEditValues("category")),
+                    ) || item.category,
+                  isActive: getItemEditValues("status") === "true",
+                }
+              : item,
+          );
+        },
+      );
       setIsAddItemModalOpen(false);
       setSelectedItem(null);
     },
@@ -911,7 +932,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     mutationFn: async (formData) => {
       const response = await axios.patch(
         `/api/inventory/update-inventory/${selectedAsset?._id}`,
-        formData,
+        {
+          consumptions: [
+            {
+              quantity: Number(formData.consumedNewPurchaseInventoryUnits) || 0,
+              source: "newPurchase",
+            },
+          ],
+        },
         {
           headers: {
             "Content-Type": "application/json",
@@ -929,7 +957,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       resetUpdateInventory();
     },
     onError: (error) => {
-      toast.error("Failed to update inventory. Please try again.");
+      toast.error(error.response.data.message);
       console.error(error);
     },
   });
@@ -1903,7 +1931,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               />
               <DetalisFormatted
                 title="Status"
-                detail={selectedCategory?.isActive ? "Active" : "Inactive"}
+                detail={selectedItem?.isActive ? "Active" : "Inactive"}
               />
             </div>
             {/* <div>
@@ -2529,7 +2557,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 <Controller
                   name="lastConsumedUnitValue"
                   control={updateControl}
-                 // rules={{ required: "Last consumed unit value is required" }}
+                  // rules={{ required: "Last consumed unit value is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
