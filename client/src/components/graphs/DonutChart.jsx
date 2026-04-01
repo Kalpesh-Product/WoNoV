@@ -82,7 +82,7 @@ const DonutChart = ({
             },
             total: {
               show: true,
-              label: `Total Due ${centerLabel}`,
+              label: `${centerLabel}`,
               fontSize: "16px",
               fontWeight: "bold",
               formatter: function (w) {

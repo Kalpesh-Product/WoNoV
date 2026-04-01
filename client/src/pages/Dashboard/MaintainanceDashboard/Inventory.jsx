@@ -22,11 +22,20 @@ import useAuth from "../../../hooks/useAuth";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const Inventory = ({ forcedBuildingTab = null }) => {
+  const normalizeUnitNo = (value) =>
+    String(value || "")
+      .trim()
+      .toUpperCase()
+      .replace(/^ST\s*/i, "")
+      .replace(/\s+/g, " ");
   const { auth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   //const { unitNo: unitNoParam } = useParams();
-  const { unitNo: unitNoParam, inventoryTab: inventoryTabParam } = useParams();
+  const {
+    unitNo: unitNoParam,
+    inventoryTab: inventoryTabParam,
+  } = useParams();
   const userPermissions = useMemo(
     () => auth?.user?.permissions?.permissions || [],
     [auth?.user?.permissions?.permissions],
@@ -203,6 +212,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     control: itemEditControl,
     formState: { errors: itemEditErrors },
     reset: resetItemEditForm,
+    getValues: getItemEditValues,
   } = useForm({
     mode: "onChange",
     defaultValues: {
@@ -373,10 +383,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue(
       "buildingName",
       selectedAsset?.buildingName ||
-        selectedUnit?.building?.buildingName ||
-        selectedUnit?.buildingName ||
-        selectedTabConfig?.buildingName ||
-        defaultBuildingName,
+      selectedUnit?.building?.buildingName ||
+      selectedUnit?.buildingName ||
+      selectedTabConfig?.buildingName ||
+      defaultBuildingName,
     );
     setValue(
       "unitNo",
@@ -387,9 +397,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue(
       "category",
       selectedAsset?.category?._id ||
-        selectedAsset?.categoryId ||
-        selectedAsset?.category ||
-        "",
+      selectedAsset?.categoryId ||
+      selectedAsset?.category ||
+      "",
     );
   }, [
     currentDate,
@@ -493,7 +503,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   useEffect(() => {
     const lastRemainingUnits = Number(
       (Number(updateOpeningUnits) || 0) -
-        (Number(updateLastConsumedUnits) || 0),
+      (Number(updateLastConsumedUnits) || 0),
     );
     const newPurchaseUnitsValue = Number(updateNewPurchaseUnits) || 0;
     const newConsumedUnits = Number(updateNewConsumedUnits) || 0;
@@ -540,11 +550,21 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           item.updatedAt ||
           new Date().toISOString();
 
+        // Fix: Check if addedBy has actual name properties
+        const hasAddedByName =
+          item.addedBy &&
+          (item.addedBy.firstName ||
+            item.addedBy.lastName ||
+            item.addedBy.name ||
+            item.addedBy.email);
+
         return {
           ...item,
           itemName: item?.itemName?.name || item?.itemName || "N/A",
           itemId: item?.itemName?._id || null,
-          unitId: item?.unit?._id || item?.unit || null,
+          unitId:
+            item?.unit?._id ||
+            (typeof item?.unit === "string" ? item.unit : null),
           unitNo: item?.unit?.unitNo || item?.unitNo || "",
           unitName: item?.unit?.unitName || "",
           buildingName:
@@ -555,15 +575,25 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           date: safeDate,
           dateRaw: safeDate,
           categoryId: item.category?._id || null,
-          categoryName: item.Category || item.category?.categoryName || "N/A",
-          addedByName: item.addedBy
+          // Fix: Handle both string and object category
+          categoryName:
+            item.Category ||
+            (typeof item.category === "string"
+              ? item.category
+              : item.category?.categoryName) ||
+            "N/A",
+          // Fix: Properly check for addedBy name
+          addedByName: hasAddedByName
             ? [
-                item.addedBy.firstName,
-                item.addedBy.middleName,
-                item.addedBy.lastName,
-              ]
-                .filter(Boolean)
-                .join(" ")
+              item.addedBy.firstName,
+              item.addedBy.middleName,
+              item.addedBy.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ") ||
+            item.addedBy.name ||
+            item.addedBy.email ||
+            "N/A"
             : "N/A",
           addedOn: item.createdAt || item.date || item.updatedAt || null,
         };
@@ -593,7 +623,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const inventoryTableData = useMemo(() => {
     if (!Array.isArray(inventoryData)) return [];
-    return inventoryData.filter((item) => !isItemMasterRecord(item));
+    return inventoryData;
   }, [inventoryData]);
 
   const { data: inventoryCategories = [] } = useQuery({
@@ -609,6 +639,40 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     },
   });
 
+  useEffect(() => {
+    if (modalMode !== "edit" || !selectedAsset || !inventoryCategories.length) {
+      return;
+    }
+
+    const selectedCategoryId =
+      selectedAsset?.category?._id ||
+      selectedAsset?.categoryId ||
+      (typeof selectedAsset?.category === "string"
+        ? selectedAsset.category
+        : "");
+
+    const selectedCategoryName =
+      selectedAsset?.categoryName ||
+      selectedAsset?.category?.categoryName ||
+      (typeof selectedAsset?.category === "string"
+        ? selectedAsset.category
+        : "");
+
+    const matchedCategory = inventoryCategories.find((category) => {
+      const categoryId = String(category?._id || "");
+      const categoryName = String(category?.categoryName || "");
+
+      return (
+        categoryId === String(selectedCategoryId || "") ||
+        categoryName.toLowerCase() === String(selectedCategoryName).toLowerCase()
+      );
+    });
+
+    if (matchedCategory?._id) {
+      setValue("category", matchedCategory._id);
+    }
+  }, [inventoryCategories, modalMode, selectedAsset, setValue]);
+
   const { data: unitsData = [] } = useQuery({
     queryKey: ["inventory-units-list"],
     queryFn: async () => {
@@ -618,33 +682,28 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   });
 
   const { data: inventoryItems = [] } = useQuery({
-    queryKey: ["inventory-items", department?._id],
-    // queryKey: [
-    //   "inventory-items",
-    //   department?._id,
-    //   selectedCategoryForAdd || "",
-    // ],
+    queryKey: [
+      "inventory-items",
+      department?._id,
+      selectedCategoryForAdd || "",
+    ],
     enabled: Boolean(department?._id),
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (department?._id) {
         searchParams.set("department", department._id);
       }
-      // if (selectedCategoryForAdd) {
-      //   searchParams.set("category", selectedCategoryForAdd);
-      // }
+      if (selectedCategoryForAdd) {
+        searchParams.set("category", selectedCategoryForAdd);
+      }
 
       const query = searchParams.toString();
       const response = await axios.get(`/api/items${query ? `?${query}` : ""}`);
-      if (Array.isArray(response.data)) {
-        return response.data;
-      }
-
-      if (Array.isArray(response.data?.data)) {
-        return response.data.data;
-      }
-
-      return [];
+      return Array.isArray(response.data?.data)
+        ? response.data.data
+        : Array.isArray(response.data)
+          ? response.data
+          : [];
     },
   });
 
@@ -658,6 +717,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           ? String(item?.category?._id) === String(selectedCategoryForAdd)
           : true,
       )
+      .filter((item) => item?.isActive)
       .forEach((item) => {
         const itemId = item?._id;
         const itemName = item?.name?.trim();
@@ -679,63 +739,149 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setAddValue("itemName", "");
   }, [selectedCategoryForAdd, setAddValue]);
 
+  // useEffect(() => {
+  //   const fetchOpeningData = async () => {
+  //     if (!selectedItemForAdd || !selectedCategoryForAdd || !department?._id)
+  //       return;
+
+  //     try {
+  //       const res = await axios.get(
+  //         `/api/inventory/get-inventories?department=${department._id}`,
+  //       );
+
+  //       const data = res.data || [];
+
+  //       const matched = data
+  //         .filter(
+  //           (item) =>
+  //             String(item?.itemName?._id) === String(selectedItemForAdd) &&
+  //             String(item?.category?._id) === String(selectedCategoryForAdd),
+  //         )
+  //         .sort(
+  //           (a, b) =>
+  //             new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date),
+  //         )[0];
+
+  //       if (matched) {
+  //         const units = Number(matched.closingInventoryUnits || 0);
+  //         const price = Number(matched.newPurchasePerUnitPrice || 0);
+
+  //         setAddValue("openingInventoryUnits", units, {
+  //           shouldValidate: true,
+  //         });
+
+  //         setAddValue("openingPerUnitPrice", price, {
+  //           shouldValidate: true,
+  //         });
+
+  //         setAddValue("openingInventoryValue", units * price, {
+  //           shouldValidate: true,
+  //         });
+  //       } else {
+  //         setAddValue("openingInventoryUnits", 0);
+  //         setAddValue("openingPerUnitPrice", 0);
+  //         setAddValue("openingInventoryValue", 0);
+  //       }
+  //     } catch (err) {
+  //       console.error(err);
+  //     }
+  //   };
+
+  //   fetchOpeningData();
+  // }, [
+  //   selectedItemForAdd,
+  //   selectedCategoryForAdd,
+  //   department?._id,
+  //   axios,
+  //   setAddValue,
+  // ]);
+
   useEffect(() => {
-    const fetchOpeningData = async () => {
-      if (!selectedItemForAdd || !selectedCategoryForAdd || !department?._id)
-        return;
+    if (!selectedItemForAdd || !selectedCategoryForAdd) {
+      setAddValue("openingInventoryUnits", 0);
+      setAddValue("openingPerUnitPrice", 0);
+      setAddValue("openingInventoryValue", 0);
+      return;
+    }
 
-      try {
-        const res = await axios.get(
-          `/api/inventory/get-inventories?department=${department._id}`,
-        );
+    const selectedItemOption = itemOptions.find(
+      (item) => String(item.id) === String(selectedItemForAdd),
+    );
+    const selectedCategoryOption = inventoryCategories.find(
+      (category) => String(category._id) === String(selectedCategoryForAdd),
+    );
 
-        const data = res.data || [];
+    const selectedItemName = selectedItemOption?.name?.trim().toLowerCase();
+    const selectedCategoryName = selectedCategoryOption?.categoryName
+      ?.trim()
+      .toLowerCase();
 
-        const matched = data
-          .filter(
-            (item) =>
-              String(item?.itemName?._id) === String(selectedItemForAdd) &&
-              String(item?.category?._id) === String(selectedCategoryForAdd),
+    const matched = [...(inventoryData || [])]
+      .filter(
+        (item) => {
+          const itemId = String(item?.itemName?._id || item?.itemId || "");
+          const categoryId = String(
+            item?.category?._id || item?.categoryId || "",
+          );
+          const itemName = String(item?.itemName || "")
+            .trim()
+            .toLowerCase();
+          const categoryName = String(
+            item?.categoryName || item?.category || item?.Category || "",
           )
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date),
-          )[0];
+            .trim()
+            .toLowerCase();
 
-        if (matched) {
-          const units = Number(matched.closingInventoryUnits || 0);
-          const price = Number(matched.newPurchasePerUnitPrice || 0);
+          const isItemMatched =
+            itemId === String(selectedItemForAdd) ||
+            (selectedItemName && itemName === selectedItemName);
+          const isCategoryMatched =
+            categoryId === String(selectedCategoryForAdd) ||
+            (selectedCategoryName && categoryName === selectedCategoryName);
 
-          setAddValue("openingInventoryUnits", units, {
-            shouldValidate: true,
-          });
+          return isItemMatched && isCategoryMatched;
+        },
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date || b.updatedAt || 0) -
+          new Date(a.createdAt || a.date || a.updatedAt || 0),
+      )[0];
 
-          setAddValue("openingPerUnitPrice", price, {
-            shouldValidate: true,
-          });
+    if (matched) {
+      const units = Number(matched.newPurchaseUnits || 0);
+      const price = Number(matched.newPurchasePerUnitPrice || 0);
+      const inventoryValue = Number(matched.newPurchaseInventoryValue);
 
-          setAddValue("openingInventoryValue", units * price, {
-            shouldValidate: true,
-          });
-        } else {
-          setAddValue("openingInventoryUnits", 0);
-          setAddValue("openingPerUnitPrice", 0);
-          setAddValue("openingInventoryValue", 0);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
+      setAddValue("openingInventoryUnits", units, {
+        shouldValidate: true,
+      });
 
-    fetchOpeningData();
+      setAddValue("openingPerUnitPrice", price, {
+        shouldValidate: true,
+      });
+
+      setAddValue(
+        "openingInventoryValue",
+        Number.isFinite(inventoryValue) ? inventoryValue : units * price,
+        {
+          shouldValidate: true,
+        },
+      );
+      return;
+    }
+
+    setAddValue("openingInventoryUnits", 0);
+    setAddValue("openingPerUnitPrice", 0);
+    setAddValue("openingInventoryValue", 0);
   }, [
     selectedItemForAdd,
     selectedCategoryForAdd,
-    department?._id,
-    axios,
+    inventoryData,
+    itemOptions,
+    inventoryCategories,
     setAddValue,
   ]);
-
   useEffect(() => {
     const activeBuildingName =
       selectedUnit?.building?.buildingName ||
@@ -873,10 +1019,30 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       return response.data;
     },
     onSuccess: () => {
+      // for item
       toast.success("Item updated successfully!");
-      queryClient.invalidateQueries({
-        queryKey: ["inventory-items", department?._id],
-      });
+      queryClient.setQueriesData(
+        { queryKey: ["inventory-items", department?._id] },
+        (oldData) => {
+          if (!Array.isArray(oldData) || !selectedItem?._id) return oldData;
+
+          return oldData.map((item) =>
+            String(item?._id) === String(selectedItem._id)
+              ? {
+                ...item,
+                name: getItemEditValues("itemName")?.trim() || item.name,
+                category:
+                  inventoryCategories.find(
+                    (cat) =>
+                      String(cat?._id) ===
+                      String(getItemEditValues("category")),
+                  ) || item.category,
+                isActive: getItemEditValues("status") === "true",
+              }
+              : item,
+          );
+        },
+      );
       setIsAddItemModalOpen(false);
       setSelectedItem(null);
     },
@@ -890,7 +1056,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     mutationFn: async (formData) => {
       const response = await axios.patch(
         `/api/inventory/update-inventory/${selectedAsset?._id}`,
-        formData,
+        {
+          consumptions: [
+            {
+              quantity: Number(formData.consumedNewPurchaseInventoryUnits) || 0,
+              source: "newPurchase",
+            },
+          ],
+        },
         {
           headers: {
             "Content-Type": "application/json",
@@ -908,7 +1081,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       resetUpdateInventory();
     },
     onError: (error) => {
-      toast.error("Failed to update inventory. Please try again.");
+      toast.error(error.response.data.message || "Failed to update inventory.");
       console.error(error);
     },
   });
@@ -946,9 +1119,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setAddValue(
       "buildingName",
       selectedUnit?.building?.buildingName ||
-        selectedUnit?.buildingName ||
-        selectedTabConfig?.buildingName ||
-        defaultBuildingName,
+      selectedUnit?.buildingName ||
+      selectedTabConfig?.buildingName ||
+      defaultBuildingName,
     );
     setAddValue("unitNo", selectedUnit?.unitNo || defaultUnitNo);
     setIsModalOpen(true);
@@ -1060,8 +1233,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     if (!selectedItem?._id) return;
     updateItem({
       name: data.itemName,
-      category: data.category,
-      status: data.status === "true",
+      //category: data.category,
+      isActive: data.status === "true",
     });
   };
 
@@ -1133,21 +1306,26 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       headerName: "New Purchase Value",
       cellRenderer: (params) => inrFormat(params.value),
     },
-    {
-      field: "consumedOpenInventoryUnits",
-      headerName: "Consumed Unit Value",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "remainingInventoryUnits",
-      headerName: "Remaining Unit Value",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "closingInventoryUnits",
-      headerName: "Closing Units",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
+    // {
+    //   field: "consumedOpenInventoryUnits",
+    //   headerName: "Consumed Unit Value",
+    //   cellRenderer: (params) => inrFormat(params.value),
+    // },
+    // {
+    //   field: "remainingInventoryUnits",
+    //   headerName: "Remaining Unit Value",
+    //   cellRenderer: (params) => inrFormat(params.value),
+    // },
+{
+  headerName: "Closing Units",
+  cellRenderer: (params) => {
+    const value =
+      (params.data.remainingOpeningInventoryUnits || 0) +
+      (params.data.remainingNewPurchaseInventoryUnits || 0);
+
+    return inrFormat(value);
+  },
+},
     {
       field: "categoryName",
       headerName: "Category",
@@ -1173,6 +1351,16 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 setSelectedAsset(params.data);
                 setModalMode("edit");
                 setIsModalOpen(true);
+              },
+            },
+            {
+              label: "View Records",
+              onClick: () => {
+                const currentPath = location.pathname.endsWith("/")
+                  ? location.pathname.slice(0, -1)
+                  : location.pathname;
+                const recordPath = `${currentPath}/${encodeURIComponent(params.data.categoryName || "uncategorized")}/${encodeURIComponent(params.data.itemName)}`;
+                navigate(recordPath, { target: "_blank" });
               },
             },
           ]}
@@ -1203,8 +1391,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       const matchesBuilding =
         aliases.length === 0
           ? unitBuildingName.includes(
-              selectedTabConfig.buildingName.toLowerCase(),
-            )
+            selectedTabConfig.buildingName.toLowerCase(),
+          )
           : aliases.some((alias) => unitBuildingName.includes(alias));
 
       if (!matchesBuilding) return false;
@@ -1224,9 +1412,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     return selectedBuildingUnits.map((unit, index) => {
       const normalizedBuildingName = String(
         unit?.buildingName ||
-          unit?.building?.buildingName ||
-          unit?.building ||
-          "",
+        unit?.building?.buildingName ||
+        unit?.building ||
+        "",
       ).toLowerCase();
       const buildingAliases =
         selectedTabConfig?.buildingAliases?.map((alias) =>
@@ -1235,8 +1423,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
       const linkedInventory = inventoryTableData?.find((inv) => {
         const matchesUnit =
-          String(inv?.unitNo || "").trim() ===
-          String(unit?.unitNo || "").trim();
+          normalizeUnitNo(inv?.unitNo) === normalizeUnitNo(unit?.unitNo);
 
         if (!matchesUnit) return false;
 
@@ -1304,25 +1491,63 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     { field: "unitName", headerName: "Unit Name", minWidth: 210, flex: 1 },
   ];
 
+  // const selectedUnitInventoryRows = useMemo(() => {
+  //   if (!selectedUnit) return inventoryTableData;
+
+  //   return (inventoryTableData || []).filter((item) => {
+  //     const matchesUnit =
+  //       normalizeUnitNo(item?.unitNo) === normalizeUnitNo(selectedUnit?.unitNo);
+
+  //     return matchesUnit;
+  //   });
+  // }, [inventoryTableData, selectedUnit]);
+
   const selectedUnitInventoryRows = useMemo(() => {
-    if (!selectedUnit) return [];
+    const unitFilteredRows = selectedUnit
+      ? (inventoryTableData || []).filter(
+        (item) =>
+          normalizeUnitNo(item?.unitNo) === normalizeUnitNo(selectedUnit?.unitNo),
+      )
+      : inventoryTableData || [];
 
-    const buildingAliases =
-      selectedTabConfig?.buildingAliases?.map((alias) => alias.toLowerCase()) ||
-      [];
+    const latestByItemCategory = new Map();
 
-    return (inventoryTableData || []).filter((item) => {
-      const matchesUnit =
-        String(item?.unitNo || "").trim() ===
-        String(selectedUnit?.unitNo || "").trim();
-      if (!matchesUnit) return false;
+    unitFilteredRows.forEach((item) => {
+      const itemKey =
+        String(item?.itemId || item?.itemName || "")
+          .trim()
+          .toLowerCase() || "unknown-item";
+      const categoryKey =
+        String(item?.categoryId || item?.categoryName || item?.category || "")
+          .trim()
+          .toLowerCase() || "unknown-category";
+      const compositeKey = `${itemKey}__${categoryKey}`;
 
-      const itemBuildingName = String(item?.buildingName || "").toLowerCase();
-      if (buildingAliases.length === 0) return true;
+      const existing = latestByItemCategory.get(compositeKey);
+      const itemDate = new Date(
+        item?.createdAt || item?.dateRaw || item?.date || item?.updatedAt || 0,
+      );
+      const existingDate = existing
+        ? new Date(
+          existing?.createdAt ||
+          existing?.dateRaw ||
+          existing?.date ||
+          existing?.updatedAt ||
+          0,
+        )
+        : null;
 
-      return buildingAliases.some((alias) => itemBuildingName.includes(alias));
+      if (!existing || itemDate > existingDate) {
+        latestByItemCategory.set(compositeKey, item);
+      }
     });
-  }, [inventoryTableData, selectedTabConfig?.buildingAliases, selectedUnit]);
+
+    return Array.from(latestByItemCategory.values()).sort(
+      (a, b) =>
+        new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
+        new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
+    );
+  }, [inventoryTableData, selectedUnit]);
 
   const projectShortName =
     selectedBuildingTab === "dempo"
@@ -1357,11 +1582,17 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   };
 
   const categoryColumns = [
-    { field: "srNo", headerName: "Sr. No", width: 110 },
+    {
+      field: "srNo",
+      headerName: "Sr. No",
+      flex: 0.5,
+      minWidth: 80,
+    },
     {
       field: "categoryName",
       headerName: "Category Name",
-      flex: 1,
+      flex: 2,
+      minWidth: 200,
       cellRenderer: (params) => (
         <span
           role="button"
@@ -1375,13 +1606,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     {
       field: "status",
       headerName: "Status",
-      width: 150,
+      flex: 1,
+      minWidth: 120,
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
       field: "action",
       headerName: "Action",
-      width: 110,
+      flex: 0.8,
+      minWidth: 100,
       cellRenderer: (params) => (
         <ThreeDotMenu
           rowId={params.data._id}
@@ -1492,13 +1725,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="button"
                       disabled={isActive}
                       onClick={() => handleTabChange(tab.key)}
-                      className={`py-3 px-4 text-center font-normal text-[16px] transition-colors ${
-                        arr.length === 1 ? "w-full" : "flex-1"
-                      } ${
-                        isActive
+                      className={`py-3 px-4 text-center font-normal text-[16px] transition-colors ${arr.length === 1 ? "w-full" : "flex-1"
+                        } ${isActive
                           ? "bg-primary text-white cursor-default"
                           : "bg-white text-primary"
-                      } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
+                        } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
                     >
                       {tab.label}
                     </button>
@@ -1553,11 +1784,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                     type="button"
                     disabled={isActive}
                     onClick={() => handleUnitTabChange(tab.key)}
-                    className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${
-                      isActive
-                        ? "bg-primary text-white cursor-default"
-                        : "bg-white text-primary"
-                    } ${index !== unitTabOptions.length - 1 ? "border-r border-borderGray" : ""}`}
+                    className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${isActive
+                      ? "bg-primary text-white cursor-default"
+                      : "bg-white text-primary"
+                      } ${index !== unitTabOptions.length - 1 ? "border-r border-borderGray" : ""}`}
                   >
                     {tab.label}
                   </button>
@@ -1727,6 +1957,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 </TextField>
               )}
             />
+
             <PrimaryButton
               title={isUpdatingCategory ? "Updating..." : "Update Category"}
               className="w-full"
@@ -1884,7 +2115,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               />
               <DetalisFormatted
                 title="Status"
-                detail={selectedCategory?.isActive ? "Active" : "Inactive"}
+                detail={selectedItem?.isActive ? "Active" : "Inactive"}
               />
             </div>
             {/* <div>
@@ -2260,24 +2491,25 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   : "N/A"
               }
             />
-            <DetalisFormatted
+           <DetalisFormatted
               title="Closing Units"
-              detail={selectedAsset.closingInventoryUnits ?? "N/A"}
-            />
+              detail={
+                (selectedAsset?.remainingOpeningInventoryUnits || 0) +
+                (selectedAsset?.remainingNewPurchaseInventoryUnits || 0)
+              }
+              />
             <br />
             <div className="font-bold">Inventory Value</div>
             <DetalisFormatted
               title="Opening Value"
-              detail={`INR ${
-                inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
-              }`}
+              detail={`INR ${inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
+                }`}
             />
 
             <DetalisFormatted
               title="New Purchase Value"
-              detail={`INR ${
-                inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
-              }`}
+              detail={`INR ${inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
+                }`}
             />
             <br />
             <div className="font-bold">Inventory Added By</div>
@@ -2412,8 +2644,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       disabled
-                      // error={!!updateErrors.openingInventoryUnits}
-                      // helperText={updateErrors.openingInventoryUnits?.message}
+                    // error={!!updateErrors.openingInventoryUnits}
+                    // helperText={updateErrors.openingInventoryUnits?.message}
                     />
                   )}
                 />
@@ -2430,8 +2662,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       disabled
-                      // error={!!updateErrors.openingPerUnitPrice}
-                      // helperText={updateErrors.openingPerUnitPrice?.message}
+                    // error={!!updateErrors.openingPerUnitPrice}
+                    // helperText={updateErrors.openingPerUnitPrice?.message}
                     />
                   )}
                 />
@@ -2466,8 +2698,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       disabled
-                      // error={!!updateErrors.newPurchaseUnits}
-                      // helperText={updateErrors.newPurchaseUnits?.message}
+                    // error={!!updateErrors.newPurchaseUnits}
+                    // helperText={updateErrors.newPurchaseUnits?.message}
                     />
                   )}
                 />
@@ -2484,8 +2716,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       disabled
-                      // error={!!updateErrors.newPurchasePerUnitPrice}
-                      // helperText={updateErrors.newPurchasePerUnitPrice?.message}
+                    // error={!!updateErrors.newPurchasePerUnitPrice}
+                    // helperText={updateErrors.newPurchasePerUnitPrice?.message}
                     />
                   )}
                 />
@@ -2510,7 +2742,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 <Controller
                   name="lastConsumedUnitValue"
                   control={updateControl}
-                  rules={{ required: "Last consumed unit value is required" }}
+                  // rules={{ required: "Last consumed unit value is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2518,8 +2750,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="number"
                       size="small"
                       fullWidth
-                      error={!!updateErrors.lastConsumedUnitValue}
-                      helperText={updateErrors.lastConsumedUnitValue?.message}
+                      disabled
+                    // error={!!updateErrors.lastConsumedUnitValue}
+                    // helperText={updateErrors.lastConsumedUnitValue?.message}
                     />
                   )}
                 />

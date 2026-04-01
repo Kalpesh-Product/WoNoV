@@ -29,6 +29,7 @@ import { queryClient } from "../../../main";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
+import { useNavigate } from "react-router-dom";
 
 const ListOfAssets = () => {
   const { auth } = useAuth();
@@ -39,6 +40,7 @@ const ListOfAssets = () => {
   const [selectedForEdit, setSelectedForEdit] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  const navigate = useNavigate();
 
   //---------------------Forms----------------------//
   const {
@@ -46,6 +48,7 @@ const ListOfAssets = () => {
     control,
     formState: { errors },
     watch,
+    setValue: setAddValue,
     reset,
   } = useForm({
     defaultValues: {
@@ -54,14 +57,19 @@ const ListOfAssets = () => {
       subCategoryId: "",
       vendorId: "",
       name: "",
+      assetId: "",
+      secondaryId: "",
       purchaseDate: null,
       quantity: 0,
       price: 0,
       brand: "",
+      totalPrice: 0,
       assetType: "",
       warranty: 0,
+      warrantyExpiryDate: null,
       ownershipType: "",
       rentedMonths: 0,
+      rentedExpirationDate: null,
       tangable: "",
       locationId: "",
       location: "",
@@ -84,14 +92,19 @@ const ListOfAssets = () => {
       subCategoryId: "",
       vendorId: "",
       name: "",
+      assetId: "",
+      secondaryId: "",
       purchaseDate: null,
       quantity: 0,
       price: 0,
       brand: "",
+      totalPrice: 0,
       assetType: "",
       warranty: 0,
+      warrantyExpiryDate: null,
       ownershipType: "",
       rentedMonths: 0,
+      rentedExpirationDate: null,
       tangable: "",
       locationId: "",
       location: "",
@@ -107,6 +120,12 @@ const ListOfAssets = () => {
   const selectedCategory = watch("categoryId");
   const selectedLocation = watch("location");
   const selectedUnit = watch("floor");
+  const watchedPurchaseDate = watch("purchaseDate");
+  const watchedQuantity = watch("quantity");
+  const watchedPrice = watch("price");
+  const watchedWarranty = watch("warranty");
+  const watchedOwnershipType = watch("ownershipType");
+  const watchedRentedMonths = watch("rentedMonths");
 
   //---------------------Forms----------------------//
 
@@ -160,6 +179,9 @@ const ListOfAssets = () => {
       }
     },
   });
+  const activeVendorDetails = vendorDetails.filter(
+    (item) => item?.status === "Active",
+  );
   const { mutate: addAsset, isPending: isAddingAsset } = useMutation({
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
@@ -169,6 +191,8 @@ const ListOfAssets = () => {
       formData.append("subCategoryId", data.subCategoryId);
       formData.append("vendorId", data.vendorId);
       formData.append("name", data.name);
+      formData.append("assetId", data.assetId);
+      formData.append("secondaryId", data.secondaryId || "");
       formData.append("isDamaged", data.isDamaged);
       formData.append("isUnderMaintenance", data.isUnderMaintenance);
       formData.append("status", data.status);
@@ -203,6 +227,45 @@ const ListOfAssets = () => {
     },
   });
   useEffect(() => {
+    const totalPrice = (Number(watchedQuantity) || 0) * (Number(watchedPrice) || 0);
+    setAddValue("totalPrice", totalPrice, { shouldValidate: true });
+
+    if (watchedPurchaseDate && Number(watchedWarranty) > 0) {
+      setAddValue(
+        "warrantyExpiryDate",
+        dayjs(watchedPurchaseDate).add(Number(watchedWarranty), "month").toISOString(),
+        { shouldValidate: true },
+      );
+    } else {
+      setAddValue("warrantyExpiryDate", null, { shouldValidate: true });
+    }
+
+    if (
+      watchedOwnershipType === "Rental" &&
+      watchedPurchaseDate &&
+      Number(watchedRentedMonths) > 0
+    ) {
+      setAddValue(
+        "rentedExpirationDate",
+        dayjs(watchedPurchaseDate)
+          .add(Number(watchedRentedMonths), "month")
+          .toISOString(),
+        { shouldValidate: true },
+      );
+    } else {
+      setAddValue("rentedExpirationDate", null, { shouldValidate: true });
+    }
+  }, [
+    watchedQuantity,
+    watchedPrice,
+    watchedPurchaseDate,
+    watchedWarranty,
+    watchedOwnershipType,
+    watchedRentedMonths,
+    setAddValue,
+  ]);
+
+  useEffect(() => {
     const selected = assetsList.find((item) => item._id === selectedAsset?._id);
     if (selected) {
       setSelectedForEdit(selected);
@@ -220,6 +283,8 @@ const ListOfAssets = () => {
         subCatId: selectedForEdit?.subCategory?._id || "",
         vendorId: selectedForEdit?.vendor?._id || "",
         name: selectedForEdit?.name || "",
+        assetId: selectedForEdit?.assetId || "",
+        secondaryId: selectedForEdit?.secondaryId || "",
         purchaseDate: selectedForEdit?.purchaseDate || null,
         quantity: selectedForEdit?.quantity || 0,
         price: selectedForEdit?.price || 0,
@@ -259,6 +324,8 @@ const ListOfAssets = () => {
       formData.append("subCategoryId", data.subCatId);
       formData.append("vendorId", data.vendorId);
       formData.append("name", data.name);
+      formData.append("assetId", data.assetId);
+      formData.append("secondaryId", data.secondaryId || "");
       formData.append("purchaseDate", data.purchaseDate);
       formData.append("quantity", Number(data.quantity));
       formData.append("price", Number(data.price));
@@ -371,8 +438,9 @@ const ListOfAssets = () => {
   //-----------------------Event handlers----------------------//
   //-----------------------Table Data----------------------//
   const assetColumns = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "assetId", headerName: "Asset Id" },
+    { field: "secondaryId", headerName: "Secondary Id" },
     { field: "department", headerName: "Department" },
     { field: "subCategory", headerName: "Sub-Category" },
     { field: "brand", headerName: "Brand" },
@@ -383,6 +451,16 @@ const ListOfAssets = () => {
     },
     { field: "purchaseDate", headerName: "Purchase Date" },
     { field: "warranty", headerName: "Warranty (Months)" },
+    {
+      field: "warrantyExpiryDate",
+      headerName: "Warranty Expiry Date",
+      cellRenderer: (params) => humanDate(params.value),
+    },
+    {
+      field: "rentedExpirationDate",
+      headerName: "Rental Expiry Date",
+      cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -509,18 +587,35 @@ const ListOfAssets = () => {
                 <TextField
                   select
                   {...field}
+                  onChange={(event) => {
+                    const selectedValue = event.target.value;
+
+                    if (selectedValue === "add_vendor") {
+                      // Open in new tab (blank page)
+                      window.open("/app/assets/mix-bag/vender/vendor-onboard", "_blank");
+
+                      // Reset the dropdown after navigation
+                      setTimeout(() => {
+                        event.target.value = "";
+                      }, 0);
+
+                      return;
+                    }
+
+                    field.onChange(event);
+                  }}
                   size="small"
                   fullWidth
                   label="Vendor"
                   error={!!errors.vendorId}
                   helperText={errors?.vendorId?.message}
                 >
-                  <MenuItem value="" disabled>
-                    <em>Select a Vendor</em>
+                  <MenuItem value="add_vendor">
+                    <em>Add Vendor</em>
                   </MenuItem>
                   {isVendorDetails
                     ? []
-                    : vendorDetails.map((item) => (
+                    : activeVendorDetails.map((item) => (
                       <MenuItem key={item._id} value={item._id}>
                         {item.companyName || item.name}
                       </MenuItem>
@@ -596,9 +691,26 @@ const ListOfAssets = () => {
                   size="small"
                   fullWidth
                   type="number"
-                  label="Price"
+                  label="Per Quantity Price"
                   error={!!errors.price}
                   helperText={errors?.price?.message}
+                />
+              )}
+            />
+            <Controller
+              name="totalPrice"
+              control={control}
+              rules={{ required: "Price is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Total Price"
+                  disabled
+                  error={!!errors.totalPrice}
+                  helperText={errors?.totalPrice?.message}
                 />
               )}
             />
@@ -652,9 +764,33 @@ const ListOfAssets = () => {
                   size="small"
                   fullWidth
                   type="number"
-                  label="Warranty (Months)"
+                  label="Warranty in Months"
                   error={!!errors.warranty}
                   helperText={errors?.warranty?.message}
+                />
+              )}
+            />
+            <Controller
+              name="warrantyExpiryDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  format="DD-MM-YYYY"
+                  label="Warranty Expiry Date"
+                  disabled
+                  value={field.value ? dayjs(field.value) : null}
+                  onChange={(date) => {
+                    field.onChange(date ? date.toISOString() : null);
+                  }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                      error: !!errors.warrantyExpiryDate,
+                      helperText: errors?.warrantyExpiryDate?.message,
+                    },
+                  }}
                 />
               )}
             />
@@ -681,28 +817,6 @@ const ListOfAssets = () => {
               )}
             />
             <Controller
-              name="rentedMonths"
-              control={control}
-              rules={{
-                validate: (value) =>
-                  watch("ownershipType") !== "Rental" ||
-                  Number(value) > 0 ||
-                  "Rented Months is required for Rental assets",
-              }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  fullWidth
-                  type="number"
-                  label="Rented Months"
-                  disabled={watch("ownershipType") !== "Rental"}
-                  error={!!errors.rentedMonths}
-                  helperText={errors?.rentedMonths?.message}
-                />
-              )}
-            />
-            <Controller
               name="tangable"
               control={control}
               rules={{ required: "Tangible is required" }}
@@ -724,7 +838,49 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
-
+            <Controller
+              name="rentedMonths"
+              control={control}
+              rules={{
+                validate: (value) =>
+                  watch("ownershipType") !== "Rental" ||
+                  Number(value) > 0 ||
+                  "Rented Months is required for Rental assets",
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  type="number"
+                  label="Rented for Months"
+                  disabled={watch("ownershipType") !== "Rental"}
+                  error={!!errors.rentedMonths}
+                  helperText={errors?.rentedMonths?.message}
+                />
+              )}
+            />
+            <Controller
+              name="rentedExpirationDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  format="DD-MM-YYYY"
+                  label="Rented Expiration Date"
+                  disabled
+                  value={field.value ? dayjs(field.value) : null}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                      error: !!errors.rentedExpirationDate,
+                      helperText: errors?.rentedExpirationDate?.message,
+                    },
+                  }}
+                />
+              )}
+            />
             <Controller
               name="location"
               control={control}
@@ -794,17 +950,19 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
-            <Controller
-              name="assetImage"
-              control={control}
-              render={({ field }) => (
-                <UploadFileInput
-                  value={field.value}
-                  label="Asset Image"
-                  onChange={field.onChange}
-                />
-              )}
-            />
+            <div className="col-span-1">
+              <Controller
+                name="assetImage"
+                control={control}
+                render={({ field }) => (
+                  <UploadFileInput
+                    value={field.value}
+                    label="Asset Image"
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
 
             <PrimaryButton
               title={"Add Asset"}
@@ -827,6 +985,39 @@ const ListOfAssets = () => {
             )}
             className="grid grid-cols-2 gap-4"
           >
+            <Controller
+              name="assetId"
+              control={editControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Asset ID"
+                  disabled
+                  error={!!editErrors.assetId}
+                  helperText={editErrors?.assetId?.message}
+                />
+              )}
+            />
+            <Controller
+              name="secondaryId"
+              control={editControl}
+              rules={{
+                validate: (value) =>
+                  !value || noOnlyWhitespace(value) === true || "Enter a valid Secondary ID",
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Secondary ID"
+                  error={!!editErrors.secondaryId}
+                  helperText={editErrors?.secondaryId?.message}
+                />
+              )}
+            />
             <Controller
               name="name"
               control={editControl}
@@ -1106,6 +1297,10 @@ const ListOfAssets = () => {
               detail={selectedAsset?.assetId || "N/A"}
             />
             <DetalisFormatted
+              title={"Secondary ID"}
+              detail={selectedAsset?.secondaryId || "N/A"}
+            />
+            <DetalisFormatted
               title={"Asset Name"}
               detail={selectedAsset?.name || "N/A"}
             />
@@ -1136,6 +1331,14 @@ const ListOfAssets = () => {
             <DetalisFormatted
               title={"Purchase Date"}
               detail={humanDate(selectedAsset?.purchaseDate)}
+            />
+            <DetalisFormatted
+              title={"Warranty Expiry Date"}
+              detail={selectedAsset?.warrantyExpiryDate ? humanDate(selectedAsset?.warrantyExpiryDate) : "N/A"}
+            />
+            <DetalisFormatted
+              title={"Rental Expiry Date"}
+              detail={selectedAsset?.rentedExpirationDate ? humanDate(selectedAsset?.rentedExpirationDate) : "N/A"}
             />
             <DetalisFormatted
               title={"Category"}

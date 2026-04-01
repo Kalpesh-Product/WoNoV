@@ -23,6 +23,11 @@ const HrAttendance = () => {
       start: new Date(2025, 3, 1),
       end: new Date(2026, 2, 31),
     },
+    {
+      label: "FY 2026–27",
+      start: new Date(2026, 3, 1),
+      end: new Date(2027, 2, 31),
+    },
   ];
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
@@ -157,7 +162,7 @@ const HrAttendance = () => {
         for (let day = 1; day <= daysInMonth; day++) {
           const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
-          const isWeekend = date.day() === 0 || date.day() === 6;
+          const isWeekend = date.day() === 0 || date.day() === 7;
           const beforeJoining =
             startDate.isValid() && date.isBefore(startDate, "day");
 

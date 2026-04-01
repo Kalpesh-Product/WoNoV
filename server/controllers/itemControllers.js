@@ -1,5 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const Item = require("../models/Item");
+const Inventory = require("../models/inventory/Inventory");
+const Category = require("../models/category/Category");
 
 const addItem = async (req, res) => {
   try {
@@ -49,7 +51,7 @@ const addItem = async (req, res) => {
       name: name.trim(),
       department: department || null,
       category: category || null,
-      addedBy: user?._id,
+      addedBy: user,
     });
 
     return res.status(201).json({
@@ -69,9 +71,7 @@ const getItems = async (req, res) => {
   try {
     const { department, category } = req.query;
 
-    let filter = {
-      isActive: true,
-    };
+    let filter = {};
 
     // ✅ Validate before using in query
     if (department) {
@@ -95,9 +95,10 @@ const getItems = async (req, res) => {
     }
 
     const items = await Item.find(filter)
-      .select("name department category")
+      .select("name department category isActive createdAt updatedAt")
       .populate("department", "name")
-      .populate("category", "name")
+      .populate("category", "categoryName")
+      .populate("addedBy", "firstName lastName")
       .sort({ name: 1 })
       .lean();
 
@@ -114,17 +115,98 @@ const getItems = async (req, res) => {
   }
 };
 
-// const items = await Inventory.find();
+const updateItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, isActive, department, category } = req.body;
 
-// for (const inv of items) {
-//   let item = await Item.findOne({ name: inv.itemNameText });
+    /* ------------------ Validate ID ------------------ */
 
-//   if (!item) {
-//     item = await Item.create({ name: inv.itemNameText });
-//   }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid item id",
+      });
+    }
 
-//   inv.itemName = item._id;
-//   await inv.save();
-// }
+    /* ------------------ Fetch existing ------------------ */
 
-module.exports = { addItem, getItems };
+    const existingItem = await Item.findById(id);
+
+    if (!existingItem) {
+      return res.status(404).json({
+        success: false,
+        message: "Item not found",
+      });
+    }
+
+    /* ------------------ Validate name ------------------ */
+
+    if (name && !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Item name cannot be empty",
+      });
+    }
+
+    /* ------------------ Validate ObjectIds ------------------ */
+
+    if (department && !mongoose.Types.ObjectId.isValid(department)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid department id",
+      });
+    }
+
+    if (category && !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category id",
+      });
+    }
+
+    /* ------------------ Duplicate check ------------------ */
+
+    if (name) {
+      const normalizedName = name.trim().toLowerCase();
+
+      const duplicate = await Item.findOne({
+        _id: { $ne: id }, // exclude current item
+        name: { $regex: new RegExp(`^${normalizedName}$`, "i") },
+        department: department ?? existingItem.department ?? null,
+        category: category ?? existingItem.category ?? null,
+      });
+
+      if (duplicate) {
+        return res.status(400).json({
+          success: false,
+          message: "Item with same name already exists",
+        });
+      }
+    }
+
+    /* ------------------ Update ------------------ */
+
+    const updated = await Item.findByIdAndUpdate(
+      id,
+      {
+        ...(name && { name: name.trim() }),
+        ...(typeof isActive === "boolean" && { isActive }),
+      },
+      { new: true, runValidators: true },
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Item updated successfully",
+      data: updated,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Something went wrong",
+    });
+  }
+};
+
+module.exports = { addItem, getItems, updateItem };
