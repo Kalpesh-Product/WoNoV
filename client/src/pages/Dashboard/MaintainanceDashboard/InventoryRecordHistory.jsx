@@ -131,7 +131,7 @@ const InventoryRecordHistory = () => {
         },
     ];
 
-    const tableTitle = `Inventory History - ${decodedItemName || "Item"} - ${decodedCategoryName || "Category"} - ${decodedUnitNo || "Unit"}`;
+    const tableTitle = `Inventory History - ${decodedItemName || "Item"} - ${decodedCategoryName || "Category"}`;
 
     return (
         <PageFrame>

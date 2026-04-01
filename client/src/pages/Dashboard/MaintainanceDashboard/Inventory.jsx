@@ -1047,7 +1047,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       resetUpdateInventory();
     },
     onError: (error) => {
-      toast.error(error.response.data.message);
+      toast.error(error.response.data.message || "Failed to update inventory.");
       console.error(error);
     },
   });
@@ -1321,7 +1321,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   ? location.pathname.slice(0, -1)
                   : location.pathname;
                 const recordPath = `${currentPath}/${encodeURIComponent(params.data.categoryName || "uncategorized")}/${encodeURIComponent(params.data.itemName)}`;
-                window.open(recordPath, "_blank", "noopener,noreferrer");
+                navigate(recordPath, { target: "_blank" });
               },
             },
           ]}
