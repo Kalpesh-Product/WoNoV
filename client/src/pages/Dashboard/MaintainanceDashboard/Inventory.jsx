@@ -380,10 +380,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue(
       "buildingName",
       selectedAsset?.buildingName ||
-        selectedUnit?.building?.buildingName ||
-        selectedUnit?.buildingName ||
-        selectedTabConfig?.buildingName ||
-        defaultBuildingName,
+      selectedUnit?.building?.buildingName ||
+      selectedUnit?.buildingName ||
+      selectedTabConfig?.buildingName ||
+      defaultBuildingName,
     );
     setValue(
       "unitNo",
@@ -394,9 +394,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue(
       "category",
       selectedAsset?.category?._id ||
-        selectedAsset?.categoryId ||
-        selectedAsset?.category ||
-        "",
+      selectedAsset?.categoryId ||
+      selectedAsset?.category ||
+      "",
     );
   }, [
     currentDate,
@@ -500,7 +500,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   useEffect(() => {
     const lastRemainingUnits = Number(
       (Number(updateOpeningUnits) || 0) -
-        (Number(updateLastConsumedUnits) || 0),
+      (Number(updateLastConsumedUnits) || 0),
     );
     const newPurchaseUnitsValue = Number(updateNewPurchaseUnits) || 0;
     const newConsumedUnits = Number(updateNewConsumedUnits) || 0;
@@ -582,15 +582,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           // Fix: Properly check for addedBy name
           addedByName: hasAddedByName
             ? [
-                item.addedBy.firstName,
-                item.addedBy.middleName,
-                item.addedBy.lastName,
-              ]
-                .filter(Boolean)
-                .join(" ") ||
-              item.addedBy.name ||
-              item.addedBy.email ||
-              "N/A"
+              item.addedBy.firstName,
+              item.addedBy.middleName,
+              item.addedBy.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ") ||
+            item.addedBy.name ||
+            item.addedBy.email ||
+            "N/A"
             : "N/A",
           addedOn: item.createdAt || item.date || item.updatedAt || null,
         };
@@ -905,16 +905,16 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           return oldData.map((item) =>
             String(item?._id) === String(selectedItem._id)
               ? {
-                  ...item,
-                  name: getItemEditValues("itemName")?.trim() || item.name,
-                  category:
-                    inventoryCategories.find(
-                      (cat) =>
-                        String(cat?._id) ===
-                        String(getItemEditValues("category")),
-                    ) || item.category,
-                  isActive: getItemEditValues("status") === "true",
-                }
+                ...item,
+                name: getItemEditValues("itemName")?.trim() || item.name,
+                category:
+                  inventoryCategories.find(
+                    (cat) =>
+                      String(cat?._id) ===
+                      String(getItemEditValues("category")),
+                  ) || item.category,
+                isActive: getItemEditValues("status") === "true",
+              }
               : item,
           );
         },
@@ -995,9 +995,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setAddValue(
       "buildingName",
       selectedUnit?.building?.buildingName ||
-        selectedUnit?.buildingName ||
-        selectedTabConfig?.buildingName ||
-        defaultBuildingName,
+      selectedUnit?.buildingName ||
+      selectedTabConfig?.buildingName ||
+      defaultBuildingName,
     );
     setAddValue("unitNo", selectedUnit?.unitNo || defaultUnitNo);
     setIsModalOpen(true);
@@ -1224,6 +1224,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 setIsModalOpen(true);
               },
             },
+            {
+              label: "View Records",
+              onClick: () => {
+                setSelectedAsset(params.data);
+                setModalMode("view");
+                setIsModalOpen(true);
+              },
+            }
           ]}
         />
       ),
@@ -1252,8 +1260,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       const matchesBuilding =
         aliases.length === 0
           ? unitBuildingName.includes(
-              selectedTabConfig.buildingName.toLowerCase(),
-            )
+            selectedTabConfig.buildingName.toLowerCase(),
+          )
           : aliases.some((alias) => unitBuildingName.includes(alias));
 
       if (!matchesBuilding) return false;
@@ -1273,9 +1281,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     return selectedBuildingUnits.map((unit, index) => {
       const normalizedBuildingName = String(
         unit?.buildingName ||
-          unit?.building?.buildingName ||
-          unit?.building ||
-          "",
+        unit?.building?.buildingName ||
+        unit?.building ||
+        "",
       ).toLowerCase();
       const buildingAliases =
         selectedTabConfig?.buildingAliases?.map((alias) =>
@@ -1539,13 +1547,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="button"
                       disabled={isActive}
                       onClick={() => handleTabChange(tab.key)}
-                      className={`py-3 px-4 text-center font-normal text-[16px] transition-colors ${
-                        arr.length === 1 ? "w-full" : "flex-1"
-                      } ${
-                        isActive
+                      className={`py-3 px-4 text-center font-normal text-[16px] transition-colors ${arr.length === 1 ? "w-full" : "flex-1"
+                        } ${isActive
                           ? "bg-primary text-white cursor-default"
                           : "bg-white text-primary"
-                      } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
+                        } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
                     >
                       {tab.label}
                     </button>
@@ -1600,11 +1606,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                     type="button"
                     disabled={isActive}
                     onClick={() => handleUnitTabChange(tab.key)}
-                    className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${
-                      isActive
-                        ? "bg-primary text-white cursor-default"
-                        : "bg-white text-primary"
-                    } ${index !== unitTabOptions.length - 1 ? "border-r border-borderGray" : ""}`}
+                    className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${isActive
+                      ? "bg-primary text-white cursor-default"
+                      : "bg-white text-primary"
+                      } ${index !== unitTabOptions.length - 1 ? "border-r border-borderGray" : ""}`}
                   >
                     {tab.label}
                   </button>
@@ -1774,7 +1779,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 </TextField>
               )}
             />
-            
+
             <PrimaryButton
               title={isUpdatingCategory ? "Updating..." : "Update Category"}
               className="w-full"
@@ -2316,16 +2321,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
             <div className="font-bold">Inventory Value</div>
             <DetalisFormatted
               title="Opening Value"
-              detail={`INR ${
-                inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
-              }`}
+              detail={`INR ${inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
+                }`}
             />
 
             <DetalisFormatted
               title="New Purchase Value"
-              detail={`INR ${
-                inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
-              }`}
+              detail={`INR ${inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
+                }`}
             />
             <br />
             <div className="font-bold">Inventory Added By</div>
@@ -2460,8 +2463,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       disabled
-                      // error={!!updateErrors.openingInventoryUnits}
-                      // helperText={updateErrors.openingInventoryUnits?.message}
+                    // error={!!updateErrors.openingInventoryUnits}
+                    // helperText={updateErrors.openingInventoryUnits?.message}
                     />
                   )}
                 />
@@ -2478,8 +2481,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       disabled
-                      // error={!!updateErrors.openingPerUnitPrice}
-                      // helperText={updateErrors.openingPerUnitPrice?.message}
+                    // error={!!updateErrors.openingPerUnitPrice}
+                    // helperText={updateErrors.openingPerUnitPrice?.message}
                     />
                   )}
                 />
@@ -2514,8 +2517,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       disabled
-                      // error={!!updateErrors.newPurchaseUnits}
-                      // helperText={updateErrors.newPurchaseUnits?.message}
+                    // error={!!updateErrors.newPurchaseUnits}
+                    // helperText={updateErrors.newPurchaseUnits?.message}
                     />
                   )}
                 />
@@ -2532,8 +2535,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       disabled
-                      // error={!!updateErrors.newPurchasePerUnitPrice}
-                      // helperText={updateErrors.newPurchasePerUnitPrice?.message}
+                    // error={!!updateErrors.newPurchasePerUnitPrice}
+                    // helperText={updateErrors.newPurchasePerUnitPrice?.message}
                     />
                   )}
                 />
@@ -2567,8 +2570,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       disabled
-                      // error={!!updateErrors.lastConsumedUnitValue}
-                      // helperText={updateErrors.lastConsumedUnitValue?.message}
+                    // error={!!updateErrors.lastConsumedUnitValue}
+                    // helperText={updateErrors.lastConsumedUnitValue?.message}
                     />
                   )}
                 />
