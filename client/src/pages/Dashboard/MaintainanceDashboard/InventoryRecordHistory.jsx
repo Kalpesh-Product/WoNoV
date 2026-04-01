@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Box } from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import AgTable from "../../../components/AgTable";
@@ -21,7 +22,9 @@ const normalizeText = (value) =>
         .toLowerCase();
 
 const InventoryRecordHistory = () => {
-    const { unitNo, inventoryCategory, inventoryItemName } = useParams();
+    const { unitNo, inventoryTab, inventoryCategory, inventoryItemName } = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
     const axios = useAxiosPrivate();
     const department = usePageDepartment();
 
@@ -37,6 +40,27 @@ const InventoryRecordHistory = () => {
         () => (inventoryItemName ? decodeURIComponent(inventoryItemName) : ""),
         [inventoryItemName],
     );
+
+
+    const unitTabs = useMemo(
+        () => [
+            { key: "category", label: "Category" },
+            { key: "item", label: "Item" },
+            { key: "inventory", label: "Inventory" },
+        ],
+        [],
+    );
+
+    const activeUnitTab = unitTabs.some((tab) => tab.key === inventoryTab)
+        ? inventoryTab
+        : "inventory";
+
+    const handleUnitTabChange = (tabKey) => {
+        if (!decodedUnitNo || tabKey === activeUnitTab) return;
+
+        const basePath = location.pathname.split(`/${encodeURIComponent(decodedUnitNo)}/`)[0];
+        navigate(`${basePath}/${encodeURIComponent(decodedUnitNo)}/${tabKey}`);
+    };
 
     const { data: inventoryData = [] } = useQuery({
         queryKey: ["inventory-record-history", department?._id],
@@ -134,15 +158,46 @@ const InventoryRecordHistory = () => {
     const tableTitle = `Inventory History - ${decodedItemName || "Item"} - ${decodedCategoryName || "Category"}`;
 
     return (
-        <PageFrame>
-            <AgTable
-                data={historyRows}
-                columns={columns}
-                search={true}
-                tableTitle={tableTitle}
-                tableHeight={450}
-            />
-        </PageFrame>
+        <>
+
+            <Box
+                sx={{
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    mb: 3,
+                    display: "flex",
+                }}
+            >
+                {unitTabs.map((tab, index) => {
+                    const isActive = activeUnitTab === tab.key;
+
+                    return (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            disabled={isActive}
+                            onClick={() => handleUnitTabChange(tab.key)}
+                            className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${isActive
+                                ? "bg-primary text-white cursor-default"
+                                : "bg-white text-primary"
+                                } ${index !== unitTabs.length - 1 ? "border-r border-borderGray" : ""}`}
+                        >
+                            {tab.label}
+                        </button>
+                    );
+                })}
+            </Box>
+            <PageFrame>
+                <AgTable
+                    data={historyRows}
+                    columns={columns}
+                    search={true}
+                    tableTitle={tableTitle}
+                    tableHeight={450}
+                />
+            </PageFrame>
+        </>
     );
 };
 

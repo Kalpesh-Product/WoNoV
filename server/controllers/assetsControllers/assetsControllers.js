@@ -211,7 +211,7 @@ const addAsset = async (req, res, next) => {
       secondaryId,
     } = req.body;
 
-    const normalizedSecondaryId = secondaryId?.trim();
+    const normalizedSecondaryId = secondaryId?.trim() || undefined;
     const foundUser = await User.findOne({ _id: user })
       .select("company departments role")
       .populate([{ path: "role", select: "roleTitle" }])
@@ -382,7 +382,7 @@ const addAsset = async (req, res, next) => {
       const assetData = {
         assetType,
         assetId: uniqueAssetId,
-        secondaryId: i === 0 ? normalizedSecondaryId : undefined,
+        secondaryId: (i === 0 && normalizedSecondaryId) ? normalizedSecondaryId : uniqueAssetId,
         departmentAssetId: uniqueAssetId,
         rentedMonths: ownershipType === "Rental" ? rentedMonths : undefined,
         tangable,
@@ -452,7 +452,7 @@ const editAsset = async (req, res, next) => {
       secondaryId,
     } = req.body;
 
-    const normalizedSecondaryId = secondaryId?.trim();
+    const normalizedSecondaryId = secondaryId?.trim() || undefined;
     const assetImageFile = req.files?.assetImage?.[0];
     const warrantyDocumentFile = req.files?.warrantyDocument?.[0];
 
@@ -606,7 +606,7 @@ const editAsset = async (req, res, next) => {
       subCategory: subCategoryId,
       assetImage,
       status: assetStatus,
-      secondaryId: normalizedSecondaryId || null,
+      secondaryId: normalizedSecondaryId || foundAsset.assetId,
       warrantyExpiryDate: calculateFutureDateByMonths(purchaseDate, warranty),
     };
 
