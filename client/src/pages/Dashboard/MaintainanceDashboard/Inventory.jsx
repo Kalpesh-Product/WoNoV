@@ -1774,6 +1774,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 </TextField>
               )}
             />
+            
             <PrimaryButton
               title={isUpdatingCategory ? "Updating..." : "Update Category"}
               className="w-full"
