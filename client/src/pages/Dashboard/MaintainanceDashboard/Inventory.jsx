@@ -702,63 +702,149 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setAddValue("itemName", "");
   }, [selectedCategoryForAdd, setAddValue]);
 
+  // useEffect(() => {
+  //   const fetchOpeningData = async () => {
+  //     if (!selectedItemForAdd || !selectedCategoryForAdd || !department?._id)
+  //       return;
+
+  //     try {
+  //       const res = await axios.get(
+  //         `/api/inventory/get-inventories?department=${department._id}`,
+  //       );
+
+  //       const data = res.data || [];
+
+  //       const matched = data
+  //         .filter(
+  //           (item) =>
+  //             String(item?.itemName?._id) === String(selectedItemForAdd) &&
+  //             String(item?.category?._id) === String(selectedCategoryForAdd),
+  //         )
+  //         .sort(
+  //           (a, b) =>
+  //             new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date),
+  //         )[0];
+
+  //       if (matched) {
+  //         const units = Number(matched.closingInventoryUnits || 0);
+  //         const price = Number(matched.newPurchasePerUnitPrice || 0);
+
+  //         setAddValue("openingInventoryUnits", units, {
+  //           shouldValidate: true,
+  //         });
+
+  //         setAddValue("openingPerUnitPrice", price, {
+  //           shouldValidate: true,
+  //         });
+
+  //         setAddValue("openingInventoryValue", units * price, {
+  //           shouldValidate: true,
+  //         });
+  //       } else {
+  //         setAddValue("openingInventoryUnits", 0);
+  //         setAddValue("openingPerUnitPrice", 0);
+  //         setAddValue("openingInventoryValue", 0);
+  //       }
+  //     } catch (err) {
+  //       console.error(err);
+  //     }
+  //   };
+
+  //   fetchOpeningData();
+  // }, [
+  //   selectedItemForAdd,
+  //   selectedCategoryForAdd,
+  //   department?._id,
+  //   axios,
+  //   setAddValue,
+  // ]);
+
   useEffect(() => {
-    const fetchOpeningData = async () => {
-      if (!selectedItemForAdd || !selectedCategoryForAdd || !department?._id)
-        return;
+    if (!selectedItemForAdd || !selectedCategoryForAdd) {
+      setAddValue("openingInventoryUnits", 0);
+      setAddValue("openingPerUnitPrice", 0);
+      setAddValue("openingInventoryValue", 0);
+      return;
+    }
 
-      try {
-        const res = await axios.get(
-          `/api/inventory/get-inventories?department=${department._id}`,
-        );
+    const selectedItemOption = itemOptions.find(
+      (item) => String(item.id) === String(selectedItemForAdd),
+    );
+    const selectedCategoryOption = inventoryCategories.find(
+      (category) => String(category._id) === String(selectedCategoryForAdd),
+    );
 
-        const data = res.data || [];
+    const selectedItemName = selectedItemOption?.name?.trim().toLowerCase();
+    const selectedCategoryName = selectedCategoryOption?.categoryName
+      ?.trim()
+      .toLowerCase();
 
-        const matched = data
-          .filter(
-            (item) =>
-              String(item?.itemName?._id) === String(selectedItemForAdd) &&
-              String(item?.category?._id) === String(selectedCategoryForAdd),
+    const matched = [...(inventoryData || [])]
+      .filter(
+        (item) => {
+          const itemId = String(item?.itemName?._id || item?.itemId || "");
+          const categoryId = String(
+            item?.category?._id || item?.categoryId || "",
+          );
+          const itemName = String(item?.itemName || "")
+            .trim()
+            .toLowerCase();
+          const categoryName = String(
+            item?.categoryName || item?.category || item?.Category || "",
           )
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date),
-          )[0];
+            .trim()
+            .toLowerCase();
 
-        if (matched) {
-          const units = Number(matched.closingInventoryUnits || 0);
-          const price = Number(matched.newPurchasePerUnitPrice || 0);
+          const isItemMatched =
+            itemId === String(selectedItemForAdd) ||
+            (selectedItemName && itemName === selectedItemName);
+          const isCategoryMatched =
+            categoryId === String(selectedCategoryForAdd) ||
+            (selectedCategoryName && categoryName === selectedCategoryName);
 
-          setAddValue("openingInventoryUnits", units, {
-            shouldValidate: true,
-          });
+          return isItemMatched && isCategoryMatched;
+        },
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date || b.updatedAt || 0) -
+          new Date(a.createdAt || a.date || a.updatedAt || 0),
+      )[0];
 
-          setAddValue("openingPerUnitPrice", price, {
-            shouldValidate: true,
-          });
+    if (matched) {
+      const units = Number(matched.newPurchaseUnits || 0);
+      const price = Number(matched.newPurchasePerUnitPrice || 0);
+      const inventoryValue = Number(matched.newPurchaseInventoryValue);
 
-          setAddValue("openingInventoryValue", units * price, {
-            shouldValidate: true,
-          });
-        } else {
-          setAddValue("openingInventoryUnits", 0);
-          setAddValue("openingPerUnitPrice", 0);
-          setAddValue("openingInventoryValue", 0);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
+      setAddValue("openingInventoryUnits", units, {
+        shouldValidate: true,
+      });
 
-    fetchOpeningData();
+      setAddValue("openingPerUnitPrice", price, {
+        shouldValidate: true,
+      });
+
+      setAddValue(
+        "openingInventoryValue",
+        Number.isFinite(inventoryValue) ? inventoryValue : units * price,
+        {
+          shouldValidate: true,
+        },
+      );
+      return;
+    }
+
+    setAddValue("openingInventoryUnits", 0);
+    setAddValue("openingPerUnitPrice", 0);
+    setAddValue("openingInventoryValue", 0);
   }, [
     selectedItemForAdd,
     selectedCategoryForAdd,
-    department?._id,
-    axios,
+    inventoryData,
+    itemOptions,
+    inventoryCategories,
     setAddValue,
   ]);
-
   useEffect(() => {
     const activeBuildingName =
       selectedUnit?.building?.buildingName ||
@@ -1360,15 +1446,62 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     { field: "unitName", headerName: "Unit Name", minWidth: 210, flex: 1 },
   ];
 
+  // const selectedUnitInventoryRows = useMemo(() => {
+  //   if (!selectedUnit) return inventoryTableData;
+
+  //   return (inventoryTableData || []).filter((item) => {
+  //     const matchesUnit =
+  //       normalizeUnitNo(item?.unitNo) === normalizeUnitNo(selectedUnit?.unitNo);
+
+  //     return matchesUnit;
+  //   });
+  // }, [inventoryTableData, selectedUnit]);
+
   const selectedUnitInventoryRows = useMemo(() => {
-    if (!selectedUnit) return inventoryTableData;
+    const unitFilteredRows = selectedUnit
+      ? (inventoryTableData || []).filter(
+        (item) =>
+          normalizeUnitNo(item?.unitNo) === normalizeUnitNo(selectedUnit?.unitNo),
+      )
+      : inventoryTableData || [];
 
-    return (inventoryTableData || []).filter((item) => {
-      const matchesUnit =
-        normalizeUnitNo(item?.unitNo) === normalizeUnitNo(selectedUnit?.unitNo);
+    const latestByItemCategory = new Map();
 
-      return matchesUnit;
+    unitFilteredRows.forEach((item) => {
+      const itemKey =
+        String(item?.itemId || item?.itemName || "")
+          .trim()
+          .toLowerCase() || "unknown-item";
+      const categoryKey =
+        String(item?.categoryId || item?.categoryName || item?.category || "")
+          .trim()
+          .toLowerCase() || "unknown-category";
+      const compositeKey = `${itemKey}__${categoryKey}`;
+
+      const existing = latestByItemCategory.get(compositeKey);
+      const itemDate = new Date(
+        item?.createdAt || item?.dateRaw || item?.date || item?.updatedAt || 0,
+      );
+      const existingDate = existing
+        ? new Date(
+          existing?.createdAt ||
+          existing?.dateRaw ||
+          existing?.date ||
+          existing?.updatedAt ||
+          0,
+        )
+        : null;
+
+      if (!existing || itemDate > existingDate) {
+        latestByItemCategory.set(compositeKey, item);
+      }
     });
+
+    return Array.from(latestByItemCategory.values()).sort(
+      (a, b) =>
+        new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
+        new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
+    );
   }, [inventoryTableData, selectedUnit]);
 
   const projectShortName =
