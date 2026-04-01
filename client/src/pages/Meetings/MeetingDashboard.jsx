@@ -308,16 +308,34 @@ const MeetingDashboard = () => {
 
   const meetings = [];
   // To check the number of times a meeting room is booked based on timings
-  const durationCount = {};
+   const durationBuckets = ["15", "30", "60", "90", "120", "Others"];
+  const durationCount = durationBuckets.reduce((acc, bucket) => {
+    acc[bucket] = 0;
+    return acc;
+  }, {});
+
   meetingsData.forEach((meeting) => {
-    durationCount[meeting.duration] =
-      (durationCount[meeting.duration] || 0) + 1;
+     const durationInMinutes = parseDuration(meeting.duration || "0m");
+
+    if (durationInMinutes <= 15) {
+      durationCount["15"] += 1;
+    } else if (durationInMinutes <= 30) {
+      durationCount["30"] += 1;
+    } else if (durationInMinutes <= 60) {
+      durationCount["60"] += 1;
+    } else if (durationInMinutes <= 90) {
+      durationCount["90"] += 1;
+    } else if (durationInMinutes <= 120) {
+      durationCount["120"] += 1;
+    } else {
+      durationCount.Others += 1;
+    }
   });
 
   // Convert to Pie Chart Data Format
-  const meetingPieData = Object.entries(durationCount).map(([time, count]) => ({
-    label: time,
-    value: count,
+  const meetingPieData = durationBuckets.map((bucket) => ({
+    label: bucket,
+    value: durationCount[bucket],
   }));
 
   const meetingPieOptions = {
