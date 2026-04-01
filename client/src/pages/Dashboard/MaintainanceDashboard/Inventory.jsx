@@ -32,7 +32,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const navigate = useNavigate();
   const location = useLocation();
   //const { unitNo: unitNoParam } = useParams();
-  const { unitNo: unitNoParam, inventoryTab: inventoryTabParam } = useParams();
+  const {
+    unitNo: unitNoParam,
+    inventoryTab: inventoryTabParam,
+  } = useParams();
   const userPermissions = useMemo(
     () => auth?.user?.permissions?.permissions || [],
     [auth?.user?.permissions?.permissions],
@@ -1314,11 +1317,13 @@ const Inventory = ({ forcedBuildingTab = null }) => {
             {
               label: "View Records",
               onClick: () => {
-                setSelectedAsset(params.data);
-                setModalMode("view");
-                setIsModalOpen(true);
+                const currentPath = location.pathname.endsWith("/")
+                  ? location.pathname.slice(0, -1)
+                  : location.pathname;
+                const recordPath = `${currentPath}/${encodeURIComponent(params.data.categoryName || "uncategorized")}/${encodeURIComponent(params.data.itemName)}`;
+                window.open(recordPath, "_blank", "noopener,noreferrer");
               },
-            }
+            },
           ]}
         />
       ),
