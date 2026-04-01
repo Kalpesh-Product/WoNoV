@@ -71,9 +71,7 @@ const getItems = async (req, res) => {
   try {
     const { department, category } = req.query;
 
-    let filter = {
-      isActive: true,
-    };
+    let filter = {};
 
     // ✅ Validate before using in query
     if (department) {
