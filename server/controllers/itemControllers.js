@@ -51,7 +51,7 @@ const addItem = async (req, res) => {
       name: name.trim(),
       department: department || null,
       category: category || null,
-      addedBy: user?._id,
+      addedBy: user,
     });
 
     return res.status(201).json({
@@ -95,9 +95,10 @@ const getItems = async (req, res) => {
     }
 
     const items = await Item.find(filter)
-      .select("name department category")
+      .select("name department category isActive createdAt updatedAt")
       .populate("department", "name")
       .populate("category", "categoryName")
+      .populate("addedBy", "firstName lastName")
       .sort({ name: 1 })
       .lean();
 
