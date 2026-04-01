@@ -581,12 +581,12 @@ const getMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
           : "";
       }
 
@@ -602,11 +602,11 @@ const getMeetings = async (req, res, next) => {
           meeting.bookedBy ||
           (meeting.externalBookedBy
             ? {
-              _id: meeting.externalBookedBy._id,
-              firstName: meeting.externalBookedBy.firstName,
-              middleName: meeting.externalBookedBy.middleName,
-              lastName: meeting.externalBookedBy.lastName,
-            }
+                _id: meeting.externalBookedBy._id,
+                firstName: meeting.externalBookedBy.firstName,
+                middleName: meeting.externalBookedBy.middleName,
+                lastName: meeting.externalBookedBy.lastName,
+              }
             : null),
         location: meeting.bookedRoom.location,
         client: isClient
@@ -747,12 +747,12 @@ const getMyMeetings = async (req, res, next) => {
 
       const bookedBy = meeting.bookedBy
         ? [
-          meeting.bookedBy.firstName,
-          meeting.bookedBy.middleName,
-          meeting.bookedBy.lastName,
-        ]
-          .filter(Boolean)
-          .join(" ")
+            meeting.bookedBy.firstName,
+            meeting.bookedBy.middleName,
+            meeting.bookedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
         : "";
 
       const isReceptionist = meeting.receptionist.departments.some(
@@ -763,12 +763,12 @@ const getMyMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
           : "";
       }
 
@@ -1150,7 +1150,11 @@ const cancelMeeting = async (req, res, next) => {
         );
 
         const now = new Date();
-        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const currentMonthStart = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          1,
+        );
         const isCurrentMonth =
           meetingMonthStart.getTime() === currentMonthStart.getTime();
 
@@ -1564,7 +1568,6 @@ const updateMeeting = async (req, res, next) => {
     const resolvedClientName =
       client || updatedMeeting.externalClient?.registeredClientCompany || "";
 
-
     const meetingRevenue = new MeetingRevenue({
       date: updatedMeeting.startDate,
       company,
@@ -1935,33 +1938,56 @@ const updateMeetingDetails = async (req, res, next) => {
     );
 
     if (creditDifference > 0) {
-      // Deduct extra credits
-      console.log("booked client ID", bookedClientId);
-      const updatedUser = await BookingCompanyModel.findOneAndUpdate(
-        {
-          _id: bookedClientId,
-          meetingCreditBalance: { $gte: creditDifference },
-        },
-        { $inc: { meetingCreditBalance: -creditDifference } },
-        { new: true },
-      );
+      const bookingEntity = await BookingCompanyModel.findById(bookedClientId);
 
-      if (!updatedUser) {
-        return res
-          .status(400)
-          .json({ message: "Insufficient credits for the update" });
+      if (!bookingEntity) {
+        return res.status(404).json({
+          message: "Booking entity not found",
+        });
       }
+
+      if (bookingEntity.meetingCreditBalance < creditDifference) {
+        return res.status(400).json({
+          message: "Insufficient credits to update the meeting",
+        });
+      }
+
+      bookingEntity.meetingCreditBalance -= creditDifference;
+      await bookingEntity.save();
     } else if (creditDifference < 0) {
-      // Refund excess credits
       await BookingCompanyModel.findByIdAndUpdate(bookedClientId, {
         $inc: { meetingCreditBalance: Math.abs(creditDifference) },
       });
     }
 
+    // if (creditDifference > 0) {
+    //   // Deduct extra credits
+    //   console.log("booked client ID", bookedClientId);
+    //   const updatedUser = await BookingCompanyModel.findOneAndUpdate(
+    //     {
+    //       _id: bookedClientId,
+    //       meetingCreditBalance: { $gte: creditDifference },
+    //     },
+    //     { $inc: { meetingCreditBalance: -creditDifference } },
+    //     { new: true },
+    //   );
+
+    //   if (!updatedUser) {
+    //     return res
+    //       .status(400)
+    //       .json({ message: "Insufficient credits for the update" });
+    //   }
+    // } else if (creditDifference < 0) {
+    //   // Refund excess credits
+    //   await BookingCompanyModel.findByIdAndUpdate(bookedClientId, {
+    //     $inc: { meetingCreditBalance: Math.abs(creditDifference) },
+    //   });
+    // }
+
     const changes = {
       startTime: startTimeObj,
       endTime: endTimeObj,
-      creditsUsed: newCreditsUsed,
+      creditsUsed: externalParticipants ? newCreditsUsed : 0,
       internalParticipants: !isClient ? internalUsers : [],
       clientParticipants: isClient ? internalUsers : [],
       externalParticipants: externalParticipants || [],
