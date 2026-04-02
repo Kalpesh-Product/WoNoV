@@ -19,6 +19,28 @@ const toDateOrNull = (v) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
+const calculateTotalTermMonths = (startDate, endDate) => {
+  if (!startDate || !endDate) return 0;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+    return 0;
+  }
+
+  let months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
+
+  if (end.getDate() < start.getDate()) {
+    months -= 1;
+  }
+
+  return Math.max(months, 0);
+};
+
+
 const createVirtualOfficeClient = async (req, res) => {
   try {
     const data = req.body;
@@ -227,6 +249,7 @@ const createVirtualOfficeClient = async (req, res) => {
       perDeskMeetingCredits,
       totalMeetingCredits,
       totalDesks,
+      totalTerm: calculateTotalTermMonths(termStartDate, termEnd),
       termStartDate,
       termEnd,
       rentDate,
@@ -681,6 +704,7 @@ const updateVirtualOfficeClient = async (req, res) => {
     }
 
     updates.nextIncrementDate = nextIncrementDate || null;
+    updates.totalTerm = calculateTotalTermMonths(termStartDate, termEnd);
 
     const updated = await VirtualOfficeClient.findByIdAndUpdate(id, updates, {
       new: true,

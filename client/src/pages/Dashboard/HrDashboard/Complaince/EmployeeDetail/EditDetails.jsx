@@ -1,11 +1,11 @@
-import { TextField } from "@mui/material";
-import React, { useState } from "react";
+import { MenuItem, TextField } from "@mui/material";
+import React, { useEffect, useState } from "react";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../../components/SecondaryButton";
 import { toast } from "sonner";
 import useAxiosPrivate from "../../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { useLocation, useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
@@ -21,6 +21,7 @@ const EditDetails = () => {
   // const { employmentID } = location.state;
   const employmentID = useSelector((state) => state.hr.selectedEmployee);
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   const { data: employeeData, isLoading } = useQuery({
     queryKey: ["employeeData"],
     queryFn: async () => {
@@ -57,6 +58,7 @@ const EditDetails = () => {
       attendanceSource: "Biometric",
       leavePolicy: "Standard",
       holidayPolicy: "Company Approved",
+      status: "Active",
       aadharID: "1234-5678-9123",
       pan: "ABCDE1234F",
       pfAcNo: "PF123456789",
@@ -76,6 +78,15 @@ const EditDetails = () => {
 
   const [isEditing, setIsEditing] = useState(false);
 
+   useEffect(() => {
+    if (!employeeData) return;
+
+    reset({
+      ...employeeData,
+      status: employeeData.status || (employeeData.isActive ? "Active" : "Inactive"),
+    });
+  }, [employeeData, reset]);
+
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const hasEmployeeEditAccess = userPermissions.includes(
@@ -86,9 +97,31 @@ const EditDetails = () => {
     setIsEditing(!isEditing);
   };
 
+  const updateEmployeeStatus = useMutation({
+    mutationFn: async (statusValue) => {
+      return axios.patch("/api/users/update-single-user", {
+        empId: employmentID,
+        isActive: statusValue === "Active",
+      });
+    },
+    onSuccess: () => {
+      toast.success("User details updated successfully");
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["employeeData"] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["past-employees"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to update employee details"
+      );
+    },
+  });
+
   const onSubmit = (data) => {
-    setIsEditing(!isEditing);
-    toast.success("User details updated successfully");
+    // setIsEditing(!isEditing);
+    // toast.success("User details updated successfully");
+    updateEmployeeStatus.mutate(data.status);
   };
 
   const handleReset = () => {
@@ -103,6 +136,7 @@ const EditDetails = () => {
       startDate: dayjs(employeeData.startDate).format(
         "DD-MM-YYYY"
       ),
+      status: employeeData?.status || (employeeData?.isActive ? "Active" : "Inactive"),
     };
 
   return (
@@ -270,6 +304,7 @@ const EditDetails = () => {
                       "attendanceSource",
                       "leavePolicy",
                       "holidayPolicy",
+                      "status",
                     ].map((fieldKey) => (
                       <div key={fieldKey}>
                         {isEditing ? (
@@ -277,14 +312,27 @@ const EditDetails = () => {
                             name={fieldKey}
                             control={control}
                             render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                                fullWidth
-                              />
+                            fieldKey === "status" ? (
+                                <TextField
+                                  {...field}
+                                  select
+                                  size="small"
+                                  label="Status"
+                                  fullWidth
+                                >
+                                  <MenuItem value="Active">Active</MenuItem>
+                                  <MenuItem value="Inactive">Inactive</MenuItem>
+                                </TextField>
+                              ) : (
+                                <TextField
+                                  {...field}
+                                  size="small"
+                                  label={fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  fullWidth
+                                />
+                              )
                             )}
                           />
                         ) : (
@@ -505,6 +553,7 @@ const EditDetails = () => {
                   handleSubmit={
                     isEditing ? handleSubmit(onSubmit) : handleEditToggle
                   }
+                  disabled={updateEmployeeStatus.isPending}
                 />
                 {isEditing && (
                   <SecondaryButton title={"Reset"} handleSubmit={handleReset} />

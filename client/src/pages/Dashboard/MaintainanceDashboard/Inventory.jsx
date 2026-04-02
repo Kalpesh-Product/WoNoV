@@ -331,7 +331,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     [unitTabPermissions, userPermissions],
   );
 
-  const defaultUnitTab = unitTabOptions[0]?.key || "category";
+  const defaultUnitTab = unitTabOptions[0]?.key || "null";
   const activeUnitTab = unitTabOptions.some(
     (tab) => tab.key === inventoryTabParam,
   )

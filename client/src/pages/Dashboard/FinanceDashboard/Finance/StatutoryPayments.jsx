@@ -257,7 +257,7 @@ const StatutoryPayments = () => {
     ...row,
     srNo: index + 1,
     projectedAmount: inrFormat(row.projectedAmount),
-    actualAmount: row.actualAmount,
+    actualAmount: inrFormat(row.actualAmount),
     dueDate: row.dueDate,
   }));
 
