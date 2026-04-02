@@ -194,15 +194,42 @@ const MeetingFormLayout = () => {
     [clientsData, company]
   );
 
+  const selectedCreditMonth = useMemo(
+    () => (startDate ? dayjs(startDate) : dayjs()),
+    [startDate]
+  );
+
+  const getMonthlyRemainingCredit = (clientData, month) => {
+    if (!clientData) return "-";
+
+    const totalMonthlyCredit = Number(clientData?.totalMeetingCredits || 0);
+    const monthHistory = clientData?.meetingCreditBalanceHistory?.find(
+      (history) =>
+        history?.monthStartDate &&
+        dayjs(history.monthStartDate).isSame(month, "month")
+    );
+
+    if (monthHistory) {
+      return Number(monthHistory.remainingCredit || 0);
+    }
+
+    if (month.isSame(dayjs(), "month")) {
+      return Number(clientData?.meetingCreditBalance || 0);
+    }
+
+    return totalMonthlyCredit;
+  };
+
+
   const remainingMeetingCredits = useMemo(() => {
     if (!company || company === BIZNEST_COMPANY_ID) return "-";
 
-    return selectedClient?.meetingCreditBalance ?? "-";
-  }, [company, selectedClient]);
+    return getMonthlyRemainingCredit(selectedClient, selectedCreditMonth);
+  }, [company, selectedClient, selectedCreditMonth]);
   //-------------------------------API-------------------------------//
   const displayedRemainingCredits = isReceptionist
     ? remainingMeetingCredits
-    : auth.user?.company?.meetingCreditBalance ?? "-";
+    : getMonthlyRemainingCredit(auth.user?.company, selectedCreditMonth);
 
   const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 

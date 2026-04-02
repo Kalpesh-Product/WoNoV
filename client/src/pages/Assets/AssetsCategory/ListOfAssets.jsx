@@ -57,6 +57,8 @@ const ListOfAssets = () => {
       subCategoryId: "",
       vendorId: "",
       name: "",
+      serialNumber: "",
+      description: "",
       assetId: "",
       secondaryId: "",
       purchaseDate: null,
@@ -92,6 +94,8 @@ const ListOfAssets = () => {
       subCategoryId: "",
       vendorId: "",
       name: "",
+      serialNumber: "",
+      description: "",
       assetId: "",
       secondaryId: "",
       purchaseDate: null,
@@ -186,11 +190,13 @@ const ListOfAssets = () => {
     mutationKey: ["addAsset"],
     mutationFn: async (data) => {
       const formData = new FormData();
-      formData.append("departmentId", departmentId);
+      formData.append("departmentId", data.departmentId || departmentId);
       formData.append("categoryId", data.categoryId);
       formData.append("subCategoryId", data.subCategoryId);
       formData.append("vendorId", data.vendorId);
       formData.append("name", data.name);
+      formData.append("serialNumber", data.serialNumber || "");
+      formData.append("description", data.description || "");
       formData.append("assetId", data.assetId);
       formData.append("secondaryId", data.secondaryId || "");
       formData.append("isDamaged", data.isDamaged);
@@ -283,6 +289,8 @@ const ListOfAssets = () => {
         subCatId: selectedForEdit?.subCategory?._id || "",
         vendorId: selectedForEdit?.vendor?._id || "",
         name: selectedForEdit?.name || "",
+        serialNumber: selectedForEdit?.serialNumber || "",
+        description: selectedForEdit?.description || "",
         assetId: selectedForEdit?.assetId || "",
         secondaryId: selectedForEdit?.secondaryId || "",
         purchaseDate: selectedForEdit?.purchaseDate || null,
@@ -319,11 +327,13 @@ const ListOfAssets = () => {
     mutationFn: async (data) => {
       console.log("data for edit", data);
       const formData = new FormData();
-      formData.append("departmentId", departmentId);
+      formData.append("departmentId", data.departmentId || departmentId);
       formData.append("categoryId", data.categoryId);
       formData.append("subCategoryId", data.subCatId);
       formData.append("vendorId", data.vendorId);
       formData.append("name", data.name);
+      formData.append("serialNumber", data.serialNumber || "");
+      formData.append("description", data.description || "");
       formData.append("assetId", data.assetId);
       formData.append("secondaryId", data.secondaryId || "");
       formData.append("purchaseDate", data.purchaseDate);
@@ -638,6 +648,42 @@ const ListOfAssets = () => {
                   label="Asset Name"
                   error={!!errors.name}
                   helperText={errors?.name?.message}
+                />
+              )}
+            />
+            <Controller
+              name="serialNumber"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Serial Number"
+                  error={!!errors.serialNumber}
+                  helperText={errors?.serialNumber?.message}
+                />
+              )}
+            />
+            <Controller
+              name="description"
+              control={control}
+              rules={{
+                validate: (value) =>
+                  !value ||
+                  value.trim().split(/\s+/).filter(Boolean).length <= 1000 ||
+                  "Description must be 1000 words or less",
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  label="Description"
+                  error={!!errors.description}
+                  helperText={errors?.description?.message}
                 />
               )}
             />
@@ -1037,6 +1083,42 @@ const ListOfAssets = () => {
               )}
             />
             <Controller
+              name="serialNumber"
+              control={editControl}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Serial Number"
+                  error={!!editErrors.serialNumber}
+                  helperText={editErrors?.serialNumber?.message}
+                />
+              )}
+            />
+            <Controller
+              name="description"
+              control={editControl}
+              rules={{
+                validate: (value) =>
+                  !value ||
+                  value.trim().split(/\s+/).filter(Boolean).length <= 1000 ||
+                  "Description must be 1000 words or less",
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  label="Description"
+                  error={!!editErrors.description}
+                  helperText={editErrors?.description?.message}
+                />
+              )}
+            />
+            <Controller
               name="purchaseDate"
               control={editControl}
               rules={{ required: "Purchase date is required" }}
@@ -1303,6 +1385,14 @@ const ListOfAssets = () => {
             <DetalisFormatted
               title={"Asset Name"}
               detail={selectedAsset?.name || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Serial Number"}
+              detail={selectedAsset?.serialNumber || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Description"}
+              detail={selectedAsset?.description || "N/A"}
             />
             <DetalisFormatted
               title={"Asset Type"}
