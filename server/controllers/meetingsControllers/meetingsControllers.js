@@ -1818,9 +1818,20 @@ const updateMeetingDetails = async (req, res, next) => {
           : [];
 
     const isClient = !!meeting.clientBookedBy;
-    const BookingCompanyModel = isClient ? CoworkingClient : Company;
-    const BookingUserModel = isClient ? CoworkingMember : User;
-    const bookedClientId = meeting.client;
+    const isExternal = !!meeting.externalBookedBy;
+    const BookingCompanyModel = isClient
+      ? CoworkingClient
+      : isExternal
+        ? Visitor
+        : Company;
+    const BookingUserModel = isClient
+      ? CoworkingMember
+      : isExternal
+        ? Visitor
+        : User;
+    const bookedClientId = meeting.client
+      ? meeting.client
+      : meeting.externalClient;
 
     const currDate = new Date();
     const startTimeObj = new Date(startTime);
@@ -1829,8 +1840,6 @@ const updateMeetingDetails = async (req, res, next) => {
     if (isNaN(startTimeObj.getTime()) || isNaN(endTimeObj.getTime())) {
       return res.status(400).json({ message: "Invalid date/time format" });
     }
-
-    console.log("role", roles);
 
     const allowedRoles = ["Tech Admin", "Tech Employee"];
     const isTech = roles?.some((r) => allowedRoles.includes(r));
