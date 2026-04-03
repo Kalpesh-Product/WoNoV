@@ -513,6 +513,8 @@ const getMeetings = async (req, res, next) => {
 
     let filteredMeetings = meetings;
 
+    const currentUserId = user?.toString();
+
     if (
       !roles.includes("Administration Admin") &&
       !roles.includes("Finance Admin") &&
@@ -523,8 +525,21 @@ const getMeetings = async (req, res, next) => {
       !roles.includes("Tech Employee")
     ) {
       filteredMeetings = meetings.filter((meeting) => {
-        if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments))
+        const isMeetingParticipant =
+          meeting?.bookedBy?._id?.toString() === currentUserId ||
+          meeting?.clientBookedBy?._id?.toString() === currentUserId ||
+          (meeting?.internalParticipants || []).some(
+            (participant) => participant?._id?.toString() === currentUserId,
+          ) ||
+          (meeting?.clientParticipants || []).some(
+            (participant) => participant?._id?.toString() === currentUserId,
+          );
+
+        if (isMeetingParticipant) return true;
+
+        if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments)) {
           return false;
+        }
 
         const bookedDeptIds = meeting.bookedBy.departments.map((dept) =>
           dept._id?.toString(),
