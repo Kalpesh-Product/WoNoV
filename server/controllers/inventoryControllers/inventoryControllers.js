@@ -652,6 +652,101 @@ const getInventories = async (req, res, next) => {
 //   }
 // };
 
+// const updateInventory = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { consumptions = [] } = req.body;
+//     const { user, company } = req;
+
+//     const inventory = await Inventory.findOne({ _id: id, company });
+
+//     if (!inventory) {
+//       return res
+//         .status(404)
+//         .json({ message: "Inventory not found or unauthorized" });
+//     }
+
+//     /* ------------------ Format consumptions ------------------ */
+
+//     let formattedConsumptions = [];
+
+//     if (Array.isArray(consumptions) && consumptions.length > 0) {
+//       formattedConsumptions = consumptions.map((c) => {
+//         if (!c.quantity || c.quantity < 0) {
+//           throw new Error("Invalid consumption quantity");
+//         }
+
+//         return {
+//           quantity: Number(c.quantity),
+//           source: c.source || "newPurchase",
+//           date: new Date(),
+//           addedBy: user,
+//         };
+//       });
+//     }
+
+//     /* ------------------ Get Last Inventory State ------------------ */
+
+//     const lastInventory = await Inventory.findOne({
+//       company,
+//       department: inventory.department,
+//       itemName: inventory.itemName,
+//       unit: inventory.unit,
+//       _id: { $ne: id }, // 🔥 THIS IS THE FIX
+//     }).sort({ createdAt: -1 });
+
+//     const previousRemaining = lastInventory?.remainingUnits || 0;
+
+//     /* ------------------ Calculate Incoming Consumption ------------------ */
+
+//     const incomingConsumption = formattedConsumptions.reduce(
+//       (sum, c) => sum + c.quantity,
+//       0,
+//     );
+
+//     console.log("Previous Remaining:", previousRemaining);
+//     console.log("Incoming Consumption:", incomingConsumption);
+
+//     /* ------------------ Calculate New Remaining ------------------ */
+
+//     const newRemaining =
+//       previousRemaining +
+//       (inventory.newPurchaseUnits || 0) -
+//       incomingConsumption;
+
+//     /* ------------------ Validation ------------------ */
+
+//     if (newRemaining < 0) {
+//       return res.status(400).json({
+//         message: "Consumption exceeds available stock",
+//       });
+//     }
+
+//     /* ------------------ Update ------------------ */
+
+//     const updated = await Inventory.findOneAndUpdate(
+//       { _id: id, company },
+//       {
+//         ...(formattedConsumptions.length > 0 && {
+//           $push: { consumptions: { $each: formattedConsumptions } },
+//         }),
+//         remainingUnits: newRemaining,
+//       },
+//       { new: true, runValidators: true },
+//     )
+//       .populate("itemName", "name")
+//       .populate("department", "name");
+
+//     return res.status(200).json(updated);
+//   } catch (error) {
+//     console.error("Update Inventory Error:", error);
+//     return res.status(500).json({
+//       message: "Failed to update inventory",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const updateInventory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -672,7 +767,7 @@ const updateInventory = async (req, res) => {
 
     if (Array.isArray(consumptions) && consumptions.length > 0) {
       formattedConsumptions = consumptions.map((c) => {
-        if (!c.quantity || c.quantity < 0) {
+        if (!c.quantity || Number(c.quantity) < 0) {
           throw new Error("Invalid consumption quantity");
         }
 
@@ -685,17 +780,11 @@ const updateInventory = async (req, res) => {
       });
     }
 
-    /* ------------------ Get Last Inventory State ------------------ */
-
-    const lastInventory = await Inventory.findOne({
-      company,
-      department: inventory.department,
-      itemName: inventory.itemName,
-      unit: inventory.unit,
-      _id: { $ne: id }, // 🔥 THIS IS THE FIX
-    }).sort({ createdAt: -1 });
-
-    const previousRemaining = lastInventory?.remainingUnits || 0;
+    if (formattedConsumptions.length === 0) {
+      return res.status(400).json({
+        message: "At least one consumption entry is required",
+      });
+    }
 
     /* ------------------ Calculate Incoming Consumption ------------------ */
 
@@ -706,10 +795,8 @@ const updateInventory = async (req, res) => {
 
     /* ------------------ Calculate New Remaining ------------------ */
 
-    const newRemaining =
-      previousRemaining +
-      (inventory.newPurchaseUnits || 0) -
-      incomingConsumption;
+    const currentRemaining = Number(inventory.remainingUnits || 0);
+    const newRemaining = currentRemaining - incomingConsumption;
 
     /* ------------------ Validation ------------------ */
 
@@ -724,10 +811,8 @@ const updateInventory = async (req, res) => {
     const updated = await Inventory.findOneAndUpdate(
       { _id: id, company },
       {
-        ...(formattedConsumptions.length > 0 && {
-          $push: { consumptions: { $each: formattedConsumptions } },
-        }),
-        remainingUnits: newRemaining,
+        $push: { consumptions: { $each: formattedConsumptions } },
+        $set: { remainingUnits: newRemaining },
       },
       { new: true, runValidators: true },
     )
