@@ -48,6 +48,15 @@ const createInventory = async (req, res, next) => {
       });
     }
 
+    const lastInventory = await Inventory.findOne({
+      company,
+      department: department,
+      itemName: itemName,
+      unit: unit,
+    }).sort({ createdAt: -1 });
+
+    const previousRemaining = lastInventory?.remainingUnits || 0;
+
     /* ------------------ Create ------------------ */
 
     const inventory = await Inventory.create({
@@ -60,6 +69,7 @@ const createInventory = async (req, res, next) => {
       newPurchasePerUnitPrice,
       newPurchaseInventoryValue:
         Number(newPurchaseUnits) * Number(newPurchasePerUnitPrice),
+      remainingUnits: previousRemaining + Number(newPurchaseUnits),
     });
 
     return res.status(201).json(inventory);
@@ -69,33 +79,79 @@ const createInventory = async (req, res, next) => {
 };
 
 // GET Inventories with Aggregation (for complex derived fields and optimized lookups)
+
 const getInventories = async (req, res, next) => {
   try {
-    const { department, category } = req.query;
+    const { department } = req.query;
     const { company } = req;
 
-    const query = { company };
-    if (department) query.department = department;
-    if (category) query.category = category;
+    const match = {
+      company: new mongoose.Types.ObjectId(company),
+      ...(department && {
+        department: new mongoose.Types.ObjectId(department),
+      }),
+    };
 
     const inventories = await Inventory.aggregate([
       {
-        $match: {
-          company: new mongoose.Types.ObjectId(req.company),
-          ...(req.query.department && {
-            department: new mongoose.Types.ObjectId(req.query.department),
-          }),
-          ...(req.query.category && {
-            category: new mongoose.Types.ObjectId(req.query.category),
-          }),
-        },
+        $match: match,
       },
 
       {
         $sort: { createdAt: 1 },
       },
 
-      /* ------------------ Add consumption sum ------------------ */
+      /* ------------------ Window: Get Previous Entry ------------------ */
+
+      {
+        $setWindowFields: {
+          partitionBy: {
+            itemName: "$itemName",
+            unit: "$unit",
+            department: "$department",
+          },
+          sortBy: { createdAt: 1 },
+          output: {
+            prevUnits: {
+              $shift: {
+                output: "$newPurchaseUnits",
+                by: -1,
+              },
+            },
+            prevPrice: {
+              $shift: {
+                output: "$newPurchasePerUnitPrice",
+                by: -1,
+              },
+            },
+            prevValue: {
+              $shift: {
+                output: "$newPurchaseInventoryValue",
+                by: -1,
+              },
+            },
+            prevRemaining: {
+              $shift: {
+                output: "$remainingUnits",
+                by: -1,
+              },
+            },
+          },
+        },
+      },
+
+      /* ------------------ Opening Values ------------------ */
+
+      {
+        $addFields: {
+          openingInventoryUnits: { $ifNull: ["$prevUnits", 0] },
+          openingPerUnitPrice: { $ifNull: ["$prevPrice", 0] },
+          openingInventoryValue: { $ifNull: ["$prevValue", 0] },
+          remainingOpeningInventoryUnits: { $ifNull: ["$prevRemaining", 0] },
+        },
+      },
+
+      /* ------------------ Consumption Sum ------------------ */
 
       {
         $addFields: {
@@ -104,71 +160,16 @@ const getInventories = async (req, res, next) => {
           },
         },
       },
-
-      /* ------------------ Window function ------------------ */
-
-      {
-        $setWindowFields: {
-          partitionBy: {
-            itemName: "$itemName",
-            unit: "$unit",
-          },
-          sortBy: { createdAt: 1 },
-          output: {
-            prevPurchaseUnits: {
-              $shift: {
-                output: "$newPurchaseUnits",
-                by: -1,
-              },
-            },
-            prevPurchasePrice: {
-              $shift: {
-                output: "$newPurchasePerUnitPrice",
-                by: -1,
-              },
-            },
-            prevConsumed: {
-              $shift: {
-                output: "$totalConsumed",
-                by: -1,
-              },
-            },
-          },
-        },
-      },
-
-      /* ------------------ Derived fields ------------------ */
+      /* ------------------ Remaining Inventory Sum ------------------ */
 
       {
         $addFields: {
-          openingInventoryUnits: {
-            $ifNull: ["$prevPurchaseUnits", 0],
-          },
-          openingPerUnitPrice: {
-            $ifNull: ["$prevPurchasePrice", 0],
-          },
-          openingInventoryValue: {
-            $multiply: [
-              { $ifNull: ["$prevPurchaseUnits", 0] },
-              { $ifNull: ["$prevPurchasePrice", 0] },
-            ],
-          },
-          consumedOpenInventoryUnits: {
-            $ifNull: ["$prevConsumed", 0],
-          },
-          remainingOpeningInventoryUnits: {
-            $subtract: [
-              { $ifNull: ["$prevPurchaseUnits", 0] },
-              { $ifNull: ["$prevConsumed", 0] },
-            ],
-          },
-          remainingNewPurchaseInventoryUnits: {
-            $subtract: ["$newPurchaseUnits", "$totalConsumed"],
-          },
+          remainingNewPurchaseInventoryUnits: "$remainingUnits",
         },
       },
 
-      /* ------------------ Lookup (populate replacement) ------------------ */
+      /* ------------------ Lookups ------------------ */
+
       {
         $lookup: {
           from: "items",
@@ -188,6 +189,7 @@ const getInventories = async (req, res, next) => {
         },
       },
       { $unwind: { path: "$unit", preserveNullAndEmptyArrays: true } },
+
       {
         $lookup: {
           from: "categories",
@@ -207,6 +209,7 @@ const getInventories = async (req, res, next) => {
         },
       },
       { $unwind: { path: "$department", preserveNullAndEmptyArrays: true } },
+
       {
         $lookup: {
           from: "userdatas",
@@ -216,6 +219,7 @@ const getInventories = async (req, res, next) => {
         },
       },
       { $unwind: { path: "$addedBy", preserveNullAndEmptyArrays: true } },
+
       {
         $lookup: {
           from: "userdatas",
@@ -224,6 +228,9 @@ const getInventories = async (req, res, next) => {
           as: "consumptionUsers",
         },
       },
+
+      /* ------------------ Map consumption users ------------------ */
+
       {
         $addFields: {
           consumptions: {
@@ -262,16 +269,23 @@ const getInventories = async (req, res, next) => {
           },
         },
       },
+
+      /* ------------------ Final Output ------------------ */
+
       {
         $project: {
           itemName: "$itemName.name",
 
-          department: { _id: "$department._id", name: "$department.name" },
+          department: {
+            _id: "$department._id",
+            name: "$department.name",
+          },
 
           unit: {
             unitNo: "$unit.unitNo",
             unitName: "$unit.unitName",
           },
+
           category: "$category.categoryName",
 
           addedBy: {
@@ -279,19 +293,28 @@ const getInventories = async (req, res, next) => {
             lastName: "$addedBy.lastName",
           },
 
-          newPurchaseUnits: 1,
-          newPurchasePerUnitPrice: 1,
-          newPurchaseInventoryValue: 1,
-          consumedNewPurchaseInventoryUnits: 1,
+          // remainingNewPurchaseInventoryUnits
+          // remainingOpeningInventoryUnits
+          /* 🔥 Opening */
           openingInventoryUnits: 1,
           openingPerUnitPrice: 1,
           openingInventoryValue: 1,
-          consumedOpenInventoryUnits: 1,
           remainingOpeningInventoryUnits: 1,
+
+          /* 🔥 Current */
+          newPurchaseUnits: 1,
+          newPurchasePerUnitPrice: 1,
+          newPurchaseInventoryValue: 1,
           remainingNewPurchaseInventoryUnits: 1,
+
+          totalConsumed: 1,
           consumptions: 1,
           createdAt: 1,
         },
+      },
+
+      {
+        $sort: { createdAt: -1 },
       },
     ]);
 
@@ -301,6 +324,112 @@ const getInventories = async (req, res, next) => {
     next(error);
   }
 };
+
+// const updateInventory = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { consumptions = [] } = req.body;
+//     const { user, company } = req;
+
+//     const inventory = await Inventory.findOne({ _id: id, company });
+
+//     if (!inventory) {
+//       return res
+//         .status(404)
+//         .json({ message: "Inventory not found or unauthorized" });
+//     }
+
+//     /* ------------------ Format consumptions ------------------ */
+
+//     let formattedConsumptions = [];
+
+//     if (Array.isArray(consumptions) && consumptions.length > 0) {
+//       formattedConsumptions = consumptions.map((c) => {
+//         if (!c.quantity || c.quantity < 0) {
+//           throw new Error("Invalid consumption quantity");
+//         }
+
+//         return {
+//           quantity: Number(c.quantity),
+//           source: c.source || "newPurchase",
+//           date: new Date(),
+//           addedBy: user,
+//         };
+//       });
+//     }
+
+//     /* ------------------ STOCK VALIDATION ------------------ */
+
+//     // const totalPurchase = inventory.newPurchaseUnits;
+
+//     // const totalConsumed = inventory.consumptions.reduce(
+//     //   (sum, c) => sum + c.quantity,
+//     //   0,
+//     // );
+
+//     // const incomingConsumption = formattedConsumptions.reduce(
+//     //   (sum, c) => sum + c.quantity,
+//     //   0,
+//     // );
+
+//     // if (totalConsumed + incomingConsumption > totalPurchase) {
+//     //   return res.status(400).json({
+//     //     message: "Consumption exceeds available stock",
+//     //   });
+//     // }
+
+//     const allInventories = await Inventory.find({
+//       company,
+//       department: inventory.department,
+//       itemName: inventory.itemName,
+//       unit: inventory.unit,
+//     });
+
+//     let totalPurchase = 0;
+//     let totalConsumed = 0;
+
+//     allInventories.forEach((inv) => {
+//       totalPurchase += inv.newPurchaseUnits || 0;
+//       totalConsumed += (inv.consumptions || []).reduce(
+//         (sum, c) => sum + c.quantity,
+//         0,
+//       );
+//     });
+
+//     const incomingConsumption = formattedConsumptions.reduce(
+//       (sum, c) => sum + c.quantity,
+//       0,
+//     );
+
+//     if (totalConsumed + incomingConsumption > totalPurchase) {
+//       return res.status(400).json({
+//         message: "Consumption exceeds available stock",
+//       });
+//     }
+
+//     /* ------------------ Update ------------------ */
+
+//     const updated = await Inventory.findOneAndUpdate(
+//       { _id: id, company },
+//       {
+//         ...(formattedConsumptions.length > 0 && {
+//           $push: { consumptions: { $each: formattedConsumptions } },
+//         }),
+//       },
+//       { new: true, runValidators: true },
+//     )
+//       .populate("itemName", "name")
+//       .populate("department", "name");
+
+//     return res.status(200).json(updated);
+//   } catch (error) {
+//     console.error("Update Inventory Error:", error);
+//     return res.status(500).json({
+//       message: "Failed to update inventory",
+//       error: error.message,
+//     });
+//   }
+// };
 
 const updateInventory = async (req, res) => {
   try {
@@ -335,21 +464,35 @@ const updateInventory = async (req, res) => {
       });
     }
 
-    /* ------------------ STOCK VALIDATION ------------------ */
+    /* ------------------ Get Last Inventory State ------------------ */
 
-    const totalPurchase = inventory.newPurchaseUnits;
+    const lastInventory = await Inventory.findOne({
+      company,
+      department: inventory.department,
+      itemName: inventory.itemName,
+      unit: inventory.unit,
+      _id: { $ne: id }, // 🔥 THIS IS THE FIX
+    }).sort({ createdAt: -1 });
 
-    const totalConsumed = inventory.consumptions.reduce(
-      (sum, c) => sum + c.quantity,
-      0,
-    );
+    const previousRemaining = lastInventory?.remainingUnits || 0;
+
+    /* ------------------ Calculate Incoming Consumption ------------------ */
 
     const incomingConsumption = formattedConsumptions.reduce(
       (sum, c) => sum + c.quantity,
       0,
     );
 
-    if (totalConsumed + incomingConsumption > totalPurchase) {
+    /* ------------------ Calculate New Remaining ------------------ */
+
+    const newRemaining =
+      previousRemaining +
+      (inventory.newPurchaseUnits || 0) -
+      incomingConsumption;
+
+    /* ------------------ Validation ------------------ */
+
+    if (newRemaining < 0) {
       return res.status(400).json({
         message: "Consumption exceeds available stock",
       });
@@ -363,11 +506,12 @@ const updateInventory = async (req, res) => {
         ...(formattedConsumptions.length > 0 && {
           $push: { consumptions: { $each: formattedConsumptions } },
         }),
+        remainingUnits: newRemaining,
       },
       { new: true, runValidators: true },
     )
       .populate("itemName", "name")
-      .populate("department category");
+      .populate("department", "name");
 
     return res.status(200).json(updated);
   } catch (error) {
@@ -444,3 +588,12 @@ module.exports = {
   updateInventory,
   bulkInsertInventory,
 };
+
+//BULK UPLOAD FLOW FOR INVENTORY
+
+//1.The upload will add data in 3 collections - Inventory, Category and Item.
+
+//2.The upload order will be as follows:
+//Category -> Item -> Inventory
+
+//This ensures that the necessary references are in place when creating inventory records. The backend will handle the logic to check for existing categories and items, and create new ones if they do not exist, before creating the inventory record with the correct references.

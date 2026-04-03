@@ -49,7 +49,13 @@ const inventorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
+    remainingUnits: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
   },
+
   {
     timestamps: true,
   },
