@@ -537,6 +537,8 @@ const fetchSingleUser = async (req, res) => {
       attendanceSource: user?.attendanceSource || "",
       leavePolicy: policyMap?.["Leave Policy"]?.url || "",
       holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
+       status: user.isActive ? "Active" : "Inactive",
+      isActive: Boolean(user.isActive),
       aadhaarID: user.panAadhaarDetails?.aadhaarId || "",
       pan: user.panAadhaarDetails?.pan || "",
       pfAccountNumber: user.panAadhaarDetails?.pfAccountNumber || "",
@@ -655,10 +657,19 @@ const updateProfile = async (req, res, next) => {
   const logSourceKey = "user";
   try {
     const { user, ip, company } = req;
-
-    const userId = req.user;
+    const loggedInUserId = req.user;
+    //const userId = req.user;
     const updateData = req.body;
     const newProfilePicture = req.file;
+
+     const targetEmpId = updateData?.empId;
+    const targetUser = targetEmpId
+      ? await User.findOne({ empId: targetEmpId, company }).lean().exec()
+      : await User.findOne({ _id: loggedInUserId, company }).lean().exec();
+
+    if (!targetUser) {
+      throw new CustomError("User not found", logPath, logAction, logSourceKey);
+    }
 
     // Allowed top-level fields
     const allowedFields = [
@@ -724,11 +735,16 @@ const updateProfile = async (req, res, next) => {
       });
     });
 
+      if (typeof updateData?.isActive === "boolean") {
+      updatePayload.isActive = updateData.isActive;
+    }
+
+
     let profilePictureUpdate = null;
 
     if (newProfilePicture) {
-      const foundUser = await User.findOne({ _id: userId }).lean().exec();
-
+     // const foundUser = await User.findOne({ _id: userId }).lean().exec();
+           const foundUser = await User.findOne({ _id: targetUser._id }).lean().exec();
       if (foundUser?.profilePicture?.id) {
         try {
           const response = await handleFileDelete(foundUser.profilePicture.id);
@@ -793,7 +809,7 @@ const updateProfile = async (req, res, next) => {
     }
 
     const updatedUser = await User.findByIdAndUpdate(
-      userId,
+      targetUser._id,
       { $set: updatePayload },
       { new: true, runValidators: true },
     ).select("-password");

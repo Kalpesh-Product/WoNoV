@@ -27,10 +27,14 @@ const calendarMonths = [
   "March",
 ];
 
+const getDefaultFiscalMonth = () =>
+  calendarMonths[(new Date().getMonth() + 9) % 12];
+
 const HrOverallTasks = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
+    const activeMonth = selectedMonth || getDefaultFiscalMonth();
   const axios = useAxiosPrivate();
   // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
@@ -69,7 +73,7 @@ const HrOverallTasks = () => {
   );
 
   const currentMonthIndex = calendarMonths.findIndex(
-    (m) => m.toLowerCase() === selectedMonth?.toLowerCase()
+     (m) => m.toLowerCase() === activeMonth.toLowerCase()
   );
 
   const handlePrevMonth = () => {
@@ -92,11 +96,11 @@ const HrOverallTasks = () => {
           const taskMonth =
             calendarMonths[(new Date(y, m - 1, day).getMonth() + 9) % 12];
 
-          return taskMonth?.toLowerCase() === selectedMonth.toLowerCase();
+            return taskMonth?.toLowerCase() === activeMonth.toLowerCase();
         })
         .map((task) => ({ department: dept.department, ...task }))
     );
-  }, [tasksRawData, selectedMonth]);
+  }, [tasksRawData, activeMonth]);
 
   const totalCompleted = filteredTasks.filter(
     (t) => t.status === "Completed"
@@ -137,7 +141,7 @@ const HrOverallTasks = () => {
   const graphData = [
     {
       name: "Completed Tasks",
-      group: `Tasks - ${selectedMonth}`,
+       group: `Tasks - ${activeMonth}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -149,7 +153,7 @@ const HrOverallTasks = () => {
     },
     {
       name: "Remaining Tasks",
-      group: `Tasks - ${selectedMonth}`,
+      group: `Tasks - ${activeMonth}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -177,7 +181,7 @@ const HrOverallTasks = () => {
 
           navigate("department-tasks", {
             state: {
-              month: selectedMonth,
+               month: activeMonth,
               department: clickedDept,
               tasks: departmentTasks,
               year: yearArray[0].split("-")[2],
@@ -305,7 +309,7 @@ const HrOverallTasks = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`Tasks overview - ${selectedMonth} ${
+         title={`Tasks overview - ${activeMonth} ${
           yearArray[0]?.split("-")[2]
         }`}
         border
@@ -329,7 +333,7 @@ const HrOverallTasks = () => {
               // disabled={!isPrevAvailable}
             />
             <div className="text-sm min-w-[120px] text-center">
-              {selectedMonth}
+                   {activeMonth}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}

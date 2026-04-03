@@ -63,6 +63,11 @@ const AreaGraph = ({
       (_, index) => String(index + 1).padStart(2, "0") // e.g., '01', '02', ...
     );
 
+      const yearlyCategories = Array.from({ length: 12 }, (_, index) => {
+      const monthDate = fyStart.add(index, "month");
+      return monthDate.format("MMM-YY");
+    });
+
     const transformed = {
       Yearly: {
         series: [
@@ -71,20 +76,21 @@ const AreaGraph = ({
           { name: "Open Tickets", data: Array(12).fill(0), color: "#ff4d4d" },
           { name: "Rejected Tickets", data: Array(12).fill(0), color: "#999999" },
         ],
-        categories: [
-          "Apr-25",
-          "May-25",
-          "Jun-25",
-          "Jul-25",
-          "Aug-25",
-          "Sep-25",
-          "Oct-25",
-          "Nov-25",
-          "Dec-25",
-          "Jan-26",
-          "Feb-26",
-          "Mar-26",
-        ],
+        categories: yearlyCategories,
+        // categories: [
+        //   "Apr-25",
+        //   "May-25",
+        //   "Jun-25",
+        //   "Jul-25",
+        //   "Aug-25",
+        //   "Sep-25",
+        //   "Oct-25",
+        //   "Nov-25",
+        //   "Dec-25",
+        //   "Jan-26",
+        //   "Feb-26",
+        //   "Mar-26",
+        // ],
       },
       Monthly: {
         series: monthlySeriesTemplate,
