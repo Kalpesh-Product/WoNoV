@@ -345,12 +345,12 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue("openingPerUnitPrice", selectedAsset?.openingPerUnitPrice);
     setValue("openingInventoryValue", selectedAsset?.openingInventoryValue);
     setValue(
-      "lastConsumedUnitValue",
-      selectedAsset?.consumedOpenInventoryUnits ?? "",
+      "lastConsumed",
+      selectedAsset?.lastConsumed ?? "",
     );
     setValue(
-      "lastRemainingUnitValue",
-      selectedAsset?.remainingInventoryUnits ?? 0,
+      "remainingOpeningInventoryUnits",
+      selectedAsset?.remainingOpeningInventoryUnits ?? 0,
     );
     setValue("newPurchaseUnits", selectedAsset?.newPurchaseUnits);
     setValue("newPurchasePerUnitPrice", selectedAsset?.newPurchasePerUnitPrice);
@@ -363,8 +363,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       selectedAsset?.consumedNewPurchaseInventoryUnits ?? "",
     );
     setValue(
-      "newRemainingUnitValue",
-      selectedAsset?.closingInventoryUnits ?? 0,
+      "remainingNewPurchaseInventoryUnits",
+      selectedAsset?.remainingNewPurchaseInventoryUnits ?? 0,
     );
     setValue(
       "closingInventoryUnits",
@@ -2742,7 +2742,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Controller
-                  name="lastConsumedUnitValue"
+                  name="lastConsumed"
                   control={updateControl}
                   // rules={{ required: "Last consumed unit value is required" }}
                   render={({ field }) => (
@@ -2759,7 +2759,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   )}
                 />
                 <Controller
-                  name="lastRemainingUnitValue"
+                  name="remainingOpeningInventoryUnits"
                   control={updateControl}
                   render={({ field }) => (
                     <TextField
@@ -2792,7 +2792,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   )}
                 />
                 <Controller
-                  name="newRemainingUnitValue"
+                  name="remainingNewPurchaseInventoryUnits"
                   control={updateControl}
                   render={({ field }) => (
                     <TextField
