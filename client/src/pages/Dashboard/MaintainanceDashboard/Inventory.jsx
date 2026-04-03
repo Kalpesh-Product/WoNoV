@@ -344,10 +344,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue("openingInventoryUnits", selectedAsset?.openingInventoryUnits);
     setValue("openingPerUnitPrice", selectedAsset?.openingPerUnitPrice);
     setValue("openingInventoryValue", selectedAsset?.openingInventoryValue);
-    setValue(
-      "lastConsumed",
-      selectedAsset?.lastConsumed ?? "",
-    );
+    setValue("lastConsumed", selectedAsset?.lastConsumed ?? "");
     setValue(
       "remainingOpeningInventoryUnits",
       selectedAsset?.remainingOpeningInventoryUnits ?? 0,
@@ -445,6 +442,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     control: updateControl,
     name: "newConsumedUnitValue",
   });
+  const updateRemainingNewPurchaseUnits = useWatch({
+    control: updateControl,
+    name: "remainingNewPurchaseInventoryUnits",
+  });
 
   useEffect(() => {
     const units = Number(openingUnits) || 0;
@@ -530,6 +531,38 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     updateNewConsumedUnits,
     updateNewPurchaseUnits,
     updateOpeningUnits,
+  ]);
+  useEffect(() => {
+    const baseRemainingNewPurchaseUnits = Number(
+      selectedAsset?.remainingNewPurchaseInventoryUnits,
+    );
+    const remainingNewPurchaseUnits = Number(updateRemainingNewPurchaseUnits);
+    const consumedNewUnits = Number(updateNewConsumedUnits) || 0;
+
+    const safeBaseRemaining = Number.isFinite(baseRemainingNewPurchaseUnits)
+      ? baseRemainingNewPurchaseUnits
+      : Number.isFinite(remainingNewPurchaseUnits)
+        ? remainingNewPurchaseUnits
+        : 0;
+
+    const computedRemainingNewPurchaseUnits =
+      safeBaseRemaining - consumedNewUnits;
+
+    setValue(
+      "remainingNewPurchaseInventoryUnits",
+      computedRemainingNewPurchaseUnits >= 0
+        ? computedRemainingNewPurchaseUnits
+        : 0,
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
+  }, [
+    selectedAsset,
+    setValue,
+    updateNewConsumedUnits,
+    updateRemainingNewPurchaseUnits,
   ]);
 
   const { data: inventoryData, isPending: isInventoryLoading } = useQuery({
