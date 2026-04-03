@@ -25,6 +25,11 @@ const HrLeaves = () => {
       start: new Date(2025, 3, 1),
       end: new Date(2026, 2, 31),
     },
+    {
+      label: "FY 2026–27",
+      start: new Date(2026, 3, 1),
+      end: new Date(2027, 2, 31),
+    },
   ];
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
@@ -157,7 +162,7 @@ const HrLeaves = () => {
         for (let day = 1; day <= daysInMonth; day++) {
           const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
-          const isWeekend = date.day() === 0 || date.day() === 6;
+          const isWeekend = date.day() === 0 || date.day() === 7;
 
           const beforeJoining =
             startDate.isValid() && date.isBefore(startDate, "day");
@@ -192,12 +197,11 @@ const HrLeaves = () => {
   const dayColumns = Array.from({ length: daysInMonth }, (_, i) => {
     const date = dayjs(new Date(currentYearNum, currentMonthNum, i + 1));
     const dayOfWeek = date.format("ddd");
-    const isSaturday = dayOfWeek === "Sat";
     const isSunday = dayOfWeek === "Sun";
 
     return {
       field: `day${i + 1}`,
-      headerName: isSaturday ? "SAT" : isSunday ? "SUN" : `${i + 1}`,
+      headerName: isSunday ? "SUN" : `${i + 1}`,
       width: 80,
       cellStyle: { textAlign: "center" },
       headerTooltip: `${date.format("dddd, MMM D")}`,

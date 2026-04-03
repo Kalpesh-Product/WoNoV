@@ -11,6 +11,12 @@ const assetsSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    secondaryId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
     departmentAssetId: {
       type: String,
       unique: true,
@@ -49,6 +55,12 @@ const assetsSchema = new mongoose.Schema(
     warranty: {
       type: Number,
       required: true,
+    },
+    warrantyExpiryDate: {
+      type: Date,
+    },
+    rentedExpirationDate: {
+      type: Date,
     },
     warrantyDocument: {
       link: String,
