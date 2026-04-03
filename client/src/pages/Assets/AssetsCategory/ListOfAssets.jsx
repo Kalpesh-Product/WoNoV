@@ -652,42 +652,6 @@ const ListOfAssets = () => {
               )}
             />
             <Controller
-              name="serialNumber"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  fullWidth
-                  label="Serial Number"
-                  error={!!errors.serialNumber}
-                  helperText={errors?.serialNumber?.message}
-                />
-              )}
-            />
-            <Controller
-              name="description"
-              control={control}
-              rules={{
-                validate: (value) =>
-                  !value ||
-                  value.trim().split(/\s+/).filter(Boolean).length <= 1000 ||
-                  "Description must be 1000 words or less",
-              }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  fullWidth
-                  multiline
-                  minRows={3}
-                  label="Description"
-                  error={!!errors.description}
-                  helperText={errors?.description?.message}
-                />
-              )}
-            />
-            <Controller
               name="purchaseDate"
               control={control}
               rules={{ required: "Purchase date is required" }}
@@ -996,7 +960,7 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
-            <div className="col-span-1">
+            <div className="col-span-2">
               <Controller
                 name="assetImage"
                 control={control}
