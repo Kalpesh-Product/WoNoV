@@ -261,6 +261,13 @@ const BookMeetings = () => {
       headerName: "Location",
     },
     {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => (
+        <StatusChip status={params?.data?.status || "N/A"} />
+      ),
+    },
+    {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => {

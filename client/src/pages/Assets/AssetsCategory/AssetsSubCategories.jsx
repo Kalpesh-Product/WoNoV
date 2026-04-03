@@ -88,23 +88,25 @@ const AssetsSubCategories = () => {
           const response = await axios.get(
             `/api/assets/get-subcategory?departmentId=${departmentId}`,
           );
-          return response.data;
+          return Array.isArray(response.data) ? response.data : [];
         } catch (error) {
-          console.error(error.message);
+          console.error(error.response?.data?.message || error.message);
+          return [];
         }
       },
     });
 
-  const { data: assetCategories, isPending: isCategoriesPending } = useQuery({
+  const { data: assetCategories = [], isPending: isCategoriesPending } = useQuery({
     queryKey: ["assetCategories"],
     queryFn: async () => {
       try {
         const response = await axios.get(
           `/api/category/get-category?departmentId=${departmentId}`,
         );
-        return response.data;
+        return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
-        console.error(error.message);
+        console.error(error.response?.data?.message || error.message);
+        return [];
       }
     },
   });
@@ -181,6 +183,7 @@ const AssetsSubCategories = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
@@ -206,18 +209,18 @@ const AssetsSubCategories = () => {
       },
     },
   ];
-  const tableData = isSubCategoriesPending
+  const tableData = isSubCategoriesPending || !Array.isArray(assetSubCategories)
     ? []
     : assetSubCategories.map((item, index) => {
-        const status = item.isActive ? "Active" : "Inactive";
-        return {
-          ...item,
-          _id: item._id,
-          srNo: index + 1,
-          status: status,
-          categoryName: item?.category?.categoryName,
-        };
-      });
+      const status = item.isActive ? "Active" : "Inactive";
+      return {
+        ...item,
+        _id: item._id,
+        srNo: index + 1,
+        status: status,
+        categoryName: item?.category?.categoryName || "N/A",
+      };
+    });
   //--------------------Table Data------------------------------//
 
   return (
@@ -234,7 +237,7 @@ const AssetsSubCategories = () => {
         data={tableData}
         columns={categoriesColumn}
         tableHeight={350}
-        // getRowStyle={getRowStyle}
+      // getRowStyle={getRowStyle}
       />
 
       <MuiModal

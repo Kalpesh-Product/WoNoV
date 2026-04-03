@@ -14,6 +14,13 @@ import { toast } from "sonner";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation } from "@tanstack/react-query";
 
+const BIOMETRIC_OPTIONS = ["Pending", "Approved"];
+const getMemberId = (member) => member?._id || member?.id || member?.employeeName;
+const normalizeBiometricStatus = (status) =>
+  String(status || "Pending").toLowerCase() === "approved"
+    ? "Approved"
+    : "Pending";
+
 const AdminClientMembers = () => {
   const axios = useAxiosPrivate();
   const selectedClient = useSelector((state) => state.client.selectedClient);
@@ -38,17 +45,19 @@ const AdminClientMembers = () => {
       email: "",
       phone: "",
       dob: null,
+      biometricStatus: "Pending",
     },
   });
 
   const handleEditMember = (member) => {
-    setSelectedMemberId(member._id || member.id || member.employeeName);
+    setSelectedMemberId(getMemberId(member));
     reset({
       employeeName: member.employeeName || "",
       gender: member.gender || "",
       email: member.email || "",
       phone: member.mobileNo || member.phone || "",
       dob: member.dob && dayjs(member.dob).isValid() ? dayjs(member.dob) : null,
+      biometricStatus: normalizeBiometricStatus(member.biometricStatus),
     });
     setOpenEditModal(true);
   };
@@ -66,14 +75,17 @@ const AdminClientMembers = () => {
 
       setMembers((prev) =>
         prev.map((member) => {
-          const currentMemberId =
-            member._id || member.id || member.employeeName;
+          const currentMemberId = getMemberId(member);
 
           if (currentMemberId !== variables.memberId) {
             return member;
           }
 
-          return updatedMember ? { ...member, ...updatedMember } : member;
+          return {
+            ...member,
+            ...(updatedMember || {}),
+            biometricStatus: variables.payload.biometricStatus,
+          };
         }),
       );
 
@@ -101,8 +113,7 @@ const AdminClientMembers = () => {
     onSuccess: (response, variables) => {
       setMembers((prev) =>
         prev.map((member) => {
-          const currentMemberId =
-            member._id || member.id || member.employeeName;
+          const currentMemberId = getMemberId(member);
 
           if (currentMemberId !== variables.memberId) {
             return member;
@@ -128,10 +139,9 @@ const AdminClientMembers = () => {
   });
 
   const handleUpdateMember = (data) => {
-    const selectedMember = members.find((member) => {
-      const currentMemberId = member._id || member.id || member.employeeName;
-      return currentMemberId === selectedMemberId;
-    });
+    const selectedMember = members.find(
+      (member) => getMemberId(member) === selectedMemberId,
+    );
 
     if (!selectedMember || !selectedMemberId) {
       toast.error("Unable to find selected member");
@@ -153,7 +163,7 @@ const AdminClientMembers = () => {
           : undefined,
       emergencyName: selectedMember.emergencyName,
       emergencyNo: selectedMember.emergencyNo,
-      biometricStatus: selectedMember.biometricStatus,
+      biometricStatus: data.biometricStatus,
       dateOfJoining: selectedMember.dateOfJoining
         ? dayjs(selectedMember.dateOfJoining).format("YYYY-MM-DD")
         : undefined,
@@ -163,7 +173,7 @@ const AdminClientMembers = () => {
   };
 
   const handleToggleMemberStatus = (member) => {
-    const memberId = member._id || member.id || member.employeeName;
+    const memberId = getMemberId(member);
 
     if (!memberId) {
       toast.error("Unable to find selected member");
@@ -189,6 +199,7 @@ const AdminClientMembers = () => {
           typeof item?.isActive === "boolean"
             ? item.isActive
             : item?.status === "Active",
+        biometricStatus: normalizeBiometricStatus(item.biometricStatus),
       })),
     [members],
   );
@@ -203,8 +214,34 @@ const AdminClientMembers = () => {
     { field: "email", headerName: "Email", flex: 1 },
     { field: "phone", headerName: "Phone No", flex: 1 },
     {
+      field: "biometricStatus",
+      headerName: "Biometric Status",
+      sort: "desc",
+      flex: 1,
+      cellRenderer: (params) => {
+        const status = params.value || "Pending";
+        const statusColorMap = {
+          Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          Approved: { backgroundColor: "#D4F8D4", color: "#0A7A0A" },
+        };
+
+        const { backgroundColor, color } = statusColorMap[status];
+
+        return (
+          <Chip
+            label={status}
+            style={{
+              backgroundColor,
+              color,
+            }}
+          />
+        );
+      },
+    },
+    {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive";
         const statusColorMap = {
@@ -348,6 +385,29 @@ const AdminClientMembers = () => {
                 fullWidth
                 slotProps={{ textField: { size: "small" } }}
               />
+            )}
+          />
+
+          <Controller
+            name="biometricStatus"
+            control={control}
+            rules={{ required: "Biometric status is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label="Biometric Status"
+                size="small"
+                fullWidth
+                error={!!errors?.biometricStatus}
+                helperText={errors?.biometricStatus?.message}
+              >
+                {BIOMETRIC_OPTIONS.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </TextField>
             )}
           />
 

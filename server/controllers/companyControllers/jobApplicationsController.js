@@ -1,5 +1,5 @@
 const JobApplications = require("../../models/hr/JobApplications");
-const { handleDocumentUpload } = require("../../config/cloudinaryConfig");
+const { handleDocumentUpload } = require("../../config/s3Config");
 const Company = require("../../models/hr/Company");
 const csvParser = require("csv-parser");
 const { Readable } = require("stream");

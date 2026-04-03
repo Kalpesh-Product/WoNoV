@@ -4,10 +4,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const csvParser = require("csv-parser");
 const { Readable } = require("stream");
 const CustomError = require("../../utils/customErrorlogs");
-const {
-  handleFileUpload,
-  handleFileDelete,
-} = require("../../config/cloudinaryConfig");
+const { handleFileUpload, handleFileDelete } = require("../../config/s3Config");
 const sharp = require("sharp");
 const Unit = require("../../models/locations/Unit");
 const Building = require("../../models/locations/Building");
@@ -34,7 +31,7 @@ const addBuilding = async (req, res, next) => {
         "Company and Building Name are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -43,7 +40,7 @@ const addBuilding = async (req, res, next) => {
         "Invalid company ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -54,7 +51,7 @@ const addBuilding = async (req, res, next) => {
         "Company not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -77,7 +74,7 @@ const addBuilding = async (req, res, next) => {
       {
         $push: { workLocations: savedBuilding._id },
       },
-      { new: true, useFindAndModify: false }
+      { new: true, useFindAndModify: false },
     );
 
     await createLog({
@@ -102,7 +99,7 @@ const addBuilding = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -251,7 +248,7 @@ const updateUnit = async (req, res, next) => {
           .webp({ quality: 80 })
           .toBuffer();
         const base64Image = `data:image/webp;base64,${buffer.toString(
-          "base64"
+          "base64",
         )}`;
 
         const folderPath = `${existingUnit.company.companyName}/work-locations/${existingUnit.building.buildingName}/${existingUnit.unitName}`;
@@ -294,7 +291,7 @@ const assignPrimaryUnit = async (req, res, next) => {
         "Missing required fields",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -303,7 +300,7 @@ const assignPrimaryUnit = async (req, res, next) => {
         "Invalid unit ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -312,7 +309,7 @@ const assignPrimaryUnit = async (req, res, next) => {
         "Invalid employee ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -325,15 +322,15 @@ const assignPrimaryUnit = async (req, res, next) => {
       departmentName === "Administration"
         ? "adminLead"
         : departmentName === "Maintenance"
-        ? "maintenanceLead"
-        : departmentName === "IT"
-        ? "itLead"
-        : "";
+          ? "maintenanceLead"
+          : departmentName === "IT"
+            ? "itLead"
+            : "";
 
     const updatedUnit = await Unit.findByIdAndUpdate(
       { _id: unitId },
       { [dept]: employeeId },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedUnit) {
@@ -341,7 +338,7 @@ const assignPrimaryUnit = async (req, res, next) => {
         "Failed to assign primary unit",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -368,7 +365,7 @@ const assignPrimaryUnit = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -410,20 +407,20 @@ const fetchUnits = async (req, res, next) => {
 
       const occupiedCabinDesks = coworkingClients.reduce(
         (sum, client) => sum + (client.cabinDesks || 0),
-        0
+        0,
       );
       const occupiedOpenDesks = coworkingClients.reduce(
         (sum, client) => sum + (client.openDesks || 0),
-        0
+        0,
       );
 
       locations.remainingCabinDesks = Math.max(
         0,
-        locations.cabinDesks - occupiedCabinDesks
+        locations.cabinDesks - occupiedCabinDesks,
       );
       locations.remainingOpenDesks = Math.max(
         0,
-        locations.openDesks - occupiedOpenDesks
+        locations.openDesks - occupiedOpenDesks,
       );
 
       return res.status(200).json(locations);
@@ -506,18 +503,32 @@ const fetchUnits = async (req, res, next) => {
 
 const fetchSimpleUnits = async (req, res, next) => {
   try {
-    const units = await Unit.find()
+    const companyId = req.company;
+    const units = await Unit.find({ company: companyId })
       .populate([{ path: "building", select: "buildingName" }])
       .lean()
       .exec();
 
-    const coworkingClients = await CoworkingClient.find().lean().exec();
+    const coworkingClients = await CoworkingClient.find({
+      company: companyId,
+      unit: { $exists: true, $ne: null },
+    })
+      .select("unit")
+      .lean()
+      .exec();
+
+    const unitClientCountMap = coworkingClients.reduce((acc, client) => {
+      const unitId = client?.unit?.toString?.();
+      if (!unitId) return acc;
+      acc[unitId] = (acc[unitId] || 0) + 1;
+      return acc;
+    }, {});
     const newResponse = units.map((unit) => {
       return {
         ...unit,
         coworkingClientsCount:
           coworkingClients.filter(
-            (client) => client.unit._id.toString() === unit._id.toString()
+            (client) => client.unit?._id.toString() === unit?._id.toString(),
           ).length || 0,
       };
     });
@@ -640,7 +651,7 @@ const bulkInsertUnits = async (req, res, next) => {
         const updatedCompany = await Company.findByIdAndUpdate(
           companyId,
           { $push: { workLocations: { $each: workLocationIds } } },
-          { new: true }
+          { new: true },
         );
 
         if (!updatedCompany) {

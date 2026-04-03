@@ -8,13 +8,31 @@ const {
   handleFileUpload,
   handleFileDelete,
   handleDocumentUpload,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const Department = require("../../models/Departments");
 const AssetSubCategory = require("../../models/category/SubCategories");
+const AssignAsset = require("../../models/assets/AssignAsset");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+
+const calculateFutureDateByMonths = (baseDate, monthsToAdd) => {
+  const parsedBaseDate = new Date(baseDate);
+  const parsedMonths = Number(monthsToAdd);
+
+  if (
+    Number.isNaN(parsedBaseDate.getTime()) ||
+    !Number.isFinite(parsedMonths) ||
+    parsedMonths <= 0
+  ) {
+    return null;
+  }
+
+  const calculatedDate = new Date(parsedBaseDate);
+  calculatedDate.setMonth(calculatedDate.getMonth() + parsedMonths);
+  return calculatedDate;
+};
 
 const getAssetsWithDepartments = async (req, res, next) => {
   try {
@@ -67,17 +85,18 @@ const getAssetsWithDepartments = async (req, res, next) => {
 const getAssets = async (req, res, next) => {
   try {
     const userId = req.user;
-    const userDepartments = req.departments;
-    const user = await User.findById(userId).lean().exec();
+    const user = await User.findById(userId).populate("departments").lean().exec();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userDepartments = req.departments || user.departments || [];
 
     const isTopManagement = userDepartments.some(
       (dept) => dept.name === "Top Management",
     );
     const userDepartmentIds = userDepartments.map((dept) => dept._id);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
 
     const companyId = user.company;
     let { assigned, departmentId, vendorId, sortBy, order } = req.query;
@@ -118,9 +137,32 @@ const getAssets = async (req, res, next) => {
       .select("-company")
       .sort({ [sortField]: sortOrder });
 
+    const assetIds = assets.map((asset) => asset._id);
+    const pendingRequests = await AssignAsset.find({
+      asset: { $in: assetIds },
+      status: "Pending",
+    })
+      .select("asset")
+      .lean()
+      .exec();
+
+    const pendingAssetIds = new Set(
+      pendingRequests.map((request) => request.asset?.toString()),
+    );
+
+    const assetsWithAssignmentState = assets.map((asset) => {
+      const parsedAsset = asset.toObject();
+      parsedAsset.assignmentState = pendingAssetIds.has(asset._id.toString())
+        ? "Pending"
+        : asset.isAssigned
+          ? "Assigned"
+          : "Available";
+      return parsedAsset;
+    });
+
     // Group assets by department ID
     const assetMap = {};
-    for (const asset of assets) {
+    for (const asset of assetsWithAssignmentState) {
       const deptId = asset.department?._id?.toString();
       if (!assetMap[deptId]) assetMap[deptId] = [];
       assetMap[deptId].push(asset);
@@ -166,8 +208,10 @@ const addAsset = async (req, res, next) => {
       rentedMonths,
       tangable,
       locationId,
+      secondaryId,
     } = req.body;
 
+    const normalizedSecondaryId = secondaryId?.trim() || undefined;
     const foundUser = await User.findOne({ _id: user })
       .select("company departments role")
       .populate([{ path: "role", select: "roleTitle" }])
@@ -252,9 +296,14 @@ const addAsset = async (req, res, next) => {
 
     let assetImage = null;
 
-    if (req.file) {
+    const imageFile =
+      req?.files?.["asset-image"]?.[0] ||
+      req?.files?.assetImage?.[0] ||
+      req.file;
+
+    if (imageFile) {
       try {
-        const buffer = await sharp(req.file.buffer)
+        const buffer = await sharp(imageFile.buffer)
           .resize(1262, 284, { fit: "contain" })
           .webp({ quality: 80 })
           .toBuffer();
@@ -291,13 +340,50 @@ const addAsset = async (req, res, next) => {
     const subCatPrefix = subCategoryName.slice(0, 2).toUpperCase();
 
     const assetsToInsert = [];
+    if (normalizedSecondaryId && Number(quantity) > 1) {
+      throw new CustomError(
+        "Secondary ID can only be set when quantity is 1",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    if (normalizedSecondaryId) {
+      const existingSecondaryId = await Asset.findOne({
+        secondaryId: normalizedSecondaryId,
+      })
+        .select("_id")
+        .lean()
+        .exec();
+
+      if (existingSecondaryId) {
+        throw new CustomError(
+          "Secondary ID already exists",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
     for (let i = 0; i < Number(quantity); i++) {
       const assetNumber = existingAssetsCount + i + 1; // incremental
       const uniqueAssetId = `${ownershipPrefix}-${deptPrefix}-${subCatPrefix}-${assetNumber}`;
 
+      const warrantyExpiryDate = calculateFutureDateByMonths(
+        purchaseDate,
+        warranty,
+      );
+      const rentedExpirationDate =
+        ownershipType === "Rental"
+          ? calculateFutureDateByMonths(purchaseDate, rentedMonths)
+          : null;
+
       const assetData = {
         assetType,
         assetId: uniqueAssetId,
+        secondaryId: (i === 0 && normalizedSecondaryId) ? normalizedSecondaryId : uniqueAssetId,
+        departmentAssetId: uniqueAssetId,
         rentedMonths: ownershipType === "Rental" ? rentedMonths : undefined,
         tangable,
         ownershipType,
@@ -307,6 +393,8 @@ const addAsset = async (req, res, next) => {
         purchaseDate,
         price,
         warranty,
+        warrantyExpiryDate,
+        rentedExpirationDate,
         brand,
         department: departmentId,
         location: locationId || null,
@@ -361,8 +449,10 @@ const editAsset = async (req, res, next) => {
       tangable,
       locationId,
       status,
+      secondaryId,
     } = req.body;
 
+    const normalizedSecondaryId = secondaryId?.trim() || undefined;
     const assetImageFile = req.files?.assetImage?.[0];
     const warrantyDocumentFile = req.files?.warrantyDocument?.[0];
 
@@ -516,12 +606,38 @@ const editAsset = async (req, res, next) => {
       subCategory: subCategoryId,
       assetImage,
       status: assetStatus,
+      secondaryId: normalizedSecondaryId || foundAsset.assetId,
+      warrantyExpiryDate: calculateFutureDateByMonths(purchaseDate, warranty),
     };
+
+    if (normalizedSecondaryId) {
+      const existingSecondaryId = await Asset.findOne({
+        secondaryId: normalizedSecondaryId,
+        _id: { $ne: assetId },
+      })
+        .select("_id")
+        .lean()
+        .exec();
+
+      if (existingSecondaryId) {
+        throw new CustomError(
+          "Secondary ID already exists",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
 
     // Handle rental logic
     if (ownershipType === "Rental") {
       updatePayload.rentedMonths = rentedMonths;
+      updatePayload.rentedExpirationDate = calculateFutureDateByMonths(
+        purchaseDate,
+        warranty,
+      );
     } else {
+      updatePayload.rentedExpirationDate = null;
       updatePayload.rentedMonths = null;
     }
 
@@ -645,6 +761,7 @@ const bulkInsertAssets = async (req, res, next) => {
             assets.push({
               assetType: assetType === "Digital" ? "Digital" : "Physical",
               assetId: uniqueAssetId,
+              departmentAssetId: uniqueAssetId,
               tangable: tangible,
               ownershipType,
               vendor: vendorId,
@@ -653,11 +770,16 @@ const bulkInsertAssets = async (req, res, next) => {
               purchaseDate,
               price: pricePerUnit,
               warranty,
+              warrantyExpiryDate: calculateFutureDateByMonths(
+                purchaseDate,
+                warranty,
+              ),
               brand,
               isDamaged: false,
               department,
               status: status === "Inactive" ? "Inactive" : "Active",
               subCategory: subCategoryId,
+              rentedExpirationDate: null,
             });
           }
         }

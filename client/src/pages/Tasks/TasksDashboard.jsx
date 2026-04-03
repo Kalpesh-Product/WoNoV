@@ -24,7 +24,10 @@ const TasksDashboard = () => {
   const [selectedFY, setSelectedFY] = useState(null);
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
-
+  const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
+  const isSuperAdminView = roleTitles.some((roleTitle) =>
+    ["Master Admin", "Super Admin"].includes(roleTitle),
+  );
   //------------------------PAGE ACCESS START-------------------//
   const cardsConfig = [
     {
@@ -388,11 +391,13 @@ const TasksDashboard = () => {
 
   const completedTasks = allTasksQuery.isLoading
     ? 0
-    : allTasksQuery.data.filter((task) => task.status === "Completed").length;
+    : departmentTasks.filter((task) => task.status === "Completed").length; //Only Department Task
+    // : allTasksQuery.data.filter((task) => task.status === "Completed").length; (For My Task + Department task)
 
   const pendingTasks = allTasksQuery.isLoading
     ? 0
-    : allTasksQuery.data.filter((task) => task.status === "Pending").length;
+    : departmentTasks.filter((task) => task.status === "Pending").length;
+    //: allTasksQuery.data.filter((task) => task.status === "Pending").length;
 
   const totalTasks = completedTasks + pendingTasks;
 
@@ -478,16 +483,15 @@ const TasksDashboard = () => {
     }, {});
 
     return Object.entries(departmentMap).map(([department, data]) => ({
-      label: `${department} (${((data.pending / data.total) * 100).toFixed(
-        1
-      )}%)`,
+       label: department,
       value: data.pending,
     }));
   };
 
   const departmentPendingStats = allTasksQuery.isLoading
     ? []
-    : calculateDepartmentPendingStats(allTasksQuery.data);
+   // : calculateDepartmentPendingStats(allTasksQuery.data);
+   : calculateDepartmentPendingStats(departmentTasks);
 
   const tasks = allTasksQuery.isLoading ? [] : allTasksQuery.data;
 
@@ -733,7 +737,9 @@ const TasksDashboard = () => {
     },
   ];
   const allowedPieCharts = pieChartConfigs.filter(
-    (card) => !card.key || userPermissions.includes(card.key)
+    //(card) => !card.key || userPermissions.includes(card.key)
+     (card) =>
+      isSuperAdminView || !card.key || userPermissions.includes(card.key),
   );
 
   //---------------------------------------------

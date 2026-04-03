@@ -164,7 +164,7 @@ const PerformanceTeamKra = () => {
     });
 
     const teamColumns = [
-        { headerName: "Sr no", field: "srno", width: 100 },
+        { headerName: "Sr No", field: "srNo", width: 100 },
         { headerName: "KRA List", field: "taskName", flex: 1 },
         { headerName: "Assigned To", field: "assignedTo", flex: 1 },
         { headerName: "DueTime", field: "dueTime" },
@@ -209,7 +209,7 @@ const PerformanceTeamKra = () => {
             : []),
     ];
     const completedColumns = [
-        { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+        { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
         { headerName: "KPA List", field: "taskName", flex: 1 },
         // { headerName: "Assigned Time", field: "assignedDate" },
 

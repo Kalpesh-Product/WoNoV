@@ -24,7 +24,12 @@ const virtualOfficeSchema = new mongoose.Schema(
     email: { type: String, trim: true, lowercase: true },
     phone: { type: String, trim: true },
 
-    service: { type: String, required: true, trim: true },
+    service: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ClientService",
+      required: true,
+      trim: true,
+    },
     sector: { type: String, trim: true },
     state: { type: String, trim: true },
     city: { type: String, trim: true },
@@ -32,6 +37,10 @@ const virtualOfficeSchema = new mongoose.Schema(
 
     channel: { type: String, trim: true },
     // Space & Desks
+    building: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Building",
+    },
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
@@ -49,6 +58,7 @@ const virtualOfficeSchema = new mongoose.Schema(
 
     // Desks & Credits
     cabinDesks: { type: Number, default: 0 },
+    securityDeposit: { type: Number, default: 0 },
     cabinDeskRate: { type: Number, default: 0 },
     cabinTotal: { type: Number, default: 0 },
     openDesks: { type: Number, default: 0 },

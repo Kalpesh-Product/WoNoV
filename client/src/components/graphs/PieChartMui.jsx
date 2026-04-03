@@ -6,7 +6,7 @@ import useResponsiveChart from "../../hooks/useResponsiveChart";
 const PieChartMui = ({
   data,
   options,
-  width = 320,
+  width = 500,
   height = 320,
   customLegend,
   centerAlign = false,

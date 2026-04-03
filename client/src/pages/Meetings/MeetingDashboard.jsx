@@ -308,16 +308,34 @@ const MeetingDashboard = () => {
 
   const meetings = [];
   // To check the number of times a meeting room is booked based on timings
-  const durationCount = {};
+   const durationBuckets = ["15", "30", "60", "90", "120", "Others"];
+  const durationCount = durationBuckets.reduce((acc, bucket) => {
+    acc[bucket] = 0;
+    return acc;
+  }, {});
+
   meetingsData.forEach((meeting) => {
-    durationCount[meeting.duration] =
-      (durationCount[meeting.duration] || 0) + 1;
+     const durationInMinutes = parseDuration(meeting.duration || "0m");
+
+    if (durationInMinutes <= 15) {
+      durationCount["15"] += 1;
+    } else if (durationInMinutes <= 30) {
+      durationCount["30"] += 1;
+    } else if (durationInMinutes <= 60) {
+      durationCount["60"] += 1;
+    } else if (durationInMinutes <= 90) {
+      durationCount["90"] += 1;
+    } else if (durationInMinutes <= 120) {
+      durationCount["120"] += 1;
+    } else {
+      durationCount.Others += 1;
+    }
   });
 
   // Convert to Pie Chart Data Format
-  const meetingPieData = Object.entries(durationCount).map(([time, count]) => ({
-    label: time,
-    value: count,
+  const meetingPieData = durationBuckets.map((bucket) => ({
+    label: bucket,
+    value: durationCount[bucket],
   }));
 
   const meetingPieOptions = {
@@ -364,7 +382,7 @@ const MeetingDashboard = () => {
   // 🔁 Transform API response into availabilityRooms format
   const availabilityRooms = useMemo(
     () =>
-       roomsData
+      roomsData
         .filter((room) => room.isActive)
         .map((room, index) => {
           const roomName = room.name;
@@ -623,7 +641,7 @@ const MeetingDashboard = () => {
     },
     xaxis: { categories: BookingMonths },
     yaxis: {
-      max: 100,
+      max: 200,
       title: { text: "Utilization (%)" },
       labels: {
         formatter: (value) => Math.round(value),
@@ -1265,37 +1283,37 @@ const MeetingDashboard = () => {
       ),
     },
     {
-     layout: 2,
-widgets: [
-  ...allowedPieCharts.map((item) => (
-    <WidgetSection
-      key={item.key}
-      layout={item.layout}
-      title={item.title}
-      border={item.border}
-    >
-      <div className="relative flex items-center justify-center">
+      layout: 2,
+      widgets: [
+        ...allowedPieCharts.map((item) => (
+          <WidgetSection
+            key={item.key}
+            layout={item.layout}
+            title={item.title}
+            border={item.border}
+          >
+            <div className="relative flex items-center justify-center">
 
-        {/* CHART – perfectly centered */}
-        <div className="w-[400px] h-[320px]">
-          <PieChartMui
-            data={item.data}
-            options={item.options}
-            width={320}
-            height={320}
-          />
-        </div>
+              {/* CHART – perfectly centered */}
+              <div className="w-[400px] h-[320px]">
+                <PieChartMui
+                  data={item.data}
+                  options={item.options}
+                  width={320}
+                  height={320}
+                />
+              </div>
 
-        {/* LEGEND – stays on right */}
-        {item.customLegend && (
-          <div className="absolute right-0 max-h-[320px] overflow-y-auto">
-            {item.customLegend}
-          </div>
-        )}
+              {/* LEGEND – stays on right */}
+              {item.customLegend && (
+                <div className="absolute right-0 max-h-[320px] overflow-y-auto">
+                  {item.customLegend}
+                </div>
+              )}
 
-      </div>
-    </WidgetSection>
-  )),
+            </div>
+          </WidgetSection>
+        )),
         ...allowedDonutCharts.map((item) => (
           <WidgetSection
             key={item.key} // Add a key if possible!

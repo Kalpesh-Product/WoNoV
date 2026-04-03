@@ -11,10 +11,11 @@ const { PDFDocument } = require("pdf-lib");
 const {
   handleDocumentUpload,
   handleFileDelete,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const emitter = require("../../utils/eventEmitter");
+const { parseAmount } = require("../../utils/parseAmount");
 
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
@@ -1005,10 +1006,8 @@ const bulkInsertBudgets = async (req, res, next) => {
     Readable.from(csvData)
       .pipe(csvParser())
       .on("data", (row) => {
-        const projectedAmt = parseFloat(row["Projected Amount"]);
-        const actualAmt = row["Actual Amount"]
-          ? parseFloat(row["Actual Amount"])
-          : 0;
+        const projectedAmt = parseAmount(row["Projected Amount"]);
+        const actualAmt = parseAmount(row["Actual Amount"]);
         const month = new Date(row["Due Date"]);
 
         if (isNaN(projectedAmt) || isNaN(month.getTime())) {
@@ -1028,6 +1027,7 @@ const bulkInsertBudgets = async (req, res, next) => {
           dueDate: month,
           expanseType: row["Expanse Type"],
           category: row["Expanse Category"],
+          isPaid: row["Status"] === "Approved" ? "Paid" : "Unpaid",
         });
       })
       // .on("end", async () => {

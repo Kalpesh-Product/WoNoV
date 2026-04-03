@@ -175,7 +175,7 @@ const PerformanceTeamKpa = () => {
     value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
   const teamColumns = [
-    { headerName: "Sr no", field: "srNo", width: 100 },
+    { headerName: "Sr No", field: "srNo", width: 100 },
     { headerName: "KPA List", field: "taskName", flex: 1 },
     { headerName: "Assigned To", field: "assignedTo", flex: 1 },
     {
@@ -230,7 +230,7 @@ const PerformanceTeamKpa = () => {
   ];
 
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
 

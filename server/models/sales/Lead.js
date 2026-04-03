@@ -54,7 +54,7 @@ const LeadSchema = new mongoose.Schema(
     },
     period: {
       type: String,
-      required: true,
+      // required: true,
     },
     openDesks: {
       type: Number,

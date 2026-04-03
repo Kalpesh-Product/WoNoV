@@ -7,6 +7,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const validateUsers = require("../../utils/validateUsers");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
+const Unit = require("../../models/locations/Unit");
 const emitter = require("../../utils/eventEmitter");
 const {
   toUtcStartOfDay,
@@ -32,6 +33,7 @@ const createTasks = async (req, res, next) => {
       dueTime,
       endDate: dueDate,
       startDate: assignedDate,
+      location,
     } = req.body;
 
     if (
@@ -47,7 +49,7 @@ const createTasks = async (req, res, next) => {
         "Missing required fields",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -56,19 +58,48 @@ const createTasks = async (req, res, next) => {
         "Invalid department ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const parsedAssignedDate = new Date(assignedDate);
     const parsedDueDate = new Date(dueDate);
 
+    let validatedLocation = null;
+    if (location) {
+      if (!mongoose.Types.ObjectId.isValid(location)) {
+        throw new CustomError(
+          "Invalid location ID provided",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      validatedLocation = await Unit.findOne({
+        _id: location,
+        company,
+        isActive: true,
+      })
+        .select("_id")
+        .lean();
+
+      if (!validatedLocation) {
+        throw new CustomError(
+          "Selected location does not exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
     if (isNaN(parsedAssignedDate.getTime())) {
       throw new CustomError(
         "Invalid date format",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
     if (isNaN(parsedDueDate.getTime())) {
@@ -76,7 +107,7 @@ const createTasks = async (req, res, next) => {
         "Invalid date format",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -111,7 +142,7 @@ const createTasks = async (req, res, next) => {
         "Character limit exceeded",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -142,14 +173,14 @@ const createTasks = async (req, res, next) => {
       dueDate: parsedDueDate,
       dueTime: dueTime,
       company,
+      location: validatedLocation?._id || null,
     });
 
     await newTask.save();
 
     // Emit the task notification
-    const foundDepartment = await Department.findById(department).select(
-      "name"
-    );
+    const foundDepartment =
+      await Department.findById(department).select("name");
 
     const userDetails = await UserData.findById({
       _id: user,
@@ -200,7 +231,7 @@ const createTasks = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -220,7 +251,7 @@ const updateTaskStatus = async (req, res, next) => {
         "Task ID must be provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -229,15 +260,15 @@ const updateTaskStatus = async (req, res, next) => {
         "Invalid task ID provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     const currDate = new Date();
-    const updatedTask = await Task.findByIdAndUpdate(
-      id,
+     const updatedTask = await Task.findOneAndUpdate(
+      { _id: id, company, isDeleted: { $ne: true } },
       { status: "Completed", completedBy: user, completedDate: currDate },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedTask) {
@@ -267,7 +298,7 @@ const updateTaskStatus = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -288,7 +319,7 @@ const updateTask = async (req, res, next) => {
         "Task ID must be provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -302,7 +333,7 @@ const updateTask = async (req, res, next) => {
           "Invalid status value",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
       updates.status = status;
@@ -314,7 +345,7 @@ const updateTask = async (req, res, next) => {
           "Invalid priority value",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
       updates.priority = priority;
@@ -325,7 +356,7 @@ const updateTask = async (req, res, next) => {
           "Assignees must be an array of user IDs",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
       updates.assignedTo = assignees;
@@ -336,7 +367,7 @@ const updateTask = async (req, res, next) => {
         "No valid fields to update",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -371,7 +402,7 @@ const updateTask = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -381,9 +412,10 @@ const getAllTasks = async (req, res, next) => {
   try {
     const { company, departments, roles } = req;
 
-    let query = { company };
+    // let query = { company };
+    let query = { company, isDeleted: { $ne: true } };
 
-    if (!roles.includes("Master Admin") && !roles.includes("Super Adtmin")) {
+    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
       query.department = { $in: departments };
     }
 
@@ -391,6 +423,7 @@ const getAllTasks = async (req, res, next) => {
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate("department", "name")
+      .populate({ path: "location", select: "unitNo unitName" })
       .select("-company")
       .lean();
 
@@ -421,7 +454,7 @@ const getTasks = async (req, res, next) => {
   try {
     const { company } = req;
     const { dept } = req.query;
-    const query = { company };
+   const query = { company, isDeleted: { $ne: true } };
 
     // const team = await UserData.find({});
 
@@ -471,6 +504,12 @@ const getTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+      .populate({ path: "location", select: "unitNo unitName" })
+      .populate({
+        path: "location",
+        select: "unitName unitNo",
+        populate: { path: "building", select: "buildingName" },
+      })
       .select("-company")
       .lean();
 
@@ -505,7 +544,12 @@ const getMyTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
     const { flag } = req.query;
-    const query = { company, assignedBy: user, taskType: "Self" };
+    const query = {
+      company,
+      assignedBy: user,
+      taskType: "Self",
+      isDeleted: { $ne: true },
+    };
 
     if (flag === "pending") {
       query.status = "Pending";
@@ -515,6 +559,12 @@ const getMyTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+      .populate({ path: "location", select: "unitNo unitName" })
+      .populate({
+        path: "location",
+        select: "unitName unitNo",
+        populate: { path: "building", select: "buildingName" },
+      })
       .select("-company")
       .lean();
 
@@ -552,10 +602,12 @@ const getMyAssignedTasks = async (req, res, next) => {
       company,
       assignedBy: { $ne: user },
       department: { $in: departments },
+      isDeleted: { $ne: true },
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -598,6 +650,7 @@ const getCompletedTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+       .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -617,6 +670,7 @@ const getCompletedTasks = async (req, res, next) => {
         : "";
       return {
         ...task,
+        unitNo: task.location?.unitNo || "N/A",
         dueDate: task.dueDate,
         dueTime: task.dueTime ? task.dueTime : "06:30 PM",
         assignedDate: task.assignedDate,
@@ -637,6 +691,7 @@ const getMyCompletedTasks = async (req, res, next) => {
     const tasks = await Task.find({
       company,
       completedBy: user,
+      isDeleted: { $ne: true },
       // $or: [
       //   { $and: [{ taskType: "Self" }, { status: "Completed" }] },
       //   { $and: [{ completedBy: user }] },
@@ -645,6 +700,7 @@ const getMyCompletedTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -694,6 +750,7 @@ const getMyTodayTasks = async (req, res, next) => {
 
     const tasks = await Task.find({
       company,
+      isDeleted: { $ne: true },
       // assignedDate: { $gte: start, $lte: end },
       // assignedDate: { $gte: startOfDay, $lte: endOfDay },
       $or: [{ assignedBy: { $in: [user] } }, { completedBy: { $in: [user] } }],
@@ -701,6 +758,7 @@ const getMyTodayTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -757,12 +815,14 @@ const getTodayDeptTasks = async (req, res, next) => {
 
     const tasks = await Task.find({
       company,
+      isDeleted: { $ne: true },
       assignedDate: { $gte: startOfDay, $lte: endOfDay },
       department: dept,
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -842,6 +902,7 @@ const getTeamMembersTasks = async (req, res, next) => {
       status: "Completed",
       taskType: "Department",
       completedBy: { $ne: null },
+      isDeleted: { $ne: true },
     })
       .select("completedBy")
       .lean();
@@ -869,7 +930,7 @@ const getTeamMembersTasks = async (req, res, next) => {
       const memberId = member._id.toString();
 
       const completedTaskCount = tasks.filter(
-        (task) => task.completedBy?.toString() === memberId
+        (task) => task.completedBy?.toString() === memberId,
       ).length;
 
       return {
@@ -894,7 +955,7 @@ const getAllDeptTasks = async (req, res, next) => {
     const { roles, departments, company } = req;
 
     let departmentMap = new Map();
-    let query = { company, taskType: "Department" };
+    let query = { company, taskType: "Department", isDeleted: { $ne: true } };
 
     const isSuperAdmin =
       roles.includes("Master Admin") || roles.includes("Super Admin");
@@ -953,9 +1014,14 @@ const getAssignedTasks = async (req, res, next) => {
   try {
     const { user, company } = req;
 
-    const tasks = await Task.find({ company, assignedBy: user })
+    const tasks = await Task.find({
+      company,
+      assignedBy: user,
+      isDeleted: { $ne: true },
+    })
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
+      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
       .select("-company")
       .lean();
 
@@ -1000,24 +1066,32 @@ const completeTasks = async (req, res, next) => {
     }
 
     // Step 1: Fetch tasks before updating
-    const existingTasks = await Task.find({ _id: { $in: taskIds }, company });
+    const existingTasks = await Task.find({
+      _id: { $in: taskIds },
+      company,
+      isDeleted: { $ne: true },
+    });
 
     if (!existingTasks.length) {
       throw new CustomError(
         "No tasks found for the given IDs",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
     await Task.updateMany(
-      { _id: { $in: taskIds }, company },
-      { status: "Completed" }
+     { _id: { $in: taskIds }, company, isDeleted: { $ne: true } },
+      { status: "Completed" },
     );
 
     // Step 3: Fetch updated tasks
-    const updatedTasks = await Task.find({ _id: { $in: taskIds }, company });
+     const updatedTasks = await Task.find({
+      _id: { $in: taskIds },
+      company,
+      isDeleted: { $ne: true },
+    });
 
     // Log the changes
 
@@ -1039,7 +1113,7 @@ const completeTasks = async (req, res, next) => {
               ?.status,
             newStatus: task.status,
           },
-        })
+        }),
     );
 
     return res.status(200).json({
@@ -1050,7 +1124,7 @@ const completeTasks = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -1069,22 +1143,32 @@ const deleteTask = async (req, res, next) => {
         "Task ID must be provided",
         logPath,
         logAction,
-        logSourceKey
+         logSourceKey,
       );
     }
 
-    const deletedTask = await Task.findByIdAndUpdate(
-      { _id: id, company },
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new CustomError(
+        "Invalid task ID provided",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+      const deletedTask = await Task.findOneAndUpdate(
+      { _id: id, company, isDeleted: { $ne: true } },
       { isDeleted: true },
-      { new: true }
+      { new: true, runValidators: true },
     );
+
 
     if (!deletedTask) {
       throw new CustomError(
         "Failed to delete the task",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -1108,7 +1192,7 @@ const deleteTask = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -1118,10 +1202,11 @@ const getTasksSummary = async (req, res, next) => {
   try {
     const { company, departments, roles } = req;
 
-    const tasks = await Task.find({ company })
+    const tasks = await Task.find({ company, isDeleted: { $ne: true } })
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate("department", "name")
+      .populate({ path: "location", select: "unitNo unitName" })
       .select("-company")
       .lean();
 

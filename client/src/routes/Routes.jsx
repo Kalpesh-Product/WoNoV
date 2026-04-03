@@ -87,6 +87,7 @@ import FrontendSettings from "../pages/Dashboard/FrontendDashboard/FrontendSetti
 import FrontendBulkUpload from "../pages/Dashboard/FrontendDashboard/FrontendSettings/BulkUpload";
 import AssetsLayout from "../pages/Assets/AssetsLayout";
 import AssetsDashboard from "../pages/Assets/AssetsDashboard";
+import AssetsMixBag from "../pages/Assets/AssetsMixBag";
 import AssignAssets from "../pages/Assets/ManageAssets/AssignAssets";
 import ManageAssets from "../pages/Assets/ManageAssets/ManageAssets";
 import AssignedAssets from "../pages/Assets/ManageAssets/AssignedAssets";
@@ -203,7 +204,9 @@ import AdminSops from "../pages/Dashboard/AdminDashboard/AdminSettings/AdminSops
 import AdminPolicies from "../pages/Dashboard/AdminDashboard/AdminSettings/AdminPolicies";
 import MaintenanceAnnualExpenses from "../pages/Dashboard/MaintainanceDashboard/MaintenanceAnnualExpenses";
 import Inventory from "../pages/Dashboard/MaintainanceDashboard/Inventory";
+import InventoryRecordHistory from "../pages/Dashboard/MaintainanceDashboard/InventoryRecordHistory";
 import MaintenanceFinance from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceFinance";
+import MaintenanceInventoryTabs from "../pages/Dashboard/MaintainanceDashboard/MaintenanceInventoryTabs";
 import MaintenanceBudget from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceBudget";
 import MaintenancePayment from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenancePayment";
 import MaintenanceData from "../pages/Dashboard/MaintainanceDashboard/MaintenanceData/MaintenanceData";
@@ -328,7 +331,13 @@ import HrDepartmentTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartme
 import HrTasksLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrTasksLayout";
 import PerformanceLayout from "../pages/Performance/PerformanceLayout";
 import PerformanceHome from "../pages/Performance/PerformanceHome";
+import PerformanceAssignKraKpa from "../pages/Performance/PerformanceAssignKraKpa";
+import PerformanceReportKraKpa from "../pages/Performance/PerformanceReportKraKpa";
+import PerformanceDepartmentWiseKraKpa from "../pages/Performance/PerformanceDepartmentWiseKraKpa";
+import PerformanceMemberWiseKraKpa from "../pages/Performance/PerformanceMemberWiseKraKpa";
 import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerformanceLayout";
+import PerformanceOverallKPA from "../pages/Performance/PerformanceOverallKPA";
+import PerformanceDepartmentKPA from "../pages/Performance/PerformanceDepartmentKPA";
 import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKra";
 import PerformanceIndividualKra from "../pages/Performance/DepartmentDetails/PerformanceIndividualKra";
 import PerformanceIndividualKpa from "../pages/Performance/DepartmentDetails/PerformanceIndividualKpa";
@@ -855,7 +864,42 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "inventory",
-                        element: <Inventory />,
+                        //element: <Inventory />,
+                        element: <MaintenanceInventoryTabs />,
+                        children: [
+                          {
+                            path: "sunteck-kanaka-units",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "dempo-trade-center",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo/:inventoryTab",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                        ],
                       },
                       {
                         path: "finance",
@@ -1075,7 +1119,52 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "inventory",
-                        element: <Inventory />,
+                        element: <MaintenanceInventoryTabs />,
+                        children: [
+                          {
+                            path: "sunteck-kanaka-units",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "dempo-trade-center",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo/:inventoryTab",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                        ],
+                        //   element: <MaintenanceInventoryTabs />,
+                        // children: [
+                        //   {
+                        //     path: "sunteck-kanaka-units",
+                        //     element: <Inventory forcedBuildingTab="sunteck" />,
+                        //   },
+                        //   {
+                        //     path: "dempo-trade-center",
+                        //     element: <Inventory forcedBuildingTab="dempo" />,
+                        //   },
+                        // ],
                       },
                       {
                         path: "finance",
@@ -1225,7 +1314,42 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "inventory",
-                        element: <Inventory />,
+                        //element: <Inventory />,
+                        element: <MaintenanceInventoryTabs />,
+                        children: [
+                          {
+                            path: "sunteck-kanaka-units",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "dempo-trade-center",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo/:inventoryTab",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                        ],
                       },
                       {
                         path: "finance",
@@ -1795,6 +1919,37 @@ export const routes = createBrowserRouter([
                         element: <HrMixBag />,
                       },
                       {
+                        path: "mix-bag/overall-KPA",
+                        element: <HrTasksLayout />,
+                        children: [
+                          {
+                            path: "department-KPA",
+                            element: <HrKPA />,
+                            index: true,
+                          },
+                          {
+                            path: "department-task",
+                            element: <HrOverallTasks />,
+                          },
+                          {
+                            path: "department-tasks",
+                            element: <HrOverallTasks />,
+                          },
+                          {
+                            path: "department-KPA/:department",
+                            element: <HrDepartmentKPA />,
+                          },
+                          {
+                            path: "department-task/:department",
+                            element: <HrDepartmentTasks />,
+                          },
+                          {
+                            path: "department-tasks/:department",
+                            element: <HrDepartmentTasks />,
+                          },
+                        ],
+                      },
+                      {
                         path: "mix-bag/attendance",
                         element: <AttendanceLayout />,
                         children: [
@@ -2319,7 +2474,22 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
-
+                  {
+                    path: "mix-bag/vender",
+                    element: <VendorTable />,
+                  },
+                  {
+                    path: "mix-bag/vender/vendor-onboard",
+                    element: <Vendor />,
+                  },
+                  {
+                    path: "mix-bag/vender/:id",
+                    element: <ViewVendor />,
+                  },
+                  {
+                    path: "mix-bag",
+                    element: <AssetsMixBag />,
+                  },
                   {
                     path: "reports",
                     element: <AssetReports />,
@@ -2348,6 +2518,40 @@ export const routes = createBrowserRouter([
                     path: "",
                     element: <PerformanceHome />,
                     index: true,
+                  },
+                  {
+                    path: "overall-KPA",
+                    children: [
+                      {
+                        path: "department-KPA",
+                        element: <PerformanceOverallKPA />,
+                        index: true,
+                      },
+                      {
+                        path: "department-KPA/:department",
+                        element: <PerformanceDepartmentKPA />,
+                      },
+                      {
+                        path: "department-wise-KPA",
+                        element: <PerformanceDepartmentWiseKraKpa />,
+                      },
+                      {
+                        path: "department-wise-kra-kpa",
+                        element: <PerformanceDepartmentWiseKraKpa />,
+                      },
+                      {
+                        path: "department-wise-kpa/member-wise-kra-kpa/:department",
+                        element: <PerformanceMemberWiseKraKpa />,
+                      },
+                    ],
+                  },
+                  {
+                    path: "assign-kra-kpa",
+                    element: <PerformanceAssignKraKpa />,
+                  },
+                  {
+                    path: "report-kra-kpa",
+                    element: <PerformanceReportKraKpa />,
                   },
                   {
                     path: ":department",

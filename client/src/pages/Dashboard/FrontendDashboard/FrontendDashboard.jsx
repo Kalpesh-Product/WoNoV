@@ -1,6 +1,6 @@
 import Card from "../../../components/Card";
 import React, { Suspense, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import LayerBarGraph from "../../../components/graphs/LayerBarGraph";
 import WidgetSection from "../../../components/WidgetSection";
 import { MdRebaseEdit } from "react-icons/md";
@@ -12,8 +12,8 @@ import { SiGoogleadsense } from "react-icons/si";
 import { MdMiscellaneousServices } from "react-icons/md";
 import BarGraph from "../../../components/graphs/BarGraph";
 import PieChartMui from "../../../components/graphs/PieChartMui";
+import DonutChart from "../../../components/graphs/DonutChart";
 import LineGraph from "../../../components/graphs/LineGraph";
-import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
@@ -25,6 +25,7 @@ import dayjs from "dayjs";
 import { filterPermissions } from "../../../utils/accessConfig";
 import useAuth from "../../../hooks/useAuth";
 import { PERMISSIONS } from "../../../constants/permissions";
+import usePageDepartment from "../../../hooks/usePageDepartment";
 
 const FrontendDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -32,21 +33,134 @@ const FrontendDashboard = () => {
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const department = usePageDepartment();
 
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["frontend-selectedDepartments"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments",
+      );
+      return Array.isArray(response.data?.selectedDepartments)
+        ? response.data.selectedDepartments
+        : [];
+    },
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["frontend-dashboard-tasks", department?._id],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/tasks/get-tasks?dept=${department?._id}`,
+      );
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: Boolean(department?._id),
+  });
+
+  const managerByDepartmentName = useMemo(() => {
+    const map = new Map();
+    selectedDepartments.forEach((item) => {
+      const departmentName = item?.department?.name?.trim();
+      if (departmentName) {
+        map.set(departmentName.toLowerCase(), item?.admin || "Unassigned");
+      }
+    });
+    return map;
+  }, [selectedDepartments]);
+
+  const pendingDepartmentTasks = useMemo(
+    () =>
+      tasks.filter(
+        (task) => task?.taskType === "Department" && task?.status === "Pending",
+      ),
+    [tasks],
+  );
+
+  const unitWisePieData = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const unitName = task?.location?.unitNo || "Unassigned";
+      if (!acc[unitName]) acc[unitName] = { label: unitName, value: 0 };
+      acc[unitName].value += 1;
+      return acc;
+    }, {});
+    return Object.values(groupedTasks).sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { numeric: true }),
+    );
+  }, [pendingDepartmentTasks]);
+
+  const unitPieChartOptions = {
+    labels: unitWisePieData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+      events: {
+        dataPointSelection: () => navigate("/app/tasks"),
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} Due tasks`,
+      },
+    },
+  };
+
+  const executiveTasks = useMemo(() => {
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const departmentName =
+        typeof task?.department === "object"
+          ? task?.department?.name
+          : task?.department || department?.name || "Unknown Department";
+      const managerName =
+        managerByDepartmentName.get(departmentName.toLowerCase()) ||
+        "Unassigned";
+      if (!acc[managerName]) acc[managerName] = { name: managerName, tasks: 0 };
+      acc[managerName].tasks += 1;
+      return acc;
+    }, {});
+    return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
+  }, [department?.name, managerByDepartmentName, pendingDepartmentTasks]);
+
+  const executiveTaskLabels = executiveTasks.map((item) => item.name);
+  const executiveTasksCount = executiveTasks.map((item) => item.tasks);
+  const executiveTaskColors = [
+    "#FF5733",
+    "#FFC300",
+    "#28B463",
+    "#5B6CFF",
+    "#9B59B6",
+    "#17A2B8",
+    "#E67E22",
+    "#E91E63",
+  ];
 
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
 
   //--------------------Frontend budget-graph-----------------------//
+  const { data: tickets = [], isLoading: isTicketsLoading } = useQuery({
+    queryKey: ["frontend-ticket-issues", department?._id],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${department._id}`,
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error("Error fetching ticket data");
+      }
+    },
+    enabled: !!department?._id,
+  });
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["frontendBudget"],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798ba9de469e809084e2494`
+          `/api/budget/company-budget?departmentId=6798ba9de469e809084e2494`,
         );
         const budgets = response.data.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
@@ -69,7 +183,7 @@ const FrontendDashboard = () => {
     }
   }, [isHrLoading]);
 
-    const expenseRawSeries = useMemo(() => {
+  const expenseRawSeries = useMemo(() => {
     const fyData = {
       "FY 2024-25": Array(12).fill(0),
       "FY 2025-26": Array(12).fill(0),
@@ -174,7 +288,7 @@ const FrontendDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData
+                 rawData,
                ).toLocaleString("en-IN")}</div>
   
                 </div>
@@ -433,8 +547,99 @@ const FrontendDashboard = () => {
   const totalUtilised =
     budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
       (acc, val) => acc + val,
-      0
+      0,
     ) || 0;
+
+  const currentDepartmentComplaints = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return null;
+
+    const issueCounts = tickets.reduce((acc, ticket) => {
+      const issueTitle = ticket?.ticket?.trim() || "Other";
+      acc[issueTitle] = (acc[issueTitle] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedIssues = Object.entries(issueCounts)
+      .map(([issue, count]) => ({ issue, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const topIssue = sortedIssues[0];
+
+    if (!topIssue) return null;
+
+    return {
+      label: topIssue.issue,
+      departmentLabel: department?.name?.trim() || "Unknown",
+      value: topIssue.count,
+      issues: sortedIssues,
+    };
+  }, [department?.name, isTicketsLoading, tickets]);
+
+  // Department wise complaint
+  const departmentIssueSummary = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return [];
+
+    const issueCounts = tickets.reduce((acc, ticket) => {
+      const issueTitle = ticket?.ticket?.trim() || "Other";
+      acc[issueTitle] = (acc[issueTitle] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(issueCounts)
+      .map(([issue, count]) => ({
+        issue,
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [isTicketsLoading, tickets]);
+
+  const departmentWiseComplaintData = departmentIssueSummary.map(
+    ({ issue, count }) => ({
+      label: issue,
+      value: count,
+    }),
+  );
+
+  const departmentWiseComplaintOptions = {
+    labels: departmentWiseComplaintData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    // legend: {
+    //   //formatter: (seriesName) => seriesName},  //  this line issue show
+    legend: {
+      formatter: function (seriesName, opts) {
+        const value = opts.w.globals.series[opts.seriesIndex]; // //  this line Value show
+        return `${value}`;
+      },
+    },
+    tooltip: {
+      custom: ({ series, seriesIndex, w }) => {
+        const issueType = w?.globals?.labels?.[seriesIndex] || "Other";
+        const count = series?.[seriesIndex] || 0;
+        const issueColor = w?.globals?.colors?.[seriesIndex] || "#64748b";
+
+        return `
+      <div style="
+        padding: 8px 10px;
+        font-size: 12px;
+        font-family: Poppins-Regular;
+        background: ${issueColor};
+        color: #fff;
+        border-radius: 6px;
+        display: inline-block;
+      ">
+        <div style="display: flex; justify-content: space-between; gap: 8px;">
+          <span>${issueType} : ${count}</span>
+        </div>
+      </div>
+    `;
+      },
+      y: {
+        formatter: (value) => `${value}`,
+      },
+    },
+  };
 
   //---------------ACCESS-------------//
 
@@ -452,52 +657,49 @@ const FrontendDashboard = () => {
 
   const allowedSalesGraph = filterPermissions(
     techSalesGraphConfig,
-    userPermissions
+    userPermissions,
   );
 
   const cardsConfigFrontend = [
     {
-    key: PERMISSIONS.FRONTEND_CREATE_WEBSITE.value,
-    route: "create-website",
-    title: "Create Website",
-    icon: <LuHardDriveUpload />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_EDIT_WEBSITE.value,
-    route: "websites",
-    title: "Edit website",
-    icon: <LuHardDriveUpload />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_NEW_THEMES.value,
-    route: "select-theme",
-    title: "New Themes",
-    icon: <CgWebsite />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_FINANCE.value,
-    route: "finance",
-    title: "Finance",
-    icon: <SiCashapp />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_DATA.value,
-    route: "data",
-    title: "Data",
-    icon: <SiGoogleadsense />,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_SETTINGS.value,
-    route: "settings",
-    title: "Settings",
-    icon: <MdMiscellaneousServices />,
-  },
-];
+      key: PERMISSIONS.FRONTEND_CREATE_WEBSITE.value,
+      route: "create-website",
+      title: "Create Website",
+      icon: <LuHardDriveUpload />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_EDIT_WEBSITE.value,
+      route: "websites",
+      title: "Edit website",
+      icon: <LuHardDriveUpload />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_NEW_THEMES.value,
+      route: "select-theme",
+      title: "New Themes",
+      icon: <CgWebsite />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_FINANCE.value,
+      route: "finance",
+      title: "Finance",
+      icon: <SiCashapp />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_DATA.value,
+      route: "data",
+      title: "Data",
+      icon: <SiGoogleadsense />,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_SETTINGS.value,
+      route: "settings",
+      title: "Settings",
+      icon: <MdMiscellaneousServices />,
+    },
+  ];
 
-  const allowedCards = filterPermissions(
-    cardsConfigFrontend,
-    userPermissions
-  );
+  const allowedCards = filterPermissions(cardsConfigFrontend, userPermissions);
 
   const techExpenseGraphConfig = [
     {
@@ -512,7 +714,7 @@ const FrontendDashboard = () => {
 
   const allowedExpenseGraph = filterPermissions(
     techExpenseGraphConfig,
-    userPermissions
+    userPermissions,
   );
   const techIssuesGraphConfig = [
     {
@@ -527,37 +729,82 @@ const FrontendDashboard = () => {
 
   const allowedIssuesGraph = filterPermissions(
     techIssuesGraphConfig,
-    userPermissions
+    userPermissions,
+  );
+
+  const frontendComplaintLayoutConfig = [
+    {
+      key: PERMISSIONS.FRONTEND_DEPARTMENT_WISE_COMPLAINTS.value,
+      type: "PieChartMui",
+      title: "Department-Wise Complaints",
+      border: true,
+      data: departmentWiseComplaintData,
+      options: departmentWiseComplaintOptions,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_DEPARTMENT_WISE_COMPLAINTS_1.value,
+      type: "PieChartMui",
+      title: "Department-Wise Complaints-1",
+      border: true,
+      data: departmentWiseComplaintData,
+      options: departmentWiseComplaintOptions,
+    },
+  ];
+  const allowedFrontendComplaints = filterPermissions(
+    frontendComplaintLayoutConfig,
+    userPermissions,
   );
 
   const pieChartConfig = [
-  {
-    key: PERMISSIONS.FRONTEND_NATION_WISE_SITE_VISITORS.value,
-    layout: 1,
-    border: true,
-    title: "Nation-wise site Visitors",
-    percent: true,
-    data: [],
-    options: [],
-    width: 500,
-  },
-  {
-    key: PERMISSIONS.FRONTEND_STATE_WISE_SITE_VISITORS.value,
-    layout: 1,
-    border: true,
-    title: "State-wise site Visitors",
-    percent: true,
-    data: [],
-    options: [],
-    width: 500,
-  },
-];
+    {
+      key: PERMISSIONS.FRONTEND_NATION_WISE_SITE_VISITORS.value,
+      layout: 1,
+      border: true,
+      title: "Nation-wise site Visitors",
+      percent: true,
+      data: [],
+      options: [],
+      width: 500,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_STATE_WISE_SITE_VISITORS.value,
+      layout: 1,
+      border: true,
+      title: "State-wise site Visitors",
+      percent: true,
+      data: [],
+      options: [],
+      width: 500,
+    },
+  ];
 
+  const allowedPieCharts = filterPermissions(pieChartConfig, userPermissions);
 
-  const allowedPieCharts = filterPermissions(
-    pieChartConfig,
-    userPermissions
-  );
+  const dueTasksConfigs = [
+    {
+      key: PERMISSIONS.FRONTEND_UNIT_WISE_DUE_TASKS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Unit Wise Due Tasks",
+      data: unitWisePieData,
+      options: unitPieChartOptions,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_EXECUTIVE_WISE_DUE_TASKS.value,
+      type: "DonutChart",
+      border: true,
+      title: "Executive Wise Due Tasks",
+      centerLabel: "Tasks",
+      labels: executiveTaskLabels,
+      colors: executiveTaskColors,
+      series: executiveTasksCount,
+      tooltipValue: executiveTasksCount,
+      tooltipFormatter: (label, value) =>
+        `${label}: ${value || 0} pending tasks`,
+    },
+  ];
+
+  const allowedDueTasks = filterPermissions(dueTasksConfigs, userPermissions);
 
   const techWidgets = [
     {
@@ -575,23 +822,60 @@ const FrontendDashboard = () => {
     },
     {
       layout: allowedCards.length,
-      widgets: allowedCards.map((config)=>  <Card
-          icon={config.icon}
-          title={config.title}
-          route={config.route}
-        />)
+      widgets: allowedCards.map((config) => (
+        <Card icon={config.icon} title={config.title} route={config.route} />
+      )),
     },
     {
       layout: allowedPieCharts.length,
-      widgets: allowedPieCharts.map((config)=>
-       <WidgetSection layout={1} border title={config.title}>
+      widgets: allowedPieCharts.map((config) => (
+        <WidgetSection layout={1} border title={config.title}>
           <PieChartMui
             percent={config.percent} // Enable percentage display
             data={config.data} // Pass processed data
             options={config.options}
             width={config.width}
           />
-        </WidgetSection>)
+        </WidgetSection>
+      )),
+    },
+    {
+      layout: allowedDueTasks.length,
+      widgets: allowedDueTasks.map((config) => (
+        <WidgetSection key={config.key} layout={1} border title={config.title}>
+          {config.type === "PieChartMui" ? (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={500}
+              height={320}
+              centerAlign
+            />
+          ) : (
+            <DonutChart
+              centerLabel={config.centerLabel}
+              labels={config.labels}
+              colors={config.colors}
+              series={config.series}
+              tooltipValue={config.tooltipValue}
+              tooltipFormatter={config.tooltipFormatter}
+            />
+          )}
+        </WidgetSection>
+      )),
+    },
+
+    {
+      layout: allowedFrontendComplaints.length,
+      widgets: allowedFrontendComplaints.map((config) => (
+        <WidgetSection key={config.key} layout={1} border title={config.title}>
+          <PieChartMui
+            data={config.data}
+            options={config.options}
+            centerAlign
+          />
+        </WidgetSection>
+      )),
     },
     {
       layout: allowedExpenseGraph.length,
@@ -605,27 +889,25 @@ const FrontendDashboard = () => {
             </Box>
           }
         >
-          {
-            allowedExpenseGraph.map((config)=>
+          {allowedExpenseGraph.map((config) => (
             <YearlyGraph
-            data={config.data}
-            options={config.options}
-            title={config.title}
-            onYearChange={config.onYearChange}
-            titleAmount={config.titleAmount}
-          />)
-          }
+              data={config.data}
+              options={config.options}
+              title={config.title}
+              onYearChange={config.onYearChange}
+              titleAmount={config.titleAmount}
+            />
+          ))}
         </Suspense>,
       ],
     },
-
     {
       layout: allowedIssuesGraph.length,
-      widgets: allowedIssuesGraph.map((config)=>
-       <WidgetSection layout={config.layout} title={config.title} border>
+      widgets: allowedIssuesGraph.map((config) => (
+        <WidgetSection layout={config.layout} title={config.title} border>
           <LineGraph options={config.options} data={config.data} />
-        </WidgetSection>,
-        ),
+        </WidgetSection>
+      )),
     },
   ];
 
@@ -641,5 +923,3 @@ const FrontendDashboard = () => {
 };
 
 export default FrontendDashboard;
-
-

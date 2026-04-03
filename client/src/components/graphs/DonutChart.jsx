@@ -20,16 +20,16 @@ const DonutChart = ({
   };
   const { chartKey, containerRef } = useResponsiveChart();
 
- const fullLabels = chartData.labels;
-const truncatedLabels = fullLabels.map(label =>
-  label.length > 7 ? label.slice(0, 15) + "..." : label
-);
+//  const fullLabels = chartData.labels;
+// const truncatedLabels = fullLabels.map(label =>
+//   label.length > 7 ? label.slice(0, 15) + "..." : label
+// );
 
   const chartOptions = {
     chart: {
       type: "donut",
-      animations : {
-        enabled : false
+      animations: {
+        enabled: false,
       },
       fontFamily: "Poppins-Regular",
       events: {
@@ -43,7 +43,7 @@ const truncatedLabels = fullLabels.map(label =>
       },
     },
     colors: chartData.colors,
-    labels: truncatedLabels,
+     labels: chartData.labels,
     legend: {
       position: "bottom",
     },
@@ -53,12 +53,12 @@ const truncatedLabels = fullLabels.map(label =>
     },
     tooltip: {
       enabled: true,
-        custom: function({ seriesIndex }) {
-    const fullLabel = chartData.labels[seriesIndex]; // ✅ Full label only
-    return `<div style="padding: 8px">
-              <strong>${fullLabel}</strong>
-            </div>`;
-  },
+         custom: function ({ seriesIndex }) {
+        const fullLabel = chartData.labels[seriesIndex];
+        return `<div style="padding: 8px">
+                  <strong>${fullLabel}</strong>
+                </div>`;
+      },
       y: {
         formatter: (val, { seriesIndex }) => `${tooltipValue[seriesIndex]}`,
       },
@@ -82,7 +82,7 @@ const truncatedLabels = fullLabels.map(label =>
             },
             total: {
               show: true,
-              label: `Total ${centerLabel}`,
+              label: `${centerLabel}`,
               fontSize: "16px",
               fontWeight: "bold",
               formatter: function (w) {
@@ -96,7 +96,6 @@ const truncatedLabels = fullLabels.map(label =>
         },
       },
     },
-    
   };
 
   return (

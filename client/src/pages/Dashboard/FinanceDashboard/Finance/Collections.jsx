@@ -71,7 +71,7 @@ const Collections = () => {
   };
 
   const kraColumn = [
-    { field: "srno", headerName: "Sr No", width: 100 },
+    { field: "srNo", headerName: "Sr No", width: 100 },
     {
       field: "clientName",
       headerName: "Client",
@@ -430,7 +430,8 @@ const Collections = () => {
             />
             <DetalisFormatted
               title="Annual Increment"
-              detail={`${viewDetails.annualIncrement}%`}
+              //detail={`${viewDetails.annualIncrement}%`}
+              detail={`${viewDetails.annualIncrement ?? 0}%`}
             />
             <DetalisFormatted
               title="Next Increment Date"

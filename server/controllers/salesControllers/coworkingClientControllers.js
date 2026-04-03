@@ -10,7 +10,7 @@ const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const {
   handleFileDelete,
   handleFileUpload,
-} = require("../../config/cloudinaryConfig");
+} = require("../../config/s3Config");
 const sharp = require("sharp");
 const ClientService = require("../../models/sales/ClientService");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
@@ -32,6 +32,7 @@ const createCoworkingClient = async (req, res, next) => {
       sector,
       hoCity,
       hoState,
+      building,
       unit,
       cabinDesks,
       openDesks,
@@ -73,6 +74,14 @@ const createCoworkingClient = async (req, res, next) => {
         logSourceKey,
       );
     }
+    if (!mongoose.Types.ObjectId.isValid(building)) {
+      throw new CustomError(
+        "Invalid building ID provided",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
     const unitExists = await Unit.findOne({ _id: unit });
     if (!unitExists) {
       throw new CustomError(
@@ -82,6 +91,15 @@ const createCoworkingClient = async (req, res, next) => {
         logSourceKey,
       );
     }
+    if (String(unitExists.building) !== String(building)) {
+      throw new CustomError(
+        "Selected building does not match the selected unit",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
 
     const coworkingService = await ClientService.findOne({
       serviceName: "Co-working",
@@ -101,6 +119,7 @@ const createCoworkingClient = async (req, res, next) => {
       !sector ||
       !hoCity ||
       !hoState ||
+      !building ||
       !ratePerOpenDesk ||
       !ratePerCabinDesk ||
       !annualIncrement ||
@@ -132,9 +151,9 @@ const createCoworkingClient = async (req, res, next) => {
 
     const bookedDesks = cabinDesks + openDesks;
     if (
-      bookedDesks < 1 ||
-      ratePerOpenDesk <= 0 ||
-      ratePerCabinDesk <= 0 ||
+      bookedDesks < 0 ||
+      ratePerOpenDesk < 0 ||
+      ratePerCabinDesk < 0 ||
       annualIncrement < 0
     ) {
       throw new CustomError(
@@ -163,6 +182,7 @@ const createCoworkingClient = async (req, res, next) => {
       service: coworkingService._id,
       sector,
       hoCity,
+      building: unitExists.building,
       hoState,
       unit,
       cabinDesks,
@@ -173,6 +193,14 @@ const createCoworkingClient = async (req, res, next) => {
       annualIncrement,
       perDeskMeetingCredits,
       totalMeetingCredits,
+      meetingCreditBalance: Number(totalMeetingCredits) || 0,
+      meetingCreditBalanceHistory: [
+        {
+          monthStartDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          remainingCredit: Number(totalMeetingCredits) || 0,
+          consumedCredit: 0,
+        },
+      ],
       startDate,
       endDate,
       lockinPeriod,
@@ -401,6 +429,7 @@ const updateCoworkingClient = async (req, res, next) => {
     const {
       clientName,
       service,
+      building,
       unit,
       cabinDesks = 0,
       openDesks = 0,
@@ -438,6 +467,7 @@ const updateCoworkingClient = async (req, res, next) => {
     }
 
     // ✅ Validate unit if changed
+    let unitExists = null;
     if (unit) {
       if (!mongoose.Types.ObjectId.isValid(unit)) {
         throw new CustomError(
@@ -448,7 +478,7 @@ const updateCoworkingClient = async (req, res, next) => {
         );
       }
 
-      const unitExists = await Unit.findById(unit);
+      unitExists = await Unit.findById(unit);
       if (!unitExists) {
         throw new CustomError(
           "Unit doesn't exist",
@@ -456,6 +486,26 @@ const updateCoworkingClient = async (req, res, next) => {
           logAction,
           logSourceKey,
         );
+      }
+
+      if (building) {
+        if (!mongoose.Types.ObjectId.isValid(building)) {
+          throw new CustomError(
+            "Invalid building ID",
+            logPath,
+            logAction,
+            logSourceKey,
+          );
+        }
+
+        if (String(unitExists.building) !== String(building)) {
+          throw new CustomError(
+            "Selected building does not match the selected unit",
+            logPath,
+            logAction,
+            logSourceKey,
+          );
+        }
       }
     }
 
@@ -567,6 +617,7 @@ const updateCoworkingClient = async (req, res, next) => {
       "hoCity",
       "hoState",
       "unit",
+      "building",
       "cabinDesks",
       "openDesks",
       "ratePerOpenDesk",
@@ -587,24 +638,29 @@ const updateCoworkingClient = async (req, res, next) => {
     const updateData = {};
 
     allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
+      if (req.body[field] !== undefined && req.body[field] !== "") {
         updateData[field] = req.body[field];
       }
     });
+
+    if (unitExists) {
+      updateData.building = unitExists.building;
+    }
+
 
     updateData.totalDesks = newBookedDesks;
 
     // nested POCs
     updateData.hOPoc = {
-      name: hOPocName,
-      email: hOPocEmail,
-      phone: hOPocPhone,
+      name: hOPocName || existingClient.hOPoc?.name,
+      email: hOPocEmail || existingClient.hOPoc?.email,
+      phone: hOPocPhone || undefined, // Set to undefined if empty to bypass minlength
     };
 
     updateData.localPoc = {
-      name: localPocName,
-      email: localPocEmail,
-      phone: localPocPhone,
+      name: localPocName || existingClient.localPoc?.name,
+      email: localPocEmail || existingClient.localPoc?.email,
+      phone: localPocPhone || undefined, // Set to undefined if empty to bypass minlength
     };
 
     const oldState = existingClient.toObject();
@@ -631,8 +687,24 @@ const updateCoworkingClient = async (req, res, next) => {
       },
     });
 
+    const updatedClient = await CoworkingClient.findById(existingClient._id)
+      .populate([
+        {
+          path: "unit",
+          select: "_id unitName unitNo cabinDesks openDesks",
+          populate: {
+            path: "building",
+            select: "_id buildingName fullAddress",
+          },
+        },
+        { path: "service", select: "_id serviceName description" },
+      ])
+      .lean()
+      .exec();
+
     return res.status(200).json({
       message: "CoworkingClient updated successfully",
+      client: updatedClient,
     });
   } catch (error) {
     if (error instanceof CustomError) {
@@ -644,6 +716,126 @@ const updateCoworkingClient = async (req, res, next) => {
     }
   }
 };
+
+const resetCoworkingClientCredits = async (req, res, next) => {
+  const logPath = "sales/SalesLog";
+  const logAction = "Reset CoworkingClient Credits";
+  const logSourceKey = "client";
+
+  const { user, ip, company } = req;
+
+  try {
+    const { clientId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      throw new CustomError(
+        "Invalid client ID",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const existingClient = await CoworkingClient.findOne({
+      _id: clientId,
+      company,
+    });
+
+    if (!existingClient) {
+      throw new CustomError(
+        "Client not found",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const oldState = existingClient.toObject();
+
+    const resetTimestamp = new Date();
+
+    const currentMonthStart = new Date(
+      resetTimestamp.getFullYear(),
+      resetTimestamp.getMonth(),
+      1,
+    );
+
+    const existingHistory = Array.isArray(existingClient.meetingCreditBalanceHistory)
+      ? [...existingClient.meetingCreditBalanceHistory]
+      : [];
+
+    const existingMonthIndex = existingHistory.findIndex((entry) => {
+      if (!entry?.monthStartDate) return false;
+      const entryDate = new Date(entry.monthStartDate);
+      return (
+        entryDate.getFullYear() === currentMonthStart.getFullYear() &&
+        entryDate.getMonth() === currentMonthStart.getMonth()
+      );
+    });
+
+    if (existingMonthIndex >= 0) {
+      existingHistory[existingMonthIndex] = {
+        ...existingHistory[existingMonthIndex],
+        monthStartDate: currentMonthStart,
+        remainingCredit: 0,
+        consumedCredit: 0,
+      };
+    } else {
+      existingHistory.push({
+        monthStartDate: currentMonthStart,
+        remainingCredit: 0,
+        consumedCredit: 0,
+      });
+    }
+
+    const updatedClient = await CoworkingClient.findOneAndUpdate(
+      {
+        _id: clientId,
+        company,
+      },
+      {
+        $set: {
+          meetingCreditBalance: 0,
+          meetingCreditBalanceHistory: existingHistory,
+          lastManualCreditResetAt: resetTimestamp,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "CoworkingClient credits reset successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: updatedClient._id,
+      changes: {
+        before: oldState,
+        after: updatedClient,
+      },
+    });
+
+    return res.status(200).json({
+      message: "CoworkingClient credits reset successfully",
+      client: updatedClient,
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+      );
+    }
+  }
+};
+
 
 const updateClientStatus = async (req, res) => {
   try {
@@ -1408,6 +1600,7 @@ const onboardedNames = [
 module.exports = {
   createCoworkingClient,
   updateCoworkingClient,
+  resetCoworkingClientCredits,
   updateClientStatus,
   deleteCoworkingClient,
   getCoworkingClients,

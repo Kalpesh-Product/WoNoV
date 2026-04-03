@@ -9,14 +9,89 @@ export const PERMISSIONS = {
     title: "MANAGE ASSETS",
     type: "read",
   },
+  ASSETS_MIX_BAG: {
+    value: "mix_bag",
+    title: "MIX BAG",
+    type: "read",
+  },
+  ASSETS_REPORTS: {
+    value: "reports",
+    title: "REPORTS",
+    type: "read",
+  },
   ASSETS_ASSIGNED_UNASSIGNED: {
     value: "assigned_unassigned",
     title: "ASSIGNED UNASSIGNED",
     type: "read",
   },
+  ASSETS_PHYSICAL_DIGITAL: {
+    value: "physical_digital",
+    title: "PHYSICAL DIGITAL",
+    type: "read",
+  },
+  ASSETS_ASSIGN_ASSETS: {
+    value: "assign_assets",
+    title: "ASSIGN ASSETS",
+    type: "read",
+  },
   ASSETS_ASSIGNED_ASSETS: {
     value: "assigned_assets",
     title: "ASSIGNED ASSETS",
+    type: "read",
+  },
+  ASSETS_APPROVALS: {
+    value: "approvals",
+    title: "APPROVALS",
+    type: "read",
+  },
+  ASSETS_MIX_BAG_VENDER: {
+    value: "mix_bag_vender",
+    title: "MIX BAG VENDER",
+    type: "read",
+  },
+  ASSETS_ASSET_VALUE_UTILIZATION: {
+    value: "asset_value_utilization",
+    title: "ASSET VALUE UTILIZATION",
+    type: "read",
+  },
+  ASSETS_DEPARTMENT_WISE_ASSET_USAGE: {
+    value: "department_wise_asset_usage",
+    title: "DEPARTMENT WISE ASSET USAGE",
+    type: "read",
+  },
+  ASSETS_ASSET_CATEGORIES: {
+    value: "asset_categories",
+    title: "ASSET CATEGORIES",
+    type: "read",
+  },
+  ASSETS_RECENTLY_ADDED_ASSETS: {
+    value: "recently_added_assets",
+    title: "RECENTLY ADDED ASSETS",
+    type: "read",
+  },
+  ASSETS_ASSETS_OWNED: {
+    value: "assets_owned",
+    title: "ASSETS OWNED",
+    type: "read",
+  },
+  ASSETS_ASSET_VALUE: {
+    value: "asset_value",
+    title: "ASSET VALUE",
+    type: "read",
+  },
+  ASSETS_ASSETS_IN_USE: {
+    value: "assets_in_use",
+    title: "ASSETS IN USE",
+    type: "read",
+  },
+  ASSETS_UNASSIGNED_ASSETS: {
+    value: "unassigned_assets",
+    title: "UNASSIGNED ASSETS",
+    type: "read",
+  },
+  ASSETS_ASSETS_UNDER_MAINTENANCE: {
+    value: "assets_under_maintenance",
+    title: "ASSETS UNDER MAINTENANCE",
     type: "read",
   },
 
@@ -282,6 +357,11 @@ export const PERMISSIONS = {
   VISITORS_VISITOR_CATEGORIES: {
     value: "visitor_categories",
     title: "VISITOR CATEGORIES",
+    type: "read",
+  },
+  VISITORS_INTERNAL_AND_EXTERNAL_CATEGORIES: {
+    value: "visitor_internal_and_external_categories_chart",
+    title: "INTERNAL_AND_EXTERNAL_CATEGORIES",
     type: "read",
   },
   VISITORS_CHECKED_IN_VS_YET_TO_CHECK_OUT: {
@@ -613,6 +693,17 @@ export const PERMISSIONS = {
     type: "read",
   },
 
+  FINANCE_UNIT_WISE_DUE_TASKS: {
+    value: "finance_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  FINANCE_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "finance_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+
   // Finance Tabs
   FINANCE_CASHFLOW_PROJECTIONS: {
     value: "finance_cashflow_projections_tab",
@@ -878,35 +969,46 @@ export const PERMISSIONS = {
 
   // 🔷 Sales Chart Permissions
   SALES_SECTOR_WISE_OCCUPANCY: {
-    value: "sales_sector_wise_occupancy_card",
+    value: "sales_sector_wise_occupancy_chart",
     title: "SECTOR WISE OCCUPANCY",
     type: "read",
   },
   SALES_CLIENT_WISE_OCCUPANCY: {
-    value: "sales_client_wise_occupancy_card",
+    value: "sales_client_wise_occupancy_chart",
     title: "CLIENT WISE OCCUPANCY",
     type: "read",
   },
-  SALES_CLIENT_GENDER_WISE_DATA: {
-    value: "sales_client_gender_wise_data_card",
-    title: "CLIENT GENDER WISE DATA",
+  SALES_CLIENT_MEMBER_GENDER_WISE_DATA: {
+    value: "sales_client_member_gender_wise_data_chart",
+    title: "CLIENT MEMBER GENDER WISE DATA",
     type: "read",
   },
   SALES_INDIA_WISE_MEMBERS: {
-    value: "sales_india_wise_members_card",
+    value: "sales_india_wise_members_chart",
     title: "INDIA WISE MEMBERS",
     type: "read",
   },
   SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY: {
-    value: "sales_current_month_client_anniversary_card",
+    value: "sales_current_month_client_anniversary_chart",
     title: "CURRENT MONTH CLIENT ANNIVERSARY",
     type: "read",
   },
   SALES_CLIENT_MEMBER_BIRTHDAY: {
-    value: "sales_client_member_birthday_card",
+    value: "sales_client_member_birthday_chart",
     title: "CLIENT MEMBER BIRTHDAY",
     type: "read",
   },
+  SALES_UNIT_WISE_DUE_TASKS: {
+    value: "sales_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  SALES_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "sales_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+
 
   //Finance
   SALES_BUDGET: {
@@ -1030,6 +1132,19 @@ export const PERMISSIONS = {
     route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
   },
 
+ HR_DEPARTMENT_KPA_MIX_BAG: {
+    value: "hr_department_kpa_tab",
+    title: "Department KPA",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-KPA",
+  },
+  HR_DEPARTMENT_TASK_MIX_BAG: {
+    value: "hr_department_task_tab",
+    title: "Department Task",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-task",
+  },
+
 
   //inside dashboard of mix bag
   HR_PENDING_APPROVALS_LEAVES: {
@@ -1083,6 +1198,16 @@ export const PERMISSIONS = {
   HR_CURRENT_MONTH_HOLIDAY_LIST: {
     value: "hr_current_month_holiday_list_chart",
     title: "CURRENT MONTH HOLIDAY LIST",
+    type: "read",
+  },
+  HR_UNIT_WISE_DUE_TASKS: {
+    value: "hr_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  HR_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "hr_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
 
@@ -1386,6 +1511,36 @@ export const PERMISSIONS = {
     type: "read",
   },
   ADMIN_INVENTORY: { value: "admin_inventory_page", title: "INVENTORY", type: "read" },
+   ADMIN_INVENTORY_SUNTECK_UNITS: {
+    value: "admin_inventory_sunteck_units",
+    title: "SUNTECK KANAKA UNITS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
+  ADMIN_INVENTORY_DEMPO_UNITS: {
+    value: "admin_inventory_dempo_trade_centre_units",
+    title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
+   ADMIN_INVENTORY_CATEGORY_TAB: {
+    value: "admin_inventory_category_tab",
+    title: "INVENTORY CATEGORY TAB",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
+  ADMIN_INVENTORY_ITEM_TAB: {
+    value: "admin_inventory_item_tab",
+    title: "INVENTORY ITEM TAB",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
+  ADMIN_INVENTORY_LIST_TAB: {
+    value: "admin_inventory_list_tab",
+    title: "INVENTORY LIST TAB",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory",
+  },
   ADMIN_FINANCE: { value: "admin_finance_card", title: "FINANCE", type: "read" },
   ADMIN_MIX_BAG: { value: "admin_mix_bag_card", title: "MIX BAG", type: "read" },
   ADMIN_TEAM_MEMBERS_SCHEDULE_MIX_BAG: {
@@ -1511,9 +1666,19 @@ export const PERMISSIONS = {
     title: "TOTAL DESKS COMPANY WISE",
     type: "read",
   },
-  ADMIN_BIOMETRICS_GENDER_DATA: {
-    value: "admin_biometrics_gender_data_chart",
-    title: "BIOMETRICS GENDER DATA",
+  ADMIN_BIOMETRICS_ACTIVATION_DATA: {
+    value: "admin_biometrics_activation_data_chart",
+    title: "BIOMETRICS ACTIVATION DATA",
+    type: "read",
+  },
+  ADMIN_CLIENT_MEMBER_GENDER_WISE_DATA: {
+    value: "admin_client_member_gender_wise_data_chart",
+    title: "CLIENT MEMBER GENDER WISE DATA",
+    type: "read",
+  },
+  ADMIN_INDIA_WISE_MEMBERS: {
+    value: "admin_india_wise_members_chart",
+    title: "INDIA WISE MEMBERS",
     type: "read",
   },
   // Finance
@@ -1644,6 +1809,39 @@ export const PERMISSIONS = {
     title: "INVENTORY",
     type: "read",
   },
+  MAINTENANCE_INVENTORY_SUNTECK_UNITS: {
+    value: "maintenance_inventory_sunteck_units",
+    title: "SUNTECK KANAKA UNITS",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+  MAINTENANCE_INVENTORY_DEMPO_UNITS: {
+    value: "maintenance_inventory_dempo_trade_centre_units",
+    title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+
+   MAINTENANCE_INVENTORY_CATEGORY_TAB: {
+    value: "maintenance_inventory_category_tab",
+    title: "INVENTORY CATEGORY TAB",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+  MAINTENANCE_INVENTORY_ITEM_TAB: {
+    value: "maintenance_inventory_item_tab",
+    title: "INVENTORY ITEM TAB",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+  MAINTENANCE_INVENTORY_LIST_TAB: {
+    value: "maintenance_inventory_list_tab",
+    title: "INVENTORY LIST TAB",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory",
+  },
+
+
   MAINTENANCE_FINANCE: { value: "maintenance_finance_card", title: "FINANCE", type: "read" },
   MAINTENANCE_MIX_BAG: { value: "maintenance_mix_bag_card", title: "MIX BAG", type: "read" },
   MAINTENANCE_TEAM_MEMBERS_SCHEDULE: {
@@ -1727,6 +1925,16 @@ export const PERMISSIONS = {
   MAINTENANCE_AVERAGE_YEARLY_DUE: {
     value: "maintenance_average_yearly_due_chart",
     title: "AVERAGE YEARLY DUE",
+    type: "read",
+  },
+  MAINTENANCE_UNIT_WISE_DUE_TASKS: {
+    value: "maintenance_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  MAINTENANCE_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "maintenance_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
 
@@ -1828,6 +2036,37 @@ export const PERMISSIONS = {
     type: "read",
     access: "page",
   },
+   IT_INVENTORY_SUNTECK_UNITS: {
+    value: "it_inventory_sunteck_units",
+    title: "SUNTECK KANAKA UNITS",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
+  IT_INVENTORY_DEMPO_UNITS: {
+    value: "it_inventory_dempo_trade_centre_units",
+    title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
+
+   IT_INVENTORY_CATEGORY_TAB: {
+    value: "it_inventory_category_tab",
+    title: "INVENTORY CATEGORY TAB",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
+  IT_INVENTORY_ITEM_TAB: {
+    value: "it_inventory_item_tab",
+    title: "INVENTORY ITEM TAB",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
+  IT_INVENTORY_LIST_TAB: {
+    value: "it_inventory_list_tab",
+    title: "INVENTORY LIST TAB",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory",
+  },
   IT_FINANCE: {
     value: "it_finance_card",
     title: "IT FINANCE",
@@ -1918,14 +2157,14 @@ export const PERMISSIONS = {
     title: "UNIT WISE IT EXPENSES",
     type: "read",
   },
-  IT_BIOMETRICS_GENDER_DATA: {
-    value: "it_biometrics_gender_data_chart",
-    title: "BIOMETRICS GENDER DATA",
+  IT_BIOMETRICS_ACTIVATION_DATA: {
+    value: "it_biometrics_activation_data_chart",
+    title: "BIOMETRICS ACTIVATION DATA",
     type: "read",
   },
-  IT_CLIENT_WISE_COMPLAINTS: {
-    value: "it_client_wise_complaints_chart",
-    title: "CLIENT WISE COMPLAINTS",
+  IT_DEPARTMENT_WISE_COMPLAINTS: {
+    value: "it_department_wise_complaints_chart",
+    title: "DEPARTMENT WISE COMPLAINTS",
     type: "read",
   },
   IT_TYPE_OF_IT_COMPLAINTS: {
@@ -2019,6 +2258,27 @@ export const PERMISSIONS = {
   FRONTEND_WEBSITE_ISSUES_RAISED: {
     value: "frontend_website_issues_raised_chart",
     title: "WEBSITE ISSUES RAISED",
+    type: "read",
+  },
+
+  FRONTEND_DEPARTMENT_WISE_COMPLAINTS: {
+    value: "frontend_department_wise_complaints_chart",
+    title: "DEPARTMENT-WISE COMPLAINTS",
+    type: "read",
+  },
+  FRONTEND_DEPARTMENT_WISE_COMPLAINTS_1: {
+    value: "frontend_department_wise_complaints_1_chart",
+    title: "DEPARTMENT-WISE COMPLAINTS-1",
+    type: "read",
+  },
+  FRONTEND_UNIT_WISE_DUE_TASKS: {
+    value: "frontend_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  FRONTEND_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "frontend_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
 

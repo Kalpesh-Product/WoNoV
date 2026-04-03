@@ -7,8 +7,9 @@ import { useDispatch, useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, TextField } from "@mui/material";
-import PrimaryButton from "../../../components/PrimaryButton";
+
 import { Controller, useForm } from "react-hook-form";
+import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
 import {
   DatePicker,
@@ -23,7 +24,7 @@ import { queryClient } from "../../../main";
 import { toast } from "sonner";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import DetalisFormatted from "../../../components/DetalisFormatted";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdDeleteForever, MdOutlineRemoveRedEye } from "react-icons/md";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
@@ -51,7 +52,7 @@ const DailyTasks = () => {
     if (!deptId) {
       dispatch(setSelectedDepartment(currentDepartmentId));
     }
-  }, []);
+  }, [currentDepartmentId, deptId, dispatch]);
 
   const {
     handleSubmit: submitDailyKra,
@@ -125,7 +126,7 @@ const DailyTasks = () => {
     mutationKey: ["updateMyTasks"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/tasks/update-task-status/${data}`
+        `/api/tasks/update-task-status/${data}`,
       );
       return response.data;
     },
@@ -140,6 +141,21 @@ const DailyTasks = () => {
     },
   });
   //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
+  const { mutate: deleteMyTask, isPending: isDeletePending } = useMutation({
+    mutationKey: ["deleteMyTask"],
+    mutationFn: async (taskId) => {
+      const response = await axios.patch(`/api/tasks/delete-task/${taskId}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["fetchMyTask"] });
+      queryClient.invalidateQueries({ queryKey: ["completedTasks"] });
+      toast.success(data.message || "Task deleted");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error deleting task");
+    },
+  });
 
   //--------Column configs----------------//
 
@@ -147,7 +163,7 @@ const DailyTasks = () => {
     value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
   const departmentColumns = [
-    { headerName: "SR no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskList",
@@ -210,15 +226,45 @@ const DailyTasks = () => {
       pinned: "right",
       cellRenderer: (params) => {
         return (
-          <div
-            role="button"
-            onClick={() => updateMonthlyKpa(params.data.id)}
-            className="p-2"
-          >
-            <PrimaryButton
-              disabled={!params.node.selected}
-              title={"Mark As Done"}
-            />
+          <div className="flex items-center">
+            {/* Mark As Done */}
+            <div
+              role="button"
+              onClick={() => {
+                if (!params.node.selected || isUpdatePending || isDeletePending)
+                  return;
+                updateMonthlyKpa(params.data.id);
+              }}
+              className="p-2"
+            >
+              <PrimaryButton
+                title={isUpdatePending ? "⏳" : "Mark As Done"}
+                disabled={
+                  !params.node.selected || isUpdatePending || isDeletePending
+                }
+                className="px-2 py-1 text-xs w-28 h-7"
+              />
+            </div>
+
+            {/* Delete Button */}
+            <button
+              type="button"
+              title="Delete Task"
+              disabled={
+                !params.node.selected || isDeletePending || isUpdatePending
+              }
+              onClick={() => deleteMyTask(params.data.id)}
+              className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+            >
+              {isDeletePending ? (
+                "⏳"
+              ) : (
+                <MdDeleteForever
+                  size={26}
+                  color={!params.node.selected ? "gray" : "red"}
+                />
+              )}
+            </button>
           </div>
         );
       },
@@ -248,7 +294,7 @@ const DailyTasks = () => {
     // },
   ];
   const completedColumns = [
-    { headerName: "Sr no", field: "srno", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     {
       headerName: "Task List",
       field: "taskList",
@@ -335,22 +381,22 @@ const DailyTasks = () => {
   const completedData = isCompletedLoading
     ? []
     : completedEntries.map((item, index) => ({
-      srno: index + 1,
-      mongoId: item._id,
-      taskList: item.taskName,
-      department: item.department?.name,
-      completedBy: item.completedBy,
-      assignedBy: item.assignedBy.firstName + " " + item.assignedBy.lastName,
-      assignedDate: item.assignedDate,
-      dueDate: item.dueDate,
-      dueTime: item.dueTime,
-      completedDate: item.completedDate,
-      completedTime: item.completedDate,
-      completedDateTime: `${humanDate(item.completedDate)}, ${humanTime(
-        item.completedDate
-      )}`,
-      status: item.status,
-    }));
+        srno: index + 1,
+        mongoId: item._id,
+        taskList: item.taskName,
+        department: item.department?.name,
+        completedBy: item.completedBy,
+        assignedBy: item.assignedBy.firstName + " " + item.assignedBy.lastName,
+        assignedDate: item.assignedDate,
+        dueDate: item.dueDate,
+        dueTime: item.dueTime,
+        completedDate: item.completedDate,
+        completedTime: item.completedDate,
+        completedDateTime: `${humanDate(item.completedDate)}, ${humanTime(
+          item.completedDate,
+        )}`,
+        status: item.status,
+      }));
 
   return (
     <>
@@ -591,7 +637,6 @@ const DailyTasks = () => {
               title={"Due Date"}
               detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
             />
-
 
             <DetalisFormatted
               title={"Assigned By"}

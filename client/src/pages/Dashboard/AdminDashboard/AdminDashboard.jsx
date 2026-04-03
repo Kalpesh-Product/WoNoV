@@ -43,18 +43,19 @@ const AdminDashboard = () => {
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
-
+  const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
+  const isSuperAdminView = roleTitles.some((roleTitle) =>
+    ["Master Admin", "Super Admin"].includes(roleTitle),
+  );
   const userDepartments = auth?.user?.departments || [];
   const departmentIds = useMemo(
     () => userDepartments.map((dept) => dept?._id).filter(Boolean),
-    [userDepartments]
+    [userDepartments],
   );
   const departmentNames = useMemo(
     () =>
-      userDepartments
-        .map((dept) => dept?.name?.toLowerCase())
-        .filter(Boolean),
-    [userDepartments]
+      userDepartments.map((dept) => dept?.name?.toLowerCase()).filter(Boolean),
+    [userDepartments],
   );
   const hasMultipleDepartments = departmentIds.length > 1;
 
@@ -99,7 +100,7 @@ const AdminDashboard = () => {
   ];
 
   const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
+    (card) => !card.permission || userPermissions.includes(card.permission),
   );
   //------------------------PAGE ACCESS END-------------------//
 
@@ -109,7 +110,7 @@ const AdminDashboard = () => {
       try {
         const response = await axios.get(
           `/api/budget/company-budget?departmentId=6798bae6e469e809084e24a4
-            `
+            `,
         );
         return response.data?.allBudgets;
       } catch (error) {
@@ -121,7 +122,7 @@ const AdminDashboard = () => {
   const expenseSeries = useMemo(() => {
     // Initialize monthly buckets
     const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+      dayjs(`2024-04-01`).add(index, "month").format("MMM"),
     );
 
     const fyData = {
@@ -166,7 +167,7 @@ const AdminDashboard = () => {
   }, [hrFinance]);
 
   const maxExpenseValue = Math.max(
-    ...expenseSeries.flatMap((series) => series.data)
+    ...expenseSeries.flatMap((series) => series.data),
   );
   const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
   //------------------------Graph round functions-------------------//
@@ -189,7 +190,7 @@ const AdminDashboard = () => {
   });
 
   const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
-    amounts.reduce((sum, val) => sum + val, 0)
+    amounts.reduce((sum, val) => sum + val, 0),
   );
 
   const averageMonthlyExpense = monthlyTotals.length
@@ -230,7 +231,7 @@ const AdminDashboard = () => {
         acc.totalExpense += unit.totalExpense;
         return acc;
       },
-      { totalSqFt: 0, totalExpense: 0 }
+      { totalSqFt: 0, totalExpense: 0 },
     );
 
     const perSqFtExpense =
@@ -257,6 +258,21 @@ const AdminDashboard = () => {
     : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
 
   //----------------------Units data-----------------------//
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["selectedDepartments"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(
+          "api/company/get-company-data?field=selectedDepartments",
+        );
+        return Array.isArray(response.data?.selectedDepartments)
+          ? response.data.selectedDepartments
+          : [];
+      } catch (error) {
+        throw new Error("Error fetching selected departments");
+      }
+    },
+  });
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -274,7 +290,7 @@ const AdminDashboard = () => {
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
-    0
+    0,
   );
 
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
@@ -282,7 +298,7 @@ const AdminDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tasks/get-tasks?dept=${department._id}`
+          `/api/tasks/get-tasks?dept=${department._id}`,
         );
         return response.data;
       } catch (error) {
@@ -311,7 +327,7 @@ const AdminDashboard = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/weekly-unit/fetch-weekly-unit/${department._id}`
+            `/api/weekly-unit/fetch-weekly-unit/${department._id}`,
           );
 
           console.log("weekly schedule", weeklySchedule.length);
@@ -325,7 +341,7 @@ const AdminDashboard = () => {
   const expenseRawSeries = useMemo(() => {
     // Initialize monthly buckets
     const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+      dayjs(`2024-04-01`).add(index, "month").format("MMM"),
     );
 
     const fyData = {
@@ -438,7 +454,7 @@ const AdminDashboard = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-          rawData
+          rawData,
         ).toLocaleString("en-IN")}</div>
   
                 </div>
@@ -457,7 +473,7 @@ const AdminDashboard = () => {
   const totalUtilised =
     budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
       (acc, val) => acc + val,
-      0
+      0,
     ) || 0;
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -466,22 +482,134 @@ const AdminDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
 
   //-----------------------------------------------------------------------------------------------------------------//
-  const taskData = [
-    { unit: "ST-701A", tasks: 50 },
-    { unit: "ST-701B", tasks: 30 },
-    { unit: "ST-601A", tasks: 25 },
-    { unit: "ST-601B", tasks: 30 },
-    { unit: "ST-501A", tasks: 25 },
-    { unit: "ST-501B", tasks: 30 },
-    { unit: "DT-002", tasks: 25 },
-    { unit: "DT-706", tasks: 30 },
-  ];
+  //   const accessibleDepartmentTasks = useMemo(() => {
+  //   if (hasMultipleDepartments) {
+  //     if (isTasksSummaryLoading) return [];
+
+  //     return tasksSummary
+  //       .filter((dept) => {
+  //         const deptId =
+  //           typeof dept?.department === "object"
+  //             ? dept?.department?._id
+  //             : dept?.department;
+  //         const deptName =
+  //           typeof dept?.department === "object"
+  //             ? dept?.department?.name
+  //             : dept?.department;
+  //         const normalizedName =
+  //           typeof deptName === "string" ? deptName.toLowerCase() : "";
+
+  //         return (
+  //           (deptId && departmentIds.includes(deptId)) ||
+  //           (normalizedName && departmentNames.includes(normalizedName))
+  //         );
+  //       })
+  //       .flatMap((dept) =>
+  //         Array.isArray(dept?.tasks)
+  //           ? dept.tasks.filter((task) => task?.taskType === "Department")
+  //           : [],
+  //       );
+  //   }
+
+  //   return tasks.filter((task) => task?.taskType === "Department");
+  // }, [
+  //   departmentIds,
+  //   departmentNames,
+  //   hasMultipleDepartments,
+  //   isTasksSummaryLoading,
+  //   tasks,
+  //   tasksSummary,
+  // ]);
+
+  // const unitWiseTaskData = useMemo(() => {
+  //   const groupedTasks = accessibleDepartmentTasks.reduce((acc, task) => {
+  //     const unitNo = task?.location?.unitNo?.trim();
+
+  //     if (!unitNo || task?.status === "Completed") {
+  //       return acc;
+  //     }
+
+  //     if (!acc[unitNo]) {
+  //       acc[unitNo] = {
+  //         unit: unitNo,
+  //         tasks: 0,
+  //       };
+  //     }
+
+  //     acc[unitNo].tasks += 1;
+  //     return acc;
+  //   }, {});
+
+  //   return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
+  // }, [accessibleDepartmentTasks]);
+
+  // const totalUnitWiseTask = unitWiseTaskData.reduce(
+  //   (sum, item) => sum + item.tasks,
+  //   0,
+  // );
+  // const unitWisePieData = unitWiseTaskData.map((item) => ({
+  //   label: `${item.unit} (${((item.tasks / totalUnitWiseTask) * 100).toFixed(
+  //     1,
+  //   )}%)`,
+  //   value: item.tasks,
+  // }));
+
+  // const unitPieChartOptions = {
+  //   labels: unitWisePieData.map((item) => item.label),
+  //   chart: {
+  //     fontFamily: "Poppins-Regular",
+  //     events: {
+  //       dataPointSelection: () => {
+  //          navigate("/app/tasks/department-tasks");
+  //       },
+  //     },
+  //   },
+  //   toolTip: {
+  //     y: {
+  //       formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
+  //     },
+  //   },
+  // };
+  const managerByDepartmentName = useMemo(() => {
+    const map = new Map();
+
+    selectedDepartments.forEach((item) => {
+      const departmentName = item?.department?.name?.trim();
+      if (departmentName) {
+        map.set(departmentName.toLowerCase(), item?.admin || "Unassigned");
+      }
+    });
+
+    return map;
+  }, [selectedDepartments]);
+
+  const taskData = useMemo(() => {
+    const pendingDepartmentTasks = tasks.filter(
+      (task) => task?.taskType === "Department" && task?.status === "Pending",
+    );
+
+    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
+      const unitName = task?.location?.unitNo || "Unassigned";
+
+      if (!acc[unitName]) {
+        acc[unitName] = {
+          unit: unitName,
+          tasks: 0,
+        };
+      }
+
+      acc[unitName].tasks += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) =>
+      a.unit.localeCompare(b.unit, undefined, { numeric: true }),
+    );
+  }, [tasks]);
 
   const totalUnitWiseTask = taskData.reduce((sum, item) => sum + item.tasks, 0);
   const unitWisePieData = taskData.map((item) => ({
-    label: `${item.unit} (${((item.tasks / totalUnitWiseTask) * 100).toFixed(
-      1
-    )}%)`,
+    label: item.unit,
     value: item.tasks,
   }));
 
@@ -495,94 +623,154 @@ const AdminDashboard = () => {
         },
       },
     },
-    toolTip: {
+    tooltip: {
       y: {
-        formatter: (val) => `${((val / totalUnitWiseTask) * 100).toFixed(1)}%`,
+        formatter: (val) => `${val} Due tasks`,
       },
     },
   };
 
-  //-----------------------------------------------------------------------------------------------------------------//
-  const executiveTasks = [
-    { name: "Mac Parkar", tasks: 30 },
-    { name: "Anne Fernandes", tasks: 10 },
-    { name: "Naaz Bavannawar", tasks: 20 },
-  ];
 
-  const executiveTotalTasks = executiveTasks.reduce(
-    (sum, user) => sum + user.tasks,
-    0
-  );
-  const pieExecutiveData = executiveTasks.map((user) =>
-    parseFloat(((user.tasks / executiveTotalTasks) * 100).toFixed(1))
-  );
+  //-----------------------------------------------------------------------------------------------------------------//
+  const executiveTasks = useMemo(() => {
+    const pendingTaskCollection = hasMultipleDepartments && !isSuperAdminView
+      ? tasksSummary
+        .filter((dept) => {
+          const deptName =
+            typeof dept?.department === "object"
+              ? dept?.department?.name
+              : dept?.department;
+          const normalizedName =
+            typeof deptName === "string" ? deptName.toLowerCase() : "";
+          const isSalesDepartment = normalizedName.includes("sales");
+
+          return (
+            !isSalesDepartment &&
+            (!departmentNames.length ||
+              departmentNames.includes(normalizedName))
+          );
+        })
+        .flatMap((dept) =>
+          Array.isArray(dept?.tasks)
+            ? dept.tasks
+              .filter(
+                (task) =>
+                  task?.taskType === "Department" &&
+                  task?.status === "Pending",
+              )
+              .map((task) => ({
+                ...task,
+                department:
+                  typeof task?.department === "object"
+                    ? task?.department?.name
+                    : task?.department ||
+                    (typeof dept?.department === "object"
+                      ? dept?.department?.name
+                      : dept?.department),
+              }))
+            : [],
+        )
+      : tasks.filter(
+        (task) =>
+          task?.taskType === "Department" && task?.status === "Pending",
+      );
+
+    const groupedTasks = pendingTaskCollection.reduce((acc, task) => {
+      const departmentName =
+        typeof task?.department === "object"
+          ? task?.department?.name
+          : task?.department || department?.name || "Unknown Department";
+
+      if (departmentName?.toLowerCase?.().includes("sales")) {
+        return acc;
+      }
+      const managerName =
+        managerByDepartmentName.get(departmentName.toLowerCase()) ||
+        "Unassigned";
+      if (!acc[managerName]) {
+        acc[managerName] = {
+          name: managerName,
+          tasks: 0,
+        };
+      }
+
+      acc[managerName].tasks += 1;
+      return acc;
+    }, {});
+
+    return Object.values(groupedTasks).sort((a, b) => b.tasks - a.tasks);
+  }, [
+    department?.name,
+    departmentNames,
+    hasMultipleDepartments,
+    isSuperAdminView,
+    managerByDepartmentName,
+    tasks,
+    tasksSummary,
+  ]);
+  // const executiveTotalTasks = executiveTasks.reduce(
+  //   (sum, user) => sum + user.tasks,
+  //   0,
+  // );
+  //  const pieExecutiveData =
+  //   executiveTotalTasks > 0
+  //     ? executiveTasks.map((user) =>
+  //         parseFloat(((user.tasks / executiveTotalTasks) * 100).toFixed(1)),
+  //       )
+  //     : [];
   const executiveTasksCount = executiveTasks.map((user) => user.tasks);
   const labels = executiveTasks.map((user) => user.name);
-  const colors = ["#FF5733", "#FFC300", "#28B463"];
-  //-----------------------------------------------------------------------------------------------------------------//
-  const companyWiseDesk = [
-    { company: "Zomato", desks: "12" },
-    { company: "SquadStack", desks: "10" },
-    { company: "Zimetrics", desks: "15" },
-    { company: "Others", desks: "16" },
+  const currentDepartmentAdminName =
+    managerByDepartmentName.get(department?.name?.toLowerCase?.()) ||
+    "—";
+  const colors = [
+    "#FF5733",
+    "#FFC300",
+    "#28B463",
+    "#5B6CFF",
+    "#9B59B6",
+    "#17A2B8",
+    "#E67E22",
+    "#E91E63",
   ];
-  const totalCompanyDesks = companyWiseDesk.reduce(
-    (sum, item) => sum + item.desks,
-    0
-  );
-  const pieCompanyWiseDeskData = companyWiseDesk.map((item) => ({
-    label: `${item.company} (${((item.desks / totalCompanyDesks) * 100).toFixed(
-      1
-    )}%)`,
-    value: item.desks,
-  }));
-  const pieCompanyWiseDeskOptions = {
-    labels: companyWiseDesk.map((item) => item.company),
-    chart: {
-      fontFamily: "Poppins-Regular",
-      events: {
-        dataPointSelection: () => {
-          navigate(
-            "/app/dashboard/admin-dashboard/client-members/client-members-data"
-          );
-        },
-      },
-    },
-    stroke: {
-      show: true,
-      width: 6, // Increase for more "gap"
-      colors: ["#ffffff"], // Or match background color
-    },
-    toolTip: {
-      y: {
-        formatter: (val) => `${((val / totalCompanyDesks) * 100).toFixed(1)}%`,
-      },
-    },
-  };
   //-----------------------------------------------------------------------------------------------------------------//
-  const genderData = [
-    { gender: "Male", count: "45" },
-    { gender: "Female", count: "40" },
-  ];
-  const totalGenderCount = genderData.reduce(
-    (sum, item) => sum + item.count,
-    0
+  // India - Wise Client Members
+  const clientMembersData = isClientsDataPending
+    ? []
+    : clientsData
+      .filter((item) => item.members?.length > 0)
+      .map((item) => item.members)
+      .flat();
+
+  const genderCounts = clientMembersData.reduce(
+    (acc, member) => {
+      const value = String(member?.gender || "")
+        .trim()
+        .toLowerCase();
+
+      if (value.startsWith("m")) acc.Male += 1;
+      else if (value.startsWith("f")) acc.Female += 1;
+
+      return acc;
+    },
+    { Male: 0, Female: 0 },
   );
-  const pieGenderData = genderData.map((item) => ({
-    label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(
-      1
-    )}%`,
-    value: item.count,
-  }));
+
+  const pieGenderData = [
+    { label: "Male", value: genderCounts.Male || 0 },
+    { label: "Female", value: genderCounts.Female || 0 },
+  ];
+
   const pieGenderOptions = {
-    labels: genderData.map((item) => item.gender),
+    labels: pieGenderData.map((item) => item.label),
     chart: {
+      type: "pie",
       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: () => {
-          navigate(
-            "/app/dashboard/admin-dashboard/client-members/client-members-data"
-          );
+          // navigate(
+          //   "/app/dashboard/admin-dashboard/client-members/client-members-data",
+          // );
         },
       },
     },
@@ -593,9 +781,83 @@ const AdminDashboard = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `${val}`,
+        formatter: (val) => `${val} Members`,
       },
     },
+    legend: {
+      position: "right",
+    },
+    colors: ["#1E3D73", "#54C4A7"],
+  };
+  //-----------------------------------------------------------------------------------------------------------------//
+  function getLocationWiseData(data) {
+    const locationMap = {};
+
+    // Count companies per state from coworkingclient table.
+    data.forEach((client) => {
+      const state =
+        client?.hostate?.trim() || client?.hoState?.trim() || "Unknown";
+      locationMap[state] = (locationMap[state] || 0) + 1;
+    });
+
+    const sortedLocations = Object.entries(locationMap)
+      .map(([state, count]) => ({ label: state, value: count }))
+      .sort((a, b) => b.value - a.value);
+
+    const topStates = sortedLocations.slice(0, 6);
+    const othersCount = sortedLocations
+      .slice(6)
+      .reduce((sum, item) => sum + item.value, 0);
+
+    if (othersCount > 0) {
+      topStates.push({ label: "Others", value: othersCount });
+    }
+
+    return topStates;
+  }
+
+  const locationWiseData = getLocationWiseData(clientsData);
+  const locationChartColors = [
+    "#1E3D73",
+    "#FF6B6B",
+    "#4ECDC4",
+    "#F7B801",
+    "#8E44AD",
+    "#2ECC71",
+    "#FF8C42",
+  ];
+
+  const locationPieChartOptions = {
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
+    },
+    labels: locationWiseData.map((item) => item.label),
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const state = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const companies = series?.[seriesIndex] ?? 0;
+
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          locationChartColors[seriesIndex % locationChartColors.length];
+
+        return `<div style="
+      padding:8px 12px;
+      font-size:12px;
+      background:${color};
+      color:#fff;
+      border-radius:6px;
+    ">
+      ${state}: ${companies} companies
+    </div>`;
+      },
+    },
+    legend: {
+      position: "right",
+    },
+    colors: locationChartColors,
   };
   //-----------------------------------------------------------------------------------------------------------------//
   const houseKeepingMemberColumns = [
@@ -649,7 +911,7 @@ const AdminDashboard = () => {
               birthdayStart.isBefore(cutOff) &&
               birthdayStart.isAfter(today.subtract(1, "day")),
           };
-        })
+        }),
     )
     .filter((item) => item.isUpcoming);
 
@@ -743,10 +1005,36 @@ const AdminDashboard = () => {
     };
   });
 
-  let simplifiedClientsPie = [];
+  const simplifiedClientsPie = useMemo(() => {
+    if (isClientsDataPending || !Array.isArray(clientsData)) {
+      return [];
+    }
+
+    const sortedClients = clientsData
+      .map((item) => ({
+        companyName: item?.clientName || "Unknown",
+        totalDesks: Number(item?.totalDesks) || 0,
+      }))
+      .filter((item) => item.totalDesks > 0)
+      .sort((a, b) => b.totalDesks - a.totalDesks);
+
+    const topCompanies = sortedClients.slice(0, 6);
+    const otherTotalDesks = sortedClients
+      .slice(6)
+      .reduce((sum, item) => sum + item.totalDesks, 0);
+
+    if (otherTotalDesks > 0) {
+      topCompanies.push({
+        companyName: "Others",
+        totalDesks: otherTotalDesks,
+      });
+    }
+
+    return topCompanies;
+  }, [clientsData, isClientsDataPending]);
 
   const totalDueTasks = useMemo(() => {
-    if (hasMultipleDepartments) {
+    if (hasMultipleDepartments && !isSuperAdminView) {
       if (isTasksSummaryLoading) return 0;
 
       return tasksSummary
@@ -776,50 +1064,51 @@ const AdminDashboard = () => {
     }
 
     const departmentTasks = tasks.filter(
-      (task) => task?.taskType === "Department"
+      (task) => task?.taskType === "Department",
     );
     return departmentTasks.length || 0;
   }, [
     departmentIds,
     departmentNames,
     hasMultipleDepartments,
+    isSuperAdminView,
     isTasksSummaryLoading,
     tasks,
     tasksSummary,
   ]);
 
-  if (!isClientsDataPending && Array.isArray(clientsData)) {
-    let otherTotalDesks = 0;
+  // if (!isClientsDataPending && Array.isArray(clientsData)) {
+  //   let otherTotalDesks = 0;
 
-    simplifiedClientsPie = clientsData.reduce((acc, item) => {
-      const { clientName: companyName, totalDesks } = item;
+  //   simplifiedClientsPie = clientsData.reduce((acc, item) => {
+  //     const { clientName: companyName, totalDesks } = item;
 
-      if (totalDesks < 15) {
-        otherTotalDesks += totalDesks;
-        return acc;
-      }
+  //     if (totalDesks < 15) {
+  //       otherTotalDesks += totalDesks;
+  //       return acc;
+  //     }
 
-      acc.push({ companyName, totalDesks });
-      return acc;
-    }, []);
+  //     acc.push({ companyName, totalDesks });
+  //     return acc;
+  //   }, []);
 
-    if (otherTotalDesks > 0) {
-      simplifiedClientsPie.push({
-        companyName: "Other",
-        totalDesks: otherTotalDesks,
-      });
-    }
-  }
+  //   if (otherTotalDesks > 0) {
+  //     simplifiedClientsPie.push({
+  //       companyName: "Other",
+  //       totalDesks: otherTotalDesks,
+  //     });
+  //   }
+  // }
 
   const totalClientsDesks = simplifiedClientsPie.reduce(
     (sum, item) => sum + item.totalDesks,
-    0
+    0,
   );
 
   const totalDeskPercent = simplifiedClientsPie.map((item) => ({
-    label: `${item.companyName} ${(
-      (item.totalDesks / totalClientsDesks) *
-      100
+    label: `${item.companyName} ${(totalClientsDesks > 0
+      ? (item.totalDesks / totalClientsDesks) * 100
+      : 0
     ).toFixed(1)}%`,
     value: item.totalDesks,
   }));
@@ -860,7 +1149,7 @@ const AdminDashboard = () => {
       toolbar: false,
       events: {
         dataPointSelection: () => {
-          navigate("/app/dashboard/admin-dashboard/mix-bag/biometric-access");
+          // navigate("/app/dashboard/admin-dashboard/mix-bag/biometric-access");
         },
       },
     },
@@ -875,14 +1164,12 @@ const AdminDashboard = () => {
     },
   };
   const clientsDesksPieOptions = {
-    labels: simplifiedClientsPie.map((item) => {
-      const label = item?.companyName ? `${item.companyName}` : "Unknown";
-      return label.length > 10 ? label.slice(0, 15) + "..." : label;
-    }),
+    labels: simplifiedClientsPie.map((item) => item?.companyName || "Unknown"),
     chart: {
       fontFamily: "Poppins-Regular",
       toolbar: false,
     },
+
     colors: [
       "#0F172A", // deep navy blue
       "#1E293B", // dark slate blue
@@ -896,15 +1183,43 @@ const AdminDashboard = () => {
       "#4C51BF", // indigo-tinged blue
     ],
 
+
     tooltip: {
-      y: {
-        formatter: (val) => {
-          return `${val} Desks`; // Explicitly return the formatted value
-        },
+      custom: function ({ series, seriesIndex, w }) {
+        const name = w.globals.labels[seriesIndex] || "";
+        const value = series[seriesIndex];
+        const color = w.globals.colors[seriesIndex];
+
+        const shortName =
+          name.length > 15 ? name.slice(0, 15) + "..." : name;
+
+        return `<div style="
+                     padding:7px 10px;
+                     background:${color};
+                     border-radius:5px;
+                     font-size:13px;
+                   ">
+                     ${shortName}: ${value} Desks
+                   </div>`;
       },
     },
     legend: {
-      position: "right",
+      position: "bottom",
+      horizontalAlign: "center",
+      fontSize: "12px",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+      markers: {
+        width: 12,
+        height: 12,
+      },
+      formatter: (seriesName) => {
+        return seriesName.length > 15
+          ? seriesName.slice(0, 15) + "..."
+          : seriesName;
+      },
     },
   };
 
@@ -924,7 +1239,7 @@ const AdminDashboard = () => {
 
   const allowedDeptExpenseGrpah = filterPermissions(
     departmentExpenseGraphConfig,
-    userPermissions
+    userPermissions,
   );
 
   //data cards
@@ -971,14 +1286,14 @@ const AdminDashboard = () => {
       key: PERMISSIONS.ADMIN_TOP_EXECUTIVE.value,
       title: "Top Executive",
       data: "",
-      description: "Ms. Utkarsha Palkar",
+      description: currentDepartmentAdminName,
       route: "admin-executive-expense",
     },
   ];
 
   const allowedAdminDataCards = filterPermissions(
     dataCardConfigs,
-    userPermissions
+    userPermissions,
   );
 
   //MUI Tables
@@ -1055,10 +1370,8 @@ const AdminDashboard = () => {
 
   const allowedUnitWise = filterPermissions(
     unitWiseDueTasksWidget,
-    userPermissions
+    userPermissions,
   );
-
-
 
   //Executivve wise
   const executiveWiseDueTasksWidget = [
@@ -1069,16 +1382,18 @@ const AdminDashboard = () => {
       chartType: "DonutChart",
       border: true,
       centerLabel: "Tasks",
-      labels: [],
+      labels,
       colors,
-      series: [],
+      series: executiveTasksCount,
       tooltipValue: executiveTasksCount,
+      tooltipFormatter: (label, value) =>
+        `${label}: ${value || 0} pending tasks`,
     },
   ];
 
   const allowedExecutiveWise = filterPermissions(
     executiveWiseDueTasksWidget,
-    userPermissions
+    userPermissions,
   );
 
   const piechartConfig2 = [
@@ -1090,14 +1405,41 @@ const AdminDashboard = () => {
       border: true,
       data: totalDeskPercent,
       options: clientsDesksPieOptions,
-      width: "100%",
+      height: 320,
+      width: 500,
       isLoading: isClientsDataPending,
       loadingFallback: <CircularProgress color="#1E3D73" />,
     },
     {
-      key: PERMISSIONS.ADMIN_BIOMETRICS_GENDER_DATA.value,
+      key: PERMISSIONS.ADMIN_INDIA_WISE_MEMBERS.value,
       layout: 2,
-      title: "Biometrics Data",
+      title: "India-wise Members",
+      chartType: "PieChartMui",
+      border: true,
+      data: locationWiseData,
+      options: locationPieChartOptions,
+      height: 320,
+      width: 500,
+      isLoading: isClientsDataPending,
+      loadingFallback: <CircularProgress color="#1E3D73" />,
+    },
+    {
+      key: PERMISSIONS.ADMIN_CLIENT_MEMBER_GENDER_WISE_DATA.value,
+      layout: 2,
+      title: "Client Member Gender Wise Data",
+      chartType: "PieChartMui",
+      border: true,
+      data: pieGenderData,
+      options: pieGenderOptions,
+      height: 320,
+      width: 500,
+      isLoading: isClientsDataPending,
+      loadingFallback: <CircularProgress color="#1E3D73" />,
+    },
+    {
+      key: PERMISSIONS.ADMIN_BIOMETRICS_ACTIVATION_DATA.value,
+      layout: 2,
+      title: "Biometrics Activation Data",
       chartType: "PieChartMui",
       border: true,
       data: biometricStatusSummary,
@@ -1107,7 +1449,7 @@ const AdminDashboard = () => {
 
   const allowedPiechartConfig2 = filterPermissions(
     piechartConfig2,
-    userPermissions
+    userPermissions,
   );
   //-----------------------------------------------------------------------------------------------------------------//
   const techWidgets = [
@@ -1188,33 +1530,34 @@ const AdminDashboard = () => {
       layout: 2,
       widgets: allowedTables.map((config) => <MuiTable {...config} />),
     },
-    // {
-    //   layout: 2,
-    //   widgets: [
-    //     allowedUnitWise.map((config) => (
-    //       <WidgetSection border={config.border} title={config.title}>
-    //         <PieChartMui 
-    //         data={config.data} 
-    //         options={config.options} 
-    //         width={config?.width}
-    //         height={config?.height}
-    //         centerAlign
-    //         />
-    //       </WidgetSection>
-    //     )),
-    //     allowedExecutiveWise.map((config) => (
-    //       <WidgetSection border={config.border} title={config.title}>
-    //         <DonutChart
-    //           centerLabel={config.centerLabel}
-    //           labels={config.labels}
-    //           colors={config.colors}
-    //           series={config.series}
-    //           tooltipValue={config.tooltipValue}
-    //         />
-    //       </WidgetSection>
-    //     )),
-    //   ],
-    // },
+    {
+      layout: 2,
+      widgets: [
+        allowedUnitWise.map((config) => (
+          <WidgetSection border={config.border} title={config.title}>
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={config?.width}
+              height={config?.height}
+              centerAlign
+            />
+          </WidgetSection>
+        )),
+        allowedExecutiveWise.map((config) => (
+          <WidgetSection border={config.border} title={config.title}>
+            <DonutChart
+              centerLabel={config.centerLabel}
+              labels={config.labels}
+              colors={config.colors}
+              series={config.series}
+              tooltipValue={config.tooltipValue}
+              tooltipFormatter={config.tooltipFormatter}
+            />
+          </WidgetSection>
+        )),
+      ],
+    },
     {
       layout: 2,
       widgets: allowedPiechartConfig2.map((config) => (
@@ -1223,7 +1566,8 @@ const AdminDashboard = () => {
             <PieChartMui
               data={config.data}
               options={config.options}
-              width={config.width}
+              width={config?.width}
+              height={config?.height}
               centerAlign
             />
           ) : (

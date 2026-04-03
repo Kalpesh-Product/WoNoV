@@ -91,9 +91,10 @@ const AssetsCategories = () => {
           const response = await axios.get(
             `/api/category/get-category?departmentId=${departmentId}`,
           );
-          return response.data;
+          return Array.isArray(response.data) ? response.data : [];
         } catch (error) {
-          console.error(error.message);
+          console.error(error.response?.data?.message || error.message);
+          return [];
         }
       },
     });
@@ -148,6 +149,7 @@ const AssetsCategories = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
@@ -173,22 +175,22 @@ const AssetsCategories = () => {
       },
     },
   ];
-  const tableData = isCategoriesPending
+  const tableData = isCategoriesPending || !Array.isArray(assetCategories)
     ? []
     : assetCategories.map((item, index) => {
-        const status = item.isActive ? "Active" : "Inactive";
-        const subCategories = item.subCategories.map(
-          (sub) => sub.subCategoryName,
-        );
+      const status = item.isActive ? "Active" : "Inactive";
+      const subCategories = Array.isArray(item.subCategories)
+        ? item.subCategories.map((sub) => sub.subCategoryName)
+        : [];
 
-        return {
-          ...item,
-          _id: item._id,
-          srNo: index + 1,
-          status: status,
-          subCategories,
-        };
-      });
+      return {
+        ...item,
+        _id: item._id,
+        srNo: index + 1,
+        status: status,
+        subCategories,
+      };
+    });
   //--------------------Table Data------------------------------//
 
   return (
@@ -206,7 +208,7 @@ const AssetsCategories = () => {
         data={tableData}
         columns={categoriesColumn}
         tableHeight={350}
-        // getRowStyle={getRowStyle}
+      // getRowStyle={getRowStyle}
       />
 
       <MuiModal

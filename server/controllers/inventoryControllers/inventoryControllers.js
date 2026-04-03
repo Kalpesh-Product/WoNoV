@@ -5,196 +5,827 @@ const { createLog } = require("../../utils/moduleLogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const Category = require("../../models/category/Category");
-
-// Create Inventory Item
+const Item = require("../../models/Item");
 
 const createInventory = async (req, res, next) => {
-  const logPath = "inventory/InventoryLog";
-  const logAction = "Add inventory";
-  const logSourceKey = "inventory";
-  const { user, ip, company } = req;
+  const { user, company } = req;
 
   try {
     const {
       department,
       itemName,
-      openingInventoryUnits = 0,
-      openingPerUnitPrice = 0,
-      openingInventoryValue,
       newPurchaseUnits = 0,
       newPurchasePerUnitPrice = 0,
-      newPurchaseInventoryValue,
-      closingInventoryUnits,
-      category,
+      unit,
     } = req.body;
 
-    /* ------------------ Basic validations ------------------ */
+    /* ------------------ Validations ------------------ */
 
-    if (!itemName?.trim()) {
-      throw new CustomError(
-        "Item name is required",
-        logPath,
-        logAction,
-        logSourceKey,
-        400,
-      );
+    if (!itemName) {
+      return res.status(400).json({ message: "Item is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(itemName)) {
+      return res.status(400).json({ message: "Invalid item id" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(unit)) {
+      return res.status(400).json({ message: "Invalid unit id" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(department)) {
-      throw new CustomError(
-        "Invalid department Id provided",
-        logPath,
-        logAction,
-        logSourceKey,
-        400,
-      );
+      return res.status(400).json({ message: "Invalid department id" });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(category)) {
-      throw new CustomError(
-        "Invalid category Id provided",
-        logPath,
-        logAction,
-        logSourceKey,
-        400,
-      );
+    const itemExists = await Item.exists({ _id: itemName, isActive: true });
+    if (!itemExists) {
+      return res.status(400).json({ message: "Item not found or inactive" });
     }
 
-    /* ------------------ Category validation ------------------ */
+    if (Number(newPurchaseUnits) < 0 || Number(newPurchasePerUnitPrice) < 0) {
+      return res.status(400).json({
+        message: "Purchase values must be non-negative",
+      });
+    }
 
-    const validCategory = await Category.findOne({
-      _id: category,
+    const lastInventory = await Inventory.findOne({
       company,
-      appliesTo: "inventory",
-      isActive: true,
-    }).lean();
+      department: department,
+      itemName: itemName,
+      unit: unit,
+    }).sort({ createdAt: -1 });
 
-    if (!validCategory) {
-      throw new CustomError(
-        "Category is not valid for inventory",
-        logPath,
-        logAction,
-        logSourceKey,
-        400,
-      );
-    }
+    const previousRemaining = lastInventory?.remainingUnits || 0;
 
-    /* ------------------ Numeric sanity checks ------------------ */
-
-    const numbers = [
-      Number(openingInventoryUnits),
-      Number(openingPerUnitPrice),
-      Number(newPurchaseUnits),
-      Number(newPurchasePerUnitPrice),
-    ];
-
-    if (numbers.some((n) => typeof n !== "number" || n < 0)) {
-      throw new CustomError(
-        "Inventory values must be non-negative numbers",
-        logPath,
-        logAction,
-        logSourceKey,
-        400,
-      );
-    }
-
-    /* ------------------ Create inventory ------------------ */
+    /* ------------------ Create ------------------ */
 
     const inventory = await Inventory.create({
       company,
       department,
-      itemName: itemName.trim(),
-      category,
-      openingInventoryUnits,
-      openingPerUnitPrice,
-      openingInventoryValue,
+      itemName,
+      unit,
+      addedBy: user,
       newPurchaseUnits,
       newPurchasePerUnitPrice,
-      newPurchaseInventoryValue,
-      closingInventoryUnits,
-      date: new Date(),
-    });
-
-    /* ------------------ Logging ------------------ */
-
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Inventory added successfully",
-      status: "Success",
-      user,
-      ip,
-      company,
-      sourceKey: logSourceKey,
-      sourceId: inventory._id,
-      changes: inventory,
+      newPurchaseInventoryValue:
+        Number(newPurchaseUnits) * Number(newPurchasePerUnitPrice),
+      remainingUnits: previousRemaining + Number(newPurchaseUnits),
     });
 
     return res.status(201).json(inventory);
   } catch (error) {
-    return next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-    );
+    next(error);
   }
 };
 
-const getInventories = async (req, res) => {
+// GET Inventories with Aggregation (for complex derived fields and optimized lookups)
+
+const getInventories = async (req, res, next) => {
   try {
-    const { department, category, id } = req.query;
+    const { department } = req.query;
+    const { company } = req;
 
-    if (id) {
-      // Fetch a single inventory item by ID
-      const inventory = await Inventory.findOne({
-        _id: id,
-        company: req.company,
-      }).populate("department");
+    const match = {
+      company: new mongoose.Types.ObjectId(company),
+      ...(department && {
+        department: new mongoose.Types.ObjectId(department),
+      }),
+    };
 
-      if (!inventory) {
-        return res.status(404).json({ message: "Inventory not found" });
-      }
+    // const inventories = await Inventory.aggregate([
+    //   {
+    //     $match: match,
+    //   },
 
-      return res.status(200).json(inventory);
-    }
+    //   {
+    //     $sort: { createdAt: 1 },
+    //   },
 
-    // Build dynamic query for filtering
-    const query = { company: req.company };
+    //   /* ------------------ Window: Get Previous Entry ------------------ */
 
-    if (department) query.department = department;
-    if (category) query.category = category;
+    //   {
+    //     $setWindowFields: {
+    //       partitionBy: {
+    //         itemName: "$itemName",
+    //         unit: "$unit",
+    //         department: "$department",
+    //       },
+    //       sortBy: { createdAt: 1 },
+    //       output: {
+    //         prevUnits: {
+    //           $shift: {
+    //             output: "$newPurchaseUnits",
+    //             by: -1,
+    //           },
+    //         },
+    //         prevPrice: {
+    //           $shift: {
+    //             output: "$newPurchasePerUnitPrice",
+    //             by: -1,
+    //           },
+    //         },
+    //         prevValue: {
+    //           $shift: {
+    //             output: "$newPurchaseInventoryValue",
+    //             by: -1,
+    //           },
+    //         },
+    //         prevRemaining: {
+    //           $shift: {
+    //             output: "$remainingUnits",
+    //             by: -1,
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
 
-    const inventories = await Inventory.find(query).populate(
-      "department category",
-    );
+    //   /* ------------------ Opening Values ------------------ */
+
+    //   {
+    //     $addFields: {
+    //       openingInventoryUnits: { $ifNull: ["$prevUnits", 0] },
+    //       openingPerUnitPrice: { $ifNull: ["$prevPrice", 0] },
+    //       openingInventoryValue: { $ifNull: ["$prevValue", 0] },
+    //       remainingOpeningInventoryUnits: { $ifNull: ["$prevRemaining", 0] },
+    //     },
+    //   },
+
+    //   /* ------------------ Consumption Sum ------------------ */
+
+    //   {
+    //     $addFields: {
+    //       totalConsumed: {
+    //         $sum: "$consumptions.quantity",
+    //       },
+    //     },
+    //   },
+    //   /* ------------------ Remaining Inventory Sum ------------------ */
+
+    //   {
+    //     $addFields: {
+    //       remainingNewPurchaseInventoryUnits: "$remainingUnits",
+    //     },
+    //   },
+
+    //   /* ------------------ Lookups ------------------ */
+
+    //   {
+    //     $lookup: {
+    //       from: "items",
+    //       localField: "itemName",
+    //       foreignField: "_id",
+    //       as: "itemName",
+    //     },
+    //   },
+    //   { $unwind: { path: "$itemName", preserveNullAndEmptyArrays: true } },
+
+    //   {
+    //     $lookup: {
+    //       from: "units",
+    //       localField: "unit",
+    //       foreignField: "_id",
+    //       as: "unit",
+    //     },
+    //   },
+    //   { $unwind: { path: "$unit", preserveNullAndEmptyArrays: true } },
+
+    //   {
+    //     $lookup: {
+    //       from: "categories",
+    //       localField: "itemName.category",
+    //       foreignField: "_id",
+    //       as: "category",
+    //     },
+    //   },
+    //   { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+
+    //   {
+    //     $lookup: {
+    //       from: "departments",
+    //       localField: "department",
+    //       foreignField: "_id",
+    //       as: "department",
+    //     },
+    //   },
+    //   { $unwind: { path: "$department", preserveNullAndEmptyArrays: true } },
+
+    //   {
+    //     $lookup: {
+    //       from: "userdatas",
+    //       localField: "addedBy",
+    //       foreignField: "_id",
+    //       as: "addedBy",
+    //     },
+    //   },
+    //   { $unwind: { path: "$addedBy", preserveNullAndEmptyArrays: true } },
+
+    //   {
+    //     $lookup: {
+    //       from: "userdatas",
+    //       localField: "consumptions.addedBy",
+    //       foreignField: "_id",
+    //       as: "consumptionUsers",
+    //     },
+    //   },
+
+    //   /* ------------------ Map consumption users ------------------ */
+
+    //   {
+    //     $addFields: {
+    //       consumptions: {
+    //         $map: {
+    //           input: "$consumptions",
+    //           as: "c",
+    //           in: {
+    //             quantity: "$$c.quantity",
+    //             date: "$$c.date",
+    //             source: "$$c.source",
+    //             addedBy: {
+    //               $let: {
+    //                 vars: {
+    //                   user: {
+    //                     $arrayElemAt: [
+    //                       {
+    //                         $filter: {
+    //                           input: "$consumptionUsers",
+    //                           cond: {
+    //                             $eq: ["$$this._id", "$$c.addedBy"],
+    //                           },
+    //                         },
+    //                       },
+    //                       0,
+    //                     ],
+    //                   },
+    //                 },
+    //                 in: {
+    //                   firstName: "$$user.firstName",
+    //                   lastName: "$$user.lastName",
+    //                 },
+    //               },
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+
+    //   /* ------------------ Final Output ------------------ */
+
+    //   {
+    //     $project: {
+    //       itemName: "$itemName.name",
+
+    //       department: {
+    //         _id: "$department._id",
+    //         name: "$department.name",
+    //       },
+
+    //       unit: {
+    //         unitNo: "$unit.unitNo",
+    //         unitName: "$unit.unitName",
+    //       },
+
+    //       category: "$category.categoryName",
+
+    //       addedBy: {
+    //         firstName: "$addedBy.firstName",
+    //         lastName: "$addedBy.lastName",
+    //       },
+
+    //       // remainingNewPurchaseInventoryUnits
+    //       // remainingOpeningInventoryUnits
+    //       /* 🔥 Opening */
+    //       openingInventoryUnits: 1,
+    //       openingPerUnitPrice: 1,
+    //       openingInventoryValue: 1,
+    //       remainingOpeningInventoryUnits: 1,
+
+    //       /* 🔥 Current */
+    //       newPurchaseUnits: 1,
+    //       newPurchasePerUnitPrice: 1,
+    //       newPurchaseInventoryValue: 1,
+    //       remainingNewPurchaseInventoryUnits: 1,
+
+    //       totalConsumed: 1,
+    //       consumptions: 1,
+    //       createdAt: 1,
+    //     },
+    //   },
+
+    //   {
+    //     $sort: { createdAt: -1 },
+    //   },
+    // ]);
+
+    const inventories = await Inventory.aggregate([
+      /* ------------------ Match ------------------ */
+      {
+        $match: {
+          company: new mongoose.Types.ObjectId(company),
+          ...(department && {
+            department: new mongoose.Types.ObjectId(department),
+          }),
+        },
+      },
+
+      /* ------------------ Sort ASC (required for window) ------------------ */
+      {
+        $sort: { createdAt: 1 },
+      },
+
+      /* ------------------ Current Consumption ------------------ */
+      {
+        $addFields: {
+          totalConsumed: {
+            $sum: "$consumptions.quantity",
+          },
+        },
+      },
+
+      /* ------------------ Window: Previous Entry ------------------ */
+      {
+        $setWindowFields: {
+          partitionBy: {
+            itemName: "$itemName",
+            unit: "$unit",
+            department: "$department",
+          },
+          sortBy: { createdAt: 1 },
+          output: {
+            prevUnits: {
+              $shift: { output: "$newPurchaseUnits", by: -1 },
+            },
+            prevPrice: {
+              $shift: { output: "$newPurchasePerUnitPrice", by: -1 },
+            },
+            prevValue: {
+              $shift: { output: "$newPurchaseInventoryValue", by: -1 },
+            },
+            prevRemaining: {
+              $shift: { output: "$remainingUnits", by: -1 },
+            },
+            prevConsumed: {
+              $shift: { output: "$totalConsumed", by: -1 },
+            },
+          },
+        },
+      },
+
+      /* ------------------ Opening + LastConsumed ------------------ */
+      {
+        $addFields: {
+          openingInventoryUnits: { $ifNull: ["$prevUnits", 0] },
+          openingPerUnitPrice: { $ifNull: ["$prevPrice", 0] },
+          openingInventoryValue: { $ifNull: ["$prevValue", 0] },
+          remainingOpeningInventoryUnits: {
+            $ifNull: ["$prevRemaining", 0],
+          },
+
+          /* 🔥 Your new field */
+          lastConsumed: { $ifNull: ["$prevConsumed", 0] },
+
+          /* Current Remaining */
+          remainingNewPurchaseInventoryUnits: "$remainingUnits",
+        },
+      },
+
+      /* ------------------ Lookups ------------------ */
+      {
+        $lookup: {
+          from: "items",
+          localField: "itemName",
+          foreignField: "_id",
+          as: "itemName",
+        },
+      },
+      { $unwind: { path: "$itemName", preserveNullAndEmptyArrays: true } },
+
+      {
+        $lookup: {
+          from: "units",
+          localField: "unit",
+          foreignField: "_id",
+          as: "unit",
+        },
+      },
+      { $unwind: { path: "$unit", preserveNullAndEmptyArrays: true } },
+
+      {
+        $lookup: {
+          from: "categories",
+          localField: "itemName.category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+
+      {
+        $lookup: {
+          from: "departments",
+          localField: "department",
+          foreignField: "_id",
+          as: "department",
+        },
+      },
+      { $unwind: { path: "$department", preserveNullAndEmptyArrays: true } },
+
+      {
+        $lookup: {
+          from: "userdatas",
+          localField: "addedBy",
+          foreignField: "_id",
+          as: "addedBy",
+        },
+      },
+      { $unwind: { path: "$addedBy", preserveNullAndEmptyArrays: true } },
+
+      {
+        $lookup: {
+          from: "userdatas",
+          localField: "consumptions.addedBy",
+          foreignField: "_id",
+          as: "consumptionUsers",
+        },
+      },
+
+      /* ------------------ Map Consumption Users ------------------ */
+      {
+        $addFields: {
+          consumptions: {
+            $map: {
+              input: "$consumptions",
+              as: "c",
+              in: {
+                quantity: "$$c.quantity",
+                date: "$$c.date",
+                source: "$$c.source",
+                addedBy: {
+                  $let: {
+                    vars: {
+                      user: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: "$consumptionUsers",
+                              cond: {
+                                $eq: ["$$this._id", "$$c.addedBy"],
+                              },
+                            },
+                          },
+                          0,
+                        ],
+                      },
+                    },
+                    in: {
+                      firstName: "$$user.firstName",
+                      lastName: "$$user.lastName",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+
+      /* ------------------ Final Projection ------------------ */
+      {
+        $project: {
+          itemName: "$itemName.name",
+
+          department: {
+            _id: "$department._id",
+            name: "$department.name",
+          },
+
+          unit: {
+            unitNo: "$unit.unitNo",
+            unitName: "$unit.unitName",
+          },
+
+          category: "$category.categoryName",
+
+          addedBy: {
+            firstName: "$addedBy.firstName",
+            lastName: "$addedBy.lastName",
+          },
+
+          /* 🔥 Opening */
+          openingInventoryUnits: 1,
+          openingPerUnitPrice: 1,
+          openingInventoryValue: 1,
+          remainingOpeningInventoryUnits: 1,
+
+          /* 🔥 Current */
+          newPurchaseUnits: 1,
+          newPurchasePerUnitPrice: 1,
+          newPurchaseInventoryValue: 1,
+          remainingNewPurchaseInventoryUnits: 1,
+
+          /* 🔥 Consumption */
+          totalConsumed: 1,
+          lastConsumed: 1,
+
+          consumptions: 1,
+          createdAt: 1,
+        },
+      },
+
+      /* ------------------ Final Sort (latest first) ------------------ */
+      {
+        $sort: { createdAt: -1 },
+      },
+    ]);
+
     return res.status(200).json(inventories);
   } catch (error) {
     console.error("Fetch Inventory Error:", error);
-    res.status(500).json({ message: "Failed to fetch inventory", error });
+    next(error);
   }
 };
 
-// Update Inventory
+// const updateInventory = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { consumptions = [] } = req.body;
+//     const { user, company } = req;
+
+//     const inventory = await Inventory.findOne({ _id: id, company });
+
+//     if (!inventory) {
+//       return res
+//         .status(404)
+//         .json({ message: "Inventory not found or unauthorized" });
+//     }
+
+//     /* ------------------ Format consumptions ------------------ */
+
+//     let formattedConsumptions = [];
+
+//     if (Array.isArray(consumptions) && consumptions.length > 0) {
+//       formattedConsumptions = consumptions.map((c) => {
+//         if (!c.quantity || c.quantity < 0) {
+//           throw new Error("Invalid consumption quantity");
+//         }
+
+//         return {
+//           quantity: Number(c.quantity),
+//           source: c.source || "newPurchase",
+//           date: new Date(),
+//           addedBy: user,
+//         };
+//       });
+//     }
+
+//     /* ------------------ STOCK VALIDATION ------------------ */
+
+//     // const totalPurchase = inventory.newPurchaseUnits;
+
+//     // const totalConsumed = inventory.consumptions.reduce(
+//     //   (sum, c) => sum + c.quantity,
+//     //   0,
+//     // );
+
+//     // const incomingConsumption = formattedConsumptions.reduce(
+//     //   (sum, c) => sum + c.quantity,
+//     //   0,
+//     // );
+
+//     // if (totalConsumed + incomingConsumption > totalPurchase) {
+//     //   return res.status(400).json({
+//     //     message: "Consumption exceeds available stock",
+//     //   });
+//     // }
+
+//     const allInventories = await Inventory.find({
+//       company,
+//       department: inventory.department,
+//       itemName: inventory.itemName,
+//       unit: inventory.unit,
+//     });
+
+//     let totalPurchase = 0;
+//     let totalConsumed = 0;
+
+//     allInventories.forEach((inv) => {
+//       totalPurchase += inv.newPurchaseUnits || 0;
+//       totalConsumed += (inv.consumptions || []).reduce(
+//         (sum, c) => sum + c.quantity,
+//         0,
+//       );
+//     });
+
+//     const incomingConsumption = formattedConsumptions.reduce(
+//       (sum, c) => sum + c.quantity,
+//       0,
+//     );
+
+//     if (totalConsumed + incomingConsumption > totalPurchase) {
+//       return res.status(400).json({
+//         message: "Consumption exceeds available stock",
+//       });
+//     }
+
+//     /* ------------------ Update ------------------ */
+
+//     const updated = await Inventory.findOneAndUpdate(
+//       { _id: id, company },
+//       {
+//         ...(formattedConsumptions.length > 0 && {
+//           $push: { consumptions: { $each: formattedConsumptions } },
+//         }),
+//       },
+//       { new: true, runValidators: true },
+//     )
+//       .populate("itemName", "name")
+//       .populate("department", "name");
+
+//     return res.status(200).json(updated);
+//   } catch (error) {
+//     console.error("Update Inventory Error:", error);
+//     return res.status(500).json({
+//       message: "Failed to update inventory",
+//       error: error.message,
+//     });
+//   }
+// };
+
+// const updateInventory = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { consumptions = [] } = req.body;
+//     const { user, company } = req;
+
+//     const inventory = await Inventory.findOne({ _id: id, company });
+
+//     if (!inventory) {
+//       return res
+//         .status(404)
+//         .json({ message: "Inventory not found or unauthorized" });
+//     }
+
+//     /* ------------------ Format consumptions ------------------ */
+
+//     let formattedConsumptions = [];
+
+//     if (Array.isArray(consumptions) && consumptions.length > 0) {
+//       formattedConsumptions = consumptions.map((c) => {
+//         if (!c.quantity || c.quantity < 0) {
+//           throw new Error("Invalid consumption quantity");
+//         }
+
+//         return {
+//           quantity: Number(c.quantity),
+//           source: c.source || "newPurchase",
+//           date: new Date(),
+//           addedBy: user,
+//         };
+//       });
+//     }
+
+//     /* ------------------ Get Last Inventory State ------------------ */
+
+//     const lastInventory = await Inventory.findOne({
+//       company,
+//       department: inventory.department,
+//       itemName: inventory.itemName,
+//       unit: inventory.unit,
+//       _id: { $ne: id }, // 🔥 THIS IS THE FIX
+//     }).sort({ createdAt: -1 });
+
+//     const previousRemaining = lastInventory?.remainingUnits || 0;
+
+//     /* ------------------ Calculate Incoming Consumption ------------------ */
+
+//     const incomingConsumption = formattedConsumptions.reduce(
+//       (sum, c) => sum + c.quantity,
+//       0,
+//     );
+
+//     console.log("Previous Remaining:", previousRemaining);
+//     console.log("Incoming Consumption:", incomingConsumption);
+
+//     /* ------------------ Calculate New Remaining ------------------ */
+
+//     const newRemaining =
+//       previousRemaining +
+//       (inventory.newPurchaseUnits || 0) -
+//       incomingConsumption;
+
+//     /* ------------------ Validation ------------------ */
+
+//     if (newRemaining < 0) {
+//       return res.status(400).json({
+//         message: "Consumption exceeds available stock",
+//       });
+//     }
+
+//     /* ------------------ Update ------------------ */
+
+//     const updated = await Inventory.findOneAndUpdate(
+//       { _id: id, company },
+//       {
+//         ...(formattedConsumptions.length > 0 && {
+//           $push: { consumptions: { $each: formattedConsumptions } },
+//         }),
+//         remainingUnits: newRemaining,
+//       },
+//       { new: true, runValidators: true },
+//     )
+//       .populate("itemName", "name")
+//       .populate("department", "name");
+
+//     return res.status(200).json(updated);
+//   } catch (error) {
+//     console.error("Update Inventory Error:", error);
+//     return res.status(500).json({
+//       message: "Failed to update inventory",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const updateInventory = async (req, res) => {
   try {
     const { id } = req.params;
+    const { consumptions = [] } = req.body;
+    const { user, company } = req;
 
-    const updated = await Inventory.findOneAndUpdate(
-      { _id: id, company: req.company },
-      req.body,
-      { new: true, runValidators: true },
-    );
+    const inventory = await Inventory.findOne({ _id: id, company });
 
-    if (!updated) {
+    if (!inventory) {
       return res
         .status(404)
         .json({ message: "Inventory not found or unauthorized" });
     }
 
-    res.status(200).json(updated);
+    /* ------------------ Format consumptions ------------------ */
+
+    let formattedConsumptions = [];
+
+    if (Array.isArray(consumptions) && consumptions.length > 0) {
+      formattedConsumptions = consumptions.map((c) => {
+        if (!c.quantity || Number(c.quantity) < 0) {
+          throw new Error("Invalid consumption quantity");
+        }
+
+        return {
+          quantity: Number(c.quantity),
+          source: c.source || "newPurchase",
+          date: new Date(),
+          addedBy: user,
+        };
+      });
+    }
+
+    if (formattedConsumptions.length === 0) {
+      return res.status(400).json({
+        message: "At least one consumption entry is required",
+      });
+    }
+
+    /* ------------------ Calculate Incoming Consumption ------------------ */
+
+    const incomingConsumption = formattedConsumptions.reduce(
+      (sum, c) => sum + c.quantity,
+      0,
+    );
+
+    /* ------------------ Calculate New Remaining ------------------ */
+
+    const currentRemaining = Number(inventory.remainingUnits || 0);
+    const newRemaining = currentRemaining - incomingConsumption;
+
+    /* ------------------ Validation ------------------ */
+
+    if (newRemaining < 0) {
+      return res.status(400).json({
+        message: "Consumption exceeds available stock",
+      });
+    }
+
+    /* ------------------ Update ------------------ */
+
+    const updated = await Inventory.findOneAndUpdate(
+      { _id: id, company },
+      {
+        $push: { consumptions: { $each: formattedConsumptions } },
+        $set: { remainingUnits: newRemaining },
+      },
+      { new: true, runValidators: true },
+    )
+      .populate("itemName", "name")
+      .populate("department", "name");
+
+    return res.status(200).json(updated);
   } catch (error) {
     console.error("Update Inventory Error:", error);
-    res.status(500).json({ message: "Failed to update inventory", error });
+    return res.status(500).json({
+      message: "Failed to update inventory",
+      error: error.message,
+    });
   }
 };
 
@@ -263,3 +894,12 @@ module.exports = {
   updateInventory,
   bulkInsertInventory,
 };
+
+//BULK UPLOAD FLOW FOR INVENTORY
+
+//1.The upload will add data in 3 collections - Inventory, Category and Item.
+
+//2.The upload order will be as follows:
+//Category -> Item -> Inventory
+
+//This ensures that the necessary references are in place when creating inventory records. The backend will handle the logic to check for existing categories and items, and create new ones if they do not exist, before creating the inventory record with the correct references.

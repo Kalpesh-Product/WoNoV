@@ -25,10 +25,15 @@ const HrLeaves = () => {
       start: new Date(2025, 3, 1),
       end: new Date(2026, 2, 31),
     },
+    {
+      label: "FY 2026–27",
+      start: new Date(2026, 3, 1),
+      end: new Date(2027, 2, 31),
+    },
   ];
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
-  const [currentMonth, setCurrentMonth] = useState(selectedFY.start);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const { data: attendanceData = {}, isLoading } = useQuery({
     queryKey: ["attendance"],
@@ -75,19 +80,38 @@ const HrLeaves = () => {
       return day !== 0; // Exclude Sunday only
     }).filter(Boolean).length;
 
+    const activeUsersMap = new Map(
+      (attendanceData?.activeEmployees || []).map((employee) => [
+        employee?._id?.toString(),
+        employee,
+      ])
+    );
+
+    (attendanceData?.activeEmployees || []).forEach((employee) => {
+      const userId = employee?._id?.toString();
+      if (!userId) return;
+
+      groupedUsers[userId] = {
+        empId: employee.empId || "",
+        empName: `${employee.firstName || ""} ${employee.lastName || ""}`.trim(),
+        startDate: employee.startDate,
+      };
+    });
+
     // Attendance map
     const attendanceMap = {};
     attendanceData?.companyAttandances?.forEach((entry) => {
-      const userId = entry.user?._id;
+      const userId = entry.user?._id?.toString();
+      if (!userId || !activeUsersMap.has(userId)) return;
       const dateKey = dayjs(entry.inTime).format("YYYY-MM-DD");
       attendanceMap[`${userId}-${dateKey}`] = "✅";
 
       if (!groupedUsers[userId]) {
         groupedUsers[userId] = {
           empId: entry.user?.empId,
-          empName: `${entry.user?.firstName || ""} ${
-            entry.user?.lastName || ""
-          }`.trim(),
+          empName: `${entry.user?.firstName || ""} ${entry.user?.lastName || ""
+            }`.trim(),
+          startDate: entry.user?.startDate,
         };
       }
     });
@@ -95,12 +119,13 @@ const HrLeaves = () => {
     // Leave map
     const leaveMap = {};
     attendanceData?.allLeaves?.forEach((leave) => {
-      const userId = leave.takenBy?._id;
+      const userId = leave.takenBy?._id?.toString();
+      if (!userId || !activeUsersMap.has(userId)) return;
       const leaveType = leave.leaveType?.toLowerCase().includes("sick")
         ? "SL"
         : leave.leaveType?.toLowerCase().includes("comp")
-        ? "CO"
-        : "PL";
+          ? "CO"
+          : "PL";
 
       const from = dayjs(leave.fromDate);
       const to = dayjs(leave.toDate);
@@ -113,9 +138,9 @@ const HrLeaves = () => {
       if (!groupedUsers[userId]) {
         groupedUsers[userId] = {
           empId: leave.takenBy?.empId || "",
-          empName: `${leave.takenBy?.firstName || ""} ${
-            leave.takenBy?.lastName || ""
-          }`.trim(),
+          empName: `${leave.takenBy?.firstName || ""} ${leave.takenBy?.lastName || ""
+            }`.trim(),
+          startDate: leave.takenBy?.startDate,
         };
       }
     });
@@ -132,17 +157,12 @@ const HrLeaves = () => {
 
         let hasData = false;
 
-        // Get user startDate from attendance entry (only companyAttandances has it)
-        const userAttendance = attendanceData.companyAttandances?.find(
-          (entry) => entry.user?._id === userId && entry.user?.startDate
-        );
-
-        const startDate = dayjs(userAttendance?.user?.startDate);
+        const startDate = dayjs(userInfo?.startDate);
 
         for (let day = 1; day <= daysInMonth; day++) {
           const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
-          const isWeekend = date.day() === 0 || date.day() === 6;
+          const isWeekend = date.day() === 0 || date.day() === 7;
 
           const beforeJoining =
             startDate.isValid() && date.isBefore(startDate, "day");
@@ -157,10 +177,10 @@ const HrLeaves = () => {
             row[`day${day}`] = leaveMap[key];
             hasData = true;
           } else if (!isWeekend) {
-            row[`day${day}`] = "H";
+            row[`day${day}`] = "A";
             hasData = true;
           } else {
-            row[`day${day}`] = "";
+            row[`day${day}`] = "H";
           }
         }
 
@@ -177,12 +197,11 @@ const HrLeaves = () => {
   const dayColumns = Array.from({ length: daysInMonth }, (_, i) => {
     const date = dayjs(new Date(currentYearNum, currentMonthNum, i + 1));
     const dayOfWeek = date.format("ddd");
-    const isSaturday = dayOfWeek === "Sat";
     const isSunday = dayOfWeek === "Sun";
 
     return {
       field: `day${i + 1}`,
-      headerName: isSaturday ? "SAT" : isSunday ? "SUN" : `${i + 1}`,
+      headerName: isSunday ? "SUN" : `${i + 1}`,
       width: 80,
       cellStyle: { textAlign: "center" },
       headerTooltip: `${date.format("dddd, MMM D")}`,
@@ -195,6 +214,12 @@ const HrLeaves = () => {
         let tooltip = "";
 
         switch (value) {
+          case "A":
+            bgColor = "#fee2e2"; // light red
+            textColor = "#991b1b"; // dark red
+            label = "A";
+            tooltip = "Absent";
+            break;
           case "✅":
             bgColor = "#d1fae5"; // light green
             textColor = "#065f46"; // dark green

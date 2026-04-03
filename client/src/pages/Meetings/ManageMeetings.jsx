@@ -218,6 +218,26 @@ const ManageMeetings = () => {
   );
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
+    ...(() => {
+      const client = clientDetails.find((c) => c.clientName === meeting.client);
+      const meetingMonth = dayjs(meeting.date);
+      const monthHistory = client?.meetingCreditBalanceHistory?.find((history) =>
+        dayjs(history.monthStartDate).isSame(meetingMonth, "month"),
+      );
+      const totalMonthlyCredit = Number(client?.totalMeetingCredits || 0);
+
+      let monthlyRemainingCredit = totalMonthlyCredit;
+
+      if (monthHistory) {
+        monthlyRemainingCredit = Number(monthHistory.remainingCredit || 0);
+      } else if (meetingMonth.isSame(dayjs(), "month")) {
+        monthlyRemainingCredit = Number(client?.meetingCreditBalance || 0);
+      }
+
+      return {
+        monthlyRemainingCredit: monthlyRemainingCredit.toFixed(2),
+      };
+    })(),
     ...meeting,
     date: meeting.date,
     bookedBy: meeting.bookedBy
@@ -237,7 +257,7 @@ const ManageMeetings = () => {
     department:
       meeting.bookedBy &&
       [...meeting.bookedBy.departments.map((dept) => dept.name)].join(","),
-    meetingCreditBalance: clientDetails.find((c) => c.clientName === meeting.client)?.meetingCreditBalance.toFixed(2) || "0.00",
+    // meetingCreditBalance: clientDetails.find((c) => c.clientName === meeting.client)?.meetingCreditBalance.toFixed(2) || "0.00",
   }));
 
   const getDisplayDuration = (meeting) => {
@@ -493,7 +513,7 @@ const ManageMeetings = () => {
   };
 
   const columns = [
-    { field: "srNo", headerName: "Sr No", sort: "desc" },
+    { field: "srNo", headerName: "Sr No" },
     { field: "client", headerName: "Company" },
     { field: "bookedBy", headerName: "Booked By" },
     { field: "building", headerName: "Building" },
@@ -514,8 +534,8 @@ const ManageMeetings = () => {
       cellRenderer: (params) => humanTime(params.value),
     },
     {
-      field: "meetingCreditBalance",
-      headerName: "Credit Balance",
+      field: "monthlyRemainingCredit",
+      headerName: "Remaining Credit",
       cellRenderer: (params) => params.value,
     },
     // {
@@ -526,6 +546,7 @@ const ManageMeetings = () => {
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
+      sort: "desc",
       cellRenderer: (params) => (
         <Chip
           label={params.value || ""}
@@ -604,10 +625,10 @@ const ManageMeetings = () => {
             onClick: () =>
               handleOpenChecklistModal("update", params.data._id),
           },
-          isUpcoming && {
-            label: "Edit",
-            onClick: () => handleEditMeeting("edit", params.data),
-          },
+          // isUpcoming && {
+          //   label: "Edit",
+          //   onClick: () => handleEditMeeting("edit", params.data),
+          // },
           !isOngoing &&
           !isHousekeepingPending && {
             label: "Mark As Ongoing",

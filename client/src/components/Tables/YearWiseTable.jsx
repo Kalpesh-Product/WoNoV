@@ -24,6 +24,9 @@ const YearWiseTable = ({
   secondaryButtonTitle,
   secondaryButtonDisabled,
   handleSecondarySubmit,
+  middleButtonTitle,
+  middleButtonDisabled,
+  handleMiddleSubmit,
   checkbox,
   checkAll,
   key,
@@ -240,7 +243,7 @@ const YearWiseTable = ({
           <span></span>
         )}
 
-        <div className="flex gap-2 items-center justify-end flex-wrap col-span-3">
+        <div className="flex gap-2 items-center justify-end flex-nowrap col-span-3">
           {/* ✅ Show calendar only if data is not empty */}
 
           <Popover
@@ -291,6 +294,13 @@ const YearWiseTable = ({
               title={secondaryButtonTitle}
               handleSubmit={handleSecondarySubmit}
               disabled={secondaryButtonDisabled}
+            />
+          )}
+           {middleButtonTitle && (
+            <PrimaryButton
+              title={middleButtonTitle}
+              handleSubmit={handleMiddleSubmit}
+              disabled={middleButtonDisabled}
             />
           )}
           {buttonTitle && (

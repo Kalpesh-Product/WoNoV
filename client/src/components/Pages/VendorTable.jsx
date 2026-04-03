@@ -15,14 +15,6 @@ const VendorTable = () => {
   const [selectedVendor, setSelectedVendor] = useState(null);
   const department = usePageDepartment();
   const navigate = useNavigate();
-  let departmentName = department?.name || "";
-
-  if (department?.name === "Administration") {
-    departmentName = "Admin";
-  }
-  if (department?.name === "Tech") {
-    departmentName = "Frontend";
-  }
   const axios = useAxiosPrivate();
 
   const {
@@ -62,12 +54,7 @@ const VendorTable = () => {
               textDecoration: "underline",
               cursor: "pointer",
             }}
-            onClick={() =>
-              navigate(
-                `/app/dashboard/${departmentName}-dashboard/data/vendor/${params.data.vendorName}`,
-                { state: params.data }
-              )
-            }
+            onClick={() => navigate(`${params.data.vendorName}`, { state: params.data })}
           >
             {params.value}
           </span>
@@ -80,6 +67,7 @@ const VendorTable = () => {
     {
       field: "status",
       headerName: "Status",
+      sort: "desc",
       width: 130,
       cellRenderer: (params) => (
         <Chip
@@ -94,36 +82,36 @@ const VendorTable = () => {
   const rows = isVendorFetchingPending
     ? []
     : data?.map((vendor, index) => ({
-        id: index + 1,
-        vendorMongoId: vendor._id,
-        vendorID: vendor._id.slice(-4).toUpperCase(),
-        vendorName: vendor.name
-          ? vendor.name.includes("/")
-            ? vendor.name.split("/").join("-")
-            : vendor.name
-          : "N/A",
+      id: index + 1,
+      vendorMongoId: vendor._id,
+      vendorID: vendor._id.slice(-4).toUpperCase(),
+      vendorName: vendor.name
+        ? vendor.name.includes("/")
+          ? vendor.name.split("/").join("-")
+          : vendor.name
+        : "N/A",
 
-        address: vendor.address,
-        state: vendor.state,
-        country: vendor.country,
-        partyType: vendor?.partyType,
-        status: vendor.status,
-        departmentId: vendor.departmentId,
-        company: vendor.company,
-        email: vendor.email,
-        mobile: vendor.mobile,
-        companyName: vendor.companyName,
-        onboardingDate: humanDate(vendor.onboardingDate),
-        city: vendor.city,
-        pinCode: vendor.pinCode,
-        panIdNo: vendor.panIdNo,
-        gstIn: vendor.gstIn,
-        ifscCode: vendor.ifscCode,
-        bankName: vendor.bankName,
-        branchName: vendor.branchName,
-        nameOnAccount: vendor.nameOnAccount,
-        accountNumber: vendor.accountNumber,
-      })) || [];
+      address: vendor.address,
+      state: vendor.state,
+      country: vendor.country,
+      partyType: vendor?.partyType,
+      status: vendor.status,
+      departmentId: vendor.departmentId,
+      company: vendor.company,
+      email: vendor.email,
+      mobile: vendor.mobile,
+      companyName: vendor.companyName,
+      onboardingDate: humanDate(vendor.onboardingDate),
+      city: vendor.city,
+      pinCode: vendor.pinCode,
+      panIdNo: vendor.panIdNo,
+      gstIn: vendor.gstIn,
+      ifscCode: vendor.ifscCode,
+      bankName: vendor.bankName,
+      branchName: vendor.branchName,
+      nameOnAccount: vendor.nameOnAccount,
+      accountNumber: vendor.accountNumber,
+    })) || [];
 
   return (
     <div>

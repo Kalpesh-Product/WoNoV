@@ -20,6 +20,12 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import PrimaryButton from "../../components/PrimaryButton";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useLocation, useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+import { DateRangePicker } from "react-date-range";
+import { Popover } from "@mui/material";
+import { MdCalendarToday } from "react-icons/md";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 const Reviews = () => {
   const axios = useAxiosPrivate();
@@ -31,6 +37,23 @@ const Reviews = () => {
   const [modalType, setModalType] = useState("creditView");
   const [selectedData, setSelectedData] = useState({});
   const [creditEdits, setCreditEdits] = useState({});
+  const [dateRange, setDateRange] = useState([
+    {
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    },
+  ]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openCalendar = Boolean(anchorEl);
+
+  const handleOpenCalendar = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseCalendar = () => {
+    setAnchorEl(null);
+  };
 
   const userPermissions = useMemo(
     () => auth?.user?.permissions?.permissions || [],
@@ -161,6 +184,7 @@ const Reviews = () => {
     },
   });
 
+
   const submitCreditEdit = (formValues) => {
     const monthlyCredit = Number(formValues.monthlyCredit);
     const consumedCredit = Number(formValues.consumedCredit);
@@ -233,35 +257,140 @@ const Reviews = () => {
       ),
     },
   ];
+  const formatExportDate = (date = new Date()) =>
+    new Intl.DateTimeFormat("en-IN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(date);
 
-  const clientCreditRows = useMemo(
-    () =>
-      clientsData.map((client, index) => {
-        const clientId = client?._id;
-        const fallbackMonthly = Number(client?.totalMeetingCredits || 0);
-        const fallbackBalance = Number(client?.meetingCreditBalance || 0);
-        const fallbackConsumed = Math.max(fallbackMonthly - fallbackBalance, 0);
+  const buildClientCreditExportRows = (rows, exportDate) =>
+    rows.map((row) => ({
+      "Export Date": exportDate,
+      "Sr No": row.srNo,
+      "Client Name": row.clientName,
+      Month: row.monthLabel,
+      "Monthly Credit": row.monthlyCredit,
+      "Consumed Credit": row.consumedCredit,
+      "Remaining Credit": row.remainingCredit,
+    }));
 
-        const editedValues = creditEdits[clientId];
-        const monthlyCredit = editedValues?.monthlyCredit ?? fallbackMonthly;
-        const consumedCredit = editedValues?.consumedCredit ?? fallbackConsumed;
+  const exportClientCredits = (rows = clientCreditRows) => {
+    if (!rows.length) {
+      toast.error("No client credit data available to export");
+      return false;
+    }
+
+    const exportDate = formatExportDate();
+    const exportRows = buildClientCreditExportRows(rows, exportDate);
+    const headers = Object.keys(exportRows[0]);
+    const csvContent = [
+      headers.join(","),
+      ...exportRows.map((row) =>
+        headers
+          .map((header) => `"${String(row[header] ?? "").replace(/"/g, '""')}"`)
+          .join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const downloadLink = document.createElement("a");
+    const fileDate = exportDate.replace(/[/:,\s]/g, "-");
+
+    downloadLink.href = URL.createObjectURL(blob);
+    downloadLink.download = `client-credit-export-${fileDate}.csv`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(downloadLink.href);
+
+    toast.success("Client credit exported successfully");
+    return true;
+  };
+
+  const clientCreditRows = useMemo(() => {
+    const { startDate, endDate } = dateRange[0] || {};
+    if (!startDate || !endDate || !clientsData.length) return [];
+
+    const startMonth = dayjs(startDate).startOf("month");
+    const endMonth = dayjs(endDate).startOf("month");
+
+    // Generate all months in selected range
+    const monthsArray = [];
+    let tempMonth = startMonth;
+    while (tempMonth.isBefore(endMonth) || tempMonth.isSame(endMonth, "month")) {
+      monthsArray.push(tempMonth);
+      tempMonth = tempMonth.add(1, "month");
+    }
+
+    const rows = clientsData.flatMap((client) => {
+      const clientId = client?._id;
+      const clientName = client?.clientName || "-";
+      const totalMonthlyCredit = Number(client?.totalMeetingCredits || 0);
+
+      return monthsArray.map((month) => {
+        const monthLabel = month.format("MMM YYYY");
+        const monthId = month.format("YYYY-MM");
+
+        // Try to find historical entry for this month
+        const historyEntry = client?.meetingCreditBalanceHistory?.find((h) =>
+          dayjs(h.monthStartDate).isSame(month, "month"),
+        );
+
+        let consumed = 0;
+        let remaining = totalMonthlyCredit;
+
+        if (historyEntry) {
+          consumed = Number(historyEntry.consumedCredit || 0);
+          remaining = Number(historyEntry.remainingCredit || 0);
+        } else if (month.isSame(dayjs(), "month")) {
+          // Current month fallback if no history entry exists yet
+          remaining = Number(client?.meetingCreditBalance || 0);
+          consumed = Math.max(totalMonthlyCredit - remaining, 0);
+        } else if (month.isAfter(dayjs(), "month")) {
+          // Future months are "Fresh Start"
+          consumed = 0;
+          remaining = totalMonthlyCredit;
+        } else {
+          // Past months with no history
+          consumed = 0;
+          remaining = totalMonthlyCredit;
+        }
 
         return {
-          id: index + 1,
-          srNo: index + 1,
+          id: `${clientId}-${monthId}`,
           clientId,
-          clientName: client?.clientName || "-",
-          monthlyCredit: Number(monthlyCredit).toFixed(2),
-          consumedCredit: Number(consumedCredit).toFixed(2),
-          remainingCredit: Math.max(monthlyCredit - consumedCredit).toFixed(2),
+          clientName,
+          monthLabel,
+          monthlyCredit: totalMonthlyCredit.toFixed(2),
+          consumedCredit: consumed.toFixed(2),
+          remainingCredit: remaining.toFixed(2),
+          monthDate: month.toDate(),
         };
-      }),
-    [clientsData, creditEdits]
-  );
+      });
+    });
+
+    return rows
+      .sort((a, b) => {
+        if (a.clientName !== b.clientName)
+          return a.clientName.localeCompare(b.clientName);
+        return a.monthDate.getTime() - b.monthDate.getTime();
+      })
+      .map((row, index) => ({
+        ...row,
+        srNo: index + 1,
+      }));
+  }, [clientsData, dateRange]);
+
 
   const clientCreditColumns = [
     { field: "srNo", headerName: "Sr No", width: 90 },
     { field: "clientName", headerName: "Client Name", flex: 1 },
+    { field: "monthLabel", headerName: "Month", flex: 1 },
     { field: "monthlyCredit", headerName: "Monthly Credit", flex: 1 },
     { field: "consumedCredit", headerName: "Consumed Credit", flex: 1 },
     { field: "remainingCredit", headerName: "Remaining Credit", flex: 1 },
@@ -369,16 +498,74 @@ const Reviews = () => {
             </div>
           </>
         ) : activeTabKey === "clientCredit" ? (
-          <PageFrame>
-            <AgTable
-              search={true}
-              tableTitle="Client Credits"
-              searchColumn={"clientName"}
-              data={clientCreditRows}
-              columns={clientCreditColumns}
-              loading={isClientsLoading}
-            />
-          </PageFrame>
+          <div className="space-y-4">
+            <PageFrame>
+              <div className="flex flex-col gap-4 pb-4">
+                <div className="grid grid-cols-12 items-center w-full pb-4">
+                  <div className="col-span-4">
+                    <span className="text-title text-primary font-pmedium uppercase">
+                      Client Credits
+                    </span>
+                  </div>
+                  <div className="col-span-4 flex justify-center">
+                    <div className="flex items-center gap-2">
+                      <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                        <span className="text-gray-600 text-content font-pregular">
+                          {dayjs(dateRange[0]?.startDate).format("DD MMM YYYY")}
+                        </span>
+                      </div>
+                      <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                        <span className="text-gray-600 text-content font-pregular">
+                          {dayjs(dateRange[0]?.endDate).format("DD MMM YYYY")}
+                        </span>
+                      </div>
+                      <div
+                        className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+                        onClick={handleOpenCalendar}
+                      >
+                        <MdCalendarToday size={19} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-span-4 flex justify-end">
+                    <PrimaryButton
+                      title="Export"
+                      handleSubmit={() => exportClientCredits()}
+                      type="button"
+                      externalStyles="!bg-primary"
+                      padding="px-6 py-2"
+                    />
+                  </div>
+                </div>
+
+                <Popover
+                  open={openCalendar}
+                  anchorEl={anchorEl}
+                  onClose={handleCloseCalendar}
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "left",
+                  }}
+                >
+                  <DateRangePicker
+                    ranges={dateRange}
+                    onChange={(item) => setDateRange([item.selection])}
+                    moveRangeOnFirstSelection={false}
+                  />
+                </Popover>
+              </div>
+
+              <AgTable
+                search={true}
+                tableTitle="Client Credits"
+                searchColumn={"clientName"}
+                data={clientCreditRows}
+                columns={clientCreditColumns}
+                loading={isClientsLoading}
+                hideTitle={true}
+              />
+            </PageFrame>
+          </div>
         ) : null}
       </div>
 
@@ -459,6 +646,7 @@ const Reviews = () => {
         {modalType === "creditView" && (
           <div className="space-y-4">
             <DetalisFormatted title="Client Name" detail={selectedData.clientName} />
+            <DetalisFormatted title="Month" detail={selectedData.monthLabel} />
             <DetalisFormatted title="Monthly Credit" detail={selectedData.monthlyCredit} />
             <DetalisFormatted title="Consumed Credit" detail={selectedData.consumedCredit} />
             <DetalisFormatted title="Remaining Credit" detail={selectedData.remainingCredit} />
@@ -503,6 +691,7 @@ const Reviews = () => {
           </form>
         )}
       </MuiModal>
+
     </div>
   );
 };

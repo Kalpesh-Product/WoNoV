@@ -19,6 +19,28 @@ const toDateOrNull = (v) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
+const calculateTotalTermMonths = (startDate, endDate) => {
+  if (!startDate || !endDate) return 0;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+    return 0;
+  }
+
+  let months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
+
+  if (end.getDate() < start.getDate()) {
+    months -= 1;
+  }
+
+  return Math.max(months, 0);
+};
+
+
 const createVirtualOfficeClient = async (req, res) => {
   try {
     const data = req.body;
@@ -31,6 +53,7 @@ const createVirtualOfficeClient = async (req, res) => {
       "sector",
       "state",
       "city",
+      "building",
       "unit",
       "termStartDate",
       "termEnd",
@@ -54,6 +77,26 @@ const createVirtualOfficeClient = async (req, res) => {
 
     if (clientExists) {
       return res.status(400).json({ message: "Client already exists" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(data.building)) {
+      return res.status(400).json({ message: "Invalid building ID" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(data.unit)) {
+      return res.status(400).json({ message: "Invalid unit ID" });
+    }
+
+    const unit = await Unit.findById(data.unit).lean().exec();
+
+    if (!unit) {
+      return res.status(404).json({ message: "Selected unit not found" });
+    }
+
+    if (String(unit.building) !== String(data.building)) {
+      return res.status(400).json({
+        message: "Selected building does not match the selected unit",
+      });
     }
 
     const service = await ClientService.findOne({
@@ -106,6 +149,7 @@ const createVirtualOfficeClient = async (req, res) => {
 
     // Desk numbers validation
     const cabinDesks = Number(data.cabinDesks || 0);
+    const securityDeposit = Number(data.securityDeposit || 0);
     const cabinDeskRate = Number(data.cabinDeskRate || 0);
     const openDesks = Number(data.openDesks || 0);
     const openDeskRate = Number(data.openDeskRate || 0);
@@ -115,6 +159,7 @@ const createVirtualOfficeClient = async (req, res) => {
     const numericFields = [
       ["cabinDesks", cabinDesks],
       ["cabinDeskRate", cabinDeskRate],
+      ["securityDeposit", securityDeposit],
       ["openDesks", openDesks],
       ["openDeskRate", openDeskRate],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
@@ -192,7 +237,9 @@ const createVirtualOfficeClient = async (req, res) => {
 
     const doc = await VirtualOfficeClient.create({
       ...data,
+      building: unit.building,
       cabinDesks,
+      securityDeposit,
       cabinDeskRate,
       cabinTotal,
       openDesks,
@@ -202,6 +249,7 @@ const createVirtualOfficeClient = async (req, res) => {
       perDeskMeetingCredits,
       totalMeetingCredits,
       totalDesks,
+      totalTerm: calculateTotalTermMonths(termStartDate, termEnd),
       termStartDate,
       termEnd,
       rentDate,
@@ -383,12 +431,28 @@ const updateVirtualOfficeClient = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = { ...req.body };
+     const hasField = (key) =>
+      Object.prototype.hasOwnProperty.call(updates, key);
 
     const existing = await VirtualOfficeClient.findById(id).lean();
     if (!existing) {
       return res
         .status(404)
         .json({ message: "Virtual Office client not found" });
+    }
+
+    if (
+      hasField("unit") &&
+      (updates.unit === null || String(updates.unit).trim() === "")
+    ) {
+      return res.status(400).json({ message: "unit is required" });
+    }
+
+    if (
+      hasField("building") &&
+      (updates.building === null || String(updates.building).trim() === "")
+    ) {
+      return res.status(400).json({ message: "building is required" });
     }
 
     const clientExists = await VirtualOfficeClient.findOne({
@@ -398,6 +462,35 @@ const updateVirtualOfficeClient = async (req, res) => {
 
     if (clientExists) {
       return res.status(400).json({ message: "Client already exists" });
+    }
+    let selectedUnit = null;
+    //if (updates.unit || updates.building) {
+    if (hasField("unit") || hasField("building")) {
+      const nextUnitId = updates.unit || existing.unit;
+      const nextBuildingId = updates.building || existing.building;
+
+      if (!mongoose.Types.ObjectId.isValid(nextUnitId)) {
+        return res.status(400).json({ message: "Invalid unit ID" });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(nextBuildingId)) {
+        return res.status(400).json({ message: "Invalid building ID" });
+      }
+
+      selectedUnit = await Unit.findById(nextUnitId).lean().exec();
+
+      if (!selectedUnit) {
+        return res.status(404).json({ message: "Selected unit not found" });
+      }
+
+      if (String(selectedUnit.building) !== String(nextBuildingId)) {
+        return res.status(400).json({
+          message: "Selected building does not match the selected unit",
+        });
+      }
+
+      updates.unit = selectedUnit._id;
+      updates.building = selectedUnit.building;
     }
 
     // ✅ Basic validations if provided
@@ -539,6 +632,11 @@ const updateVirtualOfficeClient = async (req, res) => {
         ? updates.cabinDesks
         : existing.cabinDesks || 0,
     );
+    const securityDeposit = Number(
+      typeof updates.securityDeposit !== "undefined"
+        ? updates.securityDeposit
+        : existing.securityDeposit || 0,
+    );
     const cabinDeskRate = Number(
       typeof updates.cabinDeskRate !== "undefined"
         ? updates.cabinDeskRate
@@ -562,6 +660,7 @@ const updateVirtualOfficeClient = async (req, res) => {
 
     const numericChecks = [
       ["cabinDesks", cabinDesks],
+      ["securityDeposit", securityDeposit],
       ["cabinDeskRate", cabinDeskRate],
       ["openDesks", openDesks],
       ["openDeskRate", openDeskRate],
@@ -577,6 +676,7 @@ const updateVirtualOfficeClient = async (req, res) => {
     }
 
     updates.cabinDesks = cabinDesks;
+    updates.securityDeposit = securityDeposit;
     updates.cabinDeskRate = cabinDeskRate;
     updates.openDesks = openDesks;
     updates.openDeskRate = openDeskRate;
@@ -621,6 +721,7 @@ const updateVirtualOfficeClient = async (req, res) => {
     }
 
     updates.nextIncrementDate = nextIncrementDate || null;
+    updates.totalTerm = calculateTotalTermMonths(termStartDate, termEnd);
 
     const updated = await VirtualOfficeClient.findByIdAndUpdate(id, updates, {
       new: true,
@@ -642,10 +743,11 @@ const updateVirtualOfficeClient = async (req, res) => {
 const updateVirtualOfficeStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { clientStatus } = req.body;
+    const { isActive } = req.body;
 
     // Validate boolean explicitly
-    if (typeof clientStatus !== "boolean") {
+
+    if (typeof isActive !== "boolean") {
       return res.status(400).json({
         message: "clientStatus must be a boolean value (true or false)",
       });
@@ -659,20 +761,18 @@ const updateVirtualOfficeStatus = async (req, res) => {
     }
 
     // Optional: Prevent unnecessary DB write
-    if (existing.clientStatus === clientStatus) {
+    if (existing.clientStatus === isActive) {
       return res.status(200).json({
         message: "Client status is already updated",
         data: existing,
       });
     }
 
-    existing.clientStatus = clientStatus;
+    existing.clientStatus = isActive;
     await existing.save();
 
     return res.status(200).json({
-      message: `Client ${
-        clientStatus ? "activated" : "deactivated"
-      } successfully`,
+      message: `Client marked as${isActive ? "active" : "inactive"} successfully`,
       data: existing,
     });
   } catch (error) {
