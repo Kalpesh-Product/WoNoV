@@ -431,12 +431,28 @@ const updateVirtualOfficeClient = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = { ...req.body };
+     const hasField = (key) =>
+      Object.prototype.hasOwnProperty.call(updates, key);
 
     const existing = await VirtualOfficeClient.findById(id).lean();
     if (!existing) {
       return res
         .status(404)
         .json({ message: "Virtual Office client not found" });
+    }
+
+    if (
+      hasField("unit") &&
+      (updates.unit === null || String(updates.unit).trim() === "")
+    ) {
+      return res.status(400).json({ message: "unit is required" });
+    }
+
+    if (
+      hasField("building") &&
+      (updates.building === null || String(updates.building).trim() === "")
+    ) {
+      return res.status(400).json({ message: "building is required" });
     }
 
     const clientExists = await VirtualOfficeClient.findOne({
@@ -448,7 +464,8 @@ const updateVirtualOfficeClient = async (req, res) => {
       return res.status(400).json({ message: "Client already exists" });
     }
     let selectedUnit = null;
-    if (updates.unit || updates.building) {
+    //if (updates.unit || updates.building) {
+    if (hasField("unit") || hasField("building")) {
       const nextUnitId = updates.unit || existing.unit;
       const nextBuildingId = updates.building || existing.building;
 
