@@ -2512,7 +2512,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
             <DetalisFormatted
               title="Opening Units"
-              detail={selectedAsset.openingInventoryUnits ?? "0"}
+              detail={selectedAsset.openingInventoryUnits !== null &&
+                selectedAsset.openingInventoryUnits  !== undefined
+                  ? selectedAsset.openingInventoryUnits 
+                  : "NA"
+              }
             />
             <DetalisFormatted
               title="Opening Per Unit Price"
@@ -2522,10 +2526,19 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   : "N/A"
               }
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="New Purchase Units"
               detail={selectedAsset.newPurchaseUnits ?? "0"}
-            />
+            /> */}
+            <DetalisFormatted
+              title="New Purchase Units"
+              detail={
+                selectedAsset.newPurchaseUnits !== null &&
+                selectedAsset.newPurchaseUnits !== undefined
+                  ? selectedAsset.newPurchaseUnits
+                  : "NA"
+              }
+              />
             <DetalisFormatted
               title="New Purchase Per Unit Price"
               detail={
@@ -2534,21 +2547,21 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   : "N/A"
               }
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Closing Units"
               detail={
                 // (selectedAsset?.remainingOpeningInventoryUnits || 0) +
                 selectedAsset?.remainingNewPurchaseInventoryUnits || 0
               }
-            />
+            /> */}
             <DetalisFormatted
-              title="Last Consumed Units"
+              title="Last Consumed Unit Value"
               detail={
-                 selectedAsset.lastConsume ??
+                selectedAsset.lastConsumed ??
                // selectedAsset.lastConsumedUnitValue ??
-                //selectedAsset.consumedOpenInventoryUnits ??
-                "0"
-               }
+              //  selectedAsset.consumedOpenInventoryUnits ??
+                "N/A"
+              }
             />
             <DetalisFormatted
               title="Last Remaining Units"
@@ -2560,7 +2573,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
             <DetalisFormatted
               title="New Consumed Units"
               detail={
-                selectedAsset.newConsumedUnitValue??
+                selectedAsset.totalConsumed??
                 //selectedAsset.consumedNewPurchaseInventoryUnits ??
                 "0"
               }
