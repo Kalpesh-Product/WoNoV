@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Box } from "@mui/material";
@@ -6,6 +6,8 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import AgTable from "../../../components/AgTable";
 import PageFrame from "../../../components/Pages/PageFrame";
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 import { inrFormat } from "../../../utils/currencyFormat";
 import formatDateTime from "../../../utils/formatDateTime";
 
@@ -22,44 +24,58 @@ const normalizeText = (value) =>
         .toLowerCase();
 
 const InventoryRecordHistory = () => {
-    const { unitNo, inventoryTab, inventoryCategory, inventoryItemName } = useParams();
+    const { unitNo, inventoryTab, inventoryItemName } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
     const axios = useAxiosPrivate();
     const department = usePageDepartment();
+    const [selectedAsset, setSelectedAsset] = useState(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
     const decodedUnitNo = useMemo(
         () => (unitNo ? decodeURIComponent(unitNo) : ""),
         [unitNo],
     );
-    const decodedCategoryName = useMemo(
-        () => (inventoryCategory ? decodeURIComponent(inventoryCategory) : ""),
-        [inventoryCategory],
-    );
+    // const decodedCategoryName = useMemo(
+    //     () => (inventoryCategory ? decodeURIComponent(inventoryCategory) : ""),
+    //     [inventoryCategory],
+    // );
     const decodedItemName = useMemo(
         () => (inventoryItemName ? decodeURIComponent(inventoryItemName) : ""),
         [inventoryItemName],
     );
 
+     const selectedCategoryFromState = useMemo(
+        () => normalizeText(location.state?.inventoryCategory),
+        [location.state?.inventoryCategory],
+    );
 
     const unitTabs = useMemo(
         () => [
-            { key: "category", label: "Category" },
-            { key: "item", label: "Item" },
-            { key: "inventory", label: "Inventory" },
+            { key: "category", path: "category", label: "Category" },
+            { key: "item", path: "item", label: "Item" },
+            { key: "inventory", path: "item-inventory", label: "Item Inventory" },
         ],
         [],
     );
 
-    const activeUnitTab = unitTabs.some((tab) => tab.key === inventoryTab)
-        ? inventoryTab
-        : "inventory";
+       const activeUnitTab =
+        unitTabs.find(
+            (tab) =>
+                tab.path === inventoryTab ||
+                (tab.key === "inventory" && inventoryTab === "inventory"),
+        )?.key || "inventory";
 
-    const handleUnitTabChange = (tabKey) => {
-        if (!decodedUnitNo || tabKey === activeUnitTab) return;
+    const handleUnitTabChange = (tabPath) => {
+        if (
+            !decodedUnitNo ||
+            tabPath ===
+            unitTabs.find((tab) => tab.key === activeUnitTab)?.path
+        )
+            return;
 
         const basePath = location.pathname.split(`/${encodeURIComponent(decodedUnitNo)}/`)[0];
-        navigate(`${basePath}/${encodeURIComponent(decodedUnitNo)}/${tabKey}`);
+          navigate(`${basePath}/${encodeURIComponent(decodedUnitNo)}/${tabPath}`);
     };
 
     const { data: inventoryData = [] } = useQuery({
@@ -76,6 +92,12 @@ const InventoryRecordHistory = () => {
                     item.createdAt ||
                     item.updatedAt ||
                     new Date().toISOString();
+                    const hasAddedByName =
+                    item.addedBy &&
+                    (item.addedBy.firstName ||
+                        item.addedBy.lastName ||
+                        item.addedBy.name ||
+                        item.addedBy.email);
 
                 return {
                     ...item,
@@ -87,6 +109,19 @@ const InventoryRecordHistory = () => {
                             ? item.category
                             : item.category?.categoryName) ||
                         "N/A",
+                     addedByName: hasAddedByName
+                        ? [
+                            item.addedBy.firstName,
+                            item.addedBy.middleName,
+                            item.addedBy.lastName,
+                        ]
+                            .filter(Boolean)
+                            .join(" ") ||
+                        item.addedBy.name ||
+                        item.addedBy.email ||
+                        "N/A"
+                        : "N/A",        
+
                     dateRaw: safeDate,
                 };
             });
@@ -95,14 +130,15 @@ const InventoryRecordHistory = () => {
 
     const historyRows = useMemo(() => {
         const unitKey = normalizeUnitNo(decodedUnitNo);
-        const categoryKey = normalizeText(decodedCategoryName);
+        //const categoryKey = normalizeText(decodedCategoryName);
         const itemKey = normalizeText(decodedItemName);
 
         return inventoryData
             .filter(
                 (item) =>
                     normalizeUnitNo(item?.unitNo) === unitKey &&
-                    normalizeText(item?.categoryName) === categoryKey &&
+                      (!selectedCategoryFromState ||
+                        normalizeText(item?.categoryName) === selectedCategoryFromState) &&
                     normalizeText(item?.itemName) === itemKey,
             )
             .sort(
@@ -114,11 +150,28 @@ const InventoryRecordHistory = () => {
                 ...item,
                 srNo: index + 1,
             }));
-    }, [decodedCategoryName, decodedItemName, decodedUnitNo, inventoryData]);
+   }, [decodedItemName, decodedUnitNo, inventoryData, selectedCategoryFromState]);
 
     const columns = [
         { field: "srNo", headerName: "Sr. No", width: 110 },
-        { field: "itemName", headerName: "Item Name", flex: 1, minWidth: 180 },
+       {
+            field: "itemName",
+            headerName: "Item Name",
+            flex: 1,
+            minWidth: 180,
+            cellRenderer: (params) => (
+                <span
+                    role="button"
+                    onClick={() => {
+                        setSelectedAsset(params.data);
+                        setIsViewModalOpen(true);
+                    }}
+                    className="text-primary cursor-pointer underline"
+                >
+                    {params.value || "N/A"}
+                </span>
+            ),
+        },
         {
             field: "openingInventoryUnits",
             headerName: "Opening Units",
@@ -131,7 +184,7 @@ const InventoryRecordHistory = () => {
             headerName: "Opening Unit Price",
             flex: 1,
             minWidth: 180,
-            cellRenderer: (params) => inrFormat(params.value),
+            //cellRenderer: (params) => inrFormat(params.value),
         },
         {
             field: "openingInventoryValue",
@@ -139,6 +192,32 @@ const InventoryRecordHistory = () => {
             flex: 1,
             minWidth: 170,
             cellRenderer: (params) => inrFormat(params.value),
+        },
+         {
+            field: "newPurchaseUnits",
+            headerName: "New Purchases Unit",
+            flex: 1,
+            minWidth: 180,
+        },
+        {
+            field: "newPurchasePerUnitPrice",
+            headerName: "New Purchases Per Unit Price",
+            flex: 1,
+            minWidth: 230,
+            cellRenderer: (params) => inrFormat(params.value),
+        },
+        {
+            field: "newPurchaseInventoryValue",
+            headerName: "New Purchases Value",
+            flex: 1,
+            minWidth: 190,
+            cellRenderer: (params) => inrFormat(params.value),
+        },
+        {
+            field: "remainingNewPurchaseInventoryUnits",
+            headerName: "Closing Unit",
+            flex: 1,
+            minWidth: 150,
         },
         {
             field: "categoryName",
@@ -155,7 +234,24 @@ const InventoryRecordHistory = () => {
         },
     ];
 
-    const tableTitle = `Inventory History - ${decodedItemName || "Item"} - ${decodedCategoryName || "Category"}`;
+
+     const resolvedCategoryName = useMemo(() => {
+        if (location.state?.inventoryCategory) {
+            return location.state.inventoryCategory;
+        }
+
+        const uniqueCategories = Array.from(
+            new Set(
+                historyRows
+                    .map((item) => item?.categoryName)
+                    .filter((value) => String(value || "").trim()),
+            ),
+        );
+
+        return uniqueCategories[0] || "Category";
+    }, [historyRows, location.state?.inventoryCategory]);
+
+    const tableTitle = `Inventory Item History - ${decodedItemName || "Item"} - ${resolvedCategoryName}`;
 
     return (
         <>
@@ -177,7 +273,7 @@ const InventoryRecordHistory = () => {
                             key={tab.key}
                             type="button"
                             disabled={isActive}
-                            onClick={() => handleUnitTabChange(tab.key)}
+                            onClick={() => handleUnitTabChange(tab.path)}
                             className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${isActive
                                 ? "bg-primary text-white cursor-default"
                                 : "bg-white text-primary"
@@ -197,6 +293,134 @@ const InventoryRecordHistory = () => {
                     tableHeight={450}
                 />
             </PageFrame>
+
+             <MuiModal
+                open={isViewModalOpen}
+                onClose={() => setIsViewModalOpen(false)}
+                title="View Details"
+            >
+                {selectedAsset && (
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-3 px-2 py-4">
+                        {selectedAsset.image && (
+                            <div className="col-span-2 flex justify-center">
+                                <img
+                                    src={selectedAsset.image}
+                                    alt="Asset"
+                                    className="max-h-40 object-contain rounded-md shadow-md"
+                                />
+                            </div>
+                        )}
+                        <div className="font-bold">Item Information</div>
+                        <DetalisFormatted
+                            title="Item Name"
+                            detail={selectedAsset.itemName || "N/A"}
+                        />
+                        <DetalisFormatted
+                            title="Department"
+                            detail={
+                                selectedAsset.department?.name ||
+                                selectedAsset.department ||
+                                "N/A"
+                            }
+                        />
+                        <DetalisFormatted
+                            title="Date"
+                            detail={formatDateTime(selectedAsset.dateRaw)}
+                        />
+                        <DetalisFormatted
+                            title="Category"
+                            detail={selectedAsset.categoryName || "N/A"}
+                        />
+                        <br />
+
+                        <div className="font-bold">Inventory Units</div>
+
+                        <DetalisFormatted
+                            title="Opening Units"
+                            detail={selectedAsset.openingInventoryUnits ?? "N/A"}
+                        />
+                        <DetalisFormatted
+                            title="Opening Per Unit Price"
+                            detail={
+                                selectedAsset.openingPerUnitPrice != null
+                                    ? `INR ${inrFormat(selectedAsset.openingPerUnitPrice)}`
+                                    : "N/A"
+                            }
+                        />
+                        <DetalisFormatted
+                            title="New Purchase Units"
+                            detail={selectedAsset.newPurchaseUnits ?? "N/A"}
+                        />
+                        <DetalisFormatted
+                            title="New Purchase Per Unit Price"
+                            detail={
+                                selectedAsset.newPurchasePerUnitPrice != null
+                                    ? `INR ${inrFormat(selectedAsset.newPurchasePerUnitPrice)}`
+                                    : "N/A"
+                            }
+                        />
+                        <DetalisFormatted
+                            title="Closing Units"
+                            detail={
+                                selectedAsset?.remainingNewPurchaseInventoryUnits || 0
+                            }
+                        />
+                        <br />
+                        <div className="font-bold">Inventory Value</div>
+                        <DetalisFormatted
+                            title="Opening Value"
+                            detail={`INR ${
+                                inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
+                            }`}
+                        />
+
+                        <DetalisFormatted
+                            title="New Purchase Value"
+                            detail={`INR ${
+                                inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
+                            }`}
+                        />
+                        <DetalisFormatted
+                            title="Last Consumed Unit Value"
+                            detail={`INR ${
+                                inrFormat(selectedAsset.lastConsumed) ??
+                                // selectedAsset.lastConsumedUnitValue ??
+                                // selectedAsset.consumedOpenInventoryUnits ??
+                                "N/A"
+                            }`}
+                        />
+                        <DetalisFormatted
+                            title="Last Remaining Unit Value"
+                           detail={`INR ${
+                               inrFormat(selectedAsset.remainingOpeningInventoryUnits) ??
+                                "N/A"
+                             }`}
+                        />
+                        <DetalisFormatted
+                            title="New Consumed Unit Value"
+                             detail={`INR ${
+                               inrFormat(selectedAsset.newConsumedUnitValue) ??
+                               // selectedAsset.consumedNewPurchaseInventoryUnits ??
+                                "N/A"
+                            }`}
+                        />
+                        <DetalisFormatted
+                            title="New Remaining Unit Value"
+                             detail={`INR ${       
+                                inrFormat(selectedAsset.remainingNewPurchaseInventoryUnits) ??
+                                "N/A"
+                             }`}
+                        />
+                        <br />
+                        <div className="font-bold">Inventory Added By</div>
+                        <DetalisFormatted
+                            title="Name"
+                            detail={selectedAsset.addedByName || "N/A"}
+                        />
+                    </div>
+                )}
+            </MuiModal>
+
         </>
     );
 };
