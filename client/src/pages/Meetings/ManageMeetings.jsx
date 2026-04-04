@@ -625,10 +625,10 @@ const ManageMeetings = () => {
             onClick: () =>
               handleOpenChecklistModal("update", params.data._id),
           },
-          // isUpcoming && {
-          //   label: "Edit",
-          //   onClick: () => handleEditMeeting("edit", params.data),
-          // },
+          isUpcoming && {
+            label: "Edit",
+            onClick: () => handleEditMeeting("edit", params.data),
+          },
           !isOngoing &&
           !isHousekeepingPending && {
             label: "Mark As Ongoing",

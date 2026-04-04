@@ -43,6 +43,16 @@ const assetsSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    serialNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    description: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     purchaseDate: {
       type: Date,
       required: true,
