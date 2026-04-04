@@ -336,9 +336,13 @@ const InventoryRecordHistory = () => {
                         <div className="font-bold">Inventory Units</div>
 
                         <DetalisFormatted
-                            title="Opening Units"
-                            detail={selectedAsset.openingInventoryUnits ?? "0"}
-                        />
+              title="Opening Units"
+              detail={selectedAsset.openingInventoryUnits !== null &&
+                selectedAsset.openingInventoryUnits  !== undefined
+                  ? selectedAsset.openingInventoryUnits 
+                  : "NA"
+              }
+            />
                         <DetalisFormatted
                             title="Opening Per Unit Price"
                             detail={
@@ -347,10 +351,15 @@ const InventoryRecordHistory = () => {
                                     : "N/A"
                             }
                         />
-                        <DetalisFormatted
-                            title="New Purchase Units"
-                            detail={selectedAsset.newPurchaseUnits ?? "0"}
-                        />
+                         <DetalisFormatted
+                                      title="New Purchase Units"
+                                      detail={
+                                        selectedAsset.newPurchaseUnits !== null &&
+                                        selectedAsset.newPurchaseUnits !== undefined
+                                          ? selectedAsset.newPurchaseUnits
+                                          : "NA"
+                                      }
+                                      />
                         <DetalisFormatted
                             title="New Purchase Per Unit Price"
                             detail={
@@ -359,19 +368,19 @@ const InventoryRecordHistory = () => {
                                     : "N/A"
                             }
                         />
-                        <DetalisFormatted
+                        {/* <DetalisFormatted
                             title="Closing Units"
                             detail={
                                 selectedAsset?.remainingNewPurchaseInventoryUnits || 0
                             }
-                        />
+                        /> */}
                          <DetalisFormatted
                                       title="Last Consumed Units"
                                       detail={
-                                         selectedAsset.lastConsume ??
+                                        selectedAsset.lastConsumed ??
                                        // selectedAsset.lastConsumedUnitValue ??
                                         //selectedAsset.consumedOpenInventoryUnits ??
-                                        "0"
+                                        "NA"
                                        }
                                     />
                                     <DetalisFormatted
@@ -384,7 +393,7 @@ const InventoryRecordHistory = () => {
                                     <DetalisFormatted
                                       title="New Consumed Units"
                                       detail={
-                                        selectedAsset.newConsumedUnitValue??
+                                        selectedAsset.totalComsumed??
                                         //selectedAsset.consumedNewPurchaseInventoryUnits ??
                                         "0"
                                       }
