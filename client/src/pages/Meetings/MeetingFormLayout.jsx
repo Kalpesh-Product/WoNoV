@@ -222,7 +222,7 @@ const MeetingFormLayout = () => {
 
 
   const remainingMeetingCredits = useMemo(() => {
-    if (!company || company === BIZNEST_COMPANY_ID) return "-";
+    if (!company) return "-";
 
     return getMonthlyRemainingCredit(selectedClient, selectedCreditMonth);
   }, [company, selectedClient, selectedCreditMonth]);
@@ -328,12 +328,19 @@ const MeetingFormLayout = () => {
   ]);
 
   const companyOptions = useMemo(() => {
-    const opts = [
-      {
+    // Collect all unique client/company entries
+    const opts = [];
+
+    // Add BizNest first to ensure it's at the top if needed, 
+    // but check if it's already in clientsData to avoid duplicates
+    const hasBizNestInClients = clientsData?.some(c => c._id === BIZNEST_COMPANY_ID);
+
+    if (!hasBizNestInClients) {
+      opts.push({
         id: BIZNEST_COMPANY_ID,
-        label: "BizNest",
-      },
-    ];
+        label: "BIZNEST",
+      });
+    }
 
     if (clientsData?.length) {
       clientsData.forEach((client) => {
@@ -345,7 +352,7 @@ const MeetingFormLayout = () => {
     }
 
     return opts;
-  }, [clientsData]);
+  }, [clientsData, BIZNEST_COMPANY_ID]);
 
   // useEffect(() => {
   //   if (isCurrentUserUnavailable) {

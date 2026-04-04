@@ -613,7 +613,7 @@ const getMeetings = async (req, res, next) => {
           ? meeting.client.clientName
           : meeting.externalClient
             ? null
-            : "BIZ Nest",
+            : "BIZNEST",
         externalClient: meeting.externalClient
           ? meeting.externalClient.registeredClientCompany
           : null,
@@ -785,7 +785,7 @@ const getMyMeetings = async (req, res, next) => {
           ? meeting.client.clientName
           : meeting.externalClient
             ? null
-            : "BIZ Nest",
+            : "BIZNEST",
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
@@ -1353,10 +1353,35 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    // Atomic deduction of credits
+    const meetingDate = new Date(meeting.startTime);
+    const meetingMonthStart = new Date(
+      meetingDate.getFullYear(),
+      meetingDate.getMonth(),
+      1,
+    );
+
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const isCurrentMonth = meetingMonthStart.getTime() === currentMonthStart.getTime();
+
+    const updateFields = {
+      $inc: {
+        "meetingCreditBalanceHistory.$.remainingCredit": -addedCredits,
+        "meetingCreditBalanceHistory.$.consumedCredit": addedCredits,
+      },
+    };
+
+    if (isCurrentMonth) {
+      updateFields.$inc.meetingCreditBalance = -addedCredits;
+    }
+
+    // Atomic deduction across both balances
     await bookingUserModel.findOneAndUpdate(
-      { _id: bookingUserCompany },
-      { $inc: { meetingCreditBalance: -addedCredits } },
+      { 
+        _id: meeting.client,
+        "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
+      },
+      updateFields,
     );
 
     // Step 3: Update meeting details
@@ -1946,27 +1971,41 @@ const updateMeetingDetails = async (req, res, next) => {
       (newCreditsUsed - oldCreditsUsed).toFixed(2),
     );
 
-    if (creditDifference > 0) {
-      const bookingEntity = await BookingCompanyModel.findById(bookedClientId);
+    if (creditDifference !== 0) {
+      const meetingDate = new Date(meeting.startTime);
+      const meetingMonthStart = new Date(
+        meetingDate.getFullYear(),
+        meetingDate.getMonth(),
+        1,
+      );
 
-      if (!bookingEntity) {
-        return res.status(404).json({
-          message: "Booking entity not found",
-        });
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const isCurrentMonth = meetingMonthStart.getTime() === currentMonthStart.getTime();
+
+      const updateFields = {
+        $inc: {
+          "meetingCreditBalanceHistory.$.remainingCredit": -creditDifference,
+          "meetingCreditBalanceHistory.$.consumedCredit": creditDifference,
+        },
+      };
+
+      if (isCurrentMonth) {
+        updateFields.$inc.meetingCreditBalance = -creditDifference;
       }
 
-      if (bookingEntity.meetingCreditBalance < creditDifference) {
-        return res.status(400).json({
-          message: "Insufficient credits to update the meeting",
-        });
-      }
+      const updatedEntity = await BookingCompanyModel.findOneAndUpdate(
+        {
+          _id: bookedClientId,
+          "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
+        },
+        updateFields,
+        { new: true },
+      );
 
-      bookingEntity.meetingCreditBalance -= creditDifference;
-      await bookingEntity.save();
-    } else if (creditDifference < 0) {
-      await BookingCompanyModel.findByIdAndUpdate(bookedClientId, {
-        $inc: { meetingCreditBalance: Math.abs(creditDifference) },
-      });
+      if (!updatedEntity) {
+        return res.status(404).json({ message: "Booking entity or history entry not found" });
+      }
     }
 
     // if (creditDifference > 0) {
