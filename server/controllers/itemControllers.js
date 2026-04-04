@@ -2,6 +2,10 @@ const { default: mongoose } = require("mongoose");
 const Item = require("../models/Item");
 const Inventory = require("../models/inventory/Inventory");
 const Category = require("../models/category/Category");
+const csv = require("csv-parser");
+const { Readable } = require("stream");
+const Role = require("../models/roles/Roles");
+const UserData = require("../models/hr/UserData");
 
 const addItem = async (req, res) => {
   try {
@@ -209,4 +213,168 @@ const updateItem = async (req, res) => {
   }
 };
 
-module.exports = { addItem, getItems, updateItem };
+const bulkUploadItems = async (req, res) => {
+  try {
+    const { department } = req.params;
+    const { company } = req;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "CSV file is required" });
+    }
+
+    /* ------------------ GET ADMIN USER ------------------ */
+
+    // Find admin role for this department
+    const adminRole = await Role.findOne({
+      department,
+      roleTitle: { $regex: "admin", $options: "i" },
+    });
+
+    if (!adminRole) {
+      return res.status(400).json({
+        message: "Admin role not found for department",
+      });
+    }
+
+    // Find user with this role
+    const adminUser = await UserData.findOne({
+      company,
+      roles: adminRole._id,
+    });
+
+    if (!adminUser) {
+      return res.status(400).json({
+        message: "Admin user not found for department",
+      });
+    }
+
+    /* ------------------ PARSE CSV ------------------ */
+
+    const results = [];
+
+    const stream = Readable.from(req.file.buffer.toString("utf-8").trim());
+
+    stream
+      .pipe(csv())
+      .on("data", (row) => {
+        const name = row["Item Name"]?.trim();
+        const categoryName = row["Category"]?.trim()?.toLowerCase();
+
+        if (name && categoryName) {
+          results.push({
+            name: name.trim().toLowerCase(),
+            categoryName,
+          });
+        }
+      })
+      .on("end", async () => {
+        try {
+          if (!results.length) {
+            return res
+              .status(400)
+              .json({ message: "No valid items found in CSV" });
+          }
+
+          /* ------------------ FETCH CATEGORIES ------------------ */
+
+          const categoryNames = [
+            ...new Set(results.map((r) => r.categoryName)),
+          ];
+
+          const categories = await Category.find({
+            categoryName: { $in: categoryNames },
+            department,
+            company,
+          });
+
+          const categoryMap = new Map();
+          categories.forEach((c) => {
+            categoryMap.set(c.categoryName, c._id);
+          });
+
+          /* ------------------ PREPARE ITEMS ------------------ */
+
+          const itemsToInsert = [];
+
+          results.forEach((r) => {
+            const categoryId = categoryMap.get(r.categoryName);
+
+            if (categoryId) {
+              itemsToInsert.push({
+                name: r.name,
+                department,
+                category: categoryId,
+                addedBy: adminUser._id,
+                isActive: true,
+              });
+            }
+          });
+
+          if (!itemsToInsert.length) {
+            return res.status(400).json({
+              message:
+                "No items inserted. Categories not found or invalid data.",
+            });
+          }
+
+          /* ------------------ DEDUP (CSV LEVEL) ------------------ */
+
+          const uniqueMap = new Map();
+
+          itemsToInsert.forEach((item) => {
+            const key = `${item.name}-${item.department}-${item.category}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, item);
+            }
+          });
+
+          const uniqueItems = Array.from(uniqueMap.values());
+
+          /* ------------------ REMOVE EXISTING ------------------ */
+
+          const existing = await Item.find({
+            department,
+            category: { $in: uniqueItems.map((i) => i.category) },
+            name: { $in: uniqueItems.map((i) => i.name) },
+          }).select("name category");
+
+          const existingSet = new Set(
+            existing.map((e) => `${e.name}-${e.department}-${e.category}`),
+          );
+
+          const finalItems = uniqueItems.filter(
+            (i) => !existingSet.has(`${i.name}-${i.department}-${i.category}`),
+          );
+
+          if (!finalItems.length) {
+            return res.status(200).json({
+              message: "All items already exist",
+              inserted: 0,
+            });
+          }
+
+          /* ------------------ INSERT ------------------ */
+
+          await Item.insertMany(finalItems, { ordered: false });
+
+          return res.status(200).json({
+            message: "Items uploaded successfully",
+            inserted: finalItems.length,
+          });
+        } catch (err) {
+          console.error(err);
+          return res.status(500).json({
+            message: "Error processing items",
+            error: err.message,
+          });
+        }
+      });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Bulk upload failed",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { addItem, getItems, updateItem, bulkUploadItems };
