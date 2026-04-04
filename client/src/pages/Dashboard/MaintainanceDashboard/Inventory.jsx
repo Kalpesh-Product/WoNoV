@@ -328,7 +328,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           label: "Item",
           permission: unitTabPermissions.item,
         },
-       {
+        {
           key: "inventory",
           path: "item-inventory",
           label: "Inventory",
@@ -338,13 +338,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     [unitTabPermissions, userPermissions],
   );
 
- const defaultUnitTabPath = unitTabOptions[0]?.path || "null";
+  const defaultUnitTabPath = unitTabOptions[0]?.path || "null";
   const activeUnitTab =
     unitTabOptions.find(
       (tab) =>
         tab.path === inventoryTabParam ||
         (tab.key === "inventory" && inventoryTabParam === "inventory"),
-    )?.key || unitTabOptions[0]?.key || "null";
+    )?.key ||
+    unitTabOptions[0]?.key ||
+    "null";
 
   useEffect(() => {
     setValue("itemName", selectedAsset?.itemName);
@@ -1396,7 +1398,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 const currentPath = location.pathname.endsWith("/")
                   ? location.pathname.slice(0, -1)
                   : location.pathname;
-                 const recordPath = `${currentPath}/${encodeURIComponent(params.data.itemName)}`;
+                const recordPath = `${currentPath}/${encodeURIComponent(params.data.itemName)}`;
                 navigate(recordPath, {
                   state: { inventoryCategory: params.data.categoryName || "" },
                 });
@@ -1732,7 +1734,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   useEffect(() => {
     if (!forcedBuildingTab || !unitNoParam || inventoryTabParam) return;
-     navigate(`${location.pathname}/${defaultUnitTabPath}`, { replace: true });
+    navigate(`${location.pathname}/${defaultUnitTabPath}`, { replace: true });
   }, [
     defaultUnitTabPath,
     forcedBuildingTab,
@@ -2512,9 +2514,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
             <DetalisFormatted
               title="Opening Units"
-              detail={selectedAsset.openingInventoryUnits !== null &&
-                selectedAsset.openingInventoryUnits  !== undefined
-                  ? selectedAsset.openingInventoryUnits 
+              detail={
+                selectedAsset.openingInventoryUnits !== null &&
+                selectedAsset.openingInventoryUnits !== undefined
+                  ? selectedAsset.openingInventoryUnits
                   : "NA"
               }
             />
@@ -2538,7 +2541,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   ? selectedAsset.newPurchaseUnits
                   : "NA"
               }
-              />
+            />
             <DetalisFormatted
               title="New Purchase Per Unit Price"
               detail={
@@ -2555,35 +2558,29 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               }
             /> */}
             <DetalisFormatted
-              title="Last Consumed Unit Value"
+              title="Last Consumed Unit"
               detail={
                 selectedAsset.lastConsumed ??
-               // selectedAsset.lastConsumedUnitValue ??
-              //  selectedAsset.consumedOpenInventoryUnits ??
+                // selectedAsset.lastConsumedUnitValue ??
+                //  selectedAsset.consumedOpenInventoryUnits ??
                 "N/A"
               }
             />
             <DetalisFormatted
               title="Last Remaining Units"
-              detail={
-                selectedAsset.remainingOpeningInventoryUnits ??
-                "0"
-              }
+              detail={selectedAsset.remainingOpeningInventoryUnits ?? "0"}
             />
             <DetalisFormatted
               title="New Consumed Units"
               detail={
-                selectedAsset.totalConsumed??
+                selectedAsset.totalConsumed ??
                 //selectedAsset.consumedNewPurchaseInventoryUnits ??
                 "0"
               }
             />
             <DetalisFormatted
               title="New Remaining Units"
-              detail={
-               selectedAsset.remainingNewPurchaseInventoryUnits??
-                "0"
-              }
+              detail={selectedAsset.remainingNewPurchaseInventoryUnits ?? "0"}
             />
             <br />
             <div className="font-bold">Inventory Value</div>
@@ -2600,7 +2597,6 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
               }`}
             />
-           
 
             <br />
             <div className="font-bold">Inventory Added By</div>
