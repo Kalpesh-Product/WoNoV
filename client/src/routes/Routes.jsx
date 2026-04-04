@@ -1919,6 +1919,37 @@ export const routes = createBrowserRouter([
                         element: <HrMixBag />,
                       },
                       {
+                        path: "mix-bag/overall-KPA",
+                        element: <HrTasksLayout />,
+                        children: [
+                          {
+                            path: "department-KPA",
+                            element: <HrKPA />,
+                            index: true,
+                          },
+                          {
+                            path: "department-task",
+                            element: <HrOverallTasks />,
+                          },
+                          {
+                            path: "department-tasks",
+                            element: <HrOverallTasks />,
+                          },
+                          {
+                            path: "department-KPA/:department",
+                            element: <HrDepartmentKPA />,
+                          },
+                          {
+                            path: "department-task/:department",
+                            element: <HrDepartmentTasks />,
+                          },
+                          {
+                            path: "department-tasks/:department",
+                            element: <HrDepartmentTasks />,
+                          },
+                        ],
+                      },
+                      {
                         path: "mix-bag/attendance",
                         element: <AttendanceLayout />,
                         children: [

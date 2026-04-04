@@ -430,7 +430,8 @@ const Collections = () => {
             />
             <DetalisFormatted
               title="Annual Increment"
-              detail={`${viewDetails.annualIncrement}%`}
+              //detail={`${viewDetails.annualIncrement}%`}
+              detail={`${viewDetails.annualIncrement ?? 0}%`}
             />
             <DetalisFormatted
               title="Next Increment Date"

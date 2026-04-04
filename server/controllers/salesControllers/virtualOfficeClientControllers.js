@@ -19,6 +19,28 @@ const toDateOrNull = (v) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
+const calculateTotalTermMonths = (startDate, endDate) => {
+  if (!startDate || !endDate) return 0;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+    return 0;
+  }
+
+  let months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
+
+  if (end.getDate() < start.getDate()) {
+    months -= 1;
+  }
+
+  return Math.max(months, 0);
+};
+
+
 const createVirtualOfficeClient = async (req, res) => {
   try {
     const data = req.body;
@@ -227,6 +249,7 @@ const createVirtualOfficeClient = async (req, res) => {
       perDeskMeetingCredits,
       totalMeetingCredits,
       totalDesks,
+      totalTerm: calculateTotalTermMonths(termStartDate, termEnd),
       termStartDate,
       termEnd,
       rentDate,
@@ -408,12 +431,28 @@ const updateVirtualOfficeClient = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = { ...req.body };
+     const hasField = (key) =>
+      Object.prototype.hasOwnProperty.call(updates, key);
 
     const existing = await VirtualOfficeClient.findById(id).lean();
     if (!existing) {
       return res
         .status(404)
         .json({ message: "Virtual Office client not found" });
+    }
+
+    if (
+      hasField("unit") &&
+      (updates.unit === null || String(updates.unit).trim() === "")
+    ) {
+      return res.status(400).json({ message: "unit is required" });
+    }
+
+    if (
+      hasField("building") &&
+      (updates.building === null || String(updates.building).trim() === "")
+    ) {
+      return res.status(400).json({ message: "building is required" });
     }
 
     const clientExists = await VirtualOfficeClient.findOne({
@@ -425,7 +464,8 @@ const updateVirtualOfficeClient = async (req, res) => {
       return res.status(400).json({ message: "Client already exists" });
     }
     let selectedUnit = null;
-    if (updates.unit || updates.building) {
+    //if (updates.unit || updates.building) {
+    if (hasField("unit") || hasField("building")) {
       const nextUnitId = updates.unit || existing.unit;
       const nextBuildingId = updates.building || existing.building;
 
@@ -681,6 +721,7 @@ const updateVirtualOfficeClient = async (req, res) => {
     }
 
     updates.nextIncrementDate = nextIncrementDate || null;
+    updates.totalTerm = calculateTotalTermMonths(termStartDate, termEnd);
 
     const updated = await VirtualOfficeClient.findByIdAndUpdate(id, updates, {
       new: true,

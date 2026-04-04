@@ -1132,6 +1132,19 @@ export const PERMISSIONS = {
     route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
   },
 
+ HR_DEPARTMENT_KPA_MIX_BAG: {
+    value: "hr_department_kpa_tab",
+    title: "Department KPA",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-KPA",
+  },
+  HR_DEPARTMENT_TASK_MIX_BAG: {
+    value: "hr_department_task_tab",
+    title: "Department Task",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-task",
+  },
+
 
   //inside dashboard of mix bag
   HR_PENDING_APPROVALS_LEAVES: {
