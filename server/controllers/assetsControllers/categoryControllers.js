@@ -6,6 +6,8 @@ const AssetCategory = require("../../models/category/Category");
 const CustomError = require("../../utils/customErrorlogs");
 const AssetSubCategory = require("../../models/category/SubCategories");
 const Category = require("../../models/category/Category");
+const csv = require("csv-parser");
+const { Readable } = require("stream");
 
 const addAssetCategory = async (req, res, next) => {
   const { assetCategoryName, departmentId, appliesTo = "asset" } = req.body;
@@ -481,6 +483,102 @@ const getSubCategory = async (req, res, next) => {
   }
 };
 
+const bulkUploadCategory = async (req, res) => {
+  try {
+    const { department } = req.params;
+    const { company } = req;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "CSV file is required" });
+    }
+
+    const results = [];
+
+    // Convert buffer → stream
+    const stream = Readable.from(req.file.buffer.toString("utf-8").trim());
+
+    stream
+      .pipe(csv())
+      .on("data", (row) => {
+        if (row["Category"] || row["Category Name"]) {
+          results.push({
+            categoryName: (row["Category"] || row["Category Name"])
+              .trim()
+              .toLowerCase(), // normalize to avoid duplicates
+            department,
+            company,
+            appliesTo: ["inventory"],
+            isActive: true,
+          });
+        }
+      })
+      .on("end", async () => {
+        try {
+          if (!results.length) {
+            return res
+              .status(400)
+              .json({ message: "No valid categories found in CSV" });
+          }
+
+          // 🔥 Deduplicate in-memory first (case insensitive)
+          const uniqueMap = new Map();
+
+          results.forEach((item) => {
+            const key = `${item.categoryName}-${item.department}-${item.company}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, item);
+            }
+          });
+
+          const uniqueCategories = Array.from(uniqueMap.values());
+
+          // 🔥 Fetch existing categories to avoid duplicate insert
+          const existing = await Category.find({
+            company,
+            department,
+            categoryName: {
+              $in: uniqueCategories.map((c) => c.categoryName),
+            },
+          }).select("categoryName");
+
+          const existingNames = new Set(existing.map((e) => e.categoryName));
+
+          const finalToInsert = uniqueCategories.filter(
+            (c) => !existingNames.has(c.categoryName),
+          );
+
+          if (!finalToInsert.length) {
+            return res.status(200).json({
+              message: "All categories already exist",
+              inserted: 0,
+            });
+          }
+
+          // 🔥 Bulk insert
+          await Category.insertMany(finalToInsert, {
+            ordered: false,
+          });
+
+          return res.status(200).json({
+            message: "Categories uploaded successfully",
+            inserted: finalToInsert.length,
+          });
+        } catch (err) {
+          console.error(err);
+          return res.status(500).json({
+            message: "Error processing categories",
+            error: err.message,
+          });
+        }
+      });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Bulk upload failed",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   addAssetCategory,
   addSubCategory,
@@ -488,4 +586,5 @@ module.exports = {
   updateSubCategory,
   getCategory,
   getSubCategory,
+  bulkUploadCategory,
 };

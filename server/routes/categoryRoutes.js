@@ -1,3 +1,4 @@
+const upload = require("../config/multerConfig");
 const {
   addAssetCategory,
   addSubCategory,
@@ -5,6 +6,7 @@ const {
   updateSubCategory,
   getCategory,
   getSubCategory,
+  bulkUploadCategory,
 } = require("../controllers/assetsControllers/categoryControllers");
 
 const router = require("express").Router();
@@ -15,5 +17,10 @@ router.patch("/update-category", updateCategory);
 router.patch("/update-subcategory", updateSubCategory);
 router.get("/get-category", getCategory);
 router.get("/get-subcategory", getSubCategory);
+router.post(
+  "/bulk-upload-category/:department",
+  upload.single("category"),
+  bulkUploadCategory,
+);
 
 module.exports = router;

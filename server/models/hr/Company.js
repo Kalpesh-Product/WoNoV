@@ -408,6 +408,10 @@ const companySchema = new mongoose.Schema({
       },
     },
   ],
+  lastCreditReset: {
+    type: Date,
+    default: Date.now,
+  },
   complianceDocuments: [
     {
       name: String,

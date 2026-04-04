@@ -318,12 +318,19 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       [
         {
           key: "category",
+          path: "category",
           label: "Category",
           permission: unitTabPermissions.category,
         },
-        { key: "item", label: "Item", permission: unitTabPermissions.item },
         {
+          key: "item",
+          path: "item",
+          label: "Item",
+          permission: unitTabPermissions.item,
+        },
+       {
           key: "inventory",
+          path: "item-inventory",
           label: "Inventory",
           permission: unitTabPermissions.inventory,
         },
@@ -331,12 +338,13 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     [unitTabPermissions, userPermissions],
   );
 
-  const defaultUnitTab = unitTabOptions[0]?.key || "null";
-  const activeUnitTab = unitTabOptions.some(
-    (tab) => tab.key === inventoryTabParam,
-  )
-    ? inventoryTabParam
-    : defaultUnitTab;
+ const defaultUnitTabPath = unitTabOptions[0]?.path || "null";
+  const activeUnitTab =
+    unitTabOptions.find(
+      (tab) =>
+        tab.path === inventoryTabParam ||
+        (tab.key === "inventory" && inventoryTabParam === "inventory"),
+    )?.key || unitTabOptions[0]?.key || "null";
 
   useEffect(() => {
     setValue("itemName", selectedAsset?.itemName);
@@ -1388,8 +1396,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 const currentPath = location.pathname.endsWith("/")
                   ? location.pathname.slice(0, -1)
                   : location.pathname;
-                const recordPath = `${currentPath}/${encodeURIComponent(params.data.categoryName || "uncategorized")}/${encodeURIComponent(params.data.itemName)}`;
-                navigate(recordPath, { target: "_blank" });
+                 const recordPath = `${currentPath}/${encodeURIComponent(params.data.itemName)}`;
+                navigate(recordPath, {
+                  state: { inventoryCategory: params.data.categoryName || "" },
+                });
               },
             },
           ]}
@@ -1722,9 +1732,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   useEffect(() => {
     if (!forcedBuildingTab || !unitNoParam || inventoryTabParam) return;
-    navigate(`${location.pathname}/${defaultUnitTab}`, { replace: true });
+     navigate(`${location.pathname}/${defaultUnitTabPath}`, { replace: true });
   }, [
-    defaultUnitTab,
+    defaultUnitTabPath,
     forcedBuildingTab,
     inventoryTabParam,
     location.pathname,
@@ -1815,7 +1825,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                     key={tab.key}
                     type="button"
                     disabled={isActive}
-                    onClick={() => handleUnitTabChange(tab.key)}
+                    onClick={() => handleUnitTabChange(tab.path)}
                     className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${
                       isActive
                         ? "bg-primary text-white cursor-default"
@@ -2502,7 +2512,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
             <DetalisFormatted
               title="Opening Units"
-              detail={selectedAsset.openingInventoryUnits ?? "N/A"}
+              detail={selectedAsset.openingInventoryUnits !== null &&
+                selectedAsset.openingInventoryUnits  !== undefined
+                  ? selectedAsset.openingInventoryUnits 
+                  : "NA"
+              }
             />
             <DetalisFormatted
               title="Opening Per Unit Price"
@@ -2512,10 +2526,19 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   : "N/A"
               }
             />
+            {/* <DetalisFormatted
+              title="New Purchase Units"
+              detail={selectedAsset.newPurchaseUnits ?? "0"}
+            /> */}
             <DetalisFormatted
               title="New Purchase Units"
-              detail={selectedAsset.newPurchaseUnits ?? "N/A"}
-            />
+              detail={
+                selectedAsset.newPurchaseUnits !== null &&
+                selectedAsset.newPurchaseUnits !== undefined
+                  ? selectedAsset.newPurchaseUnits
+                  : "NA"
+              }
+              />
             <DetalisFormatted
               title="New Purchase Per Unit Price"
               detail={
@@ -2524,11 +2547,42 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   : "N/A"
               }
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Closing Units"
               detail={
                 // (selectedAsset?.remainingOpeningInventoryUnits || 0) +
                 selectedAsset?.remainingNewPurchaseInventoryUnits || 0
+              }
+            /> */}
+            <DetalisFormatted
+              title="Last Consumed Unit Value"
+              detail={
+                selectedAsset.lastConsumed ??
+               // selectedAsset.lastConsumedUnitValue ??
+              //  selectedAsset.consumedOpenInventoryUnits ??
+                "N/A"
+              }
+            />
+            <DetalisFormatted
+              title="Last Remaining Units"
+              detail={
+                selectedAsset.remainingOpeningInventoryUnits ??
+                "0"
+              }
+            />
+            <DetalisFormatted
+              title="New Consumed Units"
+              detail={
+                selectedAsset.totalConsumed??
+                //selectedAsset.consumedNewPurchaseInventoryUnits ??
+                "0"
+              }
+            />
+            <DetalisFormatted
+              title="New Remaining Units"
+              detail={
+               selectedAsset.remainingNewPurchaseInventoryUnits??
+                "0"
               }
             />
             <br />
@@ -2546,6 +2600,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
               }`}
             />
+           
+
             <br />
             <div className="font-bold">Inventory Added By</div>
             <DetalisFormatted
@@ -2781,7 +2837,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Last Consumed Unit Value"
+                      label="Last Consumed Units"
                       type="number"
                       size="small"
                       fullWidth
@@ -2797,7 +2853,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Last Remaining Unit Value"
+                      label="Last Remaining Units"
                       type="number"
                       size="small"
                       fullWidth
@@ -2815,7 +2871,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="New Consumed Unit Value"
+                      label="New Consumed Units"
                       type="number"
                       size="small"
                       fullWidth
@@ -2830,7 +2886,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="New Remaining Unit Value"
+                      label="New Remaining Units"
                       type="number"
                       size="small"
                       fullWidth
