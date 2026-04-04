@@ -78,6 +78,7 @@ const addCompany = async (req, res, next) => {
           consumedCredit: 0,
         },
       ],
+      lastCreditReset: new Date(),
     });
 
     // Save the company to the database

@@ -513,6 +513,8 @@ const getMeetings = async (req, res, next) => {
 
     let filteredMeetings = meetings;
 
+    const currentUserId = user?.toString();
+
     if (
       !roles.includes("Administration Admin") &&
       !roles.includes("Finance Admin") &&
@@ -523,8 +525,21 @@ const getMeetings = async (req, res, next) => {
       !roles.includes("Tech Employee")
     ) {
       filteredMeetings = meetings.filter((meeting) => {
-        if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments))
+        const isMeetingParticipant =
+          meeting?.bookedBy?._id?.toString() === currentUserId ||
+          meeting?.clientBookedBy?._id?.toString() === currentUserId ||
+          (meeting?.internalParticipants || []).some(
+            (participant) => participant?._id?.toString() === currentUserId,
+          ) ||
+          (meeting?.clientParticipants || []).some(
+            (participant) => participant?._id?.toString() === currentUserId,
+          );
+
+        if (isMeetingParticipant) return true;
+
+        if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments)) {
           return false;
+        }
 
         const bookedDeptIds = meeting.bookedBy.departments.map((dept) =>
           dept._id?.toString(),
@@ -581,12 +596,12 @@ const getMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
           : "";
       }
 
@@ -602,18 +617,18 @@ const getMeetings = async (req, res, next) => {
           meeting.bookedBy ||
           (meeting.externalBookedBy
             ? {
-              _id: meeting.externalBookedBy._id,
-              firstName: meeting.externalBookedBy.firstName,
-              middleName: meeting.externalBookedBy.middleName,
-              lastName: meeting.externalBookedBy.lastName,
-            }
+                _id: meeting.externalBookedBy._id,
+                firstName: meeting.externalBookedBy.firstName,
+                middleName: meeting.externalBookedBy.middleName,
+                lastName: meeting.externalBookedBy.lastName,
+              }
             : null),
         location: meeting.bookedRoom.location,
         client: isClient
           ? meeting.client.clientName
           : meeting.externalClient
             ? null
-            : "BIZ Nest",
+            : "BIZNEST",
         externalClient: meeting.externalClient
           ? meeting.externalClient.registeredClientCompany
           : null,
@@ -747,12 +762,12 @@ const getMyMeetings = async (req, res, next) => {
 
       const bookedBy = meeting.bookedBy
         ? [
-          meeting.bookedBy.firstName,
-          meeting.bookedBy.middleName,
-          meeting.bookedBy.lastName,
-        ]
-          .filter(Boolean)
-          .join(" ")
+            meeting.bookedBy.firstName,
+            meeting.bookedBy.middleName,
+            meeting.bookedBy.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ")
         : "";
 
       const isReceptionist = meeting.receptionist.departments.some(
@@ -763,12 +778,12 @@ const getMyMeetings = async (req, res, next) => {
       if (isReceptionist) {
         receptionist = meeting.receptionist
           ? [
-            meeting.receptionist.firstName,
-            meeting.receptionist.middleName,
-            meeting.receptionist.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
+              meeting.receptionist.firstName,
+              meeting.receptionist.middleName,
+              meeting.receptionist.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
           : "";
       }
 
@@ -785,7 +800,7 @@ const getMyMeetings = async (req, res, next) => {
           ? meeting.client.clientName
           : meeting.externalClient
             ? null
-            : "BIZ Nest",
+            : "BIZNEST",
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,
@@ -1150,7 +1165,11 @@ const cancelMeeting = async (req, res, next) => {
         );
 
         const now = new Date();
-        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const currentMonthStart = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          1,
+        );
         const isCurrentMonth =
           meetingMonthStart.getTime() === currentMonthStart.getTime();
 
@@ -1349,10 +1368,35 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    // Atomic deduction of credits
+    const meetingDate = new Date(meeting.startTime);
+    const meetingMonthStart = new Date(
+      meetingDate.getFullYear(),
+      meetingDate.getMonth(),
+      1,
+    );
+
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const isCurrentMonth = meetingMonthStart.getTime() === currentMonthStart.getTime();
+
+    const updateFields = {
+      $inc: {
+        "meetingCreditBalanceHistory.$.remainingCredit": -addedCredits,
+        "meetingCreditBalanceHistory.$.consumedCredit": addedCredits,
+      },
+    };
+
+    if (isCurrentMonth) {
+      updateFields.$inc.meetingCreditBalance = -addedCredits;
+    }
+
+    // Atomic deduction across both balances
     await bookingUserModel.findOneAndUpdate(
-      { _id: bookingUserCompany },
-      { $inc: { meetingCreditBalance: -addedCredits } },
+      { 
+        _id: meeting.client,
+        "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
+      },
+      updateFields,
     );
 
     // Step 3: Update meeting details
@@ -1563,7 +1607,6 @@ const updateMeeting = async (req, res, next) => {
     const resolvedPaymentStatus = paymentStatus === "Paid" ? "Paid" : "Unpaid";
     const resolvedClientName =
       client || updatedMeeting.externalClient?.registeredClientCompany || "";
-
 
     const meetingRevenue = new MeetingRevenue({
       date: updatedMeeting.startDate,
@@ -1815,9 +1858,20 @@ const updateMeetingDetails = async (req, res, next) => {
           : [];
 
     const isClient = !!meeting.clientBookedBy;
-    const BookingCompanyModel = isClient ? CoworkingClient : Company;
-    const BookingUserModel = isClient ? CoworkingMember : User;
-    const bookedClientId = meeting.client;
+    const isExternal = !!meeting.externalBookedBy;
+    const BookingCompanyModel = isClient
+      ? CoworkingClient
+      : isExternal
+        ? Visitor
+        : Company;
+    const BookingUserModel = isClient
+      ? CoworkingMember
+      : isExternal
+        ? Visitor
+        : User;
+    const bookedClientId = meeting.client
+      ? meeting.client
+      : meeting.externalClient;
 
     const currDate = new Date();
     const startTimeObj = new Date(startTime);
@@ -1826,8 +1880,6 @@ const updateMeetingDetails = async (req, res, next) => {
     if (isNaN(startTimeObj.getTime()) || isNaN(endTimeObj.getTime())) {
       return res.status(400).json({ message: "Invalid date/time format" });
     }
-
-    console.log("role", roles);
 
     const allowedRoles = ["Tech Admin", "Tech Employee"];
     const isTech = roles?.some((r) => allowedRoles.includes(r));
@@ -1934,34 +1986,71 @@ const updateMeetingDetails = async (req, res, next) => {
       (newCreditsUsed - oldCreditsUsed).toFixed(2),
     );
 
-    if (creditDifference > 0) {
-      // Deduct extra credits
-      console.log("booked client ID", bookedClientId);
-      const updatedUser = await BookingCompanyModel.findOneAndUpdate(
+    if (creditDifference !== 0) {
+      const meetingDate = new Date(meeting.startTime);
+      const meetingMonthStart = new Date(
+        meetingDate.getFullYear(),
+        meetingDate.getMonth(),
+        1,
+      );
+
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const isCurrentMonth = meetingMonthStart.getTime() === currentMonthStart.getTime();
+
+      const updateFields = {
+        $inc: {
+          "meetingCreditBalanceHistory.$.remainingCredit": -creditDifference,
+          "meetingCreditBalanceHistory.$.consumedCredit": creditDifference,
+        },
+      };
+
+      if (isCurrentMonth) {
+        updateFields.$inc.meetingCreditBalance = -creditDifference;
+      }
+
+      const updatedEntity = await BookingCompanyModel.findOneAndUpdate(
         {
           _id: bookedClientId,
-          meetingCreditBalance: { $gte: creditDifference },
+          "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
         },
-        { $inc: { meetingCreditBalance: -creditDifference } },
+        updateFields,
         { new: true },
       );
 
-      if (!updatedUser) {
-        return res
-          .status(400)
-          .json({ message: "Insufficient credits for the update" });
+      if (!updatedEntity) {
+        return res.status(404).json({ message: "Booking entity or history entry not found" });
       }
-    } else if (creditDifference < 0) {
-      // Refund excess credits
-      await BookingCompanyModel.findByIdAndUpdate(bookedClientId, {
-        $inc: { meetingCreditBalance: Math.abs(creditDifference) },
-      });
     }
+
+    // if (creditDifference > 0) {
+    //   // Deduct extra credits
+    //   console.log("booked client ID", bookedClientId);
+    //   const updatedUser = await BookingCompanyModel.findOneAndUpdate(
+    //     {
+    //       _id: bookedClientId,
+    //       meetingCreditBalance: { $gte: creditDifference },
+    //     },
+    //     { $inc: { meetingCreditBalance: -creditDifference } },
+    //     { new: true },
+    //   );
+
+    //   if (!updatedUser) {
+    //     return res
+    //       .status(400)
+    //       .json({ message: "Insufficient credits for the update" });
+    //   }
+    // } else if (creditDifference < 0) {
+    //   // Refund excess credits
+    //   await BookingCompanyModel.findByIdAndUpdate(bookedClientId, {
+    //     $inc: { meetingCreditBalance: Math.abs(creditDifference) },
+    //   });
+    // }
 
     const changes = {
       startTime: startTimeObj,
       endTime: endTimeObj,
-      creditsUsed: newCreditsUsed,
+      creditsUsed: externalParticipants ? newCreditsUsed : 0,
       internalParticipants: !isClient ? internalUsers : [],
       clientParticipants: isClient ? internalUsers : [],
       externalParticipants: externalParticipants || [],

@@ -880,7 +880,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -896,7 +896,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                          path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1134,7 +1134,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                             path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1150,7 +1150,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                             path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1330,7 +1330,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                             path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1346,7 +1346,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryCategory/:inventoryItemName",
+                             path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1917,6 +1917,37 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag",
                         element: <HrMixBag />,
+                      },
+                      {
+                        path: "mix-bag/overall-KPA",
+                        element: <HrTasksLayout />,
+                        children: [
+                          {
+                            path: "department-KPA",
+                            element: <HrKPA />,
+                            index: true,
+                          },
+                          {
+                            path: "department-task",
+                            element: <HrOverallTasks />,
+                          },
+                          {
+                            path: "department-tasks",
+                            element: <HrOverallTasks />,
+                          },
+                          {
+                            path: "department-KPA/:department",
+                            element: <HrDepartmentKPA />,
+                          },
+                          {
+                            path: "department-task/:department",
+                            element: <HrDepartmentTasks />,
+                          },
+                          {
+                            path: "department-tasks/:department",
+                            element: <HrDepartmentTasks />,
+                          },
+                        ],
                       },
                       {
                         path: "mix-bag/attendance",

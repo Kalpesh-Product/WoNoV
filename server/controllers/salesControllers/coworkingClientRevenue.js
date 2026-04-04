@@ -234,7 +234,7 @@ const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
           "Desk Rate": deskRate,
           "Total Term": totalTerm,
           "Past Due Date": pastDueDate,
-          "Annual Increment Date": annualIncrement,
+          "Annual Increment": annualIncrement,
           "Next Increment Date": nextIncrementDate,
         } = row;
 

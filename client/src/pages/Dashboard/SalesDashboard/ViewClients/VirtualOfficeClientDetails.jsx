@@ -170,6 +170,35 @@ const VirtualOfficeClientDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
   const selectedBuilding = useWatch({ control, name: "building" });
 
+  const termStartDateValue = useWatch({ control, name: "termStartDate" });
+  const termEndValue = useWatch({ control, name: "termEnd" });
+
+  const calculateTotalTermMonths = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
+
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+
+    if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return 0;
+
+    return end.diff(start, "month");
+  };
+
+  const totalTermMonths = useMemo(() => {
+    if (isEditing) {
+      return calculateTotalTermMonths(termStartDateValue, termEndValue);
+    }
+
+    const startDate = selectedClient?.termStartDate || selectedClient?.startDate;
+    const endDate = selectedClient?.termEnd || selectedClient?.endDate;
+
+    if (typeof selectedClient?.totalTerm === "number" && selectedClient?.totalTerm >= 0) {
+      return selectedClient.totalTerm;
+    }
+
+    return calculateTotalTermMonths(startDate, endDate);
+  }, [isEditing, termStartDateValue, termEndValue, selectedClient]);
+
   const { data: units = [], isLoading: isUnitsLoading } = useQuery({
     queryKey: ["units", "virtual-office-client-details"],
     queryFn: async () => {
@@ -862,6 +891,39 @@ const VirtualOfficeClientDetails = () => {
                           <span className="text-gray-500">
                             {humanDate(selectedClient?.nextIncrementDate || selectedClient?.nextIncrement)}
                           </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                   {/* Total Term */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="totalTerm"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            value={`${totalTermMonths} months`}
+                            size="small"
+                            label="Total Term"
+                            fullWidth
+                            disabled
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Total Term
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">{totalTermMonths} months</span>
                         </div>
                       </div>
                     )}

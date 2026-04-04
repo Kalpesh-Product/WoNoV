@@ -7,6 +7,7 @@ const CustomError = require("../../utils/customErrorlogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const CoworkingMembers = require("../../models/sales/CoworkingMembers");
+const Company = require("../../models/hr/Company");
 const {
   handleFileDelete,
   handleFileUpload,
@@ -326,9 +327,37 @@ const getCoworkingClients = async (req, res, next) => {
       .lean()
       .exec();
 
-    if (!clients?.length) {
-      return res.status(404).json({ message: "No clients found" });
+    // --- INCLUDE HOST COMPANY (BIZNEST) ---
+    let hostCompanyData = [];
+    if (!coworkingclientid || coworkingclientid.toString() === company.toString()) {
+      const hostCompany = await Company.findById(company)
+        .select(
+          "companyName totalMeetingCredits meetingCreditBalance meetingCreditBalanceHistory",
+        )
+        .lean()
+        .exec();
+
+      if (hostCompany) {
+        hostCompanyData = [
+          {
+            _id: hostCompany._id,
+            clientName: "BIZNEST",
+            totalMeetingCredits: hostCompany.totalMeetingCredits,
+            meetingCreditBalance: hostCompany.meetingCreditBalance,
+            meetingCreditBalanceHistory: hostCompany.meetingCreditBalanceHistory || [],
+            isActive: true,
+            isHost: true,
+          },
+        ];
+      }
     }
+
+    const allEntities = [...hostCompanyData, ...clients];
+
+    if (!allEntities.length) {
+      return res.status(404).json({ message: "No clients or companies found" });
+    }
+
     const members = await CoworkingMembers.find()
       .populate([
         { path: "client", select: "clientName email" },
@@ -337,21 +366,18 @@ const getCoworkingClients = async (req, res, next) => {
       .lean()
       .exec();
 
-    const clientsWithMembers = clients.map((client) => {
+    const entitiesWithMembers = allEntities.map((entity) => {
       return {
-        ...client,
-        // members: members.filter(
-        //   (member) => member?.client._id.toString() === client?._id.toString(),
-        // ),
+        ...entity,
         members: members.filter(
           (member) =>
             member.client &&
-            member.client._id.toString() === client._id.toString(),
+            member.client._id.toString() === entity._id.toString(),
         ),
       };
     });
 
-    res.status(200).json(clientsWithMembers);
+    res.status(200).json(entitiesWithMembers);
   } catch (error) {
     next(error);
   }

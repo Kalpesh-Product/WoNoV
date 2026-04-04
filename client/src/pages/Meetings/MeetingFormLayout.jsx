@@ -194,15 +194,42 @@ const MeetingFormLayout = () => {
     [clientsData, company]
   );
 
-  const remainingMeetingCredits = useMemo(() => {
-    if (!company || company === BIZNEST_COMPANY_ID) return "-";
+  const selectedCreditMonth = useMemo(
+    () => (startDate ? dayjs(startDate) : dayjs()),
+    [startDate]
+  );
 
-    return selectedClient?.meetingCreditBalance ?? "-";
-  }, [company, selectedClient]);
+  const getMonthlyRemainingCredit = (clientData, month) => {
+    if (!clientData) return "-";
+
+    const totalMonthlyCredit = Number(clientData?.totalMeetingCredits || 0);
+    const monthHistory = clientData?.meetingCreditBalanceHistory?.find(
+      (history) =>
+        history?.monthStartDate &&
+        dayjs(history.monthStartDate).isSame(month, "month")
+    );
+
+    if (monthHistory) {
+      return Number(monthHistory.remainingCredit || 0);
+    }
+
+    if (month.isSame(dayjs(), "month")) {
+      return Number(clientData?.meetingCreditBalance || 0);
+    }
+
+    return totalMonthlyCredit;
+  };
+
+
+  const remainingMeetingCredits = useMemo(() => {
+    if (!company) return "-";
+
+    return getMonthlyRemainingCredit(selectedClient, selectedCreditMonth);
+  }, [company, selectedClient, selectedCreditMonth]);
   //-------------------------------API-------------------------------//
   const displayedRemainingCredits = isReceptionist
     ? remainingMeetingCredits
-    : auth.user?.company?.meetingCreditBalance ?? "-";
+    : getMonthlyRemainingCredit(auth.user?.company, selectedCreditMonth);
 
   const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 
@@ -301,12 +328,19 @@ const MeetingFormLayout = () => {
   ]);
 
   const companyOptions = useMemo(() => {
-    const opts = [
-      {
+    // Collect all unique client/company entries
+    const opts = [];
+
+    // Add BizNest first to ensure it's at the top if needed, 
+    // but check if it's already in clientsData to avoid duplicates
+    const hasBizNestInClients = clientsData?.some(c => c._id === BIZNEST_COMPANY_ID);
+
+    if (!hasBizNestInClients) {
+      opts.push({
         id: BIZNEST_COMPANY_ID,
-        label: "BizNest",
-      },
-    ];
+        label: "BIZNEST",
+      });
+    }
 
     if (clientsData?.length) {
       clientsData.forEach((client) => {
@@ -318,7 +352,7 @@ const MeetingFormLayout = () => {
     }
 
     return opts;
-  }, [clientsData]);
+  }, [clientsData, BIZNEST_COMPANY_ID]);
 
   // useEffect(() => {
   //   if (isCurrentUserUnavailable) {

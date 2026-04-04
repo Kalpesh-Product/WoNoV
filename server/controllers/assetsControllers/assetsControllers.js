@@ -34,6 +34,12 @@ const calculateFutureDateByMonths = (baseDate, monthsToAdd) => {
   return calculatedDate;
 };
 
+const countWords = (value = "") =>
+  String(value)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+
 const getAssetsWithDepartments = async (req, res, next) => {
   try {
     const user = req.user;
@@ -124,7 +130,7 @@ const getAssets = async (req, res, next) => {
         { path: "vendor", populate: { path: "departmentId", select: "name" } },
         {
           path: "subCategory",
-          select: "subCategoryName",
+          select: "subCategoryName category",
           populate: { path: "category", select: "categoryName" },
         },
         {
@@ -209,9 +215,22 @@ const addAsset = async (req, res, next) => {
       tangable,
       locationId,
       secondaryId,
+      serialNumber,
+      description,
     } = req.body;
 
     const normalizedSecondaryId = secondaryId?.trim() || undefined;
+    const normalizedSerialNumber = serialNumber?.trim() || "";
+    const normalizedDescription = description?.trim() || "";
+
+    if (countWords(normalizedDescription) > 1000) {
+      throw new CustomError(
+        "Description must be 1000 words or less",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
     const foundUser = await User.findOne({ _id: user })
       .select("company departments role")
       .populate([{ path: "role", select: "roleTitle" }])
@@ -257,8 +276,8 @@ const addAsset = async (req, res, next) => {
         logSourceKey,
       );
 
-    const categoryExistsInDepartment = doesDepartmentExist.assetCategories.find(
-      (ct) => ct._id.toString() === categoryId,
+    const categoryExistsInDepartment = doesDepartmentExist.assetCategories.some(
+      (ct) => (ct._id || ct).toString() === categoryId,
     );
     if (!categoryExistsInDepartment)
       throw new CustomError(
@@ -390,6 +409,8 @@ const addAsset = async (req, res, next) => {
         vendor: vendorId || null,
         company: company,
         name,
+        serialNumber: normalizedSerialNumber,
+        description: normalizedDescription,
         purchaseDate,
         price,
         warranty,
@@ -450,11 +471,24 @@ const editAsset = async (req, res, next) => {
       locationId,
       status,
       secondaryId,
+      serialNumber,
+      description,
     } = req.body;
 
     const normalizedSecondaryId = secondaryId?.trim() || undefined;
+    const normalizedSerialNumber = serialNumber?.trim() || "";
+    const normalizedDescription = description?.trim() || "";
     const assetImageFile = req.files?.assetImage?.[0];
     const warrantyDocumentFile = req.files?.warrantyDocument?.[0];
+
+    if (countWords(normalizedDescription) > 1000) {
+      throw new CustomError(
+        "Description must be 1000 words or less",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
 
     if (!assetId)
       throw new CustomError(
@@ -502,7 +536,25 @@ const editAsset = async (req, res, next) => {
         logSourceKey,
       );
 
-    const category = await Category.findById(categoryId);
+    const subCategory =
+      await AssetSubCategory.findById(subCategoryId).populate("category");
+    if (!subCategory)
+      throw new CustomError(
+        "Sub-category not found",
+        logPath,
+        logAction,
+        logSourceKey,
+      )
+
+    const resolvedCategoryId =
+      categoryId ||
+      subCategory?.category?._id?.toString() ||
+      foundAsset?.subCategory?.category?.toString();
+
+    const category = resolvedCategoryId
+      ? await Category.findById(resolvedCategoryId)
+      : null;
+
     if (!category)
       throw new CustomError(
         "Category not found",
@@ -512,21 +564,11 @@ const editAsset = async (req, res, next) => {
       );
 
     const categoryExists = department.assetCategories?.some(
-      (cat) => cat._id.toString() === categoryId,
+      (cat) => (cat._id || cat).toString() === category._id.toString(),
     );
     if (!categoryExists)
       throw new CustomError(
         "Category not linked to department",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-
-    const subCategory =
-      await AssetSubCategory.findById(subCategoryId).populate("category");
-    if (!subCategory)
-      throw new CustomError(
-        "Sub-category not found",
         logPath,
         logAction,
         logSourceKey,
@@ -592,6 +634,8 @@ const editAsset = async (req, res, next) => {
       vendor: vendorId || null,
       company,
       name: name?.trim(),
+      serialNumber: normalizedSerialNumber,
+      description: normalizedDescription,
       purchaseDate,
       price,
       isDamaged: isDamaged ? isDamaged : foundAsset.isDamaged,

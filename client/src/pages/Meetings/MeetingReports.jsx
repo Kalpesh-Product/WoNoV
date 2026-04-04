@@ -87,9 +87,26 @@ const MeetingReports = () => {
   const isEmployeeLevelUser = roleTitles.some((roleTitle) =>
     roleTitle?.toLowerCase().includes("employee"),
   );
+
+  const isCurrentUserParticipant = (meeting) => {
+    const bookedById =
+      typeof meeting?.bookedBy === "object"
+        ? meeting?.bookedBy?._id
+        : meeting?.bookedBy;
+
+    return (
+      bookedById?.toString() === currentUserId?.toString() ||
+      meeting?.clientBookedBy?._id?.toString() === currentUserId?.toString() ||
+      (meeting?.participants || []).some(
+        (participant) => participant?._id?.toString() === currentUserId?.toString(),
+      )
+    );
+  };
+
   const filteredMeetings = isMeetingsPending
     ? []
     : meetings.filter((meeting) => {
+       if (isCurrentUserParticipant(meeting)) return true;
         const bookedByDepts =
           meeting.bookedBy?.departments?.map((d) => d._id) || [];
         return bookedByDepts.some((deptId) => loggedDeptIds.includes(deptId));
@@ -97,13 +114,15 @@ const MeetingReports = () => {
 
    const employeeOwnMeetings = isMeetingsPending
     ? []
-    : meetings.filter((meeting) => {
-      const bookedById =
-        typeof meeting?.bookedBy === "object"
-          ? meeting?.bookedBy?._id
-          : meeting?.bookedBy;
-      return bookedById?.toString() === currentUserId?.toString();
-    });    
+    : meetings.filter((meeting) => isCurrentUserParticipant(meeting));
+
+    // : meetings.filter((meeting) => {
+    //   const bookedById =
+    //     typeof meeting?.bookedBy === "object"
+    //       ? meeting?.bookedBy?._id
+    //       : meeting?.bookedBy;
+    //   return bookedById?.toString() === currentUserId?.toString();
+    // });    
 
   const getEffectiveEndTime = (meeting) => {
     const extendTime = meeting?.extendTime;

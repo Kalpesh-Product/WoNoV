@@ -152,19 +152,27 @@ const Calender = () => {
         .map((dept) => dept?._id?.toString())
         .filter(Boolean);
 
+       const isCurrentUserParticipant =
+        bookedById?.toString() === currentUserId ||
+        meeting?.clientBookedBy?._id?.toString() === currentUserId ||
+        (meeting?.participants || []).some(
+          (participant) => participant?._id?.toString() === currentUserId
+        );  
+
       if (isFinanceEmployee) {
-        return bookedById?.toString() === currentUserId;
+        //return bookedById?.toString() === currentUserId;
+        return isCurrentUserParticipant;
       }
 
       if (isFinanceAdmin || isFinanceManager || isManager) {
         return meetingDepartmentIds.some((deptId) =>
           userDepartmentIds.includes(deptId)
-        ) || bookedById?.toString() === currentUserId;
+        ) || isCurrentUserParticipant;
       }
 
       if (isPrivilegedAdmin) return true;
 
-      return bookedById?.toString() === currentUserId;
+      return isCurrentUserParticipant;
     });
   }, [
     meetings,
