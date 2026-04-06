@@ -16,6 +16,7 @@ const AssetSubCategory = require("../../models/category/SubCategories");
 const AssignAsset = require("../../models/assets/AssignAsset");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const Unit = require("../../models/locations/Unit");
 
 const calculateFutureDateByMonths = (baseDate, monthsToAdd) => {
   const parsedBaseDate = new Date(baseDate);
@@ -35,10 +36,7 @@ const calculateFutureDateByMonths = (baseDate, monthsToAdd) => {
 };
 
 const countWords = (value = "") =>
-  String(value)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean).length;
+  String(value).trim().split(/\s+/).filter(Boolean).length;
 
 const getAssetsWithDepartments = async (req, res, next) => {
   try {
@@ -91,7 +89,10 @@ const getAssetsWithDepartments = async (req, res, next) => {
 const getAssets = async (req, res, next) => {
   try {
     const userId = req.user;
-    const user = await User.findById(userId).populate("departments").lean().exec();
+    const user = await User.findById(userId)
+      .populate("departments")
+      .lean()
+      .exec();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -401,7 +402,10 @@ const addAsset = async (req, res, next) => {
       const assetData = {
         assetType,
         assetId: uniqueAssetId,
-        secondaryId: (i === 0 && normalizedSecondaryId) ? normalizedSecondaryId : uniqueAssetId,
+        secondaryId:
+          i === 0 && normalizedSecondaryId
+            ? normalizedSecondaryId
+            : uniqueAssetId,
         departmentAssetId: uniqueAssetId,
         rentedMonths: ownershipType === "Rental" ? rentedMonths : undefined,
         tangable,
@@ -544,7 +548,7 @@ const editAsset = async (req, res, next) => {
         logPath,
         logAction,
         logSourceKey,
-      )
+      );
 
     const resolvedCategoryId =
       categoryId ||
@@ -710,6 +714,149 @@ const editAsset = async (req, res, next) => {
   }
 };
 
+// const bulkInsertAssets = async (req, res, next) => {
+//   try {
+//     const { department } = req.params;
+//     const file = req.file;
+
+//     if (!file) {
+//       return res
+//         .status(400)
+//         .json({ message: "Please provide a valid csv file" });
+//     }
+
+//     // Fetch reference data
+//     const subCategories = await AssetSubCategory.find().lean();
+//     const vendors = await Vendor.find({ departmentId: department }).lean();
+//     const departmentDoc = await Department.findById(department).lean();
+
+//     const subCategoryMap = new Map(
+//       subCategories.map((cat) => [cat.subCategoryName, cat]),
+//     );
+//     const vendorsMap = new Map(vendors.map((v) => [v.name, v._id]));
+
+//     const deptPrefix = departmentDoc.name.slice(0, 2).toUpperCase();
+//     const company = req.user?.companyId;
+
+//     const stream = Readable.from(file.buffer.toString("utf-8").trim());
+
+//     const rows = [];
+
+//     stream
+//       .pipe(csvParser())
+//       .on("data", (row) => {
+//         rows.push(row); // Just store rows synchronously
+//       })
+//       .on("end", async () => {
+//         const assets = [];
+//         const assetCounters = {};
+
+//         for (const row of rows) {
+//           // Your async-compatible processing here
+//           const assetName = row["Asset Name"]?.trim();
+//           const assetType = row["Asset Type (Digital / Physical)"]?.trim();
+//           const tangible =
+//             row["Tangible / Intangible  Asset"]?.toLowerCase() === "tangible";
+//           const ownershipType = row["Ownership Type (Owned / Rental)"]?.trim();
+//           const vendorName = row["Vendor Name"]?.trim();
+//           const subCategoryName = row["Sub Category"]?.trim();
+//           const purchaseDate = new Date(row["Purchase Date"]);
+//           const rentedExpirationDate = new Date(row["Rental Expiration Date"]);
+//           const quantity = parseInt(row["Quantity"]);
+//           const pricePerUnit = parseFloat(row["Price Per Unit"]);
+//           const description = row["Description"]?.trim();
+//           const serialNumber = row["Serial Number"]?.trim();
+//           const rentedMonths = parseInt(row["Rented Months"]);
+//           const warranty = parseInt(row["Warranty In Months"]);
+//           const brand = row["Brand Name"]?.trim();
+//           const status = row["Status (Active / Inactive)"]?.trim();
+//           const isDamaged = row["Damaged (Yes/No)"]?.trim() === "Yes"? true : false;
+//           const isAssigned = row["Assigned (Yes/No)"]?.trim() === "Yes"? true : false;
+//           const isUnderMaintenance = row["Under Maintenance (Yes/No)"]?.trim() === "Yes"? true : false;
+
+//           const vendorId = vendorsMap.get(vendorName);
+//           const subCategoryObj = subCategoryMap.get(subCategoryName);
+//           const subCategoryId = subCategoryObj?._id;
+//           const subCatPrefix = subCategoryObj?.subCategoryName
+//             .slice(0, 2)
+//             .toUpperCase();
+//           const ownershipPrefix = ownershipType.slice(0, 2).toUpperCase();
+
+//           if (
+//             !assetName ||
+//             !assetType ||
+//             !vendorId ||
+//             !subCategoryId ||
+//             !purchaseDate ||
+//             !quantity ||
+//             !pricePerUnit ||
+//             !warranty ||
+//             !brand
+//           ) {
+//             return res
+//               .status(400)
+//               .json({ message: `Row is invalid: ${JSON.stringify(row)}` });
+//           }
+
+//           const key = `${ownershipPrefix}-${deptPrefix}-${subCatPrefix}`;
+//           if (!assetCounters[key]) {
+//             const count = await Asset.countDocuments({
+//               ownershipType,
+//               department,
+//               subCategory: subCategoryId,
+//             });
+//             assetCounters[key] = count;
+//           }
+
+//           for (let i = 0; i < quantity; i++) {
+//             const assetNumber = assetCounters[key] + 1;
+//             const uniqueAssetId = `${key}-${assetNumber}`;
+//             assetCounters[key]++;
+
+//             assets.push({
+//               assetType: assetType === "Digital" ? "Digital" : "Physical",
+//               assetId: uniqueAssetId,
+//               departmentAssetId: uniqueAssetId,
+//               tangable: tangible,
+//               ownershipType,
+//               vendor: vendorId,
+//               company,
+//               name: assetName,
+//               purchaseDate,
+//               price: pricePerUnit,
+//               warranty,
+//               warrantyExpiryDate: calculateFutureDateByMonths(
+//                 purchaseDate,
+//                 warranty,
+//               ),
+//               brand,
+//               isDamaged: false,
+//               department,
+//               status: status === "Inactive" ? "Inactive" : "Active",
+//               subCategory: subCategoryId,
+//               rentedExpirationDate: null,
+//             });
+//           }
+//         }
+
+//         if (!assets.length) {
+//           return res.status(400).json({ message: "No valid assets to insert" });
+//         }
+
+//         await Asset.insertMany(assets);
+//         res
+//           .status(201)
+//           .json({ message: `${assets.length} assets inserted successfully` });
+//       })
+//       .on("error", (err) => {
+//         console.error("CSV parsing error:", err);
+//         next(err);
+//       });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const bulkInsertAssets = async (req, res, next) => {
   try {
     const { department } = req.params;
@@ -721,18 +868,34 @@ const bulkInsertAssets = async (req, res, next) => {
         .json({ message: "Please provide a valid csv file" });
     }
 
-    // Fetch reference data
-    const subCategories = await AssetSubCategory.find().lean();
-    const vendors = await Vendor.find({ departmentId: department }).lean();
-    const departmentDoc = await Department.findById(department).lean();
+    const company = req.user?.companyId;
+
+    /* ------------------ FETCH REFERENCE DATA ------------------ */
+
+    const [categories, subCategories, vendors, departmentDoc, units] =
+      await Promise.all([
+        Category.find().lean(),
+        AssetSubCategory.find().lean(),
+        Vendor.find({ departmentId: department }).lean(),
+        Department.findById(department).lean(),
+        Unit.find({ company }).lean(),
+      ]);
+
+    const categoryMap = new Map(
+      categories.map((c) => [c.categoryName?.trim(), c]),
+    );
 
     const subCategoryMap = new Map(
-      subCategories.map((cat) => [cat.subCategoryName, cat]),
+      subCategories.map((c) => [c.subCategoryName?.trim(), c]),
     );
-    const vendorsMap = new Map(vendors.map((v) => [v.name, v._id]));
+
+    const vendorsMap = new Map(vendors.map((v) => [v.name?.trim(), v._id]));
+
+    const normalize = (val) => val?.toLowerCase().replace(/\s+/g, "");
+
+    const unitMap = new Map(units.map((u) => [normalize(u.unitNo), u._id]));
 
     const deptPrefix = departmentDoc.name.slice(0, 2).toUpperCase();
-    const company = req.user?.companyId;
 
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
 
@@ -740,109 +903,326 @@ const bulkInsertAssets = async (req, res, next) => {
 
     stream
       .pipe(csvParser())
-      .on("data", (row) => {
-        rows.push(row); // Just store rows synchronously
-      })
+      .on("data", (row) => rows.push(row))
       .on("end", async () => {
-        const assets = [];
-        const assetCounters = {};
+        try {
+          const assets = [];
+          const isYes = (val) => val?.toLowerCase() === "yes";
 
-        for (const row of rows) {
-          // Your async-compatible processing here
-          const assetName = row["Asset Name"]?.trim();
-          const assetType = row["Asset Type (Digital / Physical)"]?.trim();
-          const tangible =
-            row["Tangible / Intangible  Asset"]?.toLowerCase() === "tangible";
-          const ownershipType = tangible ? "Owned" : "Rental";
-          const vendorName = row["Vendor Name"]?.trim();
-          const subCategoryName = row["Sub Category"]?.trim();
-          const purchaseDate = new Date(row["Purchase Date"]);
-          const quantity = parseInt(row["Quantity"]);
-          const pricePerUnit = parseFloat(row["Price Per Unit"]);
-          const warranty = parseInt(row["Warranty In Months"]);
-          const brand = row["Brand Name"]?.trim();
-          const status = row["Status (Active / Inactive)"]?.trim();
+          /* 🔥 SAME AS addAsset */
+          const existingAssetsCount = await Asset.countDocuments({
+            department,
+          });
 
-          const vendorId = vendorsMap.get(vendorName);
-          const subCategoryObj = subCategoryMap.get(subCategoryName);
-          const subCategoryId = subCategoryObj?._id;
-          const subCatPrefix = subCategoryObj?.subCategoryName
-            .slice(0, 2)
-            .toUpperCase();
-          const ownershipPrefix = ownershipType.slice(0, 2).toUpperCase();
+          let globalCounter = existingAssetsCount;
 
-          if (
-            !assetName ||
-            !assetType ||
-            !vendorId ||
-            !subCategoryId ||
-            !purchaseDate ||
-            !quantity ||
-            !pricePerUnit ||
-            !warranty ||
-            !brand
-          ) {
-            return res
-              .status(400)
-              .json({ message: `Row is invalid: ${JSON.stringify(row)}` });
-          }
+          for (const row of rows) {
+            /* ------------------ PARSE ------------------ */
 
-          const key = `${ownershipPrefix}-${deptPrefix}-${subCatPrefix}`;
-          if (!assetCounters[key]) {
-            const count = await Asset.countDocuments({
-              ownershipType,
-              department,
-              subCategory: subCategoryId,
-            });
-            assetCounters[key] = count;
-          }
+            const assetName = row["Asset Name"]?.trim();
+            const assetType = row["Asset Type (Digital / Physical)"]?.trim();
+            const secondaryIdInput = row["Department Asset ID"]?.trim();
 
-          for (let i = 0; i < quantity; i++) {
-            const assetNumber = assetCounters[key] + 1;
-            const uniqueAssetId = `${key}-${assetNumber}`;
-            assetCounters[key]++;
+            const tangible =
+              row["Tangible / Intangible  Asset"]?.toLowerCase() === "tangible";
+
+            const ownershipType =
+              row["Ownership Type (Owned / Rental)"]?.trim();
+
+            const vendorName = row["Vendor Name"]?.trim();
+            const categoryName = row["Category"]?.trim();
+            const subCategoryName = row["Sub Category"]?.trim();
+            const unitNo = row["Unit No"]?.trim();
+
+            const purchaseDate = row["Purchase Date"]
+              ? new Date(row["Purchase Date"])
+              : null;
+
+            const pricePerUnit = Number(row["Price Per Unit"]) || 0;
+            const warranty = Number(row["Warranty In Months"]) || 0;
+            const rentedMonths = Number(row["Rented Months"]) || 0;
+
+            const description = row["Description"]?.trim();
+            const serialNumber = row["Serial Number"]?.trim();
+            const brand = row["Brand Name"]?.trim();
+
+            const isDamaged = isYes(row["Damaged (Yes/No)"]);
+            const isAssigned = isYes(row["Assigned (Yes/No)"]);
+            const isUnderMaintenance = isYes(row["Under Maintenance (Yes/No)"]);
+
+            /* ------------------ MAP ------------------ */
+
+            const vendorId = vendorsMap.get(vendorName);
+            const categoryObj = categoryMap.get(categoryName);
+            const subCategoryObj = subCategoryMap.get(subCategoryName);
+
+            const categoryId = categoryObj?._id;
+            const subCategoryId = subCategoryObj?._id;
+            const unitId = unitMap.get(normalize(unitNo));
+
+            /* ------------------ VALIDATION ------------------ */
+
+            if (
+              !assetName ||
+              !assetType ||
+              !vendorId ||
+              !categoryId ||
+              !subCategoryId ||
+              !unitId ||
+              !purchaseDate ||
+              !pricePerUnit ||
+              !brand
+            ) {
+              return res.status(400).json({
+                message: `Invalid row: ${JSON.stringify(row)}`,
+              });
+            }
+
+            /* ------------------ PREFIX ------------------ */
+
+            const ownershipPrefix =
+              ownershipType?.slice(0, 2).toUpperCase() || "XX";
+
+            const subCatPrefix = subCategoryObj.subCategoryName
+              .slice(0, 2)
+              .toUpperCase();
+
+            /* ------------------ SECONDARY ID CHECK ------------------ */
+
+            if (secondaryIdInput) {
+              const exists = await Asset.findOne({
+                secondaryId: secondaryIdInput,
+              });
+
+              if (exists) {
+                return res.status(400).json({
+                  message: `Duplicate secondary ID: ${secondaryIdInput}`,
+                });
+              }
+            }
+
+            /* ------------------ CREATE SINGLE ASSET ------------------ */
+
+            globalCounter++;
+
+            const uniqueAssetId = `${ownershipPrefix}-${deptPrefix}-${subCatPrefix}-${globalCounter}`;
+
+            const warrantyExpiryDate = warranty
+              ? calculateFutureDateByMonths(purchaseDate, warranty)
+              : null;
+
+            const rentedExpirationDate =
+              ownershipType === "Rental"
+                ? calculateFutureDateByMonths(purchaseDate, rentedMonths)
+                : null;
 
             assets.push({
               assetType: assetType === "Digital" ? "Digital" : "Physical",
               assetId: uniqueAssetId,
               departmentAssetId: uniqueAssetId,
+
+              secondaryId: secondaryIdInput || uniqueAssetId,
+
               tangable: tangible,
               ownershipType,
+
               vendor: vendorId,
+              category: categoryId,
+              subCategory: subCategoryId,
+
               company,
+              department,
+              unit: unitId,
+
               name: assetName,
+              description,
+              serialNumber,
+
               purchaseDate,
               price: pricePerUnit,
+
               warranty,
-              warrantyExpiryDate: calculateFutureDateByMonths(
-                purchaseDate,
-                warranty,
-              ),
+              warrantyExpiryDate,
+              rentedMonths,
+              rentedExpirationDate,
+
               brand,
-              isDamaged: false,
-              department,
-              status: status === "Inactive" ? "Inactive" : "Active",
-              subCategory: subCategoryId,
-              rentedExpirationDate: null,
+
+              isDamaged,
+              isAssigned,
+              isUnderMaintenance,
+
+              status: "Active",
             });
           }
-        }
 
-        if (!assets.length) {
-          return res.status(400).json({ message: "No valid assets to insert" });
-        }
+          if (!assets.length) {
+            return res.status(400).json({ message: "No valid assets" });
+          }
 
-        await Asset.insertMany(assets);
-        res
-          .status(201)
-          .json({ message: `${assets.length} assets inserted successfully` });
+          await Asset.insertMany(assets, { ordered: false });
+
+          return res.status(201).json({
+            message: `${assets.length} assets inserted successfully`,
+          });
+        } catch (err) {
+          return res.status(500).json({
+            message: "Error processing assets",
+            error: err.message,
+          });
+        }
       })
-      .on("error", (err) => {
-        console.error("CSV parsing error:", err);
-        next(err);
-      });
+      .on("error", next);
   } catch (error) {
     next(error);
+  }
+};
+
+const bulkAssignedAssets = async (req, res) => {
+  try {
+    const { department } = req.params;
+    const { company } = req;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "CSV file is required" });
+    }
+
+    const stream = Readable.from(req.file.buffer.toString("utf-8").trim());
+
+    const rows = [];
+
+    stream
+      .pipe(csv())
+      .on("data", (row) => rows.push(row))
+      .on("end", async () => {
+        try {
+          if (!rows.length) {
+            return res.status(400).json({ message: "No data found in CSV" });
+          }
+
+          /* ------------------ FETCH ALL REFERENCES ------------------ */
+
+          const [assets, users, departments, units] = await Promise.all([
+            Asset.find({ company }).select("_id secondaryId"),
+            UserData.find({ company }).select("_id employeeId"),
+            Department.find().select("_id name"),
+            Unit.find({ company }).select("_id unitNo"),
+          ]);
+
+          /* ------------------ MAPS ------------------ */
+
+          const normalize = (val) => val?.toLowerCase().replace(/\s+/g, "");
+
+          const assetMap = new Map(
+            assets.map((a) => [a.secondaryId?.trim(), a._id]),
+          );
+
+          const userMap = new Map(
+            users.map((u) => [u.employeeId?.trim(), u._id]),
+          );
+
+          const deptMap = new Map(
+            departments.map((d) => [d.name?.trim(), d._id]),
+          );
+
+          const unitMap = new Map(
+            units.map((u) => [normalize(u.unitNo), u._id]),
+          );
+
+          /* ------------------ PROCESS ------------------ */
+
+          const assignments = [];
+
+          for (const row of rows) {
+            const secondaryId = row["Department Asset ID"]?.trim();
+            const assigneeEmpId = row["Assignee (Employee ID)"]?.trim();
+            const toDeptName = row["Department (Assigned To)"]?.trim();
+            const approvedEmpId = row["Approved By (Employee ID)"]?.trim();
+            const rejectedEmpId = row["Rejected By (Employee ID)"]?.trim();
+            const unitNo = row["Unit No"]?.trim();
+            const status =
+              row["Status (Approved/Rejected/Pending/Revoked)"]?.trim();
+
+            /* ------------------ MAP VALUES ------------------ */
+
+            const assetId = assetMap.get(secondaryId);
+            const assigneeId = userMap.get(assigneeEmpId);
+            const toDepartmentId = deptMap.get(toDeptName);
+            const approvedById = userMap.get(approvedEmpId);
+            const rejectedById = userMap.get(rejectedEmpId);
+            const unitId = unitMap.get(normalize(unitNo));
+
+            /* ------------------ VALIDATION ------------------ */
+
+            if (!assetId) {
+              return res.status(400).json({
+                message: `Asset not found for secondaryId: ${secondaryId}`,
+              });
+            }
+
+            if (!assigneeId) {
+              return res.status(400).json({
+                message: `Assignee not found: ${assigneeEmpId}`,
+              });
+            }
+
+            if (!toDepartmentId) {
+              return res.status(400).json({
+                message: `Department not found: ${toDeptName}`,
+              });
+            }
+
+            if (!unitId) {
+              return res.status(400).json({
+                message: `Unit not found: ${unitNo}`,
+              });
+            }
+
+            /* ------------------ BUILD OBJECT ------------------ */
+
+            assignments.push({
+              asset: assetId,
+              fromDepartment: department,
+              toDepartment: toDepartmentId,
+              approvedBy: approvedById || null,
+              rejectededBy: rejectedById || null,
+              assignee: assigneeId,
+              company,
+              location: unitId,
+              status: ["Approved", "Rejected", "Pending", "Revoked"].includes(
+                status,
+              )
+                ? status
+                : "Pending",
+              isRevoked: status === "Revoked",
+            });
+          }
+
+          if (!assignments.length) {
+            return res.status(400).json({
+              message: "No valid assignments to insert",
+            });
+          }
+
+          /* ------------------ INSERT ------------------ */
+
+          await AssignAsset.insertMany(assignments, { ordered: false });
+
+          return res.status(201).json({
+            message: `${assignments.length} assignments inserted successfully`,
+          });
+        } catch (err) {
+          return res.status(500).json({
+            message: "Error processing assignments",
+            error: err.message,
+          });
+        }
+      });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Bulk upload failed",
+      error: error.message,
+    });
   }
 };
 
@@ -852,4 +1232,5 @@ module.exports = {
   getAssets,
   getAssetsWithDepartments,
   bulkInsertAssets,
+  bulkAssignedAssets,
 };
