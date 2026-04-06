@@ -433,6 +433,8 @@ import WebsitesLayout from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/
 import InActiveWebsites from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/InActiveWebsites";
 import EditWebsiteTemp from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/EditWebsiteTemp";
 import ProtectedDepartmentRoute from "../components/ProtectedDepartmentRoute";
+import PerformancePermissionRoute from "../pages/Performance/PerformancePermissionRoute";
+import { PERMISSIONS } from "../constants/permissions";
 
 export const routes = createBrowserRouter([
   {
@@ -2516,7 +2518,19 @@ export const routes = createBrowserRouter([
                 children: [
                   {
                     path: "",
-                    element: <PerformanceHome />,
+                     element: (
+                      <PerformancePermissionRoute
+                        permissions={[
+                          PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS,
+                          PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                          PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA,
+                          PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA,
+                          PERMISSIONS.PERFORMANCE_KRA_PENDING_VS_COMPLETED,
+                          PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED,
+                        ]}
+                        element={<PerformanceHome />}
+                      />
+                    ),
                     index: true,
                   },
                   {
@@ -2524,34 +2538,79 @@ export const routes = createBrowserRouter([
                     children: [
                       {
                         path: "department-KPA",
-                        element: <PerformanceOverallKPA />,
+                         element: (
+                          <PerformancePermissionRoute
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS,
+                            ]}
+                            element={<PerformanceOverallKPA />}
+                          />
+                        ),
                         index: true,
                       },
                       {
                         path: "department-KPA/:department",
-                        element: <PerformanceDepartmentKPA />,
+                       element: (
+                          <PerformancePermissionRoute
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS,
+                            ]}
+                            element={<PerformanceDepartmentKPA />}
+                          />
+                        ),
                       },
                       {
                         path: "department-wise-KPA",
-                        element: <PerformanceDepartmentWiseKraKpa />,
+                          element: (
+                          <PerformancePermissionRoute
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                            ]}
+                            element={<PerformanceDepartmentWiseKraKpa />}
+                          />
+                        ),
                       },
                       {
                         path: "department-wise-kra-kpa",
-                        element: <PerformanceDepartmentWiseKraKpa />,
+                         element: (
+                          <PerformancePermissionRoute
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                            ]}
+                            element={<PerformanceDepartmentWiseKraKpa />}
+                          />
+                        ),
                       },
                       {
                         path: "department-wise-kpa/member-wise-kra-kpa/:department",
-                        element: <PerformanceMemberWiseKraKpa />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                            ]}
+                            element={<PerformanceMemberWiseKraKpa />}
+                          />
+                        ),
                       },
                     ],
                   },
                   {
                     path: "assign-kra-kpa",
-                    element: <PerformanceAssignKraKpa />,
+                     element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA]}
+                        element={<PerformanceAssignKraKpa />}
+                      />
+                    ),
                   },
                   {
                     path: "report-kra-kpa",
-                    element: <PerformanceReportKraKpa />,
+                      element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}
+                        element={<PerformanceReportKraKpa />}
+                      />
+                    ),
                   },
                   {
                     path: ":department",

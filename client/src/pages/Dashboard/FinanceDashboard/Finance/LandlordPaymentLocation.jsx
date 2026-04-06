@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import WidgetSection from "../../../../components/WidgetSection";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
-import YearlyGraph from "../../../../components/graphs/YearlyGraph";
+import YearlyGraph2 from "../../../../components/graphs/YearlyGraph2";
 import dayjs from "dayjs";
 import { calculateMonthTotal } from "../../../../utils/calculateMonthTotal";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
@@ -208,7 +208,7 @@ const LandlordPaymentLocation = () => {
         </div>
       ) : (
         <>
-          <YearlyGraph
+          <YearlyGraph2
             title={`(${unit}) RENT DETAILS `}
             chartId="unit-wise-rent"
             data={graphData}

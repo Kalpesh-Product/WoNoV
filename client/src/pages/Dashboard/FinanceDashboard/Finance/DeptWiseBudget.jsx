@@ -8,7 +8,7 @@ import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import { useNavigate } from "react-router-dom";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import { inrFormat } from "../../../../utils/currencyFormat";
-import YearlyGraph from "../../../../components/graphs/YearlyGraph";
+import YearlyGraph2 from "../../../../components/graphs/YearlyGraph2";
 import { parseAmount } from "../../../../utils/parseAmount";
 import { CircularProgress } from "@mui/material";
 
@@ -309,7 +309,7 @@ const expenseRawSeries = useMemo(() => {
 
   return (
     <div className="flex flex-col gap-8">
-      <YearlyGraph
+      <YearlyGraph2
         data={expenseRawSeries}
         options={expenseOptions}
         title={"BIZ Nest DEPARTMENT WISE EXPENSE"}

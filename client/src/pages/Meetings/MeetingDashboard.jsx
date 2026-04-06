@@ -202,15 +202,17 @@ const MeetingDashboard = () => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
-  const fyStart = dayjs("2025-04-01");
-  const fyEnd = dayjs("2026-03-31");
+  // const fyStart = dayjs("2025-04-01");
+  // const fyEnd = dayjs("2026-03-31");
+  const currentMonth = dayjs();
+  const currentMonthLabel = currentMonth.format("MMM-YY");
 
   const months = [];
   const monthlyVisitorMap = {};
 
   for (let i = 0; i < 12; i++) {
-    const month = fyStart.add(i, "month");
-    const label = month.format("MMM-YY"); // e.g., "Apr-25"
+    const month = currentMonth.subtract(11 - i, "month");
+    const label = month.format("MMM-YY"); // e.g., "Apr-26"
     months.push(label);
     monthlyVisitorMap[label] = 0;
   }
@@ -234,14 +236,10 @@ const MeetingDashboard = () => {
   // Populate the map
   visitorsData.forEach((visitor) => {
     const visitDate = dayjs(visitor.dateOfVisit);
-    if (
-      visitDate.isAfter(fyStart.subtract(1, "day")) &&
-      visitDate.isBefore(fyEnd.add(1, "day"))
-    ) {
-      const label = visitDate.format("MMM-YY");
-      if (monthlyVisitorMap[label] !== undefined) {
-        monthlyVisitorMap[label]++;
-      }
+     if (!visitDate.isValid()) return;
+    const label = visitDate.format("MMM-YY");
+    if (monthlyVisitorMap[label] !== undefined) {
+      monthlyVisitorMap[label]++;
     }
   });
 
@@ -682,7 +680,12 @@ const MeetingDashboard = () => {
     },
   };
 
-  const bookedHours = meetingsData.reduce((acc, room) => {
+  const meetingsInCurrentMonth = meetingsData.filter((meeting) =>
+    dayjs(meeting.date).isValid() &&
+    dayjs(meeting.date).isSame(currentMonth, "month")
+  );
+
+  const bookedHours = meetingsInCurrentMonth.reduce((acc, room) => {
     const name = room.roomName;
     const hours = parseInt(room.duration) / 60 || 0;
 
@@ -1082,9 +1085,7 @@ const MeetingDashboard = () => {
       key: "externalGuestsVisited",
       permission: PERMISSIONS.MEETINGS_EXTERNAL_GUESTS_VISITED.value,
       title: "External Guests Visited",
-      titleLabel: `${new Date().toLocaleString("default", {
-        month: "short",
-      })}-${new Date().getFullYear().toString().slice(-2)}`,
+      titleLabel: currentMonthLabel,
       data: externalGuestsData,
       options: externalGuestsOptions,
     },
@@ -1092,9 +1093,7 @@ const MeetingDashboard = () => {
       key: "averageOccupancy",
       permission: PERMISSIONS.MEETINGS_AVERAGE_OCCUPANCY.value,
       title: "Average Occupancy Of Rooms in %",
-      titleLabel: `${new Date().toLocaleString("default", {
-        month: "short",
-      })}-${new Date().getFullYear().toString().slice(-2)}`,
+      titleLabel: currentMonthLabel,
       data: averageOccupancySeries,
       options: averageOccupancyOptions,
     },

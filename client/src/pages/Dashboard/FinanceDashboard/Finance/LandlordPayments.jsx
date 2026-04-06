@@ -1,5 +1,5 @@
 import WidgetSection from "../../../../components/WidgetSection";
-import YearlyGraph from "../../../../components/graphs/YearlyGraph";
+import YearlyGraph2 from "../../../../components/graphs/YearlyGraph2";
 import FilterUnits from "./FilterUnits";
 import { useState } from "react";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -146,7 +146,7 @@ const LandlordPayments = () => {
           </div>
         </WidgetSection>
       ) : (
-        <YearlyGraph
+        <YearlyGraph2
           title="LANDLORD MONTHLY RENT"
           chartId="landlord-rent-bar"
           data={graphData}

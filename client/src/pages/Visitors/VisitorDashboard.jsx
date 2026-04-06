@@ -780,8 +780,8 @@ const VisitorDashboard = () => {
   const pieChartConfigs = [
     {
       key: "visitorGenderData",
-      title: "Visitor Gender Data ",
-      titleLabel: "This Month",
+      title: "Overall",
+      titleLabel: "Visitor Gender Data",
       layout: 1,
       border: true,
       percent: true,
@@ -794,8 +794,8 @@ const VisitorDashboard = () => {
     },
     {
       key: "departmentWiseVisits",
-      title: "Department Wise Visits ",
-      titleLabel: "This Month",
+      title: "Overall ",
+      titleLabel: "Department Wise Visits",
       layout: 1,
       border: true,
       data: pieChartData,

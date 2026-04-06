@@ -6,6 +6,7 @@ const csv = require("csv-parser");
 const { Readable } = require("stream");
 const Role = require("../models/roles/Roles");
 const UserData = require("../models/hr/UserData");
+const Department = require("../models/Departments");
 
 const addItem = async (req, res) => {
   try {
@@ -222,12 +223,31 @@ const bulkUploadItems = async (req, res) => {
       return res.status(400).json({ message: "CSV file is required" });
     }
 
+    /* ------------------ Validate department ------------------ */
+
+    if (!mongoose.Types.ObjectId.isValid(department)) {
+      return res.status(400).json({
+        message: "Invalid department id",
+      });
+    }
+
+    console.log("department", department);
+    const dept = await Department.findOne({
+      _id: new mongoose.Types.ObjectId(department),
+    });
+
+    if (!dept) {
+      return res.status(400).json({
+        message: "Department not found",
+      });
+    }
+
     /* ------------------ GET ADMIN USER ------------------ */
 
+    const roleName = `${dept.name.toUpperCase()}_Admin`;
     // Find admin role for this department
     const adminRole = await Role.findOne({
-      department,
-      roleTitle: { $regex: "admin", $options: "i" },
+      roleID: { $regex: roleName.toUpperCase(), $options: "i" },
     });
 
     if (!adminRole) {
@@ -238,8 +258,8 @@ const bulkUploadItems = async (req, res) => {
 
     // Find user with this role
     const adminUser = await UserData.findOne({
-      company,
-      roles: adminRole._id,
+      role: { $in: [adminRole._id] },
+      isActive: true,
     });
 
     if (!adminUser) {

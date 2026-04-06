@@ -26,6 +26,7 @@ const WidgetSection = ({
   fun,
   normalCase,
 }) => {
+  const visibleChildren = React.Children.toArray(children).filter(Boolean);
   // Tailwind grid classes for different layouts
   const gridClasses = {
     1: "grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1",
@@ -35,6 +36,12 @@ const WidgetSection = ({
     5: "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-5",
     6: "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-6",
   };
+
+   const effectiveLayout = Math.max(
+    1,
+    Math.min(layout, visibleChildren.length || 1)
+  );
+
 
   return (
     <div className={`py-0 motion-preset-slide-up-sm ${height ? height : ""}`}>
@@ -127,9 +134,12 @@ const WidgetSection = ({
         className="h-full rounded-b-xl">
         <div
           style={{ padding: padding ? "0" : "1rem" }}
-          className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
-          {React.Children.map(children, (child) => (
-            <div>{child}</div>
+          // className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
+          // {React.Children.map(children, (child) => (
+          //   <div>{child}</div>
+           className={`w-full grid gap-4 ${gridClasses[effectiveLayout]} h-full py-4`}>
+          {visibleChildren.map((child, index) => (
+            <div key={index}>{child}</div>
           ))}
         </div>
       </div>

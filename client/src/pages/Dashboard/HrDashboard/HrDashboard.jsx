@@ -22,7 +22,7 @@ import { calculateAverageAttendance } from "../../../utils/calculateAverageAtten
 import { calculateAverageDailyWorkingHours } from "../../../utils/calculateAverageDailyWorkingHours ";
 import FinanceCard from "../../../components/FinanceCard";
 import dayjs from "dayjs";
-import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setSelectedMonth,
@@ -1424,7 +1424,7 @@ const HrDashboard = () => {
             }
           >
             <WidgetSection normalCase layout={1} padding>
-              <YearlyGraph
+              <YearlyGraph2
                 data={expenseRawSeries}
                 responsiveResize
                 chartId={"bargraph-hr-expense"}
@@ -1472,7 +1472,7 @@ const HrDashboard = () => {
               </Box>
             }
           >
-            <YearlyGraph
+            <YearlyGraph2
               data={tasksData}
               options={tasksOptions}
               title={"ANNUAL KPA VS ACHIEVEMENTS"}
@@ -1492,7 +1492,7 @@ const HrDashboard = () => {
               </Box>
             }
           >
-            <YearlyGraph
+            <YearlyGraph2
               data={tasksGraphData}
               options={tasksOverallOptions}
               title={"ANNUAL TASKS VS ACHIEVEMENTS"}
