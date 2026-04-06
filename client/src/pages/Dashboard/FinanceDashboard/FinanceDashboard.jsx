@@ -12,7 +12,7 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../../context/SideBarContext";
 import { useEffect, useMemo, useState } from "react";
-import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -1173,7 +1173,7 @@ const FinanceDashboard = () => {
     {
       layout: allowedYearlyGraphs.length,
       widgets: allowedYearlyGraphs.map((item) => (
-        <YearlyGraph
+        <YearlyGraph2
           layout={item.layout}
           key={item.key}
           data={item.data}

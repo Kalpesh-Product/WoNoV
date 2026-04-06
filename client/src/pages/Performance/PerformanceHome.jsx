@@ -1,18 +1,16 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import PageFrame from "../../components/Pages/PageFrame";
+//import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import PieChartMui from "../../components/graphs/PieChartMui";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+//import { useDispatch } from "react-redux";
 import Card from "../../components/Card";
 import { CgWebsite } from "react-icons/cg";
-import {
-  setSelectedDepartment,
-  setSelectedDepartmentName,
-} from "../../redux/slices/performanceSlice";
+import useAuth from "../../hooks/useAuth";
+import { PERMISSIONS } from "../../constants/permissions";
 
 const FISCAL_MONTHS = [
   "April",
@@ -35,6 +33,11 @@ const toCount = (value) => Number(value) || 0;
 const PerformanceHome = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+
+  const hasPermission = (permission) =>
+    userPermissions.includes(permission.value);
 
   const { data: fetchedDepartments = [] } = useQuery({
     queryKey: ["performanceDepartments"],
@@ -236,50 +239,84 @@ const PerformanceHome = () => {
     },
   });
 
+   const performanceCards = [
+    {
+      title: "DEPARTMENT WISE KRA/KPA",
+      route: "/app/performance/overall-KPA/department-wise-KPA",
+      permission: PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+    },
+    {
+      title: "ASSIGN KRA/KPA",
+      route: "/app/performance/assign-kra-kpa",
+      permission: PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA,
+    },
+    {
+      title: "Report KRA/KPA",
+      route: "/app/performance/report-kra-kpa",
+      permission: PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA,
+    },
+  ].filter((card) => hasPermission(card.permission));
+
+    const getCardGridClass = () => {
+    if (performanceCards.length >= 3) {
+      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+    }
+
+    if (performanceCards.length === 2) {
+      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-2";
+    }
+
+    return "grid-cols-1 md:grid-cols-1 xl:grid-cols-1";
+  };
+
+
   return (
     <div className="flex flex-col gap-4">
-      <YearlyGraph
-        data={annualKpaGraphData}
-        options={annualKpaChartOptions}
-        title="ANNUAL KPA VS ACHIEVEMENTS"
-        titleAmount={`TOTAL KPA : ${kpaPieData[0].value + kpaPieData[1].value}`}
-        secondParam
-        currentYear
-      />
-      <WidgetSection layout={3}>
-        <Card
-          icon={<CgWebsite />}
-          title="DEPARTMENT WISE KRA/KPA"
-          route="/app/performance/overall-KPA/department-wise-KPA"
+      {hasPermission(PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS) && (
+        <YearlyGraph
+          data={annualKpaGraphData}
+          options={annualKpaChartOptions}
+          title="ANNUAL KPA VS ACHIEVEMENTS"
+          titleAmount={`TOTAL KPA : ${kpaPieData[0].value + kpaPieData[1].value}`}
+          secondParam
+          currentYear
+
         />
-        <Card
-          icon={<CgWebsite />}
-          title="ASSIGN KRA/KPA"
-          route="/app/performance/assign-kra-kpa"
-        />
-        <Card
-          icon={<CgWebsite />}
-          title="Report KRA/KPA"
-          route="/app/performance/report-kra-kpa"
-        />
-      </WidgetSection>
+        )}
+      {performanceCards.length > 0 && (
+        <div className={`grid ${getCardGridClass()} gap-4 auto-rows-fr`}>
+          {performanceCards.map((card) => (
+            <div key={card.route} className="h-full">
+              <Card
+                icon={<CgWebsite />}
+                title={card.title}
+                route={card.route}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <WidgetSection border title="KRA - Pending vs Completed">
-          <PieChartMui
-            data={kraPieData}
-            options={pieOptions(kraPieData.map((item) => item.label))}
-            centerAlign
-          />
-        </WidgetSection>
+        {hasPermission(PERMISSIONS.PERFORMANCE_KRA_PENDING_VS_COMPLETED) && (
+          <WidgetSection border title="KRA - Pending vs Completed">
+            <PieChartMui
+              data={kraPieData}
+              options={pieOptions(kraPieData.map((item) => item.label))}
+              centerAlign
+            />
+          </WidgetSection>
+        )}
 
-        <WidgetSection border title="KPA - Pending vs Completed">
-          <PieChartMui
-            data={kpaPieData}
-            options={pieOptions(kpaPieData.map((item) => item.label))}
-            centerAlign
-          />
-        </WidgetSection>
+        {hasPermission(PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED) && (
+          <WidgetSection border title="KPA - Pending vs Completed">
+            <PieChartMui
+              data={kpaPieData}
+              options={pieOptions(kpaPieData.map((item) => item.label))}
+              centerAlign
+            />
+          </WidgetSection>
+        )}
       </div>
     </div>
 
