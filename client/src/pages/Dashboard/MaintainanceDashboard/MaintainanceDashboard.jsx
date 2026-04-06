@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
-import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
@@ -1097,7 +1097,7 @@ const MaintainanceDashboard = () => {
         >
           <WidgetSection normalCase layout={1} padding>
             {allowedMaintenanceYearlyGraphs.map((config) => (
-              <YearlyGraph
+              <YearlyGraph2
                 data={config.data}
                 responsiveResize
                 chartId={config.chartId}

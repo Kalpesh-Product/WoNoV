@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { inrFormat } from "../../../../utils/currencyFormat";
-import YearlyGraph from "../../../../components/graphs/YearlyGraph";
+import YearlyGraph2 from "../../../../components/graphs/YearlyGraph2";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -228,7 +228,7 @@ const Projections = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection padding>
-        <YearlyGraph
+        <YearlyGraph2
           options={projectionOptions}
           data={projectionData}
           title={"PROJECTIONS"}
