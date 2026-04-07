@@ -811,22 +811,24 @@ const MeetingFormLayout = () => {
                     />
                   </div>
                 )}
-                <TextField
-                  fullWidth
-                  size="small"
-                  value={displayedRemainingCredits}
-                  disabled
-                  label="Remaining Credit"
-                  InputProps={{
-                    sx: isRemainingCreditsNegative
-                      ? {
-                        "& .MuiInputBase-input.Mui-disabled": {
-                          WebkitTextFillColor: "#d32f2f",
-                        },
-                      }
-                      : undefined,
-                  }}
-                />
+                {isReceptionist ? (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={displayedRemainingCredits}
+                    disabled
+                    label="Remaining Credit"
+                    InputProps={{
+                      sx: isRemainingCreditsNegative
+                        ? {
+                          "& .MuiInputBase-input.Mui-disabled": {
+                            WebkitTextFillColor: "#d32f2f",
+                          },
+                        }
+                        : undefined,
+                    }}
+                  />
+                ) : null}
 
 
                 {isReceptionist ? (
