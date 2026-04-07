@@ -11,6 +11,6 @@ const {
 router.post("/", addItem);
 router.get("/", getItems);
 router.patch("/:id", updateItem);
-router.post("/upload", upload.single("itemFile"), bulkUploadItems);
+router.post("/upload/:department", upload.single("itemFile"), bulkUploadItems);
 
 module.exports = router;

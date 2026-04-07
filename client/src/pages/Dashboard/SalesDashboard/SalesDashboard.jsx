@@ -32,7 +32,7 @@ import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
 import FinanceCard from "../../../components/FinanceCard";
 import { YearCalendar } from "@mui/x-date-pickers";
-import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
 import humanDate from "../../../utils/humanDateForamt";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 import SectorLegend from "../../../components/graphs/SectorLegend";
@@ -1209,7 +1209,7 @@ const SalesDashboard = () => {
         <>
           {!isTotalLoading ? (
             allowedGraph.map((config) => (
-              <YearlyGraph
+              <YearlyGraph2
                 key={config.key}
                 chartId={config.chartId}
                 data={config.data}

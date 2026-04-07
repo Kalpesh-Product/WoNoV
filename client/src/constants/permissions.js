@@ -234,6 +234,41 @@ export const PERMISSIONS = {
     route: "team-Monthly-KPA",
   },
 
+   PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS: {
+    value: "annual_kpa_vs_achievements",
+    title: "ANNUAL KPA VS ACHIEVEMENTS",
+    type: "read",
+    route: "overall-KPA/department-KPA",
+  },
+  PERFORMANCE_DEPARTMENT_WISE_KRA_KPA: {
+    value: "department_wise_kra_kpa",
+    title: "DEPARTMENT-WISE KRA/KPA",
+    type: "read",
+    route: "department-wise",
+  },
+  PERFORMANCE_ASSIGN_KRA_KPA: {
+    value: "assign_kra_kpa",
+    title: "ASSIGN KRA/KPA",
+    type: "read",
+    route: "assign-kra-kpa",
+  },
+  PERFORMANCE_REPORT_KRA_KPA: {
+    value: "report_kra_kpa",
+    title: "REPORT KRA/KPA",
+    type: "read",
+    route: "report-kra-kpa",
+  },
+  PERFORMANCE_KRA_PENDING_VS_COMPLETED: {
+    value: "kra_pending_vs_completed",
+    title: "KRA - PENDING VS COMPLETED",
+    type: "read",
+  },
+  PERFORMANCE_KPA_PENDING_VS_COMPLETED: {
+    value: "kpa_pending_vs_completed",
+    title: "KPA - PENDING VS COMPLETED",
+    type: "read",
+  },
+
   //Tasks Module
   TASKS_OVERALL_AVERAGE_COMPLETION: {
     value: "overall_average_task_completion",

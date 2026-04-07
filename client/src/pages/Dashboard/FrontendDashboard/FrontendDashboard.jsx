@@ -19,7 +19,7 @@ import { useSidebar } from "../../../context/SideBarContext";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
 import { Box, Skeleton } from "@mui/material";
 import dayjs from "dayjs";
 import { filterPermissions } from "../../../utils/accessConfig";
@@ -890,7 +890,7 @@ const FrontendDashboard = () => {
           }
         >
           {allowedExpenseGraph.map((config) => (
-            <YearlyGraph
+            <YearlyGraph2
               data={config.data}
               options={config.options}
               title={config.title}

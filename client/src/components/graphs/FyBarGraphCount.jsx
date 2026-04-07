@@ -45,6 +45,19 @@ const FyBarGraphCount = ({
   chartOptions = {},
   graphTitle = "",
 }) => {
+
+  const currentDate = dayjs();
+  const currentFYStartYear =
+    currentDate.month() < 3 ? currentDate.year() - 1 : currentDate.year();
+  const getFYLabel = (startYear) =>
+    `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+  const getFYStartYear = (fyLabel) => {
+    if (!fyLabel) return currentFYStartYear;
+    const [startYearStr] = fyLabel.replace("FY", "").split("-");
+    const startYear = parseInt(startYearStr?.trim(), 10);
+    return Number.isNaN(startYear) ? currentFYStartYear : startYear;
+  };
+
   const fyOptions = useMemo(() => {
     const yearsSet = new Set();
     data.forEach((item) => {
@@ -54,14 +67,18 @@ const FyBarGraphCount = ({
     return Array.from(yearsSet).sort();
   }, [data, dateKey]);
 
-  const [selectedFY, setSelectedFY] = useState("");
-  useEffect(() => {
-    if (fyOptions.length > 0 && !selectedFY) {
-      setSelectedFY(fyOptions[fyOptions.length - 1]);
-    }
-  }, [fyOptions, selectedFY]);
+   const [selectedFYStartYear, setSelectedFYStartYear] =
+    useState(currentFYStartYear);
+    useEffect(() => {
+        if (fyOptions.length > 0) {
+          const lastAvailableFY = fyOptions[fyOptions.length - 1];
+          setSelectedFYStartYear(getFYStartYear(lastAvailableFY));
+        } else {
+          setSelectedFYStartYear(currentFYStartYear);
+        }
+   }, [fyOptions, currentFYStartYear]);
 
-  const currentIndex = fyOptions.indexOf(selectedFY);
+   const selectedFY = getFYLabel(selectedFYStartYear);
 
   const monthsWithLabels = useMemo(() => {
     return getMonthsWithYearLabels(selectedFY);
@@ -77,6 +94,7 @@ const FyBarGraphCount = ({
     if (!selectedFY || !groupKey) return [];
     const base = {};
     const months = getMonthsWithYearLabels(selectedFY);
+    const groupNames = new Set();
 
     filteredData.forEach((item) => {
       const date = dayjs(item?.[dateKey]);
@@ -88,16 +106,24 @@ const FyBarGraphCount = ({
 
       const label = match.label;
       const group = getValueByPath(item, groupKey) || "Unknown";
+      groupNames.add(group);
 
       if (!base[group]) base[group] = {};
       base[group][label] = (base[group][label] || 0) + 1;
     });
 
-    return Object.entries(base).map(([group, monthData]) => ({
+    if (groupNames.size === 0) {
+      data.forEach((item) => {
+        const group = getValueByPath(item, groupKey) || "Unknown";
+        groupNames.add(group);
+      });
+    }
+
+    return Array.from(groupNames).map((group) => ({
       name: group,
-      data: months.map(({ label }) => monthData[label] || 0),
+     data: months.map(({ label }) => base[group]?.[label] || 0),
     }));
-  }, [filteredData, selectedFY, dateKey, groupKey]);
+   }, [filteredData, selectedFY, dateKey, groupKey, data]);
 
   const fyTotalCount = useMemo(() => {
     return stackedSeries.reduce((total, group) => {
@@ -145,13 +171,13 @@ const FyBarGraphCount = ({
     };
   }, [monthsWithLabels, chartOptions]);
 
-  if (fyOptions.length === 0) {
-    return (
-      <div className="text-center text-gray-500 py-10">
-        No valid financial year data available.
-      </div>
-    );
-  }
+  // if (fyOptions.length === 0) {
+  //   return (
+  //     <div className="text-center text-gray-500 py-10">
+  //       No valid financial year data available.
+  //     </div>
+  //   );
+  // }
 
   return (
     <WidgetSection
@@ -169,15 +195,17 @@ const FyBarGraphCount = ({
         <div className="flex justify-center items-center gap-4 mt-4">
           <SecondaryButton
             title={<MdNavigateBefore />}
-            disabled={currentIndex === 0}
-            handleSubmit={() => setSelectedFY(fyOptions[currentIndex - 1])}
+              handleSubmit={() =>
+              setSelectedFYStartYear((prevYear) => prevYear - 1)
+            }
           />
           <span className="text-primary text-content font-semibold">
             {selectedFY || "N/A"}
           </span>
           <SecondaryButton
-            disabled={currentIndex === fyOptions.length - 1}
-            handleSubmit={() => setSelectedFY(fyOptions[currentIndex + 1])}
+            handleSubmit={() =>
+              setSelectedFYStartYear((prevYear) => prevYear + 1)
+            }
             title={<MdNavigateNext />}
           />
         </div>
