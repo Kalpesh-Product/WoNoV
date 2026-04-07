@@ -59,8 +59,35 @@ const MeetingFormLayout = () => {
 
   const canBypassMeetingAvailability = useMemo(
     () =>
+      // Administration
       roles.includes("Administration Admin") ||
-      roles.includes("Administration Employee"),
+      roles.includes("Administration Employee") ||
+      // Tech & IT
+      roles.includes("Tech Admin") ||
+      roles.includes("Tech Employee") ||
+      roles.includes("IT Admin") ||
+      roles.includes("IT Employee") ||
+      // Finance
+      roles.includes("Finance Admin") ||
+      roles.includes("Finance Employee") ||
+      // Sales
+      roles.includes("Sales Admin") ||
+      roles.includes("Sales Employee") ||
+      // HR
+      roles.includes("HR Admin") ||
+      roles.includes("HR Employee") ||
+      // Marketing
+      roles.includes("Marketing Admin") ||
+      roles.includes("Marketing Employee") ||
+      // Maintenance
+      roles.includes("Maintenance Admin") ||
+      roles.includes("Maintenance Employee") ||
+      // Cafe
+      roles.includes("Cafe Admin") ||
+      roles.includes("Cafe Employee") ||
+      // Global Admins
+      roles.includes("Super Admin") ||
+      roles.includes("Master Admin"),
     [roles]
   );
 
