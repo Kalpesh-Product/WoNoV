@@ -628,7 +628,7 @@ const getMeetings = async (req, res, next) => {
           ? meeting.client.clientName
           : meeting.externalClient
             ? null
-            : "BIZNEST",
+            : "BIZNest",
         externalClient: meeting.externalClient
           ? meeting.externalClient.registeredClientCompany
           : null,
@@ -800,7 +800,7 @@ const getMyMeetings = async (req, res, next) => {
           ? meeting.client.clientName
           : meeting.externalClient
             ? null
-            : "BIZNEST",
+            : "BIZNest",
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,

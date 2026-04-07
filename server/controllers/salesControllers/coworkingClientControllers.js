@@ -341,7 +341,7 @@ const getCoworkingClients = async (req, res, next) => {
         hostCompanyData = [
           {
             _id: hostCompany._id,
-            clientName: "BIZNEST",
+            clientName: "BIZNest",
             totalMeetingCredits: hostCompany.totalMeetingCredits,
             meetingCreditBalance: hostCompany.meetingCreditBalance,
             meetingCreditBalanceHistory: hostCompany.meetingCreditBalanceHistory || [],
