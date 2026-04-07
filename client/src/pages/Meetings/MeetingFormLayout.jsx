@@ -229,7 +229,7 @@ const MeetingFormLayout = () => {
   //-------------------------------API-------------------------------//
   const displayedRemainingCredits = isReceptionist
     ? remainingMeetingCredits
-    : getMonthlyRemainingCredit(auth.user?.company, selectedCreditMonth);
+    : (remainingMeetingCredits !== "-" ? remainingMeetingCredits : getMonthlyRemainingCredit(auth.user?.company, selectedCreditMonth));
 
   const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 
@@ -338,7 +338,7 @@ const MeetingFormLayout = () => {
     if (!hasBizNestInClients) {
       opts.push({
         id: BIZNEST_COMPANY_ID,
-        label: "BIZNEST",
+        label: "BIZNest",
       });
     }
 
@@ -778,7 +778,7 @@ const MeetingFormLayout = () => {
                     <TextField
                       fullWidth
                       size="small"
-                      value={`${auth.user?.company?.companyName || "BizNest"} `}
+                      value={`${auth.user?.company?.companyName || "BIZNest"} `}
                       disabled
                       label="Company"
                     />
