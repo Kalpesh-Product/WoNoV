@@ -96,13 +96,10 @@ const PerformanceHome = () => {
 
 
   const annualKpaGraphData = useMemo(() => {
-    const monthlyTotals = {};
-    const monthlyAchieved = {};
-
-    FISCAL_MONTHS.forEach((month) => {
-      monthlyTotals[month] = 0;
-      monthlyAchieved[month] = 0;
-    });
+      const fyTaskMap = {};
+    const today = new Date();
+    const currentFyStartYear =
+      today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
 
     kpaTasksRaw.forEach((departmentTasks) => {
       departmentTasks?.tasks?.forEach((task) => {
@@ -111,38 +108,60 @@ const PerformanceHome = () => {
         const taskDate = new Date(task.assignedDate);
         if (Number.isNaN(taskDate.getTime())) return;
 
-        const fiscalMonth = FISCAL_MONTHS[(taskDate.getMonth() + 9) % 12];
-        monthlyTotals[fiscalMonth] += 1;
+                const fyStartYear =
+          taskDate.getMonth() >= 3 ? taskDate.getFullYear() : taskDate.getFullYear() - 1;
+        const fiscalMonthIndex = (taskDate.getMonth() + 9) % 12;
+
+        if (!fyTaskMap[fyStartYear]) {
+          fyTaskMap[fyStartYear] = {
+            total: Array(12).fill(0),
+            achieved: Array(12).fill(0),
+          };
+        }
+
+        fyTaskMap[fyStartYear].total[fiscalMonthIndex] += 1;
 
         if (task.status === "Completed") {
-          monthlyAchieved[fiscalMonth] += 1;
+            fyTaskMap[fyStartYear].achieved[fiscalMonthIndex] += 1;
         }
       });
     });
 
-    return [
-      {
-        name: "Completed KPA",
-        group: "FY 2025-26",
-        data: FISCAL_MONTHS.map((month) => {
-          const total = monthlyTotals[month];
-          const achieved = monthlyAchieved[month];
-          const percent = total > 0 ? (achieved / total) * 100 : 0;
-          return { x: month, y: +percent.toFixed(1), raw: achieved };
-        }),
-      },
-      {
-        name: "Remaining KPA",
-        group: "FY 2025-26",
-        data: FISCAL_MONTHS.map((month) => {
-          const total = monthlyTotals[month];
-          const achieved = monthlyAchieved[month];
-          const remaining = total - achieved;
-          const percent = total > 0 ? (remaining / total) * 100 : 0;
-          return { x: month, y: +percent.toFixed(1), raw: remaining };
-        }),
-      },
-    ];
+     const fyStartYears = Object.keys(fyTaskMap).length
+      ? Object.keys(fyTaskMap).map(Number).sort((a, b) => a - b)
+      : [currentFyStartYear];
+
+    return fyStartYears.flatMap((fyStartYear) => {
+      const fiscalYearLabel = `FY ${fyStartYear}-${String(fyStartYear + 1).slice(-2)}`;
+      const yearData = fyTaskMap[fyStartYear] || {
+        total: Array(12).fill(0),
+        achieved: Array(12).fill(0),
+      };
+
+      return [
+        {
+          name: "Completed KPA",
+          group: fiscalYearLabel,
+          data: FISCAL_MONTHS.map((month, index) => {
+            const total = yearData.total[index];
+            const achieved = yearData.achieved[index];
+            const percent = total > 0 ? (achieved / total) * 100 : 0;
+            return { x: month, y: +percent.toFixed(1), raw: achieved };
+          }),
+        },
+        {
+          name: "Remaining KPA",
+          group: fiscalYearLabel,
+          data: FISCAL_MONTHS.map((month, index) => {
+            const total = yearData.total[index];
+            const achieved = yearData.achieved[index];
+            const remaining = total - achieved;
+            const percent = total > 0 ? (remaining / total) * 100 : 0;
+            return { x: month, y: +percent.toFixed(1), raw: remaining };
+          }),
+        },
+      ];
+    });
   }, [kpaTasksRaw]);
 
   const annualKpaChartOptions = {
