@@ -400,7 +400,7 @@ const PerformanceMemberWiseKraKpa = () => {
             },
         },
         //{ headerName: "Daily KRA", field: "dailyKra" },
-        { headerName: "Monthly KPA", field: "monthlyKpa", hide: isEmployeeLevel },
+        { headerName: "Department Monthly KPA", field: "monthlyKpa", hide: isEmployeeLevel },
         //{ headerName: "Individual Daily KRA", field: "individualDailyKra" },
         { headerName: "Individual Monthly KPA", field: "individualMonthlyKpa" },
         //{ headerName: "Team Daily KRA", field: "teamDailyKra", hide: isEmployeeLevel },
@@ -459,6 +459,29 @@ const PerformanceMemberWiseKraKpa = () => {
         colors: ["#54C4A7", "#EB5C45"],
         fill: { opacity: 1 },
         legend: { position: "top" },
+        
+tooltip: {
+            custom: ({ series, dataPointIndex, w }) => {
+                const label =
+                    w?.config?.series?.[0]?.data?.[dataPointIndex]?.x || "Department";
+                const completed = series?.[0]?.[dataPointIndex] ?? 0;
+                const pending = series?.[1]?.[dataPointIndex] ?? 0;
+                const total = completed + pending;
+
+                return `
+                    <div style="padding:8px; font-family:Poppins, sans-serif; font-size:13px; width:220px;">
+                        <strong>${label}</strong><br/>
+                        <hr style="margin:6px 0; border-top:1px solid #ddd;" />
+                        <div style="display:flex; justify-content:space-between;"><span>Total KPA :</span><span>${total}</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>Completed KPA :</span><span>${completed}</span></div>
+                        <hr style="margin:6px 0; border-top:1px solid #ddd;" />
+                        <div style="display:flex; justify-content:space-between;"><span>Pending KPA :</span><span>${pending}</span></div>
+                    </div>
+                `;
+            },
+        },
+
+
     };
 
     return (
@@ -506,7 +529,7 @@ const PerformanceMemberWiseKraKpa = () => {
                     <AgTable
                          data={visibleRowData}
                         columns={columns}
-                        tableTitle={`${selectedDepartmentName || department || "Department"} - MEMBER WISE KPA`}
+                        tableTitle={`${selectedDepartmentName || department || "Department"} - MEMBER WISE PENDING KPA`}
                         hideFilter
                     />
                 </WidgetSection>

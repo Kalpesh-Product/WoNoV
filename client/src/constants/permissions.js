@@ -246,6 +246,30 @@ export const PERMISSIONS = {
     type: "read",
     route: "department-wise",
   },
+  PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA: {
+    value: "overall_department_wise_kpa",
+    title: "OVERALL DEPARTMENT WISE KPA",
+    type: "read",
+    route: "department-wise/overall-department-kpa",
+  },
+  PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA: {
+    value: "overall_department_wise_kra",
+    title: "OVERALL DEPARTMENT WISE KRA",
+    type: "read",
+    route: "department-wise/overall-department-kra",
+  },
+  PERFORMANCE_MEMBER_WISE_KPA: {
+    value: "member_wise_kpa",
+    title: "MEMBER WISE KPA",
+    type: "read",
+    route: "overall-department-kpa/member-wise-kpa",
+  },
+  PERFORMANCE_MEMBER_WISE_KRA: {
+    value: "member_wise_kra",
+    title: "MEMBER WISE KRA",
+    type: "read",
+    route: "overall-department-kpa/member-wise-kra",
+  },
   PERFORMANCE_ASSIGN_KRA_KPA: {
     value: "assign_kra_kpa",
     title: "ASSIGN KRA/KPA",

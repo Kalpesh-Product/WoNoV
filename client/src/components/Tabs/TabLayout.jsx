@@ -20,17 +20,27 @@ const TabLayout = ({
 
   // 🧠 Filter tabs based on permissions
   const filteredTabs = useMemo(() => {
-    return tabs.filter(
-      (tab) => !tab.permission || userPermissions.includes(tab.permission)
-    );
+     return tabs.filter((tab) => {
+      if (!tab.permission) return true;
+      const requiredPermissions = Array.isArray(tab.permission)
+        ? tab.permission
+        : [tab.permission];
+      return requiredPermissions.some((permission) =>
+        userPermissions.includes(permission)
+      );
+    });
   }, [tabs, userPermissions]);
 
   // 🧠 Check if current path is authorized
   const isAuthorized = useMemo(() => {
     const currentTab = tabs.find((tab) => location.pathname.includes(tab.path));
     if (!currentTab) return true;
-    return (
-      !currentTab.permission || userPermissions.includes(currentTab.permission)
+    if (!currentTab.permission) return true;
+    const requiredPermissions = Array.isArray(currentTab.permission)
+      ? currentTab.permission
+      : [currentTab.permission];
+    return requiredPermissions.some((permission) =>
+      userPermissions.includes(permission)
     );
   }, [tabs, location.pathname, userPermissions]);
 

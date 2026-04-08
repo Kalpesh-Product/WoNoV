@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 //import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
@@ -30,19 +30,53 @@ const FISCAL_MONTHS = [
 const PIE_COLORS = ["#54C4A7", "#EB5C45"];
 const toCount = (value) => Number(value) || 0;
 
+const getCurrentMonthYear = () => {
+  const now = new Date();
+  return {
+    monthName: now.toLocaleString("en-US", { month: "long" }),
+    year: now.getFullYear(),
+  };
+};
+
+
 const PerformanceHome = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const [currentMonthYear, setCurrentMonthYear] = useState(getCurrentMonthYear);
+
+  useEffect(() => {
+    const now = new Date();
+    const nextMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
+
+    const timeoutMs = Math.max(nextMonthStart.getTime() - now.getTime(), 1000);
+
+    const timeoutId = setTimeout(() => {
+      setCurrentMonthYear(getCurrentMonthYear());
+    }, timeoutMs);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentMonthYear]);
 
   const hasPermission = (permission) =>
     userPermissions.includes(permission.value);
+  const currentMonthLabel = currentMonthYear.monthName;
 
   const { data: fetchedDepartments = [] } = useQuery({
-    queryKey: ["performanceDepartments"],
+      queryKey: ["performanceDepartments", currentMonthYear.monthName],
     queryFn: async () => {
-      const response = await axios.get("/api/performance/get-depts-tasks");
+      const response = await axios.get("/api/performance/get-depts-tasks", {
+        params: { month: currentMonthYear.monthName },
+      });
       return response.data || [];
     },
   });
@@ -60,6 +94,8 @@ const PerformanceHome = () => {
     queryKey: [
       "performanceCompletedKraByDepartment",
       fetchedDepartments.map((item) => item?.department?._id).filter(Boolean),
+      currentMonthYear.monthName,
+      currentMonthYear.year,
     ],
     enabled: fetchedDepartments.length > 0,
     queryFn: async () => {
@@ -71,13 +107,28 @@ const PerformanceHome = () => {
         departmentIds.map(async (departmentId) => {
           const [kraRes, teamKraRes, individualKraRes] = await Promise.all([
             axios.get("/api/performance/get-completed-tasks", {
-              params: { dept: departmentId, type: "KRA" },
+               params: {
+                dept: departmentId,
+                type: "KRA",
+                month: currentMonthYear.monthName,
+                year: currentMonthYear.year,
+              },
             }),
             axios.get("/api/performance/get-completed-tasks", {
-              params: { dept: departmentId, type: "TEAMKRA" },
+              params: {
+                dept: departmentId,
+                type: "TEAMKRA",
+                month: currentMonthYear.monthName,
+                year: currentMonthYear.year,
+              },
             }),
             axios.get("/api/performance/get-completed-tasks", {
-              params: { dept: departmentId, type: "INDIVIDUALKRA" },
+              params: {
+                dept: departmentId,
+                type: "INDIVIDUALKRA",
+                month: currentMonthYear.monthName,
+                year: currentMonthYear.year,
+              },
             }),
           ]);
 
@@ -176,7 +227,7 @@ const PerformanceHome = () => {
           const clickedMonth =
             config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
 
-          navigate("/app/performance/overall-KPA/department-KPA", {
+            navigate("/app/performance/overall-department-kpa", {
             state: { month: clickedMonth },
           });
         },
@@ -208,15 +259,45 @@ const PerformanceHome = () => {
 
 
   const kpaPieData = useMemo(() => {
-    const completed = kpaTasksRaw.reduce((acc, dept) => acc + (dept.achieved || 0), 0);
-    const total = kpaTasksRaw.reduce((acc, dept) => acc + (dept.total || 0), 0);
+     const hasMatchingAssignedMonth = (assignedDate) => {
+      if (!assignedDate) return false;
+
+      const parsedDate = new Date(assignedDate);
+      if (Number.isNaN(parsedDate.getTime())) return false;
+
+      return (
+        parsedDate.toLocaleString("en-US", { month: "long" }) ===
+          currentMonthYear.monthName &&
+        parsedDate.getFullYear() === currentMonthYear.year
+      );
+    };
+
+    const completed = kpaTasksRaw.reduce(
+      (acc, dept) =>
+        acc +
+        (dept?.tasks || []).filter(
+          (task) =>
+            task?.status === "Completed" &&
+            hasMatchingAssignedMonth(task?.assignedDate),
+        ).length,
+      0,
+    );
+
+    const total = kpaTasksRaw.reduce(
+      (acc, dept) =>
+        acc +
+        (dept?.tasks || []).filter((task) =>
+          hasMatchingAssignedMonth(task?.assignedDate),
+        ).length,
+      0,
+    );
     const pending = Math.max(total - completed, 0);
 
     return [
       { label: "Completed KPA", value: completed },
       { label: "Pending KPA", value: pending },
     ];
-  }, [kpaTasksRaw]);
+   }, [kpaTasksRaw, currentMonthYear]);
 
   const kraPieData = useMemo(() => {
     const completed = fetchedDepartments.reduce(
@@ -258,23 +339,29 @@ const PerformanceHome = () => {
     },
   });
 
+   const canAccessDepartmentWiseCard =
+    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA) ||
+    hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA) ||
+    hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA);
+
+
    const performanceCards = [
     {
       title: "DEPARTMENT WISE KRA/KPA",
-      route: "/app/performance/overall-KPA/department-wise-KPA",
-      permission: PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+      route: "/app/performance/department-wise",
+      hasAccess: canAccessDepartmentWiseCard,
     },
     {
       title: "ASSIGN KRA/KPA",
       route: "/app/performance/assign-kra-kpa",
-      permission: PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA,
+       hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA),
     },
     {
       title: "Report KRA/KPA",
       route: "/app/performance/report-kra-kpa",
-      permission: PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA,
+       hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA),
     },
-  ].filter((card) => hasPermission(card.permission));
+  ].filter((card) => card.hasAccess);
 
     const getCardGridClass = () => {
     if (performanceCards.length >= 3) {
@@ -318,7 +405,10 @@ const PerformanceHome = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {hasPermission(PERMISSIONS.PERFORMANCE_KRA_PENDING_VS_COMPLETED) && (
-          <WidgetSection border title="KRA - Pending vs Completed">
+         <WidgetSection
+            border
+            title={`KRA - Pending vs Completed - ${currentMonthLabel}`}
+          >
             <PieChartMui
               data={kraPieData}
               options={pieOptions(kraPieData.map((item) => item.label))}
@@ -328,7 +418,10 @@ const PerformanceHome = () => {
         )}
 
         {hasPermission(PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED) && (
-          <WidgetSection border title="KPA - Pending vs Completed">
+           <WidgetSection
+            border
+            title={`KPA - Pending vs Completed - ${currentMonthLabel}`}
+          >
             <PieChartMui
               data={kpaPieData}
               options={pieOptions(kpaPieData.map((item) => item.label))}
