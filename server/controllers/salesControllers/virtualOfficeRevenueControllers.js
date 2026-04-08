@@ -67,6 +67,102 @@ const getVirtualOfficeRevenue = async (req, res, next) => {
   }
 };
 
+// const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
+//   try {
+//     const file = req.file;
+//     const company = req.company;
+
+//     if (!file) {
+//       return res
+//         .status(400)
+//         .json({ message: "Please provide a valid CSV file" });
+//     }
+
+//     const stream = Readable.from(file.buffer.toString("utf-8").trim());
+//     const revenues = [];
+
+//     const virtualOfficeClients = await VirtualOfficeClient.find({
+//       company,
+//     }).lean();
+//     const clientMap = new Map(
+//       virtualOfficeClients.map((client) => [
+//         client.clientName.trim(),
+//         client._id,
+//       ]),
+//     );
+
+//     stream
+//       .pipe(csvParser())
+//       .on("data", (row) => {
+//         const {
+//           "Client Name": clientName,
+//           Location: location,
+//           Channel: channel,
+//           "Taxable Amount": taxableAmount,
+//           Revenue: revenue,
+//           "Total Term": totalTerm,
+//           "Due Term": dueTerm,
+//           "Rent Date": rentDate,
+//           "Rent Status": rentStatus,
+//           "Past Due Date": pastDueDate,
+//           "Annual Increment": annualIncrement,
+//           "Next Increment Date": nextIncrementDate,
+//         } = row;
+
+//         const clientId = clientMap.get(clientName?.trim());
+//         if (!clientId) {
+//           stream.destroy();
+//           return res.status(400).json({ message: `${clientName} not found` });
+//         }
+
+//         const revenueEntry = {
+//           client: clientId,
+//           location: location?.trim(),
+//           channel: channel?.trim(),
+//           taxableAmount: parseAmount(taxableAmount) || 0,
+//           revenue: parseAmount(revenue) || 0,
+//           totalTerm: parseInt(totalTerm) || 0,
+//           dueTerm: parseInt(dueTerm) || 0,
+//           rentDate: rentDate ? new Date(rentDate) : null,
+//           rentStatus: rentStatus?.trim(),
+//           pastDueDate: pastDueDate ? new Date(pastDueDate) : null,
+//           annualIncrement: isNaN(parseFloat(annualIncrement))
+//             ? null
+//             : parseFloat(annualIncrement),
+//           nextIncrementDate: nextIncrementDate
+//             ? new Date(nextIncrementDate)
+//             : null,
+//           company,
+//         };
+
+//         revenues.push(revenueEntry);
+//       })
+//       .on("end", async () => {
+//         try {
+//           if (revenues.length === 0) {
+//             return res
+//               .status(400)
+//               .json({ message: "No valid revenue records found" });
+//           }
+
+//           await VirtualOfficeRevenue.insertMany(revenues);
+
+//           res.status(201).json({
+//             message: `${revenues.length} revenue records inserted successfully`,
+//           });
+//         } catch (err) {
+//           next(err);
+//         }
+//       })
+//       .on("error", (error) => {
+//         console.error("CSV parse error:", error);
+//         next(error);
+//       });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
   try {
     const file = req.file;
@@ -80,13 +176,15 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
 
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
     const revenues = [];
+    const missingClients = [];
 
     const virtualOfficeClients = await VirtualOfficeClient.find({
       company,
     }).lean();
+
     const clientMap = new Map(
       virtualOfficeClients.map((client) => [
-        client.clientName.trim(),
+        client.clientName.trim().toLowerCase(),
         client._id,
       ]),
     );
@@ -109,13 +207,15 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
           "Next Increment Date": nextIncrementDate,
         } = row;
 
-        const clientId = clientMap.get(clientName?.trim());
+        const normalizedName = clientName?.trim().toLowerCase();
+        const clientId = clientMap.get(normalizedName);
+
         if (!clientId) {
-          stream.destroy();
-          return res.status(400).json({ message: `${clientName} not found` });
+          missingClients.push(clientName);
+          return; // skip row, don’t break stream
         }
 
-        const revenueEntry = {
+        revenues.push({
           client: clientId,
           location: location?.trim(),
           channel: channel?.trim(),
@@ -133,12 +233,17 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
             ? new Date(nextIncrementDate)
             : null,
           company,
-        };
-
-        revenues.push(revenueEntry);
+        });
       })
       .on("end", async () => {
         try {
+          if (missingClients.length > 0) {
+            return res.status(400).json({
+              message: "Some clients not found",
+              missingClients,
+            });
+          }
+
           if (revenues.length === 0) {
             return res
               .status(400)
@@ -147,7 +252,7 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
 
           await VirtualOfficeRevenue.insertMany(revenues);
 
-          res.status(201).json({
+          return res.status(201).json({
             message: `${revenues.length} revenue records inserted successfully`,
           });
         } catch (err) {
@@ -155,7 +260,6 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
         }
       })
       .on("error", (error) => {
-        console.error("CSV parse error:", error);
         next(error);
       });
   } catch (error) {

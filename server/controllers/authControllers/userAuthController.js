@@ -26,7 +26,7 @@ const login = async (req, res, next) => {
         {
           path: "company",
           select:
-            "companyName workLocations employeeTypes shifts policies agreements sops totalMeetingCredits meetingCreditBalance",
+            "companyName workLocations employeeTypes shifts policies agreements sops totalMeetingCredits meetingCreditBalance meetingCreditBalanceHistory",
           populate: {
             path: "workLocations",
             select: "buildingName",

@@ -97,6 +97,10 @@ const assetsSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
     },
+    Category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+    },
     subCategory: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "SubCategory",

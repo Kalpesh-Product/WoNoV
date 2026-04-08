@@ -6,6 +6,7 @@ const {
   getAssets,
   getAssetsWithDepartments,
   bulkInsertAssets,
+  bulkAssignedAssets,
 } = require("../controllers/assetsControllers/assetsControllers");
 const {
   addSubCategory,
@@ -52,6 +53,11 @@ router.post(
   "/bulk-insert-assets/:department",
   upload.single("assets"),
   bulkInsertAssets,
+);
+router.post(
+  "/bulk-assign-assets/:department",
+  upload.single("assigned-assets"),
+  bulkAssignedAssets,
 );
 router.patch("/update-category", updateCategory);
 router.patch("/update-subcategory", updateSubCategory);

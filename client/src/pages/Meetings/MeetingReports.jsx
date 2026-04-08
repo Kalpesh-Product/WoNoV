@@ -173,7 +173,7 @@ const MeetingReports = () => {
     if (sourceFilter === "biz-nest") {
       return meetingReportsData.filter(
         (meeting) =>
-          meeting?.meetingType === "Internal" && meeting?.client === "BIZ Nest",
+          meeting?.meetingType === "Internal" && meeting?.client === "BIZNest",
       );
     }
 

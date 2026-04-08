@@ -18,7 +18,7 @@ router.patch("/update-subcategory", updateSubCategory);
 router.get("/get-category", getCategory);
 router.get("/get-subcategory", getSubCategory);
 router.post(
-  "/bulk-upload-category/:department",
+  "/bulk-upload-category/:department/:appliesTo",
   upload.single("category"),
   bulkUploadCategory,
 );
