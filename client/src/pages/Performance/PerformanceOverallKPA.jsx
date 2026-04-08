@@ -125,7 +125,8 @@ const PerformanceOverallKPA = () => {
     ];
 
     const openDepartment = (department) => {
-        navigate(`/app/performance/overall-KPA/department-KPA/${department}`, {
+        // navigate(`/app/performance/overall-KPA/department-KPA/${department}`, {
+         navigate(`/app/performance/overall-department-kpa/department-KPA/${department}`, {
             state: {
                 month: selectedMonth,
                 department,

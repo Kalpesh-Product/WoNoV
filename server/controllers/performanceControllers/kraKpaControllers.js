@@ -516,7 +516,7 @@ const getMyKraKpaTasks = async (req, res, next) => {
 const getCompletedKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { type, dept, duration, empId } = req.query;
+     const { type, dept, duration, empId, month, year } = req.query;
     const { roles, departments: userDepts } = req;
 
     if (!dept) {
@@ -560,7 +560,38 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
             if (duration && duration !== task.task.kpaDuration) return;
             if (empId && task.completedBy.empId !== empId) return;
             if (task.task.department._id.toString() !== dept) return false;
+            if (month) {
+              const monthIndex = [
+                "january",
+                "february",
+                "march",
+                "april",
+                "may",
+                "june",
+                "july",
+                "august",
+                "september",
+                "october",
+                "november",
+                "december",
+              ].indexOf(String(month).trim().toLowerCase());
 
+              if (monthIndex === -1) return false;
+
+              const completionDate = new Date(task.completionDate);
+              if (Number.isNaN(completionDate.getTime())) return false;
+
+              if (completionDate.getMonth() !== monthIndex) return false;
+            }
+
+            if (year) {
+              const completionDate = new Date(task.completionDate);
+              if (Number.isNaN(completionDate.getTime())) return false;
+
+              if (completionDate.getFullYear() !== Number(year)) return false;
+            }
+
+            
             // Department KRA/KPA
             if (type === "KRA" || type === "KPA") {
               return task.task.taskType === type;

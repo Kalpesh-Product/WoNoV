@@ -32,7 +32,7 @@ const fiscalMonths = [
   "March",
 ];
 
-const PerformanceDepartmentWiseKraKpa = () => {
+const PerformanceDepartmentWiseKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const dispatch = useDispatch();
@@ -42,10 +42,14 @@ const PerformanceDepartmentWiseKraKpa = () => {
   const [selectedMonth, setSelectedMonth] = useState(
     clickedMonth || fiscalMonths[0],
   );
-  const userDepartmentIds =
-    auth?.user?.departments
-      ?.map((dept) => dept?._id?.toString())
-      .filter(Boolean) || [];
+
+  const userDepartmentIds = useMemo(
+    () =>
+      auth?.user?.departments
+        ?.map((dept) => dept?._id?.toString())
+        .filter(Boolean) || [],
+    [auth?.user?.departments],
+  );
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const isEmployeeLevel =
     !userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) &&
@@ -56,7 +60,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
   });
 
   const { data: fetchedDepartments = [] } = useQuery({
-    queryKey: ["fetchedDepartments", selectedMonth],
+    queryKey: ["fetchedDepartmentsKra", selectedMonth],
     queryFn: async () => {
       const response = await axios.get("/api/performance/get-depts-tasks", {
         params: { month: selectedMonth },
@@ -65,11 +69,55 @@ const PerformanceDepartmentWiseKraKpa = () => {
     },
   });
 
-  const { data: kpaTasksRaw = [] } = useQuery({
-    queryKey: ["departmentWiseKpaTasks"],
+  const visibleDepartments = useMemo(() => {
+    return fetchedDepartments.filter((item) => {
+      if (isTop) return true;
+      return userDepartmentIds.includes(item?.department?._id?.toString());
+    });
+  }, [fetchedDepartments, isTop, userDepartmentIds]);
+
+  const { data: completedKraByDepartment = {} } = useQuery({
+    queryKey: [
+      "departmentWiseCompletedKra",
+      selectedMonth,
+      visibleDepartments.map((item) => item?.department?._id).filter(Boolean),
+    ],
+    enabled: visibleDepartments.length > 0,
     queryFn: async () => {
-      const response = await axios.get("/api/performance/get-kpa-tasks");
-      return response.data || [];
+      const completedByDeptEntries = await Promise.all(
+        visibleDepartments.map(async (item) => {
+          const departmentId = item?.department?._id;
+
+          const [kraRes, teamKraRes, individualKraRes] = await Promise.all([
+            axios.get("/api/performance/get-completed-tasks", {
+              params: { dept: departmentId, type: "KRA" },
+            }),
+            axios.get("/api/performance/get-completed-tasks", {
+              params: { dept: departmentId, type: "TEAMKRA" },
+            }),
+            axios.get("/api/performance/get-completed-tasks", {
+              params: { dept: departmentId, type: "INDIVIDUALKRA" },
+            }),
+          ]);
+
+          const allCompleted = [
+            ...(kraRes.data || []),
+            ...(teamKraRes.data || []),
+            ...(individualKraRes.data || []),
+          ];
+
+          const completedCount = allCompleted.filter((task) => {
+            const assignedDate = new Date(task?.assignedDate);
+            if (Number.isNaN(assignedDate.getTime())) return false;
+            const taskFiscalMonth = fiscalMonths[(assignedDate.getMonth() + 9) % 12];
+            return taskFiscalMonth.toLowerCase() === selectedMonth.toLowerCase();
+          }).length;
+
+          return [item?.department?.name, completedCount];
+        }),
+      );
+
+      return Object.fromEntries(completedByDeptEntries);
     },
   });
 
@@ -77,90 +125,62 @@ const PerformanceDepartmentWiseKraKpa = () => {
     (month) => month.toLowerCase() === selectedMonth.toLowerCase(),
   );
 
-  // const getDepartmentKraTotal = (departmentData) =>
-  //     (departmentData?.dailyKRA || 0) +
-  //     (departmentData?.individualDailyKRA || 0) +
-  //     (departmentData?.teamDailyKRA || 0);
+  const getDepartmentKraTotal = (departmentData) =>
+    (departmentData?.dailyKRA || 0) +
+    (departmentData?.individualDailyKRA || 0) +
+    (departmentData?.teamDailyKRA || 0);
 
-  const getDepartmentKpaTotal = (departmentData) =>
-    (departmentData?.monthlyKPA || 0) +
-    (departmentData?.individualMonthlyKPA || 0) +
-    (departmentData?.teamMonthlyKPA || 0);
-
-  const visibleDepartments = fetchedDepartments.filter((item) => {
-    if (isTop) return true;
-    return userDepartmentIds.includes(item?.department?._id?.toString());
-  });
-
-  const completedKpaByDepartment = useMemo(() => {
-    const completedMap = {};
-    const visibleDepartmentNames = new Set(
-      visibleDepartments.map((item) => item?.department?.name).filter(Boolean),
-    );
-
-    kpaTasksRaw.forEach((departmentTasks) => {
-      if (!visibleDepartmentNames.has(departmentTasks?.department)) return;
-
-      const completedCount = (departmentTasks?.tasks || []).filter((task) => {
-        const assignedDate = new Date(task?.assignedDate);
-        if (Number.isNaN(assignedDate.getTime())) return false;
-
-        const taskFiscalMonth =
-          fiscalMonths[(assignedDate.getMonth() + 9) % 12];
-        return (
-          taskFiscalMonth.toLowerCase() === selectedMonth.toLowerCase() &&
-          task.status === "Completed"
-        );
-      }).length;
-
-      completedMap[departmentTasks.department] = completedCount;
-    });
-
-    return completedMap;
-  }, [kpaTasksRaw, selectedMonth, visibleDepartments]);
-
-  const pendingKpaByDepartment = useMemo(
+  const pendingKraByDepartment = useMemo(
     () =>
       visibleDepartments.reduce((acc, item) => {
-        const assignedCount = getDepartmentKpaTotal(item);
+        const assignedCount = getDepartmentKraTotal(item);
         const completedCount =
-          completedKpaByDepartment[item.department?.name] || 0;
+          completedKraByDepartment[item.department?.name] || 0;
         acc[item.department?.name] = Math.max(
           assignedCount - completedCount,
           0,
         );
         return acc;
       }, {}),
-    [completedKpaByDepartment, visibleDepartments],
+    [completedKraByDepartment, visibleDepartments],
   );
 
-  const totalCompletedKpa = Object.values(completedKpaByDepartment).reduce(
+  const totalCompletedKra = Object.values(completedKraByDepartment).reduce(
     (sum, count) => sum + count,
     0,
   );
-  const totalPendingKpa = Object.values(pendingKpaByDepartment).reduce(
+  const totalPendingKra = Object.values(pendingKraByDepartment).reduce(
     (sum, count) => sum + count,
     0,
   );
 
   const graphData = [
     {
-      name: "Completed KPA",
-      group: `KPA - ${selectedMonth}`,
+      name: "Completed KRA",
+      group: `KRA - ${selectedMonth}`,
       data: visibleDepartments.map((item) => ({
         x: item.department?.name,
-        y: completedKpaByDepartment[item.department?.name] || 0,
+        y: completedKraByDepartment[item.department?.name] || 0,
       })),
     },
     {
-      name: "Pending KPA",
-      group: `KPA - ${selectedMonth}`,
+      name: "Pending KRA",
+      group: `KRA - ${selectedMonth}`,
       data: visibleDepartments.map((item) => ({
         x: item.department?.name,
-        y: pendingKpaByDepartment[item.department?.name] || 0,
+        y: pendingKraByDepartment[item.department?.name] || 0,
       })),
     },
   ];
+
+  const openMemberWisePage = (departmentName, departmentId) => {
+    dispatch(setSelectedDepartment(departmentId));
+    dispatch(setSelectedDepartmentName(departmentName));
+    navigate(
+      `/app/performance/overall-department-kra/member-wise-kra-kpa/${departmentName}`,
+      { state: { month: selectedMonth } },
+    );
+  };
 
   const graphOptions = {
     chart: {
@@ -179,13 +199,9 @@ const PerformanceDepartmentWiseKraKpa = () => {
             (item) => item.department?.name === clickedDepartment,
           );
           if (departmentData) {
-            dispatch(setSelectedDepartment(departmentData.department?._id));
-            dispatch(
-              setSelectedDepartmentName(departmentData.department?.name),
-            );
-            navigate(
-               `/app/performance/overall-department-kpa/member-wise-kra-kpa/${departmentData.department?.name}`,
-              { state: { month: selectedMonth } },
+            openMemberWisePage(
+              departmentData.department?.name,
+              departmentData.department?._id,
             );
           }
         },
@@ -200,14 +216,13 @@ const PerformanceDepartmentWiseKraKpa = () => {
       title: { text: "Departments" },
       categories: visibleDepartments.map((item) => item.department?.name),
     },
-   yaxis: {
-            title: { text: "Count" },
-        },
+     yaxis: {
+      title: { text: "Count" },
+    },
     colors: ["#54C4A7", "#EB5C45"],
     fill: { opacity: 1 },
     legend: { position: "top" },
-    
-tooltip: {
+    tooltip: {
             custom: ({ series, dataPointIndex, w }) => {
                 const label =
                     w?.config?.series?.[0]?.data?.[dataPointIndex]?.x || "Department";
@@ -219,17 +234,15 @@ tooltip: {
                     <div style="padding:8px; font-family:Poppins, sans-serif; font-size:13px; width:220px;">
                         <strong>${label}</strong><br/>
                         <hr style="margin:6px 0; border-top:1px solid #ddd;" />
-                        <div style="display:flex; justify-content:space-between;"><span>Total KPA :</span><span>${total}</span></div>
-                        <div style="display:flex; justify-content:space-between;"><span>Completed KPA :</span><span>${completed}</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>Total KRA :</span><span>${total}</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>Completed KRA :</span><span>${completed}</span></div>
                         <hr style="margin:6px 0; border-top:1px solid #ddd;" />
-                        <div style="display:flex; justify-content:space-between;"><span>Pending KPA :</span><span>${pending}</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>Pending KRA :</span><span>${pending}</span></div>
                     </div>
                 `;
             },
         },
 
-
-    
   };
 
   const departmentColumns = [
@@ -242,12 +255,7 @@ tooltip: {
         <span
           role="button"
           onClick={() => {
-            dispatch(setSelectedDepartment(params.data.mongoId));
-            dispatch(setSelectedDepartmentName(params.data.department));
-            navigate(
-               `/app/performance/overall-department-kpa/member-wise-kra-kpa/${params.value}`,
-              { state: { month: selectedMonth } },
-            );
+            openMemberWisePage(params.value, params.data.mongoId);
           }}
           className="text-primary font-pregular hover:underline cursor-pointer"
         >
@@ -255,23 +263,20 @@ tooltip: {
         </span>
       ),
     },
-    // { headerName: "Daily KRA", field: "dailyKra" },
     {
-      headerName: "Department Monthly KPA",
-      field: "monthlyKpa",
+      headerName: "Department Daily KRA",
+      field: "dailyKra",
       hide: isEmployeeLevel,
       width: 300,
     },
-    // { headerName: "Individual Daily KRA", field: "individualDailyKra" },
     {
-      headerName: "Individual Monthly KPA",
-      field: "individualMonthlyKpa",
+      headerName: "Individual Daily KRA",
+      field: "individualDailyKra",
       width: 300,
     },
-    // { headerName: "Team Daily KRA", field: "teamDailyKra", hide: isEmployeeLevel },
     {
-      headerName: "Team Monthly KPA",
-      field: "teamMonthlyKpa",
+      headerName: "Team Daily KRA",
+      field: "teamDailyKra",
       hide: isEmployeeLevel,
     },
   ];
@@ -279,13 +284,13 @@ tooltip: {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`KPA overview - ${selectedMonth}`}
+        title={`KRA overview - ${selectedMonth}`}
         border
         padding
-        greenTitle="KPA "
-        TitleAmountGreen={totalCompletedKpa}
-        redTitle="KPA "
-        TitleAmountRed={totalPendingKpa}
+        greenTitle="KRA "
+        TitleAmountGreen={totalCompletedKra}
+        redTitle="KRA "
+        TitleAmountRed={totalPendingKra}
       >
         <NormalBarGraph
           data={graphData}
@@ -307,9 +312,7 @@ tooltip: {
                 setSelectedMonth(fiscalMonths[prevIndex]);
               }}
             />
-            <div className="text-sm min-w-[120px] text-center">
-              {selectedMonth}
-            </div>
+            <div className="text-sm min-w-[120px] text-center">{selectedMonth}</div>
             <SecondaryButton
               title={<MdNavigateNext />}
               disabled={false}
@@ -340,7 +343,7 @@ tooltip: {
               annualKpa: item.annualKPA,
             }))}
             columns={departmentColumns}
-            tableTitle="DEPARTMENT-WISE PENDING KPA"
+            tableTitle="DEPARTMENT-WISE PENDING KRA"
             hideFilter
           />
         </WidgetSection>
@@ -349,4 +352,4 @@ tooltip: {
   );
 };
 
-export default PerformanceDepartmentWiseKraKpa;
+export default PerformanceDepartmentWiseKra;
