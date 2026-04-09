@@ -1466,205 +1466,217 @@ const getSingleRoomMeetings = async (req, res, next) => {
 };
 
 //Update payment details
-const updateMeeting = async (req, res, next) => {
-  const logPath = "meetings/MeetingLog";
-  const logAction = "Update Payment Status";
-  const logSourceKey = "meeting";
+// const updateMeeting = async (req, res, next) => {
+//   const logPath = "meetings/MeetingLog";
+//   const logAction = "Update Payment Status";
+//   const logSourceKey = "meeting";
 
-  try {
-    const { user, ip, company } = req;
-    const {
-      paymentAmount,
-      paymentMode,
-      paymentStatus,
-      discountAmount,
-      paymentBaseAmount,
-      paymentGstAmount,
-      client,
-      taxable,
-      gst,
-      status,
-      unitsOrHours,
-      meetingRoomName,
-    } = req.body;
-    const { meetingId } = req.params;
-    const paymentProofFile = req.file;
+//   try {
+//     const { user, ip, company } = req;
+//     const {
+//       paymentAmount,
+//       paymentMode,
+//       paymentStatus,
+//       discountAmount,
+//       paymentBaseAmount,
+//       paymentGstAmount,
+//       client,
+//       taxable,
+//       gst,
+//       status,
+//       unitsOrHours,
+//       meetingRoomName,
+//     } = req.body;
+//     const { meetingId } = req.params;
+//     const paymentProofFile = req.file;
 
-    if (!mongoose.Types.ObjectId.isValid(meetingId)) {
-      return res.status(400).json({ message: "Invalid meeting Id provided" });
-    }
+//     if (!mongoose.Types.ObjectId.isValid(meetingId)) {
+//       return res.status(400).json({ message: "Invalid meeting Id provided" });
+//     }
 
-    if (!paymentAmount || !paymentMode || !paymentStatus || !paymentProofFile) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
+//     if (!paymentAmount || !paymentMode || !paymentStatus || !paymentProofFile) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
 
-    const updatedMeeting = await Meeting.findById(meetingId).populate([
-      { path: "bookedRoom" },
-      { path: "externalClient", select: "registeredClientCompany" },
-    ]);
+//     const updatedMeeting = await Meeting.findById(meetingId).populate([
+//       { path: "bookedRoom" },
+//       { path: "externalClient", select: "registeredClientCompany" },
+//     ]);
 
-    if (!updatedMeeting) {
-      throw new CustomError(
-        "Meeting not found",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+//     if (!updatedMeeting) {
+//       throw new CustomError(
+//         "Meeting not found",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
 
-    if (updatedMeeting.meetingType !== "External") {
-      throw new CustomError(
-        "Meeting type is not external",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+//     if (updatedMeeting.meetingType !== "External") {
+//       throw new CustomError(
+//         "Meeting type is not external",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
 
-    const durationInMs = updatedMeeting.endTime - updatedMeeting.startTime;
-    const durationInHours = durationInMs / (1000 * 60 * 60);
-    const perHourCost = updatedMeeting.bookedRoom.perHourPrice;
-    const amountToBePaid = durationInHours * perHourCost;
+//     const durationInMs = updatedMeeting.endTime - updatedMeeting.startTime;
+//     const durationInHours = durationInMs / (1000 * 60 * 60);
+//     const perHourCost = updatedMeeting.bookedRoom.perHourPrice;
+//     const amountToBePaid = durationInHours * perHourCost;
 
-    // Validate actual amount (optional)
-    // if (Number(paymentAmount) !== amountToBePaid) {
-    //   throw new CustomError(
-    //     `Actual amount is INR ${amountToBePaid}`,
-    //     logPath,
-    //     logAction,
-    //     logSourceKey
-    //   );
-    // }
+//     // Validate actual amount (optional)
+//     // if (Number(paymentAmount) !== amountToBePaid) {
+//     //   throw new CustomError(
+//     //     `Actual amount is INR ${amountToBePaid}`,
+//     //     logPath,
+//     //     logAction,
+//     //     logSourceKey
+//     //   );
+//     // }
 
-    // File Upload Handling
-    if (paymentProofFile) {
-      const allowedMimeTypes = [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-      ];
+//     // File Upload Handling
+//     if (paymentProofFile) {
+//       const allowedMimeTypes = [
+//         "application/pdf",
+//         "application/msword",
+//         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+//         "image/jpeg",
+//         "image/png",
+//         "image/jpg",
+//       ];
 
-      if (!allowedMimeTypes.includes(paymentProofFile.mimetype)) {
-        throw new CustomError(
-          "Invalid payment proof file type",
-          logPath,
-          logAction,
-          logSourceKey,
-        );
-      }
+//       if (!allowedMimeTypes.includes(paymentProofFile.mimetype)) {
+//         throw new CustomError(
+//           "Invalid payment proof file type",
+//           logPath,
+//           logAction,
+//           logSourceKey,
+//         );
+//       }
 
-      let processedBuffer = paymentProofFile.buffer;
-      const originalFilename = paymentProofFile.originalname;
+//       let processedBuffer = paymentProofFile.buffer;
+//       const originalFilename = paymentProofFile.originalname;
 
-      if (paymentProofFile.mimetype === "application/pdf") {
-        try {
-          const pdfDoc = await PDFDocument.load(paymentProofFile.buffer);
-          pdfDoc.setTitle(originalFilename.split(".")[0] || "Payment Proof");
-          processedBuffer = await pdfDoc.save();
-        } catch (pdfErr) {
-          console.error("PDF processing failed:", pdfErr);
-          // Decide: fail or fallback to original buffer?
-          // Most secure: fail the request
-          throw new CustomError("Invalid or corrupted PDF file");
-        }
-      }
+//       if (paymentProofFile.mimetype === "application/pdf") {
+//         try {
+//           const pdfDoc = await PDFDocument.load(paymentProofFile.buffer);
+//           pdfDoc.setTitle(originalFilename.split(".")[0] || "Payment Proof");
+//           processedBuffer = await pdfDoc.save();
+//         } catch (pdfErr) {
+//           console.error("PDF processing failed:", pdfErr);
+//           // Decide: fail or fallback to original buffer?
+//           // Most secure: fail the request
+//           throw new CustomError("Invalid or corrupted PDF file");
+//         }
+//       }
 
-      const response = await handleDocumentUpload(
-        processedBuffer,
-        `${company}/meetings/${meetingId}/payment-proof`,
-        originalFilename,
-      );
+//       const response = await handleDocumentUpload(
+//         processedBuffer,
+//         `${company}/meetings/${meetingId}/payment-proof`,
+//         originalFilename,
+//       );
 
-      if (!response.public_id) {
-        throw new CustomError(
-          "Failed to upload payment proof",
-          logPath,
-          logAction,
-          logSourceKey,
-        );
-      }
+//       if (!response.public_id) {
+//         throw new CustomError(
+//           "Failed to upload payment proof",
+//           logPath,
+//           logAction,
+//           logSourceKey,
+//         );
+//       }
 
-      updatedMeeting.paymentProof = {
-        name: originalFilename,
-        link: response.secure_url,
-        id: response.public_id,
-        date: new Date(),
-        mimeType: paymentProofFile.mimetype,
-      };
-    }
+//       updatedMeeting.paymentProof = {
+//         name: originalFilename,
+//         link: response.secure_url,
+//         id: response.public_id,
+//         date: new Date(),
+//         mimeType: paymentProofFile.mimetype,
+//       };
+//     }
 
-    updatedMeeting.paymentBaseAmount = paymentBaseAmount;
-    updatedMeeting.paymentGstAmount = paymentGstAmount;
-    updatedMeeting.paymentAmount = paymentAmount;
-    updatedMeeting.paymentMode = paymentMode;
-    updatedMeeting.paymentStatus = paymentStatus === "Paid";
-    updatedMeeting.discountAmount = discountAmount ?? 0;
+//     updatedMeeting.paymentBaseAmount = paymentBaseAmount;
+//     updatedMeeting.paymentGstAmount = paymentGstAmount;
+//     updatedMeeting.paymentAmount = paymentAmount;
+//     updatedMeeting.paymentMode = paymentMode;
+//     updatedMeeting.paymentStatus = paymentStatus === "Paid";
+//     updatedMeeting.discountAmount = discountAmount ?? 0;
 
-    await updatedMeeting.save();
+//     await updatedMeeting.save();
 
-    const resolvedPaymentStatus = paymentStatus === "Paid" ? "Paid" : "Unpaid";
-    const resolvedClientName =
-      client || updatedMeeting.externalClient?.registeredClientCompany || "";
+//     const resolvedPaymentStatus = paymentStatus === "Paid" ? "Paid" : "Unpaid";
+//     const resolvedClientName =
+//       client || updatedMeeting.externalClient?.registeredClientCompany || "";
 
-    const meetingRevenue = new MeetingRevenue({
-      date: updatedMeeting.startDate,
-      company,
-      client: resolvedClientName,
-      particulars: "Meeting room booking",
-      unitsOrHours: unitsOrHours || "Hours",
-      costPerHour: updatedMeeting.bookedRoom.perHourPrice,
-      meetingRoomName: meetingRoomName || updatedMeeting.bookedRoom?.name,
-      taxable: Number(taxable ?? paymentBaseAmount ?? 0),
-      gst: Number(gst ?? paymentGstAmount ?? 0),
-      totalAmount: paymentAmount,
-      paymentDate: updatedMeeting.startDate,
-      status: status || resolvedPaymentStatus,
-      remarks: paymentMode,
-      meeting: updatedMeeting._id,
-      hoursBooked: durationInHours,
-    });
+//     const meetingRevenue = new MeetingRevenue({
+//       date: updatedMeeting.startDate,
+//       company,
+//       client: resolvedClientName,
+//       particulars: "Meeting room booking",
+//       unitsOrHours: unitsOrHours || "Hours",
+//       costPerHour: updatedMeeting.bookedRoom.perHourPrice,
+//       meetingRoomName: meetingRoomName || updatedMeeting.bookedRoom?.name,
+//       taxable: Number(taxable ?? paymentBaseAmount ?? 0),
+//       gst: Number(gst ?? paymentGstAmount ?? 0),
+//       totalAmount: paymentAmount,
+//       paymentDate: updatedMeeting.startDate,
+//       status: status || resolvedPaymentStatus,
+//       remarks: paymentMode,
+//       meeting: updatedMeeting._id,
+//       hoursBooked: durationInHours,
+//     });
 
-    const savedRevenue = await meetingRevenue.save();
+//     const savedRevenue = await meetingRevenue.save();
 
-    if (!savedRevenue) {
-      throw new CustomError(
-        "Failed to save meeting revenue",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+//     if (!savedRevenue) {
+//       throw new CustomError(
+//         "Failed to save meeting revenue",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
 
-    const updatedVisitor = await Visitor.findOneAndUpdate(
-      {
-        clientCompany: updatedMeeting.externalClient.clientCompany,
-      },
-      {
-        meeting: updatedMeeting._id,
-      },
-    );
+//     const updatedVisitor = await Visitor.findOneAndUpdate(
+//       {
+//         clientCompany: updatedMeeting.externalClient.clientCompany,
+//       },
+//       {
+//         meeting: updatedMeeting._id,
+//       },
+//     );
 
-    if (!updatedVisitor) {
-      throw new CustomError(
-        "Failed to update visitor meeting reference",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+//     if (!updatedVisitor) {
+//       throw new CustomError(
+//         "Failed to update visitor meeting reference",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
 
-    return res.status(200).json({ message: "Meeting updated successfully" });
-  } catch (error) {
-    next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-    );
-  }
-};
+//     return res.status(200).json({ message: "Meeting updated successfully" });
+//   } catch (error) {
+//     next(
+//       error instanceof CustomError
+//         ? error
+//         : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+//     );
+//   }
+// };
+
+const updatedMeeting = await recalculateAndUpdatePayment({
+  meeting: updatedMeeting, // your fetched meeting
+  startTime: updatedMeeting.startTime,
+  endTime: updatedMeeting.endTime,
+  paymentPayload: {
+    paymentMode,
+    paymentStatus: paymentStatus === "Paid",
+    discountAmount: discountAmount ?? 0,
+  },
+  company,
+});
 
 const updateMeetingPaymentStatus = async (req, res, next) => {
   const { status, meetingId } = req.body;
@@ -2077,36 +2089,17 @@ const updateMeetingDetails = async (req, res, next) => {
       { path: "externalClient", select: "clientCompany" },
     ]);
 
-    // if (externalParticipants && externalParticipants.length > 0) {
-    //   const meetingRevenue = await MeetingRevenue.findByIdAndUpdate({
-    //     meeting: updatedMeeting._id,
-    //     totalAmount: paymentAmount,
-    //   });
-
-    //   if (!meetingRevenue) {
-    //     return res
-    //       .status(400)
-    //       .json({ message: "Failed to update the meeting revenue" });
-    //   }
-
-    //   const updatedVisitor = await Visitor.findOneAndUpdate(
-    //     {
-    //       clientCompany: updatedMeeting.externalClient.clientCompany,
-    //     },
-    //     {
-    //       meeting: updatedMeeting._id,
-    //     }
-    //   );
-
-    //   if (!updatedVisitor) {
-    //     return res
-    //       .status(400)
-    //       .json({ message: "Failed to update the visitor" });
-    //   }
-    // }
-
     if (!updatedMeeting) {
       return res.status(500).json({ message: "Failed to update meeting" });
+    }
+
+    if (isExternal) {
+      updatedMeeting = await recalculateAndUpdatePayment({
+        meeting: updatedMeeting,
+        startTime: startTimeObj,
+        endTime: endTimeObj,
+        company: updatedMeeting.company,
+      });
     }
 
     if (!isClient && internalParticipants?.length > 0) {
