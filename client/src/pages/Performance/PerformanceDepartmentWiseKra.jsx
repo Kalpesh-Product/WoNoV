@@ -14,23 +14,31 @@ import {
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PERMISSIONS } from "../../constants/permissions";
 
-const fiscalMonths = [
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-  "January",
-  "February",
-  "March",
-];
+const toLocalIsoDate = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formatReadableDate = (dateValue) =>
+  new Date(dateValue).toLocaleDateString("en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+const parseIsoDate = (isoDateValue) => {
+  if (!isoDateValue) return null;
+  const [year, month, day] = isoDateValue.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day, 12, 0, 0);
+};
 
 const PerformanceDepartmentWiseKra = () => {
   const axios = useAxiosPrivate();
@@ -38,10 +46,28 @@ const PerformanceDepartmentWiseKra = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const clickedMonth = location.state?.month;
-  const [selectedMonth, setSelectedMonth] = useState(
-    clickedMonth || fiscalMonths[0],
+   const clickedDate = location.state?.date;
+  const [selectedDate, setSelectedDate] = useState(
+    clickedDate || toLocalIsoDate(new Date()),
   );
+  const [, setTodayDate] = useState(toLocalIsoDate(new Date()));
+
+  useEffect(() => {
+    const updateToday = () => {
+      const currentDate = toLocalIsoDate(new Date());
+      setTodayDate((previousToday) => {
+        if (previousToday !== currentDate && selectedDate === previousToday) {
+          setSelectedDate(currentDate);
+        }
+        return currentDate;
+      });
+    };
+
+    updateToday();
+    const intervalId = setInterval(updateToday, 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, [selectedDate]);
+
 
   const userDepartmentIds = useMemo(
     () =>
@@ -50,21 +76,25 @@ const PerformanceDepartmentWiseKra = () => {
         .filter(Boolean) || [],
     [auth?.user?.departments],
   );
+   const roleTitles =
+    auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+  const isRoleEmployee = roleTitles.some((roleTitle) =>
+    roleTitle?.includes("employee"),
+  );
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const isEmployeeLevel =
-    !userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) &&
-    !userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value);
+        isRoleEmployee ||
+    (!userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) &&
+      !userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value));
 
   const { isTop } = useTopDepartment({
     additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
   });
 
   const { data: fetchedDepartments = [] } = useQuery({
-    queryKey: ["fetchedDepartmentsKra", selectedMonth],
+    queryKey: ["fetchedDepartmentsKra"],
     queryFn: async () => {
-      const response = await axios.get("/api/performance/get-depts-tasks", {
-        params: { month: selectedMonth },
-      });
+      const response = await axios.get("/api/performance/get-depts-tasks");
       return response.data || [];
     },
   });
@@ -76,74 +106,108 @@ const PerformanceDepartmentWiseKra = () => {
     });
   }, [fetchedDepartments, isTop, userDepartmentIds]);
 
-  const { data: completedKraByDepartment = {} } = useQuery({
-    queryKey: [
-      "departmentWiseCompletedKra",
-      selectedMonth,
-      visibleDepartments.map((item) => item?.department?._id).filter(Boolean),
-    ],
-    enabled: visibleDepartments.length > 0,
+  const visibleDepartmentIds = visibleDepartments
+    .map((item) => item?.department?._id?.toString())
+    .filter(Boolean)
+    .sort();
+
+  const isSameSelectedDate = (dateValue) =>
+    toLocalIsoDate(dateValue) === selectedDate;
+
+  const { data: departmentWiseKraStats = [] } = useQuery({
+    queryKey: ["departmentWiseKraStats", selectedDate, visibleDepartmentIds],
+    enabled: visibleDepartmentIds.length > 0,
     queryFn: async () => {
-      const completedByDeptEntries = await Promise.all(
+      const departmentStats = await Promise.all(
         visibleDepartments.map(async (item) => {
           const departmentId = item?.department?._id;
+          const departmentName = item?.department?.name;
+          if (!departmentId || !departmentName) return null;
 
-          const [kraRes, teamKraRes, individualKraRes] = await Promise.all([
-            axios.get("/api/performance/get-completed-tasks", {
-              params: { dept: departmentId, type: "KRA" },
-            }),
-            axios.get("/api/performance/get-completed-tasks", {
-              params: { dept: departmentId, type: "TEAMKRA" },
-            }),
-            axios.get("/api/performance/get-completed-tasks", {
-              params: { dept: departmentId, type: "INDIVIDUALKRA" },
-            }),
+          const settledResponses = await Promise.allSettled([
+            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
+            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
+            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
+            axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`),
+            axios.get(
+              `/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKRA`,
+            ),
+            axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=TEAMKRA`),
           ]);
 
-          const allCompleted = [
-            ...(kraRes.data || []),
-            ...(teamKraRes.data || []),
-            ...(individualKraRes.data || []),
+          const getResponseData = (response) =>
+            response?.status === "fulfilled" ? response.value?.data || [] : [];
+
+          const departmentTasks = getResponseData(settledResponses[0]);
+          const individualTasks = getResponseData(settledResponses[1]);
+          const teamTasks = getResponseData(settledResponses[2]);
+          const allAssignedTasks = [...departmentTasks, ...individualTasks, ...teamTasks];
+          const allCompletedTasks = [
+            ...getResponseData(settledResponses[3]),
+            ...getResponseData(settledResponses[4]),
+            ...getResponseData(settledResponses[5]),
           ];
 
-          const completedCount = allCompleted.filter((task) => {
-            const assignedDate = new Date(task?.assignedDate);
-            if (Number.isNaN(assignedDate.getTime())) return false;
-            const taskFiscalMonth = fiscalMonths[(assignedDate.getMonth() + 9) % 12];
-            return taskFiscalMonth.toLowerCase() === selectedMonth.toLowerCase();
-          }).length;
+         return {
+  departmentId,
+  departmentName,
 
-          return [item?.department?.name, completedCount];
+  // Only Department Daily KRA
+  dailyKra: departmentTasks.filter((task) =>
+    isSameSelectedDate(task?.assignedDate),
+  ).length,
+
+  // Keep these if needed for table
+  individualDailyKra: individualTasks.filter((task) =>
+    isSameSelectedDate(task?.assignedDate),
+  ).length,
+
+  teamDailyKra: teamTasks.filter((task) =>
+    isSameSelectedDate(task?.assignedDate),
+  ).length,
+
+  // ✅ ONLY Department Pending
+  pendingKra: departmentTasks.filter(
+    (task) =>
+      isSameSelectedDate(task?.assignedDate) &&
+      task?.status !== "Completed",
+  ).length,
+
+  // ✅ ONLY Department Completed
+  completedKra: getResponseData(settledResponses[3]).filter((task) =>
+    isSameSelectedDate(task?.completionDate),
+  ).length,
+};
         }),
       );
 
-      return Object.fromEntries(completedByDeptEntries);
+      return departmentStats.filter(Boolean);
     },
   });
 
-  const currentMonthIndex = fiscalMonths.findIndex(
-    (month) => month.toLowerCase() === selectedMonth.toLowerCase(),
-  );
-
-  const getDepartmentKraTotal = (departmentData) =>
-    (departmentData?.dailyKRA || 0) +
-    (departmentData?.individualDailyKRA || 0) +
-    (departmentData?.teamDailyKRA || 0);
-
-  const pendingKraByDepartment = useMemo(
+  const completedKraByDepartment = useMemo(
     () =>
-      visibleDepartments.reduce((acc, item) => {
-        const assignedCount = getDepartmentKraTotal(item);
-        const completedCount =
-          completedKraByDepartment[item.department?.name] || 0;
-        acc[item.department?.name] = Math.max(
-          assignedCount - completedCount,
-          0,
-        );
+      departmentWiseKraStats.reduce((acc, item) => {
+        acc[item.departmentName] = item.completedKra || 0;
         return acc;
       }, {}),
-    [completedKraByDepartment, visibleDepartments],
+    [departmentWiseKraStats],
   );
+
+  // const getDepartmentKraTotal = (departmentData) =>
+  //   (departmentData?.dailyKRA || 0) +
+  //   (departmentData?.individualDailyKRA || 0) +
+  //   (departmentData?.teamDailyKRA || 0);
+
+   const pendingKraByDepartment = useMemo(
+    () =>
+      departmentWiseKraStats.reduce((acc, item) => {
+        acc[item.departmentName] = item.pendingKra || 0;
+        return acc;
+      }, {}),
+    [departmentWiseKraStats],
+  );
+
 
   const totalCompletedKra = Object.values(completedKraByDepartment).reduce(
     (sum, count) => sum + count,
@@ -157,18 +221,18 @@ const PerformanceDepartmentWiseKra = () => {
   const graphData = [
     {
       name: "Completed KRA",
-      group: `KRA - ${selectedMonth}`,
-      data: visibleDepartments.map((item) => ({
-        x: item.department?.name,
-        y: completedKraByDepartment[item.department?.name] || 0,
+      group: `KRA - ${selectedDate}`,
+      data: departmentWiseKraStats.map((item) => ({
+        x: item.departmentName,
+        y: completedKraByDepartment[item.departmentName] || 0,
       })),
     },
     {
       name: "Pending KRA",
-      group: `KRA - ${selectedMonth}`,
-      data: visibleDepartments.map((item) => ({
-        x: item.department?.name,
-        y: pendingKraByDepartment[item.department?.name] || 0,
+      group: `KRA - ${selectedDate}`,
+      data: departmentWiseKraStats.map((item) => ({
+        x: item.departmentName,
+        y: pendingKraByDepartment[item.departmentName] || 0,
       })),
     },
   ];
@@ -178,7 +242,7 @@ const PerformanceDepartmentWiseKra = () => {
     dispatch(setSelectedDepartmentName(departmentName));
     navigate(
       `/app/performance/overall-department-kra/member-wise-kra-kpa/${departmentName}`,
-      { state: { month: selectedMonth } },
+      { state: { date: selectedDate } },
     );
   };
 
@@ -214,7 +278,7 @@ const PerformanceDepartmentWiseKra = () => {
     stroke: { show: true, width: 1, colors: ["#fff"] },
     xaxis: {
       title: { text: "Departments" },
-      categories: visibleDepartments.map((item) => item.department?.name),
+       categories: departmentWiseKraStats.map((item) => item.departmentName),
     },
      yaxis: {
       title: { text: "Count" },
@@ -266,7 +330,7 @@ const PerformanceDepartmentWiseKra = () => {
     {
       headerName: "Department Daily KRA",
       field: "dailyKra",
-      hide: isEmployeeLevel,
+      //hide: isEmployeeLevel,
       width: 300,
     },
     {
@@ -277,14 +341,17 @@ const PerformanceDepartmentWiseKra = () => {
     {
       headerName: "Team Daily KRA",
       field: "teamDailyKra",
-      hide: isEmployeeLevel,
+     // hide: isEmployeeLevel,
     },
   ];
-
+const visibleDepartmentColumns = departmentColumns.filter((column) => {
+    if (!isEmployeeLevel) return true;
+    return column.field !== "teamDailyKra";
+  });
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`KRA overview - ${selectedMonth}`}
+        title={`KRA overview - ${formatReadableDate(selectedDate)}`}
         border
         padding
         greenTitle="KRA "
@@ -305,23 +372,23 @@ const PerformanceDepartmentWiseKra = () => {
               title={<MdNavigateBefore />}
               disabled={false}
               handleSubmit={() => {
-                const prevIndex =
-                  currentMonthIndex === 0
-                    ? fiscalMonths.length - 1
-                    : currentMonthIndex - 1;
-                setSelectedMonth(fiscalMonths[prevIndex]);
+              const previousDate = parseIsoDate(selectedDate);
+                if (!previousDate) return;
+                previousDate.setDate(previousDate.getDate() - 1);
+                setSelectedDate(toLocalIsoDate(previousDate));
               }}
             />
-            <div className="text-sm min-w-[120px] text-center">{selectedMonth}</div>
+              <div className="text-sm min-w-[160px] text-center">
+              {formatReadableDate(selectedDate)}
+            </div>
             <SecondaryButton
               title={<MdNavigateNext />}
               disabled={false}
               handleSubmit={() => {
-                const nextIndex =
-                  currentMonthIndex === fiscalMonths.length - 1
-                    ? 0
-                    : currentMonthIndex + 1;
-                setSelectedMonth(fiscalMonths[nextIndex]);
+                const nextDate = parseIsoDate(selectedDate);
+                if (!nextDate) return;
+                nextDate.setDate(nextDate.getDate() + 1);
+                setSelectedDate(toLocalIsoDate(nextDate));
               }}
             />
           </div>
@@ -330,22 +397,22 @@ const PerformanceDepartmentWiseKra = () => {
       <PageFrame>
         <WidgetSection layout={1} padding>
           <AgTable
-            data={visibleDepartments.map((item, index) => ({
+           data={departmentWiseKraStats.map((item, index) => ({
               srNo: index + 1,
-              mongoId: item.department?._id,
-              department: item.department?.name,
-              dailyKra: item.dailyKRA,
-              monthlyKpa: item.monthlyKPA,
-              individualDailyKra: item.individualDailyKRA,
-              individualMonthlyKpa: item.individualMonthlyKPA,
-              teamDailyKra: item.teamDailyKRA,
-              teamMonthlyKpa: item.teamMonthlyKPA,
-              annualKpa: item.annualKPA,
+              mongoId: item.departmentId,
+              department: item.departmentName,
+              dailyKra: item.dailyKra,
+              individualDailyKra: item.individualDailyKra,
+              //  individualDailyKra:
+              //   (item.individualDailyKra || 0) + (item.teamDailyKra || 0),
+              teamDailyKra: item.teamDailyKra,
             }))}
-            columns={departmentColumns}
-            tableTitle="DEPARTMENT-WISE PENDING KRA"
+            columns={visibleDepartmentColumns}
+            tableTitle={`DEPARTMENT-WISE PENDING KRA - ${formatReadableDate(selectedDate)}`}
             hideFilter
           />
+           
+           
         </WidgetSection>
       </PageFrame>
     </div>

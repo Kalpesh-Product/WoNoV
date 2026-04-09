@@ -665,6 +665,32 @@ const HrDashboard = () => {
     },
   ];
 
+   const annualKpaTotals = useMemo(() => {
+    const selectedYearSeries = tasksData.filter(
+      (series) => series.group === selectedFiscalYear
+    );
+
+    const monthlyCompleted = Array(12).fill(0);
+    const monthlyPending = Array(12).fill(0);
+
+    selectedYearSeries.forEach((series) => {
+      (series.data || []).forEach((point, index) => {
+        const rawCount = Number(point?.raw) || 0;
+        if (series.name === "Completed KPA") {
+          monthlyCompleted[index] = rawCount;
+        }
+        if (series.name === "Remaining KPA") {
+          monthlyPending[index] = rawCount;
+        }
+      });
+    });
+
+    return {
+      completed: monthlyCompleted.reduce((sum, count) => sum + count, 0),
+      pending: monthlyPending.reduce((sum, count) => sum + count, 0),
+    };
+  }, [tasksData, selectedFiscalYear]);
+
   const tasksOptions = {
     chart: {
       type: "bar",
@@ -1476,7 +1502,11 @@ const HrDashboard = () => {
               data={tasksData}
               options={tasksOptions}
               title={"ANNUAL KPA VS ACHIEVEMENTS"}
-              titleAmount={`TOTAL KPA : ${tasksForSelectedYear.length || 0}`}
+              titleAmount=""
+              TitleAmountGreen={annualKpaTotals.completed}
+              TitleAmountRed={annualKpaTotals.pending}
+              greenTitle="KPA"
+              redTitle="KPA"
               secondParam
               currentYear={true}
               onYearChange={setSelectedFiscalYear}

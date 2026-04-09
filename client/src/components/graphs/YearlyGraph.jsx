@@ -13,6 +13,8 @@ const YearlyGraph = ({
   chartId,
   TitleAmountGreen,
   TitleAmountRed,
+   greenTitle,
+  redTitle,
   responsiveResize = false,
   secondParam = false,
   chartHeight,
@@ -112,6 +114,8 @@ const YearlyGraph = ({
         TitleAmount={titleAmount || ""}
         TitleAmountGreen={TitleAmountGreen}
         TitleAmountRed={TitleAmountRed}
+         greenTitle={greenTitle}
+        redTitle={redTitle}
       >
         <div className="flex flex-col gap-4">
           <BarGraph

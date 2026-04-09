@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector, useDispatch } from "react-redux";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import AgTable from "../../components/AgTable";
 import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
@@ -17,20 +17,20 @@ import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
-const fiscalMonths = [
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-  "January",
-  "February",
-  "March",
-];
+// const fiscalMonths = [
+//   "April",
+//   "May",
+//   "June",
+//   "July",
+//   "August",
+//   "September",
+//   "October",
+//   "November",
+//   "December",
+//   "January",
+//   "February",
+//   "March",
+// ];
 
 const DEFAULT_COUNTS = {
   dailyKra: 0,
@@ -40,40 +40,22 @@ const DEFAULT_COUNTS = {
   pendingKra: 0,
 };
 
-const isTaskInSelectedMonth = (task, selectedMonth) => {
-  if (!selectedMonth) return true;
-
-  const taskDate = new Date(task?.assignedDate);
-  if (Number.isNaN(taskDate.getTime())) return false;
-
-  const taskMonth = taskDate.toLocaleString("en-US", { month: "long" });
-  return taskMonth.toLowerCase() === selectedMonth.toLowerCase();
-};
-
-const getFiscalMonthFromDate = (dateValue) => {
+const getDateKey = (dateValue) => {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return null;
-  return [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ][date.getMonth()];
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+
 };
 
 const PerformanceMemberWiseKra = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  const location = useLocation();
+  //const location = useLocation();
   const { department } = useParams();
   const { auth } = useAuth();
 
@@ -98,8 +80,16 @@ const PerformanceMemberWiseKra = () => {
   const loggedInUserId = auth?.user?._id?.toString();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
-  const [selectedMonth, setSelectedMonth] = useState(
-    location.state?.month || new Date().toLocaleString("en-US", { month: "long" }),
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const selectedDateKey = useMemo(() => getDateKey(selectedDate), [selectedDate]);
+  const selectedDateLabel = useMemo(
+    () =>
+      selectedDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      }),
+    [selectedDate],
   );
 
   const canManageTeam =
@@ -111,12 +101,10 @@ const PerformanceMemberWiseKra = () => {
     additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
   });
 
-  const currentMonthIndex = fiscalMonths.findIndex(
-    (month) => month.toLowerCase() === selectedMonth.toLowerCase(),
-  );
+  
 
   const { data: memberWiseData = [] } = useQuery({
-    queryKey: ["performanceMemberWiseKra", selectedDepartment, department, selectedMonth],
+    queryKey: ["performanceMemberWiseKra", selectedDepartment, department, selectedDateKey],
     queryFn: async () => {
       let departmentId = selectedDepartment;
 
@@ -189,13 +177,8 @@ const PerformanceMemberWiseKra = () => {
       };
 
       const incrementPendingKra = (task) => {
-        const taskDate = new Date(task?.assignedDate);
-        if (Number.isNaN(taskDate.getTime())) return;
-
-        const fiscalMonth = getFiscalMonthFromDate(task?.assignedDate);
-        if (!fiscalMonth || fiscalMonth.toLowerCase() !== selectedMonth.toLowerCase()) {
-          return;
-        }
+         const assignedDateKey = getDateKey(task?.assignedDate);
+        if (!assignedDateKey || assignedDateKey !== selectedDateKey) return;
 
         if (task?.status === "Completed") return;
 
@@ -214,10 +197,8 @@ const PerformanceMemberWiseKra = () => {
       };
 
       const incrementCompletedKra = (task) => {
-        const fiscalMonth = getFiscalMonthFromDate(task?.completionDate);
-        if (!fiscalMonth || fiscalMonth.toLowerCase() !== selectedMonth.toLowerCase()) {
-          return;
-        }
+         const completionDateKey = getDateKey(task?.completionDate);
+        if (!completionDateKey || completionDateKey !== selectedDateKey) return;
 
         const completedByName = task?.completedBy?.replace(/\s+/g, " ").trim();
         if (!completedByName) return;
@@ -236,16 +217,16 @@ const PerformanceMemberWiseKra = () => {
         map.get(matchedMemberId).completedKra += 1;
       };
 
-      getResponseData(kraResponse)
-        .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
+       getResponseData(kraResponse)
+        .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
         .forEach((task) => upsert(task, "dailyKra"));
 
       getResponseData(individualKraResponse)
-        .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
+        .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
         .forEach((task) => upsert(task, "individualDailyKra"));
 
       getResponseData(teamKraResponse)
-        .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
+        .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
         .forEach((task) => upsert(task, "teamDailyKra"));
 
       getResponseData(kraResponse).forEach(incrementPendingKra);
@@ -358,7 +339,7 @@ const PerformanceMemberWiseKra = () => {
         );
       },
     },
-    { headerName: "Department Daily KRA", field: "dailyKra", hide: isEmployeeLevel },
+    { headerName: "Department Daily KRA", field: "dailyKra" },
     { headerName: "Individual Daily KRA", field: "individualDailyKra" },
     { headerName: "Team Daily KRA", field: "teamDailyKra", hide: isEmployeeLevel },
   ];
@@ -366,7 +347,7 @@ const PerformanceMemberWiseKra = () => {
   const graphData = [
     {
       name: "Completed KRA",
-      group: `KRA - ${selectedMonth}`,
+      group: `KRA - ${selectedDateLabel}`,
       data: visibleRowData.map((item) => ({
         x: item.member,
         y: item.completedKra || 0,
@@ -374,7 +355,7 @@ const PerformanceMemberWiseKra = () => {
     },
     {
       name: "Pending KRA",
-      group: `KRA - ${selectedMonth}`,
+       group: `KRA - ${selectedDateLabel}`,
       data: visibleRowData.map((item) => ({
         x: item.member,
         y: item.pendingKra || 0,
@@ -441,7 +422,7 @@ const PerformanceMemberWiseKra = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`${selectedDepartmentName || department || "Department"} KRA overview - ${selectedMonth}`}
+         title={`${selectedDepartmentName || department || "Department"} KRA overview - ${selectedDateLabel}`}
         border
         padding
         greenTitle="KRA"
@@ -457,19 +438,21 @@ const PerformanceMemberWiseKra = () => {
               title={<MdNavigateBefore />}
               disabled={false}
               handleSubmit={() => {
-                const prevIndex =
-                  currentMonthIndex === 0 ? fiscalMonths.length - 1 : currentMonthIndex - 1;
-                setSelectedMonth(fiscalMonths[prevIndex]);
+               setSelectedDate(
+                  (prevDate) =>
+                    new Date(prevDate.getFullYear(), prevDate.getMonth(), prevDate.getDate() - 1),
+                );
               }}
             />
-            <div className="text-sm min-w-[120px] text-center">{selectedMonth}</div>
+              <div className="text-sm min-w-[140px] text-center">{selectedDateLabel}</div>
             <SecondaryButton
               title={<MdNavigateNext />}
               disabled={false}
               handleSubmit={() => {
-                const nextIndex =
-                  currentMonthIndex === fiscalMonths.length - 1 ? 0 : currentMonthIndex + 1;
-                setSelectedMonth(fiscalMonths[nextIndex]);
+                 setSelectedDate(
+                  (prevDate) =>
+                    new Date(prevDate.getFullYear(), prevDate.getMonth(), prevDate.getDate() + 1),
+                );
               }}
             />
           </div>
@@ -481,7 +464,7 @@ const PerformanceMemberWiseKra = () => {
           <AgTable
             data={visibleRowData}
             columns={columns}
-            tableTitle={`${selectedDepartmentName || department || "Department"} - MEMBER WISE PENDING KRA`}
+            tableTitle={`${selectedDepartmentName || department || "Department"} - MEMBER WISE PENDING KRA - ${selectedDateLabel}`}
             hideFilter
           />
         </WidgetSection>
