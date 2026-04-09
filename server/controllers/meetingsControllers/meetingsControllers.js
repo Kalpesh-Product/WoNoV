@@ -1377,7 +1377,8 @@ const extendMeeting = async (req, res, next) => {
 
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const isCurrentMonth = meetingMonthStart.getTime() === currentMonthStart.getTime();
+    const isCurrentMonth =
+      meetingMonthStart.getTime() === currentMonthStart.getTime();
 
     const updateFields = {
       $inc: {
@@ -1392,7 +1393,7 @@ const extendMeeting = async (req, res, next) => {
 
     // Atomic deduction across both balances
     await bookingUserModel.findOneAndUpdate(
-      { 
+      {
         _id: meeting.client,
         "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
       },
@@ -1986,7 +1987,9 @@ const updateMeetingDetails = async (req, res, next) => {
       (newCreditsUsed - oldCreditsUsed).toFixed(2),
     );
 
-    if (creditDifference !== 0) {
+    const isCreditApplicable = !isExternal;
+
+    if (creditDifference !== 0 && isCreditApplicable) {
       const meetingDate = new Date(meeting.startTime);
       const meetingMonthStart = new Date(
         meetingDate.getFullYear(),
@@ -1996,7 +1999,8 @@ const updateMeetingDetails = async (req, res, next) => {
 
       const now = new Date();
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const isCurrentMonth = meetingMonthStart.getTime() === currentMonthStart.getTime();
+      const isCurrentMonth =
+        meetingMonthStart.getTime() === currentMonthStart.getTime();
 
       const updateFields = {
         $inc: {
@@ -2019,7 +2023,9 @@ const updateMeetingDetails = async (req, res, next) => {
       );
 
       if (!updatedEntity) {
-        return res.status(404).json({ message: "Booking entity or history entry not found" });
+        return res
+          .status(404)
+          .json({ message: "Booking entity or history entry not found" });
       }
     }
 
@@ -2050,11 +2056,16 @@ const updateMeetingDetails = async (req, res, next) => {
     const changes = {
       startTime: startTimeObj,
       endTime: endTimeObj,
-      creditsUsed: externalParticipants ? newCreditsUsed : 0,
+      // creditsUsed: externalParticipants ? newCreditsUsed : 0,
+      creditsUsed: isExternal ? 0 : newCreditsUsed,
       internalParticipants: !isClient ? internalUsers : [],
       clientParticipants: isClient ? internalUsers : [],
       externalParticipants: externalParticipants || [],
-      paymentAmount: externalParticipants ? paymentAmount : 0,
+      paymentAmount: isExternal
+        ? paymentAmount
+          ? paymentAmount
+          : meeting.paymentAmount
+        : 0,
     };
 
     const updatedMeeting = await Meeting.findByIdAndUpdate(
