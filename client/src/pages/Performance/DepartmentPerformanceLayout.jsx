@@ -1,22 +1,17 @@
-import { useEffect, useState } from "react";
-import {
-  matchPath,
-  NavLink,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
-import { Tabs } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useLocation, useParams } from "react-router-dom";
 import { PERMISSIONS } from "./../../constants/permissions";
 import TabLayout from "../../components/Tabs/TabLayout";
-import { useSelector } from "react-redux";
 
 const DepartmentPerformanceLayout = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const departmentName = useSelector((state) => state.performance.selectedDepartmentName);
-  console.log("dep : ", departmentName);
+  const { overallType, department, memberWiseType } = useParams();
+  const isMemberHierarchyRoute = Boolean(overallType && memberWiseType);
+  const isAssignRoute = location.pathname.includes("/assign-kra-kpa");
+  const basePath = isMemberHierarchyRoute
+    ? `/app/performance/department-wise/${overallType}/${memberWiseType}`
+    : isAssignRoute
+      ? "/app/performance/assign-kra-kpa"
+    : `/app/performance/${department}`;
 
   // Map routes to tabs
   const tabs = [
@@ -56,10 +51,12 @@ const DepartmentPerformanceLayout = () => {
 
   return (
     <TabLayout
-      basePath={`/app/performance/${departmentName}`}
+      basePath={basePath}
       defaultTabPath="daily-KRA"
       tabs={tabs}
-      hideTabsCondition={(pathname) => pathname.includes("vendor/")}
+      hideTabsCondition={(pathname) =>
+        pathname.includes("vendor/") || pathname.endsWith("/assign-kra-kpa")
+      }
     />
   );
 };

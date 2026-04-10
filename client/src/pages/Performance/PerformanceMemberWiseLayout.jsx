@@ -3,11 +3,12 @@ import TabLayout from "../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../constants/permissions";
 
 const PerformanceMemberWiseLayout = () => {
-  const { department } = useParams();
+  const { overallType } = useParams();
   const location = useLocation();
 
-  const isKraEntry = location.pathname.includes("/overall-department-kra/");
-  const baseSegment = isKraEntry ? "overall-department-kra" : "overall-department-kpa";
+  const isKraEntry =
+    overallType === "overall-department-kra" ||
+    location.pathname.includes("/overall-department-kra/");
 
   const tabs = [
     {
@@ -24,7 +25,7 @@ const PerformanceMemberWiseLayout = () => {
 
   return (
     <TabLayout
-      basePath={`/app/performance/${baseSegment}/member-wise-kra-kpa/${department}`}
+      basePath={`/app/performance/department-wise/${isKraEntry ? "overall-department-kra" : "overall-department-kpa"}`}
       defaultTabPath={isKraEntry ? "member-wise-kra" : "member-wise-kpa"}
       tabs={tabs}
     />

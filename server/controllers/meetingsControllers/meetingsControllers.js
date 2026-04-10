@@ -26,6 +26,46 @@ const CoworkingMember = require("../../models/sales/CoworkingMembers");
 const { handleDocumentUpload } = require("../../config/s3Config");
 const { resetMeetingCreditsIfNeeded } = require("../../utils/resetCredits");
 
+const recalculateAndUpdatePayment = ({
+  meeting,
+  paymentAmount,
+  paymentBaseAmount,
+  paymentGstAmount,
+  discountAmount,
+  paymentMode,
+  paymentStatus,
+}) => {
+  const durationInMs = meeting.endTime - meeting.startTime;
+  const durationInHours = Number((durationInMs / (1000 * 60 * 60)).toFixed(2));
+  const perHourCost = Number(meeting.bookedRoom?.perHourPrice || 0);
+  const calculatedBaseAmount = Number(
+    (durationInHours * perHourCost).toFixed(2),
+  );
+  const resolvedBaseAmount = Number(
+    paymentBaseAmount ?? paymentAmount ?? calculatedBaseAmount,
+  );
+  const resolvedGstAmount = Number(
+    paymentGstAmount ?? (resolvedBaseAmount * 18) / 100,
+  );
+  const resolvedPaymentAmount = Number(
+    paymentAmount ?? resolvedBaseAmount + resolvedGstAmount,
+  );
+
+  meeting.paymentBaseAmount = resolvedBaseAmount;
+  meeting.paymentGstAmount = resolvedGstAmount;
+  meeting.paymentAmount = resolvedPaymentAmount;
+  meeting.paymentMode = paymentMode;
+  meeting.paymentStatus = paymentStatus === "Paid";
+  meeting.discountAmount = Number(discountAmount ?? 0);
+
+  return {
+    durationInHours,
+    resolvedBaseAmount,
+    resolvedGstAmount,
+    resolvedPaymentAmount,
+  };
+};
+
 const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
   const logAction = "Book Meeting";
@@ -1377,7 +1417,8 @@ const extendMeeting = async (req, res, next) => {
 
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const isCurrentMonth = meetingMonthStart.getTime() === currentMonthStart.getTime();
+    const isCurrentMonth =
+      meetingMonthStart.getTime() === currentMonthStart.getTime();
 
     const updateFields = {
       $inc: {
@@ -1392,7 +1433,7 @@ const extendMeeting = async (req, res, next) => {
 
     // Atomic deduction across both balances
     await bookingUserModel.findOneAndUpdate(
-      { 
+      {
         _id: meeting.client,
         "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
       },
@@ -1520,10 +1561,16 @@ const updateMeeting = async (req, res, next) => {
       );
     }
 
-    const durationInMs = updatedMeeting.endTime - updatedMeeting.startTime;
-    const durationInHours = durationInMs / (1000 * 60 * 60);
-    const perHourCost = updatedMeeting.bookedRoom.perHourPrice;
-    const amountToBePaid = durationInHours * perHourCost;
+    const { durationInHours, resolvedBaseAmount, resolvedGstAmount } =
+      recalculateAndUpdatePayment({
+        meeting: updatedMeeting,
+        paymentAmount,
+        paymentBaseAmount,
+        paymentGstAmount,
+        discountAmount,
+        paymentMode,
+        paymentStatus,
+      });
 
     // Validate actual amount (optional)
     // if (Number(paymentAmount) !== amountToBePaid) {
@@ -1595,12 +1642,12 @@ const updateMeeting = async (req, res, next) => {
       };
     }
 
-    updatedMeeting.paymentBaseAmount = paymentBaseAmount;
-    updatedMeeting.paymentGstAmount = paymentGstAmount;
-    updatedMeeting.paymentAmount = paymentAmount;
-    updatedMeeting.paymentMode = paymentMode;
-    updatedMeeting.paymentStatus = paymentStatus === "Paid";
-    updatedMeeting.discountAmount = discountAmount ?? 0;
+    // updatedMeeting.paymentBaseAmount = paymentBaseAmount;
+    // updatedMeeting.paymentGstAmount = paymentGstAmount;
+    // updatedMeeting.paymentAmount = paymentAmount;
+    // updatedMeeting.paymentMode = paymentMode;
+    // updatedMeeting.paymentStatus = paymentStatus === "Paid";
+    // updatedMeeting.discountAmount = discountAmount ?? 0;
 
     await updatedMeeting.save();
 
@@ -1616,9 +1663,9 @@ const updateMeeting = async (req, res, next) => {
       unitsOrHours: unitsOrHours || "Hours",
       costPerHour: updatedMeeting.bookedRoom.perHourPrice,
       meetingRoomName: meetingRoomName || updatedMeeting.bookedRoom?.name,
-      taxable: Number(taxable ?? paymentBaseAmount ?? 0),
-      gst: Number(gst ?? paymentGstAmount ?? 0),
-      totalAmount: paymentAmount,
+      taxable: Number(taxable ?? resolvedBaseAmount ?? 0),
+      gst: Number(gst ?? resolvedGstAmount ?? 0),
+      totalAmount: Number(updatedMeeting.paymentAmount || 0),
       paymentDate: updatedMeeting.startDate,
       status: status || resolvedPaymentStatus,
       remarks: paymentMode,
@@ -1977,16 +2024,27 @@ const updateMeetingDetails = async (req, res, next) => {
     const creditPerHour = meeting.bookedRoom.perHourCredit || 0;
 
     //deduction based on minutes
-    const newCreditsUsed = Number(
-      ((durationInMinutes / 60) * creditPerHour).toFixed(2),
-    );
+    const normalizeCredits = (minutes) =>
+      Number(((minutes / 60) * creditPerHour).toFixed(2));
 
-    const oldCreditsUsed = meeting.creditsUsed || 0;
+    // Deduction based on exact minutes (not rounded hours)
+    const newCreditsUsed = normalizeCredits(durationInMinutes);
+
+    // Recompute old credits from previous timings so credit diffs also stay minute-based
+    const oldDurationInMinutes =
+      (new Date(meeting.endTime) - new Date(meeting.startTime)) / (1000 * 60);
+    const oldCreditsUsed =
+      oldDurationInMinutes > 0
+        ? normalizeCredits(oldDurationInMinutes)
+        : meeting.creditsUsed || 0;
+
     const creditDifference = Number(
       (newCreditsUsed - oldCreditsUsed).toFixed(2),
     );
 
-    if (creditDifference !== 0) {
+    const isCreditApplicable = !isExternal;
+
+    if (creditDifference !== 0 && isCreditApplicable) {
       const meetingDate = new Date(meeting.startTime);
       const meetingMonthStart = new Date(
         meetingDate.getFullYear(),
@@ -1996,7 +2054,8 @@ const updateMeetingDetails = async (req, res, next) => {
 
       const now = new Date();
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const isCurrentMonth = meetingMonthStart.getTime() === currentMonthStart.getTime();
+      const isCurrentMonth =
+        meetingMonthStart.getTime() === currentMonthStart.getTime();
 
       const updateFields = {
         $inc: {
@@ -2019,7 +2078,9 @@ const updateMeetingDetails = async (req, res, next) => {
       );
 
       if (!updatedEntity) {
-        return res.status(404).json({ message: "Booking entity or history entry not found" });
+        return res
+          .status(404)
+          .json({ message: "Booking entity or history entry not found" });
       }
     }
 
@@ -2050,14 +2111,19 @@ const updateMeetingDetails = async (req, res, next) => {
     const changes = {
       startTime: startTimeObj,
       endTime: endTimeObj,
-      creditsUsed: externalParticipants ? newCreditsUsed : 0,
+      // creditsUsed: externalParticipants ? newCreditsUsed : 0,
+      creditsUsed: isExternal ? 0 : newCreditsUsed,
       internalParticipants: !isClient ? internalUsers : [],
       clientParticipants: isClient ? internalUsers : [],
       externalParticipants: externalParticipants || [],
-      paymentAmount: externalParticipants ? paymentAmount : 0,
+      paymentAmount: isExternal
+        ? paymentAmount
+          ? paymentAmount
+          : meeting.paymentAmount
+        : 0,
     };
 
-    const updatedMeeting = await Meeting.findByIdAndUpdate(
+    let updatedMeeting = await Meeting.findByIdAndUpdate(
       meetingId,
       { $set: changes },
       { new: true },
@@ -2066,36 +2132,49 @@ const updateMeetingDetails = async (req, res, next) => {
       { path: "externalClient", select: "clientCompany" },
     ]);
 
-    // if (externalParticipants && externalParticipants.length > 0) {
-    //   const meetingRevenue = await MeetingRevenue.findByIdAndUpdate({
-    //     meeting: updatedMeeting._id,
-    //     totalAmount: paymentAmount,
-    //   });
-
-    //   if (!meetingRevenue) {
-    //     return res
-    //       .status(400)
-    //       .json({ message: "Failed to update the meeting revenue" });
-    //   }
-
-    //   const updatedVisitor = await Visitor.findOneAndUpdate(
-    //     {
-    //       clientCompany: updatedMeeting.externalClient.clientCompany,
-    //     },
-    //     {
-    //       meeting: updatedMeeting._id,
-    //     }
-    //   );
-
-    //   if (!updatedVisitor) {
-    //     return res
-    //       .status(400)
-    //       .json({ message: "Failed to update the visitor" });
-    //   }
-    // }
-
     if (!updatedMeeting) {
       return res.status(500).json({ message: "Failed to update meeting" });
+    }
+
+    // if (isExternal) {
+    //   updatedMeeting = await recalculateAndUpdatePayment({
+    //     meeting: updatedMeeting,
+    //     startTime: startTimeObj,
+    //     endTime: endTimeObj,
+    //     company: updatedMeeting.company,
+    //   });
+    // }
+
+    if (isExternal) {
+      const {
+        durationInHours,
+        resolvedBaseAmount,
+        resolvedGstAmount,
+        resolvedPaymentAmount,
+      } = recalculateAndUpdatePayment({
+        meeting: updatedMeeting,
+        paymentAmount,
+      });
+
+      await updatedMeeting.save();
+
+      // 🔥 Update Meeting Revenue (THIS WAS MISSING)
+      await MeetingRevenue.findOneAndUpdate(
+        { meeting: updatedMeeting._id },
+        {
+          $set: {
+            taxable: resolvedBaseAmount,
+            gst: resolvedGstAmount,
+            totalAmount: resolvedPaymentAmount,
+            hoursBooked: durationInHours,
+            costPerHour: updatedMeeting.bookedRoom?.perHourPrice,
+            meetingRoomName: updatedMeeting.bookedRoom?.name,
+            date: updatedMeeting.startDate,
+            paymentDate: updatedMeeting.startDate,
+          },
+        },
+        { upsert: true, new: true },
+      );
     }
 
     if (!isClient && internalParticipants?.length > 0) {

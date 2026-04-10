@@ -46,10 +46,16 @@ const PerformanceDepartmentWiseKraKpa = () => {
     auth?.user?.departments
       ?.map((dept) => dept?._id?.toString())
       .filter(Boolean) || [];
+  const roleTitles =
+    auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+  const isRoleEmployee = roleTitles.some((roleTitle) =>
+    roleTitle?.includes("employee"),
+  );    
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const isEmployeeLevel =
-    !userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) &&
-    !userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value);
+      isRoleEmployee ||
+    (!userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) &&
+      !userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value));
 
   const { isTop } = useTopDepartment({
     additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
@@ -65,73 +71,147 @@ const PerformanceDepartmentWiseKraKpa = () => {
     },
   });
 
-  const { data: kpaTasksRaw = [] } = useQuery({
-    queryKey: ["departmentWiseKpaTasks"],
-    queryFn: async () => {
-      const response = await axios.get("/api/performance/get-kpa-tasks");
-      return response.data || [];
-    },
-  });
+  const getCalendarMonthFromDate = (dateValue) => {
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleString("en-US", { month: "long" });
+  };
+
+  const isSameSelectedMonth = (dateValue) => {
+    const taskMonth = getCalendarMonthFromDate(dateValue);
+    return taskMonth?.toLowerCase() === selectedMonth.toLowerCase();
+  };
 
   const currentMonthIndex = fiscalMonths.findIndex(
     (month) => month.toLowerCase() === selectedMonth.toLowerCase(),
   );
 
-  // const getDepartmentKraTotal = (departmentData) =>
-  //     (departmentData?.dailyKRA || 0) +
-  //     (departmentData?.individualDailyKRA || 0) +
-  //     (departmentData?.teamDailyKRA || 0);
+  // // const getDepartmentKraTotal = (departmentData) =>
+  // //     (departmentData?.dailyKRA || 0) +
+  // //     (departmentData?.individualDailyKRA || 0) +
+  // //     (departmentData?.teamDailyKRA || 0);
 
-  const getDepartmentKpaTotal = (departmentData) =>
-    (departmentData?.monthlyKPA || 0) +
-    (departmentData?.individualMonthlyKPA || 0) +
-    (departmentData?.teamMonthlyKPA || 0);
+  // const getDepartmentKpaTotal = (departmentData) =>
+  //   (departmentData?.monthlyKPA || 0) +
+  //   (departmentData?.individualMonthlyKPA || 0) +
+  //   (departmentData?.teamMonthlyKPA || 0);
 
   const visibleDepartments = fetchedDepartments.filter((item) => {
     if (isTop) return true;
     return userDepartmentIds.includes(item?.department?._id?.toString());
   });
 
-  const completedKpaByDepartment = useMemo(() => {
-    const completedMap = {};
-    const visibleDepartmentNames = new Set(
-      visibleDepartments.map((item) => item?.department?.name).filter(Boolean),
-    );
+  const visibleDepartmentIds = visibleDepartments
+    .map((item) => item?.department?._id?.toString())
+    .filter(Boolean)
+    .sort();
 
-    kpaTasksRaw.forEach((departmentTasks) => {
-      if (!visibleDepartmentNames.has(departmentTasks?.department)) return;
+  const { data: departmentWiseDepartmentKpaStats = [] } = useQuery({
+    queryKey: [
+      "departmentWiseDepartmentKpaStats",
+      selectedMonth,
+      visibleDepartmentIds,
+    ],
+    enabled: visibleDepartmentIds.length > 0,
+    queryFn: async () => {
+      const departmentStats = await Promise.all(
+        visibleDepartments.map(async (item) => {
+          const departmentId = item?.department?._id;
+          const departmentName = item?.department?.name;
+          if (!departmentId || !departmentName) return null;
 
-      const completedCount = (departmentTasks?.tasks || []).filter((task) => {
-        const assignedDate = new Date(task?.assignedDate);
-        if (Number.isNaN(assignedDate.getTime())) return false;
+          const [assignedResponse, completedResponse, individualAssignedResponse] =
+            await Promise.allSettled([
+              axios.get(
+                `/api/performance/get-tasks?dept=${departmentId}&type=KPA&duration=Monthly`,
+              ),
+              axios.get(
+                `/api/performance/get-completed-tasks?dept=${departmentId}&type=KPA`,
+              ),
+              axios.get(
+                `/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKPA&duration=Monthly`,
+              ),
+            ]);
 
-        const taskFiscalMonth =
-          fiscalMonths[(assignedDate.getMonth() + 9) % 12];
-        return (
-          taskFiscalMonth.toLowerCase() === selectedMonth.toLowerCase() &&
-          task.status === "Completed"
-        );
-      }).length;
+          const assignedTasks =
+            assignedResponse?.status === "fulfilled"
+              ? assignedResponse.value?.data || []
+              : [];
+          const completedTasks =
+            completedResponse?.status === "fulfilled"
+              ? completedResponse.value?.data || []
+              : [];
+          const individualAssignedTasks =
+            individualAssignedResponse?.status === "fulfilled"
+              ? individualAssignedResponse.value?.data || []
+              : [];
 
-      completedMap[departmentTasks.department] = completedCount;
-    });
+          const monthlyAssignedCount = assignedTasks.filter((task) =>
+            isSameSelectedMonth(task?.assignedDate),
+          ).length;
+          const monthlyCompletedCount = completedTasks.filter((task) =>
+            isSameSelectedMonth(task?.completionDate),
+          ).length;
+          const monthlyPendingCount = assignedTasks.filter(
+            (task) =>
+              isSameSelectedMonth(task?.assignedDate) &&
+              task?.status !== "Completed",
+          ).length;
+          const individualMonthlyPendingCount = individualAssignedTasks.filter(
+            (task) =>
+              isSameSelectedMonth(task?.assignedDate) &&
+              task?.status !== "Completed",
+          ).length;
 
-    return completedMap;
-  }, [kpaTasksRaw, selectedMonth, visibleDepartments]);
+          return {
+            departmentId: departmentId?.toString(),
+            departmentName,
+            monthlyAssignedCount,
+            monthlyCompletedCount,
+            monthlyPendingCount,
+            individualMonthlyPendingCount,
+          };
+        }),
+      );
+
+      return departmentStats.filter(Boolean);
+    },
+  });
+
+  const departmentMonthlyStatsById = useMemo(
+    () =>
+      departmentWiseDepartmentKpaStats.reduce((acc, item) => {
+        acc[item.departmentId] = item;
+        return acc;
+      }, {}),
+    [departmentWiseDepartmentKpaStats],
+  );
+
+  const completedKpaByDepartment = useMemo(
+    () =>
+      departmentWiseDepartmentKpaStats.reduce((acc, item) => {
+        acc[item.departmentName] = item.monthlyCompletedCount || 0;
+        return acc;
+      }, {}),
+    [departmentWiseDepartmentKpaStats],
+  );
 
   const pendingKpaByDepartment = useMemo(
     () =>
-      visibleDepartments.reduce((acc, item) => {
-        const assignedCount = getDepartmentKpaTotal(item);
-        const completedCount =
-          completedKpaByDepartment[item.department?.name] || 0;
-        acc[item.department?.name] = Math.max(
-          assignedCount - completedCount,
-          0,
-        );
+      departmentWiseDepartmentKpaStats.reduce((acc, item) => {
+        acc[item.departmentName] = item.monthlyPendingCount || 0;
         return acc;
       }, {}),
-    [completedKpaByDepartment, visibleDepartments],
+    [departmentWiseDepartmentKpaStats],
+  );
+
+  const totalKpaByDepartment = useMemo(
+    () =>
+      departmentWiseDepartmentKpaStats.reduce((acc, item) => {
+        acc[item.departmentName] = item.monthlyAssignedCount || 0;
+        return acc;
+      }, {}),
+    [departmentWiseDepartmentKpaStats],
   );
 
   const totalCompletedKpa = Object.values(completedKpaByDepartment).reduce(
@@ -147,17 +227,17 @@ const PerformanceDepartmentWiseKraKpa = () => {
     {
       name: "Completed KPA",
       group: `KPA - ${selectedMonth}`,
-      data: visibleDepartments.map((item) => ({
-        x: item.department?.name,
-        y: completedKpaByDepartment[item.department?.name] || 0,
+      data: departmentWiseDepartmentKpaStats.map((item) => ({
+        x: item.departmentName,
+        y: completedKpaByDepartment[item.departmentName] || 0,
       })),
     },
     {
       name: "Pending KPA",
       group: `KPA - ${selectedMonth}`,
-      data: visibleDepartments.map((item) => ({
-        x: item.department?.name,
-        y: pendingKpaByDepartment[item.department?.name] || 0,
+      data: departmentWiseDepartmentKpaStats.map((item) => ({
+        x: item.departmentName,
+        y: pendingKpaByDepartment[item.departmentName] || 0,
       })),
     },
   ];
@@ -184,7 +264,8 @@ const PerformanceDepartmentWiseKraKpa = () => {
               setSelectedDepartmentName(departmentData.department?.name),
             );
             navigate(
-               `/app/performance/overall-department-kpa/member-wise-kra-kpa/${departmentData.department?.name}`,
+               `/app/performance/department-wise/overall-department-kpa/member-wise-kpa`,
+              // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${departmentData.department?.name}`,
               { state: { month: selectedMonth } },
             );
           }
@@ -198,7 +279,9 @@ const PerformanceDepartmentWiseKraKpa = () => {
     stroke: { show: true, width: 1, colors: ["#fff"] },
     xaxis: {
       title: { text: "Departments" },
-      categories: visibleDepartments.map((item) => item.department?.name),
+       categories: departmentWiseDepartmentKpaStats.map(
+        (item) => item.departmentName,
+      ),
     },
    yaxis: {
             title: { text: "Count" },
@@ -245,7 +328,8 @@ tooltip: {
             dispatch(setSelectedDepartment(params.data.mongoId));
             dispatch(setSelectedDepartmentName(params.data.department));
             navigate(
-               `/app/performance/overall-department-kpa/member-wise-kra-kpa/${params.value}`,
+                 `/app/performance/department-wise/overall-department-kpa/member-wise-kpa`,
+              // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${params.value}`,
               { state: { month: selectedMonth } },
             );
           }}
@@ -259,7 +343,7 @@ tooltip: {
     {
       headerName: "Department Monthly KPA",
       field: "monthlyKpa",
-      hide: isEmployeeLevel,
+     // hide: isEmployeeLevel,
       width: 300,
     },
     // { headerName: "Individual Daily KRA", field: "individualDailyKra" },
@@ -272,10 +356,16 @@ tooltip: {
     {
       headerName: "Team Monthly KPA",
       field: "teamMonthlyKpa",
-      hide: isEmployeeLevel,
+     // hide: isEmployeeLevel,
     },
   ];
-
+  const visibleDepartmentColumns = departmentColumns.filter((column) => {
+    if (!isEmployeeLevel) return true;
+    return (
+      column.field !== "monthlyKpa" &&
+      column.field !== "teamMonthlyKpa"
+    );
+  });
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
@@ -327,17 +417,19 @@ tooltip: {
       <PageFrame>
         <WidgetSection layout={1} padding>
           <AgTable
-            data={visibleDepartments.map((item, index) => ({
+              data={visibleDepartments.map((item, index) => ({
               srNo: index + 1,
               mongoId: item.department?._id,
               department: item.department?.name,
-              dailyKra: item.dailyKRA,
-              monthlyKpa: item.monthlyKPA,
-              individualDailyKra: item.individualDailyKRA,
-              individualMonthlyKpa: item.individualMonthlyKPA,
-              teamDailyKra: item.teamDailyKRA,
+              monthlyKpa:
+                departmentMonthlyStatsById[item.department?._id?.toString()]
+                  ?.monthlyPendingCount || 0,
+              individualMonthlyKpa:
+                departmentMonthlyStatsById[item.department?._id?.toString()]
+                  ?.individualMonthlyPendingCount || 0,
+              
               teamMonthlyKpa: item.teamMonthlyKPA,
-              annualKpa: item.annualKPA,
+              //annualKpa: item.annualKPA,
             }))}
             columns={departmentColumns}
             tableTitle="DEPARTMENT-WISE PENDING KPA"

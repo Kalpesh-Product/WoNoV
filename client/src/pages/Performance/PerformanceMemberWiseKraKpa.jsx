@@ -382,7 +382,16 @@ const PerformanceMemberWiseKraKpa = () => {
                         firstTab = "individual-Daily-KRA";
                     }
 
-                    navigate(`/app/performance/${targetDepartmentName}/${firstTab}`);
+                     const overallSegment = location.pathname.includes("/overall-department-kra/")
+                        ? "overall-department-kra"
+                        : "overall-department-kpa";
+                    const memberWiseSegment = location.pathname.includes("/member-wise-kra")
+                        ? "member-wise-kra"
+                        : "member-wise-kpa";
+
+                    navigate(
+                        `/app/performance/department-wise/${overallSegment}/${memberWiseSegment}/${firstTab}`
+                    );
                 };
 
                 return (
