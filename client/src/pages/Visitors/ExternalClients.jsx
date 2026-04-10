@@ -61,6 +61,18 @@ const ExternalClients = () => {
       }
     },
   });
+const { data: unitsData = [] } = useQuery({
+    queryKey: ["unitsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/company/fetch-units");
+        return response.data || [];
+      } catch (error) {
+        console.error("Error fetching units data:", error);
+        return [];
+      }
+    },
+  });
 
 
   const { handleSubmit, reset, control, setValue } = useForm({
@@ -214,7 +226,48 @@ const ExternalClients = () => {
     return ["paid", "completed"].includes(String(status).toLowerCase());
   };
 
+ const getBuildingName = (visitor) => {
+    if (!visitor) return "N/A";
+    if (visitor?.building?.buildingName) return visitor.building.buildingName;
+    if (visitor?.location?.buildingName) return visitor.location.buildingName;
+    if (visitor?.location?.building?.buildingName) {
+      return visitor.location.building.buildingName;
+    }
+    if (visitor?.unit?.building?.buildingName) {
+      return visitor.unit.building.buildingName;
+    }
+    if (typeof visitor?.building === "string") {
+      const matchedBuilding = auth?.user?.company?.workLocations?.find(
+        (loc) => loc?._id === visitor.building,
+      );
+      return matchedBuilding?.buildingName || "N/A";
+    }
+    if (typeof visitor?.location === "string") {
+      const matchedLocation = auth?.user?.company?.workLocations?.find(
+        (loc) => loc?._id === visitor.location,
+      );
+      return matchedLocation?.buildingName || "N/A";
+    }
+    return "N/A";
+  };
 
+  const getUnitName = (visitor) => {
+    if (!visitor) return "N/A";
+    if (visitor?.unit?.unitNo) return visitor.unit.unitNo;
+    if (visitor?.unitNo) return visitor.unitNo;
+    if (typeof visitor?.unit === "string") {
+      const matchedUnit = unitsData?.find(
+        (unit) => unit?._id === visitor.unit || unit?.unit?._id === visitor.unit,
+      );
+      return (
+        matchedUnit?.unitNo
+        || matchedUnit?.unit?.unitNo
+        || matchedUnit?.name
+        || "N/A"
+      );
+    }
+    return "N/A";
+  };
   const visitorsColumns = [
     { field: "srNo", headerName: "Sr No", sort: "desc" },
     // { field: "firstName", headerName: "First Name" },
@@ -470,6 +523,8 @@ const ExternalClients = () => {
                 dateOfVisit: item.dateOfVisit,
                 email: item.email,
                 purposeOfVisit: item.purposeOfVisit,
+                 buildingName: getBuildingName(item),
+                unitName: getUnitName(item),
                 toMeet: !item?.toMeet
                   ? null
                   : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
@@ -648,6 +703,19 @@ const ExternalClients = () => {
                     title="Purpose of Visit"
                     detail={selectedVisitor.purposeOfVisit}
                   />
+                )}
+
+                 {!isEditing && (
+                  <>
+                    <DetalisFormatted
+                      title="Building"
+                      detail={selectedVisitor.buildingName || "N/A"}
+                    />
+                    <DetalisFormatted
+                      title="Unit"
+                      detail={selectedVisitor.unitName || "N/A"}
+                    />
+                  </>
                 )}
 
                 {!isEditing && (

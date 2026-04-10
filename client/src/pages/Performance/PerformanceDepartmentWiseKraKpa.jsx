@@ -264,7 +264,8 @@ const PerformanceDepartmentWiseKraKpa = () => {
               setSelectedDepartmentName(departmentData.department?.name),
             );
             navigate(
-               `/app/performance/overall-department-kpa/member-wise-kra-kpa/${departmentData.department?.name}`,
+               `/app/performance/department-wise/overall-department-kpa/member-wise-kpa`,
+              // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${departmentData.department?.name}`,
               { state: { month: selectedMonth } },
             );
           }
@@ -327,7 +328,8 @@ tooltip: {
             dispatch(setSelectedDepartment(params.data.mongoId));
             dispatch(setSelectedDepartmentName(params.data.department));
             navigate(
-               `/app/performance/overall-department-kpa/member-wise-kra-kpa/${params.value}`,
+                 `/app/performance/department-wise/overall-department-kpa/member-wise-kpa`,
+              // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${params.value}`,
               { state: { month: selectedMonth } },
             );
           }}

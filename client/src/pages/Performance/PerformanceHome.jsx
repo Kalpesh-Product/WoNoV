@@ -29,6 +29,15 @@ const FISCAL_MONTHS = [
 
 const PIE_COLORS = ["#54C4A7", "#EB5C45"];
 const toCount = (value) => Number(value) || 0;
+const toLocalIsoDate = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 const getCurrentDateInfo = () => {
   const now = new Date();
@@ -37,7 +46,7 @@ const getCurrentDateInfo = () => {
     month: now.getMonth(),
     monthName: now.toLocaleString("en-US", { month: "long" }),
     year: now.getFullYear(),
-    dateKey: now.toISOString().slice(0, 10),
+    dateKey: toLocalIsoDate(now),
     dateLabel: now.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -45,7 +54,6 @@ const getCurrentDateInfo = () => {
     }),
   };
 };
-
 
 const PerformanceHome = () => {
   const axios = useAxiosPrivate();
@@ -104,44 +112,53 @@ const PerformanceHome = () => {
   });
 
 
-  const { data: completedKraByDepartment = {} } = useQuery({
+  const { data: departmentDailyKraStats = [] } = useQuery({
     queryKey: [
-      "performanceCompletedKraByDepartment",
+      "performanceDepartmentDailyKraStats",
       fetchedDepartments.map((item) => item?.department?._id).filter(Boolean),
-       currentDateInfo.dateKey,
+      currentDateInfo.dateKey,
     ],
     enabled: fetchedDepartments.length > 0,
-     refetchInterval: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
     queryFn: async () => {
       const departmentIds = fetchedDepartments
         .map((item) => item?.department?._id)
         .filter(Boolean);
 
-      const completedByDeptEntries = await Promise.all(
+      return Promise.all(
         departmentIds.map(async (departmentId) => {
-           const kraRes = await axios.get("/api/performance/get-completed-tasks", {
-            params: {
-              dept: departmentId,
-              type: "KRA",
-            },
-          });
+          const [pendingRes, completedRes] = await Promise.all([
+            axios.get("/api/performance/get-tasks", {
+              params: {
+                dept: departmentId,
+                type: "KRA",
+              },
+            }),
+            axios.get("/api/performance/get-completed-tasks", {
+              params: {
+                dept: departmentId,
+                type: "KRA",
+              },
+            }),
+          ]);
 
-          const completedCount = (kraRes.data || []).filter((task) => {
-            const assignedDate = new Date(task?.assignedDate);
-            if (Number.isNaN(assignedDate.getTime())) return false;
+          const todayPendingTasks = (pendingRes.data || []).filter(
+            (task) => toLocalIsoDate(task?.assignedDate) === currentDateInfo.dateKey,
+          );
+          const todayCompletedTasks = (completedRes.data || []).filter(
+            (task) => toLocalIsoDate(task?.assignedDate) === currentDateInfo.dateKey,
+          );
+          const pending = todayPendingTasks.length;
+          const completed = todayCompletedTasks.length;
+          const assigned = pending + completed;
 
-            return (
-              assignedDate.getDate() === currentDateInfo.day &&
-              assignedDate.getMonth() === currentDateInfo.month &&
-              assignedDate.getFullYear() === currentDateInfo.year
-            );
-          }).length;
-
-          return [departmentId, completedCount];
+          return {
+            assigned,
+            completed,
+            pending,
+          };
         })
       );
-
-      return Object.fromEntries(completedByDeptEntries);
     },
   });
 
@@ -361,24 +378,20 @@ const PerformanceHome = () => {
   }, [kpaTasksRaw, currentDateInfo]);
 
   const kraPieData = useMemo(() => {
-    const completed = fetchedDepartments.reduce(
-      (acc, dept) =>
-        acc + toCount(completedKraByDepartment[dept?.department?._id]),
+    const completed = departmentDailyKraStats.reduce(
+      (acc, departmentStats) => acc + toCount(departmentStats?.completed),
       0
     );
-    const assigned = fetchedDepartments.reduce(
-      (acc, dept) =>
-        acc +
-        toCount(dept.dailyKRA),
+    const pending = departmentDailyKraStats.reduce(
+      (acc, departmentStats) => acc + toCount(departmentStats?.pending),
       0
     );
-    const pending = Math.max(assigned - completed, 0);
 
     return [
       { label: "Completed KRA", value: completed },
       { label: "Pending KRA", value: pending },
     ];
-  }, [fetchedDepartments, completedKraByDepartment]);
+  }, [departmentDailyKraStats]);
 
   const pieOptions = (labels) => ({
     chart: {

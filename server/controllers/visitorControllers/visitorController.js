@@ -179,11 +179,35 @@ const addVisitor = async (req, res, next) => {
 
     // === Validations ===
 
-    if (
-      building &&
-      !["Sunteck Kanaka", "Dempo Trade Centre"].includes(building)
-    ) {
-      return res.status(400).json({ message: "Invalid building provided" });
+    // if (
+    //   building &&
+    //   !["Sunteck Kanaka", "Dempo Trade Centre"].includes(building)
+    // ) {
+    //   return res.status(400).json({ message: "Invalid building provided" });
+
+     let resolvedBuilding = null;
+    if (building) {
+      if (mongoose.Types.ObjectId.isValid(building)) {
+        resolvedBuilding = await Building.findOne({ _id: building, company })
+          .select("_id buildingName")
+          .lean();
+      } else {
+        resolvedBuilding = await Building.findOne({ buildingName: building, company })
+          .select("_id buildingName")
+          .lean();
+      }
+
+      if (!resolvedBuilding) {
+        return res.status(400).json({ message: "Invalid building provided" });
+      }
+
+      if (
+        !["Sunteck Kanaka", "Dempo Trade Centre"].includes(
+          resolvedBuilding.buildingName,
+        )
+      ) {
+        return res.status(400).json({ message: "Invalid building provided" });
+      }
     }
 
     if (isNaN(clockIn.getTime())) {
@@ -365,7 +389,9 @@ const addVisitor = async (req, res, next) => {
       !department ||
       (typeof department === "string" && department.trim() === "");
 
-    const fullDayPassAmount = building === "STC" ? 850 : 750;
+    // const fullDayPassAmount = building === "STC" ? 850 : 750;
+    const fullDayPassAmount =
+      resolvedBuilding?.buildingName === "Sunteck Kanaka" ? 850 : 750;
     const halfDayPassAmount = 500;
 
     const amount =
@@ -402,6 +428,8 @@ const addVisitor = async (req, res, next) => {
       brandName,
       gstNumber,
       panNumber,
+       building: resolvedBuilding?._id || null,
+      unit: unit || null,
       checkedInBy: user,
       amount,
       gstAmount: amount * (18 / 100),

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AgTable from "../../components/AgTable";
 import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
@@ -55,7 +55,7 @@ const PerformanceMemberWiseKra = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  //const location = useLocation();
+  const location = useLocation();
   const { department } = useParams();
   const { auth } = useAuth();
 
@@ -321,7 +321,16 @@ const PerformanceMemberWiseKra = () => {
             firstTab = "team-Daily-KRA";
           }
 
-          navigate(`/app/performance/${targetDepartmentName}/${firstTab}`);
+            const overallSegment = location.pathname.includes("/overall-department-kra/")
+            ? "overall-department-kra"
+            : "overall-department-kpa";
+          const memberWiseSegment = location.pathname.includes("/member-wise-kra")
+            ? "member-wise-kra"
+            : "member-wise-kpa";
+
+          navigate(
+            `/app/performance/department-wise/${overallSegment}/${memberWiseSegment}/${firstTab}`
+          );
         };
 
         return (

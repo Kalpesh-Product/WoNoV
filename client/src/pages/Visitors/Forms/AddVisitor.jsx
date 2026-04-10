@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { TextField, MenuItem, CircularProgress } from "@mui/material";
+import {
+  TextField,
+  MenuItem,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+} from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import {
@@ -54,6 +61,8 @@ const AddVisitor = () => {
       checkOut: null,
       checkOutBy: "",
       toMeet: "",
+      location: "",
+      unit: "",
       department: "",
       clientToMeet: "",
       toMeetCompany: "",
@@ -70,6 +79,7 @@ const AddVisitor = () => {
   const selectedCompany = watch("toMeetCompany");
   const selectedIdType = watch("idProof.idType");
   const visitorType = watch("visitorType");
+  const watchLocation = watch("location");
 
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const axios = useAxiosPrivate();
@@ -114,6 +124,19 @@ const AddVisitor = () => {
       enabled: !!selectedCompany, // <-- Runs only if selectedCompany has a truthy value
     });
 
+
+      const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
+    queryKey: ["unitsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/company/fetch-units");
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching units data:", error);
+        return [];
+      }
+    },
+  });
   //---------------------------------------Data processing----------------------------------------------------//
   const departmentMap = new Map();
   employees.forEach((employee) => {
@@ -162,6 +185,7 @@ const AddVisitor = () => {
     const payload = {
       ...data,
       visitorFlag: "Visitor",
+        building: data.location || null,
       department: isBiznest
         ? data.department === "na"
           ? null
@@ -367,7 +391,65 @@ const AddVisitor = () => {
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">To Meet</span>
               </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                 <Controller
+                  name="location"
+                  control={control}
+                  rules={{ required: "Location is required" }}
+                  render={({ field }) => (
+                    <FormControl size="small" fullWidth>
+                      <InputLabel>Location</InputLabel>
+                      <Select {...field} label="Work Location">
+                        <MenuItem value="">Select Location</MenuItem>
+                        {auth.user.company.workLocations.length > 0 ? (
+                          auth.user.company.workLocations.map((loc) => (
+                            <MenuItem key={loc._id} value={loc._id}>
+                              {loc.buildingName}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <MenuItem disabled>No Locations Available</MenuItem>
+                        )}
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+
+                <Controller
+                  name="unit"
+                  control={control}
+                  rules={{ required: "Unit is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      size="small"
+                      label="Select Unit"
+                      placeholder="ST 701 A"
+                    >
+                      <MenuItem value="" disabled>
+                        Select Unit
+                      </MenuItem>
+                      {isUnitsPending ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={20} />
+                        </MenuItem>
+                      ) : (
+                        unitsData
+                          .filter((item) => item.building?._id === watchLocation)
+                          .map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.unitNo}
+                            </MenuItem>
+                          ))
+                      )}
+                    </TextField>
+                  )}
+                />
+                </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 p-4 ">
+                
                 <Controller
                   name="toMeetCompany"
                   control={control}
@@ -493,6 +575,7 @@ const AddVisitor = () => {
                   }}
                 />
               </div>
+              
 
               <div>
                 <div className="py-4 border-b-default border-borderGray">
