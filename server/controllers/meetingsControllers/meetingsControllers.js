@@ -66,6 +66,9 @@ const recalculateAndUpdatePayment = ({
   };
 };
 
+const getMonthStartUTC = (date) =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+
 const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
   const logAction = "Book Meeting";
@@ -283,15 +286,16 @@ const addMeetings = async (req, res, next) => {
       const BookingModel = isClient ? CoworkingClient : Company;
 
       const meetingDate = new Date(startTime);
-      const meetingMonthStart = new Date(
-        meetingDate.getFullYear(),
-        meetingDate.getMonth(),
-        1,
-      );
+      const meetingMonthStart = getMonthStartUTC(meetingDate);
+      // const meetingMonthStart = new Date(
+      //   meetingDate.getFullYear(),
+      //   meetingDate.getMonth(),
+      //   1,
+      // );
 
       const now = new Date();
-      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
+      // const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentMonthStart = getMonthStartUTC(now);
       const isCurrentMonth =
         meetingMonthStart.getTime() === currentMonthStart.getTime();
 
@@ -1198,18 +1202,20 @@ const cancelMeeting = async (req, res, next) => {
 
       if (meetingToCancel.client && creditsToRefund > 0) {
         const meetingDate = new Date(meetingToCancel.startTime || new Date());
-        const meetingMonthStart = new Date(
-          meetingDate.getFullYear(),
-          meetingDate.getMonth(),
-          1,
-        );
+        // const meetingMonthStart = new Date(
+        //   meetingDate.getFullYear(),
+        //   meetingDate.getMonth(),
+        //   1,
+        // );
+        const meetingMonthStart = getMonthStartUTC(meetingDate);
 
         const now = new Date();
-        const currentMonthStart = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          1,
-        );
+        // const currentMonthStart = new Date(
+        //   now.getFullYear(),
+        //   now.getMonth(),
+        //   1,
+        // );
+        const currentMonthStart = getMonthStartUTC(now);
         const isCurrentMonth =
           meetingMonthStart.getTime() === currentMonthStart.getTime();
 
@@ -1409,14 +1415,16 @@ const extendMeeting = async (req, res, next) => {
     }
 
     const meetingDate = new Date(meeting.startTime);
-    const meetingMonthStart = new Date(
-      meetingDate.getFullYear(),
-      meetingDate.getMonth(),
-      1,
-    );
+    // const meetingMonthStart = new Date(
+    //   meetingDate.getFullYear(),
+    //   meetingDate.getMonth(),
+    //   1,
+    // );
+    const meetingMonthStart = getMonthStartUTC(meetingDate);
 
     const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    // const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthStart = getMonthStartUTC(now);
     const isCurrentMonth =
       meetingMonthStart.getTime() === currentMonthStart.getTime();
 
@@ -2046,14 +2054,16 @@ const updateMeetingDetails = async (req, res, next) => {
 
     if (creditDifference !== 0 && isCreditApplicable) {
       const meetingDate = new Date(meeting.startTime);
-      const meetingMonthStart = new Date(
-        meetingDate.getFullYear(),
-        meetingDate.getMonth(),
-        1,
-      );
+      // const meetingMonthStart = new Date(
+      //   meetingDate.getFullYear(),
+      //   meetingDate.getMonth(),
+      //   1,
+      // );
+      const meetingMonthStart = getMonthStartUTC(meetingDate);
 
       const now = new Date();
-      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      // const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentMonthStart = getMonthStartUTC(now);
       const isCurrentMonth =
         meetingMonthStart.getTime() === currentMonthStart.getTime();
 
@@ -2068,6 +2078,8 @@ const updateMeetingDetails = async (req, res, next) => {
         updateFields.$inc.meetingCreditBalance = -creditDifference;
       }
 
+      console.log("bookedClientId", bookedClientId);
+      console.log("updateFields", updateFields);
       const updatedEntity = await BookingCompanyModel.findOneAndUpdate(
         {
           _id: bookedClientId,
