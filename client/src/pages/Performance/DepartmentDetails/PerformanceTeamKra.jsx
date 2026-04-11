@@ -30,6 +30,10 @@ const PerformanceTeamKra = () => {
     const { department } = useParams();
     const [openModal, setOpenModal] = useState(false);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
+     const departmentName =
+        department ||
+        auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+        "Department";
     const userId = auth.user._id;
 
     const restrictedRoles = [
@@ -264,7 +268,8 @@ const PerformanceTeamKra = () => {
                                 buttonTitle={"Add Team KRA"}
                                 buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
-                                tableTitle={`${department} TEAM - DAILY KRA`}
+                               // tableTitle={`${department} TEAM - DAILY KRA`}
+                                tableTitle={`${departmentName} TEAM - DAILY KRA`}
                                 data={(teamKra || [])
                                     .filter((item) => item.status !== "Completed")
                                     .map((item, index) => ({

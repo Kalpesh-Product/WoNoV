@@ -37,6 +37,11 @@ const PerformanceIndividualKpa = () => {
     const [openModal, setOpenModal] = useState(false);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
 
+    const departmentName =
+        department ||
+        auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+        "Department";
+
     const restrictedRoles = [
         "IT Employee",
         "Admin Employee",
@@ -376,7 +381,7 @@ const PerformanceIndividualKpa = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 checkbox={showCheckBox}
-                                tableTitle={`${department} INDIVIDUAL - MONTHLY KPA`}
+                                tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
                                 buttonTitle={"Add Monthly KPA"}
                                 buttonDisabled={isAddKpaDisabled}
                                 handleSubmit={() => setOpenModal(true)}
