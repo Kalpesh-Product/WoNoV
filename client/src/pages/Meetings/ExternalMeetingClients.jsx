@@ -226,7 +226,8 @@ const ExternalMeetingCLients = () => {
 
   //Fetch Single Room
   const { data: room = {}, isLoading: isRoomLoading } = useQuery({
-    queryKey: ["room"],
+    queryKey: ["room", paymentMeeting?.roomName],
+    // queryKey: ["room"],
     queryFn: async () => {
       const response = await axios.get(
         `/api/meetings/get-room/${paymentMeeting.roomName}`,
@@ -461,6 +462,17 @@ const ExternalMeetingCLients = () => {
 
   const handleOpenPaymentModal = (meeting) => {
     setPaymentMeeting(meeting);
+     resetPaymentForm({
+      amount: "",
+      paymentType: meeting?.paymentMode || "",
+      paymentStatus: meeting?.paymentStatus || "",
+      transactionId: "",
+      paymentProof: "",
+      discountAmount: meeting?.paymnetDiscountAmount || 0,
+      discountPercentage: "",
+      gstAmount: "",
+      finalAmount: "",
+    });
     setOpenPaymentModal(true); // open the modal
   };
 
@@ -550,7 +562,7 @@ const ExternalMeetingCLients = () => {
       setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
 
-  }, [room, isRoomLoading, setPaymentValue]);
+   }, [room, isRoomLoading, paymentMeeting, setPaymentValue]);
 
   useEffect(() => {
     if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
@@ -567,12 +579,7 @@ const ExternalMeetingCLients = () => {
       setPaymentValue("gstAmount", paymentDetails.gstAmount);
       setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
-  }, [watchedDiscountAmount, room, isRoomLoading]);
-
-  useEffect(() => {
-    console.log("payment", paymentMeeting);
-  }, [paymentMeeting]);
-
+   }, [watchedDiscountAmount, room, isRoomLoading, paymentMeeting, setPaymentValue]);
   //---------------------------------Event handlers----------------------------------------//
 
   const columns = [
