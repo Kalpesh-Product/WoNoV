@@ -392,15 +392,22 @@ const AddVisitor = () => {
                 <span className="text-subtitle font-pmedium">To Meet</span>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                 <Controller
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4">
+                <Controller
                   name="location"
                   control={control}
                   rules={{ required: "Location is required" }}
                   render={({ field }) => (
-                    <FormControl size="small" fullWidth>
-                      <InputLabel>Location</InputLabel>
-                      <Select {...field} label="Work Location">
+                     <TextField
+                      {...field}
+                      size="small"
+                      select
+                      fullWidth
+                      label={"Location"}
+                      error={!!errors.location}
+                      helperText={errors.location?.message}
+                      className="md:col-span-3"
+                    >
                         <MenuItem value="">Select Location</MenuItem>
                         {auth.user.company.workLocations.length > 0 ? (
                           auth.user.company.workLocations.map((loc) => (
@@ -411,8 +418,7 @@ const AddVisitor = () => {
                         ) : (
                           <MenuItem disabled>No Locations Available</MenuItem>
                         )}
-                      </Select>
-                    </FormControl>
+                      </TextField>
                   )}
                 />
 
@@ -425,10 +431,14 @@ const AddVisitor = () => {
                       {...field}
                       select
                       size="small"
+                                           fullWidth
                       label="Select Unit"
-                      placeholder="ST 701 A"
+                      disabled={!watchLocation}
+                      error={!!errors.unit}
+                      helperText={errors.unit?.message}
+                      className="md:col-span-3"
                     >
-                      <MenuItem value="" disabled>
+                      <MenuItem value="">
                         Select Unit
                       </MenuItem>
                       {isUnitsPending ? (
@@ -447,8 +457,8 @@ const AddVisitor = () => {
                     </TextField>
                   )}
                 />
-                </div>
-              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 p-4 ">
+                {/* </div>
+              <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-2 p-2 "> */}
                 
                 <Controller
                   name="toMeetCompany"
@@ -464,6 +474,7 @@ const AddVisitor = () => {
                         setSelectedDepartment("");
                       }}
                       select
+                        className="md:col-span-2"
                     >
                       <MenuItem value="" disabled>
                         Select Company
@@ -497,6 +508,7 @@ const AddVisitor = () => {
                       size="small"
                       label={"Select Department"}
                       fullWidth
+                        className="md:col-span-2"
                       disabled={selectedCompany !== "6799f0cd6a01edbe1bc3fcea"}
                       onChange={(e) => {
                         field.onChange(e);
@@ -537,6 +549,7 @@ const AddVisitor = () => {
                         select
                         size="small"
                         fullWidth
+                        className="md:col-span-2"
                         disabled={
                           (!showClientMembers && !showBiznestEmployees) ||
                           (isBiznest && selectedDepartment === "na")

@@ -431,6 +431,7 @@ const getAllDeptTickets = async (req, res, next) => {
           totalTickets: 0,
           openTickets: 0,
           closedTickets: 0,
+          rejectedTickets: 0,
         });
       }
 
@@ -438,6 +439,7 @@ const getAllDeptTickets = async (req, res, next) => {
       department.totalTickets++;
       if (ticket.status === "Open") department.openTickets++;
       if (ticket.status === "Closed") department.closedTickets++;
+      if (ticket.status === "Rejected") department.rejectedTickets++;
     });
 
     const result = Array.from(departmentMap.values());

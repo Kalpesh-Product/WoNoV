@@ -34,6 +34,7 @@ const createTasks = async (req, res, next) => {
       endDate: dueDate,
       startDate: assignedDate,
       location,
+      assignTo,
     } = req.body;
 
     if (
@@ -159,6 +160,18 @@ const createTasks = async (req, res, next) => {
     //     );
     //   }
     // }
+    let existingUsers = [];
+    if (assignTo) {
+      existingUsers = await validateUsers([assignTo]);
+      if (existingUsers.length !== 1) {
+        throw new CustomError(
+          "Assignee is invalid or does not exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
 
     const newTask = new Task({
       taskName,
@@ -167,7 +180,7 @@ const createTasks = async (req, res, next) => {
       description,
       // status,
       // priority: priority ? priority : "High",
-      // assignedTo: existingUsers,
+      assignedTo: existingUsers,
       assignedBy: user,
       assignedDate: parsedAssignedDate,
       dueDate: parsedDueDate,
@@ -421,6 +434,7 @@ const getAllTasks = async (req, res, next) => {
 
     const tasks = await Task.find(query)
       .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate("department", "name")
       .populate({ path: "location", select: "unitNo unitName" })
@@ -503,6 +517,7 @@ const getTasks = async (req, res, next) => {
     const tasks = await Task.find(query)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate({ path: "location", select: "unitNo unitName" })
       .populate({
@@ -953,9 +968,19 @@ const getTeamMembersTasks = async (req, res, next) => {
 const getAllDeptTasks = async (req, res, next) => {
   try {
     const { roles, departments, company } = req;
-
+    const { month } = req.query;
     let departmentMap = new Map();
     let query = { company, taskType: "Department", isDeleted: { $ne: true } };
+
+    const monthPattern = /^\d{4}-\d{2}$/;
+    const monthToUse = monthPattern.test(month || "")
+      ? month
+      : new Date().toISOString().slice(0, 7);
+    const [year, monthIndex] = monthToUse.split("-").map(Number);
+    const startDate = new Date(year, monthIndex - 1, 1);
+    const endDate = new Date(year, monthIndex, 1);
+
+    query.assignedDate = { $gte: startDate, $lt: endDate };
 
     const isSuperAdmin =
       roles.includes("Master Admin") || roles.includes("Super Admin");

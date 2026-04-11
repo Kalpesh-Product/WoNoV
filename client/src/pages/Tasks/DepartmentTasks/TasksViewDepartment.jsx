@@ -15,7 +15,7 @@ import {
   Select,
   TextField,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -90,6 +90,7 @@ const TasksViewDepartment = () => {
     defaultValues: {
       taskName: "",
       description: "",
+      assignTo: "",
       startDate: null,
       endDate: null,
       dueTime: null,
@@ -106,6 +107,16 @@ const TasksViewDepartment = () => {
       const response = await axios.get("/api/company/fetch-units");
       return response.data;
     },
+  });
+
+
+  const { data: departmentMembers = [], isPending: isMembersPending } = useQuery({
+    queryKey: ["departmentAssignees", deptId],
+    queryFn: async () => {
+      const response = await axios.get(`/api/users/assignees?deptId=${deptId}`);
+      return response.data;
+    },
+    enabled: Boolean(deptId),
   });
 
   useEffect(() => {
@@ -128,6 +139,7 @@ const TasksViewDepartment = () => {
         endDate: data.endDate,
         dueTime: data.dueTime,
         description: data.description,
+        assignTo: data.assignTo,
         department: deptId,
         taskType: "Department",
         location: data.unit,
@@ -223,6 +235,60 @@ const TasksViewDepartment = () => {
       queryKey: ["fetchedCompletedTasks"],
       queryFn: fetchCompletedTasks,
     });
+ const departmentMemberMap = useMemo(
+    () => {
+      const membersMap = new Map(
+        (departmentMembers || []).map((member) => [member.id, member.name]),
+      );
+
+      const currentUserId = auth?.user?._id;
+      const currentUserName = [auth?.user?.firstName, auth?.user?.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      if (currentUserId && currentUserName) {
+        membersMap.set(currentUserId, currentUserName);
+      }
+
+      return membersMap;
+    },
+    [departmentMembers, auth?.user?._id, auth?.user?.firstName, auth?.user?.lastName],
+  );
+
+  const formatAssignedTo = (assignedTo) => {
+    if (!assignedTo) return "-";
+
+    const isObjectId = (value) => /^[a-f\d]{24}$/i.test(value);
+
+    if (typeof assignedTo === "string") {
+      const normalized = assignedTo.trim();
+      if (!normalized) return "-";
+      if (isObjectId(normalized)) {
+        return departmentMemberMap.get(normalized) || "-";
+      }
+      return normalized;
+    }
+
+    if (!Array.isArray(assignedTo) || assignedTo.length === 0) {
+      return "-";
+    }
+
+    const formattedNames = assignedTo
+      .map((member) => {
+        if (typeof member === "string") {
+          if (isObjectId(member)) {
+            return departmentMemberMap.get(member) || "";
+          }
+          return member;
+        }
+        return [member?.firstName, member?.lastName].filter(Boolean).join(" ");
+      })
+      .filter(Boolean);
+
+    return formattedNames.length > 0 ? formattedNames.join(", ") : "-";
+  };
+
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
     {
@@ -244,6 +310,7 @@ const TasksViewDepartment = () => {
       ),
     },
     { headerName: "Added By", field: "assignedBy", width: 300 },
+    { headerName: "Assign To", field: "assignedTo", width: 300 },
     { headerName: "Start Date", field: "assignedDate" },
     // { headerName: "Assigned Time", field: "createdAt" },
     {
@@ -363,6 +430,7 @@ const TasksViewDepartment = () => {
       ),
     },
     // { headerName: "Assigned Time", field: "assignedDate" },
+    { headerName: "Assign To", field: "assignedTo", width: 300 },
     { headerName: "Description", field: "description", hide: true },
     { headerName: "Assigned Date", field: "assignedDate", hide: true },
     { headerName: "Due Date", field: "dueDate", hide: true },
@@ -441,6 +509,7 @@ const TasksViewDepartment = () => {
                       location: item.location,
                       unitNo: item.location?.unitNo || "N/A",
                       assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
+                      assignedTo: formatAssignedTo(item.assignedTo),
                     }))}
                   dateColumn={"assignedDate"}
                   columns={departmentColumns}
@@ -479,7 +548,7 @@ const TasksViewDepartment = () => {
                           completedDate: item.completedDate,
                           completedDateLabel: humanDate(item.completedDate),
                           completedTime: item.completedDate,
-
+                          assignedTo: formatAssignedTo(item.assignedTo),
                           assignedBy:
                             item.assignedBy?.firstName ||
                               item.assignedBy?.lastName
@@ -553,6 +622,37 @@ const TasksViewDepartment = () => {
                 error={!!errors?.description?.message}
                 helperText={errors?.description?.message}
               />
+            )}
+          />
+           <Controller
+            name="assignTo"
+            control={control}
+            rules={{ required: "Assign To is required" }}
+            render={({ field }) => (
+              <FormControl size="small" fullWidth error={!!errors.assignTo}>
+                <InputLabel>Assign To</InputLabel>
+                <Select {...field} label="Assign To">
+                  <MenuItem value="">Select Member</MenuItem>
+                  {isMembersPending ? (
+                    <MenuItem disabled>
+                      <CircularProgress size={20} />
+                    </MenuItem>
+                  ) : departmentMembers.length > 0 ? (
+                    departmentMembers.map((member) => (
+                      <MenuItem key={member.id} value={member.id}>
+                        {member.name}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No Department Members Found</MenuItem>
+                  )}
+                </Select>
+                {errors.assignTo?.message && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.assignTo.message}
+                  </p>
+                )}
+              </FormControl>
             )}
           />
           <Controller
@@ -757,6 +857,10 @@ const TasksViewDepartment = () => {
               title={"Added By"}
               detail={selectedTask?.assignedBy}
             />
+             <DetalisFormatted
+              title={"Assign To"}
+              detail={selectedTask?.assignedTo || "-"}
+            />
             <DetalisFormatted
               title={"Building Name"}
               detail={selectedTask?.location?.building?.buildingName || "-"}
@@ -787,6 +891,10 @@ const TasksViewDepartment = () => {
             <DetalisFormatted
               title={"Added By"}
               detail={selectedTask?.assignedBy}
+            />
+             <DetalisFormatted
+              title={"Assign To"}
+              detail={selectedTask?.assignedTo || "-"}
             />
             <DetalisFormatted
               title={"Building Name"}

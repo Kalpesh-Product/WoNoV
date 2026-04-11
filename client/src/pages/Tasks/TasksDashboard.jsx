@@ -170,12 +170,30 @@ const TasksDashboard = () => {
     (task) => task.taskType === "Department"
   );
 
+    const myTasksQuery = useQuery({
+    queryKey: ["dashboardMyTasks"],
+    queryFn: async () => {
+      const response = await axios.get("/api/tasks/my-tasks");
+      return response.data;
+    },
+  });
+
+  const myTasks = myTasksQuery.isLoading ? [] : myTasksQuery.data || [];
+
+
   useEffect(() => {
     console.log("[TASKS] Department-only tasks:", departmentTasks);
     console.log("[TASKS] Department task count:", departmentTasks.length);
   }, [departmentTasks]);
 
-  const { series, rawCounts } = normalizeDataByMonth(allTasksQuery.data || []);
+  // const { series, rawCounts } = normalizeDataByMonth(allTasksQuery.data || []);
+   const overallAverageGraphTasks = allTasks.filter(
+    (task) =>
+      task.taskType === "Department" &&
+      ["Pending", "Completed"].includes(task.status)
+  );
+
+  const { series, rawCounts } = normalizeDataByMonth(overallAverageGraphTasks);
 
   const handleYearChange = (fy) => {
     setSelectedFY(fy);
@@ -667,7 +685,34 @@ const TasksDashboard = () => {
   // 📌 TASKS Dashboard Widget Configs
   //---------------------------------------------
 
-  const dataCardConfigs = [
+  const myTaskCardConfigs = [
+    {
+      key: "TASKS_MY_TOTAL_TASKS",
+      title: "Total",
+      dataType: "my-all",
+      description: "My Tasks",
+      route: "/app/tasks/my-tasks",
+      permission: PERMISSIONS.TASKS_MY_TASKS.value,
+    },
+    {
+      key: "TASKS_MY_PENDING_TASKS",
+      title: "Total",
+      dataType: "my-pending",
+      description: "My Pending Tasks",
+      route: "/app/tasks/my-tasks",
+      permission: PERMISSIONS.TASKS_MY_TASKS.value,
+    },
+    {
+      key: "TASKS_MY_COMPLETED_TASKS",
+      title: "Total",
+      dataType: "my-completed",
+      description: "My Completed Tasks",
+      route: "/app/tasks/my-tasks",
+      permission: PERMISSIONS.TASKS_MY_TASKS.value,
+    },
+  ];
+
+  const departmentTaskCardConfigs = [
     {
       key: "TASKS_TOTAL_TASKS",
       title: "Total",
@@ -694,9 +739,35 @@ const TasksDashboard = () => {
     },
   ];
 
-  const allowedDataCards = dataCardConfigs.filter(
+  const allowedMyTaskCards = myTaskCardConfigs.filter(
     (card) => !card.permission || userPermissions.includes(card.permission)
   );
+  const allowedDepartmentTaskCards = departmentTaskCardConfigs.filter(
+    (card) => !card.permission || userPermissions.includes(card.permission)
+  );
+  
+  const getTaskCardCount = (dataType) => {
+    if (dataType === "my-all") {
+      return myTasks.length;
+    }
+    if (dataType === "my-pending") {
+      return myTasks.filter((task) => task.status === "Pending").length;
+    }
+    if (dataType === "my-completed") {
+      return myTasks.filter((task) => task.status === "Completed").length;
+    }
+    if (dataType === "all") {
+      return departmentTasks.length;
+    }
+    if (dataType === "pending") {
+      return departmentTasks.filter((task) => task.status === "Pending").length;
+    }
+    if (dataType === "completed") {
+      return departmentTasks.filter((task) => task.status === "Completed").length;
+    }
+
+    return 0;
+  };
 
   //---------------------------------------------
   // ✅ 1. Yearly Graph Config
@@ -820,33 +891,30 @@ const TasksDashboard = () => {
     //---------------------------------------------
     // All other widgets from config
     //---------------------------------------------
+     {
+      layout: allowedMyTaskCards.length,
+      widgets: allowedMyTaskCards.map((config) => (
+        <DataCard
+          key={config.key}
+          title={config.title}
+          data={getTaskCardCount(config.dataType)}
+          description={config.description}
+          route={config.route}
+        />
+      )),
+    },
     {
-      layout: allowedDataCards.length,
-      widgets: allowedDataCards.map((config) => {
-        let dataCount = 0;
+      layout: allowedDepartmentTaskCards.length,
+      widgets: allowedDepartmentTaskCards.map((config) => (
+        <DataCard
+          key={config.key}
+          title={config.title}
+          data={getTaskCardCount(config.dataType)}
+          description={config.description}
+          route={config.route}
+        />
+      )),
 
-        if (config.dataType === "all") {
-          dataCount = departmentTasks.length;
-        } else if (config.dataType === "pending") {
-          dataCount = departmentTasks.filter(
-            (task) => task.status === "Pending"
-          ).length;
-        } else if (config.dataType === "completed") {
-          dataCount = departmentTasks.filter(
-            (task) => task.status === "Completed"
-          ).length;
-        }
-
-        return (
-          <DataCard
-            key={config.key}
-            title={config.title}
-            data={dataCount}
-            description={config.description}
-            route={config.route}
-          />
-        );
-      }),
     },
     {
       layout: allowedPieCharts.length,

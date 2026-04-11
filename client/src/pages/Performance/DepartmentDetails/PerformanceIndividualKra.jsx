@@ -31,6 +31,10 @@ const PerformanceIndividualKra = () => {
     const { department } = useParams();
     const [openModal, setOpenModal] = useState(false);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
+    const departmentName =
+        department ||
+        auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+        "Department";
     const userId = auth.user._id;
     const [selectedKra, setSelectedKra] = useState(null);
 
@@ -355,7 +359,8 @@ const PerformanceIndividualKra = () => {
                                 buttonTitle={"Add Daily KRA"}
                                 buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
-                                tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
+                                  tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA`}
+                                //tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
                                 data={(departmentKra || [])
                                     .filter((item) => item.status !== "Completed")
                                     .map((item, index) => ({

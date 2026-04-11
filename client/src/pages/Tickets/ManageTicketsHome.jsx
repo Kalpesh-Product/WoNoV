@@ -66,6 +66,7 @@ const ManageTicketsHome = () => {
     { headerName: "Total Tickets", field: "totalTickets" },
     { headerName: "Open Tickets", field: "openTickets" },
     { headerName: "Closed Tickets", field: "closedTickets" },
+    { headerName: "Rejected Tickets", field: "rejectedTickets" },
   ];
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -80,6 +81,7 @@ const ManageTicketsHome = () => {
                 totalTickets: item.totalTickets,
                 openTickets: item.openTickets,
                 closedTickets: item.closedTickets,
+                rejectedTickets: item.rejectedTickets,
               })),
             ]}
             columns={departmentColumns}

@@ -260,6 +260,7 @@ const SupportTickets = ({ title, departmentId }) => {
       setCloseModal(false);
       queryClient.invalidateQueries({ queryKey: ["supported-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      queryClient.invalidateQueries({ queryKey: ["closed-tickets"] });
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Failed to close ticket");
