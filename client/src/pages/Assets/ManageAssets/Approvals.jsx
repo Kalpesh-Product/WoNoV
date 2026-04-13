@@ -23,6 +23,7 @@ import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { toast } from "sonner";
+import { inrFormat } from "../../../utils/currencyFormat";
 import { queryClient } from "../../../main";
 import useAuth from "../../../hooks/useAuth";
 
@@ -123,21 +124,31 @@ const Approvals = () => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => {
+        const status = params.data.status;
+        const viewOnlyStatuses = ["Rejected", "Revoked"];
         const menuItems = [
           { label: "View", onClick: () => handleView(params.data) },
         ];
 
-        if (!isEmployeeRole && params.data.status === "Pending") {
+        // if (!isEmployeeRole && params.data.status === "Pending") {
+         if (!viewOnlyStatuses.includes(status) && !isEmployeeRole && status === "Pending") {
           menuItems.push({
             label: "Approve",
             onClick: () => approveAsset(params.data),
           });
         }
 
-        menuItems.push({
-          label: "Reject",
-          onClick: () => rejectAsset(params.data),
-        });
+        // menuItems.push({
+        //   label: "Reject",
+        //   onClick: () => rejectAsset(params.data),
+        // });
+
+        if (!viewOnlyStatuses.includes(status)) {
+          menuItems.push({
+            label: "Reject",
+            onClick: () => rejectAsset(params.data),
+          });
+        }
 
         return (
           <ThreeDotMenu
@@ -205,6 +216,14 @@ const Approvals = () => {
               title={"Asset Type"}
               detail={selectedAsset?.assetType}
             />
+            <DetalisFormatted
+              title={"Secondary ID"}
+              detail={selectedAsset?.secondaryId || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Department Asset ID"}
+              detail={selectedAsset?.departmentAssetId || "N/A"}
+            />
             <DetalisFormatted title={"Brand"} detail={selectedAsset?.brand} />
             <DetalisFormatted
               title={"Category"}
@@ -217,6 +236,66 @@ const Approvals = () => {
             <DetalisFormatted
               title={"Assigned Date"}
               detail={humanDate(selectedAsset?.createdAt)}
+            />
+              <DetalisFormatted
+              title={"Purchase Date"}
+              detail={humanDate(selectedAsset?.purchaseDate)}
+            />
+            <DetalisFormatted
+              title={"Warranty (Months)"}
+              detail={selectedAsset?.warranty ?? "N/A"}
+            />
+            <DetalisFormatted
+              title={"Warranty Expiry Date"}
+              detail={
+                selectedAsset?.warrantyExpiryDate
+                  ? humanDate(selectedAsset?.warrantyExpiryDate)
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Rented Months"}
+              detail={selectedAsset?.rentedMonths ?? "N/A"}
+            />
+            <DetalisFormatted
+              title={"Rented Expiration Date"}
+              detail={
+                selectedAsset?.rentedExpirationDate
+                  ? humanDate(selectedAsset?.rentedExpirationDate)
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Price"}
+              detail={inrFormat(selectedAsset?.price)}
+            />
+            <DetalisFormatted
+              title={"Serial Number"}
+              detail={selectedAsset?.serialNumber || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Description"}
+              detail={selectedAsset?.description || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Ownership Type"}
+              detail={selectedAsset?.ownershipType || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Tangable"}
+              detail={selectedAsset?.tangable ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Status"}
+              detail={selectedAsset?.status || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Department"}
+              detail={selectedAsset?.department || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Unit No"}
+              detail={selectedAsset?.location?.unitNo || "N/A"}
             />
             <DetalisFormatted
               title={"Damaged"}

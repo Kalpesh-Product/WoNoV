@@ -22,6 +22,7 @@ import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
+import { inrFormat } from "../../../utils/currencyFormat";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
 
@@ -60,9 +61,17 @@ const AssignedAssets = () => {
       queryClient.invalidateQueries({ queryKey: ["assignedAssets"] });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to revoke asset");
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to revoke asset"
+      );
     },
   });
+  //   onError: (error) => {
+  //     toast.error(error.message || "Failed to revoke asset");
+  //   },
+  // });
 
   //-----------------------Event handlers----------------------//
   const handleView = (data) => {
@@ -159,6 +168,14 @@ const AssignedAssets = () => {
               title={"Asset Type"}
               detail={selectedAsset?.assetType}
             />
+             <DetalisFormatted
+              title={"Secondary ID"}
+              detail={selectedAsset?.secondaryId || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Department Asset ID"}
+              detail={selectedAsset?.departmentAssetId || "N/A"}
+            />
             <DetalisFormatted title={"Brand"} detail={selectedAsset?.brand} />
             <DetalisFormatted
               title={"Category"}
@@ -171,6 +188,66 @@ const AssignedAssets = () => {
             <DetalisFormatted
               title={"Assigned Date"}
               detail={humanDate(selectedAsset?.createdAt)}
+            />
+               <DetalisFormatted
+              title={"Purchase Date"}
+              detail={humanDate(selectedAsset?.purchaseDate)}
+            />
+            <DetalisFormatted
+              title={"Warranty (Months)"}
+              detail={selectedAsset?.warranty ?? "N/A"}
+            />
+            <DetalisFormatted
+              title={"Warranty Expiry Date"}
+              detail={
+                selectedAsset?.warrantyExpiryDate
+                  ? humanDate(selectedAsset?.warrantyExpiryDate)
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Rented Months"}
+              detail={selectedAsset?.rentedMonths ?? "N/A"}
+            />
+            <DetalisFormatted
+              title={"Rented Expiration Date"}
+              detail={
+                selectedAsset?.rentedExpirationDate
+                  ? humanDate(selectedAsset?.rentedExpirationDate)
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Price"}
+              detail={inrFormat(selectedAsset?.price)}
+            />
+            <DetalisFormatted
+              title={"Serial Number"}
+              detail={selectedAsset?.serialNumber || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Description"}
+              detail={selectedAsset?.description || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Ownership Type"}
+              detail={selectedAsset?.ownershipType || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Tangable"}
+              detail={selectedAsset?.tangable ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Status"}
+              detail={selectedAsset?.status || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Department"}
+              detail={selectedAsset?.department || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Unit No"}
+              detail={selectedAsset?.location?.unitNo || "N/A"}
             />
             <DetalisFormatted
               title={"Damaged"}
