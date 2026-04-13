@@ -30,6 +30,7 @@ import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { useNavigate } from "react-router-dom";
+import StatusChip from "../../../components/StatusChip";
 
 const ListOfAssets = () => {
   const { auth } = useAuth();
@@ -454,22 +455,27 @@ const ListOfAssets = () => {
     { field: "department", headerName: "Department" },
     { field: "subCategory", headerName: "Sub-Category" },
     { field: "brand", headerName: "Brand" },
-    {
-      field: "price",
-      headerName: "Price (INR)",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    { field: "purchaseDate", headerName: "Purchase Date" },
-    { field: "warranty", headerName: "Warranty (Months)" },
+    // {
+    //   field: "price",
+    //   headerName: "Price (INR)",
+    //   cellRenderer: (params) => inrFormat(params.value),
+    // },
+    // { field: "purchaseDate", headerName: "Purchase Date" },
+    // { field: "warranty", headerName: "Warranty (Months)" },
     {
       field: "warrantyExpiryDate",
       headerName: "Warranty Expiry Date",
       cellRenderer: (params) => humanDate(params.value),
     },
-    {
-      field: "rentedExpirationDate",
-      headerName: "Rental Expiry Date",
-      cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
+    // {
+    //   field: "rentedExpirationDate",
+    //   headerName: "Rental Expiry Date",
+    //   cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
+    // },
+     {
+      field: "status",
+      headerName: "Status",
+      cellRenderer: (params) => <StatusChip status={params.value || "N/A"} />,
     },
     {
       field: "actions",

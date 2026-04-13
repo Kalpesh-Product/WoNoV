@@ -118,10 +118,18 @@ const AssignAssets = () => {
       setOpenModal(false);
       reset();
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to assign asset");
+        onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to assign asset"
+      );
     },
   });
+  //   onError: (error) => {
+  //     toast.error(error.message || "Failed to assign asset");
+  //   },
+  // });
   //-----------------------API----------------------//
   //---------------------------------------Data processing----------------------------------------------------//
   const departmentMap = new Map();
@@ -203,14 +211,20 @@ const AssignAssets = () => {
 
   const tableData = isAssetsListPending
     ? []
-    : assetsList.map((item, index) => ({
-      ...item,
-      srNo: index + 1,
-      department: item?.department?.name,
-      subCategory: item?.subCategory?.subCategoryName,
-      isAssigned:
-        item?.assignmentState || (item?.isAssigned ? "Assigned" : "Available"),
-    }));
+    : assetsList
+      .filter((item) => {
+        const normalizedStatus = String(item?.status ?? "").trim().toLowerCase();
+        if (normalizedStatus) return normalizedStatus === "active";
+        return item?.isActive === true;
+      })
+      .map((item, index) => ({
+        ...item,
+        srNo: index + 1,
+        department: item?.department?.name,
+        subCategory: item?.subCategory?.subCategoryName,
+        isAssigned:
+          item?.assignmentState || (item?.isAssigned ? "Assigned" : "Available"),
+      }));
 
   //-----------------------Table Data----------------------//
 
@@ -244,6 +258,14 @@ const AssignAssets = () => {
               title={"Asset Type"}
               detail={selectedAsset?.assetType || "N/A"}
             />
+             <DetalisFormatted
+              title={"Secondary ID"}
+              detail={selectedAsset?.secondaryId || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Department Asset ID"}
+              detail={selectedAsset?.departmentAssetId || "N/A"}
+            />
             <DetalisFormatted
               title={"Brand"}
               detail={selectedAsset?.brand || "N/A"}
@@ -264,6 +286,18 @@ const AssignAssets = () => {
               title={"Ownership Type"}
               detail={selectedAsset?.ownershipType || "N/A"}
             />
+             <DetalisFormatted
+              title={"Rented Months"}
+              detail={selectedAsset?.rentedMonths ?? "N/A"}
+            />
+            <DetalisFormatted
+              title={"Rented Expiration Date"}
+              detail={
+                selectedAsset?.rentedExpirationDate
+                  ? humanDate(selectedAsset?.rentedExpirationDate)
+                  : "N/A"
+              }
+            />
             <DetalisFormatted
               title={"Price"}
               detail={inrFormat(selectedAsset?.price)}
@@ -271,6 +305,26 @@ const AssignAssets = () => {
             <DetalisFormatted
               title={"Purchase Date"}
               detail={humanDate(selectedAsset?.purchaseDate)}
+            />
+            <DetalisFormatted
+              title={"Warranty (Months)"}
+              detail={selectedAsset?.warranty ?? "N/A"}
+            />
+            <DetalisFormatted
+              title={"Warranty Expiry Date"}
+              detail={
+                selectedAsset?.warrantyExpiryDate
+                  ? humanDate(selectedAsset?.warrantyExpiryDate)
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Serial Number"}
+              detail={selectedAsset?.serialNumber || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Description"}
+              detail={selectedAsset?.description || "N/A"}
             />
             <DetalisFormatted
               title={"Status"}
@@ -283,6 +337,14 @@ const AssignAssets = () => {
             <DetalisFormatted
               title={"Tangable"}
               detail={selectedAsset?.tangable ? "Yes" : "No"}
+            />
+             <DetalisFormatted
+              title={"Damaged"}
+              detail={selectedAsset?.isDamaged ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Assigned"}
+              detail={selectedAsset?.isAssigned ? "Yes" : "No"}
             />
             {/* <DetalisFormatted title={"Asset ID"} detail={selectedAsset?.status || "N/A"}/> */}
           </div>
