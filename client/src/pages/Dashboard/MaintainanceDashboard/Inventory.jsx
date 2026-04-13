@@ -2117,10 +2117,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               control={addItemControl}
               rules={{
                 required: "Item name is required",
-                validate: {
-                  isAlphanumeric,
-                  noOnlyWhitespace,
-                },
+                // validate: {
+                //   isAlphanumeric,
+                //   noOnlyWhitespace,
+                // },
               }}
               render={({ field }) => (
                 <TextField
@@ -2703,10 +2703,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   control={updateControl}
                   rules={{
                     required: "Item name is required",
-                    validate: {
-                      isAlphanumeric,
-                      noOnlyWhitespace,
-                    },
+                    // validate: {
+                    //   isAlphanumeric,
+                    //   noOnlyWhitespace,
+                    // },
                   }}
                   render={({ field }) => (
                     <TextField
