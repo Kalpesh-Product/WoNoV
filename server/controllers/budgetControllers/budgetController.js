@@ -166,6 +166,7 @@ const requestBudget = async (req, res, next) => {
     const budgetData = {
       expanseName,
       projectedAmount: projectedAmount || 0,
+      actualAmount: 0,
       department: departmentId,
       company: company,
       dueDate: parsedDueDate,
