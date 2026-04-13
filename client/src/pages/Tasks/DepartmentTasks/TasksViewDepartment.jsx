@@ -118,7 +118,31 @@ const TasksViewDepartment = () => {
     },
     enabled: Boolean(deptId),
   });
+ const assigneeOptions = useMemo(() => {
+    const options = [...(departmentMembers || [])];
 
+    const currentUserId = auth?.user?._id;
+    const currentUserName =
+      [auth?.user?.firstName, auth?.user?.lastName].filter(Boolean).join(" ").trim() ||
+      auth?.user?.name;
+
+    if (!currentUserId || !currentUserName) {
+      return options;
+    }
+
+    const hasCurrentUser = options.some(
+      (member) => member?.id === currentUserId || member?._id === currentUserId,
+    );
+
+    if (!hasCurrentUser) {
+      options.unshift({
+        id: currentUserId,
+        name: currentUserName,
+      });
+    }
+
+    return options;
+  }, [departmentMembers, auth?.user?._id, auth?.user?.firstName, auth?.user?.lastName, auth?.user?.name]);
   useEffect(() => {
     setValue("unit", "");
   }, [setValue, watchLocation]);
@@ -637,12 +661,15 @@ const TasksViewDepartment = () => {
                     <MenuItem disabled>
                       <CircularProgress size={20} />
                     </MenuItem>
-                  ) : departmentMembers.length > 0 ? (
-                    departmentMembers.map((member) => (
-                      <MenuItem key={member.id} value={member.id}>
+                   ) : assigneeOptions.length > 0 ? (
+                    assigneeOptions.map((member) => {
+                      const memberId = member.id || member._id;
+                      return (
+                      <MenuItem key={memberId} value={memberId}>
                         {member.name}
                       </MenuItem>
-                    ))
+                      );
+                    })
                   ) : (
                     <MenuItem disabled>No Department Members Found</MenuItem>
                   )}

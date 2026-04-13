@@ -63,6 +63,12 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   // Menu items array (without DASHBOARD)
   const menuItems = [
     {
+      name: "Assets",
+      icon: <FaBoxesStacked />,
+      route: "assets",
+      permission: PERMISSIONS.SIDEBAR_ASSETS.value,
+    },
+    {
       name: "Tickets",
       icon: <TiTicket />,
       route: "tickets",
@@ -134,12 +140,12 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       route: "#",
       permission: PERMISSIONS.SIDEBAR_REPORTS.value,
     },
-    {
-      name: "Assets",
-      icon: <FaBoxesStacked />,
-      route: "assets",
-      permission: PERMISSIONS.SIDEBAR_ASSETS.value,
-    },
+    // {
+    //   name: "Assets",
+    //   icon: <FaBoxesStacked />,
+    //   route: "assets",
+    //   permission: PERMISSIONS.SIDEBAR_ASSETS.value,
+    // },
     {
       name: "Chat",
       icon: <HiOutlineChatAlt2 />,

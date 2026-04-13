@@ -170,6 +170,30 @@ const TasksDashboard = () => {
     (task) => task.taskType === "Department"
   );
 
+  const isCurrentMonthTask = (dateValue) => {
+    if (!dateValue) return false;
+
+    const parsedDefault = dayjs(dateValue);
+    if (parsedDefault.isValid()) {
+      return parsedDefault.isSame(dayjs(), "month");
+    }
+
+    if (typeof dateValue === "string") {
+      const [day, month, year] = dateValue.split("-");
+      if (day && month && year) {
+        const parsedManual = dayjs(`${year}-${month}-${day}`);
+        return parsedManual.isValid() && parsedManual.isSame(dayjs(), "month");
+      }
+    }
+
+    return false;
+  };
+
+  const currentMonthDepartmentTasks = departmentTasks.filter((task) =>
+    isCurrentMonthTask(task.assignedDate)
+  );
+
+
     const myTasksQuery = useQuery({
     queryKey: ["dashboardMyTasks"],
     queryFn: async () => {
@@ -757,17 +781,36 @@ const TasksDashboard = () => {
       return myTasks.filter((task) => task.status === "Completed").length;
     }
     if (dataType === "all") {
-      return departmentTasks.length;
+       return isSuperAdminView
+        ? currentMonthDepartmentTasks.length
+        : departmentTasks.length;
     }
     if (dataType === "pending") {
-      return departmentTasks.filter((task) => task.status === "Pending").length;
+      return (isSuperAdminView
+        ? currentMonthDepartmentTasks
+        : departmentTasks
+      ).filter((task) => task.status === "Pending").length;
     }
     if (dataType === "completed") {
-      return departmentTasks.filter((task) => task.status === "Completed").length;
+      return (isSuperAdminView
+        ? currentMonthDepartmentTasks
+        : departmentTasks
+      ).filter((task) => task.status === "Completed").length;
     }
 
     return 0;
   };
+  //     return departmentTasks.length;
+  //   }
+  //   if (dataType === "pending") {
+  //     return departmentTasks.filter((task) => task.status === "Pending").length;
+  //   }
+  //   if (dataType === "completed") {
+  //     return departmentTasks.filter((task) => task.status === "Completed").length;
+  //   }
+
+  //   return 0;
+  // };
 
   //---------------------------------------------
   // ✅ 1. Yearly Graph Config

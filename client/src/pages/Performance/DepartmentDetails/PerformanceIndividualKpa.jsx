@@ -37,7 +37,12 @@ const PerformanceIndividualKpa = () => {
     const [openModal, setOpenModal] = useState(false);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
 
+    const selectedDepartmentName = useSelector(
+        (state) => state.performance.selectedDepartmentName
+    );
+
     const departmentName =
+        selectedDepartmentName ||
         department ||
         auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
         "Department";
