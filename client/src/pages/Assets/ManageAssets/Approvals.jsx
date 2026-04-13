@@ -126,15 +126,17 @@ const Approvals = () => {
       cellRenderer: (params) => {
         const status = params.data.status;
         const viewOnlyStatuses = ["Rejected", "Revoked"];
-        const menuItems = [
-          { label: "View", onClick: () => handleView(params.data) },
-        ];
+        const menuItems = [{ label: "View", onClick: () => handleView(params.data) }];
 
         // if (!isEmployeeRole && params.data.status === "Pending") {
          if (!viewOnlyStatuses.includes(status) && !isEmployeeRole && status === "Pending") {
           menuItems.push({
             label: "Approve",
             onClick: () => approveAsset(params.data),
+          });
+             menuItems.push({
+            label: "Reject",
+            onClick: () => rejectAsset(params.data),
           });
         }
 
@@ -143,12 +145,12 @@ const Approvals = () => {
         //   onClick: () => rejectAsset(params.data),
         // });
 
-        if (!viewOnlyStatuses.includes(status)) {
-          menuItems.push({
-            label: "Reject",
-            onClick: () => rejectAsset(params.data),
-          });
-        }
+        // if (!viewOnlyStatuses.includes(status)) {
+        //   menuItems.push({
+        //     label: "Reject",
+        //     onClick: () => rejectAsset(params.data),
+        //   });
+        // }
 
         return (
           <ThreeDotMenu
