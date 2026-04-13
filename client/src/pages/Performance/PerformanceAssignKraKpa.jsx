@@ -32,7 +32,7 @@ const PerformanceAssignKraKpa = () => {
     const handleMemberClick = (department) => {
         dispatch(setSelectedDepartment(department?._id));
         dispatch(setSelectedDepartmentName(department?.name));
-        navigate(`/app/performance/${department?.name}/team-Daily-KRA`);
+          navigate("/app/performance/assign-kra-kpa/team-Daily-KRA");
     };
 
     return (

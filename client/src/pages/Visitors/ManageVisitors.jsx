@@ -37,6 +37,19 @@ const ManageVisitors = () => {
     },
   });
 
+const { data: unitsData = [] } = useQuery({
+    queryKey: ["unitsData"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/company/fetch-units");
+        return response.data || [];
+      } catch (error) {
+        console.error("Error fetching units data:", error);
+        return [];
+      }
+    },
+  });
+
   const { mutate, isPending: isUpdating } = useMutation({
     mutationFn: async (updatedData) => {
       const response = await axios.patch(
@@ -161,6 +174,28 @@ const ManageVisitors = () => {
     },
   ];
 
+  const getBuildingName = (visitor) => {
+    if (!visitor) return "N/A";
+    if (visitor?.building?.buildingName) return visitor.building.buildingName;
+    if (typeof visitor?.building === "string") {
+      const matchedBuilding = auth?.user?.company?.workLocations?.find(
+        (loc) => loc?._id === visitor.building,
+      );
+      return matchedBuilding?.buildingName || "N/A";
+    }
+    return "N/A";
+  };
+
+  const getUnitName = (visitor) => {
+    if (!visitor) return "N/A";
+    if (visitor?.unit?.unitNo) return visitor.unit.unitNo;
+    if (typeof visitor?.unit === "string") {
+      const matchedUnit = unitsData?.find((unit) => unit?._id === visitor.unit);
+      return matchedUnit?.unitNo || matchedUnit?.name || "N/A";
+    }
+    return "N/A";
+  };
+
   return (
     <div>
       <PageFrame>
@@ -187,6 +222,8 @@ const ManageVisitors = () => {
                 : item.clientToMeet
                   ? item?.clientToMeet?.employeeName
                   : "",
+               buildingName: getBuildingName(item),
+              unitName: getUnitName(item),    
               checkIn: item.checkIn,
               checkInBy: item.checkedInBy
                 ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
@@ -241,6 +278,14 @@ const ManageVisitors = () => {
               <DetalisFormatted
                 title="To Meet"
                 detail={selectedVisitor?.toMeet}
+              />
+               <DetalisFormatted
+                title="Building"
+                detail={selectedVisitor?.buildingName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Unit"
+                detail={selectedVisitor?.unitName || "N/A"}
               />
               <DetalisFormatted
                 title="Date of Visit"

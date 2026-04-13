@@ -31,6 +31,14 @@ const PerformanceIndividualKra = () => {
     const { department } = useParams();
     const [openModal, setOpenModal] = useState(false);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
+ const selectedDepartmentName = useSelector(
+        (state) => state.performance.selectedDepartmentName
+    );
+    const departmentName =
+        selectedDepartmentName ||
+        department ||
+        auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+        "Department";
     const userId = auth.user._id;
     const [selectedKra, setSelectedKra] = useState(null);
 
@@ -172,6 +180,7 @@ const PerformanceIndividualKra = () => {
             return response.data;
         } catch (error) {
             console.error("Error fetching data:", error);
+             return [];
         }
     };
     const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
@@ -198,6 +207,7 @@ const PerformanceIndividualKra = () => {
                     return response.data;
                 } catch (error) {
                     console.error(error);
+                     return [];
                 }
             },
         });
@@ -353,7 +363,8 @@ const PerformanceIndividualKra = () => {
                                 buttonTitle={"Add Daily KRA"}
                                 buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
-                                tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
+                                  tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA`}
+                                //tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
                                 data={(departmentKra || [])
                                     .filter((item) => item.status !== "Completed")
                                     .map((item, index) => ({

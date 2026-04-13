@@ -346,6 +346,10 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
       );
     }
 
+     filteredTickets = filteredTickets.filter(
+      (ticket) => ticket?.ticket && ticket.ticket.status !== "Closed",
+    );
+
     // const isAdmin = matchedRole.endsWith("Admin");
 
     // let employeeTickets = isAdmin

@@ -31,6 +31,14 @@ const PerformanceTeamKpa = () => {
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const selectedDepartmentName = useSelector(
+    (state) => state.performance.selectedDepartmentName
+  );
+  const departmentName =
+    selectedDepartmentName ||
+    department ||
+    auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+    "Department";
   const userId = auth.user._id;
 
   const restrictedRoles = [
@@ -284,7 +292,8 @@ const PerformanceTeamKpa = () => {
                 buttonTitle={"Add Team Monthly KPA"}
                 buttonDisabled={isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
-                tableTitle={`${department} TEAM - MONTHLY KPA`}
+                tableTitle={`${departmentName} TEAM - MONTHLY KPA`}
+                // tableTitle={`${department} TEAM - MONTHLY KPA`}
                 data={(teamKpa || [])
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({

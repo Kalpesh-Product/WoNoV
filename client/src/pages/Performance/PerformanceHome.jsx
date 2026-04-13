@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 //import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
@@ -29,20 +29,76 @@ const FISCAL_MONTHS = [
 
 const PIE_COLORS = ["#54C4A7", "#EB5C45"];
 const toCount = (value) => Number(value) || 0;
+const toLocalIsoDate = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getCurrentDateInfo = () => {
+  const now = new Date();
+  return {
+    day: now.getDate(),
+    month: now.getMonth(),
+    monthName: now.toLocaleString("en-US", { month: "long" }),
+    year: now.getFullYear(),
+    dateKey: toLocalIsoDate(now),
+    dateLabel: now.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+  };
+};
 
 const PerformanceHome = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const [currentDateInfo, setCurrentDateInfo] = useState(getCurrentDateInfo);
+   const [selectedFiscalYear, setSelectedFiscalYear] = useState(() => {
+    const now = new Date();
+    const fyStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    return `FY ${fyStartYear}-${String(fyStartYear + 1).slice(-2)}`;
+  });
+
+   useEffect(() => {
+    const now = new Date();
+    const nextDayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+      0,
+      0,
+      0,
+      0,
+    );
+
+      const timeoutMs = Math.max(nextDayStart.getTime() - now.getTime(), 1000);
+
+        const timeoutId = setTimeout(() => {
+      setCurrentDateInfo(getCurrentDateInfo());
+    }, timeoutMs);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentDateInfo]);
 
   const hasPermission = (permission) =>
     userPermissions.includes(permission.value);
+  const currentMonthLabel = currentDateInfo.monthName;
 
   const { data: fetchedDepartments = [] } = useQuery({
-    queryKey: ["performanceDepartments"],
+      queryKey: ["performanceDepartments", currentDateInfo.monthName],
+    refetchInterval: 5 * 60 * 1000,
     queryFn: async () => {
-      const response = await axios.get("/api/performance/get-depts-tasks");
+      const response = await axios.get("/api/performance/get-depts-tasks", {
+        params: { month: currentDateInfo.monthName },
+      });
       return response.data || [];
     },
   });
@@ -56,53 +112,62 @@ const PerformanceHome = () => {
   });
 
 
-  const { data: completedKraByDepartment = {} } = useQuery({
+  const { data: departmentDailyKraStats = [] } = useQuery({
     queryKey: [
-      "performanceCompletedKraByDepartment",
+      "performanceDepartmentDailyKraStats",
       fetchedDepartments.map((item) => item?.department?._id).filter(Boolean),
+      currentDateInfo.dateKey,
     ],
     enabled: fetchedDepartments.length > 0,
+    refetchInterval: 5 * 60 * 1000,
     queryFn: async () => {
       const departmentIds = fetchedDepartments
         .map((item) => item?.department?._id)
         .filter(Boolean);
 
-      const completedByDeptEntries = await Promise.all(
+      return Promise.all(
         departmentIds.map(async (departmentId) => {
-          const [kraRes, teamKraRes, individualKraRes] = await Promise.all([
-            axios.get("/api/performance/get-completed-tasks", {
-              params: { dept: departmentId, type: "KRA" },
+          const [pendingRes, completedRes] = await Promise.all([
+            axios.get("/api/performance/get-tasks", {
+              params: {
+                dept: departmentId,
+                type: "KRA",
+              },
             }),
             axios.get("/api/performance/get-completed-tasks", {
-              params: { dept: departmentId, type: "TEAMKRA" },
-            }),
-            axios.get("/api/performance/get-completed-tasks", {
-              params: { dept: departmentId, type: "INDIVIDUALKRA" },
+              params: {
+                dept: departmentId,
+                type: "KRA",
+              },
             }),
           ]);
 
-          const completedCount =
-            (kraRes.data?.length || 0) +
-            (teamKraRes.data?.length || 0) +
-            (individualKraRes.data?.length || 0);
+          const todayPendingTasks = (pendingRes.data || []).filter(
+            (task) => toLocalIsoDate(task?.assignedDate) === currentDateInfo.dateKey,
+          );
+          const todayCompletedTasks = (completedRes.data || []).filter(
+            (task) => toLocalIsoDate(task?.assignedDate) === currentDateInfo.dateKey,
+          );
+          const pending = todayPendingTasks.length;
+          const completed = todayCompletedTasks.length;
+          const assigned = pending + completed;
 
-          return [departmentId, completedCount];
+          return {
+            assigned,
+            completed,
+            pending,
+          };
         })
       );
-
-      return Object.fromEntries(completedByDeptEntries);
     },
   });
 
 
   const annualKpaGraphData = useMemo(() => {
-    const monthlyTotals = {};
-    const monthlyAchieved = {};
-
-    FISCAL_MONTHS.forEach((month) => {
-      monthlyTotals[month] = 0;
-      monthlyAchieved[month] = 0;
-    });
+    const fyTaskMap = {};
+    const today = new Date();
+    const currentFyStartYear =
+      today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
 
     kpaTasksRaw.forEach((departmentTasks) => {
       departmentTasks?.tasks?.forEach((task) => {
@@ -111,38 +176,60 @@ const PerformanceHome = () => {
         const taskDate = new Date(task.assignedDate);
         if (Number.isNaN(taskDate.getTime())) return;
 
-        const fiscalMonth = FISCAL_MONTHS[(taskDate.getMonth() + 9) % 12];
-        monthlyTotals[fiscalMonth] += 1;
+                const fyStartYear =
+          taskDate.getMonth() >= 3 ? taskDate.getFullYear() : taskDate.getFullYear() - 1;
+        const fiscalMonthIndex = (taskDate.getMonth() + 9) % 12;
+
+        if (!fyTaskMap[fyStartYear]) {
+          fyTaskMap[fyStartYear] = {
+            total: Array(12).fill(0),
+            achieved: Array(12).fill(0),
+          };
+        }
+
+        fyTaskMap[fyStartYear].total[fiscalMonthIndex] += 1;
 
         if (task.status === "Completed") {
-          monthlyAchieved[fiscalMonth] += 1;
+            fyTaskMap[fyStartYear].achieved[fiscalMonthIndex] += 1;
         }
       });
     });
 
-    return [
-      {
-        name: "Completed KPA",
-        group: "FY 2025-26",
-        data: FISCAL_MONTHS.map((month) => {
-          const total = monthlyTotals[month];
-          const achieved = monthlyAchieved[month];
-          const percent = total > 0 ? (achieved / total) * 100 : 0;
-          return { x: month, y: +percent.toFixed(1), raw: achieved };
-        }),
-      },
-      {
-        name: "Remaining KPA",
-        group: "FY 2025-26",
-        data: FISCAL_MONTHS.map((month) => {
-          const total = monthlyTotals[month];
-          const achieved = monthlyAchieved[month];
-          const remaining = total - achieved;
-          const percent = total > 0 ? (remaining / total) * 100 : 0;
-          return { x: month, y: +percent.toFixed(1), raw: remaining };
-        }),
-      },
-    ];
+     const fyStartYears = Object.keys(fyTaskMap).length
+      ? Object.keys(fyTaskMap).map(Number).sort((a, b) => a - b)
+      : [currentFyStartYear];
+
+    return fyStartYears.flatMap((fyStartYear) => {
+      const fiscalYearLabel = `FY ${fyStartYear}-${String(fyStartYear + 1).slice(-2)}`;
+      const yearData = fyTaskMap[fyStartYear] || {
+        total: Array(12).fill(0),
+        achieved: Array(12).fill(0),
+      };
+
+      return [
+        {
+          name: "Completed KPA",
+          group: fiscalYearLabel,
+          data: FISCAL_MONTHS.map((month, index) => {
+            const total = yearData.total[index];
+            const achieved = yearData.achieved[index];
+            const percent = total > 0 ? (achieved / total) * 100 : 0;
+            return { x: month, y: +percent.toFixed(1), raw: achieved };
+          }),
+        },
+        {
+          name: "Remaining KPA",
+          group: fiscalYearLabel,
+          data: FISCAL_MONTHS.map((month, index) => {
+            const total = yearData.total[index];
+            const achieved = yearData.achieved[index];
+            const remaining = total - achieved;
+            const percent = total > 0 ? (remaining / total) * 100 : 0;
+            return { x: month, y: +percent.toFixed(1), raw: remaining };
+          }),
+        },
+      ];
+    });
   }, [kpaTasksRaw]);
 
   const annualKpaChartOptions = {
@@ -157,7 +244,7 @@ const PerformanceHome = () => {
           const clickedMonth =
             config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
 
-          navigate("/app/performance/overall-KPA/department-KPA", {
+            navigate("/app/performance/overall-department-kpa", {
             state: { month: clickedMonth },
           });
         },
@@ -185,41 +272,126 @@ const PerformanceHome = () => {
       position: "top",
     },
     colors: PIE_COLORS,
+     tooltip: {
+      custom: ({ series, dataPointIndex, w }) => {
+        const label =
+          w?.config?.series?.[0]?.data?.[dataPointIndex]?.x || "Department";
+        const completed =
+          w?.config?.series?.[0]?.data?.[dataPointIndex]?.raw ??
+          series?.[0]?.[dataPointIndex] ??
+          0;
+        const pending =
+          w?.config?.series?.[1]?.data?.[dataPointIndex]?.raw ??
+          series?.[1]?.[dataPointIndex] ??
+          0;
+        const total = completed + pending;
+
+        return `
+          <div style="padding:8px; font-family:Poppins, sans-serif; font-size:13px; width:220px;">
+            <strong>${label}</strong><br/>
+            <hr style="margin:6px 0; border-top:1px solid #ddd;" />
+            <div style="display:flex; justify-content:space-between;"><span>Total KPA :</span><span>${total}</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Completed KPA :</span><span>${completed}</span></div>
+            <hr style="margin:6px 0; border-top:1px solid #ddd;" />
+            <div style="display:flex; justify-content:space-between;"><span>Pending KPA :</span><span>${pending}</span></div>
+          </div>
+        `;
+      },
+    },
   };
 
+  const annualKpaYearlyTotals = useMemo(() => {
+    const totalsByYear = {};
+
+    annualKpaGraphData.forEach((series) => {
+      const yearKey = series?.group;
+      if (!yearKey) return;
+
+      if (!totalsByYear[yearKey]) {
+        totalsByYear[yearKey] = {
+          monthlyCompleted: Array(12).fill(0),
+          monthlyPending: Array(12).fill(0),
+        };
+      }
+
+      (series.data || []).forEach((point, index) => {
+        const rawValue = toCount(point?.raw);
+        if (series.name === "Completed KPA") {
+          totalsByYear[yearKey].monthlyCompleted[index] = rawValue;
+        }
+        if (series.name === "Remaining KPA") {
+          totalsByYear[yearKey].monthlyPending[index] = rawValue;
+        }
+      });
+    });
+
+    const selectedYearTotals = totalsByYear[selectedFiscalYear] || {
+      monthlyCompleted: Array(12).fill(0),
+      monthlyPending: Array(12).fill(0),
+    };
+
+    return {
+      completed: selectedYearTotals.monthlyCompleted.reduce((sum, value) => sum + toCount(value), 0),
+      pending: selectedYearTotals.monthlyPending.reduce((sum, value) => sum + toCount(value), 0),
+    };
+  }, [annualKpaGraphData, selectedFiscalYear]);
 
   const kpaPieData = useMemo(() => {
-    const completed = kpaTasksRaw.reduce((acc, dept) => acc + (dept.achieved || 0), 0);
-    const total = kpaTasksRaw.reduce((acc, dept) => acc + (dept.total || 0), 0);
+     const hasMatchingAssignedMonth = (assignedDate) => {
+      if (!assignedDate) return false;
+
+      const parsedDate = new Date(assignedDate);
+      if (Number.isNaN(parsedDate.getTime())) return false;
+
+      return (
+        parsedDate.toLocaleString("en-US", { month: "long" }) ===
+            currentDateInfo.monthName &&
+        parsedDate.getFullYear() === currentDateInfo.year
+      );
+    };
+
+    const completed = kpaTasksRaw.reduce(
+      (acc, dept) =>
+        acc +
+        (dept?.tasks || []).filter(
+          (task) =>
+            task?.status === "Completed" &&
+            hasMatchingAssignedMonth(task?.assignedDate),
+        ).length,
+      0,
+    );
+
+    const total = kpaTasksRaw.reduce(
+      (acc, dept) =>
+        acc +
+        (dept?.tasks || []).filter((task) =>
+          hasMatchingAssignedMonth(task?.assignedDate),
+        ).length,
+      0,
+    );
     const pending = Math.max(total - completed, 0);
 
     return [
       { label: "Completed KPA", value: completed },
       { label: "Pending KPA", value: pending },
     ];
-  }, [kpaTasksRaw]);
+  }, [kpaTasksRaw, currentDateInfo]);
 
   const kraPieData = useMemo(() => {
-    const completed = fetchedDepartments.reduce(
-      (acc, dept) =>
-        acc + toCount(completedKraByDepartment[dept?.department?._id]),
+    const completed = departmentDailyKraStats.reduce(
+      (acc, departmentStats) => acc + toCount(departmentStats?.completed),
       0
     );
-    const assigned = fetchedDepartments.reduce(
-      (acc, dept) =>
-        acc +
-        (toCount(dept.dailyKRA) +
-          toCount(dept.teamDailyKRA) +
-          toCount(dept.individualDailyKRA)),
+    const pending = departmentDailyKraStats.reduce(
+      (acc, departmentStats) => acc + toCount(departmentStats?.pending),
       0
     );
-    const pending = Math.max(assigned - completed, 0);
 
     return [
       { label: "Completed KRA", value: completed },
       { label: "Pending KRA", value: pending },
     ];
-  }, [fetchedDepartments, completedKraByDepartment]);
+  }, [departmentDailyKraStats]);
 
   const pieOptions = (labels) => ({
     chart: {
@@ -239,23 +411,29 @@ const PerformanceHome = () => {
     },
   });
 
+   const canAccessDepartmentWiseCard =
+    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA) ||
+    hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA) ||
+    hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA);
+
+
    const performanceCards = [
     {
       title: "DEPARTMENT WISE KRA/KPA",
-      route: "/app/performance/overall-KPA/department-wise-KPA",
-      permission: PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+      route: "/app/performance/department-wise",
+      hasAccess: canAccessDepartmentWiseCard,
     },
     {
       title: "ASSIGN KRA/KPA",
       route: "/app/performance/assign-kra-kpa",
-      permission: PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA,
+       hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA),
     },
     {
       title: "Report KRA/KPA",
       route: "/app/performance/report-kra-kpa",
-      permission: PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA,
+       hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA),
     },
-  ].filter((card) => hasPermission(card.permission));
+  ].filter((card) => card.hasAccess);
 
     const getCardGridClass = () => {
     if (performanceCards.length >= 3) {
@@ -277,9 +455,14 @@ const PerformanceHome = () => {
           data={annualKpaGraphData}
           options={annualKpaChartOptions}
           title="ANNUAL KPA VS ACHIEVEMENTS"
-          titleAmount={`TOTAL KPA : ${kpaPieData[0].value + kpaPieData[1].value}`}
+          titleAmount=""
+          TitleAmountGreen={annualKpaYearlyTotals.completed}
+          TitleAmountRed={annualKpaYearlyTotals.pending}
+          greenTitle="KPA"
+          redTitle="KPA"
           secondParam
           currentYear
+          onYearChange={setSelectedFiscalYear}
 
         />
         )}
@@ -299,7 +482,10 @@ const PerformanceHome = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {hasPermission(PERMISSIONS.PERFORMANCE_KRA_PENDING_VS_COMPLETED) && (
-          <WidgetSection border title="KRA - Pending vs Completed">
+         <WidgetSection
+            border
+            title={`KRA - Pending vs Completed - ${currentDateInfo.dateLabel}`}
+          >
             <PieChartMui
               data={kraPieData}
               options={pieOptions(kraPieData.map((item) => item.label))}
@@ -309,7 +495,10 @@ const PerformanceHome = () => {
         )}
 
         {hasPermission(PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED) && (
-          <WidgetSection border title="KPA - Pending vs Completed">
+           <WidgetSection
+            border
+            title={`KPA - Pending vs Completed - ${currentMonthLabel}`}
+          >
             <PieChartMui
               data={kpaPieData}
               options={pieOptions(kpaPieData.map((item) => item.label))}

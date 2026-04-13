@@ -14,6 +14,7 @@ const Department = require("../../models/Departments");
 const { PDFDocument } = require("pdf-lib");
 const { handleDocumentUpload } = require("../../config/s3Config");
 const Building = require("../../models/locations/Building");
+const Unit = require("../../models/locations/Unit");
 
 const fetchVisitors = async (req, res, next) => {
   const { company } = req;
@@ -157,6 +158,8 @@ const addVisitor = async (req, res, next) => {
       brandName,
       gstNumber,
       panNumber,
+      unit,
+      building,
     } = req.body;
 
     const gstFile = req.files?.gstFile?.[0];
@@ -175,6 +178,37 @@ const addVisitor = async (req, res, next) => {
     const isScheduled = visitorType === "Scheduled";
 
     // === Validations ===
+
+    // if (
+    //   building &&
+    //   !["Sunteck Kanaka", "Dempo Trade Centre"].includes(building)
+    // ) {
+    //   return res.status(400).json({ message: "Invalid building provided" });
+
+     let resolvedBuilding = null;
+    if (building) {
+      if (mongoose.Types.ObjectId.isValid(building)) {
+        resolvedBuilding = await Building.findOne({ _id: building, company })
+          .select("_id buildingName")
+          .lean();
+      } else {
+        resolvedBuilding = await Building.findOne({ buildingName: building, company })
+          .select("_id buildingName")
+          .lean();
+      }
+
+      if (!resolvedBuilding) {
+        return res.status(400).json({ message: "Invalid building provided" });
+      }
+
+      if (
+        !["Sunteck Kanaka", "Dempo Trade Centre"].includes(
+          resolvedBuilding.buildingName,
+        )
+      ) {
+        return res.status(400).json({ message: "Invalid building provided" });
+      }
+    }
 
     if (isNaN(clockIn.getTime())) {
       return res.status(400).json({
@@ -216,6 +250,17 @@ const addVisitor = async (req, res, next) => {
         logSourceKey,
       );
     }
+
+    if (unit && !mongoose.Types.ObjectId.isValid(unit)) {
+      return res.status(400).json({ message: "Invalid unit ID provided" });
+    }
+
+    const unitExists = await Unit.findOne({ _id: unit, company });
+
+    if (unit && !unitExists) {
+      return res.status(400).json({ message: "Unit not found" });
+    }
+
     if (toMeet && !mongoose.Types.ObjectId.isValid(toMeet)) {
       throw new CustomError(
         "Invalid to meet ID provided",
@@ -344,7 +389,9 @@ const addVisitor = async (req, res, next) => {
       !department ||
       (typeof department === "string" && department.trim() === "");
 
-    const fullDayPassAmount = 850;
+    // const fullDayPassAmount = building === "STC" ? 850 : 750;
+    const fullDayPassAmount =
+      resolvedBuilding?.buildingName === "Sunteck Kanaka" ? 850 : 750;
     const halfDayPassAmount = 500;
 
     const amount =
@@ -381,6 +428,8 @@ const addVisitor = async (req, res, next) => {
       brandName,
       gstNumber,
       panNumber,
+       building: resolvedBuilding?._id || null,
+      unit: unit || null,
       checkedInBy: user,
       amount,
       gstAmount: amount * (18 / 100),
@@ -635,7 +684,6 @@ const updateExternalCompany = async (req, res, next) => {
   }
 };
 
-
 const fetchExternalCompanies = async (req, res, next) => {
   const { company } = req;
   const { externalCompanyId } = req.query;
@@ -686,8 +734,9 @@ const fetchTeamMembers = async (req, res, next) => {
 
     const transformedVisitors = teamMembers.map((member) => {
       return {
-        name: `${member.firstName} ${member.middleName || ""} ${member.lastName
-          }`.trim(),
+        name: `${member.firstName} ${member.middleName || ""} ${
+          member.lastName
+        }`.trim(),
         email: member.email,
         department: member.departments.map((dept) => dept.name),
         role: member.role.map((r) => r.roleTitle),
