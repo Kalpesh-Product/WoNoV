@@ -348,8 +348,9 @@ const updateBudget = async (req, res, next) => {
   try {
     const { budgetId } = req.params;
     const updateFields = req.body;
+    const { departments } = req;
 
-    const allowedFields = ["gstIn", "expanseType"]; // Add more fields here later
+    const allowedFields = ["gstIn", "expanseType", "actualAmount"]; // Add more fields here later
 
     // Filter only allowed fields from incoming data
     const filteredFields = Object.keys(updateFields).reduce((acc, key) => {
@@ -360,9 +361,9 @@ const updateBudget = async (req, res, next) => {
     }, {});
 
     if (Object.keys(filteredFields).length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Allowed fields include only: gstIn, expanseType" });
+      return res.status(400).json({
+        message: "Allowed fields include only: gstIn, expanseType,actualAmount",
+      });
     }
 
     if (!mongoose.Types.ObjectId.isValid(budgetId)) {
@@ -374,7 +375,27 @@ const updateBudget = async (req, res, next) => {
       return res.status(400).json({ message: "Budget not found" });
     }
 
+    if (!departments.includes(foundBudget.department.toString())) {
+      return res
+        .status(403)
+        .json({ message: "You don't have permission to update this budget" });
+    }
+
     const originalData = foundBudget.toObject();
+
+    if (filteredFields.actualAmount !== undefined) {
+      const amount = Number(filteredFields.actualAmount);
+
+      if (isNaN(amount)) {
+        return res
+          .status(400)
+          .json({ message: "Actual amount must be a number" });
+      }
+
+      filteredFields.actualAmount = amount;
+
+      filteredFields.actualAmountDate = new Date();
+    }
 
     // Apply updates
     for (const key in filteredFields) {
