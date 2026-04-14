@@ -55,7 +55,8 @@ const AverageProfitLoss = () => {
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const monthWiseExpenses = {};
   const yearCategories = {
-    "FY 2024-25": [      "Apr-24",
+    "FY 2024-25": [
+      "Apr-24",
       "May-24",
       "Jun-24",
       "Jul-24",
@@ -102,16 +103,16 @@ const AverageProfitLoss = () => {
   const handleYearChange = (fiscalYear) => {
     setSelectedFY(fiscalYear);
 
-    const months = yearCategories[fiscalYear];
+    const months = yearCategories[fiscalYear] || [];
 
     const incomeTotal = months.reduce(
       (sum, month) => sum + (incomeMap[month] || 0),
-      0
+      0,
     );
 
     const expenseTotal = months.reduce(
       (sum, month) => sum + (expenseMap[month] || 0),
-      0
+      0,
     );
 
     setDynamicIncome(`INR ${inrFormat(incomeTotal)}`);
@@ -132,7 +133,8 @@ const AverageProfitLoss = () => {
     // Skip excluded months
     if (excludedMonths.includes(monthKey)) return;
 
-    const amount = income.taxableAmount || income.revenue || income.taxable || 0;
+    const amount =
+      income.taxableAmount || income.revenue || income.taxable || 0;
 
     if (!monthWiseIncome[monthKey]) {
       monthWiseIncome[monthKey] = {
@@ -148,7 +150,7 @@ const AverageProfitLoss = () => {
 
   // Convert to array and sort
   const transformedIncomes = Object.values(monthWiseIncome).sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
   );
 
   const incomeMap = {};
@@ -161,14 +163,14 @@ const AverageProfitLoss = () => {
       name: "Income",
       group: fiscalYear,
       data: months.map((month) => (incomeMap ? incomeMap[month] || 0 : 0)),
-    })
+    }),
   );
 
   const lastMonthRawIncome = incomeData.filter(
-    (item) => item.group === "FY 2025-26"
+    (item) => item.group === "FY 2025-26",
   );
   const lastMonthDataIncome = lastMonthRawIncome.map(
-    (item) => item.data[item.data.length - 1]
+    (item) => item.data[item.data.length - 1],
   );
 
   //-------INCOME-------//
@@ -184,7 +186,7 @@ const AverageProfitLoss = () => {
   const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
   const totalExpense = testExpense.reduce(
     (sum, item) => (item.actualAmount || 0) + sum,
-    0
+    0,
   );
   const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     const incomeSources = item.income || {};
@@ -223,7 +225,7 @@ const AverageProfitLoss = () => {
   const transformedExpenses = Object.values(monthWiseExpenses);
 
   const sortedExpenses = transformedExpenses.sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
   );
 
   // Build map of month => actualExpense
@@ -238,7 +240,7 @@ const AverageProfitLoss = () => {
       name: "Expense",
       group: fiscalYear,
       data: months.map((month) => (expenseMap ? expenseMap[month] || 0 : 0)),
-    })
+    }),
   );
   //------------------Expensedata----------------------//
 
@@ -256,7 +258,7 @@ const AverageProfitLoss = () => {
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/annual-average-profit-loss/income-details"
+              "/app/dashboard/finance-dashboard/annual-average-profit-loss/income-details",
             )
           }
           className="text-primary underline cursor-pointer"
@@ -274,7 +276,7 @@ const AverageProfitLoss = () => {
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/finance/dept-wise-budget"
+              "/app/dashboard/finance-dashboard/finance/dept-wise-budget",
             )
           }
           className="text-primary underline cursor-pointer"
@@ -360,7 +362,7 @@ const AverageProfitLoss = () => {
         const income = w.globals.initialSeries.find((s) => s.name === "Income")
           ?.data[monthIndex];
         const expense = w.globals.initialSeries.find(
-          (s) => s.name === "Expense"
+          (s) => s.name === "Expense",
         )?.data[monthIndex];
 
         const monthLabel =
@@ -402,7 +404,7 @@ const AverageProfitLoss = () => {
         expense: inrFormat(expense),
         pnl: inrFormat(pnl),
       };
-    }
+    },
   );
   const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
     const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
@@ -475,19 +477,19 @@ const AverageProfitLoss = () => {
             <DetalisFormatted
               title="Income"
               detail={`INR ${Number(
-                viewDetails.income.replace(/,/g, "")
+                viewDetails.income.replace(/,/g, ""),
               ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted
               title="Expense"
               detail={`INR ${Number(
-                viewDetails.expense.replace(/,/g, "")
+                viewDetails.expense.replace(/,/g, ""),
               ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted
               title="P&L"
               detail={`INR ${Number(
-                viewDetails.pnl.replace(/,/g, "")
+                viewDetails.pnl.replace(/,/g, ""),
               ).toLocaleString("en-IN")}`}
             />
           </div>
@@ -498,7 +500,3 @@ const AverageProfitLoss = () => {
 };
 
 export default AverageProfitLoss;
-
-
-
-

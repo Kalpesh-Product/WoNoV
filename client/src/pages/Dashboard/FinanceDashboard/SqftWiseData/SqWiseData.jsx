@@ -15,8 +15,8 @@ import { useNavigate } from "react-router-dom";
 
 const SqWiseData = () => {
   const axios = useAxiosPrivate();
-  const navigate = useNavigate()
-
+  const navigate = useNavigate();
+  const [selectedFY, setSelectedFY] = useState("FY 2025-26");
   //-----------------API-----------------//
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
     useQuery({
@@ -43,7 +43,6 @@ const SqWiseData = () => {
     },
   });
 
-  
   //-----------------API-----------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
@@ -54,7 +53,8 @@ const SqWiseData = () => {
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const monthWiseExpenses = {};
   const yearCategories = {
-    "FY 2024-25": [      "Apr-24",
+    "FY 2024-25": [
+      "Apr-24",
       "May-24",
       "Jun-24",
       "Jul-24",
@@ -112,7 +112,7 @@ const SqWiseData = () => {
     // Skip excluded months
     if (excludedMonths.includes(monthKey)) return;
 
-       const amount =
+    const amount =
       income.taxableAmount || income.revenue || income.taxable || 0;
 
     if (!monthWiseIncome[monthKey]) {
@@ -129,7 +129,7 @@ const SqWiseData = () => {
 
   // Convert to array and sort
   const transformedIncomes = Object.values(monthWiseIncome).sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
   );
 
   const incomeMap = {};
@@ -142,16 +142,16 @@ const SqWiseData = () => {
       name: "Income",
       group: fiscalYear,
       data: months.map((month) => (incomeMap ? incomeMap[month] || 0 : 0)),
-    })
+    }),
   );
 
   console.log("income data : ", incomeData);
 
   const lastMonthRawIncome = incomeData.filter(
-    (item) => item.group === "FY 2025-26"
+    (item) => item.group === "FY 2025-26",
   );
   const lastMonthDataIncome = lastMonthRawIncome.map(
-    (item) => item.data[item.data.length - 1]
+    (item) => item.data[item.data.length - 1],
   );
 
   //-------INCOME-------//
@@ -167,7 +167,7 @@ const SqWiseData = () => {
   const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
   const totalExpense = testExpense.reduce(
     (sum, item) => (item.actualAmount || 0) + sum,
-    0
+    0,
   );
   const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     const incomeSources = item.income || {};
@@ -206,7 +206,7 @@ const SqWiseData = () => {
   const transformedExpenses = Object.values(monthWiseExpenses);
 
   const sortedExpenses = transformedExpenses.sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
   );
 
   // Build map of month => actualExpense
@@ -221,7 +221,7 @@ const SqWiseData = () => {
       name: "Expense",
       group: fiscalYear,
       data: months.map((month) => (expenseMap ? expenseMap[month] || 0 : 0)),
-    })
+    }),
   );
   //------------------Expensedata----------------------//
 
@@ -230,20 +230,30 @@ const SqWiseData = () => {
   const monthlyProfitLossColumns = [
     { field: "id", headerName: "Sr No", width: 100 },
     { field: "month", headerName: "Month", flex: 1 },
-    { field: "income", headerName: "Income (INR)", flex: 1 ,cellRenderer: (params) => (
+    {
+      field: "income",
+      headerName: "Income (INR)",
+      flex: 1,
+      cellRenderer: (params) => (
         <span
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/sqft-wise-data/income-details"
+              "/app/dashboard/finance-dashboard/sqft-wise-data/income-details",
             )
           }
           className="text-primary underline cursor-pointer"
         >
           {params.value}
         </span>
-      ) },
-    { field: "sqft", headerName: "Sq.Ft", flex: 1, cellRenderer : (params)=>(inrFormat(params.value)) },
+      ),
+    },
+    {
+      field: "sqft",
+      headerName: "Sq.Ft",
+      flex: 1,
+      cellRenderer: (params) => inrFormat(params.value),
+    },
     { field: "perSqFt", headerName: "Per Sq.Ft Income (INR)", flex: 1 },
     // {
     //   field: "actions",
@@ -303,7 +313,7 @@ const SqWiseData = () => {
       colors: ["transparent"],
     },
     yaxis: {
-      max : 8000000,
+      max: 8000000,
       title: {
         text: "Amount In Lakhs (INR)",
       },
@@ -321,7 +331,7 @@ const SqWiseData = () => {
         const income = w.globals.initialSeries.find((s) => s.name === "Income")
           ?.data[monthIndex];
         const expense = w.globals.initialSeries.find(
-          (s) => s.name === "Expense"
+          (s) => s.name === "Expense",
         )?.data[monthIndex];
 
         const monthLabel =
@@ -350,21 +360,19 @@ const SqWiseData = () => {
   };
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
-  const monthlyProfitLossData = yearCategories["FY 2025-26"].map(
-    (month, index) => {
-      const income = incomeMap[month] || 0;
-      const expense = expenseMap[month] || 0;
-      const pnl = income - expense;
 
-      return {
-        id: index + 1,
-        month,
-        income: inrFormat(income),
-        sqft : totalSqft,
-        perSqFt: (income / totalSqft).toFixed(0),
-      };
-    }
-  );
+  const selectedFYMonths = yearCategories[selectedFY] || [];
+  const monthlyProfitLossData = selectedFYMonths.map((month, index) => {
+    const income = incomeMap[month] || 0;
+
+    return {
+      id: index + 1,
+      month,
+      income: inrFormat(income),
+      sqft: totalSqft,
+      perSqFt: (income / totalSqft).toFixed(0),
+    };
+  });
   // const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
   //   const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
   //   return sum + numericalPnL;
@@ -382,6 +390,7 @@ const SqWiseData = () => {
           title={"BIZNest FINANCE INCOME V/S EXPENSE"}
           TitleAmountGreen={`INR ${inrFormat(totalIncomeAmount)} `}
           TitleAmountRed={`INR ${inrFormat(totalExpense)}`}
+          onYearChange={setSelectedFY}
         />,
       ],
     },
@@ -407,7 +416,7 @@ const SqWiseData = () => {
           <WidgetSection
             border
             // TitleAmount={`P&L :  INR ${inrFormat(totalPnL)}`}
-            titleLabel={"FY 2025-26"}
+            titleLabel={selectedFY}
             title={`Total Monthly P&L`}
           >
             <AgTable
@@ -419,7 +428,7 @@ const SqWiseData = () => {
         ) : (
           <WidgetSection title="Monthly P&L">
             <p className="text-center text-gray-500 py-8">
-              No data available for FY 2024–25
+              {`No data available for ${selectedFY}`}
             </p>
           </WidgetSection>
         )}
@@ -435,19 +444,19 @@ const SqWiseData = () => {
             <DetalisFormatted
               title="Income"
               detail={`INR ${Number(
-                viewDetails.income.replace(/,/g, "")
+                viewDetails.income.replace(/,/g, ""),
               ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted
               title="Expense"
               detail={`INR ${Number(
-                viewDetails.expense.replace(/,/g, "")
+                viewDetails.expense.replace(/,/g, ""),
               ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted
               title="P&L"
               detail={`INR ${Number(
-                viewDetails.pnl.replace(/,/g, "")
+                viewDetails.pnl.replace(/,/g, ""),
               ).toLocaleString("en-IN")}`}
             />
           </div>
@@ -458,7 +467,3 @@ const SqWiseData = () => {
 };
 
 export default SqWiseData;
-
-
-
-
