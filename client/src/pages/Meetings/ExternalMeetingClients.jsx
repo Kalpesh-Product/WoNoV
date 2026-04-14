@@ -122,7 +122,8 @@ const ExternalMeetingCLients = () => {
 
     const start = new Date(meeting.startTime);
     const end = new Date(meeting.endTime);
-    const durationInHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    const durationInHours =
+      (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
     const amount = meetingRoom.perHourPrice * durationInHours;
     const safeDiscount = Number.isFinite(discount) ? discount : 0;
@@ -198,12 +199,12 @@ const ExternalMeetingCLients = () => {
         date: meeting.date,
         bookedBy: meeting.bookedBy
           ? [
-            meeting.bookedBy.firstName,
-            meeting.bookedBy.middleName,
-            meeting.bookedBy.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
+              meeting.bookedBy.firstName,
+              meeting.bookedBy.middleName,
+              meeting.bookedBy.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ")
           : meeting.clientBookedBy?.employeeName || "Unknown",
         startTime: meeting.startTime,
         endTime:
@@ -222,7 +223,6 @@ const ExternalMeetingCLients = () => {
         building: meeting.location?.building?.buildingName || "",
       };
     });
-
 
   //Fetch Single Room
   const { data: room = {}, isLoading: isRoomLoading } = useQuery({
@@ -269,7 +269,7 @@ const ExternalMeetingCLients = () => {
     onSuccess: (data) => {
       toast.success(data.message);
     },
-    onError: (error) => { },
+    onError: (error) => {},
   });
 
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
@@ -462,7 +462,7 @@ const ExternalMeetingCLients = () => {
 
   const handleOpenPaymentModal = (meeting) => {
     setPaymentMeeting(meeting);
-     resetPaymentForm({
+    resetPaymentForm({
       amount: "",
       paymentType: meeting?.paymentMode || "",
       paymentStatus: meeting?.paymentStatus || "",
@@ -554,15 +554,13 @@ const ExternalMeetingCLients = () => {
     if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
       const paymentDetails = calculatePaymentDetails(paymentMeeting, room);
 
-
       if (!paymentDetails) return;
 
       setPaymentValue("amount", paymentDetails.amount);
       setPaymentValue("gstAmount", paymentDetails.gstAmount);
       setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
-
-   }, [room, isRoomLoading, paymentMeeting, setPaymentValue]);
+  }, [room, isRoomLoading, paymentMeeting, setPaymentValue]);
 
   useEffect(() => {
     if (!isRoomLoading && paymentMeeting && room?.perHourPrice) {
@@ -579,7 +577,13 @@ const ExternalMeetingCLients = () => {
       setPaymentValue("gstAmount", paymentDetails.gstAmount);
       setPaymentValue("finalAmount", paymentDetails.finalAmount);
     }
-   }, [watchedDiscountAmount, room, isRoomLoading, paymentMeeting, setPaymentValue]);
+  }, [
+    watchedDiscountAmount,
+    room,
+    isRoomLoading,
+    paymentMeeting,
+    setPaymentValue,
+  ]);
   //---------------------------------Event handlers----------------------------------------//
 
   const columns = [
@@ -688,62 +692,61 @@ const ExternalMeetingCLients = () => {
           //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
           // },
           !isPaid &&
-          isFinance &&
-          {
-            label: "wait for payment",
-          },
+            isFinance && {
+              label: "wait for payment",
+            },
 
           isPaid &&
-          isFinance &&
-          paymentVerificationStatus === "Under Review" && {
-            label: "Verify Payment",
-            onClick: () => handleVerifyPayment(params.data, "Verified"),
-          },
+            isFinance &&
+            paymentVerificationStatus === "Under Review" && {
+              label: "Verify Payment",
+              onClick: () => handleVerifyPayment(params.data, "Verified"),
+            },
 
           isPaid &&
-          isFinance &&
-          paymentVerificationStatus === "Pending" && {
-            label: "Review Payment",
-            onClick: () => handleVerifyPayment(params.data, "Under Review"),
-          },
+            isFinance &&
+            paymentVerificationStatus === "Pending" && {
+              label: "Review Payment",
+              onClick: () => handleVerifyPayment(params.data, "Under Review"),
+            },
 
           isPaid &&
-          isFinance &&
-          paymentVerificationStatus === "Verified" && {
-            label: "Completed",
-          },
+            isFinance &&
+            paymentVerificationStatus === "Verified" && {
+              label: "Completed",
+            },
 
           // Show the following only when NOT finance
           ...(!isFinance
             ? [
-              !isPaid && {
-                label: "Update Payment Details",
-                onClick: () => handleOpenPaymentModal(params.data),
-              },
-              !isOngoing &&
-              !isHousekeepingCompleted && {
-                label: "Update Checklist",
-                onClick: () =>
-                  handleOpenChecklistModal("update", params.data._id),
-              },
-              isUpcoming && {
-                label: "Edit",
-                onClick: () => handleEditMeeting("edit", params.data),
-              },
-              !isOngoing &&
-              !isHousekeepingPending && {
-                label: "Mark As Ongoing",
-                onClick: () => handleOngoing("ongoing", params.data._id),
-              },
-              !isUpcoming && {
-                label: "Mark As Completed",
-                onClick: () => handleCompleted("complete", params.data._id),
-              },
-              !isCancelled && {
-                label: "Cancel",
-                onClick: () => handleSelectedMeeting("cancel", params.data),
-              },
-            ]
+                !isPaid && {
+                  label: "Update Payment Details",
+                  onClick: () => handleOpenPaymentModal(params.data),
+                },
+                !isOngoing &&
+                  !isHousekeepingCompleted && {
+                    label: "Update Checklist",
+                    onClick: () =>
+                      handleOpenChecklistModal("update", params.data._id),
+                  },
+                isUpcoming && {
+                  label: "Edit",
+                  onClick: () => handleEditMeeting("edit", params.data),
+                },
+                !isOngoing &&
+                  !isHousekeepingPending && {
+                    label: "Mark As Ongoing",
+                    onClick: () => handleOngoing("ongoing", params.data._id),
+                  },
+                !isUpcoming && {
+                  label: "Mark As Completed",
+                  onClick: () => handleCompleted("complete", params.data._id),
+                },
+                !isCancelled && {
+                  label: "Cancel",
+                  onClick: () => handleSelectedMeeting("cancel", params.data),
+                },
+              ]
             : []),
         ].filter(Boolean);
 
@@ -1018,7 +1021,7 @@ const ExternalMeetingCLients = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-            // detail={`N/A`}
+              // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"
@@ -1079,7 +1082,9 @@ const ExternalMeetingCLients = () => {
 
             <DetalisFormatted
               title="Status"
-              detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
+              detail={
+                selectedMeeting?.paymentStatus === "Paid" ? "Paid" : "Unpaid"
+              }
             />
 
             <DetalisFormatted
@@ -1461,8 +1466,8 @@ const ExternalMeetingCLients = () => {
           />
           <div>
             <p className="text-xs">
-              Add payment proof as : ( "Add Payment Proof in PDF, jpg, jpeg, png format & Name
-              as : DD-MM-YYYY_(Customer Name)" )
+              Add payment proof as : ( "Add Payment Proof in PDF, jpg, jpeg, png
+              format & Name as : DD-MM-YYYY_(Customer Name)" )
             </p>
           </div>
           <div className="flex justify-center">
