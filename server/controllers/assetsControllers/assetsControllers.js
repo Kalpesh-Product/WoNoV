@@ -482,6 +482,17 @@ const editAsset = async (req, res, next) => {
     const normalizedSecondaryId = secondaryId?.trim() || undefined;
     const normalizedSerialNumber = serialNumber?.trim() || "";
     const normalizedDescription = description?.trim() || "";
+    const normalizeBoolean = (value) => {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "string") {
+        const normalizedValue = value.trim().toLowerCase();
+        if (normalizedValue === "true") return true;
+        if (normalizedValue === "false") return false;
+      }
+      return undefined;
+    };
+    const normalizedIsDamaged = normalizeBoolean(isDamaged);
+    const normalizedIsUnderMaintenance = normalizeBoolean(isUnderMaintenance);
     const assetImageFile = req.files?.assetImage?.[0];
     const warrantyDocumentFile = req.files?.warrantyDocument?.[0];
 
@@ -625,11 +636,9 @@ const editAsset = async (req, res, next) => {
     }
 
     const assetStatus =
-      isDamaged || isUnderMaintenance
+      normalizedIsDamaged === true || normalizedIsUnderMaintenance === true
         ? "Inactive"
-        : status
-          ? status
-          : foundAsset.status;
+        : status || foundAsset.status;
 
     const updatePayload = {
       assetType,
@@ -642,10 +651,14 @@ const editAsset = async (req, res, next) => {
       description: normalizedDescription,
       purchaseDate,
       price,
-      isDamaged: isDamaged ? isDamaged : foundAsset.isDamaged,
-      isUnderMaintenance: isUnderMaintenance
-        ? isUnderMaintenance
-        : foundAsset.isUnderMaintenance,
+      isDamaged:
+        normalizedIsDamaged !== undefined
+          ? normalizedIsDamaged
+          : foundAsset.isDamaged,
+      isUnderMaintenance:
+        normalizedIsUnderMaintenance !== undefined
+          ? normalizedIsUnderMaintenance
+          : foundAsset.isUnderMaintenance,
       warranty,
       warrantyDocument: warrantyDocInfo,
       brand: brand?.trim(),
