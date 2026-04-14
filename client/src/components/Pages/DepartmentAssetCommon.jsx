@@ -14,7 +14,7 @@ const DepartmentAssetCommon = (disabled) => {
     enabled: Boolean(department?._id),
     queryFn: async () => {
       const response = await axios.get(
-        `/api/assets/get-asset-requests?departmentId=${department._id}&status=Approved`
+        `/api/assets/get-asset-requests?toDepartment=${department._id}&status=Approved`
       );
       return response.data;
     },
@@ -35,30 +35,38 @@ const DepartmentAssetCommon = (disabled) => {
 
   const tableData = isLoading
     ? []
-    : assignedAssets.map((item, index) => {
-      const assignedToName = [item?.assignee?.firstName, item?.assignee?.lastName]
-        .filter(Boolean)
-        .join(" ");
-      const assignedByName = [item?.approvedBy?.firstName, item?.approvedBy?.lastName]
-        .filter(Boolean)
-        .join(" ");
+     : assignedAssets
+      .filter(
+        (item) => item?.toDepartment?._id?.toString() === department?._id?.toString()
+      )
+      .map((item, index) => {
+        const assignedToName = [item?.assignee?.firstName, item?.assignee?.lastName]
+          .filter(Boolean)
+          .join(" ");
+        const assignedByName = [
+          item?.approvedBy?.firstName,
+          item?.approvedBy?.lastName,
+        ]
+          .filter(Boolean)
+          .join(" ");
 
-      return {
-        id: index + 1,
-        assetNumber: item?.asset?.assetId || "--",
-        assetName: item?.asset?.name || "--",
-        category:
-          item?.asset?.subCategory?.category?.categoryName ||
-          item?.asset?.subCategory?.subCategoryName ||
-          "--",
-        brand: item?.asset?.brand || "--",
-        assignedBy: assignedByName || "--",
-        assignedTo: assignedToName || "--",
-        fromDepartment: item?.fromDepartment?.name || "--",
-        toDepartment: item?.toDepartment?.name || department?.name || "--",
-        assignedDate: item?.updatedAt ? humanDate(item.updatedAt) : "--",
-      };
-    });
+        return {
+          id: index + 1,
+          assetNumber: item?.asset?.assetId || "--",
+          assetName: item?.asset?.name || "--",
+          category:
+            item?.asset?.subCategory?.category?.categoryName ||
+            item?.asset?.subCategory?.subCategoryName ||
+            "--",
+          brand: item?.asset?.brand || "--",
+          assignedBy: assignedByName || "--",
+          assignedTo: assignedToName || "--",
+          fromDepartment: item?.fromDepartment?.name || "--",
+          toDepartment: item?.toDepartment?.name || department?.name || "--",
+          assignedDate: item?.updatedAt ? humanDate(item.updatedAt) : "--",
+        };
+      });
+
 
   return (
     <PageFrame>
