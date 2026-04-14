@@ -375,7 +375,13 @@ const updateBudget = async (req, res, next) => {
       return res.status(400).json({ message: "Budget not found" });
     }
 
-    if (!departments.includes(foundBudget.department.toString())) {
+    const departmentIds = (departments || []).map((department) =>
+      typeof department === "string"
+        ? department
+        : department?._id?.toString?.() || department?.toString?.(),
+    );
+
+    if (!departmentIds.includes(foundBudget.department.toString())) {
       return res
         .status(403)
         .json({ message: "You don't have permission to update this budget" });
