@@ -1154,6 +1154,218 @@ const bulkInsertExternalClients = async (req, res, next) => {
   }
 };
 
+const rebookClient = async (req, res, next) => {
+  const logPath = "visitors/VisitorLog";
+  const logAction = "Repeat External Company Client Visit";
+  const logSourceKey = "visitor";
+  const { user, company } = req;
+
+  try {
+    const { externalVisitId } = req.params;
+    const { purposeOfVisit, checkInTime, checkOutTime } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(externalVisitId)) {
+      return res.status(400).json({ message: "Invalid visitor id provided" });
+    }
+
+    if (!purposeOfVisit || !checkInTime || !checkOutTime) {
+      return res.status(400).json({
+        message: "purposeOfVisit, checkInTime and checkOutTime are required",
+      });
+    }
+
+    const normalizedPurpose = purposeOfVisit.trim().toLowerCase();
+    const visitorTypeMap = {
+      "full day pass": "Full-Day Pass",
+      "half day pass": "Half-Day Pass",
+    };
+    const normalizedVisitorType = visitorTypeMap[normalizedPurpose];
+
+    if (!normalizedVisitorType) {
+      return res.status(400).json({
+        message: "purposeOfVisit must be either Full Day Pass or Half Day Pass",
+      });
+    }
+
+    const sourceVisitor = await Visitor.findOne({
+      _id: externalVisitId,
+      company,
+      visitorFlag: "Client",
+    }).lean();
+
+    if (!sourceVisitor) {
+      return res.status(404).json({ message: "Visitor not found" });
+    }
+
+    const checkIn = new Date(checkInTime);
+    const checkOut = new Date(checkOutTime);
+
+    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+      return res
+        .status(400)
+        .json({ message: "Invalid checkInTime/checkOutTime provided" });
+    }
+
+    if (checkOut < checkIn) {
+      return res.status(400).json({
+        message: "checkOutTime cannot be before checkInTime",
+      });
+    }
+
+    let fullDayPassAmount = 850;
+    if (sourceVisitor.building) {
+      const sourceBuilding = await Building.findOne({
+        _id: sourceVisitor.building,
+        company,
+      })
+        .select("buildingName")
+        .lean();
+      if (sourceBuilding?.buildingName === "Dempo Trade Centre") {
+        fullDayPassAmount = 750;
+      }
+    }
+    const amount =
+      normalizedVisitorType === "Full-Day Pass"
+        ? fullDayPassAmount || 850
+        : normalizedVisitorType === "Half-Day Pass"
+          ? 500
+          : 0;
+    const gstAmount = Number((amount * 0.18).toFixed(2));
+    const totalAmount = Number((amount + gstAmount).toFixed(2));
+
+    const externalVisit = await ExternalVisits.create({
+      visitorId: sourceVisitor._id,
+      company: sourceVisitor.company,
+      visitorType: normalizedVisitorType,
+      dateOfVisit: checkIn,
+      checkIn,
+      checkOut,
+      checkedInBy: user || null,
+      checkedOutBy: user || null,
+      amount,
+      gstAmount,
+      totalAmount,
+      paymentStatus: false,
+      paymentMode: null,
+      unit: sourceVisitor.unit || null,
+      notes: `Repeated client visit created from visitor ${sourceVisitor._id}`,
+    });
+
+    return res.status(201).json({
+      message: "Repeat client visit created successfully",
+      externalVisit,
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
+  }
+};
+
+const updateDayPassVisitPayment = async (req, res, next) => {
+  const logPath = "visitors/VisitorLog";
+  const logAction = "External Visit Payment";
+  const logSourceKey = "visitor";
+
+  try {
+    const { externalVisitId } = req.params;
+    const { paymentMode, paymentStatus, discount, amount } = req.body;
+    const paymentProofFile = req.file;
+
+    if (!mongoose.Types.ObjectId.isValid(externalVisitId)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid external visit Id provided" });
+    }
+
+    if (!paymentMode || !paymentStatus || !amount) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const externalVisit = await ExternalVisits.findById(externalVisitId);
+
+    if (!externalVisit) {
+      throw new CustomError(
+        "External visit not found",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "image/webp",
+    ];
+
+    if (paymentProofFile) {
+      if (!allowedMimeTypes.includes(paymentProofFile.mimetype)) {
+        throw new CustomError(
+          "Invalid image format for payment proof",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      const uploadResponse = await handleDocumentUpload(
+        paymentProofFile.buffer,
+        `${externalVisit.company}/visitors/${externalVisit.visitorId}/payment-proof`,
+        paymentProofFile.originalname,
+      );
+
+      if (!uploadResponse.public_id) {
+        throw new CustomError(
+          "Failed to upload payment proof",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      externalVisit.paymentProof = {
+        url: uploadResponse.secure_url,
+        id: uploadResponse.public_id,
+      };
+    }
+
+    const baseAmount = Number(amount);
+    const discountValue = Number(discount ?? 0);
+
+    if (discountValue > baseAmount) {
+      return res.status(400).json({ message: "Discount cannot exceed amount" });
+    }
+
+    const taxableAmount = baseAmount - discountValue;
+    const gstAmount = Number((taxableAmount * 0.18).toFixed(2));
+    const finalAmount = Number((taxableAmount + gstAmount).toFixed(2));
+
+    externalVisit.amount = baseAmount;
+    externalVisit.totalAmount = finalAmount;
+    externalVisit.discount = discountValue;
+    externalVisit.gstAmount = gstAmount;
+    externalVisit.paymentMode = paymentMode;
+    externalVisit.paymentStatus = paymentStatus === "Paid";
+
+    await externalVisit.save();
+
+    return res.status(200).json({
+      message: "External visit payment updated successfully",
+      externalVisit,
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
+  }
+};
+
 module.exports = {
   fetchVisitors,
   addVisitor,
@@ -1163,4 +1375,6 @@ module.exports = {
   updateExternalCompany,
   fetchTeamMembers,
   bulkInsertExternalClients,
+  rebookClient,
+  updateDayPassVisitPayment,
 };
