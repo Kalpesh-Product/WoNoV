@@ -19,7 +19,8 @@ const RepeatExternalCompaanies = () => {
   const [repeatExternalCompanies, setRepeatExternalCompanies] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
-  const [isSubmittingRepeatClient, setIsSubmittingRepeatClient] = useState(false);
+  const [isSubmittingRepeatClient, setIsSubmittingRepeatClient] =
+    useState(false);
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -42,8 +43,8 @@ const RepeatExternalCompaanies = () => {
         const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
 
         return (
-          isExternalVisitor
-          && (purpose === "half-day pass" || purpose === "full-day pass")
+          isExternalVisitor &&
+          (purpose === "half-day pass" || purpose === "full-day pass")
         );
       });
 
@@ -66,33 +67,37 @@ const RepeatExternalCompaanies = () => {
         ...item,
         srNo: index + 1,
         mongoId: item._id,
-        visitorName: `${item.firstName || ""} ${item.lastName || ""}`.trim() || "N/A",
+        visitorName:
+          `${item.firstName || ""} ${item.lastName || ""}`.trim() || "N/A",
         company:
-          item.visitorCompany
-          || item.brandName
-          || item.registeredClientCompany
-          || "N/A",
+          item.visitorCompany ||
+          item.brandName ||
+          item.registeredClientCompany ||
+          "N/A",
       })),
     [repeatExternalCompanies],
   );
 
-  const openRepeatClientModal = useCallback((row) => {
-    setSelectedRow(row);
-    const sourceCheckIn = row?.checkIn ? dayjs(row.checkIn) : dayjs();
-    const sourceCheckOut = row?.checkOut
-      ? dayjs(row.checkOut)
-      : sourceCheckIn.add(4, "hour");
+  const openRepeatClientModal = useCallback(
+    (row) => {
+      setSelectedRow(row);
+      const sourceCheckIn = row?.checkIn ? dayjs(row.checkIn) : dayjs();
+      const sourceCheckOut = row?.checkOut
+        ? dayjs(row.checkOut)
+        : sourceCheckIn.add(4, "hour");
 
-    reset({
-      visitorName: row?.visitorName || "N/A",
-      company: row?.company || "N/A",
-      purposeOfVisit: "Full Day Pass",
-      checkInTime: sourceCheckIn,
-      checkOutTime: sourceCheckOut,
-    });
+      reset({
+        visitorName: row?.visitorName || "N/A",
+        company: row?.company || "N/A",
+        purposeOfVisit: "Full Day Pass",
+        checkInTime: sourceCheckIn,
+        checkOutTime: sourceCheckOut,
+      });
 
-    setOpenModal(true);
-  }, [reset]);
+      setOpenModal(true);
+    },
+    [reset],
+  );
 
   const handleRepeatClientSubmit = async (formData) => {
     if (!selectedRow?.mongoId) return;
@@ -112,7 +117,7 @@ const RepeatExternalCompaanies = () => {
 
     setIsSubmittingRepeatClient(true);
     try {
-      await axios.post(`/api/visitors/repeat-client/${selectedRow.mongoId}`, {//This is need to be chage for repeat client Api after creation Backend
+      await axios.post(`/api/visitors/rebook-client/${selectedRow.mongoId}`, {
         purposeOfVisit: formData.purposeOfVisit,
         checkInTime: checkIn.toISOString(),
         checkOutTime: checkOut.toISOString(),
@@ -186,7 +191,12 @@ const RepeatExternalCompaanies = () => {
             name="visitorName"
             control={control}
             render={({ field }) => (
-              <TextField {...field} label="Visitor Name" size="small" disabled />
+              <TextField
+                {...field}
+                label="Visitor Name"
+                size="small"
+                disabled
+              />
             )}
           />
 
@@ -259,14 +269,14 @@ const RepeatExternalCompaanies = () => {
             )}
           />
 
-        <div className="flex justify-center mt-1">
+          <div className="flex justify-center mt-1">
             <PrimaryButton
-                title={isSubmittingRepeatClient ? "Submitting..." : "Submit"}
-                type="submit"
-                disabled={isSubmittingRepeatClient}
-                className="px-8 py-2"
+              title={isSubmittingRepeatClient ? "Submitting..." : "Submit"}
+              type="submit"
+              disabled={isSubmittingRepeatClient}
+              className="px-8 py-2"
             />
-        </div>
+          </div>
         </form>
       </MuiModal>
     </div>
@@ -274,8 +284,6 @@ const RepeatExternalCompaanies = () => {
 };
 
 export default RepeatExternalCompaanies;
-
-
 
 // import { useCallback, useEffect, useMemo, useState } from "react";
 // import { CircularProgress, MenuItem, TextField } from "@mui/material";
@@ -328,7 +336,7 @@ export default RepeatExternalCompaanies;
 //     } catch (error) {
 //       console.error("Failed to fetch repeat external companies", error);
 //       toast.error("Failed to load repeat external companies.");
-      
+
 //     } finally {
 //       setLoading(false);
 //     }

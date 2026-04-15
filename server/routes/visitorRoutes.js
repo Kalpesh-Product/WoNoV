@@ -49,11 +49,6 @@ router.post(
   upload.single("external-clients"),
   bulkInsertExternalClients,
 );
-router.patch(
-  "/day-pass-visit-payment/:externalVisitId",
-  upload.single("paymentProof"),
-  updateDayPassVisitPayment,
-);
 router.post("/rebook-client/:externalVisitId", rebookClient);
 
 module.exports = router;
