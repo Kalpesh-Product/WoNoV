@@ -269,7 +269,8 @@ const Approvals = () => {
             />
             <DetalisFormatted
               title={"Price"}
-              detail={inrFormat(selectedAsset?.price)}
+              //detail={inrFormat(selectedAsset?.price)}
+              detail={`INR ${inrFormat(selectedAsset?.price)}`}
             />
             <DetalisFormatted
               title={"Serial Number"}

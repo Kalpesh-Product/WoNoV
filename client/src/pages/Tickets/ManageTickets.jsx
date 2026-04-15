@@ -31,7 +31,7 @@ const ManageTickets = () => {
       : "Personal";
 
   const isAdmin = auth.user?.role?.some((item) =>
-    item.roleTitle.includes("Admin"),
+     item.roleTitle?.trim().endsWith("Admin"),
   );
 
   const canViewEscalatedTickets = userPermissions.includes(

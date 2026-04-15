@@ -154,9 +154,15 @@ const BudgetPage = () => {
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
+      paymentType: item.paymentType || "",
+      building: item?.unit?.building?.buildingName || item.building || "",
+      unit: item?.unit?.unitNo || "",
+      projectedAmountRaw: item?.projectedAmount || 0,
       // projectedAmount: item?.projectedAmount?.toFixed(2),
-      actualAmount: item?.actualAmount?.toFixed(2),
+      actualAmount: Number(item?.actualAmount || 0).toFixed(2),
+      actualAmountRaw: item?.actualAmount || "",
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+      dueDateRaw: item?.dueDate,
       status: item.status,
       invoiceAttached: item.invoiceAttached,
     });
@@ -378,7 +384,11 @@ const BudgetPage = () => {
         </div>
       )}
 
-      <AllocatedBudget financialData={financialData} noInvoice={false} />
+       <AllocatedBudget
+        financialData={financialData}
+        noInvoice={false}
+        enableActionMenu
+      />
       <MuiModal
         title="Request Budget"
         open={openModal}

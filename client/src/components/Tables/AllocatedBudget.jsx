@@ -6,6 +6,11 @@ import {
   CircularProgress,
   IconButton,
   Popover,
+   Menu,
+  MenuItem,
+  TextField,
+  FormControl,
+  Select,
 } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
 import { addDays, isWithinInterval } from "date-fns";
@@ -25,6 +30,9 @@ import usePageDepartment from "../../hooks/usePageDepartment";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { MdCalendarToday, MdNavigateNext } from "react-icons/md";
+import { HiOutlineDotsHorizontal } from "react-icons/hi";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 
 const AllocatedBudget = ({
   financialData,
@@ -36,11 +44,15 @@ const AllocatedBudget = ({
   annaualExpense = false,
   showInvoice = false,
   newTitle,
+  enableActionMenu = false,
 }) => {
-  const axios = useAxiosPrivate();
+ const axios = useAxiosPrivate();
   const [selectedTab, setSelectedTab] = useState(0);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState([]);
+  const [actionAnchorEl, setActionAnchorEl] = useState(null);
+  const [actionRow, setActionRow] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const openCalendar = Boolean(anchorEl);
   const handleOpenCalendar = (e) => setAnchorEl(e.currentTarget);
@@ -49,6 +61,23 @@ const AllocatedBudget = ({
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
       invoiceImage: null,
+    },
+  });
+
+   const {
+    control: editControl,
+    handleSubmit: handleEditSubmit,
+    reset: resetEdit,
+  } = useForm({
+    defaultValues: {
+      expanseName: "",
+      expanseType: "",
+      paymentType: "",
+      building: "",
+      unit: "",
+      projectedAmount: "",
+      dueDate: "",
+      actualAmount: "",
     },
   });
 
@@ -91,6 +120,63 @@ const AllocatedBudget = ({
         console.error(error);
       },
     });
+
+const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
+    useMutation({
+      mutationFn: async ({ budgetId, payload }) => {
+        const response = await axios.patch(
+          `/api/budget/update-budget/${budgetId}`,
+          payload
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Budget updated successfully");
+        setEditModalOpen(false);
+        setActionAnchorEl(null);
+        setActionRow(null);
+        resetEdit();
+        queryClient.invalidateQueries({ queryKey: ["financeBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["departmentBudget"] });
+      },
+      onError: (error) => {
+        toast.error(error?.response?.data?.message || "Failed to update budget");
+      },
+    });
+
+  const handleOpenActionMenu = (event, row) => {
+    setActionAnchorEl(event.currentTarget);
+    setActionRow(row);
+  };
+
+  const handleCloseActionMenu = () => {
+    setActionAnchorEl(null);
+    setActionRow(null);
+  };
+
+  const handleOpenEditModal = (row) => {
+    resetEdit({
+      expanseName: row.expanseName || "",
+      expanseType: row.expanseType || "",
+      paymentType: row.paymentType || "",
+      building: row.building || "",
+      unit: row.unit || "",
+      projectedAmount: row.projectedAmountRaw ?? row.projectedAmount ?? "",
+      dueDate: row.dueDateRaw || row.dueDate || "",
+      actualAmount: row.actualAmountRaw ?? "",
+    });
+    setSelectedRow(row);
+    setEditModalOpen(true);
+  };
+
+  const onEditSubmit = (data) => {
+    if (!selectedRow?.id) return;
+    updateBudgetMutation({
+      budgetId: selectedRow.id,
+      payload: { actualAmount: data.actualAmount },
+    });
+  };
+
 
   const allTypes = useMemo(() => {
     const types = new Set();
@@ -173,6 +259,17 @@ const AllocatedBudget = ({
         headerName: "Actions",
         pinned: "right",
         cellRenderer: (params) => {
+           if (enableActionMenu) {
+            return (
+              <div className="p-2 flex items-center">
+                <IconButton
+  onClick={(event) => handleOpenActionMenu(event, params.data)}
+>
+  <HiOutlineDotsHorizontal />
+</IconButton>
+              </div>
+            );
+          }
           const invoiceAttached =
             params.data.invoiceAttached === true ||
             params.data.invoiceAttached === "true";
@@ -205,7 +302,7 @@ const AllocatedBudget = ({
       });
     }
     return base;
-  }, [financialData, noInvoice]);
+  }, [financialData, noInvoice, enableActionMenu]);
 
   console.log("filtered ata : ", filteredRows);
 
@@ -347,6 +444,201 @@ const AllocatedBudget = ({
               type="submit"
               isLoading={isUploadPending}
               disabled={isUploadPending}
+            />
+          </div>
+        </form>
+      </MuiModal>
+      <Menu
+  anchorEl={actionAnchorEl}
+  open={Boolean(actionAnchorEl)}
+  onClose={handleCloseActionMenu}
+  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+  transformOrigin={{ vertical: "top", horizontal: "center" }}
+  slotProps={{
+    paper: {
+      sx: {
+        mt: 0.8,
+        minWidth: 120,
+        borderRadius: "8px",
+        overflow: "hidden",
+        boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)",
+      },
+    },
+    list: { sx: { p: 0 } },
+  }}
+>
+  <MenuItem
+    sx={{
+      justifyContent: "flex-start", // 👉 left side
+      fontWeight: 500,
+      color: "#1E3D73",
+      py: 1.1,
+      borderBottom:
+        actionRow?.status === "Approved"
+          ? "1px solid #D1D5DB"
+          : "none",
+    }}
+    onClick={() => {
+      if (actionRow) {
+        handleOpenEditModal(actionRow);
+      }
+      handleCloseActionMenu();
+    }}
+  >
+    Edit
+  </MenuItem>
+
+  {actionRow?.status === "Approved" && (
+    <MenuItem
+      sx={{
+        justifyContent: "flex-start", // 👉 left side
+        fontWeight: 500,
+        color: "#1E3D73",
+        py: 1.1,
+      }}
+      onClick={() => {
+        setSelectedRow(actionRow);
+        setUploadModalOpen(true);
+        handleCloseActionMenu();
+      }}
+    >
+      Upload Invoice
+    </MenuItem>
+  )}
+</Menu>
+      <MuiModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        title="Edit Request Budget"
+      >
+        <form onSubmit={handleEditSubmit(onEditSubmit)} className="space-y-4">
+          <Controller
+            name="expanseName"
+            control={editControl}
+            render={({ field }) => (
+              <TextField {...field} label="Expense Name" fullWidth size="small" disabled />
+            )}
+          />
+
+          <Controller
+            name="expanseType"
+            control={editControl}
+            render={({ field }) => (
+              <FormControl fullWidth>
+                <Select {...field} size="small" displayEmpty disabled>
+                  <MenuItem value={field.value || ""}>
+                    {field.value || "Select Expense Type"}
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          <Controller
+            name="paymentType"
+            control={editControl}
+            render={({ field }) => (
+              <FormControl fullWidth>
+                <Select {...field} size="small" displayEmpty disabled>
+                  <MenuItem value={field.value || ""}>
+                    {field.value || "Select Payment Type"}
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          <Controller
+            name="building"
+            control={editControl}
+            render={({ field }) => (
+              <FormControl fullWidth>
+                <Select {...field} size="small" displayEmpty disabled>
+                  <MenuItem value={field.value || ""}>
+                    {field.value || "Select Building"}
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          <Controller
+            name="unit"
+            control={editControl}
+            render={({ field }) => (
+              <FormControl fullWidth>
+                <Select {...field} size="small" displayEmpty disabled>
+                  <MenuItem value={field.value || ""}>
+                    {field.value || "Select Unit"}
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          <Controller
+            name="projectedAmount"
+            control={editControl}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Projected Amount"
+                fullWidth
+                size="small"
+                disabled
+              />
+            )}
+          />
+
+          <Controller
+            name="dueDate"
+            control={editControl}
+            render={({ field }) => (
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Due Date"
+                  format="DD-MM-YYYY"
+                  value={field.value ? dayjs(field.value) : null}
+                  disabled
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            )}
+          />
+
+          <Controller
+            name="actualAmount"
+            control={editControl}
+            rules={{
+              required: "Actual amount is required",
+              pattern: {
+                value: /^[0-9]+(\.[0-9]{1,2})?$/,
+                message: "Enter a valid amount",
+              },
+            }}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                label="Actual Amount"
+                fullWidth
+                size="small"
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+              />
+            )}
+          />
+
+          <div className="flex justify-center">
+            <PrimaryButton
+              title="Submit"
+              type="submit"
+              isLoading={isUpdatePending}
+              disabled={isUpdatePending}
             />
           </div>
         </form>
