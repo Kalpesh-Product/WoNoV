@@ -300,7 +300,9 @@ const AssignAssets = () => {
             />
             <DetalisFormatted
               title={"Price"}
-              detail={inrFormat(selectedAsset?.price)}
+             // detail={inrFormat(selectedAsset?.price)}
+              detail={`INR ${inrFormat(selectedAsset?.price)}`}
+
             />
             <DetalisFormatted
               title={"Purchase Date"}
