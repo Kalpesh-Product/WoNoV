@@ -348,7 +348,7 @@ const updateBudget = async (req, res, next) => {
   try {
     const { budgetId } = req.params;
     const updateFields = req.body;
-    const { departments } = req;
+    const { departments, roles } = req;
 
     const allowedFields = ["gstIn", "expanseType", "actualAmount"]; // Add more fields here later
 
@@ -381,7 +381,11 @@ const updateBudget = async (req, res, next) => {
         : department?._id?.toString?.() || department?.toString?.(),
     );
 
-    if (!departmentIds.includes(foundBudget.department.toString())) {
+    if (
+      !departmentIds.includes(foundBudget.department.toString()) ||
+      !roles.includes("Master Admin") ||
+      !roles.includes("Super Admin")
+    ) {
       return res
         .status(403)
         .json({ message: "You don't have permission to update this budget" });
