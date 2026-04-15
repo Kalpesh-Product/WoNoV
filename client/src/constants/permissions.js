@@ -400,6 +400,23 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/visitors/manage-visitors",
   },
+  VISITORS_MIX_BAG: {
+    value: "visitors_mix_bag",
+    title: "VISITORS MIX BAG",
+    type: "read",
+    route: "/app/visitors/mix-bag",
+  },
+  VISITORS_MIX_BAG_REPEAT_DAY_PASS: {
+    value: "visitors_mix_bag_repeat_day_pass",
+    title: "VISITORS MIX BAG REPEAT DAY PASS",
+    type: "read",
+    route: "/app/visitors/mix-bag/repeat-day-pass",
+  },
+  VISITORS_MIX_BAG_REPEAT_CLIENT: {
+    value: "visitors_mix_bag_repeat_client",
+    title: "VISITORS MIX BAG REPEAT CLIENT",
+    type: "edit",
+  },
   VISITORS_TEAM_MEMBERS: {
     value: "visitor_team_members",
     title: "VISITOR TEAM MEMBERS",
