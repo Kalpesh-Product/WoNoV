@@ -133,7 +133,7 @@ const BudgetPage = () => {
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
             // { field: "department", headerName: "Department", flex: 200 },
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            // { field: "projectedAmount", headerName: "Amount (INR)", flex: 1 },
+            { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
             {
               field: "actualAmount",
               headerName: "Actual Amount (INR)",
@@ -158,7 +158,7 @@ const BudgetPage = () => {
       building: item?.unit?.building?.buildingName || item.building || "",
       unit: item?.unit?.unitNo || "",
       projectedAmountRaw: item?.projectedAmount || 0,
-      // projectedAmount: item?.projectedAmount?.toFixed(2),
+      projectedAmount: item?.projectedAmount?.toFixed(2),
       actualAmount: Number(item?.actualAmount || 0).toFixed(2),
       actualAmountRaw: item?.actualAmount || "",
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
