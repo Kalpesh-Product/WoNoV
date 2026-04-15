@@ -47,6 +47,12 @@ const VisitorDashboard = () => {
       icon: <RiArchiveDrawerLine />,
       permission: PERMISSIONS.VISITORS_MANAGE_VISITORS.value,
     },
+     {
+      route: "/app/visitors/mix-bag",
+      title: "Mix Bag",
+      icon: <RiArchiveDrawerLine />,
+      permission: PERMISSIONS.VISITORS_MIX_BAG.value,
+    },
     {
       route: "/app/visitors/team-members",
       title: "Team Members",
