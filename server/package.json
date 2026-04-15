@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "structure": "node generateStructure.js > structure.txt"
+    "structure": "node generateStructure.js > structure.txt",
+    "migrate:externalvisits": "node scripts/migrateExternalVisits.js"
   },
   "keywords": [],
   "author": "",

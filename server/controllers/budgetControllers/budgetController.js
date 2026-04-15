@@ -382,8 +382,8 @@ const updateBudget = async (req, res, next) => {
     );
 
     if (
-      !departmentIds.includes(foundBudget.department.toString()) ||
-      !roles.includes("Master Admin") ||
+      !departmentIds.includes(foundBudget.department.toString()) &&
+      !roles.includes("Master Admin") &&
       !roles.includes("Super Admin")
     ) {
       return res

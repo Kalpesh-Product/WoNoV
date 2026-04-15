@@ -28,7 +28,6 @@ const ExternalClients = () => {
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-
   const [selectedVisitor, setSelectedVisitor] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
@@ -49,7 +48,6 @@ const ExternalClients = () => {
     );
   };
 
-
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
@@ -61,7 +59,7 @@ const ExternalClients = () => {
       }
     },
   });
-const { data: unitsData = [] } = useQuery({
+  const { data: unitsData = [] } = useQuery({
     queryKey: ["unitsData"],
     queryFn: async () => {
       try {
@@ -73,7 +71,6 @@ const { data: unitsData = [] } = useQuery({
       }
     },
   });
-
 
   const { handleSubmit, reset, control, setValue } = useForm({
     defaultValues: {
@@ -226,7 +223,7 @@ const { data: unitsData = [] } = useQuery({
     return ["paid", "completed"].includes(String(status).toLowerCase());
   };
 
- const getBuildingName = (visitor) => {
+  const getBuildingName = (visitor) => {
     if (!visitor) return "N/A";
     if (visitor?.building?.buildingName) return visitor.building.buildingName;
     if (visitor?.location?.buildingName) return visitor.location.buildingName;
@@ -257,13 +254,14 @@ const { data: unitsData = [] } = useQuery({
     if (visitor?.unitNo) return visitor.unitNo;
     if (typeof visitor?.unit === "string") {
       const matchedUnit = unitsData?.find(
-        (unit) => unit?._id === visitor.unit || unit?.unit?._id === visitor.unit,
+        (unit) =>
+          unit?._id === visitor.unit || unit?.unit?._id === visitor.unit,
       );
       return (
-        matchedUnit?.unitNo
-        || matchedUnit?.unit?.unitNo
-        || matchedUnit?.name
-        || "N/A"
+        matchedUnit?.unitNo ||
+        matchedUnit?.unit?.unitNo ||
+        matchedUnit?.name ||
+        "N/A"
       );
     }
     return "N/A";
@@ -324,14 +322,14 @@ const { data: unitsData = [] } = useQuery({
               setIsModalOpen(true);
             },
           },
-          ...(params.data.visitorType !== "Meeting"
-            && !isPaymentCompleted(params.data.paymentStatus)
+          ...(params.data.visitorType !== "Meeting" &&
+          !isPaymentCompleted(params.data.paymentStatus)
             ? [
-              {
-                label: "Update Payment Details",
-                onClick: () => handleOpenPaymentModal(params.data),
-              },
-            ]
+                {
+                  label: "Update Payment Details",
+                  onClick: () => handleOpenPaymentModal(params.data),
+                },
+              ]
             : []),
         ];
 
@@ -408,17 +406,17 @@ const { data: unitsData = [] } = useQuery({
       const combinedCheckout =
         checkInDate && checkOutRaw
           ? checkInDate
-            .hour(checkOutRaw.hour())
-            .minute(checkOutRaw.minute())
-            .second(checkOutRaw.second())
-            .millisecond(checkOutRaw.millisecond())
+              .hour(checkOutRaw.hour())
+              .minute(checkOutRaw.minute())
+              .second(checkOutRaw.second())
+              .millisecond(checkOutRaw.millisecond())
           : checkOutRaw;
 
       const checkOutByName = auth?.user
         ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim() ||
-        auth.user.name ||
-        auth.user.email ||
-        "-"
+          auth.user.name ||
+          auth.user.email ||
+          "-"
         : "-";
 
       const updatePayload = {
@@ -465,9 +463,10 @@ const { data: unitsData = [] } = useQuery({
       discountAmount: visitor.discountAmount ?? "",
       discountPercentage: visitor.discountPercentage ?? "",
       finalAmount: visitor.finalAmount ?? "",
-      paymentType: visitor.paymentMode && visitor.paymentMode !== "N/A"
-        ? visitor.paymentMode
-        : "",
+      paymentType:
+        visitor.paymentMode && visitor.paymentMode !== "N/A"
+          ? visitor.paymentMode
+          : "",
       paymentStatus: visitor.paymentStatus || "",
       paymentProof: "",
     });
@@ -489,17 +488,15 @@ const { data: unitsData = [] } = useQuery({
     setPaymentValue("finalAmount", finalAmount > 0 ? finalAmount : 0);
 
     if (watchedPaymentAmount > 0) {
-      const discountPercentage = ((watchedDiscountAmount / watchedPaymentAmount) * 100).toFixed(2);
+      const discountPercentage = (
+        (watchedDiscountAmount / watchedPaymentAmount) *
+        100
+      ).toFixed(2);
       setPaymentValue("discountPercentage", discountPercentage);
     } else {
       setPaymentValue("discountPercentage", 0);
     }
-  }, [
-    watchedPaymentAmount,
-    watchedDiscountAmount,
-    setPaymentValue,
-  ]);
-
+  }, [watchedPaymentAmount, watchedDiscountAmount, setPaymentValue]);
 
   return (
     <div>
@@ -512,67 +509,106 @@ const { data: unitsData = [] } = useQuery({
             ...visitorsData
 
               .filter((m) => m.visitorFlag === "Client")
-              .map((item, index) => ({
-                srNo: index + 1,
-                mongoId: item._id,
-                firstName: item.firstName,
-                lastName: item.lastName,
-                name: `${item.firstName} ${item.lastName}`,
-                address: item.address,
-                phoneNumber: item.phoneNumber,
-                dateOfVisit: item.dateOfVisit,
-                email: item.email,
-                purposeOfVisit: item.purposeOfVisit,
-                 buildingName: getBuildingName(item),
-                unitName: getUnitName(item),
-                toMeet: !item?.toMeet
-                  ? null
-                  : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
-                checkInRaw: item.checkIn,
-                checkInBy: item.checkedInBy
-                  ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
-                  : "-",
-                checkOutRaw: item.checkOut,
-                checkOutBy: item.checkedOutBy
-                  ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
-                  : "-",
-                checkIn: item.checkIn,
-                checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-                paymentStatus:
-                  typeof item.paymentStatus === "string"
-                    ? item.paymentStatus
-                    : item.paymentStatus === true
-                      ? "Paid"
-                      : "Unpaid",
-                paymentAmount: item.totalAmount
-                  ? inrFormat(item.totalAmount)
-                  : 0,
-                rawPaymentAmount: item.amount ?? 0,
-                gstAmount: item.gstAmount ?? 0,
-                discountAmount: item.discount ?? 0,
-                discountPercentage: item.discountPercentage ?? 0,
-                finalAmount: item.totalAmount ?? 0,
-                paymentMode: item.paymentMode || "N/A",
-                paymentVerification: item.paymentVerification || "N/A",
-                paymentDate: item.updatedAt || null,
-                paymentProof: item?.paymentProof?.url || "",
-                meetingId: item?.meeting?._id || null,
-                registeredClientCompany: item?.registeredClientCompany || "N/A",
-                brandName: item?.brandName || "N/A",
-                visitorCompany: item.visitorCompany || "N/A",
-                visitorType: item.visitorType,
-                gender: item?.gender || "N/A",
-                state: item?.state || item?.hoState || "N/A",
-                city: item?.city || item?.hoCity || "N/A",
-                sector: item?.sector || "N/A",
-                gstNumber: item?.gstNumber || "N/A",
-                gstFile: item?.gstFile?.link || "",
-                panNumber: item?.panNumber || "N/A",
-                panFile: item?.panFile?.link || "",
-                idType: item?.idProof?.idType || "N/A",
-                idNumber: item?.idProof?.idNumber || "N/A",
-                otherFile: item?.otherFile?.link || "",
-              })),
+              .map((item, index) => {
+                const latestVisit = item?.externalVisits?.[0] || null;
+                const latestCheckInBy = latestVisit?.checkedInBy;
+                const latestCheckOutBy = latestVisit?.checkedOutBy;
+                const checkInByName =
+                  latestCheckInBy && typeof latestCheckInBy === "object"
+                    ? `${latestCheckInBy.firstName || ""} ${latestCheckInBy.lastName || ""}`.trim()
+                    : "";
+                const checkOutByName =
+                  latestCheckOutBy && typeof latestCheckOutBy === "object"
+                    ? `${latestCheckOutBy.firstName || ""} ${latestCheckOutBy.lastName || ""}`.trim()
+                    : "";
+                const fallbackCheckInBy =
+                  item?.checkedInBy && typeof item.checkedInBy === "object"
+                    ? `${item.checkedInBy.firstName || ""} ${item.checkedInBy.lastName || ""}`.trim()
+                    : "";
+                const fallbackCheckOutBy =
+                  item?.checkedOutBy && typeof item.checkedOutBy === "object"
+                    ? `${item.checkedOutBy.firstName || ""} ${item.checkedOutBy.lastName || ""}`.trim()
+                    : "";
+
+                return {
+                  srNo: index + 1,
+                  mongoId: item._id,
+                  latestExternalVisitId: latestVisit?._id || null,
+                  firstName: item.firstName,
+                  lastName: item.lastName,
+                  name: `${item.firstName} ${item.lastName}`,
+                  address: item.address,
+                  phoneNumber: item.phoneNumber,
+                  dateOfVisit: latestVisit?.dateOfVisit || item.dateOfVisit,
+                  email: item.email,
+                  purposeOfVisit:
+                    latestVisit?.visitorType || item.purposeOfVisit,
+                  buildingName: getBuildingName(item),
+                  unitName: getUnitName(item),
+                  toMeet: !item?.toMeet
+                    ? null
+                    : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
+                  checkInRaw: latestVisit?.checkIn || item.checkIn,
+                  checkInBy: checkInByName || fallbackCheckInBy || "-",
+                  checkOutRaw: latestVisit?.checkOut ?? item.checkOut,
+                  checkOutBy: checkOutByName || fallbackCheckOutBy || "-",
+                  checkIn: latestVisit?.checkIn || item.checkIn,
+                  checkOut: latestVisit?.checkOut
+                    ? humanTime(latestVisit.checkOut)
+                    : item.checkOut
+                      ? humanTime(item.checkOut)
+                      : "",
+                  paymentStatus:
+                    typeof latestVisit?.paymentStatus === "boolean"
+                      ? latestVisit.paymentStatus
+                        ? "Paid"
+                        : "Unpaid"
+                      : typeof item.paymentStatus === "string"
+                        ? item.paymentStatus
+                        : item.paymentStatus === true
+                          ? "Paid"
+                          : "Unpaid",
+                  paymentAmount: latestVisit?.totalAmount
+                    ? inrFormat(latestVisit.totalAmount)
+                    : item.totalAmount
+                      ? inrFormat(item.totalAmount)
+                      : 0,
+                  rawPaymentAmount: latestVisit?.amount ?? item.amount ?? 0,
+                  gstAmount: latestVisit?.gstAmount ?? item.gstAmount ?? 0,
+                  discountAmount: latestVisit?.discount ?? item.discount ?? 0,
+                  discountPercentage:
+                    latestVisit?.discountPercentage ??
+                    item.discountPercentage ??
+                    0,
+                  finalAmount:
+                    latestVisit?.totalAmount ?? item.totalAmount ?? 0,
+                  paymentMode:
+                    latestVisit?.paymentMode || item.paymentMode || "N/A",
+                  paymentVerification: item.paymentVerification || "N/A",
+                  paymentDate: latestVisit?.updatedAt || item.updatedAt || null,
+                  paymentProof:
+                    latestVisit?.paymentProof?.url ||
+                    item?.paymentProof?.url ||
+                    "",
+                  meetingId: item?.meeting?._id || null,
+                  registeredClientCompany:
+                    item?.registeredClientCompany || "N/A",
+                  brandName: item?.brandName || "N/A",
+                  visitorCompany: item.visitorCompany || "N/A",
+                  visitorType: latestVisit?.visitorType || item.visitorType,
+                  gender: item?.gender || "N/A",
+                  state: item?.state || item?.hoState || "N/A",
+                  city: item?.city || item?.hoCity || "N/A",
+                  sector: item?.sector || "N/A",
+                  gstNumber: item?.gstNumber || "N/A",
+                  gstFile: item?.gstFile?.link || "",
+                  panNumber: item?.panNumber || "N/A",
+                  panFile: item?.panFile?.link || "",
+                  idType: item?.idProof?.idType || "N/A",
+                  idNumber: item?.idProof?.idNumber || "N/A",
+                  otherFile: item?.otherFile?.link || "",
+                };
+              }),
           ]}
           columns={visitorsColumns}
           handleClick={handleAddAsset}
@@ -587,9 +623,7 @@ const { data: unitsData = [] } = useQuery({
           <form onSubmit={handleSubmit(submit)}>
             {!isVisitorsData ? (
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
-                {!isEditing && (
-                  <div className="font-bold">Client Details</div>
-                )}
+                {!isEditing && <div className="font-bold">Client Details</div>}
                 {/* First Name */}
                 {isEditing ? (
                   <Controller
@@ -682,8 +716,6 @@ const { data: unitsData = [] } = useQuery({
                   />
                 )}
 
-
-
                 {/* Purpose of Visit */}
                 {isEditing ? (
                   <Controller
@@ -705,7 +737,7 @@ const { data: unitsData = [] } = useQuery({
                   />
                 )}
 
-                 {!isEditing && (
+                {!isEditing && (
                   <>
                     <DetalisFormatted
                       title="Building"
@@ -767,9 +799,18 @@ const { data: unitsData = [] } = useQuery({
 
                 {!isEditing && (
                   <>
-                    <DetalisFormatted title="State" detail={selectedVisitor.state} />
-                    <DetalisFormatted title="City" detail={selectedVisitor.city} />
-                    <DetalisFormatted title="Sector" detail={selectedVisitor.sector} />
+                    <DetalisFormatted
+                      title="State"
+                      detail={selectedVisitor.state}
+                    />
+                    <DetalisFormatted
+                      title="City"
+                      detail={selectedVisitor.city}
+                    />
+                    <DetalisFormatted
+                      title="Sector"
+                      detail={selectedVisitor.sector}
+                    />
                     <br />
                     <div className="font-bold">GST</div>
                     <DetalisFormatted
@@ -782,7 +823,10 @@ const { data: unitsData = [] } = useQuery({
                     />
                     <br />
                     <div className="font-bold">Verification</div>
-                    <DetalisFormatted title="ID Type" detail={selectedVisitor.idType} />
+                    <DetalisFormatted
+                      title="ID Type"
+                      detail={selectedVisitor.idType}
+                    />
                     <DetalisFormatted
                       title="ID Number"
                       detail={selectedVisitor.idNumber}
@@ -800,7 +844,6 @@ const { data: unitsData = [] } = useQuery({
                     <div className="font-bold">Others</div>
                   </>
                 )}
-
 
                 {/* date of visit */}
                 {isEditing ? (
@@ -1011,7 +1054,8 @@ const { data: unitsData = [] } = useQuery({
                     />
                     <br />
                     {/* payment details */}
-                    {selectedVisitor?.purposeOfVisit !== "Meeting Room Booking" && (
+                    {selectedVisitor?.purposeOfVisit !==
+                      "Meeting Room Booking" && (
                       <>
                         <div className="font-bold">Payment Details</div>
                         <DetalisFormatted
@@ -1040,7 +1084,6 @@ const { data: unitsData = [] } = useQuery({
                         />
                       </>
                     )}
-
                   </>
                 )}
               </div>

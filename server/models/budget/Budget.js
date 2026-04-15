@@ -32,7 +32,7 @@ const budgetSchema = new mongoose.Schema(
     },
     actualAmountDate: {
       type: Date,
-      default: false,
+      default: null,
     },
     unit: {
       type: mongoose.Schema.Types.ObjectId,

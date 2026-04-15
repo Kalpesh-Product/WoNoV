@@ -62,7 +62,7 @@ const StatutoryPayments = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
+          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`,
         );
         const budgets = response.data.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
@@ -103,7 +103,7 @@ const StatutoryPayments = () => {
           total,
           amount,
         };
-      }
+      },
     );
   };
 
@@ -134,7 +134,10 @@ const StatutoryPayments = () => {
       const fullYear = 2000 + yearSuffix;
 
       let fiscalYear = null;
-      if ((fullYear === 2024 && monthIndex >= 3) || (fullYear === 2025 && monthIndex <= 2)) {
+      if (
+        (fullYear === 2024 && monthIndex >= 3) ||
+        (fullYear === 2025 && monthIndex <= 2)
+      ) {
         fiscalYear = "FY 2024-25";
       } else if (
         (fullYear === 2025 && monthIndex >= 3) ||
@@ -145,7 +148,9 @@ const StatutoryPayments = () => {
 
       if (!fiscalYear) return;
 
-      const targetMonthIndex = fiscalYearMonthMap[fiscalYear].indexOf(item.month);
+      const targetMonthIndex = fiscalYearMonthMap[fiscalYear].indexOf(
+        item.month,
+      );
       if (targetMonthIndex === -1) return;
 
       fyBuckets[fiscalYear][targetMonthIndex] = {
@@ -216,15 +221,19 @@ const StatutoryPayments = () => {
 
         return `
       <div style="padding:10px;font-family:Poppins-Regular;font-size:13px; width: 220px">
-        <div style="display:flex; justify-content:space-between;"><strong>Month</strong> ${item.month
-          }</div>
-        <div style="display:flex; justify-content:space-between;"><strong>Total Payments</strong> ${item.total
-          }</div>
+        <div style="display:flex; justify-content:space-between;"><strong>Month</strong> ${
+          item.month
+        }</div>
+        <div style="display:flex; justify-content:space-between;"><strong>Total Payments</strong> ${
+          item.total
+        }</div>
         <div style="display:flex; justify-content:space-between;"><strong>Amount</strong> INR ${item.amount.toLocaleString()}</div>
-        <div style="color:#54C4A7; display:flex; justify-content:space-between;"><strong>Approved</strong> ${item.approved
-          }</div>
-        <div style="color:#EB5C45; display:flex; justify-content:space-between;"><strong>Unapproved</strong> ${item.unapproved
-          }</div>
+        <div style="color:#54C4A7; display:flex; justify-content:space-between;"><strong>Approved</strong> ${
+          item.approved
+        }</div>
+        <div style="color:#EB5C45; display:flex; justify-content:space-between;"><strong>Unapproved</strong> ${
+          item.unapproved
+        }</div>
       </div>
     `;
       },
@@ -236,7 +245,9 @@ const StatutoryPayments = () => {
   const kraColumn = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     {
-      field: "expanseName", headerName: "Client", flex: 1,
+      field: "expanseName",
+      headerName: "Client",
+      flex: 1,
       cellRenderer: (params) => (
         <span
           className="text-primary underline cursor-pointer"
@@ -250,10 +261,14 @@ const StatutoryPayments = () => {
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
     { field: "status", headerName: "Status", flex: 1 },
-
   ];
 
-  const formattedRows = statutoryRaw.map((row, index) => ({
+  const selectedFiscalYearMonths = fiscalYearMonthMap[selectedFiscalYear] || [];
+  const selectedFiscalYearRows = statutoryRaw.filter((item) =>
+    selectedFiscalYearMonths.includes(dayjs(item.dueDate).format("MMM-YY")),
+  );
+
+  const formattedRows = selectedFiscalYearRows.map((row, index) => ({
     ...row,
     srNo: index + 1,
     projectedAmount: inrFormat(row.projectedAmount),
@@ -278,16 +293,16 @@ const StatutoryPayments = () => {
   };
 
   const grandTotal = useMemo(() => {
-    return statutoryRaw.reduce(
+    return selectedFiscalYearRows.reduce(
       (sum, item) => sum + (item.projectedAmount || 0),
-      0
+      0,
     );
-  }, [statutoryRaw]);
+  }, [selectedFiscalYearRows]);
 
   const currentMonthTotal = useMemo(() => {
     return selectedMonthData.reduce(
       (sum, item) => sum + (item.projectedAmount || 0),
-      0
+      0,
     );
   }, [selectedMonthData]);
 
@@ -297,7 +312,7 @@ const StatutoryPayments = () => {
     <div className="flex flex-col gap-4">
       <WidgetSection
         border
-        title={"Statutory Payments FY 2025-26"}
+        title={`Statutory Payments ${selectedFiscalYear}`}
         TitleAmount={`INR ${inrFormat(grandTotal)}`}
       >
         <BarGraph data={selectedGraph.chartData} options={barGraphOptions} />
@@ -306,14 +321,20 @@ const StatutoryPayments = () => {
           <div className="flex items-center gap-4">
             <SecondaryButton
               title={<MdNavigateBefore />}
-              handleSubmit={() => setSelectedYearIndex((prev) => Math.max(0, prev - 1))}
+              handleSubmit={() =>
+                setSelectedYearIndex((prev) => Math.max(0, prev - 1))
+              }
               disabled={selectedYearIndex === 0}
             />
-            <div className="text-primary text-content font-semibold">{selectedFiscalYear}</div>
+            <div className="text-primary text-content font-semibold">
+              {selectedFiscalYear}
+            </div>
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={() =>
-                setSelectedYearIndex((prev) => Math.min(fiscalYears.length - 1, prev + 1))
+                setSelectedYearIndex((prev) =>
+                  Math.min(fiscalYears.length - 1, prev + 1),
+                )
               }
               disabled={selectedYearIndex === fiscalYears.length - 1}
             />
@@ -327,7 +348,7 @@ const StatutoryPayments = () => {
         dateColumn={"dueDate"}
         totalKey="actualAmount"
         columns={kraColumn}
-        tableTitle={"Statutory Payments FY 2025-26"}
+        tableTitle={`Statutory Payments ${selectedFiscalYear}`}
       />
 
       {viewDetails && (
