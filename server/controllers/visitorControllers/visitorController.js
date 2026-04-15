@@ -542,7 +542,24 @@ const addVisitor = async (req, res, next) => {
     }
 
     const savedVisitor = await visitor.save();
-
+    await ExternalVisits.create({
+      visitorId: savedVisitor._id,
+      company: savedVisitor.company,
+      legacyVisitorEntryId: savedVisitor._id,
+      visitorType: savedVisitor.visitorType,
+      dateOfVisit: savedVisitor.dateOfVisit,
+      checkIn: savedVisitor.checkIn,
+      checkOut: savedVisitor.checkOut,
+      checkedInBy: savedVisitor.checkedInBy,
+      checkedOutBy: savedVisitor.checkedOutBy,
+      amount: savedVisitor.amount,
+      discount: savedVisitor.discount,
+      gstAmount: savedVisitor.gstAmount,
+      totalAmount: savedVisitor.totalAmount,
+      paymentStatus: savedVisitor.paymentStatus,
+      paymentMode: savedVisitor.paymentMode,
+      paymentProof: savedVisitor.paymentProof,
+    });
     if (!isDepartmentEmpty) {
       const foundDepartment =
         await Department.findById(department).select("name");
@@ -644,6 +661,19 @@ const updateVisitor = async (req, res, next) => {
         logPath,
         logAction,
         logSourceKey,
+      );
+    }
+
+    if (updateData.checkOut) {
+      await ExternalVisits.findOneAndUpdate(
+        { visitorId, checkOut: null },
+        {
+          $set: {
+            checkOut: updatedVisitor.checkOut,
+            checkedOutBy: updatedVisitor.checkedOutBy || user,
+          },
+        },
+        { sort: { checkIn: -1 } },
       );
     }
 
@@ -907,6 +937,22 @@ const updateVisitorPayment = async (req, res, next) => {
     visitor.paymentStatus = paymentStatus === "Paid";
 
     await visitor.save();
+
+    await ExternalVisits.findOneAndUpdate(
+      { visitorId: visitor._id },
+      {
+        $set: {
+          amount: visitor.amount,
+          totalAmount: visitor.totalAmount,
+          discount: visitor.discount,
+          gstAmount: visitor.gstAmount,
+          paymentMode: visitor.paymentMode,
+          paymentStatus: visitor.paymentStatus,
+          paymentProof: visitor.paymentProof,
+        },
+      },
+      { sort: { checkIn: -1 } },
+    );
 
     return res.status(200).json({
       message: "Visitor payment updated successfully",
