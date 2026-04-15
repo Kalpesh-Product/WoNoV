@@ -114,17 +114,30 @@ const VendorTable = () => {
     })) || [];
 
   return (
-    <div>
+    // <div>
+    //   <PageFrame>
+    //     <AgTable
+    //       search={true}
+    //       searchColumn={"Vendor"}
+    //       tableTitle={"List of Vendors"}
+    //       data={rows}
+    //       columns={vendorColumns}
+    //       buttonTitle={"Add Vendor"}
+    //       handleClick={() => navigate("vendor-onboard")}
+    //     />
+      <div className="p-4 flex flex-col gap-8">
       <PageFrame>
-        <AgTable
-          search={true}
-          searchColumn={"Vendor"}
-          tableTitle={"List of Vendors"}
-          data={rows}
-          columns={vendorColumns}
-          buttonTitle={"Add Vendor"}
-          handleClick={() => navigate("vendor-onboard")}
-        />
+        <div className="h-[65vh] overflow-y-auto pr-2 sm:pr-4">
+          <AgTable
+            search={true}
+            searchColumn={"Vendor"}
+            tableTitle={"List of Vendors"}
+            data={rows}
+            columns={vendorColumns}
+            buttonTitle={"Add Vendor"}
+            handleClick={() => navigate("vendor-onboard")}
+          />
+        </div>
       </PageFrame>
       <MuiModal
         open={openModal}

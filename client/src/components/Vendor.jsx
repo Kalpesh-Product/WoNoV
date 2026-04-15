@@ -107,14 +107,14 @@ const Vendor = () => {
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
-        <div className="h-[65vh] overflow-y-auto">
+        <div className="h-[65vh] overflow-y-auto pr-2 sm:pr-4">
           <div className="flex justify-between items-center">
             <span className="text-title text-primary font-pmedium">
               VENDOR ONBOARDING FORM
             </span>
           </div>
-          <form onSubmit={handleSubmit(onSubmit)} className="">
-            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-4">
+         <form onSubmit={handleSubmit(onSubmit)} className="pt-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 gap-6">  
               <div>
                 {/* Section: Basic Information */}
                 <div className="py-4 border-b-default border-borderGray">
@@ -122,7 +122,7 @@ const Vendor = () => {
                     Basic Information
                   </span>
                 </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-4 gap-4 p-4">
+                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-4 gap-4 py-4">
                   <Controller
                     name="name"
                     control={control}
@@ -327,7 +327,7 @@ const Vendor = () => {
                     Other Information
                   </span>
                 </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 p-4">
+               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 py-4">
                   {/* <Controller
                   name="assesseeOfOtherTerritory"
                   control={control}
@@ -489,7 +489,7 @@ const Vendor = () => {
                     Bank Information
                   </span>
                 </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 p-4">
+                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 py-4">
                   <Controller
                     name="ifscCode"
                     control={control}
