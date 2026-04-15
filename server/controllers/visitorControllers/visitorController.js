@@ -15,6 +15,37 @@ const { PDFDocument } = require("pdf-lib");
 const { handleDocumentUpload } = require("../../config/s3Config");
 const Building = require("../../models/locations/Building");
 const Unit = require("../../models/locations/Unit");
+const ExternalVisits = require("../../models/visitor/ExternalVisits");
+
+const attachExternalVisits = async (visitors) => {
+  if (!Array.isArray(visitors) || visitors.length === 0) {
+    return visitors;
+  }
+
+  const visitorIds = visitors.map((visitor) => visitor._id);
+  const visits = await ExternalVisits.find({ visitorId: { $in: visitorIds } })
+    .sort({ checkIn: -1 })
+    .lean();
+
+  const visitsByVisitor = visits.reduce((acc, visit) => {
+    const visitorId = visit.visitorId?.toString();
+    if (!visitorId) {
+      return acc;
+    }
+
+    if (!acc[visitorId]) {
+      acc[visitorId] = [];
+    }
+
+    acc[visitorId].push(visit);
+    return acc;
+  }, {});
+
+  return visitors.map((visitor) => ({
+    ...visitor.toObject(),
+    externalVisits: visitsByVisitor[visitor._id.toString()] || [],
+  }));
+};
 
 const fetchVisitors = async (req, res, next) => {
   const { company } = req;
@@ -83,6 +114,7 @@ const fetchVisitors = async (req, res, next) => {
             path: "meeting",
           },
         ]);
+        visitors = await attachExternalVisits(visitors);
         break;
 
       default:
@@ -115,6 +147,7 @@ const fetchVisitors = async (req, res, next) => {
             path: "meeting",
           },
         ]);
+        visitors = await attachExternalVisits(visitors);
     }
 
     return res.status(200).json(visitors);
@@ -185,14 +218,17 @@ const addVisitor = async (req, res, next) => {
     // ) {
     //   return res.status(400).json({ message: "Invalid building provided" });
 
-     let resolvedBuilding = null;
+    let resolvedBuilding = null;
     if (building) {
       if (mongoose.Types.ObjectId.isValid(building)) {
         resolvedBuilding = await Building.findOne({ _id: building, company })
           .select("_id buildingName")
           .lean();
       } else {
-        resolvedBuilding = await Building.findOne({ buildingName: building, company })
+        resolvedBuilding = await Building.findOne({
+          buildingName: building,
+          company,
+        })
           .select("_id buildingName")
           .lean();
       }
@@ -428,7 +464,7 @@ const addVisitor = async (req, res, next) => {
       brandName,
       gstNumber,
       panNumber,
-       building: resolvedBuilding?._id || null,
+      building: resolvedBuilding?._id || null,
       unit: unit || null,
       checkedInBy: user,
       amount,
