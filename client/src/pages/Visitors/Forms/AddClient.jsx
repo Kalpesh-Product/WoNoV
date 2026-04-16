@@ -202,8 +202,10 @@ const AddClient = () => {
     formData.append("panFile", data.panFile);
     formData.append("gstFile", data.gstFile);
     formData.append("otherFile", data.otherFile);
-    formData.append("idProof", data.idProof);
-    const fileFields = new Set(["panFile", "gstFile", "otherFile","idProof"]);
+    formData.append("idType", data.idProof?.idType || "");
+    formData.append("idNumber", data.idProof?.idNumber || "");
+    const fileFields = new Set(["panFile", "gstFile", "otherFile"]);
+    console.log("Payload before appending to FormData:", formData.get("idType"));
     for (const key in payload) {
       if (fileFields.has(key)) continue;
       if (payload[key] !== undefined && payload[key] !== null) {
