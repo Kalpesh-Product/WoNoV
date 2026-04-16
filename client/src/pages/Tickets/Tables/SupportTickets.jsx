@@ -34,7 +34,7 @@ const SupportTickets = ({ title, departmentId }) => {
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [openView, setOpenView] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
+  //const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
   const { isTop } = useTopDepartment();
 
   const [closeModal, setCloseModal] = useState(false);
@@ -210,6 +210,7 @@ const SupportTickets = ({ title, departmentId }) => {
   const roleTitle = auth?.user?.role?.[0]?.roleTitle || "";
   console.log("roletitle", roleTitle);
   const canManageAssignments = roleTitle.endsWith("Admin");
+  const canViewActionMenu = roleTitle.endsWith("Admin") || isTop;
 
   console.log("canManageAssignments", canManageAssignments);
 
@@ -474,9 +475,9 @@ const SupportTickets = ({ title, departmentId }) => {
         //   },
         // ];
 
-        const showOtherActions =
-          !isTop || (isTop && departmentId === topManagementDepartment);
-        console.log("showOtherActions", showOtherActions);
+        // const showOtherActions =
+        //   !isTop || (isTop && departmentId === topManagementDepartment);
+        // console.log("showOtherActions", showOtherActions);
 
         const conditionalItems = [
           {
@@ -510,7 +511,13 @@ const SupportTickets = ({ title, departmentId }) => {
             >
               <MdOutlineRemoveRedEye />
             </div>
-            <ThreeDotMenu rowId={params.data.id} menuItems={conditionalItems} />
+            {/* <ThreeDotMenu rowId={params.data.id} menuItems={conditionalItems} /> */}
+             {canViewActionMenu ? (
+              <ThreeDotMenu
+                rowId={params.data.id}
+                menuItems={conditionalItems}
+              />
+            ) : null}
           </div>
         );
       },
