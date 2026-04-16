@@ -30,6 +30,10 @@ const budgetSchema = new mongoose.Schema(
     actualAmount: {
       type: Number,
     },
+    actualAmountDate: {
+      type: Date,
+      default: null,
+    },
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",

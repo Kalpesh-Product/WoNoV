@@ -1007,7 +1007,7 @@ const MeetingDashboard = () => {
       title: "Total",
       data:
         meetingsData.filter(
-          (item) => item.meetingType === "Internal" && item.client === "BIZ Nest"
+          (item) => item.meetingType === "Internal" && item.client === "BIZNest"
         ).length || 0,
       description: "BIZ Nest Bookings",
       route: "reports",

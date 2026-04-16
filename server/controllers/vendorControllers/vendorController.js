@@ -6,7 +6,7 @@ const { Readable } = require("stream");
 const mongoose = require("mongoose");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
-const Role = require("../../models/roles/Roles");
+//const Role = require("../../models/roles/Roles");
 
 const onboardVendor = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -89,19 +89,19 @@ const onboardVendor = async (req, res, next) => {
       );
     }
 
-    const roleIds = currentUser.role.map((role) => role._id);
+    //const roleIds = currentUser.role.map((role) => role._id);
 
     const companyDoc = await Company.findOne({
       _id: currentUser.company,
       selectedDepartments: {
         $elemMatch: {
           department: departmentId,
-          $or: [
-            { admin: { $in: roleIds } },
-            { admin: { $exists: false } },
-            { admin: null },
-            // { admin: "" },
-          ],
+          // $or: [
+          //   { admin: { $in: roleIds } },
+          //   { admin: { $exists: false } },
+          //   { admin: null },
+          //   // { admin: "" },
+          // ],
         },
       },
     })
@@ -110,7 +110,8 @@ const onboardVendor = async (req, res, next) => {
 
     if (!companyDoc) {
       throw new CustomError(
-        "You are not authorized to onboard a vendor for this department.",
+       // "You are not authorized to onboard a vendor for this department.",
+      "This department is not configured for your company.",
         logPath,
         logAction,
         logSourceKey,
@@ -323,7 +324,8 @@ const onboardVendor = async (req, res, next) => {
 // };
 
 const updateVendor = async (req, res, next) => {
-  const { ip, company, user, departments, roles } = req;
+  //const { ip, company, user, departments, roles } = req;
+    const { ip, user } = req;
 
   const allowedFields = [
     "name",
@@ -357,6 +359,7 @@ const updateVendor = async (req, res, next) => {
 
   try {
     const { vendorId } = req.params;
+    const companyId = req.company || req.userData?.company;
 
     // Validation
     const updateData = {};
@@ -420,7 +423,21 @@ const updateVendor = async (req, res, next) => {
     }
 
     // Use req.departments directly (already validated by middleware)
-    const isMember = departments.find(
+     let userDepartments = Array.isArray(req.departments)
+      ? req.departments
+      : [];
+
+    if (userDepartments.length === 0 && user) {
+      const currentUser = await User.findById(user)
+        .select("departments")
+        .lean()
+        .exec();
+      userDepartments = Array.isArray(currentUser?.departments)
+        ? currentUser.departments
+        : [];
+    }
+
+    const isMember = userDepartments.find(
       (dept) => dept._id.toString() === vendor.departmentId.toString(),
     );
     if (!isMember) {
@@ -431,15 +448,27 @@ const updateVendor = async (req, res, next) => {
 
     // Use req.role directly
     // const roleIds = roles.map((r) => r._id);
-    const foundRoles = await Role.find({ roleTitle: { $in: roles } });
+    //const foundRoles = await Role.find({ roleTitle: { $in: roles } });
 
-    const roleIds = foundRoles.map((r) => r._id);
-    const companyDoc = await Company.findOne({
-      _id: company,
+    //const roleIds = foundRoles.map((r) => r._id);
+    if (!companyId) {
+      return res.status(403).send({
+        message: "You are not authorized to update this vendor",
+      });
+    }
+
+    if (vendor.company.toString() !== companyId.toString()) {
+      return res.status(403).send({
+        message: "You are not authorized to update this vendor",
+      });
+    }
+     const companyDoc = await Company.findOne({
+      _id: companyId,
+      //_id: companyId,
       selectedDepartments: {
         $elemMatch: {
           department: vendor.departmentId,
-          admin: { $in: roleIds }, // Strict check only
+          //admin: { $in: roleIds }, // Strict check only
         },
       },
     })

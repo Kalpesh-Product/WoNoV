@@ -176,7 +176,10 @@ import ManageVisitors from "../pages/Visitors/ManageVisitors";
 import VisitorTeamMembers from "../pages/Visitors/VisitorTeamMembers";
 import VisitorReports from "../pages/Visitors/VisitorReports";
 import VisitorReviews from "../pages/Visitors/VisitorReviews";
-import VisitorSettings from "../pages/Visitors/VisitorSettings/VisitorSettings";
+import VisitorMixBag from "../pages/Visitors/VisitorMixBag";
+import RepeatDayPass from "../pages/Visitors/RepeatDayPass";
+//import VisitorSettings from "../pages/Visitors/VisitorSettings/VisitorSettings";
+import RepeatExternalCompaanies from "../pages/Visitors/RepeatExternalCompaanies";
 import VisitorBulkUpload from "../pages/Visitors/VisitorSettings/VisitorBulkUpload";
 import ProfileLayout from "../pages/Profile/ProfileLayout";
 import MyProfile from "../pages/Profile/MyProfile";
@@ -3015,7 +3018,33 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
-
+                  {
+                    path: "mix-bag",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<VisitorMixBag />}
+                        permissions={[PERMISSIONS.VISITORS_MIX_BAG]}
+                      />
+                    ),
+                  },
+                  {
+                    path: "mix-bag/repeat-day-pass",
+                    element: (
+                      <Navigate
+                        to="/app/visitors/mix-bag/repeat-day-pass/repeat-external-companies"
+                        replace
+                      />
+                    ),
+                  },
+                  {
+                    path: "mix-bag/repeat-day-pass/repeat-external-companies",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<RepeatExternalCompaanies />}
+                        permissions={[PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS]}
+                      />
+                    ),
+                  },
                   {
                     path: "team-members", // Page with table showing a list of all the team members(receptionists)
                     element: <VisitorTeamMembers />,
@@ -3028,16 +3057,16 @@ export const routes = createBrowserRouter([
                     path: "reviews", // Page with table showing a list of all the visitor reviews
                     element: <VisitorReviews />,
                   },
-                  {
-                    path: "settings",
-                    element: <VisitorSettings />,
-                    children: [
-                      {
-                        path: "bulk-upload",
-                        element: <VisitorBulkUpload />,
-                      },
-                    ],
-                  },
+                  // {
+                  //   path: "settings",
+                  //   element: <VisitorSettings />,
+                  //   children: [
+                  //     {
+                  //       path: "bulk-upload",
+                  //       element: <VisitorBulkUpload />,
+                  //     },
+                  //   ],
+                  // },
                 ],
               },
             ],

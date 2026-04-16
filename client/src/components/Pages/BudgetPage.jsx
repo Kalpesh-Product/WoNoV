@@ -52,7 +52,7 @@ const BudgetPage = () => {
     queryKey: ["departmentBudget", department?._id],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/budget/company-budget?departmentId=${department._id}`
+        `/api/budget/company-budget?departmentId=${department._id}`,
       );
       const budgets = response.data.allBudgets;
       return Array.isArray(budgets) ? budgets : [];
@@ -87,10 +87,10 @@ const BudgetPage = () => {
     new Map(
       units.length > 0
         ? units
-          .filter((loc) => loc.building && loc.building._id)
-          .map((loc) => [loc.building._id, loc.building.buildingName])
-        : []
-    ).entries()
+            .filter((loc) => loc.building && loc.building._id)
+            .map((loc) => [loc.building._id, loc.building.buildingName])
+        : [],
+    ).entries(),
   );
 
   const { mutate: requestBudget, isPending: requestBudgetPending } =
@@ -100,7 +100,7 @@ const BudgetPage = () => {
           `/api/budget/request-budget/${department._id}`,
           {
             ...data,
-          }
+          },
         );
         return response.data;
       },
@@ -133,8 +133,12 @@ const BudgetPage = () => {
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
             // { field: "department", headerName: "Department", flex: 200 },
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            // { field: "projectedAmount", headerName: "Amount (INR)", flex: 1 },
-            { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
+            { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
+            {
+              field: "actualAmount",
+              headerName: "Actual Amount (INR)",
+              flex: 1,
+            },
             { field: "dueDate", headerName: "Due Date", flex: 1 },
             { field: "status", headerName: "Status", flex: 1 },
           ],
@@ -150,9 +154,15 @@ const BudgetPage = () => {
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
-      // projectedAmount: item?.projectedAmount?.toFixed(2),
-      actualAmount: item?.actualAmount?.toFixed(2),
+      paymentType: item.paymentType || "",
+      building: item?.unit?.building?.buildingName || item.building || "",
+      unit: item?.unit?.unitNo || "",
+      projectedAmountRaw: item?.projectedAmount || 0,
+      projectedAmount: item?.projectedAmount?.toFixed(2),
+      actualAmount: Number(item?.actualAmount || 0).toFixed(2),
+      actualAmountRaw: item?.actualAmount || "",
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
+      dueDateRaw: item?.dueDate,
       status: item.status,
       invoiceAttached: item.invoiceAttached,
     });
@@ -170,7 +180,7 @@ const BudgetPage = () => {
         //   row.projectedAmount?.toLocaleString("en-IN").replace(/,/g, "")
         // ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
         actualAmount: Number(
-          row.actualAmount?.toLocaleString("en-IN").replace(/,/g, "")
+          row.actualAmount?.toLocaleString("en-IN").replace(/,/g, ""),
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
       }));
       const transformedCols = [
@@ -219,7 +229,7 @@ const BudgetPage = () => {
   const expenseRawSeries = useMemo(() => {
     // Initialize monthly buckets
     const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+      dayjs(`2024-04-01`).add(index, "month").format("MMM"),
     );
 
     const fyData = {
@@ -264,7 +274,7 @@ const BudgetPage = () => {
   }, [hrFinance]);
 
   const maxExpenseValue = Math.max(
-    ...expenseRawSeries.flatMap((series) => series.data)
+    ...expenseRawSeries.flatMap((series) => series.data),
   );
   const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
 
@@ -333,8 +343,8 @@ const BudgetPage = () => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-          rawData
-        ).toLocaleString("en-IN")}</div>
+                 rawData,
+               ).toLocaleString("en-IN")}</div>
   
                 </div>
        
@@ -347,7 +357,7 @@ const BudgetPage = () => {
   const totalUtilised =
     budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
       (acc, val) => acc + val,
-      0
+      0,
     ) || 0;
 
   const navigate = useNavigate();
@@ -355,7 +365,6 @@ const BudgetPage = () => {
 
   return (
     <div className="flex flex-col gap-8">
-
       <FyBarGraph
         data={hrFinance}
         dateKey="dueDate"
@@ -375,7 +384,11 @@ const BudgetPage = () => {
         </div>
       )}
 
-      <AllocatedBudget financialData={financialData} noInvoice={false} />
+       <AllocatedBudget
+        financialData={financialData}
+        noInvoice={false}
+        enableActionMenu
+      />
       <MuiModal
         title="Request Budget"
         open={openModal}
@@ -413,14 +426,14 @@ const BudgetPage = () => {
                   {isHrLoading
                     ? []
                     : [
-                      ...new Map(
-                        hrFinance.map((item) => [item.expanseType, item])
-                      ).values(),
-                    ].map((item) => (
-                      <MenuItem key={item._id} value={item.expanseType}>
-                        {item.expanseType}
-                      </MenuItem>
-                    ))}
+                        ...new Map(
+                          hrFinance.map((item) => [item.expanseType, item]),
+                        ).values(),
+                      ].map((item) => (
+                        <MenuItem key={item._id} value={item.expanseType}>
+                          {item.expanseType}
+                        </MenuItem>
+                      ))}
                 </Select>
               </FormControl>
             )}
@@ -458,10 +471,10 @@ const BudgetPage = () => {
                   {locationsLoading
                     ? []
                     : uniqueBuildings.map((building) => (
-                      <MenuItem key={building[0]} value={building[1]}>
-                        {building[1]}
-                      </MenuItem>
-                    ))}
+                        <MenuItem key={building[0]} value={building[1]}>
+                          {building[1]}
+                        </MenuItem>
+                      ))}
                 </Select>
               </FormControl>
             )}
@@ -481,21 +494,21 @@ const BudgetPage = () => {
                   {locationsLoading
                     ? []
                     : units.map((unit) =>
-                      unit.building.buildingName === selectedBuilding ? (
-                        <MenuItem key={unit._id} value={unit._id}>
-                          {unit.unitNo}
-                        </MenuItem>
-                      ) : (
-                        <></>
-                      )
-                    )}
+                        unit.building.buildingName === selectedBuilding ? (
+                          <MenuItem key={unit._id} value={unit._id}>
+                            {unit.unitNo}
+                          </MenuItem>
+                        ) : (
+                          <></>
+                        ),
+                      )}
                 </Select>
               </FormControl>
             )}
           />
 
           {/* Amount */}
-          {/* <Controller
+          <Controller
             name="projectedAmount"
             control={control}
             rules={{
@@ -515,9 +528,9 @@ const BudgetPage = () => {
                 helperText={fieldState.error?.message}
               />
             )}
-          /> */}
+          />
 
-          <Controller
+          {/* <Controller
             name="actualAmount"
             control={control}
             rules={{
@@ -537,7 +550,7 @@ const BudgetPage = () => {
                 helperText={fieldState.error?.message}
               />
             )}
-          />
+          /> */}
 
           {/* Due Date */}
           <Controller
