@@ -1012,6 +1012,7 @@ const MaintainanceDashboard = () => {
       data: 0,
       description: "Assets Under Management",
       // route: "maintenance-assets",
+      route: "/app/assets/view-assets/Maintenance/list-of-assets",
     },
     {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_KPA.value,

@@ -29,7 +29,7 @@ const ViewAvailability = () => {
   const [clearedImageOpen, setClearedImageOpen] = useState(false);
   const [clearedFile, setClearedFile] = useState(null);
   const [tabIndex, setTabIndex] = useState(0);
-
+  const currentMonthLabel = dayjs().format("MMM-YYYY");
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
   };
@@ -214,14 +214,14 @@ const ViewAvailability = () => {
           title="Total Desks"
           secondTitle="Total Occupancy %"
           secondData={"100%"}
-          description="Last Month : Apr-25"
+          description={`Current Month : ${currentMonthLabel}`}
         />
         <DoubleDataCard
           data={totalActualOccupied}
           title="Occupied Desks"
           secondTitle="Occupancy %"
           secondData={occupancyPercent}
-          description="Last Month : Apr-25"
+          description={`Current Month : ${currentMonthLabel}`}
         />
         <DoubleDataCard
           data={totalDesks - totalActualOccupied}
@@ -234,7 +234,7 @@ const ViewAvailability = () => {
               )
               : "0"
           }
-          description="Last Month : Apr-25"
+          description={`Current Month : ${currentMonthLabel}`}  
         />
       </WidgetSection>
 
