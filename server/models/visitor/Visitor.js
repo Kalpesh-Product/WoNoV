@@ -207,6 +207,7 @@ const visitorSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+visitorSchema.index({ email: 1, company: 1 }, { unique: true });
 
 const Visitor = mongoose.model("Visitor", visitorSchema);
 

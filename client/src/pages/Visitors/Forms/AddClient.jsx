@@ -202,12 +202,23 @@ const AddClient = () => {
     formData.append("panFile", data.panFile);
     formData.append("gstFile", data.gstFile);
     formData.append("otherFile", data.otherFile);
-    formData.append("idType", data.idProof?.idType || "");
-    formData.append("idNumber", data.idProof?.idNumber || "");
+    formData.append("idProof", JSON.stringify(data.idProof));
+    // formData.append("idType", data.idProof?.idType || "");
+    // formData.append("idNumber", data.idProof?.idNumber || "");
     const fileFields = new Set(["panFile", "gstFile", "otherFile"]);
-    console.log("Payload before appending to FormData:", formData.get("idType"));
+
+    // for (const key in payload) {
+    //   if (fileFields.has(key)) continue;
+    //   if (payload[key] !== undefined && payload[key] !== null) {
+    //     formData.append(key, payload[key]);
+    //   }
+    // }
+
+    const skipFields = new Set(["idProof"]); // 👈 ADD THIS
+
     for (const key in payload) {
-      if (fileFields.has(key)) continue;
+      if (fileFields.has(key) || skipFields.has(key)) continue;
+
       if (payload[key] !== undefined && payload[key] !== null) {
         formData.append(key, payload[key]);
       }
