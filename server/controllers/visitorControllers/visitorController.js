@@ -1233,6 +1233,64 @@ const rebookClient = async (req, res, next) => {
       });
     }
 
+    const ongoingVisit = await ExternalVisits.findOne({
+      visitorId: sourceVisitor._id,
+      company,
+      checkOut: null,
+    }).lean();
+
+    if (ongoingVisit) {
+      return res.status(409).json({
+        message: "Visitor already has an active visit. Checkout first.",
+      });
+    }
+
+    const conflictingDayPassVisit = await ExternalVisits.findOne({
+      visitorId: sourceVisitor._id,
+      company,
+      visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+      $or: [
+        {
+          checkOut: { $ne: null },
+          checkIn: { $lt: checkOut },
+          checkOut: { $gt: checkIn },
+        },
+        {
+          checkOut: null,
+          checkIn: { $lt: checkOut },
+        },
+      ],
+    })
+      .select("_id checkIn checkOut visitorType")
+      .lean();
+
+    const formatToIST = (date) => {
+      return new Date(date).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour12: true,
+      });
+    };
+
+    if (conflictingDayPassVisit) {
+      const conflictingCheckIn = conflictingDayPassVisit.checkIn
+        ? formatToIST(conflictingDayPassVisit.checkIn)
+        : "N/A";
+
+      const conflictingCheckOut = conflictingDayPassVisit.checkOut
+        ? formatToIST(conflictingDayPassVisit.checkOut)
+        : "Ongoing";
+
+      return res.status(409).json({
+        message: `Day pass timing conflict. Choose a different time range.Existing ${conflictingDayPassVisit.visitorType}: ${conflictingCheckIn} to ${conflictingCheckOut}`,
+        conflictingVisit: conflictingDayPassVisit,
+      });
+    }
+
     let fullDayPassAmount = 850;
     if (sourceVisitor.building) {
       const sourceBuilding = await Building.findOne({
