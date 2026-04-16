@@ -29,7 +29,7 @@ const AdminOfficesLayout = () => {
   const [clearedImageOpen, setClearedImageOpen] = useState(false);
   const [clearedFile, setClearedFile] = useState(null);
   const [tabIndex, setTabIndex] = useState(0);
-
+  const currentMonthLabel = dayjs().format("MMM-YYYY");
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
   };
@@ -61,10 +61,11 @@ const AdminOfficesLayout = () => {
     queryKey: ["unitDetails"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-members", {
-        params: { unitId: unit },
+         params: { unitId: unit, active: true },
       });
       return response.data || {};
     },
+    enabled: !!unit,
   });
 
   const totalOccupied = Number(unitDetails?.totalOccupiedDesks) || 0;
@@ -196,14 +197,15 @@ const AdminOfficesLayout = () => {
           title="Total Desks"
           secondTitle="Total Occupancy %"
           secondData={"100%"}
-          description="Last Month : Apr-25"
+          // description="Last Month : Apr-25"
+          description={`Current Month : ${currentMonthLabel}`}
         />
         <DoubleDataCard
           data={totalActualOccupied}
           title="Occupied Desks"
           secondTitle="Occupancy %"
           secondData={`${occupancyPercent}%`}
-          description="Last Month : Apr-25"
+          description={`Current Month : ${currentMonthLabel}`}
         />
         <DoubleDataCard
           data={totalDesks - totalActualOccupied}
@@ -213,7 +215,7 @@ const AdminOfficesLayout = () => {
             ((totalDesks - totalActualOccupied) / totalDesks) *
             100
           ).toFixed(0)}%`}
-          description="Last Month : Apr-25"
+          description={`Current Month : ${currentMonthLabel}`}
         />
       </WidgetSection>
 

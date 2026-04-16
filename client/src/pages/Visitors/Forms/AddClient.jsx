@@ -61,8 +61,8 @@ const AddClient = () => {
       registeredClientCompany: "",
       brandName: "",
       sector: "",
-      hoState: "",
-      hoCity: "",
+      state: "",
+      city: "",
       visitorType: "",
       visitorCompany: "",
       paymentAmount: "",
@@ -173,8 +173,10 @@ const AddClient = () => {
           ? data.purposeOfVisit
           : "Meeting",
       sector: data.sector,
-      hoState: data.hoState,
-      hoCity: data.hoCity,
+      state: data.state,
+      city: data.city,
+      idType: data.idProof?.idType || "",
+      idNumber: data.idProof?.idNumber || "",
       department: isBiznest
         ? data.department === "na"
           ? null
@@ -200,7 +202,23 @@ const AddClient = () => {
     formData.append("panFile", data.panFile);
     formData.append("gstFile", data.gstFile);
     formData.append("otherFile", data.otherFile);
+    formData.append("idProof", JSON.stringify(data.idProof));
+    // formData.append("idType", data.idProof?.idType || "");
+    // formData.append("idNumber", data.idProof?.idNumber || "");
+    const fileFields = new Set(["panFile", "gstFile", "otherFile"]);
+
+    // for (const key in payload) {
+    //   if (fileFields.has(key)) continue;
+    //   if (payload[key] !== undefined && payload[key] !== null) {
+    //     formData.append(key, payload[key]);
+    //   }
+    // }
+
+    const skipFields = new Set(["idProof"]); // 👈 ADD THIS
+
     for (const key in payload) {
+      if (fileFields.has(key) || skipFields.has(key)) continue;
+
       if (payload[key] !== undefined && payload[key] !== null) {
         formData.append(key, payload[key]);
       }
@@ -529,7 +547,7 @@ const AddClient = () => {
 
                 <div className="flex gap-4 items-center">
                   <Controller
-                    name="hoState"
+                    name="state"
                     control={control}
                     render={({ field }) => (
                       <TextField
@@ -553,7 +571,7 @@ const AddClient = () => {
                     )}
                   />
                   <Controller
-                    name="hoCity"
+                    name="city"
                     control={control}
                     render={({ field }) => (
                       <TextField

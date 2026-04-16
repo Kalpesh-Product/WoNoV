@@ -195,6 +195,18 @@ const addVisitor = async (req, res, next) => {
       building,
     } = req.body;
 
+    let parsedIdProof = null;
+
+    try {
+      if (idProof && typeof idProof === "string") {
+        parsedIdProof = JSON.parse(idProof);
+      }
+    } catch (err) {
+      return res.status(400).json({
+        message: "Invalid idProof format",
+      });
+    }
+
     const gstFile = req.files?.gstFile?.[0];
     const panFile = req.files?.panFile?.[0];
     const otherFile = req.files?.otherFile?.[0];
@@ -217,6 +229,14 @@ const addVisitor = async (req, res, next) => {
     //   !["Sunteck Kanaka", "Dempo Trade Centre"].includes(building)
     // ) {
     //   return res.status(400).json({ message: "Invalid building provided" });
+
+    const visitorExists = await Visitor.findOne({ email: email });
+
+    if (visitorExists) {
+      return res
+        .status(400)
+        .json({ message: "A visitor with this email already exists" });
+    }
 
     let resolvedBuilding = null;
     if (building) {
@@ -478,17 +498,12 @@ const addVisitor = async (req, res, next) => {
 
     if (visitorFlag === "Client") {
       visitorData.idProof = {
-        idType: idProof.idType,
-        idNumber: idProof.idNumber,
-      };
-    } else if (visitorFlag === "Visitor") {
-      visitorData.idProof = {
-        idType: idProof?.idType ?? null,
-        idNumber: idProof?.idNumber ?? null,
+        idType: parsedIdProof?.idType,
+        idNumber: parsedIdProof?.idNumber,
       };
     }
 
-    const visitor = new Visitor(visitorData);
+    // const visitor = new Visitor(visitorData);
 
     const companyData = await Company.findById(company).lean();
 
@@ -534,14 +549,14 @@ const addVisitor = async (req, res, next) => {
           );
         }
 
-        visitor[field] = {
+        visitorData[field] = {
           link: uploadRes.secure_url,
           id: uploadRes.public_id,
         };
       }
     }
 
-    const savedVisitor = await visitor.save();
+    const savedVisitor = await visitorData.save();
     await ExternalVisits.create({
       visitorId: savedVisitor._id,
       company: savedVisitor.company,
@@ -587,11 +602,7 @@ const addVisitor = async (req, res, next) => {
       visitor: savedVisitor,
     });
   } catch (error) {
-    next(
-      error instanceof CustomError
-        ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-    );
+    next(error);
   }
 };
 
@@ -1162,10 +1173,20 @@ const rebookClient = async (req, res, next) => {
 
   try {
     const { externalVisitId } = req.params;
-    const { purposeOfVisit, checkInTime, checkOutTime } = req.body;
+    const { purposeOfVisit, checkInTime, checkOutTime, unit } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(externalVisitId)) {
       return res.status(400).json({ message: "Invalid visitor id provided" });
+    }
+
+    if (unit && !mongoose.Types.ObjectId.isValid(unit)) {
+      return res.status(400).json({ message: "Invalid unit id provided" });
+    }
+
+    const unitExists = await Unit.findOne({ _id: unit });
+
+    if (unit && !unitExists) {
+      return res.status(400).json({ message: "Unit not found" });
     }
 
     if (!purposeOfVisit || !checkInTime || !checkOutTime) {
@@ -1247,7 +1268,7 @@ const rebookClient = async (req, res, next) => {
       totalAmount,
       paymentStatus: false,
       paymentMode: null,
-      unit: sourceVisitor.unit || null,
+      unit: unit || null,
       notes: `Repeated client visit created from visitor ${sourceVisitor._id}`,
     });
 

@@ -21,6 +21,7 @@ import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import useAuth from "../../hooks/useAuth";
 import UploadFileInput from "../../components/UploadFileInput";
+import humanDate from "../../utils/humanDateForamt";
 
 const ExternalClients = () => {
   const axios = useAxiosPrivate();
@@ -862,7 +863,7 @@ const ExternalClients = () => {
                 ) : (
                   <DetalisFormatted
                     title="Date of Visit"
-                    detail={selectedVisitor.dateOfVisit}
+                    detail={humanDate(selectedVisitor.dateOfVisit)}
                   />
                 )}
 

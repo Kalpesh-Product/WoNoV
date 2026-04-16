@@ -960,7 +960,7 @@ const ItDashboard = () => {
       title: "Total",
       data: departmentKra.length || 0,
       description: "Monthly KPA",
-      route: "/app/performance/IT/monthly-KPA",
+      route: "/app/performance",
     },
   ];
 
