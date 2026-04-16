@@ -167,10 +167,18 @@ const ManageMeetings = () => {
   });
 
   const onEditSubmit = (data) => {
+     const mapParticipantIds = (participants = []) =>
+      participants
+        .map((participant) =>
+          typeof participant === "string" ? participant : participant?._id,
+        )
+        .filter(Boolean);
     const payload = {
       ...data,
-      internalParticipants: data.internalParticipants?.map((p) => p._id),
-      clientParticipants: data.clientParticipants?.map((p) => p._id),
+      // internalParticipants: data.internalParticipants?.map((p) => p._id),
+      // clientParticipants: data.clientParticipants?.map((p) => p._id),
+      internalParticipants: mapParticipantIds(data.internalParticipants),
+      clientParticipants: mapParticipantIds(data.clientParticipants),
     };
     updateMeeting(payload);
     console.log("Final payload:", payload);
@@ -183,19 +191,36 @@ const ManageMeetings = () => {
       setEditValue("endTime", dayjs(new Date(selectedMeeting.endTime)));
 
       const formattedInternal =
-        selectedMeeting.participants?.map((p) => ({
-          _id: p._id,
-          firstName: p.firstName,
-          lastName: p.lastName,
-          email: p.email,
-        })) || [];
+       selectedMeeting.participants
+          ?.filter((p) => p?.firstName)
+          .map((p) => ({
+            _id: p._id,
+            firstName: p.firstName,
+            lastName: p.lastName,
+            email: p.email,
+          })) || [];
 
       const formattedExternal =
-        selectedMeeting.participants?.map((p) => ({
-          _id: p._id,
-          employeeName: p.employeeName,
-          email: p.email,
-        })) || [];
+        selectedMeeting.participants
+          ?.filter((p) => p?.employeeName)
+          .map((p) => ({
+            _id: p._id,
+            employeeName: p.employeeName,
+            email: p.email,
+          })) || [];
+      //   selectedMeeting.participants?.map((p) => ({
+      //     _id: p._id,
+      //     firstName: p.firstName,
+      //     lastName: p.lastName,
+      //     email: p.email,
+      //   })) || [];
+
+      // const formattedExternal =
+      //   selectedMeeting.participants?.map((p) => ({
+      //     _id: p._id,
+      //     employeeName: p.employeeName,
+      //     email: p.email,
+      //   })) || [];
 
       setEditValue("internalParticipants", formattedInternal);
       setEditValue("clientParticipants", formattedExternal);
