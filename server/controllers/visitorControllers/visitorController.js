@@ -1162,10 +1162,20 @@ const rebookClient = async (req, res, next) => {
 
   try {
     const { externalVisitId } = req.params;
-    const { purposeOfVisit, checkInTime, checkOutTime } = req.body;
+    const { purposeOfVisit, checkInTime, checkOutTime, unit } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(externalVisitId)) {
       return res.status(400).json({ message: "Invalid visitor id provided" });
+    }
+
+    if (unit && !mongoose.Types.ObjectId.isValid(unit)) {
+      return res.status(400).json({ message: "Invalid unit id provided" });
+    }
+
+    const unitExists = await Unit.findOne({ _id: unit });
+
+    if (unit && !unitExists) {
+      return res.status(400).json({ message: "Unit not found" });
     }
 
     if (!purposeOfVisit || !checkInTime || !checkOutTime) {
@@ -1247,7 +1257,7 @@ const rebookClient = async (req, res, next) => {
       totalAmount,
       paymentStatus: false,
       paymentMode: null,
-      unit: sourceVisitor.unit || null,
+      unit: unit || null,
       notes: `Repeated client visit created from visitor ${sourceVisitor._id}`,
     });
 
