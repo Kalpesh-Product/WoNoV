@@ -235,7 +235,10 @@ const addVisitor = async (req, res, next) => {
     if (visitorExists) {
       return res
         .status(400)
-        .json({ message: "A visitor with this email already exists" });
+        .json({
+          message:
+            "Visitor already exists. Continue from ‘Repeat Visitors’ in Mix Bag.",
+        });
     }
 
     let resolvedBuilding = null;
