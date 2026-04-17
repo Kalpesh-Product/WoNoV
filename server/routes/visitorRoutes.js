@@ -10,6 +10,7 @@ const {
   bulkInsertExternalClients,
   updateVisitorPayment,
   updateDayPassVisitPayment,
+  updateDayPassPaymentVerification,
   rebookClient,
 } = require("../controllers/visitorControllers/visitorController");
 
@@ -44,6 +45,12 @@ router.patch(
   upload.single("paymentProof"),
   updateVisitorPayment,
 );
+router.patch(
+  "/day-pass/payment/:externalVisitId",
+  upload.single("paymentProof"),
+  updateDayPassVisitPayment,
+);
+router.patch("/day-pass/payment-verification", updateDayPassPaymentVerification);
 router.post(
   "/bulk-upload-external-clients",
   upload.single("external-clients"),
