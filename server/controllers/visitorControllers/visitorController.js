@@ -233,12 +233,10 @@ const addVisitor = async (req, res, next) => {
     const visitorExists = await Visitor.findOne({ email: email });
 
     if (visitorExists) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Visitor already exists. Continue from ‘Repeat Visitors’ in Mix Bag.",
-        });
+      return res.status(400).json({
+        message:
+          "Visitor already exists. Continue from 'Repeat Visitors' in Mix Bag.",
+      });
     }
 
     let resolvedBuilding = null;
@@ -493,6 +491,7 @@ const addVisitor = async (req, res, next) => {
       amount,
       gstAmount: amount * (18 / 100),
       totalAmount: amount + amount * (18 / 100),
+      visitorRoles: [visitorFlag],
     });
 
     if (clockOut) {
@@ -1073,6 +1072,7 @@ const bulkInsertExternalClients = async (req, res, next) => {
           registeredClientCompany,
           brandName,
           visitorFlag: "Client",
+          visitorRoles: ["Visitor", "Client"],
           visitorType: "Meeting",
           building: buildingId,
           company,
@@ -1346,6 +1346,208 @@ const rebookClient = async (req, res, next) => {
   }
 };
 
+const convertVisitorToClient = async (req, res, next) => {
+  const logPath = "visitors/VisitorLog";
+  const logAction = "Convert Visitor To Client";
+  const logSourceKey = "visitor";
+  const { user, company } = req;
+
+  try {
+    const { visitorId } = req.params;
+    const {
+      purposeOfVisit,
+      registeredClientCompany,
+      brandName,
+      gstNumber,
+      panNumber,
+      idProof,
+      sector,
+      city,
+      state,
+      unit,
+      checkInTime,
+      checkOutTime,
+      email,
+      phoneNumber,
+      visitorCompany,
+    } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(visitorId)) {
+      return res.status(400).json({ message: "Invalid visitor id provided" });
+    }
+
+    if (unit && !mongoose.Types.ObjectId.isValid(unit)) {
+      return res.status(400).json({ message: "Invalid unit id provided" });
+    }
+
+    const visitor = await Visitor.findOne({ _id: visitorId, company });
+
+    if (!visitor) {
+      return res.status(404).json({ message: "Visitor not found" });
+    }
+
+    if (unit) {
+      const unitExists = await Unit.findOne({ _id: unit, company })
+        .select("_id")
+        .lean();
+      if (!unitExists) {
+        return res.status(400).json({ message: "Unit not found" });
+      }
+      visitor.unit = unit;
+    }
+
+    const normalizedPurpose = (purposeOfVisit || "").trim().toLowerCase();
+    const visitorTypeMap = {
+      "full day pass": "Full-Day Pass",
+      "half day pass": "Half-Day Pass",
+      meeting: "Meeting",
+    };
+    const mappedVisitorType = visitorTypeMap[normalizedPurpose] || "Meeting";
+
+    const resolvedCheckIn = checkInTime ? new Date(checkInTime) : new Date();
+    const resolvedCheckOut = checkOutTime ? new Date(checkOutTime) : null;
+
+    if (Number.isNaN(resolvedCheckIn.getTime())) {
+      return res.status(400).json({ message: "Invalid checkInTime provided" });
+    }
+
+    if (resolvedCheckOut && Number.isNaN(resolvedCheckOut.getTime())) {
+      return res.status(400).json({ message: "Invalid checkOutTime provided" });
+    }
+
+    if (resolvedCheckOut && resolvedCheckOut < resolvedCheckIn) {
+      return res.status(400).json({
+        message: "checkOutTime cannot be before checkInTime",
+      });
+    }
+
+    let parsedIdProof = idProof;
+    if (typeof idProof === "string") {
+      try {
+        parsedIdProof = JSON.parse(idProof);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid idProof format" });
+      }
+    }
+
+    const resolvedEmail = email || visitor.email;
+    const resolvedPhoneNumber = phoneNumber || visitor.phoneNumber;
+    const resolvedGstNumber = gstNumber || visitor.gstNumber;
+    const resolvedPanNumber = panNumber || visitor.panNumber;
+
+    if (!resolvedEmail || !resolvedGstNumber || !resolvedPanNumber) {
+      return res.status(400).json({
+        message:
+          "email, gstNumber and panNumber are required to convert visitor to client",
+      });
+    }
+
+    const finalIdProof = parsedIdProof || visitor.idProof;
+    if (!finalIdProof?.idType || !finalIdProof?.idNumber) {
+      return res.status(400).json({
+        message: "Valid idProof is required to convert visitor to client",
+      });
+    }
+
+    let fullDayPassAmount = 750;
+    if (visitor.building) {
+      const foundBuilding = await Building.findOne({
+        _id: visitor.building,
+        company,
+      })
+        .select("buildingName")
+        .lean();
+      fullDayPassAmount =
+        foundBuilding?.buildingName === "Sunteck Kanaka" ? 850 : 750;
+    }
+
+    const amount =
+      mappedVisitorType === "Full-Day Pass"
+        ? fullDayPassAmount
+        : mappedVisitorType === "Half-Day Pass"
+          ? 500
+          : 0;
+    const gstAmount = Number((amount * 0.18).toFixed(2));
+    const totalAmount = Number((amount + gstAmount).toFixed(2));
+
+    visitor.email = resolvedEmail;
+    visitor.phoneNumber = resolvedPhoneNumber;
+    visitor.gstNumber = resolvedGstNumber;
+    visitor.panNumber = resolvedPanNumber;
+    visitor.idProof = {
+      idType: finalIdProof.idType,
+      idNumber: finalIdProof.idNumber,
+    };
+    visitor.visitorFlag = "Client";
+    visitor.visitorType = mappedVisitorType;
+    visitor.purposeOfVisit =
+      purposeOfVisit || visitor.purposeOfVisit || "Meeting";
+    visitor.registeredClientCompany =
+      registeredClientCompany || visitor.registeredClientCompany;
+    visitor.brandName = brandName || visitor.brandName;
+    visitor.sector = sector || visitor.sector;
+    visitor.city = city || visitor.city;
+    visitor.state = state || visitor.state;
+    visitor.visitorCompany = visitorCompany || visitor.visitorCompany;
+    visitor.checkIn = resolvedCheckIn;
+    visitor.checkOut = resolvedCheckOut;
+    visitor.checkedInBy = user || visitor.checkedInBy;
+    visitor.checkedOutBy = resolvedCheckOut
+      ? user || visitor.checkedOutBy
+      : null;
+    visitor.dateOfVisit = resolvedCheckIn;
+    visitor.amount = amount;
+    visitor.gstAmount = gstAmount;
+    visitor.totalAmount = totalAmount;
+    visitor.paymentStatus = false;
+
+    const existingRoles = Array.isArray(visitor.visitorRoles)
+      ? visitor.visitorRoles
+      : [];
+    visitor.visitorRoles = Array.from(new Set([...existingRoles, "Client"]));
+    if (visitor.visitorRoles.length === 0) {
+      visitor.visitorRoles = ["Client"];
+    }
+
+    await visitor.save();
+
+    const externalVisit = await ExternalVisits.create({
+      visitorId: visitor._id,
+      company: visitor.company,
+      legacyVisitorEntryId: visitor._id,
+      visitorType: visitor.visitorType,
+      dateOfVisit: visitor.dateOfVisit || resolvedCheckIn,
+      checkIn: resolvedCheckIn,
+      checkOut: resolvedCheckOut,
+      checkedInBy: visitor.checkedInBy || user || null,
+      checkedOutBy: resolvedCheckOut
+        ? visitor.checkedOutBy || user || null
+        : null,
+      amount: visitor.amount,
+      discount: visitor.discount,
+      gstAmount: visitor.gstAmount,
+      totalAmount: visitor.totalAmount,
+      paymentStatus: visitor.paymentStatus,
+      paymentMode: visitor.paymentMode,
+      paymentProof: visitor.paymentProof,
+      unit: visitor.unit || null,
+      notes: `Converted from visitor to client by ${user || "system"}`,
+    });
+
+    return res.status(200).json({
+      message: "Visitor converted to client successfully",
+      visitor,
+      externalVisit,
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
+  }
+};
+
 const updateDayPassVisitPayment = async (req, res, next) => {
   const logPath = "visitors/VisitorLog";
   const logAction = "External Visit Payment";
@@ -1511,6 +1713,7 @@ module.exports = {
   fetchTeamMembers,
   bulkInsertExternalClients,
   rebookClient,
+  convertVisitorToClient,
   updateDayPassVisitPayment,
   updateDayPassPaymentVerification,
 };

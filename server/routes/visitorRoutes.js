@@ -12,6 +12,7 @@ const {
   updateDayPassVisitPayment,
   updateDayPassPaymentVerification,
   rebookClient,
+  convertVisitorToClient,
 } = require("../controllers/visitorControllers/visitorController");
 
 router.get("/fetch-visitors", fetchVisitors);
@@ -50,12 +51,16 @@ router.patch(
   upload.single("paymentProof"),
   updateDayPassVisitPayment,
 );
-router.patch("/day-pass/payment-verification", updateDayPassPaymentVerification);
+router.patch(
+  "/day-pass/payment-verification",
+  updateDayPassPaymentVerification,
+);
 router.post(
   "/bulk-upload-external-clients",
   upload.single("external-clients"),
   bulkInsertExternalClients,
 );
 router.post("/rebook-client/:externalVisitId", rebookClient);
+router.post("/convert-to-client/:visitorId", convertVisitorToClient);
 
 module.exports = router;
