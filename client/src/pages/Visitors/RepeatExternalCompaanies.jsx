@@ -106,9 +106,6 @@ const RepeatExternalCompaanies = () => {
   const openRepeatClientModal = useCallback((row) => {
     setSelectedRow(row);
     const sourceCheckIn = row?.checkIn ? dayjs(row.checkIn) : dayjs();
-    const sourceCheckOut = row?.checkOut
-      ? dayjs(row.checkOut)
-      : sourceCheckIn.add(4, "hour");
 
     reset({
       visitorName: row?.visitorName || "N/A",
@@ -117,7 +114,7 @@ const RepeatExternalCompaanies = () => {
       location: row?.locationId || "",
       unit: row?.unitId || "",
       checkInTime: sourceCheckIn,
-      checkOutTime: sourceCheckOut,
+      checkOutTime: null,
     });
 
     setOpenModal(true);
@@ -342,14 +339,11 @@ const RepeatExternalCompaanies = () => {
             )}
           />
 
-         <div className="flex justify-center mt-1">
-             <PrimaryButton
-              title={isSubmittingRepeatClient ? "Submitting..." : "Submit"}
-              type="submit"
-              disabled={isSubmittingRepeatClient}
-              className="px-8 py-2"
-            />
-          </div>
+          <PrimaryButton
+            title={isSubmittingRepeatClient ? "Submitting..." : "Submit"}
+            type="submit"
+            disabled={isSubmittingRepeatClient}
+          />
         </form>
       </MuiModal>
     </div>
