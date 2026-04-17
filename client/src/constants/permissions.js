@@ -803,6 +803,13 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/budget",
   },
+  FINANCE_REQUEST_BUDGET_BUTTON: {
+    value: "finance_request_budget_button",
+    title: "REQUEST BUDGET BUTTON",
+    type: "write",
+    access: "button",
+    route: "/app/dashboard/finance-dashboard/finance/budget",
+  },
   FINANCE_PAYMENT_SCHEDULE: {
     value: "finance_payment_schedule_tab",
     title: "FINANCE PAYMENT SCHEDULE",
@@ -860,6 +867,13 @@ export const PERMISSIONS = {
     access: "page",
     route:
       "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/internal-meetings",
+  },
+   FINANCE_VISITORS_DAY_PASS: {
+    value: "finance_visitors_day_pass_tab",
+    title: "FINANCE VISITORS DAY PASS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/day-pass",
   },
 
   FINANCE_BILLING_CLIENT_INVOICE: {
@@ -1091,6 +1105,13 @@ export const PERMISSIONS = {
     value: "sales_budget_finance_tab",
     title: "BUDGET",
     type: "read",
+    route: "/app/dashboard/sales-dashboard/finance/budget",
+  },
+  SALES_REQUEST_BUDGET_BUTTON: {
+    value: "sales_request_budget_button",
+    title: "REQUEST BUDGET BUTTON",
+    type: "write",
+    access: "button",
     route: "/app/dashboard/sales-dashboard/finance/budget",
   },
   SALES_PAYMENT_SCHEDULE: {
@@ -1503,7 +1524,13 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/HR-dashboard/finance/budget",
   },
-
+   HR_REQUEST_BUDGET_BUTTON: {
+    value: "hr_request_budget_button",
+    title: "REQUEST BUDGET BUTTON",
+    type: "write",
+    access: "button",
+    route: "/app/dashboard/HR-dashboard/finance/budget",
+  },
   HR_PAYMENT_SCHEDULE: {
     value: "hr_payment_schedule_tab",
     title: "PAYMENT SCHEDULE",
@@ -1764,6 +1791,13 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/admin-dashboard/finance/budget",
   },
+   ADMIN_REQUEST_BUDGET_BUTTON: {
+    value: "admin_request_budget_button",
+    title: "REQUEST BUDGET BUTTON",
+    type: "write",
+    access: "button",
+    route: "/app/dashboard/admin-dashboard/finance/budget",
+  },
 
   ADMIN_PAYMENT_SCHEDULE: {
     value: "admin_payment_schedule_tab",
@@ -2021,7 +2055,13 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/finance/budget",
   },
-
+MAINTENANCE_REQUEST_BUDGET_BUTTON: {
+    value: "maintenance_request_budget_button",
+    title: "REQUEST BUDGET BUTTON",
+    type: "write",
+    access: "button",
+    route: "/app/dashboard/maintenance-dashboard/finance/budget",
+  },
   MAINTENANCE_PAYMENT_SCHEDULE: {
     value: "maintenance_payment_schedule_tab",
     title: "PAYMENT SCHEDULE",
@@ -2256,6 +2296,13 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/IT-dashboard/finance/budget",
   },
+   IT_REQUEST_BUDGET_BUTTON: {
+    value: "it_request_budget_button",
+    title: "REQUEST BUDGET",
+    type: "write",
+    access: "button",
+    route: "/app/dashboard/IT-dashboard/finance/budget",
+  },
 
   IT_PAYMENT_SCHEDULE: {
     value: "it_payment_schedule_tab",
@@ -2419,6 +2466,13 @@ export const PERMISSIONS = {
     value: "frontend_budget_tab",
     title: "BUDGET",
     type: "read",
+    route: "/app/dashboard/frontend-dashboard/finance/budget",
+  },
+   FRONTEND_REQUEST_BUDGET_BUTTON: {
+    value: "frontend_request_budget_button",
+    title: "REQUEST BUDGET BUTTON",
+    type: "write",
+    access: "button",
     route: "/app/dashboard/frontend-dashboard/finance/budget",
   },
 

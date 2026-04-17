@@ -1429,11 +1429,64 @@ const updateDayPassVisitPayment = async (req, res, next) => {
     externalVisit.gstAmount = gstAmount;
     externalVisit.paymentMode = paymentMode;
     externalVisit.paymentStatus = paymentStatus === "Paid";
+    externalVisit.paymentVerification = "Pending";
 
     await externalVisit.save();
 
     return res.status(200).json({
       message: "External visit payment updated successfully",
+      externalVisit,
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
+  }
+};
+
+const updateDayPassPaymentVerification = async (req, res, next) => {
+  const logPath = "visitors/VisitorLog";
+  const logAction = "External Visit Payment Verification";
+  const logSourceKey = "visitor";
+
+  try {
+    const { externalVisitId, status } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(externalVisitId)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid external visit Id provided" });
+    }
+
+    const allowedStatuses = ["Pending", "Under Review", "Verified"];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status provided" });
+    }
+
+    const externalVisit = await ExternalVisits.findById(externalVisitId);
+
+    if (!externalVisit) {
+      return res.status(404).json({ message: "External visit not found" });
+    }
+
+    if (!externalVisit.paymentStatus) {
+      return res
+        .status(400)
+        .json({ message: "Cannot verify unpaid day pass payment" });
+    }
+
+    externalVisit.paymentVerification = status;
+    await externalVisit.save();
+
+    return res.status(200).json({
+      message:
+        status === "Verified"
+          ? "Payment verified"
+          : status === "Under Review"
+            ? "Payment moved to review"
+            : "Payment status updated",
       externalVisit,
     });
   } catch (error) {
@@ -1456,4 +1509,5 @@ module.exports = {
   bulkInsertExternalClients,
   rebookClient,
   updateDayPassVisitPayment,
+  updateDayPassPaymentVerification,
 };
