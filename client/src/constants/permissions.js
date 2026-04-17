@@ -868,6 +868,13 @@ export const PERMISSIONS = {
     route:
       "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/internal-meetings",
   },
+   FINANCE_VISITORS_DAY_PASS: {
+    value: "finance_visitors_day_pass_tab",
+    title: "FINANCE VISITORS DAY PASS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/day-pass",
+  },
 
   FINANCE_BILLING_CLIENT_INVOICE: {
     value: "finance_client_invoice_tab",

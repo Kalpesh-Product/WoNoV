@@ -16,6 +16,11 @@ const tabs = [
     path: "external-clients",
     permission: PERMISSIONS.FINANCE_MEETINGS_EXTERNAL.value,
   },
+  {
+    label: "Day Pass",
+    path: "day-pass",
+    permission: PERMISSIONS.FINANCE_VISITORS_DAY_PASS.value,
+  },
 ];
 
   return (

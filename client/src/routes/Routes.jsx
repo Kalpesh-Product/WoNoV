@@ -631,6 +631,16 @@ export const routes = createBrowserRouter([
                             path: "external-clients",
                             element: <ExternalMeetingClients />,
                           },
+                           {
+                            path: "day-pass",
+                            element: (
+                              <ExternalClients
+                                tableTitle="Day Pass"
+                                filterToDayPass={true}
+                                financeStatusMenu={true}
+                              />
+                            ),
+                          },
                         ],
                       },
                       {

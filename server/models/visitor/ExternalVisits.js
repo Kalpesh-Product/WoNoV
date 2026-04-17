@@ -75,6 +75,11 @@ const externalVisitSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+     paymentVerification: {
+      type: String,
+      enum: ["Pending", "Under Review", "Verified"],
+      default: "Pending",
+    },
     paymentMode: {
       type: String,
       enum: [
