@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import { Chip } from "@mui/material";
 import humanDate from "../../utils/humanDateForamt";
+import { Country, State } from "country-state-city";
 
 const VendorTable = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -78,6 +79,44 @@ const VendorTable = () => {
       ),
     },
   ];
+ const getCountryIsoCode = (countryValue) => {
+    if (!countryValue) return "";
+    const normalizedCountryValue = String(countryValue).trim();
+    const normalizedCountryCode = normalizedCountryValue.toUpperCase();
+    const match = Country.getAllCountries().find(
+      (country) =>
+        country.isoCode === normalizedCountryCode ||
+        country.name.toLowerCase() === normalizedCountryValue.toLowerCase()
+    );
+    return match?.isoCode || "";
+  };
+
+  const getCountryName = (countryValue) => {
+    const countryIsoCode = getCountryIsoCode(countryValue);
+    if (!countryIsoCode) return countryValue;
+
+    return (
+      Country.getAllCountries().find(
+        (country) => country.isoCode === countryIsoCode
+      )?.name || countryValue
+    );
+  };
+
+  const getStateName = (countryValue, stateValue) => {
+    if (!stateValue) return stateValue;
+    const countryIsoCode = getCountryIsoCode(countryValue);
+    if (!countryIsoCode) return stateValue;
+    const normalizedStateValue = String(stateValue).trim();
+    const normalizedStateCode = normalizedStateValue.toUpperCase();
+
+    return (
+      State.getStatesOfCountry(countryIsoCode).find(
+        (stateItem) =>
+          stateItem.isoCode === normalizedStateCode ||
+          stateItem.name.toLowerCase() === normalizedStateValue.toLowerCase()
+      )?.name || stateValue
+    );
+  };
 
   const rows = isVendorFetchingPending
     ? []
@@ -92,8 +131,10 @@ const VendorTable = () => {
         : "N/A",
 
       address: vendor.address,
-      state: vendor.state,
-      country: vendor.country,
+      state: getStateName(vendor.country, vendor.state),
+      stateCode: vendor.state,
+      country: getCountryName(vendor.country),
+      countryCode: vendor.country,
       partyType: vendor?.partyType,
       status: vendor.status,
       departmentId: vendor.departmentId,
