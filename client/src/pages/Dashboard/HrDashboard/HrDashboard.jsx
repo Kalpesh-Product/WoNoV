@@ -722,7 +722,8 @@ const HrDashboard = () => {
             });
           });
 
-          navigate(`overall-KPA`, {
+          // navigate(`overall-KPA`, {
+           navigate("/app/performance/department-wise/overall-department-kpa", {
             state: {
               month: clickedMonth,
               tasks: selectedMonthTasks,

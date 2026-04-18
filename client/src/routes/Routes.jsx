@@ -287,6 +287,8 @@ import InvoiceCreation from "../pages/Dashboard/FinanceDashboard/Billing/Invoice
 import VoucherCreation from "../pages/Dashboard/FinanceDashboard/Billing/VoucherCreation";
 import PendingApprovals from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovals";
 import BillingsLayout from "../pages/Dashboard/FinanceDashboard/Billing/BillingsLayout";
+import VoucherRequest from "../pages/Dashboard/FinanceDashboard/Billing/VoucherRequest";
+import BudgetRequest from "../pages/Dashboard/FinanceDashboard/Billing/BudgetRequest";
 import FinanceBudgetLayout from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudgetLayout";
 import FinanceBudget from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudget";
 import DeptWiseBudget from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudget";
@@ -792,32 +794,90 @@ export const routes = createBrowserRouter([
                         element: <BillingsLayout />,
                         children: [
                           {
-                            path: "client-invoice",
+                            path: "client-invoicing",
                             element: <InvoiceCreation />,
                           },
                           {
+                            path: "voucher-request",
+                            element: <VoucherRequest />,
+                            children: [
+                              {
+                                path: "department-invoice-voucher",
+                                element: <DepartmentInvoice />,
+                              },
+                              {
+                                path: "pending-approvals-voucher",
+                                element: <PendingApprovals />,
+                              },
+                              {
+                                path: "voucher-history",
+                                element: <VoucherCreation />,
+                              },
+                              {
+                                path: "pending-approvals-voucher/review-request",
+                                element: <ReviewRequest />,
+                              },
+                            ],
+                          },
+                         {
+                            path: "budget-request",
+                            element: <BudgetRequest />,
+                            children: [
+                              {
+                                path: "department-invoice-budget",
+                                element: <DepartmentInvoice />,
+                              },
+                              {
+                                path: "pending-approvals-budget",
+                                element: <PendingApprovals />,
+                              },
+                              {
+                                path: "voucher-history-budget",
+                                element: <VoucherCreation />,
+                              },
+                              {
+                                path: "pending-approvals-budget/review-request",
+                                element: <ReviewRequest />,
+                              },
+                            ],
+                          },
+                          // Legacy billing routes (temporary redirects)
+                          {
+                            path: "client-invoice",
+                            element: <Navigate to="../client-invoicing" replace />,
+                          },
+                          {
                             path: "department-invoice",
-                            element: <DepartmentInvoice />,
+                            element: (
+                              <Navigate
+                                to="../voucher-request/department-invoice-voucher"
+                                replace
+                              />
+                            ),
                           },
-                          {
-                            path: "finance-monthly-vouchers",
-                            element: <FinanceMonthlyVouchers />,
-                          },
-                          {
-                            path: "finance-monthly-vouchers/:id",
-                            element: <FinanceViewVoucher />,
-                          },
-                          {
+                           {
                             path: "voucher-history",
-                            element: <VoucherCreation />,
+                            element: (
+                              <Navigate to="../voucher-request/voucher-history" replace />
+                            ),
                           },
-                          {
+                           {
                             path: "pending-approvals",
-                            element: <PendingApprovals />,
+                            element: (
+                              <Navigate
+                                to="../voucher-request/pending-approvals-voucher"
+                                replace
+                              />
+                            ),
                           },
                           {
                             path: "pending-approvals/review-request",
-                            element: <ReviewRequest />,
+                            element: (
+                              <Navigate
+                                to="../voucher-request/pending-approvals-voucher/review-request"
+                                replace
+                              />
+                            ),
                           },
                         ],
                       },
@@ -2494,15 +2554,15 @@ export const routes = createBrowserRouter([
                     ],
                   },
                   {
-                    path: "mix-bag/vender",
+                    path: "mix-bag/vendor",
                     element: <VendorTable />,
                   },
                   {
-                    path: "mix-bag/vender/vendor-onboard",
+                    path: "mix-bag/vendor/vendor-onboard",
                     element: <Vendor />,
                   },
                   {
-                    path: "mix-bag/vender/:id",
+                    path: "mix-bag/vendor/:id",
                     element: <ViewVendor />,
                   },
                   {

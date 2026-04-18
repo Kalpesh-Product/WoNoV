@@ -244,12 +244,13 @@ const PerformanceHome = () => {
           const clickedMonth =
             config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
 
-            navigate("/app/performance/overall-department-kpa", {
+            navigate("/app/performance/department-wise/overall-department-kpa", {
             state: { month: clickedMonth },
           });
         },
       },
     },
+    //  route: "",
     plotOptions: {
       bar: {
         horizontal: false,
