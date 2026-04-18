@@ -2554,15 +2554,15 @@ export const routes = createBrowserRouter([
                     ],
                   },
                   {
-                    path: "mix-bag/vender",
+                    path: "mix-bag/vendor",
                     element: <VendorTable />,
                   },
                   {
-                    path: "mix-bag/vender/vendor-onboard",
+                    path: "mix-bag/vendor/vendor-onboard",
                     element: <Vendor />,
                   },
                   {
-                    path: "mix-bag/vender/:id",
+                    path: "mix-bag/vendor/:id",
                     element: <ViewVendor />,
                   },
                   {

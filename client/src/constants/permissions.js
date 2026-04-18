@@ -44,9 +44,9 @@ export const PERMISSIONS = {
     title: "APPROVALS",
     type: "read",
   },
-  ASSETS_MIX_BAG_VENDER: {
-    value: "mix_bag_vender",
-    title: "MIX BAG VENDER",
+  ASSETS_MIX_BAG_VENDOR: {
+    value: "mix_bag_vendor",
+    title: "MIX BAG VENDOR",
     type: "read",
   },
   ASSETS_ASSET_VALUE_UTILIZATION: {

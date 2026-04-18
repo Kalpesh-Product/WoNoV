@@ -166,7 +166,7 @@ const VendorTable = () => {
     //       buttonTitle={"Add Vendor"}
     //       handleClick={() => navigate("vendor-onboard")}
     //     />
-      <div className="p-4 flex flex-col gap-8">
+      <div className="flex flex-col gap-8">
       <PageFrame>
         <div className="h-[65vh] overflow-y-auto pr-2 sm:pr-4">
           <AgTable
