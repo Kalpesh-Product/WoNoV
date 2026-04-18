@@ -201,7 +201,7 @@ const ReviewRequest = () => {
       toast.success(data.message);
       setOpenPreview(false);
       reset();
-      navigate("/app/dashboard/finance-dashboard/billing/pending-approvals");
+       navigate("/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher");
     },
     onError: (error) => {
       toast.error(error.message);
