@@ -1458,6 +1458,9 @@ const convertVisitorToClient = async (req, res, next) => {
 
   try {
     const { visitorId } = req.params;
+    const gstFile = req.files?.gstFile?.[0];
+    const panFile = req.files?.panFile?.[0];
+    const otherFile = req.files?.otherFile?.[0];
     const {
       purposeOfVisit,
       registeredClientCompany,
@@ -1475,6 +1478,12 @@ const convertVisitorToClient = async (req, res, next) => {
       phoneNumber,
       visitorCompany,
     } = req.body;
+
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
 
     if (!mongoose.Types.ObjectId.isValid(visitorId)) {
       return res.status(400).json({ message: "Invalid visitor id provided" });
@@ -1604,6 +1613,49 @@ const convertVisitorToClient = async (req, res, next) => {
     visitor.gstAmount = gstAmount;
     visitor.totalAmount = totalAmount;
     visitor.paymentStatus = false;
+
+    const companyData = await Company.findById(company).lean();
+    const fileFields = [
+      { file: gstFile, field: "gstFile" },
+      { file: panFile, field: "panFile" },
+      { file: otherFile, field: "otherFile" },
+    ];
+
+    for (const { file, field } of fileFields) {
+      if (!file) continue;
+
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        return res.status(400).json({
+          message: `Invalid ${field} file type`,
+        });
+      }
+
+      let processedBuffer = file.buffer;
+      const originalFilename = file.originalname;
+
+      if (file.mimetype === "application/pdf") {
+        const pdfDoc = await PDFDocument.load(file.buffer);
+        pdfDoc.setTitle(originalFilename.split(".")[0] || "Untitled");
+        processedBuffer = await pdfDoc.save();
+      }
+
+      const uploadRes = await handleDocumentUpload(
+        processedBuffer,
+        `${companyData?.companyName || "company"}/visitors/clients/${field}`,
+        originalFilename,
+      );
+
+      if (!uploadRes.public_id) {
+        return res.status(500).json({
+          message: `Failed to upload ${field}`,
+        });
+      }
+
+      visitor[field] = {
+        link: uploadRes.secure_url,
+        id: uploadRes.public_id,
+      };
+    }
 
     const existingRoles = Array.isArray(visitor.visitorRoles)
       ? visitor.visitorRoles
