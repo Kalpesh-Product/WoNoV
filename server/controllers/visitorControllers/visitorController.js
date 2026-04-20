@@ -655,12 +655,11 @@ const updateVisitor = async (req, res, next) => {
           message: "Invalid checkout time",
         });
       }
-        if (isNaN(parsedCheckin.getTime())) {
+      if (isNaN(parsedCheckin.getTime())) {
         return res.status(400).json({
           message: "Invalid checkin time",
         });
       }
-
 
       if (parsedCheckout.getDate() !== parsedCheckin.getDate()) {
         return res.status(400).json({
@@ -676,7 +675,7 @@ const updateVisitor = async (req, res, next) => {
 
       updateData.checkedOutBy = user;
     }
-   const fileFields = [
+    const fileFields = [
       { file: gstFile, field: "gstFile" },
       { file: panFile, field: "panFile" },
       { file: otherFile, field: "otherFile" },
@@ -810,18 +809,17 @@ const Convettoclient = async (req, res, next) => {
       "half day pass": "Half-Day Pass",
     };
 
-    req.body.visitorFlag = "Client";
-    req.body.convertedFromInternal = true;
-    req.body.visitorType = req.body.visitorType || visitorTypeMap[purposeNormalized] || "Meeting";
-    req.body.dateOfVisit = req.body.dateOfVisit || new Date().toISOString();
-    req.body.checkIn = req.body.checkIn || new Date().toISOString();
+    // req.body.visitorFlag = "Client";
+    // req.body.convertedFromInternal = true;
+    // req.body.visitorType = req.body.visitorType || visitorTypeMap[purposeNormalized] || "Meeting";
+    // req.body.dateOfVisit = req.body.dateOfVisit || new Date().toISOString();
+    // req.body.checkIn = req.body.checkIn || new Date().toISOString();
 
     return updateVisitor(req, res, next);
   } catch (error) {
     return next(error);
   }
 };
-
 
 const updateExternalCompany = async (req, res, next) => {
   const logPath = "visitor/VisitorLog";
@@ -1775,13 +1773,21 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
       externalVisit = await ExternalVisits.findById(externalVisitId);
     }
 
-    if (!externalVisit && visitorId && mongoose.Types.ObjectId.isValid(visitorId)) {
+    if (
+      !externalVisit &&
+      visitorId &&
+      mongoose.Types.ObjectId.isValid(visitorId)
+    ) {
       externalVisit = await ExternalVisits.findOne({ visitorId }).sort({
         checkIn: -1,
       });
     }
 
-    if (!externalVisit && visitorId && mongoose.Types.ObjectId.isValid(visitorId)) {
+    if (
+      !externalVisit &&
+      visitorId &&
+      mongoose.Types.ObjectId.isValid(visitorId)
+    ) {
       const visitor = await Visitor.findById(visitorId).lean();
 
       if (visitor) {
@@ -1805,7 +1811,7 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
           unit: visitor.unit || null,
         });
       }
-    } 
+    }
 
     if (!externalVisit) {
       return res.status(404).json({ message: "External visit not found" });

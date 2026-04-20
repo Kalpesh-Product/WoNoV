@@ -97,6 +97,23 @@ router.post(
   bulkInsertExternalClients,
 );
 router.post("/rebook-client/:externalVisitId", rebookClient);
-router.post("/convert-to-client/:visitorId", convertVisitorToClient);
+router.post(
+  "/convert-to-client/:visitorId",
+  upload.fields([
+    {
+      name: "panFile",
+      maxCount: 1,
+    },
+    {
+      name: "gstFile",
+      maxCount: 1,
+    },
+    {
+      name: "otherFile",
+      maxCount: 1,
+    },
+  ]),
+  convertVisitorToClient,
+);
 
 module.exports = router;

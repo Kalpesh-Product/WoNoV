@@ -1,12 +1,7 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
-import {
-  InputAdornment,
-  MenuItem,
-  TextField,
-} from "@mui/material";
+import { InputAdornment, MenuItem, TextField } from "@mui/material";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { LuImageUp } from "react-icons/lu";
 import dayjs from "dayjs";
@@ -28,10 +23,10 @@ import humanTime from "../../utils/humanTime";
 const PURPOSE_OPTIONS = ["Meeting", "Full Day Pass", "Half Day Pass"];
 
 const resolveCompany = (visitor = {}) =>
-  visitor?.visitorCompany
-  || visitor?.brandName
-  || visitor?.registeredClientCompany
-  || "N/A";
+  visitor?.visitorCompany ||
+  visitor?.brandName ||
+  visitor?.registeredClientCompany ||
+  "N/A";
 
 const resolveToMeet = (visitor = {}) => {
   if (visitor?.toMeet?.firstName || visitor?.toMeet?.lastName) {
@@ -105,12 +100,16 @@ const UploadFileField = ({
 const resolveBuildingName = (visitor = {}, locations = []) => {
   if (visitor?.building?.buildingName) return visitor.building.buildingName;
   if (visitor?.building?._id) {
-    return locations.find((loc) => String(loc._id) === String(visitor.building._id))
-      ?.buildingName || "N/A";
+    return (
+      locations.find((loc) => String(loc._id) === String(visitor.building._id))
+        ?.buildingName || "N/A"
+    );
   }
   if (typeof visitor?.building === "string") {
-    return locations.find((loc) => String(loc._id) === String(visitor.building))
-      ?.buildingName || "N/A";
+    return (
+      locations.find((loc) => String(loc._id) === String(visitor.building))
+        ?.buildingName || "N/A"
+    );
   }
   return "N/A";
 };
@@ -120,11 +119,15 @@ const resolveUnitName = (visitor = {}, units = []) => {
     return visitor.unit.unitNo || visitor.unit.name;
   }
   if (visitor?.unit?._id) {
-    const unit = units.find((item) => String(item._id) === String(visitor.unit._id));
+    const unit = units.find(
+      (item) => String(item._id) === String(visitor.unit._id),
+    );
     return unit?.unitNo || unit?.name || "N/A";
   }
   if (typeof visitor?.unit === "string") {
-    const unit = units.find((item) => String(item._id) === String(visitor.unit));
+    const unit = units.find(
+      (item) => String(item._id) === String(visitor.unit),
+    );
     return unit?.unitNo || unit?.name || "N/A";
   }
   return "N/A";
@@ -196,12 +199,13 @@ const ConvertInternalVisitors = () => {
     if (!selectedLocation) return unitsData;
 
     return unitsData.filter((unit) => {
-      const unitBuildingId = unit?.building?._id
-        || unit?.building
-        || unit?.location?._id
-        || unit?.location
-        || unit?.workLocation
-        || unit?.workLocationId;
+      const unitBuildingId =
+        unit?.building?._id ||
+        unit?.building ||
+        unit?.location?._id ||
+        unit?.location ||
+        unit?.workLocation ||
+        unit?.workLocationId;
 
       return String(unitBuildingId || "") === String(selectedLocation);
     });
@@ -267,7 +271,8 @@ const ConvertInternalVisitors = () => {
           srNo: index + 1,
           id: visitor._id,
           visitorName:
-            `${visitor?.firstName || ""} ${visitor?.lastName || ""}`.trim() || "N/A",
+            `${visitor?.firstName || ""} ${visitor?.lastName || ""}`.trim() ||
+            "N/A",
           company: resolveCompany(visitor),
           raw: visitor,
         })),
@@ -276,8 +281,8 @@ const ConvertInternalVisitors = () => {
 
   const { mutate: convertVisitor, isPending: isConverting } = useMutation({
     mutationFn: async (payload) => {
-      const response = await axios.patch(
-        `/api/visitors/convettoclient/${selectedVisitor?.id}`,
+      const response = await axios.post(
+        `/api/visitors/convert-to-client/${selectedVisitor?.id}`,
         payload,
         {
           headers: {
@@ -291,13 +296,17 @@ const ConvertInternalVisitors = () => {
       toast.success("Visitor converted to client successfully.");
       setIsConvertModalOpen(false);
       setSelectedVisitor(null);
-      queryClient.invalidateQueries({ queryKey: ["mix-bag-convert-internal-visitors"] });
+      queryClient.invalidateQueries({
+        queryKey: ["mix-bag-convert-internal-visitors"],
+      });
       queryClient.invalidateQueries({ queryKey: ["visitors"] });
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       reset();
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.message || "Failed to convert visitor.");
+      toast.error(
+        error?.response?.data?.message || "Failed to convert visitor.",
+      );
     },
   });
 
@@ -311,7 +320,8 @@ const ConvertInternalVisitors = () => {
 
     setSelectedVisitor(row);
     reset({
-      visitorName: `${visitor?.firstName || ""} ${visitor?.lastName || ""}`.trim(),
+      visitorName:
+        `${visitor?.firstName || ""} ${visitor?.lastName || ""}`.trim(),
       visitorCompany: resolveCompany(visitor),
       email: visitor?.email || "",
       phoneNumber: visitor?.phoneNumber || "",
@@ -321,9 +331,11 @@ const ConvertInternalVisitors = () => {
       state: visitor?.state || "",
       city: visitor?.city || "",
       location:
-        visitor?.building?._id
-        || (typeof visitor?.building === "string" ? visitor.building : ""),
-      unit: visitor?.unit?._id || (typeof visitor?.unit === "string" ? visitor.unit : ""),
+        visitor?.building?._id ||
+        (typeof visitor?.building === "string" ? visitor.building : ""),
+      unit:
+        visitor?.unit?._id ||
+        (typeof visitor?.unit === "string" ? visitor.unit : ""),
       registeredClientCompany: visitor?.registeredClientCompany || "",
       brandName: visitor?.brandName || "",
       gstNumber: visitor?.gstNumber || "",
@@ -356,7 +368,10 @@ const ConvertInternalVisitors = () => {
     payload.append("city", formData.city || "");
     payload.append("building", formData.location || "");
     payload.append("unit", formData.unit || "");
-    payload.append("registeredClientCompany", formData.registeredClientCompany || "");
+    payload.append(
+      "registeredClientCompany",
+      formData.registeredClientCompany || "",
+    );
     payload.append("brandName", formData.brandName || "");
     payload.append("visitorCompany", formData.visitorCompany || "");
     payload.append("gstNumber", formData.gstNumber || "");
@@ -366,19 +381,19 @@ const ConvertInternalVisitors = () => {
     const now = dayjs();
     const checkInIso = formData.checkIn
       ? now
-        .hour(formData.checkIn.hour())
-        .minute(formData.checkIn.minute())
-        .second(0)
-        .millisecond(0)
-        .toISOString()
+          .hour(formData.checkIn.hour())
+          .minute(formData.checkIn.minute())
+          .second(0)
+          .millisecond(0)
+          .toISOString()
       : "";
     const checkOutIso = formData.checkOut
       ? now
-        .hour(formData.checkOut.hour())
-        .minute(formData.checkOut.minute())
-        .second(0)
-        .millisecond(0)
-        .toISOString()
+          .hour(formData.checkOut.hour())
+          .minute(formData.checkOut.minute())
+          .second(0)
+          .millisecond(0)
+          .toISOString()
       : "";
 
     payload.append("checkIn", checkInIso);
@@ -452,14 +467,38 @@ const ConvertInternalVisitors = () => {
         title="VISITOR DETAILS"
       >
         <div className="grid grid-cols-1 gap-4">
-          <DetalisFormatted title="First Name" detail={visitorDetails?.firstName || "-"} />
-          <DetalisFormatted title="Last Name" detail={visitorDetails?.lastName || "-"} />
-          <DetalisFormatted title="Email" detail={visitorDetails?.email || "-"} />
-          <DetalisFormatted title="Phone Number" detail={visitorDetails?.phoneNumber || "-"} />
-          <DetalisFormatted title="Purpose" detail={visitorDetails?.purposeOfVisit || "-"} />
-          <DetalisFormatted title="Visitor Type" detail={visitorDetails?.visitorType} />
-          <DetalisFormatted title="Visitor Company" detail={resolveCompany(visitorDetails)} />
-          <DetalisFormatted title="To Meet" detail={resolveToMeet(visitorDetails)} />
+          <DetalisFormatted
+            title="First Name"
+            detail={visitorDetails?.firstName || "-"}
+          />
+          <DetalisFormatted
+            title="Last Name"
+            detail={visitorDetails?.lastName || "-"}
+          />
+          <DetalisFormatted
+            title="Email"
+            detail={visitorDetails?.email || "-"}
+          />
+          <DetalisFormatted
+            title="Phone Number"
+            detail={visitorDetails?.phoneNumber || "-"}
+          />
+          <DetalisFormatted
+            title="Purpose"
+            detail={visitorDetails?.purposeOfVisit || "-"}
+          />
+          <DetalisFormatted
+            title="Visitor Type"
+            detail={visitorDetails?.visitorType}
+          />
+          <DetalisFormatted
+            title="Visitor Company"
+            detail={resolveCompany(visitorDetails)}
+          />
+          <DetalisFormatted
+            title="To Meet"
+            detail={resolveToMeet(visitorDetails)}
+          />
           <DetalisFormatted
             title="Building"
             detail={resolveBuildingName(visitorDetails, locationOptions)}
@@ -476,13 +515,26 @@ const ConvertInternalVisitors = () => {
                 : "N/A"
             }
           />
-          <DetalisFormatted title="Check In" detail={humanTime(visitorDetails?.checkIn)} />
-          <DetalisFormatted title="Check In By" detail={resolveUserName(visitorDetails?.checkedInBy)} />
+          <DetalisFormatted
+            title="Check In"
+            detail={humanTime(visitorDetails?.checkIn)}
+          />
+          <DetalisFormatted
+            title="Check In By"
+            detail={resolveUserName(visitorDetails?.checkedInBy)}
+          />
           <DetalisFormatted
             title="Check Out"
-            detail={visitorDetails?.checkOut ? humanTime(visitorDetails?.checkOut) : "-"}
+            detail={
+              visitorDetails?.checkOut
+                ? humanTime(visitorDetails?.checkOut)
+                : "-"
+            }
           />
-          <DetalisFormatted title="Check Out By" detail={resolveUserName(visitorDetails?.checkedOutBy)} />
+          <DetalisFormatted
+            title="Check Out By"
+            detail={resolveUserName(visitorDetails?.checkedOutBy)}
+          />
         </div>
       </MuiModal>
 
@@ -495,373 +547,387 @@ const ConvertInternalVisitors = () => {
         title="Convert to Client"
       >
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <form onSubmit={handleSubmit(onSubmitConvert)} className="grid grid-cols-1 gap-4">
-          <Controller
-            name="visitorName"
-            control={control}
-            render={({ field }) => (
-              <TextField {...field} label="Visitor Name" size="small" disabled fullWidth />
-            )}
-          />
-
-          <Controller
-            name="visitorCompany"
-            control={control}
-            rules={{ required: "Company is required" }}
-            render={({ field, fieldState }) => (
-              <TextField
-                {...field}
-                label="Company"
-                size="small"
-                disabled
-                fullWidth
-                error={!!fieldState.error}
-                helperText={fieldState.error?.message}
-              />
-            )}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form
+            onSubmit={handleSubmit(onSubmitConvert)}
+            className="grid grid-cols-1 gap-4"
+          >
             <Controller
-              name="email"
+              name="visitorName"
               control={control}
-              rules={{ required: "Email is required" }}
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Email"
+                  label="Visitor Name"
                   size="small"
+                  disabled
                   fullWidth
-                  disabled={Boolean(selectedVisitor?.raw?.email)}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
                 />
               )}
             />
+
             <Controller
-              name="phoneNumber"
+              name="visitorCompany"
               control={control}
-              rules={{ required: "Phone number is required" }}
+              rules={{ required: "Company is required" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Company"
+                  size="small"
+                  disabled
+                  fullWidth
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                name="email"
+                control={control}
+                rules={{ required: "Email is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Email"
+                    size="small"
+                    fullWidth
+                    disabled={Boolean(selectedVisitor?.raw?.email)}
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="phoneNumber"
+                control={control}
+                rules={{ required: "Phone number is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Phone Number"
+                    size="small"
+                    fullWidth
+                    disabled={Boolean(selectedVisitor?.raw?.phoneNumber)}
+                    error={!!errors.phoneNumber}
+                    helperText={errors.phoneNumber?.message}
+                  />
+                )}
+              />
+            </div>
+
+            <Controller
+              name="gender"
+              control={control}
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Phone Number"
+                  label="Gender"
                   size="small"
                   fullWidth
-                  disabled={Boolean(selectedVisitor?.raw?.phoneNumber)}
-                  error={!!errors.phoneNumber}
-                  helperText={errors.phoneNumber?.message}
+                  disabled={Boolean(selectedVisitor?.raw?.gender)}
                 />
               )}
             />
-          </div>
 
-          <Controller
-            name="gender"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Gender"
-                size="small"
-                fullWidth
-                disabled={Boolean(selectedVisitor?.raw?.gender)}
-              />
-            )}
-          />
-
-          <Controller
-            name="purposeOfVisit"
-            control={control}
-            rules={{ required: "Purpose of Visit is required" }}
-            render={({ field, fieldState }) => (
+            <Controller
+              name="purposeOfVisit"
+              control={control}
+              rules={{ required: "Purpose of Visit is required" }}
+              render={({ field, fieldState }) => (
                 <TextField
                   {...field}
                   select
                   label="Purpose of Visit"
-                size="small"
-                fullWidth
-                error={!!fieldState.error}
-                helperText={fieldState.error?.message}
-              >
-                {PURPOSE_OPTIONS.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Controller
-              name="location"
-              control={control}
-              rules={{ required: "Location is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Location"
                   size="small"
                   fullWidth
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
-                  onChange={(event) => {
-                    field.onChange(event);
-                    setValue("unit", "");
-                  }}
                 >
-                  <MenuItem value="">Select Location</MenuItem>
-                  {locationOptions.map((location) => (
-                    <MenuItem key={location._id} value={location._id}>
-                      {location.buildingName}
+                  {PURPOSE_OPTIONS.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
                     </MenuItem>
                   ))}
                 </TextField>
               )}
             />
-            <Controller
-              name="unit"
-              control={control}
-              rules={{ required: "Unit is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Unit"
-                  size="small"
-                  fullWidth
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                >
-                  <MenuItem value="">Select Unit</MenuItem>
-                  {filteredUnits.map((unit) => (
-                    <MenuItem key={unit._id} value={unit._id}>
-                      {unit.unitNo || unit.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Controller
-              name="country"
-              control={control}
-              rules={{ required: "Country is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Country"
-                  size="small"
-                  fullWidth
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                >
-                  {countryOptions.map((country) => (
-                    <MenuItem key={country.isoCode} value={country.isoCode}>
-                      {country.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-            <Controller
-              name="state"
-              control={control}
-              rules={{ required: "State is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="State"
-                  size="small"
-                  fullWidth
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                  onChange={(event) => {
-                    field.onChange(event);
-                    setValue("city", "");
-                  }}
-                >
-                  <MenuItem value="">Select State</MenuItem>
-                  {stateOptions.map((state) => (
-                    <MenuItem key={state.isoCode} value={state.name}>
-                      {state.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Controller
-              name="city"
-              control={control}
-              rules={{ required: "City is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="City"
-                  size="small"
-                  fullWidth
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                >
-                  <MenuItem value="">Select City</MenuItem>
-                  {cityOptions.map((city) => (
-                    <MenuItem key={city.name} value={city.name}>
-                      {city.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-            <Controller
-              name="sector"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Sector"
-                  size="small"
-                  fullWidth
-                />
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Controller
-              name="registeredClientCompany"
-              control={control}
-              render={({ field }) => (
-                <TextField {...field} label="Registered Company" size="small" fullWidth />
-              )}
-            />
-            <Controller
-              name="brandName"
-              control={control}
-              render={({ field }) => (
-                <TextField {...field} label="Brand Name" size="small" fullWidth />
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Controller
-              name="gstNumber"
-              control={control}
-              rules={{ required: "GST number is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="GST Number"
-                  size="small"
-                  fullWidth
-                  disabled={Boolean(selectedVisitor?.raw?.gstNumber)}
-                  error={!!errors.gstNumber}
-                  helperText={errors.gstNumber?.message}
-                />
-              )}
-            />
-            <Controller
-              name="gstFile"
-              control={control}
-              render={({ field }) => (
-                <UploadFileField
-                  value={field.value}
-                  onChange={field.onChange}
-                  inputId="gst-file-upload"
-                />
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Controller
-              name="panNumber"
-              control={control}
-              rules={{ required: "PAN number is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="PAN Number"
-                  size="small"
-                  fullWidth
-                  disabled={Boolean(selectedVisitor?.raw?.panNumber)}
-                  error={!!errors.panNumber}
-                  helperText={errors.panNumber?.message}
-                />
-              )}
-            />
-            <Controller
-              name="panFile"
-              control={control}
-              render={({ field }) => (
-                <UploadFileField
-                  value={field.value}
-                  onChange={field.onChange}
-                  inputId="pan-file-upload"
-                />
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Controller
-              name="idType"
-              control={control}
-              rules={{ required: "ID type is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="ID Type"
-                  size="small"
-                  fullWidth
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                >
-                  <MenuItem value="">Select ID Type</MenuItem>
-                  <MenuItem value="Aadhar">Aadhar</MenuItem>
-                  <MenuItem value="Driving License">Driving License</MenuItem>
-                </TextField>
-              )}
-            />
-            <Controller
-              name="idNumber"
-              control={control}
-              rules={{ required: "ID number is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="ID Number"
-                  size="small"
-                  fullWidth
-                  error={!!errors.idNumber}
-                  helperText={errors.idNumber?.message}
-                />
-              )}
-            />
-          </div>
-
-          <Controller
-            name="idProofFile"
-            control={control}
-            render={({ field }) => (
-              <UploadFileField
-                value={field.value}
-                onChange={field.onChange}
-                inputId="id-proof-file-upload"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                name="location"
+                control={control}
+                rules={{ required: "Location is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Location"
+                    size="small"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    onChange={(event) => {
+                      field.onChange(event);
+                      setValue("unit", "");
+                    }}
+                  >
+                    <MenuItem value="">Select Location</MenuItem>
+                    {locationOptions.map((location) => (
+                      <MenuItem key={location._id} value={location._id}>
+                        {location.buildingName}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
               />
-            )}
-          />
+              <Controller
+                name="unit"
+                control={control}
+                rules={{ required: "Unit is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Unit"
+                    size="small"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
+                    <MenuItem value="">Select Unit</MenuItem>
+                    {filteredUnits.map((unit) => (
+                      <MenuItem key={unit._id} value={unit._id}>
+                        {unit.unitNo || unit.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                name="country"
+                control={control}
+                rules={{ required: "Country is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Country"
+                    size="small"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
+                    {countryOptions.map((country) => (
+                      <MenuItem key={country.isoCode} value={country.isoCode}>
+                        {country.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+              <Controller
+                name="state"
+                control={control}
+                rules={{ required: "State is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="State"
+                    size="small"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    onChange={(event) => {
+                      field.onChange(event);
+                      setValue("city", "");
+                    }}
+                  >
+                    <MenuItem value="">Select State</MenuItem>
+                    {stateOptions.map((state) => (
+                      <MenuItem key={state.isoCode} value={state.name}>
+                        {state.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                name="city"
+                control={control}
+                rules={{ required: "City is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="City"
+                    size="small"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
+                    <MenuItem value="">Select City</MenuItem>
+                    {cityOptions.map((city) => (
+                      <MenuItem key={city.name} value={city.name}>
+                        {city.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+              <Controller
+                name="sector"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} label="Sector" size="small" fullWidth />
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                name="registeredClientCompany"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Registered Company"
+                    size="small"
+                    fullWidth
+                  />
+                )}
+              />
+              <Controller
+                name="brandName"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Brand Name"
+                    size="small"
+                    fullWidth
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                name="gstNumber"
+                control={control}
+                rules={{ required: "GST number is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="GST Number"
+                    size="small"
+                    fullWidth
+                    disabled={Boolean(selectedVisitor?.raw?.gstNumber)}
+                    error={!!errors.gstNumber}
+                    helperText={errors.gstNumber?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="gstFile"
+                control={control}
+                render={({ field }) => (
+                  <UploadFileField
+                    value={field.value}
+                    onChange={field.onChange}
+                    inputId="gst-file-upload"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                name="panNumber"
+                control={control}
+                rules={{ required: "PAN number is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="PAN Number"
+                    size="small"
+                    fullWidth
+                    disabled={Boolean(selectedVisitor?.raw?.panNumber)}
+                    error={!!errors.panNumber}
+                    helperText={errors.panNumber?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="panFile"
+                control={control}
+                render={({ field }) => (
+                  <UploadFileField
+                    value={field.value}
+                    onChange={field.onChange}
+                    inputId="pan-file-upload"
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                name="idType"
+                control={control}
+                rules={{ required: "ID type is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="ID Type"
+                    size="small"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
+                    <MenuItem value="">Select ID Type</MenuItem>
+                    <MenuItem value="Aadhar">Aadhar</MenuItem>
+                    <MenuItem value="Driving License">Driving License</MenuItem>
+                  </TextField>
+                )}
+              />
+              <Controller
+                name="idNumber"
+                control={control}
+                rules={{ required: "ID number is required" }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="ID Number"
+                    size="small"
+                    fullWidth
+                    error={!!errors.idNumber}
+                    helperText={errors.idNumber?.message}
+                  />
+                )}
+              />
+            </div>
+
+            <Controller
+              name="idProofFile"
+              control={control}
+              render={({ field }) => (
+                <UploadFileField
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputId="id-proof-file-upload"
+                />
+              )}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Controller
