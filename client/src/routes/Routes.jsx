@@ -180,6 +180,7 @@ import VisitorMixBag from "../pages/Visitors/VisitorMixBag";
 import RepeatDayPass from "../pages/Visitors/RepeatDayPass";
 //import VisitorSettings from "../pages/Visitors/VisitorSettings/VisitorSettings";
 import RepeatExternalCompaanies from "../pages/Visitors/RepeatExternalCompaanies";
+import ConvertInternalVisitors from "../pages/Visitors/ConvertInternalVisitors";
 import VisitorBulkUpload from "../pages/Visitors/VisitorSettings/VisitorBulkUpload";
 import ProfileLayout from "../pages/Profile/ProfileLayout";
 import MyProfile from "../pages/Profile/MyProfile";
@@ -3112,6 +3113,27 @@ export const routes = createBrowserRouter([
                       <PerformancePermissionRoute
                         element={<RepeatExternalCompaanies />}
                         permissions={[PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS]}
+                      />
+                    ),
+                  },
+                    {
+                    path: "mix-bag/visitors-to-client",
+                    element: (
+                      <Navigate
+                        to="/app/visitors/mix-bag/visitors-to-client/convert-internal-visitors"
+                        replace
+                      />
+                    ),
+                  },
+                  {
+                    path: "mix-bag/visitors-to-client/convert-internal-visitors",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<ConvertInternalVisitors />}
+                        permissions={[
+                          PERMISSIONS.VISITORS_MIX_BAG_VISITORS_TO_CLIENT,
+                          PERMISSIONS.VISITORS_MIX_BAG_CONVERT_INTERNAL_VISITORS,
+                        ]}
                       />
                     ),
                   },

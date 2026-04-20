@@ -4,6 +4,7 @@ const {
   fetchVisitors,
   addVisitor,
   updateVisitor,
+  Convettoclient,
   fetchExternalCompanies,
   updateExternalCompany,
   fetchTeamMembers,
@@ -39,7 +40,42 @@ router.patch(
   "/update-external-company/:externalCompanyId",
   updateExternalCompany,
 );
-router.patch("/update-visitor/:visitorId", updateVisitor);
+router.patch(
+  "/update-visitor/:visitorId",
+  upload.fields([
+    {
+      name: "panFile",
+      maxCount: 1,
+    },
+    {
+      name: "gstFile",
+      maxCount: 1,
+    },
+    {
+      name: "otherFile",
+      maxCount: 1,
+    },
+  ]),
+  updateVisitor,
+);
+router.patch(
+  "/convettoclient/:visitorId",
+  upload.fields([
+    {
+      name: "panFile",
+      maxCount: 1,
+    },
+    {
+      name: "gstFile",
+      maxCount: 1,
+    },
+    {
+      name: "otherFile",
+      maxCount: 1,
+    },
+  ]),
+  Convettoclient,
+);
 router.patch(
   "/payment/:visitorId",
   upload.single("paymentProof"),
