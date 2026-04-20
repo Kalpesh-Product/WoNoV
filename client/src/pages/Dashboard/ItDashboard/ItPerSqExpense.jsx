@@ -104,7 +104,7 @@ const ItPerSqExpense = () => {
   ];
 
   const maxY = Math.max(...tableData.map((item) => item.expensePerSqFt), 0);
-  const roundedMax = Math.max(5, Math.ceil(maxY / 5) * 5);
+  // const roundedMax = Math.max(5, Math.ceil(maxY / 5) * 5);
 
   const expenseOptions = {
     chart: {
@@ -129,7 +129,7 @@ const ItPerSqExpense = () => {
       offsetY: -22,
     },
     yaxis: {
-      max: roundedMax,
+      // max: roundedMax,
       title: { text: "Expense per Sq. Ft." },
       labels: {
         formatter: (value) => `${Math.round(value)}`,

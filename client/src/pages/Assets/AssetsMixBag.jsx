@@ -8,9 +8,9 @@ const AssetsMixBag = () => {
     const userPermissions = auth?.user?.permissions?.permissions || [];
     const routes = [
         {
-            title: "vender",
-            route: "/app/assets/mix-bag/vender",
-            permission: PERMISSIONS.ASSETS_MIX_BAG_VENDER.value,
+            title: "vendor",
+            route: "/app/assets/mix-bag/vendor",
+            permission: PERMISSIONS.ASSETS_MIX_BAG_VENDOR.value,
         },
     ];
 

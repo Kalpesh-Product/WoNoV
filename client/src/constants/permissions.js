@@ -44,9 +44,9 @@ export const PERMISSIONS = {
     title: "APPROVALS",
     type: "read",
   },
-  ASSETS_MIX_BAG_VENDER: {
-    value: "mix_bag_vender",
-    title: "MIX BAG VENDER",
+  ASSETS_MIX_BAG_VENDOR: {
+    value: "mix_bag_vendor",
+    title: "MIX BAG VENDOR",
     type: "read",
   },
   ASSETS_ASSET_VALUE_UTILIZATION: {
@@ -881,28 +881,31 @@ export const PERMISSIONS = {
     title: "CLIENT INVOICE",
     type: "read",
     access: "page",
-    route: "/app/dashboard/finance-dashboard/billing/client-invoice",
+    route: "/app/dashboard/finance-dashboard/billing/client-invoicing",
   },
   FINANCE_BILLING_DEPARTMENT_INVOICE: {
     value: "finance_department_invoice_tab",
     title: "DEPARTMENT INVOICE",
     type: "read",
     access: "page",
-    route: "/app/dashboard/finance-dashboard/billing/department-invoice",
+     route:
+      "/app/dashboard/finance-dashboard/billing/voucher-request/department-invoice-voucher",
   },
   FINANCE_BILLING_PENDING_APPROVALS: {
     value: "finance_pending_approvals_tab",
     title: "FINANCE PENDING APPROVALS",
     type: "read",
     access: "page",
-    route: "/app/dashboard/finance-dashboard/billing/pending-approvals",
+    route:
+      "/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher",
   },
   FINANCE_BILLING_VOUCHER_HISTORY: {
     value: "finance_voucher_history_tab",
     title: "FINANCE VOUCHER HISTORY",
     type: "read",
     access: "page",
-    route: "/app/dashboard/finance-dashboard/billing/voucher-history",
+    // route: "/app/dashboard/finance-dashboard/billing/voucher-history",
+    route: "/app/dashboard/finance-dashboard/billing/voucher-request/voucher-history",
   },
 
   FINANCE_DATA_ASSET_LIST: {
