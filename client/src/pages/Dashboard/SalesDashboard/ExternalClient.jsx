@@ -143,8 +143,16 @@ const ExternalClient = () => {
     const openDeskVisitorsCount = useMemo(
         () =>
             externalVisitors.filter((visitor) => {
-                const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
-                return purpose === "half-day pass" || purpose === "full-day pass";
+                // const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
+                // return purpose === "half-day pass" || purpose === "full-day pass";
+                const purpose = (visitor?.purposeOfVisit || "").trim().toLowerCase();
+                const isDayPass =
+                    purpose === "half-day pass" ||
+                    purpose === "full-day pass" ||
+                    purpose === "half day pass" ||
+                    purpose === "full day pass";
+
+                return isDayPass || Boolean(visitor?.convertedFromInternal);
             }).length,
         [externalVisitors],
     );

@@ -412,9 +412,26 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/visitors/mix-bag/repeat-day-pass",
   },
+   VISITORS_MIX_BAG_VISITORS_TO_CLIENT: {
+    value: "visitors_mix_bag_visitors_to_client",
+    title: "VISITORS MIX BAG VISITORS TO CLIENT",
+    type: "read",
+    route: "/app/visitors/mix-bag/visitors-to-client",
+  },
+  VISITORS_MIX_BAG_CONVERT_INTERNAL_VISITORS: {
+    value: "visitors_mix_bag_convert_internal_visitors",
+    title: "VISITORS MIX BAG CONVERT INTERNAL VISITORS",
+    type: "read",
+    route: "/app/visitors/mix-bag/visitors-to-client/convert-internal-visitors",
+  },
   VISITORS_MIX_BAG_REPEAT_CLIENT: {
     value: "visitors_mix_bag_repeat_client",
     title: "VISITORS MIX BAG REPEAT CLIENT",
+    type: "edit",
+  },
+   VISITORS_MIX_BAG_CONVERT_TO_CLIENT: {
+    value: "visitors_mix_bag_convert_to_client",
+    title: "VISITORS MIX BAG CONVERT TO CLIENT",
     type: "edit",
   },
   VISITORS_TEAM_MEMBERS: {

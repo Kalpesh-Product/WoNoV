@@ -116,13 +116,24 @@ const visitorSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "CoworkingMember", //Add Visitor form
     },
+    //previously added field, should now be substituted with visitorRoles
     visitorFlag: {
       type: String,
       enum: ["Visitor", "Client"],
     },
+    visitorRoles: {
+      type: [String],
+      enum: ["Visitor", "Client"],
+      default: ["Visitor"],
+    },
     // clientCompany: {
     //   type: String, //Add Client form
     // },
+
+    convertedFromInternal: {
+      type: Boolean,
+      default: false,
+    },
     registeredClientCompany: {
       type: String,
     },
@@ -203,6 +214,9 @@ const visitorSchema = new mongoose.Schema(
       id: {
         type: String,
       },
+    },
+    notes: {
+      type: String,
     },
   },
   { timestamps: true },
