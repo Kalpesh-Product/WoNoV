@@ -437,7 +437,7 @@ const ConvertInternalVisitors = () => {
         <AgTable
           search
           loading={isPending}
-          tableTitle="Convert Internal Visitors"
+          tableTitle="Convert Internal Visitors To Clients"
           data={rows}
           columns={columns}
         />
