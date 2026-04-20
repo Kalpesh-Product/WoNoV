@@ -13,6 +13,11 @@ const VisitorMixBag = () => {
       route: "/app/visitors/mix-bag/repeat-day-pass/repeat-external-companies",
       permission: PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS.value,
     },
+     {
+      title: "VISITORS TO CLIENT",
+      route: "/app/visitors/mix-bag/visitors-to-client/convert-internal-visitors",
+      permission: PERMISSIONS.VISITORS_MIX_BAG_VISITORS_TO_CLIENT.value,
+    },
   ].filter(
     (card) => !card.permission || userPermissions.includes(card.permission),
   );

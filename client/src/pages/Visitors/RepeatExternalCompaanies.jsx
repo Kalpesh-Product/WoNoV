@@ -67,6 +67,11 @@ const RepeatExternalCompaanies = () => {
       });
 
       setRepeatExternalCompanies(dayPassVisitors);
+       const convertedClients = visitors.filter(
+        (visitor) => visitor?.visitorFlag === "Client",
+      );
+
+      setRepeatExternalCompanies(convertedClients);
     } catch (error) {
       console.error("Failed to fetch repeat external companies", error);
       toast.error("Failed to load repeat external companies.");

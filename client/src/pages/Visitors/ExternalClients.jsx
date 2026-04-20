@@ -216,11 +216,12 @@ const ExternalClients = ({
   });
   const { mutate: verifyPaymentStatus } = useMutation({
       mutationKey: ["day-pass-payment-verification"],
-      mutationFn: async ({ externalVisitId, status }) => {
+       mutationFn: async ({ externalVisitId, visitorId, status }) => {
         const response = await axios.patch(
           "/api/visitors/day-pass/payment-verification",
           {
             externalVisitId,
+             visitorId,
             status,
           },
         );
@@ -252,8 +253,19 @@ const ExternalClients = ({
     if (!visitorType) return false;
     return String(visitorType).toLowerCase().includes("day pass");
   };
-
-
+const normalizeVisitorType = (value) => {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "full day pass" || normalized === "full-day pass") {
+      return "Full-Day Pass";
+    }
+    if (normalized === "half day pass" || normalized === "half-day pass") {
+      return "Half-Day Pass";
+    }
+    if (normalized === "meeting") {
+      return "Meeting";
+    }
+    return value || "";
+  };
   const isPaymentCompleted = (status) => {
     if (typeof status === "boolean") return status;
     if (!status) return false;
@@ -304,12 +316,13 @@ const ExternalClients = ({
     return "N/A";
   };
   const handleVerifyPayment = (rowData, status) => {
-    if (!rowData?.latestExternalVisitId) {
+     if (!rowData?.latestExternalVisitId && !rowData?.mongoId) {
       toast.error("No day-pass visit record available for verification");
       return;
     }
     verifyPaymentStatus({
       externalVisitId: rowData.latestExternalVisitId,
+      visitorId: rowData.mongoId,
       status,
     });
   };
@@ -553,10 +566,17 @@ const ExternalClients = ({
     setPaymentVisitor(visitor);
 
     let defaultAmount = visitor.rawPaymentAmount;
+    const normalizedVisitorType = normalizeVisitorType(
+      visitor.visitorType || visitor.purposeOfVisit,
+    );
     if (!defaultAmount || defaultAmount === 0) {
-      if (visitor.visitorType === "Full-Day Pass") defaultAmount = 850;
-      else if (visitor.visitorType === "Half-Day Pass") defaultAmount = 500;
+      if (normalizedVisitorType === "Full-Day Pass") defaultAmount = 850;
+      else if (normalizedVisitorType === "Half-Day Pass") defaultAmount = 500;
     }
+    // if (!defaultAmount || defaultAmount === 0) {
+    //   if (visitor.visitorType === "Full-Day Pass") defaultAmount = 850;
+    //   else if (visitor.visitorType === "Half-Day Pass") defaultAmount = 500;
+    // }
 
     resetPaymentForm({
       paymentAmount: defaultAmount || "",
@@ -642,8 +662,14 @@ const ExternalClients = ({
                   phoneNumber: item.phoneNumber,
                   dateOfVisit: latestVisit?.dateOfVisit || item.dateOfVisit,
                   email: item.email,
-                  purposeOfVisit:
-                    latestVisit?.visitorType || item.purposeOfVisit,
+                  // purposeOfVisit:
+                  //   latestVisit?.visitorType || item.purposeOfVisit,
+                  // purposeOfVisit: item.purposeOfVisit || "-",
+                   // purposeOfVisit: item.purposeOfVisit || "-",
+                   purposeOfVisit: item.purposeOfVisit || "-",
+                  visitorType: normalizeVisitorType(
+                    latestVisit?.visitorType || item?.visitorType || item?.purposeOfVisit,
+                  ),
                   buildingName: getBuildingName(item),
                   unitName: getUnitName(item),
                   toMeet: !item?.toMeet
@@ -700,7 +726,7 @@ const ExternalClients = ({
                     item?.registeredClientCompany || "N/A",
                   brandName: item?.brandName || "N/A",
                   visitorCompany: item.visitorCompany || "N/A",
-                  visitorType: latestVisit?.visitorType || item.visitorType,
+                 // visitorType: latestVisit?.visitorType || item.visitorType,
                   gender: item?.gender || "N/A",
                   state: item?.state || item?.hoState || "N/A",
                   city: item?.city || item?.hoCity || "N/A",

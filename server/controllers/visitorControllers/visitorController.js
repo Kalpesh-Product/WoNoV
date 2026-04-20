@@ -617,6 +617,19 @@ const updateVisitor = async (req, res, next) => {
   try {
     const { visitorId } = req.params;
     const updateData = req.body;
+    const gstFile = req.files?.gstFile?.[0];
+    const panFile = req.files?.panFile?.[0];
+    const otherFile = req.files?.otherFile?.[0];
+
+    if (typeof updateData.idProof === "string") {
+      try {
+        updateData.idProof = JSON.parse(updateData.idProof);
+      } catch (error) {
+        return res.status(400).json({
+          message: "Invalid idProof format",
+        });
+      }
+    }
 
     if (!mongoose.Types.ObjectId.isValid(visitorId)) {
       throw new CustomError(
@@ -636,13 +649,18 @@ const updateVisitor = async (req, res, next) => {
     }
     if (updateData.checkOut) {
       const parsedCheckout = new Date(updateData.checkOut);
-      const parsedCheckin = new Date(visitor.checkIn);
-
+      const parsedCheckin = new Date(updateData.checkIn || visitor.checkIn);
       if (isNaN(parsedCheckout.getTime())) {
         return res.status(400).json({
           message: "Invalid checkout time",
         });
       }
+        if (isNaN(parsedCheckin.getTime())) {
+        return res.status(400).json({
+          message: "Invalid checkin time",
+        });
+      }
+
 
       if (parsedCheckout.getDate() !== parsedCheckin.getDate()) {
         return res.status(400).json({
@@ -657,6 +675,55 @@ const updateVisitor = async (req, res, next) => {
       }
 
       updateData.checkedOutBy = user;
+    }
+   const fileFields = [
+      { file: gstFile, field: "gstFile" },
+      { file: panFile, field: "panFile" },
+      { file: otherFile, field: "otherFile" },
+    ];
+
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    const companyData = await Company.findById(company).lean();
+
+    for (const { file, field } of fileFields) {
+      if (!file) continue;
+
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        return res.status(400).json({
+          message: `Invalid ${field} file type`,
+        });
+      }
+
+      let processedBuffer = file.buffer;
+      const originalFilename = file.originalname;
+
+      if (file.mimetype === "application/pdf") {
+        const pdfDoc = await PDFDocument.load(file.buffer);
+        pdfDoc.setTitle(originalFilename.split(".")[0] || "Untitled");
+        processedBuffer = await pdfDoc.save();
+      }
+
+      const uploadRes = await handleDocumentUpload(
+        processedBuffer,
+        `${companyData?.companyName || "company"}/visitors/clients/${field}`,
+        originalFilename,
+      );
+
+      if (!uploadRes.public_id) {
+        return res.status(500).json({
+          message: `Failed to upload ${field}`,
+        });
+      }
+
+      updateData[field] = {
+        link: uploadRes.secure_url,
+        id: uploadRes.public_id,
+      };
     }
 
     const updatedVisitor = await Visitor.findByIdAndUpdate(
@@ -716,6 +783,45 @@ const updateVisitor = async (req, res, next) => {
     }
   }
 };
+const Convettoclient = async (req, res, next) => {
+  try {
+    const { visitorId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(visitorId)) {
+      return res.status(400).json({ message: "Invalid visitor ID provided" });
+    }
+
+    const visitor = await Visitor.findById(visitorId).select("visitorFlag");
+
+    if (!visitor) {
+      return res.status(404).json({ message: "Visitor not found" });
+    }
+
+    if (visitor.visitorFlag === "Client") {
+      return res.status(400).json({ message: "Visitor is already converted" });
+    }
+
+    const purposeNormalized = String(req.body?.purposeOfVisit || "")
+      .trim()
+      .toLowerCase();
+    const visitorTypeMap = {
+      meeting: "Meeting",
+      "full day pass": "Full-Day Pass",
+      "half day pass": "Half-Day Pass",
+    };
+
+    req.body.visitorFlag = "Client";
+    req.body.convertedFromInternal = true;
+    req.body.visitorType = req.body.visitorType || visitorTypeMap[purposeNormalized] || "Meeting";
+    req.body.dateOfVisit = req.body.dateOfVisit || new Date().toISOString();
+    req.body.checkIn = req.body.checkIn || new Date().toISOString();
+
+    return updateVisitor(req, res, next);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 
 const updateExternalCompany = async (req, res, next) => {
   const logPath = "visitor/VisitorLog";
@@ -1657,20 +1763,49 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
   const logSourceKey = "visitor";
 
   try {
-    const { externalVisitId, status } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(externalVisitId)) {
-      return res
-        .status(400)
-        .json({ message: "Invalid external visit Id provided" });
-    }
+    const { externalVisitId, visitorId, status } = req.body;
 
     const allowedStatuses = ["Pending", "Under Review", "Verified"];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status provided" });
     }
 
-    const externalVisit = await ExternalVisits.findById(externalVisitId);
+    let externalVisit = null;
+    if (externalVisitId && mongoose.Types.ObjectId.isValid(externalVisitId)) {
+      externalVisit = await ExternalVisits.findById(externalVisitId);
+    }
+
+    if (!externalVisit && visitorId && mongoose.Types.ObjectId.isValid(visitorId)) {
+      externalVisit = await ExternalVisits.findOne({ visitorId }).sort({
+        checkIn: -1,
+      });
+    }
+
+    if (!externalVisit && visitorId && mongoose.Types.ObjectId.isValid(visitorId)) {
+      const visitor = await Visitor.findById(visitorId).lean();
+
+      if (visitor) {
+        externalVisit = await ExternalVisits.create({
+          visitorId: visitor._id,
+          company: visitor.company,
+          visitorType: visitor.visitorType || "Meeting",
+          dateOfVisit: visitor.dateOfVisit || visitor.checkIn || new Date(),
+          checkIn: visitor.checkIn || visitor.dateOfVisit || new Date(),
+          checkOut: visitor.checkOut || null,
+          checkedInBy: visitor.checkedInBy || null,
+          checkedOutBy: visitor.checkedOutBy || null,
+          amount: Number(visitor.amount || 0),
+          discount: Number(visitor.discount || 0),
+          gstAmount: Number(visitor.gstAmount || 0),
+          totalAmount: Number(visitor.totalAmount || 0),
+          paymentStatus: Boolean(visitor.paymentStatus),
+          paymentMode: visitor.paymentMode || null,
+          paymentProof: visitor.paymentProof || null,
+          paymentVerification: visitor.paymentVerification || "Pending",
+          unit: visitor.unit || null,
+        });
+      }
+    } 
 
     if (!externalVisit) {
       return res.status(404).json({ message: "External visit not found" });
@@ -1707,6 +1842,7 @@ module.exports = {
   fetchVisitors,
   addVisitor,
   updateVisitor,
+  Convettoclient,
   updateVisitorPayment,
   fetchExternalCompanies,
   updateExternalCompany,
