@@ -181,6 +181,7 @@ import RepeatDayPass from "../pages/Visitors/RepeatDayPass";
 //import VisitorSettings from "../pages/Visitors/VisitorSettings/VisitorSettings";
 import RepeatExternalCompaanies from "../pages/Visitors/RepeatExternalCompaanies";
 import ConvertInternalVisitors from "../pages/Visitors/ConvertInternalVisitors";
+import RepeatInternalVisitors from "../pages/Visitors/RepeatInternalVisitors";
 import VisitorBulkUpload from "../pages/Visitors/VisitorSettings/VisitorBulkUpload";
 import ProfileLayout from "../pages/Profile/ProfileLayout";
 import MyProfile from "../pages/Profile/MyProfile";
@@ -3136,7 +3137,29 @@ export const routes = createBrowserRouter([
                         ]}
                       />
                     ),
+                    },
+                  {
+                    path: "mix-bag/repeat-visitors",
+                    element: (
+                      <Navigate
+                        to="/app/visitors/mix-bag/repeat-visitors/repeat-internal-visitors"
+                        replace
+                      />
+                    ),
                   },
+                  {
+                    path: "mix-bag/repeat-visitors/repeat-internal-visitors",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<RepeatInternalVisitors />}
+                        permissions={[
+                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_VISITORS,
+                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_INTERNAL_VISITORS,
+                        ]}
+                      />
+                    ),
+                  },
+
                   {
                     path: "team-members", // Page with table showing a list of all the team members(receptionists)
                     element: <VisitorTeamMembers />,

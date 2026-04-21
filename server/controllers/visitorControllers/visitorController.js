@@ -16,6 +16,7 @@ const { handleDocumentUpload } = require("../../config/s3Config");
 const Building = require("../../models/locations/Building");
 const Unit = require("../../models/locations/Unit");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
+const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
 
 const attachExternalVisits = async (visitors) => {
   if (!Array.isArray(visitors) || visitors.length === 0) {
@@ -576,6 +577,21 @@ const addVisitor = async (req, res, next) => {
       paymentStatus: savedVisitor.paymentStatus,
       paymentMode: savedVisitor.paymentMode,
       paymentProof: savedVisitor.paymentProof,
+      unit: savedVisitor.unit,
+      notes: savedVisitor.notes,
+      purposeOfVisit: savedVisitor.purposeOfVisit,
+      scheduledDate: savedVisitor.scheduledDate,
+      scheduledStartTime: savedVisitor.scheduledStartTime,
+      scheduledEndTime: savedVisitor.scheduledEndTime,
+      toMeetCompany: savedVisitor.toMeetCompany,
+      department: savedVisitor.department,
+      visitorRoles: savedVisitor.visitorRoles,
+      visitorFlag: savedVisitor.visitorFlag,
+      toMeet: savedVisitor.toMeet,
+      clientToMeet: savedVisitor.clientToMeet,
+      meeting: savedVisitor.meeting,
+      visitorCompany: savedVisitor.visitorCompany,
+      building: savedVisitor.building,
     });
     if (!isDepartmentEmpty) {
       const foundDepartment =
@@ -1073,6 +1089,230 @@ const updateVisitorPayment = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Visitor payment updated successfully",
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
+  }
+};
+const repeatInternalVisitor = async (req, res, next) => {
+  const logPath = "visitors/VisitorLog";
+  const logAction = "Repeat Internal Visitor";
+  const logSourceKey = "visitor";
+  const { user, company, ip } = req;
+
+  try {
+    const { visitorId } = req.params;
+    const {
+      visitorType,
+      purposeOfVisit,
+      building,
+      unit,
+      visitorCompany,
+      department,
+      toMeetCompany,
+      toMeet,
+      clientToMeet,
+      checkOut,
+    } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(visitorId)) {
+      return res.status(400).json({ message: "Invalid visitor id provided" });
+    }
+
+    if (!visitorType || !purposeOfVisit) {
+      return res
+        .status(400)
+        .json({ message: "visitorType and purposeOfVisit are required" });
+    }
+
+    if (building && !mongoose.Types.ObjectId.isValid(building)) {
+      return res.status(400).json({ message: "Invalid building ID provided" });
+    }
+
+    if (unit && !mongoose.Types.ObjectId.isValid(unit)) {
+      return res.status(400).json({ message: "Invalid unit ID provided" });
+    }
+
+    const isBiznestMeeting = toMeetCompany === BIZNEST_COMPANY_ID;
+    const normalizedDepartment =
+      isBiznestMeeting && department && department !== "na" ? department : null;
+
+    if (
+      normalizedDepartment &&
+      !mongoose.Types.ObjectId.isValid(normalizedDepartment)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid department ID provided" });
+    }
+
+    if (toMeetCompany && !mongoose.Types.ObjectId.isValid(toMeetCompany)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid company ID for meeting target" });
+    }
+
+    if (toMeet && !mongoose.Types.ObjectId.isValid(toMeet)) {
+      return res.status(400).json({ message: "Invalid person ID provided" });
+    }
+
+    if (clientToMeet && !mongoose.Types.ObjectId.isValid(clientToMeet)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid client member ID provided" });
+    }
+
+    const visitor = await Visitor.findOne({
+      _id: visitorId,
+      company,
+      visitorFlag: { $ne: "Client" },
+    });
+
+    if (!visitor) {
+      return res.status(404).json({ message: "Internal visitor not found" });
+    }
+
+    if (building) {
+      const buildingExists = await Building.findOne({ _id: building, company })
+        .select("_id")
+        .lean();
+
+      if (!buildingExists) {
+        return res.status(400).json({ message: "Building not found" });
+      }
+    }
+
+    if (unit) {
+      const unitExists = await Unit.findOne({ _id: unit, company })
+        .select("_id")
+        .lean();
+      if (!unitExists) {
+        return res.status(400).json({ message: "Unit not found" });
+      }
+    }
+
+    if (normalizedDepartment) {
+      const departmentExists = await Department.findById(normalizedDepartment)
+        .select("_id")
+        .lean();
+      if (!departmentExists) {
+        return res.status(400).json({ message: "Department not found" });
+      }
+    }
+
+    if (toMeet) {
+      const foundUser = await UserData.findById(toMeet).select("_id").lean();
+      if (!foundUser) {
+        return res.status(400).json({ message: "Person not found" });
+      }
+    }
+
+    if (clientToMeet) {
+      const foundClientMember = await CoworkingMember.findById(clientToMeet)
+        .select("_id")
+        .lean();
+      if (!foundClientMember) {
+        return res.status(400).json({ message: "Client member not found" });
+      }
+    }
+
+    const checkInDate = new Date();
+    let checkOutDate = null;
+
+    if (checkOut) {
+      checkOutDate = new Date(checkOut);
+      if (Number.isNaN(checkOutDate.getTime())) {
+        return res.status(400).json({ message: "Invalid checkOut provided" });
+      }
+      if (checkOutDate < checkInDate) {
+        return res
+          .status(400)
+          .json({ message: "Check-out time cannot be before check-in time" });
+      }
+    }
+
+    visitor.visitorType = visitorType;
+    visitor.purposeOfVisit = purposeOfVisit;
+    visitor.building = building || null;
+    visitor.unit = unit || null;
+    visitor.visitorCompany = visitorCompany || "";
+    visitor.department = normalizedDepartment;
+    visitor.toMeetCompany = toMeetCompany || null;
+    visitor.toMeet = toMeet || null;
+    visitor.clientToMeet = clientToMeet || null;
+    visitor.dateOfVisit = checkInDate;
+    visitor.checkIn = checkInDate;
+    visitor.checkOut = checkOutDate;
+    visitor.checkedInBy = user || null;
+    visitor.checkedOutBy = checkOutDate ? user || null : null;
+
+    const externalVisit = await ExternalVisits.create({
+      visitorId: visitor._id,
+      company: visitor.company,
+      legacyVisitorEntryId: visitor._id,
+      visitorType: visitor.visitorType,
+      dateOfVisit: visitor.dateOfVisit,
+      checkIn: visitor.checkIn,
+      checkOut: visitor.checkOut,
+      checkedInBy: visitor.checkedInBy || user || null,
+      checkedOutBy: visitor.checkOut
+        ? visitor.checkedOutBy || user || null
+        : null,
+      amount: visitor.amount || 0,
+      discount: visitor.discount || 0,
+      gstAmount: visitor.gstAmount || 0,
+      totalAmount: visitor.totalAmount || 0,
+      paymentStatus: Boolean(visitor.paymentStatus),
+      paymentMode: visitor.paymentMode || null,
+      paymentProof: visitor.paymentProof || null,
+      unit: visitor.unit || null,
+      purposeOfVisit: visitor.purposeOfVisit || "",
+      toMeetCompany: visitor.toMeetCompany || null,
+      department: visitor.department || null,
+      visitorRoles: visitor.visitorRoles || ["Visitor"],
+      visitorFlag: visitor.visitorFlag || "Visitor",
+      toMeet: visitor.toMeet || null,
+      clientToMeet: visitor.clientToMeet || null,
+      visitorCompany: visitor.visitorCompany || "",
+      notes: `Repeated internal visitor entry by ${user || "system"}`,
+    });
+
+    await visitor.save();
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Internal visitor repeated successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: visitor._id,
+      changes: {
+        visitorType,
+        purposeOfVisit,
+        building: building || null,
+        unit: unit || null,
+        visitorCompany: visitorCompany || "",
+        department: visitor.department,
+        toMeetCompany: toMeetCompany || null,
+        toMeet: toMeet || null,
+        clientToMeet: clientToMeet || null,
+        dateOfVisit: visitor.dateOfVisit,
+        checkIn: visitor.checkIn,
+        checkOut: visitor.checkOut,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Repeat visitor updated successfully",
+      visitor,
+      externalVisit,
     });
   } catch (error) {
     next(
@@ -1908,6 +2148,7 @@ module.exports = {
   bulkInsertExternalClients,
   rebookClient,
   convertVisitorToClient,
+  repeatInternalVisitor,
   updateDayPassVisitPayment,
   updateDayPassPaymentVerification,
 };
