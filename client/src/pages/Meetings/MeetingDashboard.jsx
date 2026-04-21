@@ -680,7 +680,9 @@ const MeetingDashboard = () => {
     },
     xaxis: { categories: fullMonthLabels },
     yaxis: {
-      max: 200,
+      min: 0,
+      max: 100,
+      tickAmount: 4, // 100 / 4 = 25 per step → 0, 25, 50, 75, 100, 125, 150, 175, 200
       title: { text: "Utilization (%)" },
       labels: {
         formatter: (value) => Math.round(value),
@@ -706,8 +708,8 @@ const MeetingDashboard = () => {
     tooltip: {
       enabled: true, // or false to disable
       y: {
-        formatter: function (val, { seriesIndex, dataPointIndex }) {
-          const monthLabel = fullMonthLabels?.[dataPointIndex];
+        formatter: function (val, { seriesIndex, dataPointIndex, w }) {
+          const monthLabel = w.config.xaxis.categories?.[dataPointIndex];
           const actualHours = Number(monthlyBookedHours?.[monthLabel]) || 0;
           console.log("[MeetingDashboard][AvgUtilization][Tooltip]", {
             monthLabel,
