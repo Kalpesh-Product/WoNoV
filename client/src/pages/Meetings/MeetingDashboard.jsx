@@ -78,7 +78,6 @@ const MeetingDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-
   const { data: holidaysData = [], isLoading: isHolidaysLoading } = useQuery({
     queryKey: ["holidays"],
     queryFn: async () => {
@@ -180,13 +179,13 @@ const MeetingDashboard = () => {
   // Fetch internal meetings
   const meetingsInternal = useMemo(
     () => meetingsData.filter((item) => item.meetingType === "Internal"),
-    [meetingsData]
+    [meetingsData],
   );
 
   // Fetch external meetings
   const meetingsExternal = useMemo(
     () => meetingsData.filter((item) => item.meetingType === "External"),
-    [meetingsData]
+    [meetingsData],
   );
 
   const meetingColumns = [
@@ -230,13 +229,13 @@ const MeetingDashboard = () => {
     ([type, count]) => ({
       label: type,
       count,
-    })
+    }),
   );
 
   // Populate the map
   visitorsData.forEach((visitor) => {
     const visitDate = dayjs(visitor.dateOfVisit);
-     if (!visitDate.isValid()) return;
+    if (!visitDate.isValid()) return;
     const label = visitDate.format("MMM-YY");
     if (monthlyVisitorMap[label] !== undefined) {
       monthlyVisitorMap[label]++;
@@ -306,14 +305,14 @@ const MeetingDashboard = () => {
 
   const meetings = [];
   // To check the number of times a meeting room is booked based on timings
-   const durationBuckets = ["15", "30", "60", "90", "120", "Others"];
+  const durationBuckets = ["15", "30", "60", "90", "120", "Others"];
   const durationCount = durationBuckets.reduce((acc, bucket) => {
     acc[bucket] = 0;
     return acc;
   }, {});
 
   meetingsData.forEach((meeting) => {
-     const durationInMinutes = parseDuration(meeting.duration || "0m");
+    const durationInMinutes = parseDuration(meeting.duration || "0m");
 
     if (durationInMinutes <= 15) {
       durationCount["15"] += 1;
@@ -400,14 +399,14 @@ const MeetingDashboard = () => {
             status: hasOngoingMeeting ? "Unavailable" : "Available",
           };
         }),
-    [roomsData, meetingsData, currentTime]
+    [roomsData, meetingsData, currentTime],
   );
 
   const availableRooms = availabilityRooms.filter(
-    (r) => r.status === "Available"
+    (r) => r.status === "Available",
   );
   const unavailableRooms = availabilityRooms.filter(
-    (r) => r.status === "Unavailable"
+    (r) => r.status === "Unavailable",
   );
 
   const RoomPieData = [
@@ -554,18 +553,28 @@ const MeetingDashboard = () => {
     monthlyBookedHours[label] = monthMap.get(label) || 0;
   }
 
+  // Capacity assumptions used for utilization/occupancy calculations.
+  const WORKING_HOURS_PER_DAY = 6;
+  const countWeekdaysInMonth = (year, monthIndex) => {
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+    let weekdays = 0;
+
+    for (let day = 1; day <= lastDay; day++) {
+      const weekday = new Date(year, monthIndex, day).getDay();
+      if (weekday !== 0 && weekday !== 7) weekdays += 1; // Mon-Sat
+    }
+
+    return weekdays;
+  };
+
   // 🔁 Group data by FY
   const groupedDataMap = new Map();
   const bookedHoursByFY = new Map();
   const totalBookedHours = Object.values(monthlyBookedHours).reduce(
     (acc, hours) => acc + hours,
-    0
+    0,
   );
   const [fyBookedHours, setFYBookedHours] = useState(totalBookedHours);
-  const workinghoursPerDay = 1;
-  const workingDays = 5;
-  const totalBookableHours =
-    roomsData.length * workinghoursPerDay * workingDays;
 
   fullMonthLabels.forEach((label) => {
     const [monthAbbr, yearSuffix] = label.split("-");
@@ -574,18 +583,28 @@ const MeetingDashboard = () => {
 
     const fyStartYear = monthIndex < 3 ? fullYear - 1 : fullYear;
     const fyLabel = `FY ${fyStartYear}-${String(
-      (fyStartYear + 1) % 100
+      (fyStartYear + 1) % 100,
     ).padStart(2, "0")}`;
 
     if (!groupedDataMap.has(fyLabel)) groupedDataMap.set(fyLabel, []);
     if (!bookedHoursByFY.has(fyLabel)) bookedHoursByFY.set(fyLabel, 0);
 
     const bookedHours = monthlyBookedHours[label];
+    const workingDays = countWeekdaysInMonth(fullYear, monthIndex);
+    const totalBookableHoursForMonth =
+      roomsData.length * WORKING_HOURS_PER_DAY * workingDays;
+
+    const utilizationPercent =
+      totalBookableHoursForMonth > 0
+        ? (bookedHours / totalBookableHoursForMonth) * 100
+        : 0;
+
     bookedHoursByFY.set(fyLabel, bookedHoursByFY.get(fyLabel) + bookedHours);
 
     groupedDataMap.get(fyLabel).push({
       x: label,
-      y: (bookedHours / totalBookableHours) * 100,
+      y: utilizationPercent,
+      totalBookableHoursForMonth,
     });
   });
 
@@ -594,7 +613,7 @@ const MeetingDashboard = () => {
     ([group, data]) => ({
       group,
       data,
-    })
+    }),
   );
 
   const averageBookingOptions = {
@@ -627,7 +646,7 @@ const MeetingDashboard = () => {
             "default",
             {
               month: "long",
-            }
+            },
           );
           const year = new Date(monthMeetings[0].date).getFullYear();
 
@@ -665,8 +684,12 @@ const MeetingDashboard = () => {
     tooltip: {
       enabled: true, // or false to disable
       y: {
-        formatter: function (val) {
-          return `${((val / 100) * totalBookableHours).toFixed(0)} hrs`; // Custom text, like "12 hrs"
+        formatter: function (val, { seriesIndex, dataPointIndex }) {
+          const point =
+            averageBookingSeries?.[seriesIndex]?.data?.[dataPointIndex] || {};
+          const actualHours =
+            (Number(point.y) / 100) * Number(point.totalBookableHoursForMonth);
+          return `${(Number.isFinite(actualHours) ? actualHours : 0).toFixed(0)} hrs`;
         },
         title: {
           formatter: () => "Total hours : ", // 🔥 Hides "Series 1"
@@ -680,9 +703,10 @@ const MeetingDashboard = () => {
     },
   };
 
-  const meetingsInCurrentMonth = meetingsData.filter((meeting) =>
-    dayjs(meeting.date).isValid() &&
-    dayjs(meeting.date).isSame(currentMonth, "month")
+  const meetingsInCurrentMonth = meetingsData.filter(
+    (meeting) =>
+      dayjs(meeting.date).isValid() &&
+      dayjs(meeting.date).isSame(currentMonth, "month"),
   );
 
   const bookedHours = meetingsInCurrentMonth.reduce((acc, room) => {
@@ -707,10 +731,20 @@ const MeetingDashboard = () => {
 
   const rooms = roomNames;
 
-  // Calculate occupancy percentage
+  const currentMonthWorkingDays = countWeekdaysInMonth(
+    currentMonth.year(),
+    currentMonth.month(),
+  );
+  const roomBookableHoursInCurrentMonth =
+    WORKING_HOURS_PER_DAY * currentMonthWorkingDays;
+
+  // Calculate occupancy percentage per room for current month.
   const processedRoomsData = Object.keys(actualBookedHours).map((room) => ({
     x: room,
-    y: (actualBookedHours[room] / totalBookableHours) * 100,
+    y:
+      roomBookableHoursInCurrentMonth > 0
+        ? (actualBookedHours[room] / roomBookableHoursInCurrentMonth) * 100
+        : 0,
   }));
 
   const averageOccupancySeries = [
@@ -941,7 +975,7 @@ const MeetingDashboard = () => {
     },
   ];
   const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
+    (card) => !card.permission || userPermissions.includes(card.permission),
   );
 
   const pieChartsConfig = [
@@ -959,7 +993,7 @@ const MeetingDashboard = () => {
   ];
   const allowedPieCharts = pieChartsConfig.filter(
     (widget) =>
-      !widget.permission || userPermissions.includes(widget.permission)
+      !widget.permission || userPermissions.includes(widget.permission),
   );
 
   const donutChartConfig = [
@@ -982,7 +1016,7 @@ const MeetingDashboard = () => {
 
   const allowedDonutCharts = donutChartConfig.filter(
     (widget) =>
-      !widget.permission || userPermissions.includes(widget.permission)
+      !widget.permission || userPermissions.includes(widget.permission),
   );
 
   const dataCardConfigs = [
@@ -1007,7 +1041,8 @@ const MeetingDashboard = () => {
       title: "Total",
       data:
         meetingsData.filter(
-          (item) => item.meetingType === "Internal" && item.client === "BIZNest"
+          (item) =>
+            item.meetingType === "Internal" && item.client === "BIZNest",
         ).length || 0,
       description: "BIZ Nest Bookings",
       route: "reports",
@@ -1029,13 +1064,13 @@ const MeetingDashboard = () => {
       data:
         meetingsData.length > 0
           ? (
-            meetingsData.reduce((sum, item) => {
-              const duration = parseInt(item.duration?.replace("m", ""));
-              return isNaN(duration) ? sum : sum + duration;
-            }, 0) /
-            60 /
-            meetingsData.length
-          ).toFixed(2)
+              meetingsData.reduce((sum, item) => {
+                const duration = parseInt(item.duration?.replace("m", ""));
+                return isNaN(duration) ? sum : sum + duration;
+              }, 0) /
+              60 /
+              meetingsData.length
+            ).toFixed(2)
           : 0,
       description: "Hours Booked",
       route: "reports",
@@ -1049,7 +1084,7 @@ const MeetingDashboard = () => {
           .filter((item) => item.meetingStatus === "Cancelled")
           .reduce(
             (sum, item) => sum + parseInt(item.duration.replace("m", "")),
-            0
+            0,
           ) / 60,
       description: "Hours Cancelled",
       route: "reports",
@@ -1058,7 +1093,7 @@ const MeetingDashboard = () => {
   ];
 
   const allowedDataCards = dataCardConfigs.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
+    (card) => !card.permission || userPermissions.includes(card.permission),
   );
 
   const meetingGraphsConfigs = [
@@ -1077,7 +1112,7 @@ const MeetingDashboard = () => {
   ];
 
   const allowedMeetingGraphs = meetingGraphsConfigs.filter((graph) =>
-    userPermissions.includes(graph.permission)
+    userPermissions.includes(graph.permission),
   );
 
   const barGraphsConfig = [
@@ -1099,7 +1134,7 @@ const MeetingDashboard = () => {
     },
   ];
   const allowedBarGraphs = barGraphsConfig.filter((graph) =>
-    userPermissions.includes(graph.permission)
+    userPermissions.includes(graph.permission),
   );
 
   const tablesConfig = [
@@ -1137,7 +1172,7 @@ const MeetingDashboard = () => {
     },
   ];
   const allowedTables = tablesConfig.filter((table) =>
-    userPermissions.includes(table.permission)
+    userPermissions.includes(table.permission),
   );
 
   const specialGraphsConfig = [
@@ -1163,7 +1198,7 @@ const MeetingDashboard = () => {
     },
   ];
   const allowedSpecialGraphs = specialGraphsConfig.filter((graph) =>
-    userPermissions.includes(graph.permission)
+    userPermissions.includes(graph.permission),
   );
 
   const meetingsWidgets = [
@@ -1278,7 +1313,7 @@ const MeetingDashboard = () => {
               centerAlign
             />
           </WidgetSection>
-        )
+        ),
       ),
     },
     {
@@ -1292,7 +1327,6 @@ const MeetingDashboard = () => {
             border={item.border}
           >
             <div className="relative flex items-center justify-center">
-
               {/* CHART – perfectly centered */}
               <div className="w-[400px] h-[320px]">
                 <PieChartMui
@@ -1309,7 +1343,6 @@ const MeetingDashboard = () => {
                   {item.customLegend}
                 </div>
               )}
-
             </div>
           </WidgetSection>
         )),
