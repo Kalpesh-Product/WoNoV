@@ -434,6 +434,23 @@ export const PERMISSIONS = {
     title: "VISITORS MIX BAG CONVERT TO CLIENT",
     type: "edit",
   },
+  VISITORS_MIX_BAG_REPEAT_VISITORS: {
+    value: "visitors_mix_bag_repeat_visitors",
+    title: "VISITORS MIX BAG REPEAT VISITORS",
+    type: "read",
+    route: "/app/visitors/mix-bag/repeat-visitors",
+  },
+  VISITORS_MIX_BAG_REPEAT_INTERNAL_VISITORS: {
+    value: "visitors_mix_bag_repeat_internal_visitors",
+    title: "VISITORS MIX BAG REPEAT INTERNAL VISITORS",
+    type: "read",
+    route: "/app/visitors/mix-bag/repeat-visitors/repeat-internal-visitors",
+  },
+  VISITORS_MIX_BAG_REPEAT_VISITOR: {
+    value: "visitors_mix_bag_repeat_visitor",
+    title: "VISITORS MIX BAG REPEAT VISITOR",
+    type: "edit",
+  },
   VISITORS_TEAM_MEMBERS: {
     value: "visitor_team_members",
     title: "VISITOR TEAM MEMBERS",
