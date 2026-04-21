@@ -129,11 +129,6 @@ const visitorSchema = new mongoose.Schema(
     // clientCompany: {
     //   type: String, //Add Client form
     // },
-
-    convertedFromInternal: {
-      type: Boolean,
-      default: false,
-    },
     registeredClientCompany: {
       type: String,
     },
