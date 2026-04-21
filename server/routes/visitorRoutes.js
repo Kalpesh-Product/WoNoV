@@ -13,6 +13,7 @@ const {
   updateDayPassVisitPayment,
   updateDayPassPaymentVerification,
   rebookClient,
+   repeatInternalVisitor,
 } = require("../controllers/visitorControllers/visitorController");
 
 router.get("/fetch-visitors", fetchVisitors);
@@ -93,5 +94,5 @@ router.post(
   bulkInsertExternalClients,
 );
 router.post("/rebook-client/:externalVisitId", rebookClient);
-
+router.patch("/repeat-internal-visitor/:visitorId", repeatInternalVisitor);
 module.exports = router;
