@@ -2116,6 +2116,7 @@ module.exports = {
   bulkInsertExternalClients,
   rebookClient,
   convertVisitorToClient,
+  repeatInternalVisitor,
   updateDayPassVisitPayment,
   updateDayPassPaymentVerification,
 };
