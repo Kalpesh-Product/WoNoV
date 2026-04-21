@@ -541,7 +541,7 @@ const MeetingDashboard = () => {
       "-" +
       date.getFullYear().toString().slice(-2);
 
-    const durationMinutes = parseInt(meeting.duration);
+    const durationMinutes = parseDuration(meeting.duration || "0m");
     const durationHours = durationMinutes / 60;
 
     const current = monthMap.get(label) || 0;
@@ -554,17 +554,17 @@ const MeetingDashboard = () => {
   }
 
   // Capacity assumptions used for utilization/occupancy calculations.
-  const WORKING_HOURS_PER_DAY = 6;
+  const WORKING_HOURS_PER_DAY = 9;
   const countWeekdaysInMonth = (year, monthIndex) => {
     const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-    let weekdays = 0;
+    let bookableDays = 0;
 
     for (let day = 1; day <= lastDay; day++) {
       const weekday = new Date(year, monthIndex, day).getDay();
-      if (weekday !== 0 && weekday !== 7) weekdays += 1; // Mon-Sat
+      if (weekday >= 1 && weekday <= 6) bookableDays += 1; // Mon-Sat
     }
 
-    return weekdays;
+    return bookableDays;
   };
 
   // 🔁 Group data by FY
@@ -599,11 +599,26 @@ const MeetingDashboard = () => {
         ? (bookedHours / totalBookableHoursForMonth) * 100
         : 0;
 
+    console.log("[MeetingDashboard][AvgUtilization][MonthCalc]", {
+      label,
+      monthAbbr,
+      fullYear,
+      monthIndex,
+      fyLabel,
+      totalRooms: roomsData.length,
+      WORKING_HOURS_PER_DAY,
+      workingDays,
+      bookedHours,
+      totalBookableHoursForMonth,
+      utilizationPercent,
+    });
+
     bookedHoursByFY.set(fyLabel, bookedHoursByFY.get(fyLabel) + bookedHours);
 
     groupedDataMap.get(fyLabel).push({
       x: label,
       y: utilizationPercent,
+      bookedHours,
       totalBookableHoursForMonth,
     });
   });
@@ -615,6 +630,13 @@ const MeetingDashboard = () => {
       data,
     }),
   );
+
+  console.log("[MeetingDashboard][AvgUtilization][FYSeries]", {
+    fullMonthLabels,
+    monthlyBookedHours,
+    bookedHoursByFY: Object.fromEntries(bookedHoursByFY.entries()),
+    averageBookingSeries,
+  });
 
   const averageBookingOptions = {
     chart: {
@@ -656,7 +678,7 @@ const MeetingDashboard = () => {
         },
       },
     },
-    xaxis: { categories: BookingMonths },
+    xaxis: { categories: fullMonthLabels },
     yaxis: {
       max: 200,
       title: { text: "Utilization (%)" },
@@ -685,11 +707,16 @@ const MeetingDashboard = () => {
       enabled: true, // or false to disable
       y: {
         formatter: function (val, { seriesIndex, dataPointIndex }) {
-          const point =
-            averageBookingSeries?.[seriesIndex]?.data?.[dataPointIndex] || {};
-          const actualHours =
-            (Number(point.y) / 100) * Number(point.totalBookableHoursForMonth);
-          return `${(Number.isFinite(actualHours) ? actualHours : 0).toFixed(0)} hrs`;
+          const monthLabel = fullMonthLabels?.[dataPointIndex];
+          const actualHours = Number(monthlyBookedHours?.[monthLabel]) || 0;
+          console.log("[MeetingDashboard][AvgUtilization][Tooltip]", {
+            monthLabel,
+            seriesIndex,
+            dataPointIndex,
+            utilizationPercent: val,
+            actualHours,
+          });
+          return `${actualHours.toFixed(0)} hrs`;
         },
         title: {
           formatter: () => "Total hours : ", // 🔥 Hides "Series 1"
@@ -1104,8 +1131,14 @@ const MeetingDashboard = () => {
       data: averageBookingSeries,
       options: averageBookingOptions,
       onYearChange: (fyLabel) => {
+        const normalized = fyLabel.trim();
+
+        const matchKey = Array.from(bookedHoursByFY.keys()).find(
+          (key) => key.trim() === normalized,
+        );
+
         setSelectedFY(fyLabel);
-        setFYBookedHours(bookedHoursByFY.get(fyLabel) || 0);
+        setFYBookedHours(bookedHoursByFY.get(matchKey) || 0);
       },
       permission: PERMISSIONS.MEETINGS_AVERAGE_ROOM_UTILIZATION.value,
     },
