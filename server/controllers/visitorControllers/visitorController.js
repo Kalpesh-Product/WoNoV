@@ -1250,6 +1250,37 @@ const repeatInternalVisitor = async (req, res, next) => {
     visitor.checkedInBy = user || null;
     visitor.checkedOutBy = checkOutDate ? user || null : null;
 
+    const externalVisit = await ExternalVisits.create({
+      visitorId: visitor._id,
+      company: visitor.company,
+      legacyVisitorEntryId: visitor._id,
+      visitorType: visitor.visitorType,
+      dateOfVisit: visitor.dateOfVisit,
+      checkIn: visitor.checkIn,
+      checkOut: visitor.checkOut,
+      checkedInBy: visitor.checkedInBy || user || null,
+      checkedOutBy: visitor.checkOut
+        ? visitor.checkedOutBy || user || null
+        : null,
+      amount: visitor.amount || 0,
+      discount: visitor.discount || 0,
+      gstAmount: visitor.gstAmount || 0,
+      totalAmount: visitor.totalAmount || 0,
+      paymentStatus: Boolean(visitor.paymentStatus),
+      paymentMode: visitor.paymentMode || null,
+      paymentProof: visitor.paymentProof || null,
+      unit: visitor.unit || null,
+      purposeOfVisit: visitor.purposeOfVisit || "",
+      toMeetCompany: visitor.toMeetCompany || null,
+      department: visitor.department || null,
+      visitorRoles: visitor.visitorRoles || ["Visitor"],
+      visitorFlag: visitor.visitorFlag || "Visitor",
+      toMeet: visitor.toMeet || null,
+      clientToMeet: visitor.clientToMeet || null,
+      visitorCompany: visitor.visitorCompany || "",
+      notes: `Repeated internal visitor entry by ${user || "system"}`,
+    });
+
     await visitor.save();
 
     await createLog({
@@ -1281,6 +1312,7 @@ const repeatInternalVisitor = async (req, res, next) => {
     return res.status(200).json({
       message: "Repeat visitor updated successfully",
       visitor,
+      externalVisit,
     });
   } catch (error) {
     next(
