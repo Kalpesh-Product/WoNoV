@@ -705,30 +705,78 @@ const MeetingDashboard = () => {
         columnWidth: "40%",
       },
     },
+    // tooltip: {
+    //   enabled: true, // or false to disable
+    //   y: {
+    //     formatter: function (val, { seriesIndex, dataPointIndex, w }) {
+    //       const monthLabel = w.config.xaxis.categories?.[dataPointIndex];
+    //       const actualHours = Number(monthlyBookedHours?.[monthLabel]) || 0;
+    //       console.log("[MeetingDashboard][AvgUtilization][Tooltip]", {
+    //         monthLabel,
+    //         seriesIndex,
+    //         dataPointIndex,
+    //         utilizationPercent: val,
+    //         actualHours,
+    //       });
+    //       return `${actualHours.toFixed(0)} hrs`;
+    //     },
+    //     title: {
+    //       formatter: () => "Total hours : ", // 🔥 Hides "Series 1"
+    //     },
+    //   },
+    //   x: {
+    //     formatter: function (val) {
+    //       return `Month: ${val}`; // Customizes "May-25"
+    //     },
+    //   },
+    // },
     tooltip: {
-      enabled: true, // or false to disable
-      y: {
-        formatter: function (val, { seriesIndex, dataPointIndex, w }) {
-          const monthLabel = w.config.xaxis.categories?.[dataPointIndex];
-          const actualHours = Number(monthlyBookedHours?.[monthLabel]) || 0;
-          console.log("[MeetingDashboard][AvgUtilization][Tooltip]", {
-            monthLabel,
-            seriesIndex,
-            dataPointIndex,
-            utilizationPercent: val,
-            actualHours,
-          });
-          return `${actualHours.toFixed(0)} hrs`;
-        },
-        title: {
-          formatter: () => "Total hours : ", // 🔥 Hides "Series 1"
-        },
+      enabled: true,
+      custom: function ({ seriesIndex, dataPointIndex, w }) {
+        const monthLabel = w.config.xaxis.categories?.[dataPointIndex];
+        const actualHours = Number(monthlyBookedHours?.[monthLabel]) || 0;
+
+        const [monthAbbr, yearSuffix] = (monthLabel || "").split("-");
+
+        const calcHours = (buildingName) =>
+          meetingsData
+            .filter((m) => {
+              const date = new Date(m.date);
+              const mAbbr = date.toLocaleString("default", { month: "short" });
+              const mYear = date.getFullYear().toString().slice(-2);
+              return (
+                mAbbr === monthAbbr &&
+                mYear === yearSuffix &&
+                m.location?.building?.buildingName === buildingName
+              );
+            })
+            .reduce(
+              (sum, m) => sum + parseDuration(m.duration || "0m") / 60,
+              0,
+            );
+
+        const stcHours = calcHours("Sunteck Kanaka");
+        const dtcHours = calcHours("Dempo Trade Centre");
+
+        return `
+      <div style="padding: 8px 12px; font-family: Poppins-Regular; font-size: 12px; line-height: 1.8;">
+        <div style="font-weight: 600; margin-bottom: 4px;">Month: ${monthLabel}</div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span>
+          <span>Total Booked Hours: <b>${actualHours.toFixed(0)} hrs</b></span>
+        </div>
+        <div>
+          <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span>
+          <span>STC: <b>${stcHours.toFixed(0)} hrs</b></span>
+        </div>
+        <div>
+          <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span>
+          <span>DTC: <b>${dtcHours.toFixed(0)} hrs</b></span>
+        </div>
+      </div>
+    `;
       },
-      x: {
-        formatter: function (val) {
-          return `Month: ${val}`; // Customizes "May-25"
-        },
-      },
+      x: { show: false },
     },
   };
 
