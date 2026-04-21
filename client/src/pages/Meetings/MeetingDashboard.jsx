@@ -737,6 +737,13 @@ const MeetingDashboard = () => {
         const actualHours = Number(monthlyBookedHours?.[monthLabel]) || 0;
 
         const [monthAbbr, yearSuffix] = (monthLabel || "").split("-");
+        const fullYear = parseInt("20" + yearSuffix);
+        const monthIndex = new Date(`${monthAbbr} 1, ${fullYear}`).getMonth();
+
+        // ✅ Same formula used in groupedDataMap
+        const workingDays = countWeekdaysInMonth(fullYear, monthIndex);
+        const totalAvailableHours =
+          roomsData.length * WORKING_HOURS_PER_DAY * workingDays;
 
         const calcHours = (buildingName) =>
           meetingsData
@@ -758,23 +765,23 @@ const MeetingDashboard = () => {
         const stcHours = calcHours("Sunteck Kanaka");
         const dtcHours = calcHours("Dempo Trade Centre");
 
+        const stcPct =
+          actualHours > 0 ? ((stcHours / actualHours) * 100).toFixed(1) : 0;
+        const dtcPct =
+          actualHours > 0 ? ((dtcHours / actualHours) * 100).toFixed(1) : 0;
+
         return `
-      <div style="padding: 8px 12px; font-family: Poppins-Regular; font-size: 12px; line-height: 1.8;">
-        <div style="font-weight: 600; margin-bottom: 4px;">Month: ${monthLabel}</div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span>
-          <span>Total Booked Hours: <b>${actualHours.toFixed(0)} hrs</b></span>
-        </div>
-        <div>
-          <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span>
-          <span>STC: <b>${stcHours.toFixed(0)} hrs</b></span>
-        </div>
-        <div>
-          <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span>
-          <span>DTC: <b>${dtcHours.toFixed(0)} hrs</b></span>
-        </div>
+    <div style="padding: 8px 12px; font-family: Poppins-Regular; font-size: 12px; line-height: 1.8;">
+      <div style="font-weight: 600; margin-bottom: 4px;">Month: ${monthLabel}</div>
+      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> Total Available Hours: <b>${totalAvailableHours.toFixed(0)} hrs</b></div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> Total Booked Hours: <b>${actualHours.toFixed(0)} hrs</b>
       </div>
-    `;
+      
+      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> STC: <b>${stcHours.toFixed(0)} hrs</b>  </div>
+      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> DTC: <b>${dtcHours.toFixed(0)} hrs</b> </div>
+    </div>
+  `;
       },
       x: { show: false },
     },
