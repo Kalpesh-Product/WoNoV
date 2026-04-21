@@ -576,6 +576,21 @@ const addVisitor = async (req, res, next) => {
       paymentStatus: savedVisitor.paymentStatus,
       paymentMode: savedVisitor.paymentMode,
       paymentProof: savedVisitor.paymentProof,
+      unit: savedVisitor.unit,
+      notes: savedVisitor.notes,
+      purposeOfVisit: savedVisitor.purposeOfVisit,
+      scheduledDate: savedVisitor.scheduledDate,
+      scheduledStartTime: savedVisitor.scheduledStartTime,
+      scheduledEndTime: savedVisitor.scheduledEndTime,
+      toMeetCompany: savedVisitor.toMeetCompany,
+      department: savedVisitor.department,
+      visitorRoles: savedVisitor.visitorRoles,
+      visitorFlag: savedVisitor.visitorFlag,
+      toMeet: savedVisitor.toMeet,
+      clientToMeet: savedVisitor.clientToMeet,
+      meeting: savedVisitor.meeting,
+      visitorCompany: savedVisitor.visitorCompany,
+      building: savedVisitor.building,
     });
     if (!isDepartmentEmpty) {
       const foundDepartment =

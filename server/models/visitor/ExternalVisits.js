@@ -148,6 +148,16 @@ const externalVisitSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "CoworkingMember", //Add Visitor form
     },
+    meeting: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Meeting",
+      default: null,
+    },
+    visitorCompany: {
+      //Add Visitor form
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );
