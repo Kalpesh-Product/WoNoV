@@ -8,7 +8,7 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { MenuItem, TextField } from "@mui/material";
-import { TimePicker } from "@mui/x-date-pickers";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -500,7 +500,12 @@ const ExternalClients = ({
       setValue("email", selectedVisitor.email || "");
       setValue("phoneNumber", selectedVisitor.phoneNumber || "");
       setValue("purposeOfVisit", selectedVisitor.purposeOfVisit || "");
-      setValue("dateOfVisit", selectedVisitor.dateOfVisit || "");
+       setValue(
+        "dateOfVisit",
+        selectedVisitor.dateOfVisit
+          ? dayjs(selectedVisitor.dateOfVisit)
+          : null,
+      );
       setValue("checkInRaw", selectedVisitor.checkInRaw || "");
       setValue("checkInBy", selectedVisitor.checkInBy || "");
 
@@ -559,7 +564,9 @@ const ExternalClients = ({
         name: `${data.firstName} ${data.lastName}`,
         email: data.email,
         phoneNumber: data.phoneNumber,
-        dateOfVisit: data.dateOfVisit,
+        dateOfVisit: data.dateOfVisit
+          ? dayjs(data.dateOfVisit).toISOString()
+          : null,
         purposeOfVisit: data.purposeOfVisit,
         // checkOut: data.checkOutRaw
         //   ? dayjs(data.checkOutRaw).toISOString()
@@ -1009,18 +1016,27 @@ const ExternalClients = ({
 
                 {/* date of visit */}
                 {isEditing ? (
-                  <Controller
-                    name="dateOfVisit"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Date of Visit"
-                        fullWidth
-                      />
-                    )}
-                  />
+                   <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Controller
+                      name="dateOfVisit"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          {...field}
+                          format="DD-MM-YYYY"
+                          label="Date of Visit"
+                          value={field.value ? dayjs(field.value) : null}
+                          onChange={(value) => field.onChange(value)}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              size: "small",
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
                 ) : (
                   <DetalisFormatted
                     title="Date of Visit"

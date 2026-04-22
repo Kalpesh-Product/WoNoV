@@ -204,13 +204,38 @@ const ManageVisitors = () => {
 
   const getLatestVisitByRole = (visits = [], role) => {
     if (!Array.isArray(visits) || visits.length === 0) return null;
+    const normalizeVisitorType = (value) =>
+      String(value || "")
+        .toLowerCase()
+        .replace(/[^a-z]/g, "");
+
+    const getVisitTimestamp = (visit) => {
+      const dateValue =
+        visit?.checkIn ||
+        visit?.dateOfVisit ||
+        visit?.createdAt ||
+        visit?.updatedAt;
+      const timestamp = new Date(dateValue || "").getTime();
+      return Number.isNaN(timestamp) ? 0 : timestamp;
+    };
+
+    const internalVisitorTypes = new Set(["walkin", "scheduled"]);
+
     return (
-      visits.find((visit) => {
-        const visitRoles = Array.isArray(visit?.visitorRoles)
-          ? visit.visitorRoles
-          : [];
-        return visit?.visitorFlag === role || visitRoles.includes(role);
-      }) || null
+      visits
+        .filter((visit) => {
+          const visitRoles = Array.isArray(visit?.visitorRoles)
+            ? visit.visitorRoles
+            : [];
+          const isMatchingRole =
+            visit?.visitorFlag === role || visitRoles.includes(role);
+          const isInternalVisitType = internalVisitorTypes.has(
+            normalizeVisitorType(visit?.visitorType),
+          );
+
+          return isMatchingRole && isInternalVisitType;
+        })
+        .sort((a, b) => getVisitTimestamp(b) - getVisitTimestamp(a))[0] || null
     );
   };
 
