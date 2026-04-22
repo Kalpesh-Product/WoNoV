@@ -2555,21 +2555,35 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
-                  {
-                    path: "mix-bag/vendor",
-                    element: <VendorTable />,
-                  },
-                  {
-                    path: "mix-bag/vendor/vendor-onboard",
-                    element: <Vendor />,
-                  },
-                  {
-                    path: "mix-bag/vendor/:id",
-                    element: <ViewVendor />,
-                  },
+                  // {
+                  //   path: "mix-bag/vendor",
+                  //   element: <VendorTable />,
+                  // },
+                  // {
+                  //   path: "mix-bag/vendor/vendor-onboard",
+                  //   element: <Vendor />,
+                  // },
+                  // {
+                  //   path: "mix-bag/vendor/:id",
+                  //   element: <ViewVendor />,
+                  // },
                   {
                     path: "mix-bag",
                     element: <AssetsMixBag />,
+                      children: [
+                      {
+                        path: "vendor",
+                        element: <VendorTable />,
+                      },
+                      {
+                        path: "vendor/vendor-onboard",
+                        element: <Vendor />,
+                      },
+                      {
+                        path: "vendor/:id",
+                        element: <ViewVendor />,
+                      },
+                    ],
                   },
                   {
                     path: "reports",

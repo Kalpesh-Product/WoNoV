@@ -48,6 +48,7 @@ export const PERMISSIONS = {
     value: "mix_bag_vendor",
     title: "MIX BAG VENDOR",
     type: "read",
+    route: "/app/assets/mix-bag/vendor",
   },
   ASSETS_ASSET_VALUE_UTILIZATION: {
     value: "asset_value_utilization",
