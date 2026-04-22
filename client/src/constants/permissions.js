@@ -527,6 +527,16 @@ export const PERMISSIONS = {
     title: "MEETING BOOKINGS TODAY",
     type: "read",
   },
+   VISITORS_FULL_DAY_VISITS_TODAY: {
+    value: "full_day_visits_today",
+    title: "FULL DAY VISITS TODAY",
+    type: "read",
+  },
+  VISITORS_HALF_DAY_VISITS_TODAY: {
+    value: "half_day_visits_today",
+    title: "HALF DAY VISITS TODAY",
+    type: "read",
+  },
   //Visitors Tabs
   VISITORS_MANAGE_INTERNAL_VISITORS: {
     value: "visitors_manage_internal_visitors",
