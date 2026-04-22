@@ -231,8 +231,17 @@ const addVisitor = async (req, res, next) => {
     // ) {
     //   return res.status(400).json({ message: "Invalid building provided" });
 
-    const visitorExists = await Visitor.findOne({ email: email });
+    if (!phoneNumber) {
+      return res.status(400).json({ message: "Phone number is required" });
+    }
 
+    if (!/^\+?[0-9]+$/.test(phoneNumber)) {
+      return res.status(400).json({ message: "Invalid phone number format" });
+    }
+
+    const visitorExists = await Visitor.findOne({ phoneNumber: phoneNumber });
+
+    console.log("Visitor exists with phone number:", visitorExists);
     if (visitorExists) {
       return res.status(400).json({
         message:
@@ -962,7 +971,7 @@ const updateVisitorPayment = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid visitor Id provided" });
     }
 
-    if (!paymentMode || !paymentStatus || !amount || !paymentProofFile) {
+    if (!paymentMode || !paymentStatus || !amount) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -997,48 +1006,49 @@ const updateVisitorPayment = async (req, res, next) => {
     -------------------------
     */
 
-    const allowedMimeTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "image/webp",
-    ];
+    if (paymentProofFile) {
+      const allowedMimeTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "image/webp",
+      ];
 
-    if (!allowedMimeTypes.includes(paymentProofFile.mimetype)) {
-      throw new CustomError(
-        "Invalid image format for payment proof",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+      if (!allowedMimeTypes.includes(paymentProofFile.mimetype)) {
+        throw new CustomError(
+          "Invalid image format for payment proof",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
 
-    /*
+      /*
     -------------------------
     Upload image
     -------------------------
     */
 
-    const uploadResponse = await handleDocumentUpload(
-      paymentProofFile.buffer,
-      `${visitor.company}/visitors/${visitor._id}/payment-proof`,
-      paymentProofFile.originalname,
-    );
-
-    if (!uploadResponse.public_id) {
-      throw new CustomError(
-        "Failed to upload payment proof",
-        logPath,
-        logAction,
-        logSourceKey,
+      const uploadResponse = await handleDocumentUpload(
+        paymentProofFile.buffer,
+        `${visitor.company}/visitors/${visitor._id}/payment-proof`,
+        paymentProofFile.originalname,
       );
+
+      if (!uploadResponse.public_id) {
+        throw new CustomError(
+          "Failed to upload payment proof",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      visitor.paymentProof = {
+        url: uploadResponse.secure_url,
+        id: uploadResponse.public_id,
+      };
     }
-
-    visitor.paymentProof = {
-      url: uploadResponse.secure_url,
-      id: uploadResponse.public_id,
-    };
-
     /*
     -------------------------
     Payment fields
@@ -1586,11 +1596,31 @@ const rebookClient = async (req, res, next) => {
       checkOut: null,
     }).lean();
 
+    console.log("Ongoing visit check:", ongoingVisit);
     if (ongoingVisit) {
       return res.status(409).json({
         message: "Visitor already has an active visit. Checkout first.",
       });
     }
+
+    // const conflictingDayPassVisit = await ExternalVisits.findOne({
+    //   visitorId: sourceVisitor._id,
+    //   company,
+    //   visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+    //   $or: [
+    //     {
+    //       checkOut: { $ne: null },
+    //       checkIn: { $lt: checkOut },
+    //       checkOut: { $gt: checkIn },
+    //     },
+    //     {
+    //       checkOut: null,
+    //       checkIn: { $lt: checkOut },
+    //     },
+    //   ],
+    // })
+    //   .select("_id checkIn checkOut visitorType")
+    //   .lean();
 
     const conflictingDayPassVisit = await ExternalVisits.findOne({
       visitorId: sourceVisitor._id,
@@ -1598,11 +1628,15 @@ const rebookClient = async (req, res, next) => {
       visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
       $or: [
         {
-          checkOut: { $ne: null },
-          checkIn: { $lt: checkOut },
-          checkOut: { $gt: checkIn },
+          // ✅ completed visit that overlaps
+          $and: [
+            { checkOut: { $ne: null } },
+            { checkOut: { $gt: checkIn } },
+            { checkIn: { $lt: checkOut } },
+          ],
         },
         {
+          // ongoing visit that started before our checkOut
           checkOut: null,
           checkIn: { $lt: checkOut },
         },
