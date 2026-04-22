@@ -48,6 +48,7 @@ export const PERMISSIONS = {
     value: "mix_bag_vendor",
     title: "MIX BAG VENDOR",
     type: "read",
+    route: "/app/assets/mix-bag/vendor",
   },
   ASSETS_ASSET_VALUE_UTILIZATION: {
     value: "asset_value_utilization",
@@ -524,6 +525,16 @@ export const PERMISSIONS = {
   VISITORS_MEETING_BOOKINGS_TODAY: {
     value: "meeting_bookings_today",
     title: "MEETING BOOKINGS TODAY",
+    type: "read",
+  },
+   VISITORS_FULL_DAY_VISITS_TODAY: {
+    value: "full_day_visits_today",
+    title: "FULL DAY VISITS TODAY",
+    type: "read",
+  },
+  VISITORS_HALF_DAY_VISITS_TODAY: {
+    value: "half_day_visits_today",
+    title: "HALF DAY VISITS TODAY",
     type: "read",
   },
   //Visitors Tabs

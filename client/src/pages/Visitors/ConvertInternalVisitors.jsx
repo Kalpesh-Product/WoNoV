@@ -265,7 +265,8 @@ const ConvertInternalVisitors = () => {
           const parsedDate = dayjs(sourceDate);
           if (!parsedDate.isValid()) return true;
 
-          return parsedDate.startOf("day").isBefore(dayjs().startOf("day"));
+          //return parsedDate.startOf("day").isBefore(dayjs().startOf("day"));
+           return !parsedDate.startOf("day").isAfter(dayjs().startOf("day"));
         })
         .map((visitor, index) => ({
           srNo: index + 1,

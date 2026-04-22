@@ -498,7 +498,19 @@ const ListOfAssets = () => {
       ),
     },
   ];
+ const addedByName = useMemo(() => {
+    if (selectedAsset?.createdBy?.firstName) {
+      return `${selectedAsset.createdBy.firstName} ${selectedAsset?.createdBy?.lastName || ""}`.trim();
+    }
 
+    if (selectedAsset?.createdBy?.name) return selectedAsset.createdBy.name;
+
+    if (auth?.user?.firstName) {
+      return `${auth.user.firstName} ${auth?.user?.lastName || ""}`.trim();
+    }
+
+    return auth?.user?.name || "N/A";
+  }, [selectedAsset, auth]);
   const tableData = isAssetsListPending || !Array.isArray(assetsList)
     ? []
     : assetsList.map((item) => {
@@ -1365,6 +1377,14 @@ const ListOfAssets = () => {
               detail={selectedAsset?.description || "N/A"}
             />
             <DetalisFormatted
+              title={"Added At"}
+              detail={selectedAsset?.createdAt ? humanDate(selectedAsset?.createdAt) : "N/A"}
+            />
+            <DetalisFormatted
+              title={"Added By"}
+              detail={addedByName}
+            />
+            <DetalisFormatted
               title={"Asset Type"}
               detail={selectedAsset?.assetType || "N/A"}
             />
@@ -1387,6 +1407,10 @@ const ListOfAssets = () => {
             <DetalisFormatted
               title={"Price"}
               detail={`INR ${inrFormat(selectedAsset?.price)}`}
+            />
+             <DetalisFormatted
+              title={"Quantity"}
+              detail={selectedAsset?.quantity ?? 1}
             />
             <DetalisFormatted
               title={"Purchase Date"}
