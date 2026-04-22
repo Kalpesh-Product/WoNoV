@@ -88,9 +88,10 @@ const BiometricAccessClients = () => {
     }));
 
     return (
-        <div className="flex flex-col gap-4">
-            <PageFrame>
-                <div className="w-full">
+        <div className="p-4">
+            
+                <div className="w-full ">
+                    <PageFrame>
                     <AgTable
                         search
                         tableTitle="Biometric Access"
@@ -98,10 +99,30 @@ const BiometricAccessClients = () => {
                         data={data}
                         columns={columns}
                     />
+                    </PageFrame>
                 </div>
-            </PageFrame>
+            
         </div>
     );
 };
 
 export default BiometricAccessClients;
+
+{/* <div className="p-4">
+      <div className="w-full">
+        <PageFrame>
+          <AgTable
+            search={true}
+            tableTitle={"CO-WORKING CLIENT DETAILS"}
+            buttonTitle={"Add Client"}
+            handleClick={() =>
+              navigate(
+                "/app/dashboard/sales-dashboard/mix-bag/clients/co-working/client-onboarding",
+              )
+            }
+            data={tableData}
+            columns={viewEmployeeColumns}
+          />
+        </PageFrame>
+      </div>{" "}
+</div> */}
