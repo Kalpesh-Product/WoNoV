@@ -745,15 +745,34 @@ const MeetingDashboard = () => {
         const totalAvailableHours =
           roomsData.length * WORKING_HOURS_PER_DAY * workingDays;
 
+        // const calcHours = (buildingName) =>
+        //   meetingsData
+        //     .filter((m) => {
+        //       const date = new Date(m.date);
+        //       const mAbbr = date.toLocaleString("default", { month: "short" });
+        //       const mYear = date.getFullYear().toString().slice(-2);
+        //       return (
+        //         mAbbr === monthAbbr &&
+        //         mYear === yearSuffix &&
+        //         m.location?.building?.buildingName === buildingName
+        //       );
+        //     })
+        //     .reduce(
+        //       (sum, m) => sum + parseDuration(m.duration || "0m") / 60,
+        //       0,
+        //     );
+
         const calcHours = (buildingName) =>
           meetingsData
             .filter((m) => {
               const date = new Date(m.date);
-              const mAbbr = date.toLocaleString("default", { month: "short" });
-              const mYear = date.getFullYear().toString().slice(-2);
+              // ✅ Use same label-building logic as monthMap
+              const mLabel =
+                date.toLocaleString("default", { month: "short" }) +
+                "-" +
+                date.getFullYear().toString().slice(-2);
               return (
-                mAbbr === monthAbbr &&
-                mYear === yearSuffix &&
+                mLabel === monthLabel && // ✅ compare full label, not split parts
                 m.location?.building?.buildingName === buildingName
               );
             })
@@ -769,17 +788,19 @@ const MeetingDashboard = () => {
           actualHours > 0 ? ((stcHours / actualHours) * 100).toFixed(1) : 0;
         const dtcPct =
           actualHours > 0 ? ((dtcHours / actualHours) * 100).toFixed(1) : 0;
+        const unaccounted = actualHours - stcHours - dtcHours;
 
         return `
     <div style="padding: 8px 12px; font-family: Poppins-Regular; font-size: 12px; line-height: 1.8;">
       <div style="font-weight: 600; margin-bottom: 4px;">Month: ${monthLabel}</div>
       <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> Total Available Hours: <b>${totalAvailableHours.toFixed(0)} hrs</b></div>
       <div style="display:flex; align-items:center; gap:6px;">
-        <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> Total Booked Hours: <b>${actualHours.toFixed(0)} hrs</b>
+        <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> Total Booked Hours: <b>${actualHours.toFixed(1)} hrs</b>
       </div>
       
-      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> STC: <b>${stcHours.toFixed(0)} hrs</b>  </div>
-      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> DTC: <b>${dtcHours.toFixed(0)} hrs</b> </div>
+      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> STC: <b>${stcHours.toFixed(1)} hrs</b>  </div>
+      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> DTC: <b>${dtcHours.toFixed(1)} hrs</b> </div>
+
     </div>
   `;
       },
