@@ -50,7 +50,8 @@ const MeetingFormLayout = () => {
   const locationState = useLocation();
   const meetingRoomId = locationState.state?.meetingRoomId || "";
   const { perHourCredit, perHourPrice } = locationState.state;
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState([])
+   const [currentTime, setCurrentTime] = useState(() => dayjs());
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   let showExternalType = false;
@@ -151,6 +152,25 @@ const MeetingFormLayout = () => {
   const externalCompany = watch("externalCompany");
   const bookedBy = watch("bookedBy");
 
+
+useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(dayjs());
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentScrollTime = useMemo(() => {
+    const minute = currentTime.minute();
+    const minutesToSubtract = minute % 30;
+    const nextSlotTime = currentTime
+      .subtract(minutesToSubtract, "minute")
+      .second(0)
+      .millisecond(0);
+
+    return nextSlotTime.format("HH:mm:ss");
+  }, [currentTime]);
   useEffect(() => {
     if (meetingType !== "External") return;
 
@@ -578,6 +598,8 @@ const MeetingFormLayout = () => {
             selectable={true}
             selectMirror={false}
             slotDuration="00:30:00"
+            // slotMinTime={currentSlotMinTime}
+            scrollTime={currentScrollTime}
             slotLabelFormat={{
               hour: "numeric",
               minute: "2-digit",
@@ -966,33 +988,36 @@ const MeetingFormLayout = () => {
             {/* New Start */}
             {meetingType === "External" ? (
               <>
-                <div className="col-span-2">
-                  <div className="hidden">
-                    <Controller
-                      name="internalBooked"
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          fullWidth
-                          size="small"
-                          value={`${auth.user?._id} `}
-                          disabled
-                          label={`${isReceptionist ? "Receptionist" : "Booked By"
-                            }`}
-                        />
-                      )}
-                    />
-                  </div>
-                  <TextField
+               <div className="hidden">
+                  <Controller
                     name="internalBooked"
-                    fullWidth
-                    size="small"
-                    value={`${auth.user?.firstName} ${auth.user?.lastName} `}
-                    disabled
-                    label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        size="small"
+                        value={`${auth.user?._id} `}
+                        disabled
+                        label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
+                      />
+                    )}
                   />
                 </div>
+                {isReceptionist ? (
+                  <div className="col-span-2">
+                    <TextField
+                      name="internalBooked"
+                      fullWidth
+                      size="small"
+                      value={`${auth.user?.firstName} ${auth.user?.lastName} `}
+                      disabled
+                      label="Receptionist"
+                    />
+                  </div>
+                ) : null} 
+
+                
                 <div className="col-span-1">
                   <Controller
                     name="externalCompany"
@@ -1033,8 +1058,8 @@ const MeetingFormLayout = () => {
                     )}
                   />
                 </div>
-                {isReceptionist ? (
-                  <div className="col-span-1">
+                 <div className="col-span-1">
+                  {isReceptionist ? (
                     <Controller
                       name="bookedBy"
                       control={control}
@@ -1090,8 +1115,17 @@ const MeetingFormLayout = () => {
                         />
                       )}
                     />
-                  </div>
-                ) : null}
+                   ) : (
+                    <TextField
+                      name="internalBooked"
+                      fullWidth
+                      size="small"
+                      value={`${auth.user?.firstName} ${auth.user?.lastName} `}
+                      disabled
+                      label="Booked By"
+                    />
+                  )}
+                </div>
               </>
             ) : null}
             {meetingType === "External" && (

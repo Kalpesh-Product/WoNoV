@@ -813,7 +813,12 @@ const MeetingDashboard = () => {
       dayjs(meeting.date).isValid() &&
       dayjs(meeting.date).isSame(currentMonth, "month"),
   );
-
+const cancelledMeetingsInCurrentMonthCount = meetingsData.filter(
+    (meeting) =>
+      meeting.meetingStatus === "Cancelled" &&
+      dayjs(meeting.date).isValid() &&
+      dayjs(meeting.date).isSame(currentMonth, "month"),
+  ).length;
   const bookedHours = meetingsInCurrentMonth.reduce((acc, room) => {
     const name = room.roomName;
     const hours = parseInt(room.duration) / 60 || 0;
@@ -1161,6 +1166,7 @@ const MeetingDashboard = () => {
         .length,
       description: "Guest Bookings",
       route: "reports",
+      onClick: () => navigate("reports?source=guest-bookings"), 
       permission: PERMISSIONS.MEETINGS_GUEST_BOOKINGS.value,
     },
     {
@@ -1184,15 +1190,17 @@ const MeetingDashboard = () => {
     {
       key: "hoursCancelled",
       title: "Total",
-      data:
-        meetingsData
-          .filter((item) => item.meetingStatus === "Cancelled")
-          .reduce(
-            (sum, item) => sum + parseInt(item.duration.replace("m", "")),
-            0,
-          ) / 60,
+       data: cancelledMeetingsInCurrentMonthCount || 0,
+      // data:
+      //   meetingsData
+      //     .filter((item) => item.meetingStatus === "Cancelled")
+      //     .reduce(
+      //       (sum, item) => sum + parseInt(item.duration.replace("m", "")),
+      //       0,
+      //     ) / 60,
       description: "Hours Cancelled",
       route: "reports",
+      onClick: () => navigate("reports?source=cancelled"),
       permission: PERMISSIONS.MEETINGS_HOURS_CANCELLED.value,
     },
   ];

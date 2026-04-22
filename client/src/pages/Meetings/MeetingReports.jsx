@@ -176,6 +176,16 @@ const MeetingReports = () => {
           meeting?.meetingType === "Internal" && meeting?.client === "BIZNest",
       );
     }
+     if (sourceFilter === "cancelled") {
+      return meetingReportsData.filter(
+        (meeting) => meeting?.meetingStatus === "Cancelled",
+      );
+    }
+    if (sourceFilter === "guest-bookings") {
+      return meetingReportsData.filter(
+        (meeting) => meeting?.meetingType === "External",
+      );
+    }
 
     return meetingReportsData;
   }, [meetingReportsData, sourceFilter]);
