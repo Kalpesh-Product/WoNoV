@@ -99,6 +99,8 @@ const VisitorDashboard = () => {
       count,
     }),
   );
+ const normalizeVisitPurpose = (value = "") =>
+    value.toLowerCase().replace(/[-\s]+/g, " ").trim();
 
   //---------------------------------------------------First Graph Data---------------------------------------------------//
   // Define financial year start and end
@@ -437,6 +439,15 @@ const VisitorDashboard = () => {
     return acc;
   }, {});
 
+  const getDayPassCountFromVisitorType = (target) =>
+    Object.entries(visitorTypeCounts).reduce((sum, [type, count]) => {
+      const normalizedType = normalizeVisitPurpose(type);
+      if (normalizedType.includes(target)) {
+        return sum + count;
+      }
+      return sum;
+    }, 0);
+
   const internalVisitorsCount = visitorsData.filter(
     (visitor) => visitor.visitorFlag !== "Client",
   ).length;
@@ -665,7 +676,10 @@ const VisitorDashboard = () => {
       permission: PERMISSIONS.VISITORS_CHECKED_OUT_TODAY.value,
     },
 
-    {
+    
+  ];
+
+   const dataCardConfigs1 = [{
       key: "walkInVisitsToday",
       title: "Total",
       data: visitorsData.filter((item) => item.visitorType === "Walk In")
@@ -689,7 +703,20 @@ const VisitorDashboard = () => {
       description: "Meeting Booking Visits",
       permission: PERMISSIONS.VISITORS_MEETING_BOOKINGS_TODAY.value,
     },
-  ];
+     {
+      key: "fullDayVisitsToday",
+      title: "Total",
+      data: getDayPassCountFromVisitorType("full day"),
+      description: "Full Day Pass Visits",
+      permission: PERMISSIONS.VISITORS_FULL_DAY_VISITS_TODAY.value,
+    },
+    {
+      key: "halfDayVisitsToday",
+      title: "Total",
+      data: getDayPassCountFromVisitorType("half day"),
+      description: "Half Day Pass Visits",
+      permission: PERMISSIONS.VISITORS_HALF_DAY_VISITS_TODAY.value,
+    },]
 
   //First pie-chart config data end
 
@@ -906,6 +933,19 @@ const VisitorDashboard = () => {
     {
       layout: 3,
       widgets: dataCardConfigs
+        .filter((card) => userPermissions.includes(card.permission))
+        .map((card) => (
+          <DataCard
+            key={card.key}
+            title={card.title}
+            data={card.data}
+            description={card.description}
+          />
+        )),
+    },
+    {
+      layout: 5,
+      widgets: dataCardConfigs1
         .filter((card) => userPermissions.includes(card.permission))
         .map((card) => (
           <DataCard
