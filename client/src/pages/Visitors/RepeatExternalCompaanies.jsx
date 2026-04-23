@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CircularProgress, MenuItem, TextField } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
-import { TimePicker } from "@mui/x-date-pickers";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -32,6 +32,7 @@ const RepeatExternalCompaanies = () => {
       purposeOfVisit: "Full Day Pass",
       location: "",
       unit: "",
+      dateOfVisit: dayjs(),
       checkInTime: null,
       checkOutTime: null,
     },
@@ -120,6 +121,7 @@ const RepeatExternalCompaanies = () => {
         purposeOfVisit: "Full Day Pass",
         location: row?.locationId || "",
         unit: row?.unitId || "",
+        dateOfVisit: sourceCheckIn.startOf("day"),
         checkInTime: sourceCheckIn,
         checkOutTime: null,
       });
@@ -132,15 +134,35 @@ const RepeatExternalCompaanies = () => {
   const handleRepeatClientSubmit = async (formData) => {
     if (!selectedRow?.mongoId) return;
 
-    const checkIn = dayjs(formData.checkInTime);
-    const checkOut = formData.checkOutTime
+    const selectedDate = dayjs(formData.dateOfVisit);
+    const checkInInput = dayjs(formData.checkInTime);
+    const checkOutInput = formData.checkOutTime
       ? dayjs(formData.checkOutTime)
       : null;
 
-    if (!checkIn.isValid()) {
+    if (!selectedDate.isValid()) {
+      toast.error("Please select valid date of visit.");
+      return;
+    }
+
+    if (!checkInInput.isValid()) {
       toast.error("Please select valid check-in time.");
       return;
     }
+
+    const checkIn = selectedDate
+      .hour(checkInInput.hour())
+      .minute(checkInInput.minute())
+      .second(0)
+      .millisecond(0);
+
+    const checkOut = checkOutInput?.isValid()
+      ? selectedDate
+          .hour(checkOutInput.hour())
+          .minute(checkOutInput.minute())
+          .second(0)
+          .millisecond(0)
+      : null;
 
     if (checkOut?.isValid() && checkOut.isBefore(checkIn)) {
       toast.error("Check-out time cannot be before check-in time.");
@@ -153,6 +175,7 @@ const RepeatExternalCompaanies = () => {
         purposeOfVisit: formData.purposeOfVisit,
         building: formData.location || null,
         unit: formData.unit || null,
+        dateOfVisit: selectedDate.startOf("day").toISOString(),
         checkInTime: checkIn.toISOString(),
         checkOutTime: checkOut?.isValid() ? checkOut.toISOString() : null,
       });
@@ -310,6 +333,28 @@ const RepeatExternalCompaanies = () => {
                     </MenuItem>
                   ))}
               </TextField>
+            )}
+          />
+
+          <Controller
+            name="dateOfVisit"
+            control={control}
+            rules={{ required: "Date of Visit is required" }}
+            render={({ field, fieldState }) => (
+              <DatePicker
+                label="Date of Visit"
+                value={field.value}
+                format="DD-MM-YYYY"
+                onChange={field.onChange}
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    fullWidth: true,
+                    error: !!fieldState.error,
+                    helperText: fieldState.error?.message,
+                  },
+                }}
+              />
             )}
           />
 
