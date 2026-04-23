@@ -133,14 +133,16 @@ const RepeatExternalCompaanies = () => {
     if (!selectedRow?.mongoId) return;
 
     const checkIn = dayjs(formData.checkInTime);
-    const checkOut = dayjs(formData.checkOutTime);
+    const checkOut = formData.checkOutTime
+      ? dayjs(formData.checkOutTime)
+      : null;
 
     if (!checkIn.isValid()) {
       toast.error("Please select valid check-in time.");
       return;
     }
 
-    if (checkOut && checkOut.isBefore(checkIn)) {
+    if (checkOut?.isValid() && checkOut.isBefore(checkIn)) {
       toast.error("Check-out time cannot be before check-in time.");
       return;
     }
@@ -152,7 +154,7 @@ const RepeatExternalCompaanies = () => {
         building: formData.location || null,
         unit: formData.unit || null,
         checkInTime: checkIn.toISOString(),
-        checkOutTime: checkOut ? checkOut.toISOString() : null,
+        checkOutTime: checkOut?.isValid() ? checkOut.toISOString() : null,
       });
 
       toast.success("Repeat client added successfully.");

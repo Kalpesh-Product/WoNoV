@@ -1546,9 +1546,9 @@ const rebookClient = async (req, res, next) => {
       return res.status(400).json({ message: "Unit not found" });
     }
 
-    if (!purposeOfVisit || !checkInTime || !checkOutTime) {
+    if (!purposeOfVisit || !checkInTime) {
       return res.status(400).json({
-        message: "purposeOfVisit, checkInTime and checkOutTime are required",
+        message: "purposeOfVisit and checkInTime are required",
       });
     }
 
@@ -1576,15 +1576,14 @@ const rebookClient = async (req, res, next) => {
     }
 
     const checkIn = new Date(checkInTime);
-    const checkOut = new Date(checkOutTime);
+    const hasCheckOutTime = !!checkOutTime;
+    const checkOut = hasCheckOutTime ? new Date(checkOutTime) : null;
 
-    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
-      return res
-        .status(400)
-        .json({ message: "Invalid checkInTime/checkOutTime provided" });
+    if (hasCheckOutTime && Number.isNaN(checkOut.getTime())) {
+      return res.status(400).json({ message: "Invalid checkOutTime provided" });
     }
 
-    if (checkOut < checkIn) {
+    if (hasCheckOutTime && checkOut < checkIn) {
       return res.status(400).json({
         message: "checkOutTime cannot be before checkInTime",
       });
@@ -1628,7 +1627,7 @@ const rebookClient = async (req, res, next) => {
       visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
       $or: [
         {
-          // ✅ completed visit that overlaps
+          // completed visit that overlaps requested range
           $and: [
             { checkOut: { $ne: null } },
             { checkOut: { $gt: checkIn } },
@@ -1636,9 +1635,9 @@ const rebookClient = async (req, res, next) => {
           ],
         },
         {
-          // ongoing visit that started before our checkOut
+          // ongoing visit that starts before requested checkout/checkin
           checkOut: null,
-          checkIn: { $lt: checkOut },
+          checkIn: { $lt: checkOut || checkIn },
         },
       ],
     })
@@ -1701,7 +1700,7 @@ const rebookClient = async (req, res, next) => {
       checkIn,
       checkOut,
       checkedInBy: user || null,
-      checkedOutBy: user || null,
+      checkedOutBy: checkOut ? user || null : null,
       amount,
       gstAmount,
       totalAmount,
