@@ -527,10 +527,6 @@ const AddClient = () => {
                     control={control}
                     rules={{
                       required: "Registered Client Company is required",
-                      validate: {
-                        noOnlyWhitespace,
-                        isAlphanumeric,
-                      },
                     }}
                     render={({ field }) => (
                       <TextField

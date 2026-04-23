@@ -180,6 +180,8 @@ import VisitorMixBag from "../pages/Visitors/VisitorMixBag";
 import RepeatDayPass from "../pages/Visitors/RepeatDayPass";
 //import VisitorSettings from "../pages/Visitors/VisitorSettings/VisitorSettings";
 import RepeatExternalCompaanies from "../pages/Visitors/RepeatExternalCompaanies";
+import ConvertInternalVisitors from "../pages/Visitors/ConvertInternalVisitors";
+import RepeatInternalVisitors from "../pages/Visitors/RepeatInternalVisitors";
 import VisitorBulkUpload from "../pages/Visitors/VisitorSettings/VisitorBulkUpload";
 import ProfileLayout from "../pages/Profile/ProfileLayout";
 import MyProfile from "../pages/Profile/MyProfile";
@@ -287,6 +289,8 @@ import InvoiceCreation from "../pages/Dashboard/FinanceDashboard/Billing/Invoice
 import VoucherCreation from "../pages/Dashboard/FinanceDashboard/Billing/VoucherCreation";
 import PendingApprovals from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovals";
 import BillingsLayout from "../pages/Dashboard/FinanceDashboard/Billing/BillingsLayout";
+import VoucherRequest from "../pages/Dashboard/FinanceDashboard/Billing/VoucherRequest";
+import BudgetRequest from "../pages/Dashboard/FinanceDashboard/Billing/BudgetRequest";
 import FinanceBudgetLayout from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudgetLayout";
 import FinanceBudget from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudget";
 import DeptWiseBudget from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudget";
@@ -631,6 +635,16 @@ export const routes = createBrowserRouter([
                             path: "external-clients",
                             element: <ExternalMeetingClients />,
                           },
+                           {
+                            path: "day-pass",
+                            element: (
+                              <ExternalClients
+                                tableTitle="Day Pass"
+                                filterToDayPass={true}
+                                financeStatusMenu={true}
+                              />
+                            ),
+                          },
                         ],
                       },
                       {
@@ -782,32 +796,90 @@ export const routes = createBrowserRouter([
                         element: <BillingsLayout />,
                         children: [
                           {
-                            path: "client-invoice",
+                            path: "client-invoicing",
                             element: <InvoiceCreation />,
                           },
                           {
+                            path: "voucher-request",
+                            element: <VoucherRequest />,
+                            children: [
+                              {
+                                path: "department-invoice-voucher",
+                                element: <DepartmentInvoice />,
+                              },
+                              {
+                                path: "pending-approvals-voucher",
+                                element: <PendingApprovals />,
+                              },
+                              {
+                                path: "voucher-history",
+                                element: <VoucherCreation />,
+                              },
+                              {
+                                path: "pending-approvals-voucher/review-request",
+                                element: <ReviewRequest />,
+                              },
+                            ],
+                          },
+                         {
+                            path: "budget-request",
+                            element: <BudgetRequest />,
+                            children: [
+                              {
+                                path: "department-invoice-budget",
+                                element: <DepartmentInvoice />,
+                              },
+                              {
+                                path: "pending-approvals-budget",
+                                element: <PendingApprovals />,
+                              },
+                              {
+                                path: "voucher-history-budget",
+                                element: <VoucherCreation />,
+                              },
+                              {
+                                path: "pending-approvals-budget/review-request",
+                                element: <ReviewRequest />,
+                              },
+                            ],
+                          },
+                          // Legacy billing routes (temporary redirects)
+                          {
+                            path: "client-invoice",
+                            element: <Navigate to="../client-invoicing" replace />,
+                          },
+                          {
                             path: "department-invoice",
-                            element: <DepartmentInvoice />,
+                            element: (
+                              <Navigate
+                                to="../voucher-request/department-invoice-voucher"
+                                replace
+                              />
+                            ),
                           },
-                          {
-                            path: "finance-monthly-vouchers",
-                            element: <FinanceMonthlyVouchers />,
-                          },
-                          {
-                            path: "finance-monthly-vouchers/:id",
-                            element: <FinanceViewVoucher />,
-                          },
-                          {
+                           {
                             path: "voucher-history",
-                            element: <VoucherCreation />,
+                            element: (
+                              <Navigate to="../voucher-request/voucher-history" replace />
+                            ),
                           },
-                          {
+                           {
                             path: "pending-approvals",
-                            element: <PendingApprovals />,
+                            element: (
+                              <Navigate
+                                to="../voucher-request/pending-approvals-voucher"
+                                replace
+                              />
+                            ),
                           },
                           {
                             path: "pending-approvals/review-request",
-                            element: <ReviewRequest />,
+                            element: (
+                              <Navigate
+                                to="../voucher-request/pending-approvals-voucher/review-request"
+                                replace
+                              />
+                            ),
                           },
                         ],
                       },
@@ -2483,21 +2555,35 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
-                  {
-                    path: "mix-bag/vender",
-                    element: <VendorTable />,
-                  },
-                  {
-                    path: "mix-bag/vender/vendor-onboard",
-                    element: <Vendor />,
-                  },
-                  {
-                    path: "mix-bag/vender/:id",
-                    element: <ViewVendor />,
-                  },
+                  // {
+                  //   path: "mix-bag/vendor",
+                  //   element: <VendorTable />,
+                  // },
+                  // {
+                  //   path: "mix-bag/vendor/vendor-onboard",
+                  //   element: <Vendor />,
+                  // },
+                  // {
+                  //   path: "mix-bag/vendor/:id",
+                  //   element: <ViewVendor />,
+                  // },
                   {
                     path: "mix-bag",
                     element: <AssetsMixBag />,
+                      children: [
+                      {
+                        path: "vendor",
+                        element: <VendorTable />,
+                      },
+                      {
+                        path: "vendor/vendor-onboard",
+                        element: <Vendor />,
+                      },
+                      {
+                        path: "vendor/:id",
+                        element: <ViewVendor />,
+                      },
+                    ],
                   },
                   {
                     path: "reports",
@@ -3045,6 +3131,49 @@ export const routes = createBrowserRouter([
                       />
                     ),
                   },
+                    {
+                    path: "mix-bag/visitors-to-client",
+                    element: (
+                      <Navigate
+                        to="/app/visitors/mix-bag/visitors-to-client/convert-internal-visitors"
+                        replace
+                      />
+                    ),
+                  },
+                  {
+                    path: "mix-bag/visitors-to-client/convert-internal-visitors",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<ConvertInternalVisitors />}
+                        permissions={[
+                          PERMISSIONS.VISITORS_MIX_BAG_VISITORS_TO_CLIENT,
+                          PERMISSIONS.VISITORS_MIX_BAG_CONVERT_INTERNAL_VISITORS,
+                        ]}
+                      />
+                    ),
+                    },
+                  {
+                    path: "mix-bag/repeat-visitors",
+                    element: (
+                      <Navigate
+                        to="/app/visitors/mix-bag/repeat-visitors/repeat-internal-visitors"
+                        replace
+                      />
+                    ),
+                  },
+                  {
+                    path: "mix-bag/repeat-visitors/repeat-internal-visitors",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<RepeatInternalVisitors />}
+                        permissions={[
+                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_VISITORS,
+                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_INTERNAL_VISITORS,
+                        ]}
+                      />
+                    ),
+                  },
+
                   {
                     path: "team-members", // Page with table showing a list of all the team members(receptionists)
                     element: <VisitorTeamMembers />,

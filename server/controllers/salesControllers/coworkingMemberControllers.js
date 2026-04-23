@@ -449,6 +449,7 @@ const updateMemberStatus = async (req, res) => {
     }
 
     member.isActive = isActive;
+    member.biometricStatus = isActive ? "Pending" : "Revoke";
     await member.save();
 
     return res.status(200).json({

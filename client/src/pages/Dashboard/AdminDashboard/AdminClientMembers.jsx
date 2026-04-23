@@ -14,12 +14,14 @@ import { toast } from "sonner";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation } from "@tanstack/react-query";
 
-const BIOMETRIC_OPTIONS = ["Pending", "Approved"];
+const BIOMETRIC_OPTIONS = ["Pending", "Approved", "Revoke"];
 const getMemberId = (member) => member?._id || member?.id || member?.employeeName;
 const normalizeBiometricStatus = (status) =>
   String(status || "Pending").toLowerCase() === "approved"
     ? "Approved"
-    : "Pending";
+     : String(status || "Pending").toLowerCase() === "revoke"
+      ? "Revoke"
+      : "Pending";
 
 const AdminClientMembers = () => {
   const axios = useAxiosPrivate();
@@ -123,6 +125,9 @@ const AdminClientMembers = () => {
             ...member,
             isActive: variables.isActive,
             status: variables.isActive ? "Active" : "Inactive",
+             biometricStatus: normalizeBiometricStatus(
+              response?.data?.biometricStatus,
+            ),
           };
         }),
       );
@@ -223,6 +228,7 @@ const AdminClientMembers = () => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
           Approved: { backgroundColor: "#D4F8D4", color: "#0A7A0A" },
+          Revoke: { backgroundColor: "#FDE2E1", color: "#B42318" },
         };
 
         const { backgroundColor, color } = statusColorMap[status];

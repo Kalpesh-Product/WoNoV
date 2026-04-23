@@ -87,7 +87,7 @@ const PendingApprovals = () => {
     onSuccess: (data) => {
       toast.success(data.message);
       reset();
-      navigate("/app/dashboard/finance-dashboard/billing/pending-approvals");
+      navigate("/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -134,7 +134,7 @@ const PendingApprovals = () => {
                           dispatch(setVoucherDetails(params.data));
                           setSelectedBudget(params.data);
                           navigate(
-                            `/app/dashboard/finance-dashboard/billing/pending-approvals/review-request`
+                            `/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher/review-request`
                           );
                         },
                       }

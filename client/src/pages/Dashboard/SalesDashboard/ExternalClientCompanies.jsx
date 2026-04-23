@@ -29,18 +29,34 @@ const ExternalClientCompanies = () => {
 
                 const externalVisitorsForPurpose = visitors.filter((visitor) => {
                     const isExternalVisitor = visitor.visitorFlag === "Client";
-                    const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
+                //     const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
+
+                //     if (isOpenDeskView) {
+                //         return (
+                //             isExternalVisitor &&
+                //             (purpose === "half-day pass" || purpose === "full-day pass")
+                //         );
+                //     }
+
+                //     return isExternalVisitor && purpose === "meeting room booking";
+                // });
+                      const purpose = (visitor?.purposeOfVisit || "").trim().toLowerCase();
+                    const isDayPass =
+                        purpose === "half-day pass" ||
+                        purpose === "full-day pass" ||
+                        purpose === "half day pass" ||
+                        purpose === "full day pass";
+                    const isConvertedClient = Boolean(visitor?.convertedFromInternal);
 
                     if (isOpenDeskView) {
-                        return (
-                            isExternalVisitor &&
-                            (purpose === "half-day pass" || purpose === "full-day pass")
-                        );
+                        return isExternalVisitor && (isDayPass || isConvertedClient);
                     }
 
-                    return isExternalVisitor && purpose === "meeting room booking";
+                    return (
+                        isExternalVisitor &&
+                        (visitor?.purposeOfVisit || "").trim().toLowerCase() === "meeting room booking"
+                    );
                 });
-
                 dispatch(setClientData(externalVisitorsForPurpose));
                 setFilteredCompanies(externalVisitorsForPurpose);
             } catch (error) {

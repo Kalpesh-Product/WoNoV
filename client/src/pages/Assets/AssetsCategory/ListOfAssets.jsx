@@ -142,7 +142,9 @@ const ListOfAssets = () => {
         const response = await axios.get(
           `/api/assets/get-assets?departmentId=${departmentId}`,
         );
-        const filtered = Array.isArray(response.data) ? response.data.flatMap((item) => item?.assets || []) : [];
+        const filtered = Array.isArray(response.data)
+          ? response.data.flatMap((item) => item?.assets || [])
+          : [];
         return filtered;
       } catch (error) {
         throw new Error(error.response?.data?.message || error.message);
@@ -168,8 +170,8 @@ const ListOfAssets = () => {
   const filteredSubCategories = !selectedCategory
     ? []
     : assetSubCategories?.filter(
-      (item) => item.category?._id === selectedCategory,
-    ) || [];
+        (item) => item.category?._id === selectedCategory,
+      ) || [];
 
   const { data: vendorDetails = [], isPending: isVendorDetails } = useQuery({
     queryKey: ["vendorDetails"],
@@ -234,13 +236,16 @@ const ListOfAssets = () => {
     },
   });
   useEffect(() => {
-    const totalPrice = (Number(watchedQuantity) || 0) * (Number(watchedPrice) || 0);
+    const totalPrice =
+      (Number(watchedQuantity) || 0) * (Number(watchedPrice) || 0);
     setAddValue("totalPrice", totalPrice, { shouldValidate: true });
 
     if (watchedPurchaseDate && Number(watchedWarranty) > 0) {
       setAddValue(
         "warrantyExpiryDate",
-        dayjs(watchedPurchaseDate).add(Number(watchedWarranty), "month").toISOString(),
+        dayjs(watchedPurchaseDate)
+          .add(Number(watchedWarranty), "month")
+          .toISOString(),
         { shouldValidate: true },
       );
     } else {
@@ -422,9 +427,12 @@ const ListOfAssets = () => {
     new Map(
       units.length > 0
         ? units.map((loc) => [
-          loc.building?._id ?? (loc.unitNo ? `unknown-${loc.unitNo}` : `unknown-${Math.random()}`),
-          loc.building?.buildingName ?? "Unknown Building",
-        ])
+            loc.building?._id ??
+              (loc.unitNo
+                ? `unknown-${loc.unitNo}`
+                : `unknown-${Math.random()}`),
+            loc.building?.buildingName ?? "Unknown Building",
+          ])
         : [],
     ).entries(),
   );
@@ -452,7 +460,7 @@ const ListOfAssets = () => {
     { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "assetId", headerName: "Asset Id" },
     { field: "secondaryId", headerName: "Secondary Id" },
-    { field: "department", headerName: "Department" },
+    // { field: "department", headerName: "Department" },
     { field: "subCategory", headerName: "Sub-Category" },
     { field: "brand", headerName: "Brand" },
     // {
@@ -472,7 +480,7 @@ const ListOfAssets = () => {
     //   headerName: "Rental Expiry Date",
     //   cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
     // },
-     {
+    {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => <StatusChip status={params.value || "N/A"} />,
@@ -498,20 +506,33 @@ const ListOfAssets = () => {
       ),
     },
   ];
+  const addedByName = useMemo(() => {
+    if (selectedAsset?.createdBy?.firstName) {
+      return `${selectedAsset.createdBy.firstName} ${selectedAsset?.createdBy?.lastName || ""}`.trim();
+    }
 
-  const tableData = isAssetsListPending || !Array.isArray(assetsList)
-    ? []
-    : assetsList.map((item) => {
-      return {
-        ...item,
-        assetMongoId: item?.asset?._id,
-        department: item?.department?.name || "N/A",
-        subCategory: item?.subCategory?.subCategoryName || "N/A",
-        subCatId: item?.subCategory?._id,
-        categoryId: item?.subCategory?.category?._id,
-        category: item?.subCategory?.category?.categoryName || "N/A",
-      };
-    });
+    if (selectedAsset?.createdBy?.name) return selectedAsset.createdBy.name;
+
+    if (auth?.user?.firstName) {
+      return `${auth.user.firstName} ${auth?.user?.lastName || ""}`.trim();
+    }
+
+    return auth?.user?.name || "N/A";
+  }, [selectedAsset, auth]);
+  const tableData =
+    isAssetsListPending || !Array.isArray(assetsList)
+      ? []
+      : assetsList.map((item) => {
+          return {
+            ...item,
+            assetMongoId: item?.asset?._id,
+            department: item?.department?.name || "N/A",
+            subCategory: item?.subCategory?.subCategoryName || "N/A",
+            subCatId: item?.subCategory?._id,
+            categoryId: item?.subCategory?.category?._id,
+            category: item?.subCategory?.category?.categoryName || "N/A",
+          };
+        });
   //-----------------------Table Data----------------------//
 
   return (
@@ -562,10 +583,10 @@ const ListOfAssets = () => {
                   {isCategoriesPending
                     ? []
                     : assetCategories.map((item) => (
-                      <MenuItem key={item._id} value={item._id}>
-                        {item.categoryName}
-                      </MenuItem>
-                    ))}
+                        <MenuItem key={item._id} value={item._id}>
+                          {item.categoryName}
+                        </MenuItem>
+                      ))}
                 </TextField>
               )}
             />
@@ -608,7 +629,10 @@ const ListOfAssets = () => {
 
                     if (selectedValue === "add_vendor") {
                       // Open in new tab (blank page)
-                      window.open("/app/assets/mix-bag/vender/vendor-onboard", "_blank");
+                      window.open(
+                        "/app/assets/mix-bag/vender/vendor-onboard",
+                        "_blank",
+                      );
 
                       // Reset the dropdown after navigation
                       setTimeout(() => {
@@ -632,10 +656,10 @@ const ListOfAssets = () => {
                   {isVendorDetails
                     ? []
                     : activeVendorDetails.map((item) => (
-                      <MenuItem key={item._id} value={item._id}>
-                        {item.companyName || item.name}
-                      </MenuItem>
-                    ))}
+                        <MenuItem key={item._id} value={item._id}>
+                          {item.companyName || item.name}
+                        </MenuItem>
+                      ))}
                 </TextField>
               )}
             />
@@ -1021,7 +1045,9 @@ const ListOfAssets = () => {
               control={editControl}
               rules={{
                 validate: (value) =>
-                  !value || noOnlyWhitespace(value) === true || "Enter a valid Secondary ID",
+                  !value ||
+                  noOnlyWhitespace(value) === true ||
+                  "Enter a valid Secondary ID",
               }}
               render={({ field }) => (
                 <TextField
@@ -1365,6 +1391,15 @@ const ListOfAssets = () => {
               detail={selectedAsset?.description || "N/A"}
             />
             <DetalisFormatted
+              title={"Added At"}
+              detail={
+                selectedAsset?.createdAt
+                  ? humanDate(selectedAsset?.createdAt)
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted title={"Added By"} detail={addedByName} />
+            <DetalisFormatted
               title={"Asset Type"}
               detail={selectedAsset?.assetType || "N/A"}
             />
@@ -1389,16 +1424,28 @@ const ListOfAssets = () => {
               detail={`INR ${inrFormat(selectedAsset?.price)}`}
             />
             <DetalisFormatted
+              title={"Quantity"}
+              detail={selectedAsset?.quantity ?? 1}
+            />
+            <DetalisFormatted
               title={"Purchase Date"}
               detail={humanDate(selectedAsset?.purchaseDate)}
             />
             <DetalisFormatted
               title={"Warranty Expiry Date"}
-              detail={selectedAsset?.warrantyExpiryDate ? humanDate(selectedAsset?.warrantyExpiryDate) : "N/A"}
+              detail={
+                selectedAsset?.warrantyExpiryDate
+                  ? humanDate(selectedAsset?.warrantyExpiryDate)
+                  : "N/A"
+              }
             />
             <DetalisFormatted
               title={"Rental Expiry Date"}
-              detail={selectedAsset?.rentedExpirationDate ? humanDate(selectedAsset?.rentedExpirationDate) : "N/A"}
+              detail={
+                selectedAsset?.rentedExpirationDate
+                  ? humanDate(selectedAsset?.rentedExpirationDate)
+                  : "N/A"
+              }
             />
             <DetalisFormatted
               title={"Category"}

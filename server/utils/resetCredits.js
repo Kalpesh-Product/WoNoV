@@ -4,8 +4,8 @@ const resetMeetingCreditsIfNeeded = async (BookingModel, clientId, targetDate = 
   if (!record) return null;
 
   const now = new Date();
-  const targetMonthStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-  const nowMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const targetMonthStart = new Date(Date.UTC(targetDate.getUTCFullYear(), targetDate.getUTCMonth(), 1));
+  const nowMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
   let isModified = false;
 

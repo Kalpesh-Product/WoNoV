@@ -17,19 +17,35 @@ import YearlyGraph from "../../components/graphs/YearlyGraph";
 import useAuth from "../../hooks/useAuth";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import FyBarGraph from "../graphs/FyBarGraph";
+import { PERMISSIONS } from "../../constants/permissions";
+import useUserPermissions from "../../hooks/useUserPermissions";
 
 const BudgetPage = () => {
   const axios = useAxiosPrivate();
+  const { hasPermission } = useUserPermissions();
   const { auth } = useAuth();
   const location = useLocation();
   const department = usePageDepartment();
   const queryClient = useQueryClient();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
-  const departmentAccess = ["67b2cf85b9b6ed5cedeb9a2e"];
+ 
+  const requestBudgetPermissionByDepartment = {
+    "6798bab0e469e809084e249a": PERMISSIONS.FINANCE_REQUEST_BUDGET_BUTTON.value,
+    "6798bab9e469e809084e249e": PERMISSIONS.HR_REQUEST_BUDGET_BUTTON.value,
+    "6798bacce469e809084e24a1": PERMISSIONS.SALES_REQUEST_BUDGET_BUTTON.value,
+    "6798bae6e469e809084e24a4": PERMISSIONS.ADMIN_REQUEST_BUDGET_BUTTON.value,
+    "6798bafbe469e809084e24a7":
+      PERMISSIONS.MAINTENANCE_REQUEST_BUDGET_BUTTON.value,
+    "6798baa8e469e809084e2497": PERMISSIONS.IT_REQUEST_BUDGET_BUTTON.value,
+    "6798ba9de469e809084e2494":
+      PERMISSIONS.FRONTEND_REQUEST_BUDGET_BUTTON.value,
+  };
 
-  const isTop = auth.user.departments.some((item) => {
-    return departmentAccess.includes(item._id.toString());
-  });
+  const requestBudgetPermission =
+    requestBudgetPermissionByDepartment[department?._id];
+  const canRequestBudget = requestBudgetPermission
+    ? hasPermission(requestBudgetPermission)
+    : true;
 
   const [openModal, setOpenModal] = useState(false);
   const { control, handleSubmit, reset, watch } = useForm({
@@ -373,7 +389,7 @@ const BudgetPage = () => {
         graphTitle={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
       />
 
-      {!isTop && (
+      {canRequestBudget && (
         <div className="flex justify-end">
           <PrimaryButton
             title={"Request Budget"}

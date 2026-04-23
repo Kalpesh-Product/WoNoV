@@ -328,7 +328,14 @@ const addMeetings = async (req, res, next) => {
       await BookingModel.findOneAndUpdate(
         {
           _id: client,
-          "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
+          meetingCreditBalanceHistory: {
+            $elemMatch: {
+              monthStartDate: {
+                $gte: new Date(meetingMonthStart.getTime() - 12 * 60 * 60 * 1000),
+                $lte: new Date(meetingMonthStart.getTime() + 12 * 60 * 60 * 1000),
+              },
+            },
+          },
         },
         updateFields,
       );
@@ -1248,7 +1255,14 @@ const cancelMeeting = async (req, res, next) => {
         await BookingModel.findOneAndUpdate(
           {
             _id: meetingToCancel.client,
-            "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
+            meetingCreditBalanceHistory: {
+              $elemMatch: {
+                monthStartDate: {
+                  $gte: new Date(meetingMonthStart.getTime() - 12 * 60 * 60 * 1000),
+                  $lte: new Date(meetingMonthStart.getTime() + 12 * 60 * 60 * 1000),
+                },
+              },
+            },
           },
           updateFields,
         );
@@ -1389,10 +1403,16 @@ const extendMeeting = async (req, res, next) => {
     const addedCredits = addedHours * creditPerHour;
 
     // Step 2: Deduct credits from the user
-    const isClient = meeting.client.toString() !== company;
+    const isClient = meeting.client.toString() !== company.toString();
     const bookingUserModel = isClient ? CoworkingClient : Company;
 
-    const bookingUserCompany = await bookingUserModel.findById(meeting.client);
+    // Ensure credit records are initialized for the month of the meeting
+    const bookingUserCompany = await resetMeetingCreditsIfNeeded(
+      bookingUserModel,
+      meeting.client,
+      meeting.startTime,
+    );
+
     if (!bookingUserCompany) {
       throw new CustomError(
         "Booking user company not found for credit deduction",
@@ -1402,9 +1422,28 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
+    // Month-aware credit check
+    const meetingMonthStart = getMonthStartUTC(new Date(meeting.startTime));
+    const monthHistory = bookingUserCompany.meetingCreditBalanceHistory.find(
+      (h) => {
+        const d = new Date(h.monthStartDate);
+        // Robust check: match UTC or Local month to handle legacy/mismatched records
+        return (
+          (d.getUTCFullYear() === meetingMonthStart.getUTCFullYear() &&
+            d.getUTCMonth() === meetingMonthStart.getUTCMonth()) ||
+          (d.getFullYear() === meetingMonthStart.getUTCFullYear() &&
+            d.getMonth() === meetingMonthStart.getUTCMonth())
+        );
+      },
+    );
+
+    const availableCredits = monthHistory
+      ? monthHistory.remainingCredit
+      : bookingUserCompany.meetingCreditBalance;
+
     if (
       meeting.meetingType === "Internal" &&
-      bookingUserCompany.meetingCreditBalance < addedCredits
+      availableCredits < addedCredits
     ) {
       throw new CustomError(
         "Insufficient credits to extend this meeting",
@@ -1414,20 +1453,6 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    const meetingDate = new Date(meeting.startTime);
-    // const meetingMonthStart = new Date(
-    //   meetingDate.getFullYear(),
-    //   meetingDate.getMonth(),
-    //   1,
-    // );
-    const meetingMonthStart = getMonthStartUTC(meetingDate);
-
-    const now = new Date();
-    // const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const currentMonthStart = getMonthStartUTC(now);
-    const isCurrentMonth =
-      meetingMonthStart.getTime() === currentMonthStart.getTime();
-
     const updateFields = {
       $inc: {
         "meetingCreditBalanceHistory.$.remainingCredit": -addedCredits,
@@ -1435,15 +1460,27 @@ const extendMeeting = async (req, res, next) => {
       },
     };
 
+    const now = new Date();
+    const currentMonthStart = getMonthStartUTC(now);
+    const isCurrentMonth =
+      meetingMonthStart.getTime() === currentMonthStart.getTime();
+
     if (isCurrentMonth) {
       updateFields.$inc.meetingCreditBalance = -addedCredits;
     }
 
-    // Atomic deduction across both balances
+    // Atomic deduction across both balances using fuzzy date match for history entry
     await bookingUserModel.findOneAndUpdate(
       {
         _id: meeting.client,
-        "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
+        meetingCreditBalanceHistory: {
+          $elemMatch: {
+            monthStartDate: {
+              $gte: new Date(meetingMonthStart.getTime() - 12 * 60 * 60 * 1000),
+              $lte: new Date(meetingMonthStart.getTime() + 12 * 60 * 60 * 1000),
+            },
+          },
+        },
       },
       updateFields,
     );
@@ -2083,7 +2120,14 @@ const updateMeetingDetails = async (req, res, next) => {
       const updatedEntity = await BookingCompanyModel.findOneAndUpdate(
         {
           _id: bookedClientId,
-          "meetingCreditBalanceHistory.monthStartDate": meetingMonthStart,
+          meetingCreditBalanceHistory: {
+            $elemMatch: {
+              monthStartDate: {
+                $gte: new Date(meetingMonthStart.getTime() - 12 * 60 * 60 * 1000),
+                $lte: new Date(meetingMonthStart.getTime() + 12 * 60 * 60 * 1000),
+              },
+            },
+          },
         },
         updateFields,
         { new: true },

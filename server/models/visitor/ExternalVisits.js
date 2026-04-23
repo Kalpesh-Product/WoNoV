@@ -75,6 +75,11 @@ const externalVisitSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    paymentVerification: {
+      type: String,
+      enum: ["Pending", "Under Review", "Verified"],
+      default: "Pending",
+    },
     paymentMode: {
       type: String,
       enum: [
@@ -102,6 +107,54 @@ const externalVisitSchema = new mongoose.Schema(
       ref: "Unit",
     },
     notes: {
+      type: String,
+      default: "",
+    },
+    purposeOfVisit: {
+      type: String,
+      default: "",
+    },
+    scheduledDate: {
+      type: Date,
+    },
+    scheduledStartTime: {
+      type: Date,
+    },
+    scheduledEndTime: {
+      type: Date,
+    },
+    toMeetCompany: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CoworkingClient", //Add Visitor form
+    },
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+    },
+    visitorRoles: {
+      type: [String],
+      enum: ["Visitor", "Client"],
+      default: ["Visitor"],
+    },
+    visitorFlag: {
+      type: String,
+      enum: ["Visitor", "Client"],
+    },
+    toMeet: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData", //Add Visitor form
+    },
+    clientToMeet: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CoworkingMember", //Add Visitor form
+    },
+    meeting: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Meeting",
+      default: null,
+    },
+    visitorCompany: {
+      //Add Visitor form
       type: String,
       default: "",
     },
