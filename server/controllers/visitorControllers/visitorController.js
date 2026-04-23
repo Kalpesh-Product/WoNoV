@@ -1530,7 +1530,8 @@ const rebookClient = async (req, res, next) => {
 
   try {
     const { externalVisitId } = req.params;
-    const { purposeOfVisit, checkInTime, checkOutTime, unit } = req.body;
+    const { purposeOfVisit, checkInTime, checkOutTime, unit, building } =
+      req.body;
 
     if (!mongoose.Types.ObjectId.isValid(externalVisitId)) {
       return res.status(400).json({ message: "Invalid visitor id provided" });
@@ -1540,7 +1541,19 @@ const rebookClient = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid unit id provided" });
     }
 
-    const unitExists = await Unit.findOne({ _id: unit });
+    if (building && !mongoose.Types.ObjectId.isValid(building)) {
+      return res.status(400).json({ message: "Invalid building id provided" });
+    }
+
+    const buildingExists = building
+      ? await Building.findOne({ _id: building, company }).select("_id").lean()
+      : null;
+
+    if (building && !buildingExists) {
+      return res.status(400).json({ message: "Building not found" });
+    }
+
+    const unitExists = await Unit.findOne({ _id: unit, company });
 
     if (unit && !unitExists) {
       return res.status(400).json({ message: "Unit not found" });
@@ -1697,6 +1710,9 @@ const rebookClient = async (req, res, next) => {
       company: sourceVisitor.company,
       visitorType: normalizedVisitorType,
       dateOfVisit: checkIn,
+      purposeOfVisit,
+      building: building || sourceVisitor.building || null,
+      unit: unit || null,
       checkIn,
       checkOut,
       checkedInBy: user || null,
@@ -1706,8 +1722,27 @@ const rebookClient = async (req, res, next) => {
       totalAmount,
       paymentStatus: false,
       paymentMode: null,
-      unit: unit || null,
       notes: `Repeated client visit created from visitor ${sourceVisitor._id}`,
+    });
+
+    await Visitor.findByIdAndUpdate(sourceVisitor._id, {
+      $set: {
+        visitorType: normalizedVisitorType,
+        visitorFlag: "Client",
+        purposeOfVisit,
+        building: building || null,
+        unit: unit || null,
+        dateOfVisit: checkIn,
+        checkIn,
+        checkOut,
+        checkedInBy: user || null,
+        checkedOutBy: checkOut ? user || null : null,
+        amount,
+        gstAmount,
+        totalAmount,
+        paymentStatus: false,
+        paymentMode: null,
+      },
     });
 
     return res.status(201).json({
