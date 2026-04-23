@@ -231,8 +231,17 @@ const addVisitor = async (req, res, next) => {
     // ) {
     //   return res.status(400).json({ message: "Invalid building provided" });
 
-    const visitorExists = await Visitor.findOne({ email: email });
+    if (!phoneNumber) {
+      return res.status(400).json({ message: "Phone number is required" });
+    }
 
+    if (!/^\+?[0-9]+$/.test(phoneNumber)) {
+      return res.status(400).json({ message: "Invalid phone number format" });
+    }
+
+    const visitorExists = await Visitor.findOne({ phoneNumber: phoneNumber });
+
+    console.log("Visitor exists with phone number:", visitorExists);
     if (visitorExists) {
       return res.status(400).json({
         message:
@@ -962,7 +971,7 @@ const updateVisitorPayment = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid visitor Id provided" });
     }
 
-    if (!paymentMode || !paymentStatus || !amount || !paymentProofFile) {
+    if (!paymentMode || !paymentStatus || !amount) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -997,48 +1006,49 @@ const updateVisitorPayment = async (req, res, next) => {
     -------------------------
     */
 
-    const allowedMimeTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "image/webp",
-    ];
+    if (paymentProofFile) {
+      const allowedMimeTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "image/webp",
+      ];
 
-    if (!allowedMimeTypes.includes(paymentProofFile.mimetype)) {
-      throw new CustomError(
-        "Invalid image format for payment proof",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+      if (!allowedMimeTypes.includes(paymentProofFile.mimetype)) {
+        throw new CustomError(
+          "Invalid image format for payment proof",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
 
-    /*
+      /*
     -------------------------
     Upload image
     -------------------------
     */
 
-    const uploadResponse = await handleDocumentUpload(
-      paymentProofFile.buffer,
-      `${visitor.company}/visitors/${visitor._id}/payment-proof`,
-      paymentProofFile.originalname,
-    );
-
-    if (!uploadResponse.public_id) {
-      throw new CustomError(
-        "Failed to upload payment proof",
-        logPath,
-        logAction,
-        logSourceKey,
+      const uploadResponse = await handleDocumentUpload(
+        paymentProofFile.buffer,
+        `${visitor.company}/visitors/${visitor._id}/payment-proof`,
+        paymentProofFile.originalname,
       );
+
+      if (!uploadResponse.public_id) {
+        throw new CustomError(
+          "Failed to upload payment proof",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      visitor.paymentProof = {
+        url: uploadResponse.secure_url,
+        id: uploadResponse.public_id,
+      };
     }
-
-    visitor.paymentProof = {
-      url: uploadResponse.secure_url,
-      id: uploadResponse.public_id,
-    };
-
     /*
     -------------------------
     Payment fields
@@ -1520,7 +1530,8 @@ const rebookClient = async (req, res, next) => {
 
   try {
     const { externalVisitId } = req.params;
-    const { purposeOfVisit, checkInTime, checkOutTime, unit } = req.body;
+    const { purposeOfVisit, checkInTime, checkOutTime, unit, building } =
+      req.body;
 
     if (!mongoose.Types.ObjectId.isValid(externalVisitId)) {
       return res.status(400).json({ message: "Invalid visitor id provided" });
@@ -1530,15 +1541,27 @@ const rebookClient = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid unit id provided" });
     }
 
-    const unitExists = await Unit.findOne({ _id: unit });
+    if (building && !mongoose.Types.ObjectId.isValid(building)) {
+      return res.status(400).json({ message: "Invalid building id provided" });
+    }
+
+    const buildingExists = building
+      ? await Building.findOne({ _id: building, company }).select("_id").lean()
+      : null;
+
+    if (building && !buildingExists) {
+      return res.status(400).json({ message: "Building not found" });
+    }
+
+    const unitExists = await Unit.findOne({ _id: unit, company });
 
     if (unit && !unitExists) {
       return res.status(400).json({ message: "Unit not found" });
     }
 
-    if (!purposeOfVisit || !checkInTime || !checkOutTime) {
+    if (!purposeOfVisit || !checkInTime) {
       return res.status(400).json({
-        message: "purposeOfVisit, checkInTime and checkOutTime are required",
+        message: "purposeOfVisit and checkInTime are required",
       });
     }
 
@@ -1566,77 +1589,100 @@ const rebookClient = async (req, res, next) => {
     }
 
     const checkIn = new Date(checkInTime);
-    const checkOut = new Date(checkOutTime);
+    const hasCheckOutTime = !!checkOutTime;
+    const checkOut = hasCheckOutTime ? new Date(checkOutTime) : null;
 
-    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
-      return res
-        .status(400)
-        .json({ message: "Invalid checkInTime/checkOutTime provided" });
+    if (hasCheckOutTime && Number.isNaN(checkOut.getTime())) {
+      return res.status(400).json({ message: "Invalid checkOutTime provided" });
     }
 
-    if (checkOut < checkIn) {
+    if (hasCheckOutTime && checkOut < checkIn) {
       return res.status(400).json({
         message: "checkOutTime cannot be before checkInTime",
       });
     }
 
-    const ongoingVisit = await ExternalVisits.findOne({
-      visitorId: sourceVisitor._id,
-      company,
-      checkOut: null,
-    }).lean();
+    // const ongoingVisit = await ExternalVisits.findOne({
+    //   visitorId: sourceVisitor._id,
+    //   company,
+    //   checkOut: null,
+    // }).lean();
 
-    if (ongoingVisit) {
-      return res.status(409).json({
-        message: "Visitor already has an active visit. Checkout first.",
-      });
-    }
+    // console.log("Ongoing visit check:", ongoingVisit);
+    // if (ongoingVisit) {
+    //   return res.status(409).json({
+    //     message: "Visitor already has an active visit. Checkout first.",
+    //   });
+    // }
 
-    const conflictingDayPassVisit = await ExternalVisits.findOne({
-      visitorId: sourceVisitor._id,
-      company,
-      visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
-      $or: [
-        {
-          checkOut: { $ne: null },
-          checkIn: { $lt: checkOut },
-          checkOut: { $gt: checkIn },
-        },
-        {
-          checkOut: null,
-          checkIn: { $lt: checkOut },
-        },
-      ],
-    })
-      .select("_id checkIn checkOut visitorType")
-      .lean();
+    // // const conflictingDayPassVisit = await ExternalVisits.findOne({
+    // //   visitorId: sourceVisitor._id,
+    // //   company,
+    // //   visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+    // //   $or: [
+    // //     {
+    // //       checkOut: { $ne: null },
+    // //       checkIn: { $lt: checkOut },
+    // //       checkOut: { $gt: checkIn },
+    // //     },
+    // //     {
+    // //       checkOut: null,
+    // //       checkIn: { $lt: checkOut },
+    // //     },
+    // //   ],
+    // // })
+    // //   .select("_id checkIn checkOut visitorType")
+    // //   .lean();
 
-    const formatToIST = (date) => {
-      return new Date(date).toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata",
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour12: true,
-      });
-    };
+    // const conflictingDayPassVisit = await ExternalVisits.findOne({
+    //   visitorId: sourceVisitor._id,
+    //   company,
+    //   visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+    //   $or: [
+    //     {
+    //       // completed visit that overlaps requested range
+    //       $and: [
+    //         { checkOut: { $ne: null } },
+    //         { checkOut: { $gt: checkIn } },
+    //         { checkIn: { $lt: checkOut } },
+    //       ],
+    //     },
+    //     {
+    //       // ongoing visit that starts before requested checkout/checkin
+    //       checkOut: null,
+    //       checkIn: { $lt: checkOut || checkIn },
+    //     },
+    //   ],
+    // })
+    //   .select("_id checkIn checkOut visitorType")
+    //   .lean();
 
-    if (conflictingDayPassVisit) {
-      const conflictingCheckIn = conflictingDayPassVisit.checkIn
-        ? formatToIST(conflictingDayPassVisit.checkIn)
-        : "N/A";
+    // const formatToIST = (date) => {
+    //   return new Date(date).toLocaleString("en-IN", {
+    //     timeZone: "Asia/Kolkata",
+    //     hour: "2-digit",
+    //     minute: "2-digit",
+    //     day: "2-digit",
+    //     month: "short",
+    //     year: "numeric",
+    //     hour12: true,
+    //   });
+    // };
 
-      const conflictingCheckOut = conflictingDayPassVisit.checkOut
-        ? formatToIST(conflictingDayPassVisit.checkOut)
-        : "Ongoing";
+    // if (conflictingDayPassVisit) {
+    //   const conflictingCheckIn = conflictingDayPassVisit.checkIn
+    //     ? formatToIST(conflictingDayPassVisit.checkIn)
+    //     : "N/A";
 
-      return res.status(409).json({
-        message: `Day pass timing conflict. Choose a different time range.Existing ${conflictingDayPassVisit.visitorType}: ${conflictingCheckIn} to ${conflictingCheckOut}`,
-        conflictingVisit: conflictingDayPassVisit,
-      });
-    }
+    //   const conflictingCheckOut = conflictingDayPassVisit.checkOut
+    //     ? formatToIST(conflictingDayPassVisit.checkOut)
+    //     : "Ongoing";
+
+    //   return res.status(409).json({
+    //     message: `Day pass timing conflict. Choose a different time range.Existing ${conflictingDayPassVisit.visitorType}: ${conflictingCheckIn} to ${conflictingCheckOut}`,
+    //     conflictingVisit: conflictingDayPassVisit,
+    //   });
+    // }
 
     let fullDayPassAmount = 850;
     if (sourceVisitor.building) {
@@ -1664,17 +1710,39 @@ const rebookClient = async (req, res, next) => {
       company: sourceVisitor.company,
       visitorType: normalizedVisitorType,
       dateOfVisit: checkIn,
+      purposeOfVisit,
+      building: building || sourceVisitor.building || null,
+      unit: unit || null,
       checkIn,
       checkOut,
       checkedInBy: user || null,
-      checkedOutBy: user || null,
+      checkedOutBy: checkOut ? user || null : null,
       amount,
       gstAmount,
       totalAmount,
       paymentStatus: false,
       paymentMode: null,
-      unit: unit || null,
       notes: `Repeated client visit created from visitor ${sourceVisitor._id}`,
+    });
+
+    await Visitor.findByIdAndUpdate(sourceVisitor._id, {
+      $set: {
+        visitorType: normalizedVisitorType,
+        visitorFlag: "Client",
+        purposeOfVisit,
+        building: building || null,
+        unit: unit || null,
+        dateOfVisit: checkIn,
+        checkIn,
+        checkOut,
+        checkedInBy: user || null,
+        checkedOutBy: checkOut ? user || null : null,
+        amount,
+        gstAmount,
+        totalAmount,
+        paymentStatus: false,
+        paymentMode: null,
+      },
     });
 
     return res.status(201).json({

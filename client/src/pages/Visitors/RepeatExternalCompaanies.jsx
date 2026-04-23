@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CircularProgress, MenuItem, TextField } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
-import { TimePicker } from "@mui/x-date-pickers";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -22,7 +22,8 @@ const RepeatExternalCompaanies = () => {
   const [repeatExternalCompanies, setRepeatExternalCompanies] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
-  const [isSubmittingRepeatClient, setIsSubmittingRepeatClient] = useState(false);
+  const [isSubmittingRepeatClient, setIsSubmittingRepeatClient] =
+    useState(false);
 
   const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
@@ -31,6 +32,7 @@ const RepeatExternalCompaanies = () => {
       purposeOfVisit: "Full Day Pass",
       location: "",
       unit: "",
+      dateOfVisit: dayjs(),
       checkInTime: null,
       checkOutTime: null,
     },
@@ -61,13 +63,13 @@ const RepeatExternalCompaanies = () => {
         const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
 
         return (
-          isExternalVisitor
-          && (purpose === "half-day pass" || purpose === "full-day pass")
+          isExternalVisitor &&
+          (purpose === "half-day pass" || purpose === "full-day pass")
         );
       });
 
       setRepeatExternalCompanies(dayPassVisitors);
-       const convertedClients = visitors.filter(
+      const convertedClients = visitors.filter(
         (visitor) => visitor?.visitorFlag === "Client",
       );
 
@@ -90,53 +92,79 @@ const RepeatExternalCompaanies = () => {
         ...item,
         srNo: index + 1,
         mongoId: item._id,
-        visitorName: `${item.firstName || ""} ${item.lastName || ""}`.trim() || "N/A",
+        visitorName:
+          `${item.firstName || ""} ${item.lastName || ""}`.trim() || "N/A",
         company:
-          item.visitorCompany
-          || item.brandName
-          || item.registeredClientCompany
-          || "N/A",
+          item.visitorCompany ||
+          item.brandName ||
+          item.registeredClientCompany ||
+          "N/A",
         locationId:
-          item?.building?._id
-          || item?.location?._id
-          || item?.location?.building?._id
-          || (typeof item?.building === "string" ? item.building : ""),
+          item?.building?._id ||
+          item?.location?._id ||
+          item?.location?.building?._id ||
+          (typeof item?.building === "string" ? item.building : ""),
         unitId:
-          item?.unit?._id
-          || (typeof item?.unit === "string" ? item.unit : ""),
+          item?.unit?._id || (typeof item?.unit === "string" ? item.unit : ""),
       })),
     [repeatExternalCompanies],
   );
 
-  const openRepeatClientModal = useCallback((row) => {
-    setSelectedRow(row);
-    const sourceCheckIn = row?.checkIn ? dayjs(row.checkIn) : dayjs();
+  const openRepeatClientModal = useCallback(
+    (row) => {
+      setSelectedRow(row);
+      const sourceCheckIn = row?.checkIn ? dayjs(row.checkIn) : dayjs();
 
-    reset({
-      visitorName: row?.visitorName || "N/A",
-      company: row?.company || "N/A",
-      purposeOfVisit: "Full Day Pass",
-      location: row?.locationId || "",
-      unit: row?.unitId || "",
-      checkInTime: sourceCheckIn,
-      checkOutTime: null,
-    });
+      reset({
+        visitorName: row?.visitorName || "N/A",
+        company: row?.company || "N/A",
+        purposeOfVisit: "Full Day Pass",
+        location: row?.locationId || "",
+        unit: row?.unitId || "",
+        dateOfVisit: sourceCheckIn.startOf("day"),
+        checkInTime: sourceCheckIn,
+        checkOutTime: null,
+      });
 
-    setOpenModal(true);
-  }, [reset]);
+      setOpenModal(true);
+    },
+    [reset],
+  );
 
   const handleRepeatClientSubmit = async (formData) => {
     if (!selectedRow?.mongoId) return;
 
-    const checkIn = dayjs(formData.checkInTime);
-    const checkOut = dayjs(formData.checkOutTime);
+    const selectedDate = dayjs(formData.dateOfVisit);
+    const checkInInput = dayjs(formData.checkInTime);
+    const checkOutInput = formData.checkOutTime
+      ? dayjs(formData.checkOutTime)
+      : null;
 
-    if (!checkIn.isValid() || !checkOut.isValid()) {
-      toast.error("Please select valid check-in and check-out time.");
+    if (!selectedDate.isValid()) {
+      toast.error("Please select valid date of visit.");
       return;
     }
 
-    if (checkOut.isBefore(checkIn)) {
+    if (!checkInInput.isValid()) {
+      toast.error("Please select valid check-in time.");
+      return;
+    }
+
+    const checkIn = selectedDate
+      .hour(checkInInput.hour())
+      .minute(checkInInput.minute())
+      .second(0)
+      .millisecond(0);
+
+    const checkOut = checkOutInput?.isValid()
+      ? selectedDate
+          .hour(checkOutInput.hour())
+          .minute(checkOutInput.minute())
+          .second(0)
+          .millisecond(0)
+      : null;
+
+    if (checkOut?.isValid() && checkOut.isBefore(checkIn)) {
       toast.error("Check-out time cannot be before check-in time.");
       return;
     }
@@ -147,8 +175,9 @@ const RepeatExternalCompaanies = () => {
         purposeOfVisit: formData.purposeOfVisit,
         building: formData.location || null,
         unit: formData.unit || null,
+        dateOfVisit: selectedDate.startOf("day").toISOString(),
         checkInTime: checkIn.toISOString(),
-        checkOutTime: checkOut.toISOString(),
+        checkOutTime: checkOut?.isValid() ? checkOut.toISOString() : null,
       });
 
       toast.success("Repeat client added successfully.");
@@ -219,7 +248,12 @@ const RepeatExternalCompaanies = () => {
             name="visitorName"
             control={control}
             render={({ field }) => (
-              <TextField {...field} label="Visitor Name" size="small" disabled />
+              <TextField
+                {...field}
+                label="Visitor Name"
+                size="small"
+                disabled
+              />
             )}
           />
 
@@ -303,6 +337,28 @@ const RepeatExternalCompaanies = () => {
           />
 
           <Controller
+            name="dateOfVisit"
+            control={control}
+            rules={{ required: "Date of Visit is required" }}
+            render={({ field, fieldState }) => (
+              <DatePicker
+                label="Date of Visit"
+                value={field.value}
+                format="DD-MM-YYYY"
+                onChange={field.onChange}
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    fullWidth: true,
+                    error: !!fieldState.error,
+                    helperText: fieldState.error?.message,
+                  },
+                }}
+              />
+            )}
+          />
+
+          <Controller
             name="checkInTime"
             control={control}
             rules={{ required: "Check-In Time is required" }}
@@ -326,7 +382,7 @@ const RepeatExternalCompaanies = () => {
           <Controller
             name="checkOutTime"
             control={control}
-            rules={{ required: "Check-Out Time is required" }}
+            // rules={{ required: "Check-Out Time is required" }}
             render={({ field, fieldState }) => (
               <TimePicker
                 label="Check-Out Time"
@@ -385,7 +441,7 @@ export default RepeatExternalCompaanies;
 //     defaultValues: {
 //       visitorName: "",
 //       company: "",
-//       purposeOfVisit: "Full Day Pass",  
+//       purposeOfVisit: "Full Day Pass",
 //       checkInTime: null,
 //       checkOutTime: null,
 //     },
@@ -643,4 +699,3 @@ export default RepeatExternalCompaanies;
 // };
 
 // export default RepeatExternalCompaanies;
-
