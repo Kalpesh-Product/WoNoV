@@ -1006,18 +1006,22 @@ const ItDashboard = () => {
 
           if (biometricStatus === "approved") {
             acc.approved += 1;
+          } else if (biometricStatus === "revoke") {
+            acc.revoke += 1;
           } else {
             acc.pending += 1;
           }
 
           return acc;
         },
-        { approved: 0, pending: 0 },
+        { approved: 0, pending: 0, revoke: 0 },
       );
 
     return [
       { label: `Approved ${summary.approved}`, value: summary.approved },
       { label: `Pending ${summary.pending}`, value: summary.pending },
+      { label: `Revoke ${summary.revoke}`, value: summary.revoke },
+
     ].filter((item) => item.value > 0);
   }, [clientsData, isClientsDataPending]);
 
@@ -1032,7 +1036,7 @@ const ItDashboard = () => {
         },
       },
     },
-    colors: ["#0B7A3E", "#E69A00"],
+    colors: ["#0B7A3E", "#E69A00", "#B42318"],
     legend: {
       position: "bottom",
     },
