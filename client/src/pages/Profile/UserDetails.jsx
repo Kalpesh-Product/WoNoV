@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,6 +13,7 @@ import {
   CircularProgress,
   Chip,
 } from "@mui/material";
+import { Country, State, City } from "country-state-city";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -130,6 +131,8 @@ const UserDetails = () => {
     control,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm({
     mode: "onChange",
@@ -137,11 +140,111 @@ const UserDetails = () => {
   });
 
   // Reset when data is loaded
+ const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const selectedCountry = watch("country");
+  const selectedState = watch("state");
+
+  const getCountryIsoCode = useCallback((countryValue) => {
+    if (!countryValue) return "";
+    const normalizedCountryValue = String(countryValue).trim();
+    const normalizedCountryCode = normalizedCountryValue.toUpperCase();
+    const match = Country.getAllCountries().find(
+      (country) =>
+        country.isoCode === normalizedCountryCode ||
+        country.name.toLowerCase() === normalizedCountryValue.toLowerCase()
+    );
+    return match?.isoCode || "";
+  }, []);
+
+  const getStateIsoCode = useCallback((countryIsoCode, stateValue) => {
+    if (!countryIsoCode || !stateValue) return "";
+    const normalizedStateValue = String(stateValue).trim();
+    const normalizedStateCode = normalizedStateValue.toUpperCase();
+    const match = State.getStatesOfCountry(countryIsoCode).find(
+      (stateItem) =>
+        stateItem.isoCode === normalizedStateCode ||
+        stateItem.name.toLowerCase() === normalizedStateValue.toLowerCase()
+    );
+    return match?.isoCode || "";
+  }, []);
+
+  const getCountryName = useCallback((countryValue) => {
+    const countryIsoCode = getCountryIsoCode(countryValue);
+    if (!countryIsoCode) return countryValue;
+
+    return (
+      Country.getAllCountries().find(
+        (country) => country.isoCode === countryIsoCode
+      )?.name || countryValue
+    );
+  }, [getCountryIsoCode]);
+
+  const getStateName = useCallback((countryValue, stateValue) => {
+    const countryIsoCode = getCountryIsoCode(countryValue);
+    if (!countryIsoCode || !stateValue) return stateValue;
+    const normalizedStateValue = String(stateValue).trim();
+    const normalizedStateCode = normalizedStateValue.toUpperCase();
+
+    return (
+      State.getStatesOfCountry(countryIsoCode).find(
+        (stateItem) =>
+          stateItem.isoCode === normalizedStateCode ||
+          stateItem.name.toLowerCase() === normalizedStateValue.toLowerCase()
+      )?.name || stateValue
+    );
+  }, [getCountryIsoCode]);
+
+  useEffect(() => {
+    setCountries(Country.getAllCountries());
+  }, []);
+
+  const getNormalizedUserDetails = useCallback((details) => {
+    if (!details) return {};
+
+    const normalizedCountry = getCountryIsoCode(details.country);
+    const normalizedState = getStateIsoCode(normalizedCountry, details.state);
+
+    setStates(
+      normalizedCountry ? State.getStatesOfCountry(normalizedCountry) : []
+    );
+    setCities(
+      normalizedCountry && normalizedState
+        ? City.getCitiesOfState(normalizedCountry, normalizedState)
+        : []
+    );
+
+    return {
+      ...details,
+      country: normalizedCountry || details.country || "",
+      state: normalizedState || details.state || "",
+      city: details.city || "",
+    };
+  }, [getCountryIsoCode, getStateIsoCode]);
+
   useEffect(() => {
     if (userDetails) {
-      reset(userDetails);
+      reset(getNormalizedUserDetails(userDetails));
     }
-  }, [userDetails, reset]);
+  }, [getNormalizedUserDetails, userDetails, reset]);
+
+  useEffect(() => {
+    if (!selectedCountry) {
+      setStates([]);
+      setCities([]);
+      return;
+    }
+    setStates(State.getStatesOfCountry(selectedCountry));
+  }, [selectedCountry]);
+
+  useEffect(() => {
+    if (!selectedCountry || !selectedState) {
+      setCities([]);
+      return;
+    }
+    setCities(City.getCitiesOfState(selectedCountry, selectedState));
+  }, [selectedCountry, selectedState]);
 
   const mutation = useMutation({
     mutationFn: async (updatedData) => {
@@ -183,8 +286,10 @@ const UserDetails = () => {
       homeAddress: {
         addressLine1: data.addressLine1,
         addressLine2: data.addressLine2,
-        country: data.country,
-        state: data.state,
+        // country: data.country,
+        // state: data.state,
+        country: getCountryName(data.country),
+        state: getStateName(data.country, data.state),
         city: data.city,
         pinCode: data.pinCode,
       },
@@ -237,7 +342,8 @@ const UserDetails = () => {
     },
     { name: "dob", label: "Date of Birth", type: "date", disabled: false },
     { name: "employeeID", label: "Employee ID", disabled: true },
-    { name: "mobilePhone", label: "Mobile Phone", disabled: false },
+   // { name: "mobilePhone", label: "Mobile Phone", disabled: false },
+    { name: "mobilePhone", label: "Mobile", disabled: false },
     { name: "startDate", label: "Start Date", type: "date", disabled: true },
     { name: "workLocation", label: "Work Location", disabled: true },
     { name: "employeeType", label: "Employee Type", disabled: true },
@@ -263,19 +369,35 @@ const UserDetails = () => {
     { name: "bankName", label: "Bank Name", disabled: false },
     { name: "bankIfsc", label: "Bank IFSC", disabled: false },
     { name: "branchName", label: "Branch Name", disabled: false },
-    { name: "nameOnAccount", label: "Name On Account", disabled: false },
+   // { name: "nameOnAccount", label: "Name On Account", disabled: false },
+   { name: "nameOnAccount", label: "Name of Account", disabled: false },
     { name: "accountNumber", label: "Account Number", disabled: false },
 
     { name: "addressLine1", label: "Address Line 1", disabled: false },
     { name: "addressLine2", label: "Address Line 2", disabled: false },
-    { name: "state", label: "State", disabled: false },
-    { name: "city", label: "City", disabled: false },
-    { name: "country", label: "Country", disabled: false },
-    { name: "pinCode", label: "Pin Code", disabled: false },
-    { name: "fatherName", label: "Father Name", disabled: false },
-    { name: "motherName", label: "Mother Name", disabled: false },
-    { name: "maritalStatus", label: "Marital Status", disabled: false },
-    { name: "emergencyPhone", label: "Emergency Phone", disabled: false },
+    // { name: "state", label: "State", disabled: false },
+    // { name: "city", label: "City", disabled: false },
+    // { name: "country", label: "Country", disabled: false },
+     { name: "state", label: "State", type: "location-select", disabled: false },
+    { name: "city", label: "City", type: "location-select", disabled: false },
+    { name: "country", label: "Country", type: "location-select", disabled: false },
+    { name: "pinCode", label: "Pincode", disabled: false },
+    { name: "fatherName", label: "Father’s Name", disabled: false },
+    { name: "motherName", label: "Mother’s Name", disabled: false },
+   // { name: "maritalStatus", label: "Marital Status", disabled: false },
+   {
+      name: "maritalStatus",
+      label: "Marital Status",
+      type: "select",
+      options: ["Yes", "No"],
+      disabled: false,
+    },
+    { name: "emergencyPhone", label: "Emergency Number", disabled: false },
+    // { name: "pinCode", label: "Pin Code", disabled: false },
+    // { name: "fatherName", label: "Father Name", disabled: false },
+    // { name: "motherName", label: "Mother Name", disabled: false },
+    // { name: "maritalStatus", label: "Marital Status", disabled: false },
+    // { name: "emergencyPhone", label: "Emergency Phone", disabled: false },
     {
       name: "includeInPayroll",
       label: "Include In Payroll",
@@ -324,7 +446,7 @@ const UserDetails = () => {
 
   const sections = [
     {
-      title: "Personal Informations",
+      title: "Personal Information",
       fields: [
         "firstName",
         "middleName",
@@ -332,27 +454,47 @@ const UserDetails = () => {
         "gender",
         "dob",
         "mobilePhone",
-        "email",
+       // "email",
         "fatherName",
         "motherName",
         "maritalStatus",
-        "emergencyPhone",
-        "aadharID",
-        "pan",
-        "pfUan",
-        "pfAccountNumber",
-        "esiAccountNumber",
-        "bankName",
-        "bankIfsc",
-        "branchName",
-        "nameOnAccount",
-        "accountNumber",
-        "addressLine1",
-        "addressLine2",
+        "country",
         "state",
         "city",
-        "country",
+        "emergencyPhone",
+        "addressLine1",
+        "addressLine2",
         "pinCode",
+      ],
+    },
+        // "aadharID",
+        // "pan",
+        // "pfUan",
+        // "pfAccountNumber",
+        // "esiAccountNumber",
+        // "bankName",
+        // "bankIfsc",
+        // "branchName",
+        // "nameOnAccount",
+        // "accountNumber",
+        // "addressLine1",
+        // "addressLine2",
+        // "state",
+        // "city",
+        // "country",
+        // "pinCode",
+         {
+      title: "Bank Details",
+      fields: [
+        "pfAccountNumber",
+        "esiAccountNumber",
+        "pfUan",
+        "bankName",
+        "accountNumber",
+        "branchName",
+        "nameOnAccount",
+        "bankIfsc",
+        "pan",
       ],
     },
     {
@@ -548,7 +690,85 @@ const UserDetails = () => {
 
                   return (
                     <div key={name}>
-                      {type === "select" ? (
+                        {type === "location-select" ? (
+                        isEditable ? (
+                          <FormControl fullWidth>
+                            <Controller
+                              name={name}
+                              control={control}
+                              rules={{ required: `${label} is required` }}
+                              render={({ field, fieldState: { error } }) => (
+                                <TextField
+                                  size="small"
+                                  select
+                                  {...field}
+                                  label={label}
+                                  disabled={
+                                    (name === "state" && !selectedCountry) ||
+                                    (name === "city" &&
+                                      (!selectedCountry || !selectedState))
+                                  }
+                                  error={!!error}
+                                  helperText={error?.message}
+                                  onChange={(event) => {
+                                    const selectedValue = event.target.value;
+                                    field.onChange(selectedValue);
+
+                                    if (name === "country") {
+                                      setValue("state", "");
+                                      setValue("city", "");
+                                    }
+
+                                    if (name === "state") {
+                                      setValue("city", "");
+                                    }
+                                  }}
+                                >
+                                  <MenuItem value="">
+                                    {`Select ${label}`}
+                                  </MenuItem>
+                                  {(name === "country"
+                                    ? countries.map((country) => ({
+                                        value: country.isoCode,
+                                        label: country.name,
+                                      }))
+                                    : name === "state"
+                                    ? states.map((stateOption) => ({
+                                        value: stateOption.isoCode,
+                                        label: stateOption.name,
+                                      }))
+                                    : cities.map((cityOption) => ({
+                                        value: cityOption.name,
+                                        label: cityOption.name,
+                                      }))
+                                  ).map((option) => (
+                                    <MenuItem
+                                      key={`${name}-${option.value}`}
+                                      value={option.value}
+                                    >
+                                      {option.label}
+                                    </MenuItem>
+                                  ))}
+                                </TextField>
+                              )}
+                            />
+                          </FormControl>
+                        ) : (
+                          <TextField
+                            size="small"
+                            fullWidth
+                            label={label}
+                            value={
+                              name === "country"
+                                ? getCountryName(value)
+                                : name === "state"
+                                ? getStateName(userDetails?.country, value)
+                                : value || ""
+                            }
+                            disabled
+                          />
+                        )
+                      ) : type === "select" ? (
                         isEditable ? (
                           <FormControl fullWidth>
                             <Controller
@@ -707,7 +927,8 @@ const UserDetails = () => {
                 <PrimaryButton
                   title={"Edit"}
                   handleSubmit={() => {
-                    if (userDetails) reset(userDetails);
+                    // if (userDetails) reset(userDetails);
+                    if (userDetails) reset(getNormalizedUserDetails(userDetails));
                     setEditMode(true);
                   }}
                 />
