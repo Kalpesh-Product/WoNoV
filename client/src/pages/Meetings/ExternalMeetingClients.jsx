@@ -188,7 +188,10 @@ const ExternalMeetingCLients = () => {
     },
   });
   const filteredMeetings = meetings.filter(
-    (item) => item.meetingStatus !== "Completed",
+    // (item) => item.meetingStatus !== "Completed",
+     (item) =>
+      item.meetingStatus !== "Completed" &&
+      item.meetingStatus !== "Cancelled",
   );
 
   const transformedMeetings = filteredMeetings
