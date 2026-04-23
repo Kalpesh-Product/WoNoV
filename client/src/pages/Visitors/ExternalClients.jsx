@@ -191,7 +191,19 @@ const ExternalClients = ({
     mutationKey: ["visitor-payment"],
     mutationFn: async (data) => {
       const externalVisitId = data.get("externalVisitId");
-      const isDayPassPayment = filterToDayPass && Boolean(externalVisitId);
+      const paymentVisitorType =
+        data.get("visitorType") || data.get("purposeOfVisit");
+      console.log("Payment Data:", Object.fromEntries(data.entries()));
+      console.log(
+        "Payment Visitor Type (raw):",
+        data.get("visitorType"),
+        data.get("purposeOfVisit"),
+      );
+      console.log("Payment Visitor Type:", paymentVisitorType);
+      const isDayPassPayment =
+        isFullOrHalfDayPass(paymentVisitorType) && Boolean(externalVisitId);
+
+      console.log("Is Day Pass Payment:", isDayPassPayment);
       const response = await axios.patch(
         isDayPassPayment
           ? `/api/visitors/day-pass/payment/${externalVisitId}`
@@ -252,6 +264,14 @@ const ExternalClients = ({
     if (!visitorType) return false;
     return String(visitorType).toLowerCase().includes("day pass");
   };
+
+  const isFullOrHalfDayPass = (value) => {
+    const normalizedValue = normalizeVisitorType(value);
+    return (
+      normalizedValue === "Full-Day Pass" || normalizedValue === "Half-Day Pass"
+    );
+  };
+
   const hasRole = (record, role) => {
     const roles = Array.isArray(record?.visitorRoles)
       ? record.visitorRoles
@@ -500,11 +520,9 @@ const ExternalClients = ({
       setValue("email", selectedVisitor.email || "");
       setValue("phoneNumber", selectedVisitor.phoneNumber || "");
       setValue("purposeOfVisit", selectedVisitor.purposeOfVisit || "");
-       setValue(
+      setValue(
         "dateOfVisit",
-        selectedVisitor.dateOfVisit
-          ? dayjs(selectedVisitor.dateOfVisit)
-          : null,
+        selectedVisitor.dateOfVisit ? dayjs(selectedVisitor.dateOfVisit) : null,
       );
       setValue("checkInRaw", selectedVisitor.checkInRaw || "");
       setValue("checkInBy", selectedVisitor.checkInBy || "");
@@ -658,10 +676,18 @@ const ExternalClients = ({
 
               .filter((visitor) => hasRole(visitor, "Client"))
               .map((item, index) => {
-                const latestVisit = getLatestVisitByRole(
-                  item?.externalVisits,
-                  "Client",
-                );
+                const latestVisit =
+                  Array.isArray(item?.externalVisits) &&
+                  item.externalVisits.length > 0
+                    ? [...item.externalVisits]
+                        .reverse()
+                        .find(
+                          (visit) =>
+                            visit?.visitorType === "Full-Day Pass" ||
+                            visit?.visitorType === "Half-Day Pass",
+                        ) || null
+                    : null;
+
                 const latestCheckInBy = latestVisit?.checkedInBy;
                 const latestCheckOutBy = latestVisit?.checkedOutBy;
                 const checkInByName =
@@ -1016,7 +1042,7 @@ const ExternalClients = ({
 
                 {/* date of visit */}
                 {isEditing ? (
-                   <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <Controller
                       name="dateOfVisit"
                       control={control}
@@ -1302,6 +1328,16 @@ const ExternalClients = ({
             formData.append(
               "externalVisitId",
               paymentVisitor?.latestExternalVisitId || "",
+            );
+            formData.append(
+              "visitorType",
+              paymentVisitor?.visitorType ||
+                paymentVisitor?.purposeOfVisit ||
+                "",
+            );
+            formData.append(
+              "purposeOfVisit",
+              paymentVisitor?.purposeOfVisit || "",
             );
             formData.append("discount", data?.discountAmount || 0);
 

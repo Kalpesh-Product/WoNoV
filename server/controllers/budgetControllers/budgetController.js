@@ -1060,6 +1060,7 @@ const bulkInsertBudgets = async (req, res, next) => {
           expanseType: row["Expanse Type"],
           category: row["Expanse Category"],
           isPaid: row["Status"] === "Approved" ? "Paid" : "Unpaid",
+          isExtraBudget: false,
         });
       })
       // .on("end", async () => {

@@ -1785,6 +1785,7 @@ const convertVisitorToClient = async (req, res, next) => {
       email,
       phoneNumber,
       visitorCompany,
+      building,
     } = req.body;
 
     const allowedMimeTypes = [
@@ -1805,6 +1806,9 @@ const convertVisitorToClient = async (req, res, next) => {
 
     if (!visitor) {
       return res.status(404).json({ message: "Visitor not found" });
+    }
+    if (building && mongoose.Types.ObjectId.isValid(building)) {
+      visitor.building = building;
     }
 
     if (unit) {
@@ -2035,12 +2039,13 @@ const updateDayPassVisitPayment = async (req, res, next) => {
     const externalVisit = await ExternalVisits.findById(externalVisitId);
 
     if (!externalVisit) {
-      throw new CustomError(
-        "External visit not found",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      return res.status(404).json({ message: "External visit not found" });
+    }
+
+    const visitor = await Visitor.findById(externalVisit.visitorId);
+    console.log("Visitor for payment update:", visitor);
+    if (!visitor) {
+      return res.status(404).json({ message: "Associated visitor not found" });
     }
 
     const allowedMimeTypes = [
@@ -2092,6 +2097,15 @@ const updateDayPassVisitPayment = async (req, res, next) => {
     const gstAmount = Number((taxableAmount * 0.18).toFixed(2));
     const finalAmount = Number((taxableAmount + gstAmount).toFixed(2));
 
+    visitor.amount = baseAmount;
+    visitor.discount = discountValue;
+    visitor.gstAmount = gstAmount;
+    visitor.totalAmount = finalAmount;
+    visitor.paymentMode = paymentMode;
+    visitor.paymentStatus = paymentStatus === "Paid";
+    visitor.paymentVerification = "Pending";
+    await visitor.save();
+
     externalVisit.amount = baseAmount;
     externalVisit.totalAmount = finalAmount;
     externalVisit.discount = discountValue;
@@ -2123,56 +2137,41 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
   try {
     const { externalVisitId, visitorId, status } = req.body;
 
+    if (!status || !externalVisitId || !visitorId) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
     const allowedStatuses = ["Pending", "Under Review", "Verified"];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status provided" });
     }
 
-    let externalVisit = null;
-    if (externalVisitId && mongoose.Types.ObjectId.isValid(externalVisitId)) {
-      externalVisit = await ExternalVisits.findById(externalVisitId);
+    if (visitorId && !mongoose.Types.ObjectId.isValid(visitorId)) {
+      return res.status(400).json({ message: "Invalid visitor Id provided" });
     }
 
-    if (
-      !externalVisit &&
-      visitorId &&
-      mongoose.Types.ObjectId.isValid(visitorId)
-    ) {
-      externalVisit = await ExternalVisits.findOne({ visitorId }).sort({
-        checkIn: -1,
-      });
+    if (externalVisitId && !mongoose.Types.ObjectId.isValid(externalVisitId)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid external visit Id provided" });
     }
 
-    if (
-      !externalVisit &&
-      visitorId &&
-      mongoose.Types.ObjectId.isValid(visitorId)
-    ) {
-      const visitor = await Visitor.findById(visitorId).lean();
+    const visitor = await Visitor.findById(visitorId);
+    const externalVisit = await ExternalVisits.findById(externalVisitId);
 
-      if (visitor) {
-        externalVisit = await ExternalVisits.create({
-          visitorId: visitor._id,
-          company: visitor.company,
-          visitorType: visitor.visitorType || "Meeting",
-          dateOfVisit: visitor.dateOfVisit || visitor.checkIn || new Date(),
-          checkIn: visitor.checkIn || visitor.dateOfVisit || new Date(),
-          checkOut: visitor.checkOut || null,
-          checkedInBy: visitor.checkedInBy || null,
-          checkedOutBy: visitor.checkedOutBy || null,
-          amount: Number(visitor.amount || 0),
-          discount: Number(visitor.discount || 0),
-          gstAmount: Number(visitor.gstAmount || 0),
-          totalAmount: Number(visitor.totalAmount || 0),
-          paymentStatus: Boolean(visitor.paymentStatus),
-          paymentMode: visitor.paymentMode || null,
-          paymentProof: visitor.paymentProof || null,
-          paymentVerification: visitor.paymentVerification || "Pending",
-          unit: visitor.unit || null,
-        });
-      }
+    // if (
+    //   !externalVisit &&
+    //   visitorId &&
+    //   mongoose.Types.ObjectId.isValid(visitorId)
+    // ) {
+    //   externalVisit = await ExternalVisits.findOne({ visitorId }).sort({
+    //     checkIn: -1,
+    //   });
+    // }
+
+    if (!visitor) {
+      return res.status(404).json({ message: "Visitor not found" });
     }
-
     if (!externalVisit) {
       return res.status(404).json({ message: "External visit not found" });
     }
@@ -2183,7 +2182,9 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
         .json({ message: "Cannot verify unpaid day pass payment" });
     }
 
+    visitor.paymentVerification = status;
     externalVisit.paymentVerification = status;
+    await visitor.save();
     await externalVisit.save();
 
     return res.status(200).json({
