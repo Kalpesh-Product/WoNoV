@@ -442,7 +442,8 @@ const PerformanceMemberWiseKra = () => {
         <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
 
         <div className="flex justify-center items-center pb-4">
-          <div className="flex items-center">
+          {/* <div className="flex items-center"> */}
+           <div className="flex items-center  mt-2">
             <SecondaryButton
               title={<MdNavigateBefore />}
               disabled={false}
@@ -453,10 +454,12 @@ const PerformanceMemberWiseKra = () => {
                 );
               }}
             />
-              <div className="text-sm min-w-[140px] text-center">{selectedDateLabel}</div>
+              {/* <div className="text-sm min-w-[140px] text-center">{selectedDateLabel}</div> */}
+               <div className="text-primary text-content font-semibold min-w-[120px] text-center">{selectedDateLabel}</div>
             <SecondaryButton
               title={<MdNavigateNext />}
               disabled={false}
+              externalStyles="min-w-20 px-6 py-2 bg-[#9CA3AF] text-black font-semibold rounded-lg"
               handleSubmit={() => {
                  setSelectedDate(
                   (prevDate) =>

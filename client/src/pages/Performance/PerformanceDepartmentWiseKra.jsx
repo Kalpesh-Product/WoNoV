@@ -368,10 +368,12 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
         />
 
         <div className="flex justify-center items-center pb-4">
-          <div className="flex items-center">
+          {/* <div className="flex items-center"> */}
+           <div className="flex items-center mt-4">
             <SecondaryButton
               title={<MdNavigateBefore />}
               disabled={false}
+               //externalStyles="min-w-24 px-6 py-2 bg-[#B8BDC6] text-primary font-semibold rounded-lg"
               handleSubmit={() => {
               const previousDate = parseIsoDate(selectedDate);
                 if (!previousDate) return;
@@ -379,12 +381,14 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
                 setSelectedDate(toLocalIsoDate(previousDate));
               }}
             />
-              <div className="text-sm min-w-[160px] text-center">
+              {/* <div className="text-sm min-w-[160px] text-center"> */}
+               <div className="text-primary text-content font-semibold min-w-[120px] text-center">
               {formatReadableDate(selectedDate)}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}
               disabled={false}
+              externalStyles="min-w-20 px-6 py-2 bg-[#9CA3AF] text-black font-semibold rounded-lg"
               handleSubmit={() => {
                 const nextDate = parseIsoDate(selectedDate);
                 if (!nextDate) return;

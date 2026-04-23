@@ -508,7 +508,8 @@ tooltip: {
                 
                 {/* Dynamic Month Navigation Buttons */}
                 <div className="flex justify-center items-center pb-4">
-                    <div className="flex items-center">
+                    {/* <div className="flex items-center"> */}
+                      <div className="flex items-center mt-2">
                         <SecondaryButton
                             title={<MdNavigateBefore />}
                             disabled={false}
@@ -519,10 +520,12 @@ tooltip: {
                                 setSelectedMonth(fiscalMonths[prevIndex]);
                             }}
                         />
-                        <div className="text-sm min-w-[120px] text-center">{selectedMonth}</div>
+                        {/* <div className="text-sm min-w-[120px] text-center">{selectedMonth}</div> */}
+                         <div className="text-primary text-content font-semibold min-w-[90px] text-center">{selectedMonth}</div>
                         <SecondaryButton
                             title={<MdNavigateNext />}
                             disabled={false}
+                            externalStyles="min-w-20 px-6 py-2 bg-[#9CA3AF] text-black font-semibold rounded-lg"
                             handleSubmit={() => {
                                 const nextIndex = currentMonthIndex === fiscalMonths.length - 1 
                                     ? 0 

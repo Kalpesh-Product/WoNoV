@@ -45,7 +45,7 @@ const Header = ({
 }) => {
   const axios = useAxiosPrivate();
   dayjs.extend(relativeTime);
-  const [isHovered, setIsHovered] = useState(false);
+  //const [isHovered, setIsHovered] = useState(false);
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   const navigate = useNavigate();
   const { auth } = useAuth(); // Assuming signOut is a method from useAuth()
@@ -207,31 +207,33 @@ const Header = ({
             )}
           </Avatar>
 
-          <div
+          {/* <div
             className="w-full relative"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-          >
+          > */}
+          {/* <div className="w-full relative"> */}
+           <div className="w-full relative min-h-[52px] flex items-center">
             {!isMobile && (
               <>
                 <h1 className="text-xl font-semibold text-start">
                   {auth.user.firstName}
                 </h1>
-                <span className="text-content w-full">
+                {/* <span className="text-content w-full"> */}
                   {/* {auth.user.designation.split(" ").length > 2 */}
-                  {auth.user.designation.split(" ").length > 3
-                    ? // ? auth.user.designation.split(" ").slice(0, 2).join(" ") +
+                  {/* {auth.user.designation.split(" ").length > 3 */}
+                    {/* ? // ? auth.user.designation.split(" ").slice(0, 2).join(" ") +
                       auth.user.designation.split(" ").slice(0, 2).join(" ") +
                       "..."
-                    : auth.user.designation}
-                </span>
+                    : auth.user.designation} */}
+                {/* </span>
                 {isHovered && auth.user.designation.split(" ").length > 1 ? (
                   <div className="motion-preset-slide-up-sm absolute top-14 right-0 bg-white border-default border-primary rounded-md p-4 w-96">
                     <span>{auth.user.designation}</span>
                   </div>
                 ) : (
                   ""
-                )}
+                )} */}
               </>
             )}
           </div>
