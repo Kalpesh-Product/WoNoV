@@ -1780,8 +1780,8 @@ const convertVisitorToClient = async (req, res, next) => {
       city,
       state,
       unit,
-      checkInTime,
-      checkOutTime,
+      checkInTime: checkIn,
+      checkOutTime: checkOut,
       email,
       phoneNumber,
       visitorCompany,
@@ -1802,6 +1802,9 @@ const convertVisitorToClient = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid unit id provided" });
     }
 
+    if (!purposeOfVisit) {
+      return res.status(400).json({ message: "purposeOfVisit is required" });
+    }
     const visitor = await Visitor.findOne({ _id: visitorId, company });
 
     if (!visitor) {
@@ -1827,10 +1830,17 @@ const convertVisitorToClient = async (req, res, next) => {
       "half day pass": "Half-Day Pass",
       meeting: "Meeting",
     };
-    const mappedVisitorType = visitorTypeMap[normalizedPurpose] || "Meeting";
+    const mappedVisitorType = visitorTypeMap[normalizedPurpose];
 
-    const resolvedCheckIn = checkInTime ? new Date(checkInTime) : new Date();
-    const resolvedCheckOut = checkOutTime ? new Date(checkOutTime) : null;
+    if (!mappedVisitorType) {
+      return res.status(400).json({
+        message:
+          "Invalid purposeOfVisit. Allowed values: Full Day Pass, Half Day Pass, Meeting",
+      });
+    }
+
+    const resolvedCheckIn = checkIn ? new Date(checkIn) : new Date();
+    const resolvedCheckOut = checkOut ? new Date(checkOut) : null;
 
     if (Number.isNaN(resolvedCheckIn.getTime())) {
       return res.status(400).json({ message: "Invalid checkInTime provided" });

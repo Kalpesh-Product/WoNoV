@@ -171,7 +171,7 @@ const ConvertInternalVisitors = () => {
       panNumber: "",
       idType: "",
       idNumber: "",
-      purposeOfVisit: "",
+      purposeOfVisit: "Meeting",
       checkIn: null,
       checkOut: null,
       gstFile: null,
@@ -266,7 +266,7 @@ const ConvertInternalVisitors = () => {
           if (!parsedDate.isValid()) return true;
 
           //return parsedDate.startOf("day").isBefore(dayjs().startOf("day"));
-           return !parsedDate.startOf("day").isAfter(dayjs().startOf("day"));
+          return !parsedDate.startOf("day").isAfter(dayjs().startOf("day"));
         })
         .map((visitor, index) => ({
           srNo: index + 1,
@@ -343,7 +343,7 @@ const ConvertInternalVisitors = () => {
       panNumber: visitor?.panNumber || "",
       idType: "",
       idNumber: "",
-      purposeOfVisit: visitor?.purposeOfVisit || "",
+      purposeOfVisit: "Meeting",
       checkIn: dayjs(),
       checkOut: null,
       gstFile: null,
@@ -636,6 +636,7 @@ const ConvertInternalVisitors = () => {
               name="purposeOfVisit"
               control={control}
               rules={{ required: "Purpose of Visit is required" }}
+              defaultValue="Meeting"
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
@@ -643,6 +644,7 @@ const ConvertInternalVisitors = () => {
                   label="Purpose of Visit"
                   size="small"
                   fullWidth
+                  value={field.value || "Meeting"}
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
                 >
@@ -939,6 +941,7 @@ const ConvertInternalVisitors = () => {
                     label="Check-In Time"
                     value={field.value}
                     onChange={field.onChange}
+                    disabled
                     slotProps={{
                       textField: {
                         size: "small",
