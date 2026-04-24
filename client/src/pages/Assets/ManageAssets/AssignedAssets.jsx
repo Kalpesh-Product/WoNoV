@@ -38,7 +38,7 @@ const AssignedAssets = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/assets/get-asset-requests?department=${departmentId}&status=Approved`
+          `/api/assets/get-asset-requests?department=${departmentId}&status=Approved`,
         );
         return response.data;
       } catch (error) {
@@ -52,7 +52,7 @@ const AssignedAssets = () => {
     mutationFn: async (data) => {
       console.log("data", data);
       const response = await axios.patch(
-        `/api/assets/revoke-asset/${data._id}`
+        `/api/assets/revoke-asset/${data._id}`,
       );
       return response.data;
     },
@@ -64,7 +64,7 @@ const AssignedAssets = () => {
       toast.error(
         error?.response?.data?.message ||
           error?.message ||
-          "Failed to revoke asset"
+          "Failed to revoke asset",
       );
     },
   });
@@ -168,13 +168,13 @@ const AssignedAssets = () => {
               title={"Asset Type"}
               detail={selectedAsset?.assetType}
             />
-             <DetalisFormatted
+            <DetalisFormatted
               title={"Secondary ID"}
               detail={selectedAsset?.secondaryId || "N/A"}
             />
             <DetalisFormatted
               title={"Department Asset ID"}
-              detail={selectedAsset?.departmentAssetId || "N/A"}
+              detail={selectedAsset?.secondaryId || "N/A"}
             />
             <DetalisFormatted title={"Brand"} detail={selectedAsset?.brand} />
             <DetalisFormatted
@@ -189,7 +189,7 @@ const AssignedAssets = () => {
               title={"Assigned Date"}
               detail={humanDate(selectedAsset?.createdAt)}
             />
-               <DetalisFormatted
+            <DetalisFormatted
               title={"Purchase Date"}
               detail={humanDate(selectedAsset?.purchaseDate)}
             />
