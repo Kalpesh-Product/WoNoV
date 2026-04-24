@@ -203,6 +203,7 @@ const FyBarGraphCount = ({
             {selectedFY || "N/A"}
           </span>
           <SecondaryButton
+          externalStyles="min-w-20 px-6 py-2 bg-[#9ca3af] text-black font-semibold rounded-lg"
             handleSubmit={() =>
               setSelectedFYStartYear((prevYear) => prevYear + 1)
             }
