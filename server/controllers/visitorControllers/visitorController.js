@@ -25,7 +25,7 @@ const attachExternalVisits = async (visitors) => {
 
   const visitorIds = visitors.map((visitor) => visitor._id);
   const visits = await ExternalVisits.find({ visitorId: { $in: visitorIds } })
-    .sort({ checkIn: -1 })
+    .sort({ createdAt: -1 })
     .lean();
 
   const visitsByVisitor = visits.reduce((acc, visit) => {
@@ -1242,11 +1242,9 @@ const repeatInternalVisitor = async (req, res, next) => {
     let normalizedScheduledDate = null;
     if (isScheduledVisitor) {
       if (!scheduledDate) {
-        return res
-          .status(400)
-          .json({
-            message: "Scheduled date is required for scheduled visitors",
-          });
+        return res.status(400).json({
+          message: "Scheduled date is required for scheduled visitors",
+        });
       }
       normalizedScheduledDate = new Date(scheduledDate);
       if (Number.isNaN(normalizedScheduledDate.getTime())) {
