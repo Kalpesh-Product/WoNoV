@@ -48,7 +48,7 @@ const coworkingMemberSchema = new mongoose.Schema(
     },
     biometricStatus: {
       type: String,
-      enum: ["Active", "Inactive", "Pending"], // customize if needed
+       enum: ["Active", "Inactive", "Pending", "Revoke"], // customize if needed
       default: "Pending",
     },
     isActive: {

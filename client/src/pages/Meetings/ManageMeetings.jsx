@@ -239,7 +239,10 @@ const ManageMeetings = () => {
   });
   const filteredMeetings = meetings.filter(
     (item) =>
-      item.meetingStatus !== "Completed" && item.meetingType === "Internal",
+      // item.meetingStatus !== "Completed" && item.meetingType === "Internal",
+     item.meetingStatus !== "Completed" &&
+      item.meetingStatus !== "Cancelled" &&
+      item.meetingType === "Internal",
   );
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({

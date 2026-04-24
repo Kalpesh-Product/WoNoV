@@ -17,10 +17,10 @@ const assetsSchema = new mongoose.Schema(
       sparse: true,
       trim: true,
     },
-    departmentAssetId: {
-      type: String,
-      unique: true,
-    },
+    // departmentAssetId: {
+    //   type: String,
+    //   unique: true,
+    // },
     rentedMonths: {
       type: Number,
     },

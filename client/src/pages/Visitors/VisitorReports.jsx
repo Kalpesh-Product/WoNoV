@@ -67,7 +67,6 @@ const VisitorReports = () => {
     { field: "email", headerName: "Email" },
     { field: "phone", headerName: "Phone No" },
 
-
     {
       field: "scheduledDate",
       headerName: "Scheduled Date",
@@ -140,10 +139,10 @@ const VisitorReports = () => {
       visitor.toMeetCompany === "6799f0cd6a01edbe1bc3fcea"
         ? "BIZNest"
         : visitor?.toMeetCompany?.clientName ||
-        visitor?.toMeetCompany?.companyName ||
-        visitor?.toMeetCompany?.name ||
-        visitor?.toMeetCompany ||
-        "-";
+          visitor?.toMeetCompany?.companyName ||
+          visitor?.toMeetCompany?.name ||
+          visitor?.toMeetCompany ||
+          "-";
 
     return {
       srNo: index + 1,
@@ -338,11 +337,20 @@ const VisitorReports = () => {
             />
             <DetalisFormatted
               title="Check Out"
-              detail={selectedVisitor.checkOutTime}
+              detail={
+                selectedVisitor.checkOutTime ||
+                selectedVisitor.rawData?.checkOut ||
+                "-"
+              }
             />
             <DetalisFormatted
               title="Checked Out By"
-              detail={selectedVisitor.checkOutBy}
+              detail={
+                selectedVisitor.checkOutBy ||
+                (selectedVisitor.rawData?.checkedOutBy
+                  ? `${selectedVisitor.rawData.checkedOutBy.firstName || ""} ${selectedVisitor.rawData.checkedOutBy.lastName || ""}`.trim()
+                  : "-")
+              }
             />
             <DetalisFormatted
               title="Date of Visit"

@@ -53,21 +53,21 @@ const RepeatDayPass = () => {
           const isExternalClient = visitor?.visitorFlag === "Client";
           const purpose = (visitor?.purposeOfVisit || "").trim().toLowerCase();
           return (
-            isExternalClient
-            && (purpose === "full day pass" || purpose === "half day pass")
+            isExternalClient &&
+            (purpose === "full day pass" || purpose === "half day pass")
           );
         })
         .map((visitor, index) => ({
           srNo: index + 1,
           id: visitor._id,
           visitorName:
-            `${visitor?.firstName || ""} ${visitor?.lastName || ""}`.trim()
-            || "N/A",
+            `${visitor?.firstName || ""} ${visitor?.lastName || ""}`.trim() ||
+            "N/A",
           company:
-            visitor?.visitorCompany
-            || visitor?.brandName
-            || visitor?.registeredClientCompany
-            || "N/A",
+            visitor?.visitorCompany ||
+            visitor?.brandName ||
+            visitor?.registeredClientCompany ||
+            "N/A",
           raw: visitor,
         })),
     [visitorsData],
@@ -152,7 +152,7 @@ const RepeatDayPass = () => {
           disabled={!canRepeatClient}
           menuItems={[
             {
-              label: "Repeat Client",
+              label: "Repeat Clien",
               onClick: () => openRepeatModal(params.data),
               disabled: !canRepeatClient,
             },
@@ -189,7 +189,13 @@ const RepeatDayPass = () => {
             name="visitorName"
             control={control}
             render={({ field }) => (
-              <TextField {...field} label="Visitor Name" size="small" disabled fullWidth />
+              <TextField
+                {...field}
+                label="Visitor Name"
+                size="small"
+                disabled
+                fullWidth
+              />
             )}
           />
 
@@ -197,7 +203,13 @@ const RepeatDayPass = () => {
             name="company"
             control={control}
             render={({ field }) => (
-              <TextField {...field} label="Company" size="small" disabled fullWidth />
+              <TextField
+                {...field}
+                label="Company"
+                size="small"
+                disabled
+                fullWidth
+              />
             )}
           />
 
@@ -248,7 +260,7 @@ const RepeatDayPass = () => {
           <Controller
             name="checkOutTime"
             control={control}
-            rules={{ required: "Check-out time is required" }}
+            // rules={{ required: "Check-out time is required" }}
             render={({ field, fieldState }) => (
               <TimePicker
                 label="Check-Out Time"
@@ -274,7 +286,9 @@ const RepeatDayPass = () => {
         </form>
       </MuiModal>
 
-      {isPending && <p className="px-2 text-sm text-gray-500">Loading data...</p>}
+      {isPending && (
+        <p className="px-2 text-sm text-gray-500">Loading data...</p>
+      )}
     </div>
   );
 };

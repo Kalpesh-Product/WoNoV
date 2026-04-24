@@ -59,7 +59,7 @@ const AssignAssets = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/assets/get-assets?departmentId=${departmentId}`
+          `/api/assets/get-assets?departmentId=${departmentId}`,
         );
         const filtered = response.data.flatMap((item) => item.assets);
         return filtered;
@@ -87,7 +87,7 @@ const AssignAssets = () => {
     const unit = units.find(
       (unit) =>
         unit.unitNo === selectedUnit &&
-        unit.building?.buildingName === selectedLocation // use ?. here too
+        unit.building?.buildingName === selectedLocation, // use ?. here too
     );
     return unit ? unit._id : null;
   }, [selectedUnit, selectedLocation, units]);
@@ -96,11 +96,11 @@ const AssignAssets = () => {
     new Map(
       units.length > 0
         ? units.map((loc) => [
-          loc.building?._id ?? `unknown-${loc.unitNo}`,
-          loc.building?.buildingName ?? "Unknown Building",
-        ])
-        : []
-    ).entries()
+            loc.building?._id ?? `unknown-${loc.unitNo}`,
+            loc.building?.buildingName ?? "Unknown Building",
+          ])
+        : [],
+    ).entries(),
   );
 
   const { mutate: assignAsset, isPending: isAssigning } = useMutation({
@@ -118,11 +118,11 @@ const AssignAssets = () => {
       setOpenModal(false);
       reset();
     },
-        onError: (error) => {
+    onError: (error) => {
       toast.error(
         error?.response?.data?.message ||
           error?.message ||
-          "Failed to assign asset"
+          "Failed to assign asset",
       );
     },
   });
@@ -141,7 +141,7 @@ const AssignAssets = () => {
   const uniqueDepartments = Array.from(departmentMap.values());
 
   const departmentEmployees = employees.filter((item) =>
-    item.departments?.some((dept) => dept._id === selectedDepartment)
+    item.departments?.some((dept) => dept._id === selectedDepartment),
   );
   //---------------------------------------Data processing----------------------------------------------------//
   //-----------------------Event handlers----------------------//
@@ -212,19 +212,22 @@ const AssignAssets = () => {
   const tableData = isAssetsListPending
     ? []
     : assetsList
-      .filter((item) => {
-        const normalizedStatus = String(item?.status ?? "").trim().toLowerCase();
-        if (normalizedStatus) return normalizedStatus === "active";
-        return item?.isActive === true;
-      })
-      .map((item, index) => ({
-        ...item,
-        srNo: index + 1,
-        department: item?.department?.name,
-        subCategory: item?.subCategory?.subCategoryName,
-        isAssigned:
-          item?.assignmentState || (item?.isAssigned ? "Assigned" : "Available"),
-      }));
+        .filter((item) => {
+          const normalizedStatus = String(item?.status ?? "")
+            .trim()
+            .toLowerCase();
+          if (normalizedStatus) return normalizedStatus === "active";
+          return item?.isActive === true;
+        })
+        .map((item, index) => ({
+          ...item,
+          srNo: index + 1,
+          department: item?.department?.name,
+          subCategory: item?.subCategory?.subCategoryName,
+          isAssigned:
+            item?.assignmentState ||
+            (item?.isAssigned ? "Assigned" : "Available"),
+        }));
 
   //-----------------------Table Data----------------------//
 
@@ -258,13 +261,13 @@ const AssignAssets = () => {
               title={"Asset Type"}
               detail={selectedAsset?.assetType || "N/A"}
             />
-             <DetalisFormatted
+            <DetalisFormatted
               title={"Secondary ID"}
               detail={selectedAsset?.secondaryId || "N/A"}
             />
             <DetalisFormatted
               title={"Department Asset ID"}
-              detail={selectedAsset?.departmentAssetId || "N/A"}
+              detail={selectedAsset?.secondaryId || "N/A"}
             />
             <DetalisFormatted
               title={"Brand"}
@@ -286,7 +289,7 @@ const AssignAssets = () => {
               title={"Ownership Type"}
               detail={selectedAsset?.ownershipType || "N/A"}
             />
-             <DetalisFormatted
+            <DetalisFormatted
               title={"Rented Months"}
               detail={selectedAsset?.rentedMonths ?? "N/A"}
             />
@@ -300,9 +303,8 @@ const AssignAssets = () => {
             />
             <DetalisFormatted
               title={"Price"}
-             // detail={inrFormat(selectedAsset?.price)}
+              // detail={inrFormat(selectedAsset?.price)}
               detail={`INR ${inrFormat(selectedAsset?.price)}`}
-
             />
             <DetalisFormatted
               title={"Purchase Date"}
@@ -340,7 +342,7 @@ const AssignAssets = () => {
               title={"Tangable"}
               detail={selectedAsset?.tangable ? "Yes" : "No"}
             />
-             <DetalisFormatted
+            <DetalisFormatted
               title={"Damaged"}
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}
             />
@@ -463,7 +465,7 @@ const AssignAssets = () => {
                     .filter(
                       (unit) =>
                         unit.building &&
-                        unit.building.buildingName === selectedLocation
+                        unit.building.buildingName === selectedLocation,
                     )
                     .map((unit) => (
                       <MenuItem key={unit._id} value={unit._id}>

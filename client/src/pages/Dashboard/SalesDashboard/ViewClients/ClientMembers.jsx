@@ -114,6 +114,7 @@ const ClientMembers = () => {
             ...member,
             isActive: variables.isActive,
             status: variables.isActive ? "Active" : "Inactive",
+            biometricStatus: response?.data?.biometricStatus || member.biometricStatus,
           };
         }),
       );

@@ -15,9 +15,15 @@ import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 
-const BIOMETRIC_OPTIONS = ["Pending", "Approved"];
+const BIOMETRIC_OPTIONS = ["Pending", "Approved", "Revoke"];
 
 const getMemberId = (member) => member?._id || member?.id || member?.employeeName;
+const normalizeBiometricStatus = (status) =>
+    String(status || "Pending").toLowerCase() === "approved"
+        ? "Approved"
+        : String(status || "Pending").toLowerCase() === "revoke"
+            ? "Revoke"
+            : "Pending";
 
 const BiometricAccessMembers = () => {
     const axios = useAxiosPrivate();
@@ -82,10 +88,7 @@ const BiometricAccessMembers = () => {
             email: member.email || "",
             phone: member.mobileNo || member.phone || "",
             dob: member.dob && dayjs(member.dob).isValid() ? dayjs(member.dob) : null,
-            biometricStatus:
-                member.biometricStatus === "approved" || member.biometricStatus === "Approved"
-                    ? "Approved"
-                    : "Pending",
+              biometricStatus: normalizeBiometricStatus(member.biometricStatus),
         });
         setOpenEditModal(true);
     };
@@ -100,7 +103,14 @@ const BiometricAccessMembers = () => {
             setMembers((prev) =>
                 prev.map((member) =>
                     getMemberId(member) === variables.memberId
-                        ? { ...member, ...(updatedMember || {}), biometricStatus: variables.payload.biometricStatus }
+                       ? {
+                            ...member,
+                            isActive: variables.isActive,
+                            status: variables.isActive ? "Active" : "Inactive",
+                            biometricStatus: normalizeBiometricStatus(
+                                response?.data?.biometricStatus,
+                            ),
+                        }
                         : member,
                 ),
             );
@@ -195,10 +205,7 @@ const BiometricAccessMembers = () => {
                 phone: item.mobileNo || item.phone || "-",
                 status:
                     typeof item?.isActive === "boolean" ? item.isActive : item?.status === "Active",
-                biometricStatus:
-                    item.biometricStatus === "approved" || item.biometricStatus === "Approved"
-                        ? "Approved"
-                        : "Pending",
+                  biometricStatus: normalizeBiometricStatus(item.biometricStatus),
             })),
         [members],
     );
@@ -217,6 +224,7 @@ const BiometricAccessMembers = () => {
                 const palette = {
                     Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
                     Approved: { backgroundColor: "#D4F8D4", color: "#0A7A0A" },
+                    Revoke: { backgroundColor: "#FDE2E1", color: "#B42318" },
                 };
                 const { backgroundColor, color } = palette[status] || palette.Pending;
                 return <Chip label={status} style={{ backgroundColor, color }} />;
@@ -254,9 +262,10 @@ const BiometricAccessMembers = () => {
     ];
 
     return (
-        <div>
+        <div className="p-4">
+               
             <div className="w-full">
-                <PageFrame>
+                 <PageFrame>
                     <AgTable
                         search
                         searchColumn="Email"
@@ -264,8 +273,9 @@ const BiometricAccessMembers = () => {
                         data={memberData}
                         columns={columns}
                     />
-                </PageFrame>
+                     </PageFrame>
             </div>
+               
 
             <MuiModal
                 open={openEditModal}

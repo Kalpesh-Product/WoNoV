@@ -21,7 +21,6 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import useAuth from "../../hooks/useAuth";
 
 const ManageVisitors = () => {
-
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [modalMode, setModalMode] = useState("view");
@@ -37,7 +36,7 @@ const ManageVisitors = () => {
     },
   });
 
-const { data: unitsData = [] } = useQuery({
+  const { data: unitsData = [] } = useQuery({
     queryKey: ["unitsData"],
     queryFn: async () => {
       try {
@@ -108,17 +107,17 @@ const { data: unitsData = [] } = useQuery({
     const combinedCheckout =
       checkInDate && checkOutRaw
         ? checkInDate
-          .hour(checkOutRaw.hour())
-          .minute(checkOutRaw.minute())
-          .second(checkOutRaw.second())
-          .millisecond(checkOutRaw.millisecond())
+            .hour(checkOutRaw.hour())
+            .minute(checkOutRaw.minute())
+            .second(checkOutRaw.second())
+            .millisecond(checkOutRaw.millisecond())
         : checkOutRaw;
 
     const checkOutByName = auth?.user
       ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim() ||
-      auth.user.name ||
-      auth.user.email ||
-      "Unknown User"
+        auth.user.name ||
+        auth.user.email ||
+        "Unknown User"
       : "-";
 
     mutate({
@@ -196,6 +195,13 @@ const { data: unitsData = [] } = useQuery({
     return "N/A";
   };
 
+  const hasRole = (record, role) => {
+    const roles = Array.isArray(record?.visitorRoles)
+      ? record.visitorRoles
+      : [];
+    return roles.includes(role) || record?.visitorFlag === role;
+  };
+
   return (
     <div>
       <PageFrame>
@@ -204,36 +210,39 @@ const { data: unitsData = [] } = useQuery({
           search
           tableTitle="Visitors Today"
           data={visitorsData
-            .filter((m) => m.visitorFlag !== "Client")
-            .map((item, index) => ({
-              srNo: index + 1,
-              mongoId: item._id,
-              firstName: item.firstName,
-              lastName: item.lastName,
-              name: `${item.firstName} ${item.lastName}`,
-              email: item.email,
-              visitorType: item.visitorType,
-              visitorCompany: item.visitorCompany,
-              date: item.date,
-              phoneNumber: item.phoneNumber,
-              purposeOfVisit: item.purposeOfVisit,
-              toMeet: item.toMeet
-                ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
-                : item.clientToMeet
-                  ? item?.clientToMeet?.employeeName
-                  : "",
-               buildingName: getBuildingName(item),
-              unitName: getUnitName(item),    
-              checkIn: item.checkIn,
-              checkInBy: item.checkedInBy
-                ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
-                : "-",
-              checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-              checkOutRaw: item.checkOut,
-              checkOutBy: item.checkedOutBy
-                ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
-                : "-",
-            }))}
+            .filter((visitor) => hasRole(visitor, "Visitor"))
+            .map((item, index) => {
+              return {
+                srNo: index + 1,
+                mongoId: item._id,
+                firstName: item.firstName,
+                lastName: item.lastName,
+                name: `${item.firstName} ${item.lastName}`,
+                email: item.email,
+                visitorType: item.visitorType,
+                visitorCompany: item.visitorCompany,
+                date: item.date,
+                phoneNumber: item.phoneNumber,
+                purposeOfVisit: item.purposeOfVisit,
+                toMeet: item.toMeet
+                  ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
+                  : item.clientToMeet
+                    ? item?.clientToMeet?.employeeName
+                    : "",
+                buildingName: getBuildingName(item),
+                unitName: getUnitName(item),
+                checkIn: item.checkIn,
+                checkInBy: item.checkedInBy
+                  ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
+                  : "-",
+                checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+                checkOutRaw: item.checkOut,
+
+                checkOutBy: item.checkedOutBy
+                  ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
+                  : "-",
+              };
+            })}
           columns={visitorsColumns}
         />
       </PageFrame>
@@ -279,7 +288,7 @@ const { data: unitsData = [] } = useQuery({
                 title="To Meet"
                 detail={selectedVisitor?.toMeet}
               />
-               <DetalisFormatted
+              <DetalisFormatted
                 title="Building"
                 detail={selectedVisitor?.buildingName || "N/A"}
               />

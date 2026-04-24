@@ -53,7 +53,7 @@ const budgetSchema = new mongoose.Schema(
     },
     isExtraBudget: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     dueDate: {
       type: Date,

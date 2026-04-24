@@ -8,7 +8,7 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { MenuItem, TextField } from "@mui/material";
-import { TimePicker } from "@mui/x-date-pickers";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -191,7 +191,19 @@ const ExternalClients = ({
     mutationKey: ["visitor-payment"],
     mutationFn: async (data) => {
       const externalVisitId = data.get("externalVisitId");
-      const isDayPassPayment = filterToDayPass && Boolean(externalVisitId);
+      const paymentVisitorType =
+        data.get("visitorType") || data.get("purposeOfVisit");
+      console.log("Payment Data:", Object.fromEntries(data.entries()));
+      console.log(
+        "Payment Visitor Type (raw):",
+        data.get("visitorType"),
+        data.get("purposeOfVisit"),
+      );
+      console.log("Payment Visitor Type:", paymentVisitorType);
+      const isDayPassPayment =
+        isFullOrHalfDayPass(paymentVisitorType) && Boolean(externalVisitId);
+
+      console.log("Is Day Pass Payment:", isDayPassPayment);
       const response = await axios.patch(
         isDayPassPayment
           ? `/api/visitors/day-pass/payment/${externalVisitId}`
@@ -215,29 +227,28 @@ const ExternalClients = ({
     },
   });
   const { mutate: verifyPaymentStatus } = useMutation({
-      mutationKey: ["day-pass-payment-verification"],
-       mutationFn: async ({ externalVisitId, visitorId, status }) => {
-        const response = await axios.patch(
-          "/api/visitors/day-pass/payment-verification",
-          {
-            externalVisitId,
-             visitorId,
-            status,
-          },
-        );
-        return response.data;
-      },
-      onSuccess: (data) => {
-        queryClient.invalidateQueries({ queryKey: ["clients"] });
-        toast.success(data?.message || "Payment status updated");
-      },
-      onError: (error) => {
-        toast.error(
-          error?.response?.data?.message || "Failed to update payment status",
-        );
-      },
-    });
-
+    mutationKey: ["day-pass-payment-verification"],
+    mutationFn: async ({ externalVisitId, visitorId, status }) => {
+      const response = await axios.patch(
+        "/api/visitors/day-pass/payment-verification",
+        {
+          externalVisitId,
+          visitorId,
+          status,
+        },
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(data?.message || "Payment status updated");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to update payment status",
+      );
+    },
+  });
 
   const paymentModes = [
     "UPI",
@@ -253,8 +264,37 @@ const ExternalClients = ({
     if (!visitorType) return false;
     return String(visitorType).toLowerCase().includes("day pass");
   };
-const normalizeVisitorType = (value) => {
-    const normalized = String(value || "").trim().toLowerCase();
+
+  const isFullOrHalfDayPass = (value) => {
+    const normalizedValue = normalizeVisitorType(value);
+    return (
+      normalizedValue === "Full-Day Pass" || normalizedValue === "Half-Day Pass"
+    );
+  };
+
+  const hasRole = (record, role) => {
+    const roles = Array.isArray(record?.visitorRoles)
+      ? record.visitorRoles
+      : [];
+    return roles.includes(role) || record?.visitorFlag === role;
+  };
+
+  const getLatestVisitByRole = (visits = [], role) => {
+    if (!Array.isArray(visits) || visits.length === 0) return null;
+    return (
+      visits.find((visit) => {
+        const visitRoles = Array.isArray(visit?.visitorRoles)
+          ? visit.visitorRoles
+          : [];
+        return visit?.visitorFlag === role || visitRoles.includes(role);
+      }) || null
+    );
+  };
+
+  const normalizeVisitorType = (value) => {
+    const normalized = String(value || "")
+      .trim()
+      .toLowerCase();
     if (normalized === "full day pass" || normalized === "full-day pass") {
       return "Full-Day Pass";
     }
@@ -316,7 +356,7 @@ const normalizeVisitorType = (value) => {
     return "N/A";
   };
   const handleVerifyPayment = (rowData, status) => {
-     if (!rowData?.latestExternalVisitId && !rowData?.mongoId) {
+    if (!rowData?.latestExternalVisitId && !rowData?.mongoId) {
       toast.error("No day-pass visit record available for verification");
       return;
     }
@@ -480,7 +520,10 @@ const normalizeVisitorType = (value) => {
       setValue("email", selectedVisitor.email || "");
       setValue("phoneNumber", selectedVisitor.phoneNumber || "");
       setValue("purposeOfVisit", selectedVisitor.purposeOfVisit || "");
-      setValue("dateOfVisit", selectedVisitor.dateOfVisit || "");
+      setValue(
+        "dateOfVisit",
+        selectedVisitor.dateOfVisit ? dayjs(selectedVisitor.dateOfVisit) : null,
+      );
       setValue("checkInRaw", selectedVisitor.checkInRaw || "");
       setValue("checkInBy", selectedVisitor.checkInBy || "");
 
@@ -539,7 +582,9 @@ const normalizeVisitorType = (value) => {
         name: `${data.firstName} ${data.lastName}`,
         email: data.email,
         phoneNumber: data.phoneNumber,
-        dateOfVisit: data.dateOfVisit,
+        dateOfVisit: data.dateOfVisit
+          ? dayjs(data.dateOfVisit).toISOString()
+          : null,
         purposeOfVisit: data.purposeOfVisit,
         // checkOut: data.checkOutRaw
         //   ? dayjs(data.checkOutRaw).toISOString()
@@ -628,25 +673,20 @@ const normalizeVisitorType = (value) => {
           dateColumn={"checkIn"}
           data={[
             ...visitorsData
-
-              .filter((m) => m.visitorFlag === "Client")
+              .filter((visitor) => hasRole(visitor, "Client"))
               .map((item, index) => {
-                const latestVisit = item?.externalVisits?.[0] || null;
-                const latestCheckInBy = latestVisit?.checkedInBy;
-                const latestCheckOutBy = latestVisit?.checkedOutBy;
+                const latestExternalVisitId =
+                  Array.isArray(item?.externalVisits) &&
+                  item.externalVisits.length > 0
+                    ? item.externalVisits[item.externalVisits.length - 1]
+                        ?._id || null
+                    : null;
+
                 const checkInByName =
-                  latestCheckInBy && typeof latestCheckInBy === "object"
-                    ? `${latestCheckInBy.firstName || ""} ${latestCheckInBy.lastName || ""}`.trim()
-                    : "";
-                const checkOutByName =
-                  latestCheckOutBy && typeof latestCheckOutBy === "object"
-                    ? `${latestCheckOutBy.firstName || ""} ${latestCheckOutBy.lastName || ""}`.trim()
-                    : "";
-                const fallbackCheckInBy =
                   item?.checkedInBy && typeof item.checkedInBy === "object"
                     ? `${item.checkedInBy.firstName || ""} ${item.checkedInBy.lastName || ""}`.trim()
                     : "";
-                const fallbackCheckOutBy =
+                const checkOutByName =
                   item?.checkedOutBy && typeof item.checkedOutBy === "object"
                     ? `${item.checkedOutBy.firstName || ""} ${item.checkedOutBy.lastName || ""}`.trim()
                     : "";
@@ -654,79 +694,53 @@ const normalizeVisitorType = (value) => {
                 return {
                   srNo: index + 1,
                   mongoId: item._id,
-                  latestExternalVisitId: latestVisit?._id || null,
+                  latestExternalVisitId,
                   firstName: item.firstName,
                   lastName: item.lastName,
                   name: `${item.firstName} ${item.lastName}`,
                   address: item.address,
                   phoneNumber: item.phoneNumber,
-                  dateOfVisit: latestVisit?.dateOfVisit || item.dateOfVisit,
+                  dateOfVisit: item.dateOfVisit,
                   email: item.email,
-                  // purposeOfVisit:
-                  //   latestVisit?.visitorType || item.purposeOfVisit,
-                  // purposeOfVisit: item.purposeOfVisit || "-",
-                   // purposeOfVisit: item.purposeOfVisit || "-",
-                   purposeOfVisit: item.purposeOfVisit || "-",
+                  purposeOfVisit: item.purposeOfVisit || "-",
                   visitorType: normalizeVisitorType(
-                    latestVisit?.visitorType || item?.visitorType || item?.purposeOfVisit,
+                    item?.visitorType || item?.purposeOfVisit,
                   ),
                   buildingName: getBuildingName(item),
                   unitName: getUnitName(item),
                   toMeet: !item?.toMeet
                     ? null
                     : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
-                  checkInRaw: latestVisit?.checkIn || item.checkIn,
-                  checkInBy: checkInByName || fallbackCheckInBy || "-",
-                  checkOutRaw: latestVisit?.checkOut ?? item.checkOut,
-                  checkOutBy: checkOutByName || fallbackCheckOutBy || "-",
-                  checkIn: latestVisit?.checkIn || item.checkIn,
-                  checkOut: latestVisit?.checkOut
-                    ? humanTime(latestVisit.checkOut)
-                    : item.checkOut
-                      ? humanTime(item.checkOut)
-                      : "",
+                  checkInRaw: item.checkIn,
+                  checkInBy: checkInByName || "-",
+                  checkOutRaw: item.checkOut,
+                  checkOutBy: checkOutByName || "-",
+                  checkIn: item.checkIn,
+                  checkOut: item.checkOut ? humanTime(item.checkOut) : "",
                   paymentStatus:
-                    typeof latestVisit?.paymentStatus === "boolean"
-                      ? latestVisit.paymentStatus
+                    typeof item.paymentStatus === "string"
+                      ? item.paymentStatus
+                      : item.paymentStatus === true
                         ? "Paid"
-                        : "Unpaid"
-                      : typeof item.paymentStatus === "string"
-                        ? item.paymentStatus
-                        : item.paymentStatus === true
-                          ? "Paid"
-                          : "Unpaid",
-                  paymentAmount: latestVisit?.totalAmount
-                    ? inrFormat(latestVisit.totalAmount)
-                    : item.totalAmount
-                      ? inrFormat(item.totalAmount)
-                      : 0,
-                  rawPaymentAmount: latestVisit?.amount ?? item.amount ?? 0,
-                  gstAmount: latestVisit?.gstAmount ?? item.gstAmount ?? 0,
-                  discountAmount: latestVisit?.discount ?? item.discount ?? 0,
-                  discountPercentage:
-                    latestVisit?.discountPercentage ??
-                    item.discountPercentage ??
-                    0,
-                  finalAmount:
-                    latestVisit?.totalAmount ?? item.totalAmount ?? 0,
-                  paymentMode:
-                    latestVisit?.paymentMode || item.paymentMode || "N/A",
-                  // paymentVerification: item.paymentVerification || "N/A",
-                   paymentVerification:
-                    latestVisit?.paymentVerification ||
-                    item.paymentVerification ||
-                    "Pending",
-                  paymentDate: latestVisit?.updatedAt || item.updatedAt || null,
-                  paymentProof:
-                    latestVisit?.paymentProof?.url ||
-                    item?.paymentProof?.url ||
-                    "",
+                        : "Unpaid",
+                  paymentAmount: item.totalAmount
+                    ? inrFormat(item.totalAmount)
+                    : 0,
+                  rawPaymentAmount: item.amount ?? 0,
+                  gstAmount: item.gstAmount ?? 0,
+                  discountAmount: item.discount ?? 0,
+                  discountPercentage: item.discountPercentage ?? 0,
+                  finalAmount: item.totalAmount ?? 0,
+                  paymentMode: item.paymentMode || "N/A",
+                  paymentVerification: item.paymentVerification || "Pending",
+                  paymentDate: item.updatedAt || null,
+                  paymentProof: item?.paymentProof?.url || "",
                   meetingId: item?.meeting?._id || null,
                   registeredClientCompany:
                     item?.registeredClientCompany || "N/A",
                   brandName: item?.brandName || "N/A",
                   visitorCompany: item.visitorCompany || "N/A",
-                 // visitorType: latestVisit?.visitorType || item.visitorType,
+                  // visitorType: latestVisit?.visitorType || item.visitorType,
                   gender: item?.gender || "N/A",
                   state: item?.state || item?.hoState || "N/A",
                   city: item?.city || item?.hoCity || "N/A",
@@ -739,7 +753,7 @@ const normalizeVisitorType = (value) => {
                   idNumber: item?.idProof?.idNumber || "N/A",
                   otherFile: item?.otherFile?.link || "",
                 };
-               })
+              })
               .filter((item) =>
                 filterToDayPass
                   ? isDayPassVisitor(item?.purposeOfVisit) ||
@@ -984,18 +998,27 @@ const normalizeVisitorType = (value) => {
 
                 {/* date of visit */}
                 {isEditing ? (
-                  <Controller
-                    name="dateOfVisit"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Date of Visit"
-                        fullWidth
-                      />
-                    )}
-                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Controller
+                      name="dateOfVisit"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          {...field}
+                          format="DD-MM-YYYY"
+                          label="Date of Visit"
+                          value={field.value ? dayjs(field.value) : null}
+                          onChange={(value) => field.onChange(value)}
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              size: "small",
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </LocalizationProvider>
                 ) : (
                   <DetalisFormatted
                     title="Date of Visit"
@@ -1262,6 +1285,16 @@ const normalizeVisitorType = (value) => {
               "externalVisitId",
               paymentVisitor?.latestExternalVisitId || "",
             );
+            formData.append(
+              "visitorType",
+              paymentVisitor?.visitorType ||
+                paymentVisitor?.purposeOfVisit ||
+                "",
+            );
+            formData.append(
+              "purposeOfVisit",
+              paymentVisitor?.purposeOfVisit || "",
+            );
             formData.append("discount", data?.discountAmount || 0);
 
             if (data?.paymentProof) {
@@ -1425,7 +1458,6 @@ const normalizeVisitorType = (value) => {
 };
 
 export default ExternalClients;
-
 
 // import { useEffect, useState } from "react";
 // import AgTable from "../../components/AgTable";

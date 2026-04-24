@@ -690,7 +690,7 @@ const MeetingDashboard = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => Math.round(val) + "%",
+      formatter: (val) => val.toFixed(1) + "%",
       style: {
         fontSize: "11px",
         colors: ["#ffff"],
@@ -791,18 +791,37 @@ const MeetingDashboard = () => {
         const unaccounted = actualHours - stcHours - dtcHours;
 
         return `
-    <div style="padding: 8px 12px; font-family: Poppins-Regular; font-size: 12px; line-height: 1.8;">
-      <div style="font-weight: 600; margin-bottom: 4px;">Month: ${monthLabel}</div>
-      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> Total Available Hours: <b>${totalAvailableHours.toFixed(0)} hrs</b></div>
-      <div style="display:flex; align-items:center; gap:6px;">
-        <span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> Total Booked Hours: <b>${actualHours.toFixed(1)} hrs</b>
-      </div>
-      
-      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> STC: <b>${stcHours.toFixed(1)} hrs</b>  </div>
-      <div><span style="width:10px;height:10px;border-radius:50%;background:#4a90d9;display:inline-block;"></span> DTC: <b>${dtcHours.toFixed(1)} hrs</b> </div>
-
+  <div style="padding: 8px 12px; font-family: Poppins-Regular; font-size: 12px; line-height: 1.8;">
+    
+    <!-- ✅ Replace "Month: Apr-26" with utilization % -->
+    <div style="display:flex; justify-content:space-between; gap:24px;">
+    <span><b>${(((stcHours + dtcHours) / totalAvailableHours) * 100).toFixed(1)}%</b></span>
+      <span style="color:#555;">Utilization</span>
     </div>
-  `;
+<hr/>
+    <!-- ✅ Numbers on left, labels on right -->
+    <div style="display:flex; justify-content:space-between; gap:24px;">
+      <span><b>${totalAvailableHours.toFixed(0)} hrs</b></span>
+      <span style="color:#555;">Total Monthly Hours</span>
+    </div>
+    <hr/>
+    <div style="display:flex; justify-content:space-between; gap:24px;">
+      <span><b>${actualHours.toFixed(1)} hrs</b></span>
+      <span style="color:#555;">Total Consumed Hours</span>
+    </div>
+    <hr/>
+    <div style="display:flex; justify-content:space-between; gap:24px;">
+      <span><b>${stcHours.toFixed(1)} hrs</b></span>
+      <span style="color:#555;">STC</span>
+    </div>
+    <hr/>
+    <div style="display:flex; justify-content:space-between; gap:24px;">
+      <span><b>${dtcHours.toFixed(1)} hrs</b></span>
+      <span style="color:#555;">DTC</span>
+    </div>
+
+  </div>
+`;
       },
       x: { show: false },
     },
@@ -813,7 +832,12 @@ const MeetingDashboard = () => {
       dayjs(meeting.date).isValid() &&
       dayjs(meeting.date).isSame(currentMonth, "month"),
   );
-
+const cancelledMeetingsInCurrentMonthCount = meetingsData.filter(
+    (meeting) =>
+      meeting.meetingStatus === "Cancelled" &&
+      dayjs(meeting.date).isValid() &&
+      dayjs(meeting.date).isSame(currentMonth, "month"),
+  ).length;
   const bookedHours = meetingsInCurrentMonth.reduce((acc, room) => {
     const name = room.roomName;
     const hours = parseInt(room.duration) / 60 || 0;
@@ -1161,6 +1185,7 @@ const MeetingDashboard = () => {
         .length,
       description: "Guest Bookings",
       route: "reports",
+      onClick: () => navigate("reports?source=guest-bookings"), 
       permission: PERMISSIONS.MEETINGS_GUEST_BOOKINGS.value,
     },
     {
@@ -1184,15 +1209,17 @@ const MeetingDashboard = () => {
     {
       key: "hoursCancelled",
       title: "Total",
-      data:
-        meetingsData
-          .filter((item) => item.meetingStatus === "Cancelled")
-          .reduce(
-            (sum, item) => sum + parseInt(item.duration.replace("m", "")),
-            0,
-          ) / 60,
+       data: cancelledMeetingsInCurrentMonthCount || 0,
+      // data:
+      //   meetingsData
+      //     .filter((item) => item.meetingStatus === "Cancelled")
+      //     .reduce(
+      //       (sum, item) => sum + parseInt(item.duration.replace("m", "")),
+      //       0,
+      //     ) / 60,
       description: "Hours Cancelled",
       route: "reports",
+      onClick: () => navigate("reports?source=cancelled"),
       permission: PERMISSIONS.MEETINGS_HOURS_CANCELLED.value,
     },
   ];
