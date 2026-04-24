@@ -211,6 +211,8 @@ const ManageVisitors = () => {
 
     const getVisitTimestamp = (visit) => {
       const dateValue =
+        visit?.scheduledDate ||
+        visit?.scheduledStartTime ||
         visit?.checkIn ||
         visit?.dateOfVisit ||
         visit?.createdAt ||
@@ -265,7 +267,10 @@ const ManageVisitors = () => {
                   latestVisitorVisit?.visitorType || item.visitorType,
                 visitorCompany:
                   latestVisitorVisit?.visitorCompany || item.visitorCompany,
-                date: latestVisitorVisit?.dateOfVisit || item.date,
+                date:
+                  latestVisitorVisit?.dateOfVisit ||
+                  latestVisitorVisit?.scheduledDate ||
+                  item.date,
                 phoneNumber: item.phoneNumber,
                 purposeOfVisit:
                   latestVisitorVisit?.purposeOfVisit || item.purposeOfVisit,

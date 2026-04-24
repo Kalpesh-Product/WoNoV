@@ -673,36 +673,20 @@ const ExternalClients = ({
           dateColumn={"checkIn"}
           data={[
             ...visitorsData
-
               .filter((visitor) => hasRole(visitor, "Client"))
               .map((item, index) => {
-                const latestVisit =
+                const latestExternalVisitId =
                   Array.isArray(item?.externalVisits) &&
                   item.externalVisits.length > 0
-                    ? [...item.externalVisits]
-                        .reverse()
-                        .find(
-                          (visit) =>
-                            visit?.visitorType === "Full-Day Pass" ||
-                            visit?.visitorType === "Half-Day Pass",
-                        ) || null
+                    ? item.externalVisits[item.externalVisits.length - 1]
+                        ?._id || null
                     : null;
 
-                const latestCheckInBy = latestVisit?.checkedInBy;
-                const latestCheckOutBy = latestVisit?.checkedOutBy;
                 const checkInByName =
-                  latestCheckInBy && typeof latestCheckInBy === "object"
-                    ? `${latestCheckInBy.firstName || ""} ${latestCheckInBy.lastName || ""}`.trim()
-                    : "";
-                const checkOutByName =
-                  latestCheckOutBy && typeof latestCheckOutBy === "object"
-                    ? `${latestCheckOutBy.firstName || ""} ${latestCheckOutBy.lastName || ""}`.trim()
-                    : "";
-                const fallbackCheckInBy =
                   item?.checkedInBy && typeof item.checkedInBy === "object"
                     ? `${item.checkedInBy.firstName || ""} ${item.checkedInBy.lastName || ""}`.trim()
                     : "";
-                const fallbackCheckOutBy =
+                const checkOutByName =
                   item?.checkedOutBy && typeof item.checkedOutBy === "object"
                     ? `${item.checkedOutBy.firstName || ""} ${item.checkedOutBy.lastName || ""}`.trim()
                     : "";
@@ -710,75 +694,47 @@ const ExternalClients = ({
                 return {
                   srNo: index + 1,
                   mongoId: item._id,
-                  latestExternalVisitId: latestVisit?._id || null,
+                  latestExternalVisitId,
                   firstName: item.firstName,
                   lastName: item.lastName,
                   name: `${item.firstName} ${item.lastName}`,
                   address: item.address,
                   phoneNumber: item.phoneNumber,
-                  dateOfVisit: latestVisit?.dateOfVisit || item.dateOfVisit,
+                  dateOfVisit: item.dateOfVisit,
                   email: item.email,
-                  // purposeOfVisit:
-                  //   latestVisit?.visitorType || item.purposeOfVisit,
-                  // purposeOfVisit: item.purposeOfVisit || "-",
-                  // purposeOfVisit: item.purposeOfVisit || "-",
                   purposeOfVisit: item.purposeOfVisit || "-",
                   visitorType: normalizeVisitorType(
-                    latestVisit?.visitorType ||
-                      item?.visitorType ||
-                      item?.purposeOfVisit,
+                    item?.visitorType || item?.purposeOfVisit,
                   ),
                   buildingName: getBuildingName(item),
                   unitName: getUnitName(item),
                   toMeet: !item?.toMeet
                     ? null
                     : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
-                  checkInRaw: latestVisit?.checkIn || item.checkIn,
-                  checkInBy: checkInByName || fallbackCheckInBy || "-",
-                  checkOutRaw: latestVisit?.checkOut ?? item.checkOut,
-                  checkOutBy: checkOutByName || fallbackCheckOutBy || "-",
-                  checkIn: latestVisit?.checkIn || item.checkIn,
-                  checkOut: latestVisit?.checkOut
-                    ? humanTime(latestVisit.checkOut)
-                    : item.checkOut
-                      ? humanTime(item.checkOut)
-                      : "",
+                  checkInRaw: item.checkIn,
+                  checkInBy: checkInByName || "-",
+                  checkOutRaw: item.checkOut,
+                  checkOutBy: checkOutByName || "-",
+                  checkIn: item.checkIn,
+                  checkOut: item.checkOut ? humanTime(item.checkOut) : "",
                   paymentStatus:
-                    typeof latestVisit?.paymentStatus === "boolean"
-                      ? latestVisit.paymentStatus
+                    typeof item.paymentStatus === "string"
+                      ? item.paymentStatus
+                      : item.paymentStatus === true
                         ? "Paid"
-                        : "Unpaid"
-                      : typeof item.paymentStatus === "string"
-                        ? item.paymentStatus
-                        : item.paymentStatus === true
-                          ? "Paid"
-                          : "Unpaid",
-                  paymentAmount: latestVisit?.totalAmount
-                    ? inrFormat(latestVisit.totalAmount)
-                    : item.totalAmount
-                      ? inrFormat(item.totalAmount)
-                      : 0,
-                  rawPaymentAmount: latestVisit?.amount ?? item.amount ?? 0,
-                  gstAmount: latestVisit?.gstAmount ?? item.gstAmount ?? 0,
-                  discountAmount: latestVisit?.discount ?? item.discount ?? 0,
-                  discountPercentage:
-                    latestVisit?.discountPercentage ??
-                    item.discountPercentage ??
-                    0,
-                  finalAmount:
-                    latestVisit?.totalAmount ?? item.totalAmount ?? 0,
-                  paymentMode:
-                    latestVisit?.paymentMode || item.paymentMode || "N/A",
-                  // paymentVerification: item.paymentVerification || "N/A",
-                  paymentVerification:
-                    latestVisit?.paymentVerification ||
-                    item.paymentVerification ||
-                    "Pending",
-                  paymentDate: latestVisit?.updatedAt || item.updatedAt || null,
-                  paymentProof:
-                    latestVisit?.paymentProof?.url ||
-                    item?.paymentProof?.url ||
-                    "",
+                        : "Unpaid",
+                  paymentAmount: item.totalAmount
+                    ? inrFormat(item.totalAmount)
+                    : 0,
+                  rawPaymentAmount: item.amount ?? 0,
+                  gstAmount: item.gstAmount ?? 0,
+                  discountAmount: item.discount ?? 0,
+                  discountPercentage: item.discountPercentage ?? 0,
+                  finalAmount: item.totalAmount ?? 0,
+                  paymentMode: item.paymentMode || "N/A",
+                  paymentVerification: item.paymentVerification || "Pending",
+                  paymentDate: item.updatedAt || null,
+                  paymentProof: item?.paymentProof?.url || "",
                   meetingId: item?.meeting?._id || null,
                   registeredClientCompany:
                     item?.registeredClientCompany || "N/A",
