@@ -50,6 +50,8 @@ const ListOfAssets = () => {
     formState: { errors },
     watch,
     setValue: setAddValue,
+    setError,
+    clearErrors,
     reset,
   } = useForm({
     defaultValues: {
@@ -88,6 +90,8 @@ const ListOfAssets = () => {
     watch: editWatch,
     reset: editRequest,
     setValue,
+     setError: setEditError,
+    clearErrors: clearEditErrors,
   } = useForm({
     defaultValues: {
       departmentId: "",
@@ -232,7 +236,12 @@ const ListOfAssets = () => {
       reset();
     },
     onError: function (error) {
-      toast.error(error.message);
+      // toast.error(error.message);
+       toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to add asset",
+      );
     },
   });
   useEffect(() => {
@@ -322,7 +331,8 @@ const ListOfAssets = () => {
           typeof selectedForEdit?.isDamaged === "boolean"
             ? String(selectedForEdit.isDamaged)
             : "",
-        assetImage: null,
+        // assetImage: null,
+         assetImage: selectedForEdit?.assetImage?.url || null,
         warrantyDocument: null,
       });
     }
@@ -376,7 +386,12 @@ const ListOfAssets = () => {
       reset();
     },
     onError: function (error) {
-      toast.error(error.message);
+      // toast.error(error.message);
+        toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update asset",
+      );
     },
   });
 
@@ -998,7 +1013,21 @@ const ListOfAssets = () => {
                   <UploadFileInput
                     value={field.value}
                     label="Asset Image"
-                    onChange={field.onChange}
+                    // onChange={field.onChange}
+                    allowedExtensions={["jpeg", "jpg", "png"]}
+                    error={!!errors.assetImage}
+                    helperText={errors.assetImage?.message}
+                    onInvalidFile={() =>
+                      setError("assetImage", {
+                        type: "manual",
+                        message:
+                          "Invalid file format. Allowed formats: image/jpeg, image/png",
+                      })
+                    }
+                    onChange={(file) => {
+                      clearErrors("assetImage");
+                      field.onChange(file);
+                    }}
                   />
                 )}
               />
@@ -1335,7 +1364,22 @@ const ListOfAssets = () => {
                   id="asset-image"
                   value={field.value}
                   label="Asset Image"
-                  onChange={field.onChange}
+                 // onChange={field.onChange}
+                   previewType="image"
+                  allowedExtensions={["jpeg", "jpg", "png"]}
+                  error={!!editErrors.assetImage}
+                  helperText={editErrors.assetImage?.message}
+                  onInvalidFile={() =>
+                    setEditError("assetImage", {
+                      type: "manual",
+                      message:
+                        "Invalid file format. Allowed formats: image/jpeg, image/png",
+                    })
+                  }
+                  onChange={(file) => {
+                    clearEditErrors("assetImage");
+                    field.onChange(file);
+                  }}
                 />
               )}
             />

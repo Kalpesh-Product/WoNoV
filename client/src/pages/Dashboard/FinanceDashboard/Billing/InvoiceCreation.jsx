@@ -48,7 +48,7 @@ const InvoiceCreation = () => {
       invoiceFile: null,
       client: "",
       date: null,
-      status: false,
+      //status: false,
     },
   });
 
@@ -169,6 +169,7 @@ const InvoiceCreation = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => (
         <ThreeDotMenu
           rowId={params.data.id}
@@ -330,7 +331,7 @@ const InvoiceCreation = () => {
               )}
             />
 
-            <Controller
+            {/* <Controller
               name="status"
               control={control}
               render={({ field }) => (
@@ -342,7 +343,7 @@ const InvoiceCreation = () => {
                   value={field.value ? "Paid" : "Unpaid"}
                 />
               )}
-            />
+            /> */}
 
             <PrimaryButton
               disabled={isSubmitPending}

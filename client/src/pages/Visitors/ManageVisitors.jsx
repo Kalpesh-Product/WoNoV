@@ -202,43 +202,6 @@ const ManageVisitors = () => {
     return roles.includes(role) || record?.visitorFlag === role;
   };
 
-  const getLatestVisitByRole = (visits = [], role) => {
-    if (!Array.isArray(visits) || visits.length === 0) return null;
-    const normalizeVisitorType = (value) =>
-      String(value || "")
-        .toLowerCase()
-        .replace(/[^a-z]/g, "");
-
-    const getVisitTimestamp = (visit) => {
-      const dateValue =
-        visit?.checkIn ||
-        visit?.dateOfVisit ||
-        visit?.createdAt ||
-        visit?.updatedAt;
-      const timestamp = new Date(dateValue || "").getTime();
-      return Number.isNaN(timestamp) ? 0 : timestamp;
-    };
-
-    const internalVisitorTypes = new Set(["walkin", "scheduled"]);
-
-    return (
-      visits
-        .filter((visit) => {
-          const visitRoles = Array.isArray(visit?.visitorRoles)
-            ? visit.visitorRoles
-            : [];
-          const isMatchingRole =
-            visit?.visitorFlag === role || visitRoles.includes(role);
-          const isInternalVisitType = internalVisitorTypes.has(
-            normalizeVisitorType(visit?.visitorType),
-          );
-
-          return isMatchingRole && isInternalVisitType;
-        })
-        .sort((a, b) => getVisitTimestamp(b) - getVisitTimestamp(a))[0] || null
-    );
-  };
-
   return (
     <div>
       <PageFrame>
@@ -249,11 +212,6 @@ const ManageVisitors = () => {
           data={visitorsData
             .filter((visitor) => hasRole(visitor, "Visitor"))
             .map((item, index) => {
-              const latestVisitorVisit = getLatestVisitByRole(
-                item?.externalVisits,
-                "Visitor",
-              );
-
               return {
                 srNo: index + 1,
                 mongoId: item._id,
@@ -261,14 +219,11 @@ const ManageVisitors = () => {
                 lastName: item.lastName,
                 name: `${item.firstName} ${item.lastName}`,
                 email: item.email,
-                visitorType:
-                  latestVisitorVisit?.visitorType || item.visitorType,
-                visitorCompany:
-                  latestVisitorVisit?.visitorCompany || item.visitorCompany,
-                date: latestVisitorVisit?.dateOfVisit || item.date,
+                visitorType: item.visitorType,
+                visitorCompany: item.visitorCompany,
+                date: item.date,
                 phoneNumber: item.phoneNumber,
-                purposeOfVisit:
-                  latestVisitorVisit?.purposeOfVisit || item.purposeOfVisit,
+                purposeOfVisit: item.purposeOfVisit,
                 toMeet: item.toMeet
                   ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
                   : item.clientToMeet
@@ -276,16 +231,13 @@ const ManageVisitors = () => {
                     : "",
                 buildingName: getBuildingName(item),
                 unitName: getUnitName(item),
-                checkIn: latestVisitorVisit?.checkIn || item.checkIn,
+                checkIn: item.checkIn,
                 checkInBy: item.checkedInBy
                   ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
                   : "-",
-                checkOut: latestVisitorVisit?.checkOut
-                  ? humanTime(latestVisitorVisit.checkOut)
-                  : item.checkOut
-                    ? humanTime(item.checkOut)
-                    : "",
-                checkOutRaw: latestVisitorVisit?.checkOut || item.checkOut,
+                checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+                checkOutRaw: item.checkOut,
+
                 checkOutBy: item.checkedOutBy
                   ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
                   : "-",

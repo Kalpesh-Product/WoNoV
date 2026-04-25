@@ -288,9 +288,12 @@ import SqWiseData from "../pages/Dashboard/FinanceDashboard/SqftWiseData/SqWiseD
 import InvoiceCreation from "../pages/Dashboard/FinanceDashboard/Billing/InvoiceCreation";
 import VoucherCreation from "../pages/Dashboard/FinanceDashboard/Billing/VoucherCreation";
 import PendingApprovals from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovals";
+import PendingApprovalsBudget from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovalsBudget";
+import DepartmentInvoiceBudget from "../pages/Dashboard/FinanceDashboard/Billing/DepartmentInvoiceBudget";
 import BillingsLayout from "../pages/Dashboard/FinanceDashboard/Billing/BillingsLayout";
 import VoucherRequest from "../pages/Dashboard/FinanceDashboard/Billing/VoucherRequest";
 import BudgetRequest from "../pages/Dashboard/FinanceDashboard/Billing/BudgetRequest";
+import BudgetHistory from "../pages/Dashboard/FinanceDashboard/Billing/BudgetHistory";
 import FinanceBudgetLayout from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudgetLayout";
 import FinanceBudget from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudget";
 import DeptWiseBudget from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudget";
@@ -827,19 +830,23 @@ export const routes = createBrowserRouter([
                             children: [
                               {
                                 path: "department-invoice-budget",
-                                element: <DepartmentInvoice />,
+                                element: <DepartmentInvoiceBudget />,
                               },
                               {
                                 path: "pending-approvals-budget",
-                                element: <PendingApprovals />,
+                                element: <PendingApprovalsBudget />,
                               },
                               {
-                                path: "voucher-history-budget",
-                                element: <VoucherCreation />,
+                              path: "budget-history",
+                                element: <BudgetHistory />,
                               },
                               {
                                 path: "pending-approvals-budget/review-request",
                                 element: <ReviewRequest />,
+                              },
+                               {
+                                path: "voucher-history-budget",
+                                element: <Navigate to="../budget-history" replace />,
                               },
                             ],
                           },

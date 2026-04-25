@@ -34,6 +34,7 @@ const ReviewRequest = () => {
   const department = usePageDepartment();
   const axios = useAxiosPrivate();
   const { control, watch, setValue, getValues, reset } = useForm({
+    mode: "onChange",
     defaultValues: {
       fSrNo: "",
       fDate: null,
@@ -124,15 +125,25 @@ const ReviewRequest = () => {
     ).entries(),
   );
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name: "particulars",
   });
   const values = watch();
+  useEffect(() => {
+    if (!Array.isArray(voucherDetails?.particulars)) return;
+
+    replace(
+      voucherDetails.particulars.map((item) => ({
+        particularName: item?.particularName || "",
+        particularAmount: Number(item?.particularAmount) || 0,
+      })),
+    );
+  }, [replace, voucherDetails?.particulars]);
 
   const onUpload = async () => {
     const values = getValues();
-    values.particulars = fields;
+   values.particulars = getValues("particulars") || fields;
 
     try {
       // Step 1: Generate the PDF Blob directly using html2pdf
@@ -413,15 +424,38 @@ const ReviewRequest = () => {
                 key={fieldName}
                 name={fieldName}
                 control={control}
-                render={({ field }) => (
+                // render={({ field }) => (
+                //   <TextField
+                //     fullWidth
+                //     size="small"
+                //     disabled={values.modeOfPayment === "Cash"}
+                //     label={fieldName
+                //       .replace(/([A-Z])/g, " $1")
+                //       .replace(/^./, (str) => str.toUpperCase())}
+                //     {...field}
+                  rules={{
+                  validate: (value) => {
+                    if (values.modeOfPayment !== "Cheque") return true;
+                    if (!value) return "Cheque No is required";
+                    if (!/^[0-9]{6,9}$/.test(value)) {
+                      return "Cheque No must be 123-456 or 123-456-789 digits";
+                    }
+                    return true;
+                  },
+                }}
+                render={({ field, fieldState }) => (
                   <TextField
+                    {...field}
                     fullWidth
                     size="small"
                     disabled={values.modeOfPayment === "Cash"}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
                     label={fieldName
                       .replace(/([A-Z])/g, " $1")
                       .replace(/^./, (str) => str.toUpperCase())}
-                    {...field}
+                    inputProps={{ maxLength: 9 }}
+                    onChange={(e) => field.onChange(e.target.value)}
                   />
                 )}
               />

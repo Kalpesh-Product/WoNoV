@@ -2,7 +2,11 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { MenuItem, TextField } from "@mui/material";
-import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import {
+  DatePicker,
+  LocalizationProvider,
+  TimePicker,
+} from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
@@ -60,6 +64,7 @@ const RepeatInternalVisitors = () => {
       toMeetCompany: "",
       department: "",
       toMeet: "",
+      scheduledDate: null,
       checkIn: null,
       checkOut: null,
     },
@@ -105,16 +110,18 @@ const RepeatInternalVisitors = () => {
     },
   });
 
-  const { data: clientMembers = [], isLoading: clientMembersIsLoading } = useQuery({
-    queryKey: ["clientMembers", selectedCompany],
-    queryFn: async () => {
-      const response = await axios.get(
-        `/api/sales/co-working-client-members?clientId=${selectedCompany}`,
-      );
-      return response.data;
-    },
-    enabled: !!selectedCompany && selectedCompany !== "6799f0cd6a01edbe1bc3fcea",
-  });
+  const { data: clientMembers = [], isLoading: clientMembersIsLoading } =
+    useQuery({
+      queryKey: ["clientMembers", selectedCompany],
+      queryFn: async () => {
+        const response = await axios.get(
+          `/api/sales/co-working-client-members?clientId=${selectedCompany}`,
+        );
+        return response.data;
+      },
+      enabled:
+        !!selectedCompany && selectedCompany !== "6799f0cd6a01edbe1bc3fcea",
+    });
 
   const departmentMap = new Map();
   employees.forEach((employee) => {
@@ -177,7 +184,10 @@ const RepeatInternalVisitors = () => {
       setValue("email", visitor.email || "");
       setValue("phoneNumber", visitor.phoneNumber || "");
       setValue("purposeOfVisit", visitor.purposeOfVisit || "");
-      setValue("checkOutRaw", visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null);
+      setValue(
+        "checkOutRaw",
+        visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null,
+      );
     }
   };
 
@@ -230,6 +240,9 @@ const RepeatInternalVisitors = () => {
           : visitor?.clientToMeet && typeof visitor.clientToMeet === "object"
             ? visitor.clientToMeet._id
             : "",
+      scheduledDate: visitor?.scheduledDate
+        ? dayjs(visitor.scheduledDate)
+        : null,
       checkIn: dayjs(),
       checkOut: null,
     });
@@ -245,7 +258,9 @@ const RepeatInternalVisitors = () => {
   };
 
   const submit = (data) => {
-    const checkInDate = selectedVisitor?.checkIn ? dayjs(selectedVisitor.checkIn) : null;
+    const checkInDate = selectedVisitor?.checkIn
+      ? dayjs(selectedVisitor.checkIn)
+      : null;
     const checkOutRaw = data.checkOutRaw ? dayjs(data.checkOutRaw) : null;
 
     const combinedCheckout =
@@ -264,7 +279,15 @@ const RepeatInternalVisitors = () => {
   };
 
   const submitRepeatVisitor = (data) => {
-    const checkIn = dayjs();
+    const isScheduledVisitor = data.visitorType === "Scheduled";
+    const parsedCheckIn = data.checkIn ? dayjs(data.checkIn) : dayjs();
+    const hasCheckIn = !!parsedCheckIn?.isValid();
+    const checkIn = hasCheckIn ? parsedCheckIn : dayjs();
+
+    if (isScheduledVisitor && !data.scheduledDate) {
+      toast.error("Scheduled date is required for scheduled visitors.");
+      return;
+    }
     const parsedCheckOut = data.checkOut ? dayjs(data.checkOut) : null;
     const hasCheckOut = !!parsedCheckOut?.isValid();
     const checkOut = hasCheckOut ? parsedCheckOut : null;
@@ -281,16 +304,18 @@ const RepeatInternalVisitors = () => {
       unit: data.unit || null,
       visitorCompany: data.visitorCompany || "",
       department:
-        data.toMeetCompany === BIZNEST_COMPANY_ID ? data.department || null : null,
+        data.toMeetCompany === BIZNEST_COMPANY_ID
+          ? data.department || null
+          : null,
       toMeetCompany: data.toMeetCompany || null,
       toMeet:
-        data.toMeetCompany === BIZNEST_COMPANY_ID
-          ? data.toMeet || null
-          : null,
+        data.toMeetCompany === BIZNEST_COMPANY_ID ? data.toMeet || null : null,
       clientToMeet:
-        data.toMeetCompany !== BIZNEST_COMPANY_ID
-          ? data.toMeet || null
-          : null,
+        data.toMeetCompany !== BIZNEST_COMPANY_ID ? data.toMeet || null : null,
+      scheduledDate: isScheduledVisitor
+        ? dayjs(data.scheduledDate).startOf("day").toISOString()
+        : null,
+      checkIn: checkIn.toISOString(),
       checkOut: hasCheckOut ? checkOut.toISOString() : null,
     });
   };
@@ -321,6 +346,14 @@ const RepeatInternalVisitors = () => {
     { field: "srNo", headerName: "Sr No" },
     { field: "name", headerName: "Name" },
     { field: "purposeOfVisit", headerName: "Purpose" },
+    {
+      field: "scheduledDate",
+      headerName: "Scheduled Date",
+      cellRenderer: ({ data }) =>
+        data?.visitorType === "Scheduled" && data?.scheduledDate
+          ? dayjs(data.scheduledDate).format("DD-MM-YYYY")
+          : "-",
+    },
     { field: "toMeet", headerName: "To Meet" },
     { field: "date", headerName: "Date of Visit" },
     {
@@ -398,6 +431,7 @@ const RepeatInternalVisitors = () => {
                 : "-",
               checkOut: item.checkOut ? humanTime(item.checkOut) : "",
               checkOutRaw: item.checkOut,
+              scheduledDate: item.scheduledDate || null,
               checkOutBy: item.checkedOutBy
                 ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
                 : "-",
@@ -406,28 +440,78 @@ const RepeatInternalVisitors = () => {
         />
       </PageFrame>
 
-      <MuiModal open={isViewEditModalOpen} onClose={closeViewEditModal} title="Visitor Details">
-        <form onSubmit={handleSubmit(submit)} className="grid grid-cols-1 gap-4">
+      <MuiModal
+        open={isViewEditModalOpen}
+        onClose={closeViewEditModal}
+        title="Visitor Details"
+      >
+        <form
+          onSubmit={handleSubmit(submit)}
+          className="grid grid-cols-1 gap-4"
+        >
           {modalMode === "view" ? (
             <>
-              <DetalisFormatted title="First Name" detail={selectedVisitor?.firstName} />
-              <DetalisFormatted title="Last Name" detail={selectedVisitor?.lastName} />
+              <DetalisFormatted
+                title="First Name"
+                detail={selectedVisitor?.firstName}
+              />
+              <DetalisFormatted
+                title="Last Name"
+                detail={selectedVisitor?.lastName}
+              />
               <DetalisFormatted title="Email" detail={selectedVisitor?.email} />
-              <DetalisFormatted title="Phone Number" detail={selectedVisitor?.phoneNumber} />
-              <DetalisFormatted title="Purpose" detail={selectedVisitor?.purposeOfVisit} />
-              <DetalisFormatted title="Visitor Type" detail={selectedVisitor?.visitorType} />
-              <DetalisFormatted title="Visitor Company" detail={selectedVisitor?.visitorCompany} />
-              <DetalisFormatted title="To Meet" detail={selectedVisitor?.toMeet} />
-              <DetalisFormatted title="Building" detail={selectedVisitor?.buildingName || "N/A"} />
-              <DetalisFormatted title="Unit" detail={selectedVisitor?.unitName || "N/A"} />
-              <DetalisFormatted title="Date of Visit" detail={selectedVisitor?.date} />
-              <DetalisFormatted title="Check In" detail={humanTime(selectedVisitor?.checkIn)} />
-              <DetalisFormatted title="Check In By" detail={selectedVisitor?.checkInBy} />
+              <DetalisFormatted
+                title="Phone Number"
+                detail={selectedVisitor?.phoneNumber}
+              />
+              <DetalisFormatted
+                title="Purpose"
+                detail={selectedVisitor?.purposeOfVisit}
+              />
+              <DetalisFormatted
+                title="Visitor Type"
+                detail={selectedVisitor?.visitorType}
+              />
+              <DetalisFormatted
+                title="Visitor Company"
+                detail={selectedVisitor?.visitorCompany}
+              />
+              <DetalisFormatted
+                title="To Meet"
+                detail={selectedVisitor?.toMeet}
+              />
+              <DetalisFormatted
+                title="Building"
+                detail={selectedVisitor?.buildingName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Unit"
+                detail={selectedVisitor?.unitName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Date of Visit"
+                detail={selectedVisitor?.date}
+              />
+              <DetalisFormatted
+                title="Check In"
+                detail={humanTime(selectedVisitor?.checkIn)}
+              />
+              <DetalisFormatted
+                title="Check In By"
+                detail={selectedVisitor?.checkInBy}
+              />
               <DetalisFormatted
                 title="Check Out"
-                detail={selectedVisitor?.checkOutRaw ? humanTime(selectedVisitor.checkOutRaw) : ""}
+                detail={
+                  selectedVisitor?.checkOutRaw
+                    ? humanTime(selectedVisitor.checkOutRaw)
+                    : ""
+                }
               />
-              <DetalisFormatted title="Check Out By" detail={selectedVisitor?.checkOutBy} />
+              <DetalisFormatted
+                title="Check Out By"
+                detail={selectedVisitor?.checkOutBy}
+              />
             </>
           ) : (
             <>
@@ -435,14 +519,24 @@ const RepeatInternalVisitors = () => {
                 name="firstName"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="First Name" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="First Name"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
                 name="lastName"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="Last Name" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="Last Name"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
@@ -456,14 +550,24 @@ const RepeatInternalVisitors = () => {
                 name="phoneNumber"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="Phone Number" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="Phone Number"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
                 name="purposeOfVisit"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="Purpose" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="Purpose"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
@@ -474,7 +578,9 @@ const RepeatInternalVisitors = () => {
                     label="Checkout Time"
                     value={field.value}
                     onChange={field.onChange}
-                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
+                    }}
                   />
                 )}
               />
@@ -488,18 +594,34 @@ const RepeatInternalVisitors = () => {
         </form>
       </MuiModal>
 
-      <MuiModal open={isRepeatModalOpen} onClose={closeRepeatModal} title="Repeat Visitor">
-        <form className="grid grid-cols-1 gap-4" onSubmit={handleRepeatSubmit(submitRepeatVisitor)}>
+      <MuiModal
+        open={isRepeatModalOpen}
+        onClose={closeRepeatModal}
+        title="Repeat Visitor"
+      >
+        <form
+          className="grid grid-cols-1 gap-4"
+          onSubmit={handleRepeatSubmit(submitRepeatVisitor)}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Controller
               name="firstName"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="First Name" size="small" disabled />}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="First Name"
+                  size="small"
+                  disabled
+                />
+              )}
             />
             <Controller
               name="lastName"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Last Name" size="small" disabled />}
+              render={({ field }) => (
+                <TextField {...field} label="Last Name" size="small" disabled />
+              )}
             />
           </div>
 
@@ -507,12 +629,21 @@ const RepeatInternalVisitors = () => {
             <Controller
               name="email"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Email" size="small" disabled />}
+              render={({ field }) => (
+                <TextField {...field} label="Email" size="small" disabled />
+              )}
             />
             <Controller
               name="phoneNumber"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Phone Number" size="small" disabled />}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Phone Number"
+                  size="small"
+                  disabled
+                />
+              )}
             />
           </div>
 
@@ -520,12 +651,21 @@ const RepeatInternalVisitors = () => {
             <Controller
               name="gender"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Gender" size="small" disabled />}
+              render={({ field }) => (
+                <TextField {...field} label="Gender" size="small" disabled />
+              )}
             />
             <Controller
               name="visitorCompany"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Visitor Company" size="small" disabled />}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Visitor Company"
+                  size="small"
+                  disabled
+                />
+              )}
             />
           </div>
 
@@ -702,7 +842,32 @@ const RepeatInternalVisitors = () => {
           </div>
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Controller
+                name="scheduledDate"
+                control={repeatControl}
+                render={({ field }) => (
+                  <DatePicker
+                    {...field}
+                    format="DD-MM-YYYY"
+                    label="Scheduled Date"
+                    disablePast
+                    disabled={watchRepeat("visitorType") !== "Scheduled"}
+                    value={
+                      watchRepeat("visitorType") !== "Scheduled"
+                        ? dayjs()
+                        : field.value
+                    }
+                    onChange={field.onChange}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                      },
+                    }}
+                  />
+                )}
+              />
               <Controller
                 name="checkIn"
                 control={repeatControl}
@@ -710,7 +875,6 @@ const RepeatInternalVisitors = () => {
                   <TimePicker
                     {...field}
                     label="Check-In Time"
-                    disabled
                     slotProps={{
                       textField: {
                         size: "small",
@@ -749,9 +913,10 @@ const RepeatInternalVisitors = () => {
                           "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
                             borderColor: "#000000",
                           },
-                          "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline": {
-                            borderColor: "#000000",
-                          },
+                          "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline":
+                            {
+                              borderColor: "#000000",
+                            },
                           "&:hover .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline":
                             {
                               borderColor: "#000000",

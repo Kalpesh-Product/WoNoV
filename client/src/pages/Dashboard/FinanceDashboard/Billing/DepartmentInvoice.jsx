@@ -7,6 +7,7 @@ import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { inrFormat } from "../../../../utils/currencyFormat";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
@@ -22,9 +23,19 @@ const DepartmentInvoice = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/budget/company-budget`);
-        return Array.isArray(response.data.allBudgets)
+         const budgets = Array.isArray(response.data.allBudgets)
           ? response.data.allBudgets
           : [];
+
+        return budgets.filter((budget) => {
+          const expenseType = String(budget.expanseType || "")
+            .trim()
+            .toLowerCase();
+          return (
+            expenseType.includes("reimbursement") ||
+            expenseType.includes("voucher")
+          );
+        });
       } catch (error) {
         console.error("Error fetching budget:", error);
         return [];
@@ -43,6 +54,7 @@ const DepartmentInvoice = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => (
         <div className="p-2 flex gap-2 items-center">
           <span
@@ -60,28 +72,46 @@ const DepartmentInvoice = () => {
 
   const mappedRows = (hrFinance || []).map((item, index) => {
     const invoice = item.invoice || {};
+    const voucher = item.voucher || {};
     const finance = item.finance || {};
     const unit = item.unit || {};
     const building = unit.building || {};
     const departmentName = item.department?.name || "-";
-
+    const particulars = Array.isArray(item.particulars) ? item.particulars : [];
+    const particularDetails = particulars.map((p, idx) => ({
+      label: `Particular ${idx + 1}`,
+      name: p?.particularName || "-",
+      amount: Number(p?.particularAmount || 0),
+    }));
     return {
       ...item,
 
       id: item._id,
+      voucherSrNo: item.srNo || "-",
       expanseName: item.expanseName || "-",
       expanseType: item.expanseType || "-",
       department: departmentName,
       unitName: unit.unitName || "-",
       unitNo: unit.unitNo || "-",
       buildingName: building.buildingName || "-",
+      particularDetails,
       dueDate: item.dueDate || "-",
       gstIn: item.gstIn || "-",
+      status: item.status || "Pending",
       isPaid: item.isPaid || "Unpaid",
+      isExtraBudget: Boolean(item.isExtraBudget),
+      preApproved: Boolean(item.preApproved),
+      emergencyApproval: Boolean(item.emergencyApproval),
+      budgetApproval: Boolean(item.budgetApproval),
+      l1Approval: Boolean(item.l1Approval),
+      invoiceAttached: Boolean(item.invoiceAttached),
+      reimbursementDate: item.reimbursementDate || null,
 
       invoiceName: invoice.name || "-",
       invoiceLink: invoice.link || "-",
       invoiceDate: invoice.date || null,
+      voucherName: voucher.name || "-",
+      voucherLink: voucher.link || "-",
 
       finance: {
         fSrNo: finance.fSrNo || "-",
@@ -109,7 +139,7 @@ const DepartmentInvoice = () => {
           dropdownColumns={["department"]}
           columns={invoiceCreationColumns}
           search
-          tableTitle="Department-Invoice"
+          tableTitle="Department-Invoice Voucher"
           dateColumn="dueDate"
           formatDate={true}
           tableHeight={450}
@@ -125,7 +155,14 @@ const DepartmentInvoice = () => {
           }}
           title="Invoice Details">
           <div className="space-y-3">
-            <div className="font-bold">Invoice Summary</div>
+            {/* <div className="font-bold">Department-Invoice Voucher Summary</div> */}
+             <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
+                 Department-Invoice Voucher Summary
+                </span>
+            <DetalisFormatted
+              title="Voucher Sr.No"
+              detail={viewDetails.voucherSrNo || "-"}
+            />    
             <DetalisFormatted
               title="Expense Name"
               detail={viewDetails.expanseName || "-"}
@@ -137,6 +174,26 @@ const DepartmentInvoice = () => {
             <DetalisFormatted
               title="Department"
               detail={viewDetails.department || "-"}
+            />
+            {/* <DetalisFormatted
+              title="Particular"
+              detail={viewDetails.particularNames || "-"}
+            /> */}
+             {Array.isArray(viewDetails.particularDetails) &&
+            viewDetails.particularDetails.length > 0 ? (
+              viewDetails.particularDetails.map((particular, index) => (
+                <DetalisFormatted
+                  key={`${particular.name}-${index}`}
+                  title={particular.label}
+                  detail={`${particular.name} — INR ${inrFormat(particular.amount || 0)}`}
+                />
+              ))
+            ) : (
+              <DetalisFormatted title="Particular" detail="-" />
+            )}
+            <DetalisFormatted
+              title="Total Amount"
+              detail={`INR ${Number(viewDetails.projectedAmount || 0).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted
               title="Unit"
@@ -162,11 +219,78 @@ const DepartmentInvoice = () => {
                   : "-"
               }
             />
+             <DetalisFormatted title="GSTIN" detail={viewDetails.gstIn || "-"} />
+            <DetalisFormatted
+              title="Approval Status"
+              detail={viewDetails.status || "Pending"}
+            />
+            <DetalisFormatted
+              title="Paid Status"
+              detail={viewDetails.isPaid || "Unpaid"}
+            />
             <DetalisFormatted
               title="Invoice Name"
               detail={viewDetails.invoiceName || "-"}
             />
-            <DetalisFormatted title="GSTIN" detail={viewDetails.gstIn || "-"} />
+             <DetalisFormatted
+              title="Extra Budget"
+              detail={viewDetails.isExtraBudget ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Pre-Approved"
+              detail={viewDetails.preApproved ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Emergency Approval"
+              detail={viewDetails.emergencyApproval ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Budget Approval"
+              detail={viewDetails.budgetApproval ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="L1 Approval"
+              detail={viewDetails.l1Approval ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Invoice Attached"
+              detail={viewDetails.invoiceAttached ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Voucher Name"
+              detail={viewDetails.voucherName || "-"}
+            />
+            <DetalisFormatted
+              title="Voucher Link"
+              detail={
+                viewDetails.voucherLink !== "-" ? (
+                  <a
+                    href={viewDetails.voucherLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline">
+                    {viewDetails.voucherName || "View Voucher"}
+                  </a>
+                ) : (
+                  "-"
+                )
+              }
+            />
+            <DetalisFormatted
+              title="Reimbursement Date"
+              detail={
+                viewDetails.reimbursementDate
+                  ? new Date(viewDetails.reimbursementDate).toLocaleDateString(
+                      "en-IN",
+                      {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      }
+                    )
+                  : "-"
+              }
+            />
             <DetalisFormatted
               title="Invoice Date"
               detail={
@@ -182,10 +306,10 @@ const DepartmentInvoice = () => {
                   : "-"
               }
             />
-            <DetalisFormatted
-              title="Status"
-              detail={viewDetails.isPaid || "Unpaid"}
-            />
+              {/* <DetalisFormatted
+                title="Status"
+                detail={viewDetails.isPaid || "Unpaid"}
+              /> */}
             <DetalisFormatted
               title="Invoice File"
               detail={
@@ -206,8 +330,8 @@ const DepartmentInvoice = () => {
             {/* Finance Details */}
             {viewDetails.finance && (
               <div className="mt-4 flex flex-col gap-4">
-                <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
-                  Finance Details
+                <span className="text-subtitle font-pmedium text-primary my-0.5 uppercase">
+                 Voucher History Finance Details
                 </span>
                 <DetalisFormatted
                   title="Finance Sr No"
@@ -216,7 +340,7 @@ const DepartmentInvoice = () => {
                 <DetalisFormatted
                   title="Mode of Payment"
                   detail={viewDetails.finance.modeOfPayment || "-"}
-                />
+                />                
                 <DetalisFormatted
                   title="Cheque No"
                   detail={viewDetails.finance.chequeNo || "-"}
@@ -263,9 +387,24 @@ const DepartmentInvoice = () => {
                       : "-"
                   }
                 />
+                 {(viewDetails.finance.particulars || []).map((p, idx) => (
+                  // <div key={idx} className="border-t pt-2">
+                    <DetalisFormatted
+                      title={`Particular ${idx + 1}`}
+                      detail={`${p.particularName || "-"} — INR ${inrFormat(p.particularAmount || 0)}`}
+                    />
+                  // </div>
+                ))}
+                 <DetalisFormatted
+                  title="Total Amount"
+                  detail={`INR ${(viewDetails.finance.particulars || []).reduce(
+                    (sum, item) => sum + Number(item?.particularAmount || 0),
+                    0
+                  )}`}
+                />
                 <DetalisFormatted
                   title="Advance Amount"
-                  detail={`₹${viewDetails.finance.advanceAmount || 0}`}
+                  detail={`INR ${inrFormat(viewDetails.finance.advanceAmount || 0)}`}
                 />
                 <DetalisFormatted
                   title="Voucher File"
@@ -283,16 +422,17 @@ const DepartmentInvoice = () => {
                     )
                   }
                 />
-                {(viewDetails.finance.particulars || []).map((p, idx) => (
-                  <div key={idx} className="border-t pt-2">
+                {/* {(viewDetails.finance.particulars || []).map((p, idx) => (
+                  // <div key={idx} className="border-t pt-2">
                     <DetalisFormatted
                       title={`Particular ${idx + 1}`}
                       detail={`${p.particularName || "-"} — ₹${
                         p.particularAmount || 0
                       }`}
                     />
-                  </div>
-                ))}
+                  // </div>
+                ))} */}
+
               </div>
             )}
           </div>
