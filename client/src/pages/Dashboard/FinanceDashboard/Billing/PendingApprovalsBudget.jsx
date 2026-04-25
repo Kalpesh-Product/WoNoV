@@ -189,7 +189,11 @@ const PendingApprovalsBudget = () => {
         <MuiModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          title={"Invoice Details"}
+         title={
+            <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
+              Pending Approvals Budget Summary
+            </span>
+          }
         >
           {modalType === "reject" && (
             <form
@@ -219,9 +223,9 @@ const PendingApprovalsBudget = () => {
 
           {modalType === "view" && selectedBudget && (
             <div className="flex flex-col gap-4">
-              <span className="text-subtitle font-pmedium text-primary my-0.5 uppercase">
+              {/* <span className="text-subtitle font-pmedium text-primary my-0.5 uppercase">
                 Pending Approvals Budget Summary
-              </span>
+              </span> */}
               {/* <div className="font-bold">Pending Approvals Budget Summary</div> */}
               {/* <DetalisFormatted title="Sr No" detail={selectedBudget.srNo} /> */}
               <DetalisFormatted
@@ -236,6 +240,10 @@ const PendingApprovalsBudget = () => {
                 title="Expense Type"
                 detail={selectedBudget.expanseType}
               />
+              <DetalisFormatted
+              title="Payment Type"
+              detail={selectedBudget.paymentType || "-"}
+            />
               <DetalisFormatted
                 title="ProjectedAmount"
                 detail={`INR ${inrFormat(selectedBudget.projectedAmount)}`}

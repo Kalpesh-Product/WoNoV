@@ -28,6 +28,7 @@ const BudgetHistory = () => {
     { field: "srNo", headerName: "Sr No", flex: 0.8 },
     { field: "expanseName", headerName: "Expense Name", flex: 1.5 },
     { field: "expanseType", headerName: "Expense Type", flex: 1.2 },
+     { field: "paymentType", headerName: "Payment Type", flex: 1.2 },
     { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1.2 },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1.2 },
     { field: "dueDate", headerName: "Due Date", flex: 1.1 },

@@ -6,6 +6,7 @@ import { Chip } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { inrFormat } from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -50,8 +51,8 @@ const DepartmentInvoiceBudget = () => {
     //{ headerName: "Invoice Name", field: "invoiceName", flex: 1 },
     // { headerName: "GSTIN", field: "gstIn", flex: 1 },
     //{ headerName: "Invoice Date", field: "invoiceDate", flex: 1 },
-    { headerName: "Projected Amount", field: "projectedAmount", flex: 1 },
-    { headerName: "Actual Amount", field: "actualAmount", flex: 1 },
+    { headerName: "Projected Amount(INR)", field: "projectedAmount", flex: 1,valueFormatter: (params) => inrFormat(params.value), },
+    { headerName: "Actual Amount(INR)", field: "actualAmount", flex: 1,valueFormatter: (params) => inrFormat(params.value), },
     { headerName: "Due Date", field: "dueDate", flex: 1 },
 
     {
@@ -141,12 +142,17 @@ const DepartmentInvoiceBudget = () => {
             setViewModal(false);
             setViewDetails(null);
           }}
-          title="Invoice Details">
+           title={
+            <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
+              Department-Invoice Budget Summary
+            </span>
+          }
+        >
           <div className="space-y-3">
             {/* <div className="font-bold">Department Invoice Budget Summary</div> */}
-              <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
+              {/* <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
                 Department-Invoice Budget Summary
-              </span>
+              </span> */}
             <DetalisFormatted
               title="Expense Name"
               detail={viewDetails.expanseName || "-"}
@@ -160,12 +166,16 @@ const DepartmentInvoiceBudget = () => {
               detail={viewDetails.department || "-"}
             />
             <DetalisFormatted
+              title="Payment Type"
+              detail={viewDetails.paymentType || "-"}
+            />
+            <DetalisFormatted
               title="Projected Amount"
-              detail={`₹${(viewDetails.projectedAmount || 0).toLocaleString()}`}
+              detail={`INR ${(viewDetails.projectedAmount || 0).toLocaleString()}`}
             />
             <DetalisFormatted
               title="Actual Amount"
-              detail={`₹${(viewDetails.actualAmount || 0).toLocaleString()}`}
+              detail={`INR ${(viewDetails.actualAmount || 0).toLocaleString()}`}
             />
             <DetalisFormatted
               title="Unit"
