@@ -58,6 +58,7 @@ const VoucherCreation = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => (
         <div className="p-2 flex gap-2 hover:bg-gray-300 rounded-full w-fit">
           <span
@@ -117,12 +118,69 @@ const VoucherCreation = () => {
           title="Voucher Finance Details"
         >
           <div className="space-y-3">
+            <span className="text-subtitle font-pmedium text-primary my-0.5 uppercase">
+                 Voucher History Finance Details
+                </span>
+
+             {(() => {
+              const particulars = Array.isArray(viewDetails.financeParticulars)
+                ? viewDetails.financeParticulars
+                : [];
+              const particularsTotal = particulars.reduce(
+                (sum, item) => sum + Number(item?.particularAmount || 0),
+                0
+              );
+
+              return (
+                <>     
             <DetalisFormatted title="Sr No" detail={viewDetails.srNo || "-"} />
             <DetalisFormatted
               title="Mode of Payment"
               detail={viewDetails.modeOfPayment}
             />
-            <DetalisFormatted title="Amount" detail={viewDetails.amount} />
+
+
+            {/* {(viewDetails.financeParticulars || []).length > 0 ? (
+              <div className="border-t pt-2">
+                <p className="text-sm font-semibold text-gray-700 mb-1">
+                  Particulars
+                </p>
+                {(viewDetails.financeParticulars || []).map((p, idx) => (
+                  <DetalisFormatted
+                    key={idx}
+                    title={`Particular ${idx + 1}`}
+                    detail={`${p.particularName || "-"} — ₹${
+                      p.particularAmount || 0
+                    }`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <DetalisFormatted title="Particulars" detail="-" />
+            )} */}
+
+
+            {(viewDetails.financeParticulars || []).length > 0 ? (
+            <>
+              {(viewDetails.financeParticulars || []).map((p, idx) => (
+                <DetalisFormatted
+                  key={idx}
+                  title={`Particular ${idx + 1}`}
+                  detail={`${p.particularName || "-"} — ₹${p.particularAmount || 0}`}
+                />
+              ))}
+            </>
+          ) : (
+            <DetalisFormatted title="Particulars" detail="-" />
+          )}
+
+           <DetalisFormatted title="Total Amount" detail={`₹${particularsTotal}`} />
+
+            {/* <DetalisFormatted title="Amount" detail={viewDetails.amount} /> */}
+             <DetalisFormatted
+                  title="Advance Amount"
+                  detail={`₹${viewDetails.finance.advanceAmount || 0}`}
+                />
             <DetalisFormatted title="Cheque No" detail={viewDetails.chequeNo} />
             <DetalisFormatted
               title="Cheque Date"
@@ -149,7 +207,7 @@ const VoucherCreation = () => {
                 )
               }
             />
-            {(viewDetails.financeParticulars || []).map((p, idx) => (
+            {/* {(viewDetails.financeParticulars || []).map((p, idx) => (
               <div key={idx} className="border-t pt-2">
                 <DetalisFormatted
                   title={`Particular ${idx + 1}`}
@@ -158,10 +216,14 @@ const VoucherCreation = () => {
                   }`}
                 />
               </div>
-            ))}
+            ))} */}
+           </>
+              );
+            })()}
           </div>
         </MuiModal>
       )}
+
 
       {viewAddVoucherModal && (
         <MuiModal

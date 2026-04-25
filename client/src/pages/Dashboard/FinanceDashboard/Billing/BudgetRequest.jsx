@@ -16,7 +16,7 @@ const BudgetRequest = () => {
     },
     {
       label: "Budget History",
-      path: "voucher-history-budget",
+      path: "budget-history",
       permission: PERMISSIONS.FINANCE_BILLING_VOUCHER_HISTORY.value,
     },
   ];
