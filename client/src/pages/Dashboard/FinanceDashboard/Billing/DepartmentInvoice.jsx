@@ -7,6 +7,7 @@ import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { inrFormat } from "../../../../utils/currencyFormat";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
@@ -86,6 +87,7 @@ const DepartmentInvoice = () => {
       ...item,
 
       id: item._id,
+      voucherSrNo: item.srNo || "-",
       expanseName: item.expanseName || "-",
       expanseType: item.expanseType || "-",
       department: departmentName,
@@ -158,6 +160,10 @@ const DepartmentInvoice = () => {
                  Department-Invoice Voucher Summary
                 </span>
             <DetalisFormatted
+              title="Voucher Sr.No"
+              detail={viewDetails.voucherSrNo || "-"}
+            />    
+            <DetalisFormatted
               title="Expense Name"
               detail={viewDetails.expanseName || "-"}
             />
@@ -179,9 +185,7 @@ const DepartmentInvoice = () => {
                 <DetalisFormatted
                   key={`${particular.name}-${index}`}
                   title={particular.label}
-                  detail={`${particular.name} — ₹${particular.amount.toLocaleString(
-                    "en-IN"
-                  )}`}
+                  detail={`${particular.name} — INR ${inrFormat(particular.amount || 0)}`}
                 />
               ))
             ) : (
@@ -217,7 +221,7 @@ const DepartmentInvoice = () => {
             />
              <DetalisFormatted title="GSTIN" detail={viewDetails.gstIn || "-"} />
             <DetalisFormatted
-              title="Status"
+              title="Approval Status"
               detail={viewDetails.status || "Pending"}
             />
             <DetalisFormatted
@@ -387,22 +391,20 @@ const DepartmentInvoice = () => {
                   // <div key={idx} className="border-t pt-2">
                     <DetalisFormatted
                       title={`Particular ${idx + 1}`}
-                      detail={`${p.particularName || "-"} — ₹${
-                        p.particularAmount || 0
-                      }`}
+                      detail={`${p.particularName || "-"} — INR ${inrFormat(p.particularAmount || 0)}`}
                     />
                   // </div>
                 ))}
                  <DetalisFormatted
                   title="Total Amount"
-                  detail={`₹${(viewDetails.finance.particulars || []).reduce(
+                  detail={`INR ${(viewDetails.finance.particulars || []).reduce(
                     (sum, item) => sum + Number(item?.particularAmount || 0),
                     0
                   )}`}
                 />
                 <DetalisFormatted
                   title="Advance Amount"
-                  detail={`₹${viewDetails.finance.advanceAmount || 0}`}
+                  detail={`INR ${inrFormat(viewDetails.finance.advanceAmount || 0)}`}
                 />
                 <DetalisFormatted
                   title="Voucher File"

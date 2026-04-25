@@ -10,6 +10,7 @@ import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
+import { inrFormat } from "../../../../utils/currencyFormat";
 import { LuImageUp } from "react-icons/lu";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -51,7 +52,7 @@ const VoucherCreation = () => {
     { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "voucherName", headerName: "Voucher Name", flex: 1 },
     { field: "modeOfPayment", headerName: "Mode of Payment", flex: 1 },
-    { field: "advanceAmount", headerName: "Advance Amount", flex: 1 },
+    { field: "advanceAmount", headerName: "Advance Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value), },
     { field: "chequeNo", headerName: "Cheque No", flex: 1 },
     { field: "chequeDate", headerName: "Cheque Date", flex: 1 },
     { field: "approvedAt", headerName: "Approved Date", flex: 1, cellRenderer : (params)=>(humanDate(params.value)) },
@@ -166,7 +167,7 @@ const VoucherCreation = () => {
                 <DetalisFormatted
                   key={idx}
                   title={`Particular ${idx + 1}`}
-                  detail={`${p.particularName || "-"} — ₹${p.particularAmount || 0}`}
+                  detail={`${p.particularName || "-"} — INR ${inrFormat(p.particularAmount || 0)}`}
                 />
               ))}
             </>
@@ -174,12 +175,12 @@ const VoucherCreation = () => {
             <DetalisFormatted title="Particulars" detail="-" />
           )}
 
-           <DetalisFormatted title="Total Amount" detail={`₹${particularsTotal}`} />
+           <DetalisFormatted title="Total Amount" detail={`INR ${inrFormat(particularsTotal)}`} />
 
             {/* <DetalisFormatted title="Amount" detail={viewDetails.amount} /> */}
              <DetalisFormatted
                   title="Advance Amount"
-                  detail={`₹${viewDetails.finance.advanceAmount || 0}`}
+                  detail={`INR ${inrFormat(viewDetails.finance.advanceAmount || 0)}`}
                 />
             <DetalisFormatted title="Cheque No" detail={viewDetails.chequeNo} />
             <DetalisFormatted

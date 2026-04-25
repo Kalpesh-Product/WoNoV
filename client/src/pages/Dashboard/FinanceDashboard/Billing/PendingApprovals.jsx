@@ -114,7 +114,7 @@ const PendingApprovals = () => {
     { field: "expanseName", headerName: "Expense Name ", width: 200 },
     { field: "department", headerName: "Department", width: 150 },
     { field: "expanseType", headerName: "Expense Type " },
-    { field: "projectedAmount", headerName: "Particular Amount (INR)" },
+    { field: "projectedAmount", headerName: "Particular Amount (INR)"},
     { field: "reimbursementDate", headerName: "Date" },
     {
       field: "actions",
@@ -229,6 +229,10 @@ const PendingApprovals = () => {
                  Pending Approval Voucher
                 </span>
               {/* <DetalisFormatted title="Sr No" detail={selectedBudget.srNo} /> */}
+                <DetalisFormatted
+                title="Voucher Sr. No."
+                detail={selectedBudget.srNo}
+              />
               <DetalisFormatted
                 title="Expense Name"
                 detail={selectedBudget.expanseName}
@@ -259,8 +263,8 @@ const PendingApprovals = () => {
                   <DetalisFormatted
                     key={`${item.particularName}-${idx}`}
                     title={`Particular ${idx + 1}`}
-                    detail={`${item.particularName || "-"} — ₹${
-                      item.particularAmount || 0
+                    detail={`${item.particularName || "-"} — INR ${
+                      inrFormat(item.particularAmount || 0)
                     }`}
                   />
                 ))}
@@ -282,7 +286,7 @@ const PendingApprovals = () => {
                 detail={`INR ${(selectedBudget.projectedAmount || 0).toLocaleString()}`}
               />
               <DetalisFormatted title="GSTIN" detail={selectedBudget.gstIn} />
-              <DetalisFormatted title="Status" detail={selectedBudget.status} />
+              <DetalisFormatted title="Approval Status" detail={selectedBudget.status} />
               <DetalisFormatted
                 title="Paid Status"
                 detail={selectedBudget.isPaid}
