@@ -146,7 +146,7 @@ const YearlyGraph = ({
               <SecondaryButton
                 title={<MdNavigateNext />}
                 handleSubmit={goToNextYear}
-                 externalStyles="min-w-20 px-6 py-2 bg-[#9CA3AF] text-black font-semibold rounded-lg"
+                 externalStyles="min-w-20 px-6 py-2 bg-[#9ca3af] text-black font-semibold rounded-lg"
                // disabled={selectedYearIndex === fiscalYears.length - 1}
               />
             </div>

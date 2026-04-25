@@ -258,23 +258,6 @@ const AssetsSubCategories = () => {
           >
             {/* Category Name Input */}
             <Controller
-              name="subCategoryName"
-              control={control}
-              defaultValue=""
-              rules={{ required: "Sub Category Name is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Sub-Category Name"
-                  fullWidth
-                  size="small"
-                  variant="outlined"
-                  error={!!errors.subCategoryName}
-                  helperText={errors.subCategoryName?.message}
-                />
-              )}
-            />
-            <Controller
               name="assetCategoryId"
               control={control}
               rules={{ required: "Asset Category is Required" }}
@@ -299,6 +282,24 @@ const AssetsSubCategories = () => {
                     ))
                   )}
                 </TextField>
+              )}
+            />
+
+            <Controller
+              name="subCategoryName"
+              control={control}
+              defaultValue=""
+              rules={{ required: "Sub Category Name is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Sub-Category Name"
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  error={!!errors.subCategoryName}
+                  helperText={errors.subCategoryName?.message}
+                />
               )}
             />
 
@@ -370,12 +371,12 @@ const AssetsSubCategories = () => {
         {modalMode === "view" && (
           <div className="grid grid-cols-1 gap-4">
             <DetalisFormatted
-              title={"Sub Category"}
-              detail={selectedAsset?.subCategoryName || "N/A"}
-            />
-            <DetalisFormatted
               title={"Category"}
               detail={selectedAsset?.categoryName || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Sub Category"}
+              detail={selectedAsset?.subCategoryName || "N/A"}
             />
           </div>
         )}

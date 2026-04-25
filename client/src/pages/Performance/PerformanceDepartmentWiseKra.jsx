@@ -388,7 +388,7 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
             <SecondaryButton
               title={<MdNavigateNext />}
               disabled={false}
-              externalStyles="min-w-20 px-6 py-2 bg-[#9CA3AF] text-black font-semibold rounded-lg"
+              externalStyles="min-w-20 px-6 py-2 bg-[#9ca3af] text-black font-semibold rounded-lg"
               handleSubmit={() => {
                 const nextDate = parseIsoDate(selectedDate);
                 if (!nextDate) return;

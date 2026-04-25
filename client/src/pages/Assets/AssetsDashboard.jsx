@@ -477,6 +477,9 @@ const AssetsDashboard = () => {
       fontFamily: "Poppins-Regular",
       toolbar: false,
     },
+     legend: {
+      show: false,
+    },
     yaxis: {
       max: 100,
       title: {

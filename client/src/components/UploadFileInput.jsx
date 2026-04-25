@@ -1,5 +1,109 @@
-import React, { useId, useRef, useState } from "react";
-import { TextField, IconButton, Avatar, Box } from "@mui/material";
+// import React, { useEffect, useId, useRef, useState } from "react";
+// import { TextField, IconButton, Avatar, Box } from "@mui/material";
+// import { LuImageUp } from "react-icons/lu";
+// import { MdDelete } from "react-icons/md";
+// import MuiModal from "./MuiModal";
+
+// const UploadFileInput = ({
+//   value,
+//   onChange,
+//   disabled = false,
+//   label = "Upload File",
+//   allowedExtensions = ["jpg", "jpeg", "png", "pdf", "webp"],
+//   previewType = "auto", // "image", "pdf", "none", or "auto"
+//   error = false,
+//   helperText = "",
+//   onInvalidFile,
+//   id,
+// }) => {
+//   const fileInputRef = useRef(null);
+//   const generatedId = useId();
+//   const inputId = id ?? `file-upload-${generatedId}`;
+//   const fileUrl =
+//     typeof value === "string"
+//       ? value
+//       : value?.url && typeof value?.url === "string"
+//       ? value.url
+//       : null;
+//   const fileName =
+//     value instanceof File
+//       ? value.name
+//       : fileUrl
+//       ? fileUrl.split("/").pop()?.split("?")[0] || "selected-file"
+//       : "";
+//   const [previewUrl, setPreviewUrl] = useState(
+//     value instanceof File
+//       ? URL.createObjectURL(value)
+//       : fileUrl || null
+//   );
+//   const [openModal, setOpenModal] = useState(false);
+
+//   useEffect(() => {
+//     if (value instanceof File) {
+//       setPreviewUrl(URL.createObjectURL(value));
+//       return;
+//     }
+//     setPreviewUrl(fileUrl || null);
+//   }, [value, fileUrl]);
+
+//   const getExtension = (fileName) => fileName.split(".").pop().toLowerCase();
+
+//   const isImage = (ext) =>
+//     ["jpg", "jpeg", "png", "webp", "gif", "bmp"].includes(ext);
+
+//   const isPDF = (ext) => ext === "pdf";
+
+//   const handleFileChange = (e) => {
+//     const file = e.target.files[0];
+//     if (file) {
+//       const ext = getExtension(file.name);
+//       if (!allowedExtensions.includes(ext)) {
+//         onInvalidFile?.(
+//           `Invalid file format. Allowed formats: ${allowedExtensions
+//             .map((allowedExt) => `image/${allowedExt}`)
+//             .join(", ")}`,
+//           file,
+//         );
+//         return;
+//       }
+
+//       onChange(file);
+//       setPreviewUrl(URL.createObjectURL(file));
+//       fileInputRef.current.value = null;
+//     }
+//   };
+
+//   const handleClear = () => {
+//     onChange(null);
+//     setPreviewUrl(null);
+//   };
+
+//   const acceptAttr = allowedExtensions.map((ext) => `.${ext}`).join(",");
+
+//   const renderPreview = () => {
+//     const ext = getExtension(fileName);
+//     const type =
+//       previewType === "auto"
+//         ? isImage(ext)
+//           ? "image"
+//           : isPDF(ext)
+//           ? "pdf"
+//           : "none"
+//         : previewType;
+
+
+//     if (type === "image") {
+//       return (
+//         <Avatar
+//           src={previewUrl}
+//           alt="Preview"
+//           sx={{ width: "100%", height: "auto", borderRadius: 2 }}
+//           variant="square"
+//         />
+//       );
+//     }
+import React, { useEffect, useId, useRef, useState } from "react";
+import { TextField, IconButton, Box } from "@mui/material";
 import { LuImageUp } from "react-icons/lu";
 import { MdDelete } from "react-icons/md";
 import MuiModal from "./MuiModal";
@@ -11,15 +115,40 @@ const UploadFileInput = ({
   label = "Upload File",
   allowedExtensions = ["jpg", "jpeg", "png", "pdf", "webp"],
   previewType = "auto", // "image", "pdf", "none", or "auto"
+  error = false,
+  helperText = "",
+  onInvalidFile,
   id,
 }) => {
   const fileInputRef = useRef(null);
   const generatedId = useId();
   const inputId = id ?? `file-upload-${generatedId}`;
+  const fileUrl =
+    typeof value === "string"
+      ? value
+      : value?.url && typeof value?.url === "string"
+      ? value.url
+      : null;
+  const fileName =
+    value instanceof File
+      ? value.name
+      : fileUrl
+      ? fileUrl.split("/").pop()?.split("?")[0] || "selected-file"
+      : "";
   const [previewUrl, setPreviewUrl] = useState(
-    value ? URL.createObjectURL(value) : null
+    value instanceof File
+      ? URL.createObjectURL(value)
+      : fileUrl || null
   );
   const [openModal, setOpenModal] = useState(false);
+
+  useEffect(() => {
+    if (value instanceof File) {
+      setPreviewUrl(URL.createObjectURL(value));
+      return;
+    }
+    setPreviewUrl(fileUrl || null);
+  }, [value, fileUrl]);
 
   const getExtension = (fileName) => fileName.split(".").pop().toLowerCase();
 
@@ -33,7 +162,12 @@ const UploadFileInput = ({
     if (file) {
       const ext = getExtension(file.name);
       if (!allowedExtensions.includes(ext)) {
-        alert(`Only ${allowedExtensions.join(", ")} files are allowed.`);
+        onInvalidFile?.(
+          `Invalid file format. Allowed formats: ${allowedExtensions
+            .map((allowedExt) => `image/${allowedExt}`)
+            .join(", ")}`,
+          file,
+        );
         return;
       }
 
@@ -51,7 +185,7 @@ const UploadFileInput = ({
   const acceptAttr = allowedExtensions.map((ext) => `.${ext}`).join(",");
 
   const renderPreview = () => {
-    const ext = getExtension(value.name);
+    const ext = getExtension(fileName);
     const type =
       previewType === "auto"
         ? isImage(ext)
@@ -63,11 +197,20 @@ const UploadFileInput = ({
 
     if (type === "image") {
       return (
-        <Avatar
+        <Box
+          component="img"
           src={previewUrl}
           alt="Preview"
-          sx={{ width: "100%", height: "auto", borderRadius: 2 }}
-          variant="square"
+          sx={{
+            maxWidth: "100%",
+            maxHeight: "500px",
+            width: "auto",
+            height: "auto",
+            objectFit: "contain",
+            borderRadius: 2,
+            mx: "auto",
+            display: "block",
+          }}
         />
       );
     }
@@ -105,7 +248,9 @@ const UploadFileInput = ({
         fullWidth
         label={label}
         disabled={disabled}
-        value={value?.name || ""}
+        error={error}
+        helperText={helperText}
+        value={fileName}
         placeholder="Choose a file..."
         InputProps={{
           readOnly: true,
