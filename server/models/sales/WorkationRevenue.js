@@ -24,6 +24,8 @@ const workationRevenueSchema = new mongoose.Schema(
     },
     status: {
       type: String,
+      enum: ["Paid", "UnPaid", "Partially Paid"],
+      default: "UnPaid",
     },
     gst: {
       type: Number,
