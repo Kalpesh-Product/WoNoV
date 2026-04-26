@@ -139,7 +139,11 @@ const VoucherCreation = () => {
               title="Mode of Payment"
               detail={viewDetails.modeOfPayment}
             />
-
+             <DetalisFormatted title="Cheque No" detail={viewDetails.chequeNo} />
+            <DetalisFormatted
+              title="Cheque Date"
+              detail={viewDetails.chequeDate}
+            />
 
             {/* {(viewDetails.financeParticulars || []).length > 0 ? (
               <div className="border-t pt-2">
@@ -182,11 +186,6 @@ const VoucherCreation = () => {
                   title="Advance Amount"
                   detail={`INR ${inrFormat(viewDetails.finance.advanceAmount || 0)}`}
                 />
-            <DetalisFormatted title="Cheque No" detail={viewDetails.chequeNo} />
-            <DetalisFormatted
-              title="Cheque Date"
-              detail={viewDetails.chequeDate}
-            />
             <DetalisFormatted
               title="Expected Invoice Date"
               detail={viewDetails.expectedDateInvoice}

@@ -229,8 +229,8 @@ const PendingApprovals = () => {
                  Pending Approval Voucher
                 </span>
               {/* <DetalisFormatted title="Sr No" detail={selectedBudget.srNo} /> */}
-                <DetalisFormatted
-                title="Voucher Sr. No."
+              <DetalisFormatted
+                title="Sr No"
                 detail={selectedBudget.srNo}
               />
               <DetalisFormatted
