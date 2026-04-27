@@ -121,7 +121,7 @@ const VoucherCreation = () => {
           <div className="space-y-3">
             <span className="text-subtitle font-pmedium text-primary my-0.5 uppercase">
                  Voucher History Finance Details
-                </span>
+            </span>
 
              {(() => {
               const particulars = Array.isArray(viewDetails.financeParticulars)
