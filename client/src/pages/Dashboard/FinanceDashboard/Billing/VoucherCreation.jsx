@@ -49,12 +49,13 @@ const VoucherCreation = () => {
   };
 
   const invoiceCreationColumns = [
-    { field: "srNo", headerName: "Sr No", flex: 1 },
+    { field: "srNo", headerName: "Sr No", flex: 0.5},
     { field: "voucherName", headerName: "Voucher Name", flex: 1 },
     { field: "modeOfPayment", headerName: "Mode of Payment", flex: 1 },
-    { field: "advanceAmount", headerName: "Advance Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value), },
-    { field: "chequeNo", headerName: "Cheque No", flex: 1 },
-    { field: "chequeDate", headerName: "Cheque Date", flex: 1 },
+    { field: "totalAmount", headerName: "Total Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value), },
+    { field: "advanceAmount", headerName: "Advance Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value),hide: true },
+    { field: "chequeNo", headerName: "Cheque No", flex: 1,hide: true },
+    { field: "chequeDate", headerName: "Cheque Date", flex: 1,hide: true },
     { field: "approvedAt", headerName: "Approved Date", flex: 1, cellRenderer : (params)=>(humanDate(params.value)) },
     {
       field: "actions",
@@ -87,6 +88,12 @@ const VoucherCreation = () => {
             voucherLink: item.finance?.voucher?.link || "-",
             modeOfPayment: item.finance?.modeOfPayment || "-",
             advanceAmount: item.finance?.advanceAmount ?? "-",
+             totalAmount: Array.isArray(item.finance?.particulars)
+              ? item.finance.particulars.reduce(
+                  (sum, entry) => sum + Number(entry?.particularAmount || 0),
+                  0,
+                )
+              : 0,
             chequeNo: item.finance?.chequeNo || "-",
             chequeDate: item.finance?.chequeDate
               ? dayjs(item.finance.chequeDate).format("DD MMM YYYY")

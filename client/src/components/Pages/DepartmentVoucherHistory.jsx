@@ -10,6 +10,8 @@ import MuiModal from "../MuiModal";
 import DetalisFormatted from "../DetalisFormatted";
 import humanDate from "../../utils/humanDateForamt";
 import { inrFormat } from "../../utils/currencyFormat";
+import { HideImage } from "@mui/icons-material";
+import { h } from "@fullcalendar/core/preact.js";
 
 const DepartmentVoucherHistory = () => {
   const axios = useAxiosPrivate();
@@ -35,17 +37,18 @@ const DepartmentVoucherHistory = () => {
   );
 
   const columns = [
-    { field: "srNo", headerName: "Sr No", flex: 1 },
+    { field: "srNo", headerName: "Sr No", flex: 0.5 },
     { field: "voucherName", headerName: "Voucher Name", flex: 1 },
     { field: "modeOfPayment", headerName: "Mode of Payment", flex: 1 },
+    { field: "totalAmount", headerName: "Total Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value), },
     {
       field: "advanceAmount",
       headerName: "Advance Amount(INR)",
       flex: 1,
-      valueFormatter: (params) => inrFormat(params.value),
+      valueFormatter: (params) => inrFormat(params.value),hide: true,
     },
-    { field: "chequeNo", headerName: "Cheque No", flex: 1 },
-    { field: "chequeDate", headerName: "Cheque Date", flex: 1 },
+    { field: "chequeNo", headerName: "Cheque No", flex: 1,hide: true },
+    { field: "chequeDate", headerName: "Cheque Date", flex: 1,hide: true },
     {
       field: "approvedAt",
       headerName: "Approved Date",
@@ -82,6 +85,12 @@ const DepartmentVoucherHistory = () => {
             voucherName: item.finance?.voucher?.name || "-",
             voucherLink: item.finance?.voucher?.link || "-",
             modeOfPayment: item.finance?.modeOfPayment || "-",
+            totalAmount: Array.isArray(item.finance?.particulars)
+              ? item.finance.particulars.reduce(
+                  (sum, entry) => sum + Number(entry?.particularAmount || 0),
+                  0,
+                )
+              : 0,
             advanceAmount: item.finance?.advanceAmount ?? "-",
             chequeNo: item.finance?.chequeNo || "-",
             chequeDate: item.finance?.chequeDate
