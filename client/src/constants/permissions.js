@@ -944,6 +944,13 @@ export const PERMISSIONS = {
     route:
       "/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher",
   },
+   FINANCE_BILLING_REJECT_VOUCHER: {
+    value: "finance_reject_voucher_tab",
+    title: "FINANCE REJECT VOUCHER",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/billing/voucher-request/reject-voucher",
+  },
   FINANCE_BILLING_VOUCHER_HISTORY: {
     value: "finance_voucher_history_tab",
     title: "FINANCE VOUCHER HISTORY",

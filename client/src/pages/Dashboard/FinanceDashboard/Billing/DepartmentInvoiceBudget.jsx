@@ -67,7 +67,7 @@ const DepartmentInvoiceBudget = () => {
         const styleMap = {
           approved: { backgroundColor: "#DCFCE7", color: "#166534" },
           pending: { backgroundColor: "#FEF3C7", color: "#92400E" },
-          rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+         // rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
         };
 
         const chipStyle = styleMap[normalizedStatus] || {

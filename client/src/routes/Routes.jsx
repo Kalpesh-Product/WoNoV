@@ -288,6 +288,7 @@ import SqWiseData from "../pages/Dashboard/FinanceDashboard/SqftWiseData/SqWiseD
 import InvoiceCreation from "../pages/Dashboard/FinanceDashboard/Billing/InvoiceCreation";
 import VoucherCreation from "../pages/Dashboard/FinanceDashboard/Billing/VoucherCreation";
 import PendingApprovals from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovals";
+import RejectedVoucher from "../pages/Dashboard/FinanceDashboard/Billing/RejectedVoucher";
 import PendingApprovalsBudget from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovalsBudget";
 import DepartmentInvoiceBudget from "../pages/Dashboard/FinanceDashboard/Billing/DepartmentInvoiceBudget";
 import BillingsLayout from "../pages/Dashboard/FinanceDashboard/Billing/BillingsLayout";
@@ -823,6 +824,10 @@ export const routes = createBrowserRouter([
                               {
                                 path: "pending-approvals-voucher",
                                 element: <PendingApprovals />,
+                              },
+                              {
+                                path: "reject-voucher",
+                                element: <RejectedVoucher />,
                               },
                               {
                                 path: "voucher-history",

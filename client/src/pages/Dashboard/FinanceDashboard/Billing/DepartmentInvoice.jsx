@@ -54,7 +54,6 @@ const DepartmentInvoice = () => {
     { headerName: "Building", field: "buildingName", hide: true },
     { headerName: "Particulars", field: "particularSummary", hide: true },
     { headerName: "Total Amount", field: "projectedAmount", hide: true },
-    { headerName: "Approval Status", field: "status", hide: true },
     { headerName: "Paid Status", field: "isPaid", hide: true },
     { headerName: "Extra Budget", field: "isExtraBudgetText", hide: true },
     { headerName: "Pre-Approved", field: "preApprovedText", hide: true },
@@ -70,6 +69,35 @@ const DepartmentInvoice = () => {
     { headerName: "Voucher Link", field: "voucherLink", hide: true },
     { headerName: "Reimbursement Date", field: "reimbursementDate", hide: true },
     { headerName: "Due Date", field: "dueDate", flex: 1 },
+    { headerName: "Approval Status", field: "status",
+      cellRenderer: (params) => {
+        const status = String(params?.value || "Pending");
+        const normalizedStatus = status.toLowerCase();
+
+        const styleMap = {
+          approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+          pending: { backgroundColor: "#FEF3C7", color: "#92400E" },
+          //rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+        };
+
+        const chipStyle = styleMap[normalizedStatus] || {
+          backgroundColor: "#F5F5F5",
+          color: "#616161",
+        };
+
+        return (
+          <Chip
+            label={status}
+            size="small"
+            sx={{
+              ...chipStyle,
+              fontWeight: 500,
+              textTransform: "capitalize",
+            }}
+          />
+        );
+      },
+    },
     { headerName: "Finance Sr No", field: "financeSrNo", hide: true },
     { headerName: "Mode of Payment", field: "modeOfPayment", hide: true },
     { headerName: "Cheque No", field: "chequeNo", hide: true },
@@ -100,7 +128,13 @@ const DepartmentInvoice = () => {
     },
   ];
 
-  const mappedRows = (hrFinance || []).map((item, index) => {
+  //const mappedRows = (hrFinance || []).map((item, index) => {
+    const mappedRows = (hrFinance || [])
+    .filter((item) => {
+      const normalizedStatus = String(item?.status || "pending").toLowerCase();
+      return normalizedStatus === "approved" || normalizedStatus === "pending";
+    })
+    .map((item, index) => {
     const invoice = item.invoice || {};
     const voucher = item.voucher || {};
     const finance = item.finance || {};

@@ -14,6 +14,11 @@ const VoucherRequest = () => {
       permission: PERMISSIONS.FINANCE_BILLING_PENDING_APPROVALS.value,
     },
     {
+      label: "Reject Voucher",
+      path: "reject-voucher",
+      permission: PERMISSIONS.FINANCE_BILLING_REJECT_VOUCHER.value,
+    },
+    {
       label: "Voucher History",
       path: "voucher-history",
       permission: PERMISSIONS.FINANCE_BILLING_VOUCHER_HISTORY.value,
