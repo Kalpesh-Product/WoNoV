@@ -15,6 +15,11 @@ const FrontendFinLayout = () => {
       path: "budget",
       permission: PERMISSIONS.FRONTEND_BUDGET.value,
     },
+     {
+      label: "Budget History",
+      path: "budget-history",
+      permission: PERMISSIONS.FRONTEND_BUDGET_HISTORY.value,
+    },
     {
       label: "Payment Schedule",
       path: "payment-schedule",
@@ -24,6 +29,11 @@ const FrontendFinLayout = () => {
       label: "Voucher",
       path: "voucher",
       permission: PERMISSIONS.FRONTEND_VOUCHER.value,
+    },
+      {
+      label: "Voucher History",
+      path: "voucher-history",
+      permission: PERMISSIONS.FRONTEND_VOUCHER_HISTORY.value,
     },
   ];
 

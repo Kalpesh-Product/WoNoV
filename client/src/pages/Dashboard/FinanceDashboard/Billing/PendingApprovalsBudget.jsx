@@ -254,7 +254,7 @@ const PendingApprovalsBudget = () => {
                 // detail={selectedBudget.actualAmount?.toLocaleString()}
               />
               {/* <DetalisFormatted title="GSTIN" detail={selectedBudget.gstIn} /> */}
-              <DetalisFormatted title="Status" detail={selectedBudget.status} />
+              <DetalisFormatted title="Approval Status" detail={selectedBudget.status} />
               <DetalisFormatted
                 title="Paid Status"
                 detail={selectedBudget.isPaid}

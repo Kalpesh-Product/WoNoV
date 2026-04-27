@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import dayjs from "dayjs";
 import {
   Tabs,
-  Tab,
+  Tab,  
+  Chip,
   CircularProgress,
   IconButton,
   Popover,
@@ -252,7 +253,37 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
 
   const tableColumns = useMemo(() => {
     const sample = financialData?.[0]?.tableData?.columns || [];
-    const base = [...sample];
+    // const base = [...sample];
+    const base = sample.map((column) => {
+      if (column.field !== "status") return column;
+
+      return {
+        ...column,
+        cellRenderer: (params) => {
+          const status = String(params.value || "Unknown");
+          const normalizedStatus = status.trim().toLowerCase();
+
+          const statusColorMap = {
+            approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+            rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+            pending: { backgroundColor: "#FEF3C7", color: "#92400E" },
+          };
+
+          const { backgroundColor, color } = statusColorMap[normalizedStatus] || {
+            backgroundColor: "#E5E7EB",
+            color: "#374151",
+          };
+
+          return (
+            <Chip
+              label={status}
+              size="small"
+              style={{ backgroundColor, color, fontWeight: 500 }}
+            />
+          );
+        },
+      };
+    });
     if (!noInvoice) {
       base.push({
         field: "actions",

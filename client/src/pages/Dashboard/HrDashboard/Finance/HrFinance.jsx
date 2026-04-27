@@ -8,6 +8,11 @@ const HrFinance = () => {
       path: "budget",
       permission: PERMISSIONS.HR_BUDGET.value,
     },
+     {
+      label: "Budget History",
+      path: "budget-history",
+      permission: PERMISSIONS.HR_BUDGET_HISTORY.value,
+    },
     {
       label: "Payment Schedule",
       path: "payment-schedule",
@@ -17,6 +22,11 @@ const HrFinance = () => {
       label: "Voucher",
       path: "voucher",
       permission: PERMISSIONS.HR_VOUCHER.value,
+    },
+       {
+      label: "Voucher History",
+      path: "voucher-history",
+      permission: PERMISSIONS.HR_VOUCHER_HISTORY.value,
     },
     // {
     //   label: "Payroll",

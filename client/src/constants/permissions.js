@@ -1155,6 +1155,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/sales-dashboard/finance/budget",
   },
+  SALES_BUDGET_HISTORY: {
+    value: "sales_budget_history_finance_tab",
+    title: "BUDGET HISTORY",
+    type: "read",
+    route: "/app/dashboard/sales-dashboard/finance/budget-history",
+  },
   SALES_REQUEST_BUDGET_BUTTON: {
     value: "sales_request_budget_button",
     title: "REQUEST BUDGET BUTTON",
@@ -1173,6 +1179,12 @@ export const PERMISSIONS = {
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/sales-dashboard/finance/voucher",
+  },
+   SALES_VOUCHER_HISTORY: {
+    value: "sales_voucher_history_finance_tab",
+    title: "VOUCHER HISTORY",
+    type: "read",
+    route: "/app/dashboard/sales-dashboard/finance/voucher-history",
   },
   // Revenue
   SALES_TOTAL_REVENUE: {
@@ -1572,6 +1584,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/HR-dashboard/finance/budget",
   },
+  HR_BUDGET_HISTORY: {
+    value: "hr_budget_history_tab",
+    title: "BUDGET HISTORY",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/finance/budget-history",
+  },
    HR_REQUEST_BUDGET_BUTTON: {
     value: "hr_request_budget_button",
     title: "REQUEST BUDGET BUTTON",
@@ -1592,7 +1610,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/HR-dashboard/finance/voucher",
   },
-
+  HR_VOUCHER_HISTORY: {
+    value: "hr_voucher_history_tab",
+    title: "VOUCHER HISTORY",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/finance/voucher-history",
+  },
   HR_PAYROLL: {
     value: "hr_payroll_tab",
     title: "PAYROLL",
@@ -1839,6 +1862,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/admin-dashboard/finance/budget",
   },
+  ADMIN_BUDGET_HISTORY: {
+    value: "admin_budget_history_tab",
+    title: "BUDGET HISTORY",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/finance/budget-history",
+  },
    ADMIN_REQUEST_BUDGET_BUTTON: {
     value: "admin_request_budget_button",
     title: "REQUEST BUDGET BUTTON",
@@ -1859,6 +1888,12 @@ export const PERMISSIONS = {
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/admin-dashboard/finance/voucher",
+  },
+  ADMIN_VOUCHER_HISTORY: {
+    value: "admin_voucher_history_tab",
+    title: "VOUCHER HISTORY",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/finance/voucher-history",
   },
 
   // Housekeeping Members
@@ -2103,6 +2138,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/finance/budget",
   },
+  MAINTENANCE_BUDGET_HISTORY: {
+    value: "maintenance_budget_history_tab",
+    title: "BUDGET HISTORY",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/finance/budget-history",
+  },
 MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     value: "maintenance_request_budget_button",
     title: "REQUEST BUDGET BUTTON",
@@ -2123,7 +2164,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/finance/voucher",
   },
-
+  MAINTENANCE_VOUCHER_HISTORY: {
+    value: "maintenance_voucher_history_tab",
+    title: "VOUCHER HISTORY",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/finance/voucher-history",
+  },  
   //Data
   MAINTENANCE_AMC_RECORDS: {
     value: "maintenance_amc_records_tab",
@@ -2343,6 +2389,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     title: "BUDGET",
     type: "read",
     route: "/app/dashboard/IT-dashboard/finance/budget",
+   },
+  IT_BUDGET_HISTORY: {
+    value: "it_budget_history_tab",
+    title: "BUDGET HISTORY",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/finance/budget-history",
   },
    IT_REQUEST_BUDGET_BUTTON: {
     value: "it_request_budget_button",
@@ -2365,7 +2417,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     type: "read",
     route: "/app/dashboard/IT-dashboard/finance/voucher",
   },
-
+  IT_VOUCHER_HISTORY: {
+    value: "it_voucher_history_tab",
+    title: "VOUCHER HISTORY",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/finance/voucher-history",
+  },
   //Data
   IT_AMC_RECORDS: {
     value: "it_amc_records_tab",
@@ -2515,6 +2572,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     title: "BUDGET",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/finance/budget",
+   },
+  FRONTEND_BUDGET_HISTORY: {
+    value: "frontend_budget_history_tab",
+    title: "BUDGET HISTORY",
+    type: "read",
+    route: "/app/dashboard/frontend-dashboard/finance/budget-history",  
   },
    FRONTEND_REQUEST_BUDGET_BUTTON: {
     value: "frontend_request_budget_button",
@@ -2537,7 +2600,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     type: "read",
     route: "/app/dashboard/frontend-dashboard/finance/voucher",
   },
-
+  FRONTEND_VOUCHER_HISTORY: {
+    value: "frontend_voucher_history_tab",
+    title: "VOUCHER HISTORY",
+    type: "read",
+    route: "/app/dashboard/frontend-dashboard/finance/voucher-history",
+  },
   //Data
   FRONTEND_LEADS: {
     value: "frontend_leads_tab",

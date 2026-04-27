@@ -15,6 +15,11 @@ const ManageAssets = () => {
     path: "budget",
     permission: PERMISSIONS.SALES_BUDGET.value,
   },
+   {
+    label: "Budget History",
+    path: "budget-history",
+    permission: PERMISSIONS.SALES_BUDGET_HISTORY.value,
+  },
   {
     label: "Payment Schedule",
     path: "payment-schedule",
@@ -24,6 +29,11 @@ const ManageAssets = () => {
     label: "Voucher",
     path: "voucher",
     permission: PERMISSIONS.SALES_VOUCHER.value,
+  },
+  {
+    label: "Voucher History",
+    path: "voucher-history",
+    permission: PERMISSIONS.SALES_VOUCHER_HISTORY.value,
   },
 ];
 

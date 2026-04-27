@@ -15,6 +15,11 @@ const ItFinance = () => {
     path: "budget",
     permission: PERMISSIONS.IT_BUDGET.value,
   },
+ {
+    label: "Budget History",
+    path: "budget-history",
+    permission: PERMISSIONS.IT_BUDGET_HISTORY.value,
+  },
   {
     label: "Payment Schedule",
     path: "payment-schedule",
@@ -24,6 +29,11 @@ const ItFinance = () => {
     label: "Voucher",
     path: "voucher",
     permission: PERMISSIONS.IT_VOUCHER.value,
+  },
+  {
+    label: "Voucher History",
+    path: "voucher-history",
+    permission: PERMISSIONS.IT_VOUCHER_HISTORY.value,
   },
 ];
 

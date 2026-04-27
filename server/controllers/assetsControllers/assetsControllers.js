@@ -406,7 +406,7 @@ const addAsset = async (req, res, next) => {
           i === 0 && normalizedSecondaryId
             ? normalizedSecondaryId
             : uniqueAssetId,
-
+        departmentAssetId: uniqueAssetId,
         rentedMonths: ownershipType === "Rental" ? rentedMonths : undefined,
         tangable,
         ownershipType,
@@ -1032,6 +1032,7 @@ const bulkInsertAssets = async (req, res, next) => {
             assets.push({
               assetType: assetType === "Digital" ? "Digital" : "Physical",
               assetId: uniqueAssetId,
+              departmentAssetId: uniqueAssetId,
 
               secondaryId: secondaryIdInput || uniqueAssetId,
 

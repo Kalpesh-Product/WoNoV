@@ -202,16 +202,6 @@ const visitorSchema = new mongoose.Schema(
         "ETC",
       ],
     },
-    paymentVerification: {
-      type: String,
-      enum: ["Pending", "Under Review", "Verified"],
-      default: "Pending",
-    },
-    paymentVerifiedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserData",
-    },
-
     paymentProof: {
       url: {
         type: String,

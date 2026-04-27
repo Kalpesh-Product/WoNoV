@@ -25,7 +25,7 @@ const attachExternalVisits = async (visitors) => {
 
   const visitorIds = visitors.map((visitor) => visitor._id);
   const visits = await ExternalVisits.find({ visitorId: { $in: visitorIds } })
-    .sort({ createdAt: -1 })
+    .sort({ checkIn: -1 })
     .lean();
 
   const visitsByVisitor = visits.reduce((acc, visit) => {
@@ -245,7 +245,7 @@ const addVisitor = async (req, res, next) => {
     if (visitorExists) {
       return res.status(400).json({
         message:
-          "Visitor with this phone number already exists. Continue from 'Repeat Visitors' in Mix Bag.",
+          "Visitor already exists. Continue from 'Repeat Visitors' in Mix Bag.",
       });
     }
 
@@ -1127,8 +1127,6 @@ const repeatInternalVisitor = async (req, res, next) => {
       toMeet,
       clientToMeet,
       checkOut,
-      scheduledDate,
-      checkIn,
     } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(visitorId)) {
@@ -1232,32 +1230,7 @@ const repeatInternalVisitor = async (req, res, next) => {
       }
     }
 
-    const isScheduledVisitor = visitorType === "Scheduled";
-    let checkInDate = checkIn ? new Date(checkIn) : new Date();
-
-    if (Number.isNaN(checkInDate.getTime())) {
-      return res.status(400).json({ message: "Invalid checkIn provided" });
-    }
-
-    let normalizedScheduledDate = null;
-    if (isScheduledVisitor) {
-      if (!scheduledDate) {
-        return res.status(400).json({
-          message: "Scheduled date is required for scheduled visitors",
-        });
-      }
-      normalizedScheduledDate = new Date(scheduledDate);
-      if (Number.isNaN(normalizedScheduledDate.getTime())) {
-        return res
-          .status(400)
-          .json({ message: "Invalid scheduledDate provided" });
-      }
-      checkInDate.setFullYear(
-        normalizedScheduledDate.getFullYear(),
-        normalizedScheduledDate.getMonth(),
-        normalizedScheduledDate.getDate(),
-      );
-    }
+    const checkInDate = new Date();
     let checkOutDate = null;
 
     if (checkOut) {
@@ -1282,7 +1255,6 @@ const repeatInternalVisitor = async (req, res, next) => {
     visitor.toMeet = toMeet || null;
     visitor.clientToMeet = clientToMeet || null;
     visitor.dateOfVisit = checkInDate;
-    visitor.scheduledDate = normalizedScheduledDate;
     visitor.checkIn = checkInDate;
     visitor.checkOut = checkOutDate;
     visitor.checkedInBy = user || null;
@@ -1312,7 +1284,6 @@ const repeatInternalVisitor = async (req, res, next) => {
       toMeetCompany: visitor.toMeetCompany || null,
       department: visitor.department || null,
       visitorRoles: visitor.visitorRoles || ["Visitor"],
-      scheduledDate: visitor.scheduledDate || null,
       visitorFlag: visitor.visitorFlag || "Visitor",
       toMeet: visitor.toMeet || null,
       clientToMeet: visitor.clientToMeet || null,
@@ -1343,7 +1314,6 @@ const repeatInternalVisitor = async (req, res, next) => {
         toMeet: toMeet || null,
         clientToMeet: clientToMeet || null,
         dateOfVisit: visitor.dateOfVisit,
-        scheduledDate: visitor.scheduledDate || null,
         checkIn: visitor.checkIn,
         checkOut: visitor.checkOut,
       },
@@ -1812,8 +1782,6 @@ const convertVisitorToClient = async (req, res, next) => {
       unit,
       checkInTime,
       checkOutTime,
-      checkIn,
-      checkOut,
       email,
       phoneNumber,
       visitorCompany,
@@ -1834,9 +1802,6 @@ const convertVisitorToClient = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid unit id provided" });
     }
 
-    if (!purposeOfVisit) {
-      return res.status(400).json({ message: "purposeOfVisit is required" });
-    }
     const visitor = await Visitor.findOne({ _id: visitorId, company });
 
     if (!visitor) {
@@ -1862,27 +1827,10 @@ const convertVisitorToClient = async (req, res, next) => {
       "half day pass": "Half-Day Pass",
       meeting: "Meeting",
     };
-    const mappedVisitorType = visitorTypeMap[normalizedPurpose];
+    const mappedVisitorType = visitorTypeMap[normalizedPurpose] || "Meeting";
 
-    if (!mappedVisitorType) {
-      return res.status(400).json({
-        message:
-          "Invalid purposeOfVisit. Allowed values: Full Day Pass, Half Day Pass, Meeting",
-      });
-    }
-
-    const incomingCheckIn =
-      checkInTime ?? (typeof checkIn === "string" ? checkIn.trim() : checkIn);
-    const incomingCheckOut =
-      checkOutTime ??
-      (typeof checkOut === "string" ? checkOut.trim() : checkOut);
-
-    const resolvedCheckIn = incomingCheckIn
-      ? new Date(incomingCheckIn)
-      : new Date();
-    const resolvedCheckOut = incomingCheckOut
-      ? new Date(incomingCheckOut)
-      : null;
+    const resolvedCheckIn = checkInTime ? new Date(checkInTime) : new Date();
+    const resolvedCheckOut = checkOutTime ? new Date(checkOutTime) : null;
 
     if (Number.isNaN(resolvedCheckIn.getTime())) {
       return res.status(400).json({ message: "Invalid checkInTime provided" });
@@ -2233,18 +2181,11 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
         .status(400)
         .json({ message: "Cannot verify unpaid day pass payment" });
     }
-    console.log("visitor", visitor.firstName);
+
     visitor.paymentVerification = status;
-    visitor.paymentVerifiedBy = status === "Verified" ? req.user : null;
     externalVisit.paymentVerification = status;
-    externalVisit.paymentVerifiedBy = status === "Verified" ? req.user : null;
     await visitor.save();
     await externalVisit.save();
-    console.log("status updated to", visitor.paymentVerification);
-    console.log(
-      "externalVisit paymentVerification updated to",
-      externalVisit.paymentVerification,
-    );
 
     return res.status(200).json({
       message:

@@ -394,6 +394,8 @@ import BudgetPage from "../components/Pages/BudgetPage";
 import AnnualExpense from "../components/Pages/AnnualExpense";
 import MaintenancOfficesNew from "../pages/Dashboard/MaintainanceDashboard/MaintenanceOffices/MaintenanceOfficesNew";
 import PaymentScheduleCommon from "../components/Pages/PaymentScheduleCommon";
+import DepartmentBudgetHistory from "../components/Pages/DepartmentBudgetHistory";
+import DepartmentVoucherHistory from "../components/Pages/DepartmentVoucherHistory";
 import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew";
 import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
 import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
@@ -586,6 +588,10 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
+                            {
+                            path: "budget-history",
+                            element: <DepartmentBudgetHistory />,
+                          },
                           {
                             path: "payment-schedule",
                             element: <PaymentScheduleCommon />,
@@ -593,6 +599,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher",
                             element: <Reimbursement />,
+                          },
+                          {
+                            path: "voucher-history",
+                            element: <DepartmentVoucherHistory />,
                           },
                         ],
                       },
@@ -998,12 +1008,20 @@ export const routes = createBrowserRouter([
                             element: <BudgetPage />,
                           },
                           {
+                            path: "budget-history",
+                            element: <DepartmentBudgetHistory />,
+                          },
+                          {
                             path: "payment-schedule",
                             element: <PaymentScheduleCommon />,
                           },
                           {
                             path: "voucher",
                             element: <Reimbursement />,
+                          },
+                          {
+                            path: "voucher-history",
+                            element: <DepartmentVoucherHistory />,
                           },
                         ],
                       },
@@ -1262,6 +1280,10 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
+                           {
+                            path: "budget-history",
+                            element: <DepartmentBudgetHistory />,
+                          },
                           {
                             path: "payment-schedule",
                             element: <PaymentScheduleCommon />,
@@ -1269,6 +1291,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher",
                             element: <Reimbursement />,
+                          },
+                          {
+                            path: "voucher-history",
+                            element: <DepartmentVoucherHistory />,
                           },
                         ],
                       },
@@ -1447,6 +1473,10 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
+                           {
+                            path: "budget-history",
+                            element: <DepartmentBudgetHistory />,
+                          },
                           {
                             path: "payment-schedule",
                             element: <PaymentScheduleCommon />,
@@ -1454,6 +1484,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher",
                             element: <Reimbursement />,
+                          },
+                          {
+                            path: "voucher-history",
+                            element: <DepartmentVoucherHistory />,
                           },
                         ],
                       },
@@ -1615,6 +1649,10 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
+                           {
+                            path: "budget-history",
+                            element: <DepartmentBudgetHistory />,
+                          },
                           {
                             path: "payment-schedule",
                             element: <PaymentScheduleCommon />,
@@ -1622,6 +1660,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher",
                             element: <Reimbursement />,
+                          },
+                          {
+                            path: "voucher-history",
+                            element: <DepartmentVoucherHistory />,
                           },
                         ],
                       },
@@ -2245,6 +2287,10 @@ export const routes = createBrowserRouter([
                             index: true,
                             element: <BudgetPage />,
                           },
+                           {
+                            path: "budget-history",
+                            element: <DepartmentBudgetHistory />,
+                          },
                           {
                             path: "payment-schedule",
                             element: <PaymentScheduleCommon />,
@@ -2252,6 +2298,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher",
                             element: <Reimbursement />,
+                          },
+                          {
+                            path: "voucher-history",
+                            element: <DepartmentVoucherHistory />,
                           },
                           {
                             path: "payroll",

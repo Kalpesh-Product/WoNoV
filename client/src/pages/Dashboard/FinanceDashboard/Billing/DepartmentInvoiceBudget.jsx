@@ -48,12 +48,23 @@ const DepartmentInvoiceBudget = () => {
     { headerName: "Department", field: "department", flex: 1 },
     { headerName: "Expense Name", field: "expanseName", flex: 1 },
     { headerName: "Expense Type", field: "expanseType", flex: 1 },
+    { headerName: "Payment Type", field: "paymentType", flex: 1,hide: true },
+    { headerName: "Projected Amount(INR)", field: "projectedAmount", flex: 1,valueFormatter: (params) => inrFormat(params.value), },
+    { headerName: "Actual Amount(INR)", field: "actualAmount", flex: 1,valueFormatter: (params) => inrFormat(params.value), },
+    { headerName: "Unit", field: "unitName", flex: 1, hide: true },
+    { headerName: "Unit No", field: "unitNo", flex: 1, hide: true },
+    { headerName: "Building", field: "buildingName", flex: 1, hide: true },
+    { headerName: "Due Date", field: "dueDate", flex: 1 },
+    { headerName: "Invoice Name", field: "invoiceName", flex: 1, hide: true },
+    { headerName: "Invoice Date", field: "invoiceDate", flex: 1, hide: true },
+    { headerName: "Approval Status", field: "status", flex: 1, hide: true },
+    { headerName: "Paid Status", field: "isPaid", flex: 1, hide: true },
+    { headerName: "Invoice File", field: "invoiceLink", flex: 1, hide: true },
     //{ headerName: "Invoice Name", field: "invoiceName", flex: 1 },
     // { headerName: "GSTIN", field: "gstIn", flex: 1 },
     //{ headerName: "Invoice Date", field: "invoiceDate", flex: 1 },
-    { headerName: "Projected Amount(INR)", field: "projectedAmount", flex: 1,valueFormatter: (params) => inrFormat(params.value), },
-    { headerName: "Actual Amount(INR)", field: "actualAmount", flex: 1,valueFormatter: (params) => inrFormat(params.value), },
-    { headerName: "Due Date", field: "dueDate", flex: 1 },
+   
+   
 
     {
       field: "actions",
@@ -154,16 +165,16 @@ const DepartmentInvoiceBudget = () => {
                 Department-Invoice Budget Summary
               </span> */}
             <DetalisFormatted
+              title="Department"
+              detail={viewDetails.department || "-"}
+            />
+            <DetalisFormatted
               title="Expense Name"
               detail={viewDetails.expanseName || "-"}
             />
             <DetalisFormatted
               title="Expense Type"
               detail={viewDetails.expanseType || "-"}
-            />
-            <DetalisFormatted
-              title="Department"
-              detail={viewDetails.department || "-"}
             />
             <DetalisFormatted
               title="Payment Type"
@@ -221,8 +232,9 @@ const DepartmentInvoiceBudget = () => {
                   : "-"
               }
             />
+            <DetalisFormatted title="Approval Status" detail={viewDetails.status} />
             <DetalisFormatted
-              title="Status"
+              title="Paid Status"
               detail={viewDetails.isPaid || "Unpaid"}
             />
             <DetalisFormatted

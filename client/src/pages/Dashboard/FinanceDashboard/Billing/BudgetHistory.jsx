@@ -41,14 +41,8 @@ const BudgetHistory = () => {
         const normalizedStatus = status.toLowerCase();
 
         const styleMap = {
-          approved: {
-            backgroundColor: "#E8F5E9",
-            color: "#2E7D32",
-          },
-          rejected: {
-            backgroundColor: "#FDECEA",
-            color: "#C62828",
-          },
+          approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+          rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
         };
 
         const chipStyle = styleMap[normalizedStatus] || {
@@ -62,7 +56,7 @@ const BudgetHistory = () => {
             size="small"
             sx={{
               ...chipStyle,
-              fontWeight: 600,
+              fontWeight: 500,
               textTransform: "capitalize",
             }}
           />

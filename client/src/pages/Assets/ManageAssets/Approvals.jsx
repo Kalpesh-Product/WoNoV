@@ -42,7 +42,7 @@ const Approvals = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/assets/get-asset-requests?department=${departmentId}&status=Unapproved`,
+          `/api/assets/get-asset-requests?department=${departmentId}&status=Unapproved`
         );
         return response.data;
       } catch (error) {
@@ -55,10 +55,10 @@ const Approvals = () => {
 
   const { mutate: approveAsset, isPending: isApproving } = useMutation({
     mutationFn: async (data) => {
-      console.log("approve", data);
+      console.log("approve", data)
       const response = await axios.patch("/api/assets/process-asset-request", {
         requestedAssetId: data?._id,
-        action: "Approved",
+        action: "Approved"
       });
       return response.data;
     },
@@ -73,10 +73,10 @@ const Approvals = () => {
 
   const { mutate: rejectAsset, isPending: isRejecting } = useMutation({
     mutationFn: async (data) => {
-      console.log("reject", data);
+      console.log("reject", data)
       const response = await axios.patch("/api/assets/process-asset-request", {
         requestedAssetId: data?._id,
-        action: "Rejected",
+        action: "Rejected"
       });
       return response.data;
     },
@@ -126,21 +126,15 @@ const Approvals = () => {
       cellRenderer: (params) => {
         const status = params.data.status;
         const viewOnlyStatuses = ["Rejected", "Revoked"];
-        const menuItems = [
-          { label: "View", onClick: () => handleView(params.data) },
-        ];
+        const menuItems = [{ label: "View", onClick: () => handleView(params.data) }];
 
         // if (!isEmployeeRole && params.data.status === "Pending") {
-        if (
-          !viewOnlyStatuses.includes(status) &&
-          !isEmployeeRole &&
-          status === "Pending"
-        ) {
+         if (!viewOnlyStatuses.includes(status) && !isEmployeeRole && status === "Pending") {
           menuItems.push({
             label: "Approve",
             onClick: () => approveAsset(params.data),
           });
-          menuItems.push({
+             menuItems.push({
             label: "Reject",
             onClick: () => rejectAsset(params.data),
           });
@@ -159,30 +153,34 @@ const Approvals = () => {
         // }
 
         return (
-          <ThreeDotMenu rowId={params.data.assetId} menuItems={menuItems} />
+          <ThreeDotMenu
+            rowId={params.data.assetId}
+            menuItems={menuItems}
+          />
         );
       },
-    },
+    }
+
   ];
 
   const tableData = isAssignedPending
     ? []
     : assignedAssets.map((item, index) => {
-        const assets = item.asset;
-        const category = assets?.subCategory?.category?.categoryName;
-        console.log("assets inside data", category);
-        return {
-          ...assets,
-          ...item,
-          srNo: index + 1,
-          assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
-          assetId: item._id,
-          assetNumber: item?.asset?.assetId,
-          department: item?.fromDepartment?.name,
-          category: category,
-          brand: assets?.brand,
-        };
-      });
+      const assets = item.asset;
+      const category = assets?.subCategory?.category?.categoryName;
+      console.log("assets inside data", category);
+      return {
+        ...assets,
+        ...item,
+        srNo: index + 1,
+        assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
+        assetId: item._id,
+        assetNumber: item?.asset?.assetId,
+        department: item?.fromDepartment?.name,
+        category: category,
+        brand: assets?.brand,
+      };
+    });
 
   //-----------------------Table Data----------------------//
 
@@ -226,7 +224,7 @@ const Approvals = () => {
             />
             <DetalisFormatted
               title={"Department Asset ID"}
-              detail={selectedAsset?.secondaryId || "N/A"}
+              detail={selectedAsset?.departmentAssetId || "N/A"}
             />
             <DetalisFormatted title={"Brand"} detail={selectedAsset?.brand} />
             <DetalisFormatted
@@ -241,7 +239,7 @@ const Approvals = () => {
               title={"Assigned Date"}
               detail={humanDate(selectedAsset?.createdAt)}
             />
-            <DetalisFormatted
+              <DetalisFormatted
               title={"Purchase Date"}
               detail={humanDate(selectedAsset?.purchaseDate)}
             />
