@@ -2025,6 +2025,7 @@ const updateDayPassVisitPayment = async (req, res, next) => {
     const { externalVisitId } = req.params;
     const { paymentMode, paymentStatus, discount, amount } = req.body;
     const paymentProofFile = req.file;
+    const { company } = req;
 
     if (!mongoose.Types.ObjectId.isValid(externalVisitId)) {
       return res
@@ -2065,9 +2066,11 @@ const updateDayPassVisitPayment = async (req, res, next) => {
         );
       }
 
+      const companyData = await Company.findById(company).lean();
+
       const uploadResponse = await handleDocumentUpload(
         paymentProofFile.buffer,
-        `${externalVisit.company}/visitors/${externalVisit.visitorId}/payment-proof`,
+        `${companyData.companyName}/visitors/${externalVisit.visitorId}/payment-proof`,
         paymentProofFile.originalname,
       );
 

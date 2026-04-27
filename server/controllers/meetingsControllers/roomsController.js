@@ -3,10 +3,7 @@ const idGenerator = require("../../utils/idGenerator");
 const User = require("../../models/hr/UserData");
 const sharp = require("sharp");
 const mongoose = require("mongoose");
-const {
-  handleFileUpload,
-  handleFileDelete,
-} = require("../../config/s3Config");
+const { handleFileUpload, handleFileDelete } = require("../../config/s3Config");
 const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Unit = require("../../models/locations/Unit");
@@ -48,6 +45,7 @@ const addRoom = async (req, res, next) => {
       })
       .lean()
       .exec();
+    console.log("Found user with company:", foundUser.company);
 
     if (!foundUser || !foundUser.company) {
       throw new CustomError(
@@ -307,6 +305,12 @@ const updateRoom = async (req, res, next) => {
       updatedFields.perHourGstPrice = Number(req.body.perHourGstPrice);
     }
 
+    const foundUser = await User.findById(user)
+      .select("company")
+      .populate({ path: "company", select: "companyName workLocations" })
+      .lean()
+      .exec();
+
     // Handle image update
     if (req.file) {
       const file = req.file;
@@ -321,7 +325,10 @@ const updateRoom = async (req, res, next) => {
         await handleFileDelete(room.image.id);
       }
 
-      const uploadResult = await handleFileUpload(base64Image, "rooms");
+      const uploadResult = await handleFileUpload(
+        base64Image,
+        `${foundUser.company.companyName}/rooms`,
+      );
       updatedFields.image = {
         id: uploadResult.public_id,
         url: uploadResult.secure_url,

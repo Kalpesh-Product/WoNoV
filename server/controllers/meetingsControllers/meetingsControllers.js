@@ -331,8 +331,12 @@ const addMeetings = async (req, res, next) => {
           meetingCreditBalanceHistory: {
             $elemMatch: {
               monthStartDate: {
-                $gte: new Date(meetingMonthStart.getTime() - 12 * 60 * 60 * 1000),
-                $lte: new Date(meetingMonthStart.getTime() + 12 * 60 * 60 * 1000),
+                $gte: new Date(
+                  meetingMonthStart.getTime() - 12 * 60 * 60 * 1000,
+                ),
+                $lte: new Date(
+                  meetingMonthStart.getTime() + 12 * 60 * 60 * 1000,
+                ),
               },
             },
           },
@@ -1258,8 +1262,12 @@ const cancelMeeting = async (req, res, next) => {
             meetingCreditBalanceHistory: {
               $elemMatch: {
                 monthStartDate: {
-                  $gte: new Date(meetingMonthStart.getTime() - 12 * 60 * 60 * 1000),
-                  $lte: new Date(meetingMonthStart.getTime() + 12 * 60 * 60 * 1000),
+                  $gte: new Date(
+                    meetingMonthStart.getTime() - 12 * 60 * 60 * 1000,
+                  ),
+                  $lte: new Date(
+                    meetingMonthStart.getTime() + 12 * 60 * 60 * 1000,
+                  ),
                 },
               },
             },
@@ -1441,10 +1449,7 @@ const extendMeeting = async (req, res, next) => {
       ? monthHistory.remainingCredit
       : bookingUserCompany.meetingCreditBalance;
 
-    if (
-      meeting.meetingType === "Internal" &&
-      availableCredits < addedCredits
-    ) {
+    if (meeting.meetingType === "Internal" && availableCredits < addedCredits) {
       throw new CustomError(
         "Insufficient credits to extend this meeting",
         logPath,
@@ -1663,9 +1668,21 @@ const updateMeeting = async (req, res, next) => {
         }
       }
 
+      const foundCompany =
+        await Company.findById(company).select("companyName");
+
+      if (!foundCompany) {
+        throw new CustomError(
+          "Company not found",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
       const response = await handleDocumentUpload(
         processedBuffer,
-        `${company}/meetings/${meetingId}/payment-proof`,
+        `${foundCompany.companyName}/meetings/${meetingId}/payment-proof`,
         originalFilename,
       );
 
@@ -2123,8 +2140,12 @@ const updateMeetingDetails = async (req, res, next) => {
           meetingCreditBalanceHistory: {
             $elemMatch: {
               monthStartDate: {
-                $gte: new Date(meetingMonthStart.getTime() - 12 * 60 * 60 * 1000),
-                $lte: new Date(meetingMonthStart.getTime() + 12 * 60 * 60 * 1000),
+                $gte: new Date(
+                  meetingMonthStart.getTime() - 12 * 60 * 60 * 1000,
+                ),
+                $lte: new Date(
+                  meetingMonthStart.getTime() + 12 * 60 * 60 * 1000,
+                ),
               },
             },
           },
