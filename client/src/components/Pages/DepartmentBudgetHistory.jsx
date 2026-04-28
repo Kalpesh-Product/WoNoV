@@ -79,8 +79,11 @@ const DepartmentBudgetHistory = () => {
       const normalizedStatus = String(item?.status || "").toLowerCase();
       const isApprovedOrRejected =
         normalizedStatus === "approved" || normalizedStatus === "rejected";
+        const isExtraBudget = item?.isExtraBudget === true;
 
-      return hasBudgetShape && !hasVoucherData && isApprovedOrRejected;
+           return (
+        hasBudgetShape && !hasVoucherData && isApprovedOrRejected && isExtraBudget
+      );
     })
     .map((item, index) => ({
       ...item,
