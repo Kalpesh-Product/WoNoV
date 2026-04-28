@@ -149,7 +149,8 @@ const BudgetPage = () => {
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
             // { field: "department", headerName: "Department", flex: 200 },
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
+           // { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
+             { field: "projectedAmount", headerName: "Projected Amount(INR)",  flex: 1,valueFormatter: (params) => inrFormat(params.value), },
             {
               field: "actualAmount",
               headerName: "Actual Amount (INR)",
