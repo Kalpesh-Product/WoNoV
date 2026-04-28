@@ -404,6 +404,7 @@ const BudgetPage = () => {
         financialData={financialData}
         noInvoice={false}
         enableActionMenu
+        filterApprovedAndPendingOnly
         newTitle="BIZ Nest EXPENSE DETAILS"
       />
       <MuiModal

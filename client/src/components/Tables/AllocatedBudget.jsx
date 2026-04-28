@@ -46,6 +46,7 @@ const AllocatedBudget = ({
   showInvoice = false,
   newTitle,
   enableActionMenu = false,
+  filterApprovedAndPendingOnly = false,
 }) => {
  const axios = useAxiosPrivate();
   const [selectedTab, setSelectedTab] = useState(0);
@@ -249,15 +250,21 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         return isWithinInterval(date, { start: startDate, end: endDate });
       })
       //.flatMap((fd) => fd.tableData?.rows || []);
-       .flatMap((fd) => fd.tableData?.rows || [])
+        .flatMap((fd) => fd.tableData?.rows || [])
       .filter((row) => {
+        if (!filterApprovedAndPendingOnly) return true;
+
         const normalizedStatus = String(row?.status || "")
           .trim()
           .toLowerCase();
 
         return normalizedStatus === "approved" || normalizedStatus === "pending";
-      });
-  }, [financialData, dateRange]);
+      })
+      .map((row, index) => ({
+        ...row,
+        srNo: index + 1,
+      }));
+  }, [financialData, dateRange, filterApprovedAndPendingOnly]);
 
   const tableColumns = useMemo(() => {
     const sample = financialData?.[0]?.tableData?.columns || [];
