@@ -248,7 +248,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         const date = new Date(fd.month);
         return isWithinInterval(date, { start: startDate, end: endDate });
       })
-      .flatMap((fd) => fd.tableData?.rows || []);
+      //.flatMap((fd) => fd.tableData?.rows || []);
+       .flatMap((fd) => fd.tableData?.rows || [])
+      .filter((row) => {
+        const normalizedStatus = String(row?.status || "")
+          .trim()
+          .toLowerCase();
+
+        return normalizedStatus === "approved" || normalizedStatus === "pending";
+      });
   }, [financialData, dateRange]);
 
   const tableColumns = useMemo(() => {

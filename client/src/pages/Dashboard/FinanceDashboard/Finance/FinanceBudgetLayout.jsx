@@ -9,6 +9,11 @@ const FinanceBudgetLayout = () => {
       path: "budget",
       permission: PERMISSIONS.FINANCE_BUDGET.value,
     },
+       {
+      label: "Budget History",
+      path: "budget-history",
+      permission: PERMISSIONS.FINANCE_BUDGET_HISTORY.value,
+    },
     {
       label: "Payment Schedule",
       path: "payment-schedule",
@@ -18,6 +23,16 @@ const FinanceBudgetLayout = () => {
       label: "Voucher",
       path: "voucher",
       permission: PERMISSIONS.FINANCE_VOUCHER.value,
+    },
+     {
+      label: "Reject Voucher",
+      path: "reject-voucher",
+      permission: PERMISSIONS.FINANCE_REJECT_VOUCHER.value,
+    },
+     {
+      label: "Voucher History",
+      path: "voucher-history",
+      permission: PERMISSIONS.FINANCE_VOUCHER_HISTORY.value,
     },
     {
       label: "Dept. Wise Budget",

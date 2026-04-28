@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
 import YearWiseTable from "../Tables/YearWiseTable";
 import PageFrame from "./PageFrame";
+import { TextField, IconButton, Chip } from "@mui/material";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import MuiModal from "../MuiModal";
@@ -55,6 +56,37 @@ const DepartmentVoucherHistory = () => {
       flex: 1,
       cellRenderer: (params) => humanDate(params.value),
     },
+    {
+          field: "status",
+          headerName: "Approval Status",
+          flex: 1,
+          cellRenderer: (params) => {
+            const status = String(params?.value || "-");
+            const normalizedStatus = status.toLowerCase();
+    
+            const styleMap = {
+              approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+              rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+            };
+    
+            const chipStyle = styleMap[normalizedStatus] || {
+              backgroundColor: "#F5F5F5",
+              color: "#616161",
+            };
+    
+            return (
+              <Chip
+                label={status}
+                size="small"
+                sx={{
+                  ...chipStyle,
+                  fontWeight: 500,
+                  textTransform: "capitalize",
+                }}
+              />
+            );
+          },
+        },
     {
       field: "actions",
       headerName: "Actions",

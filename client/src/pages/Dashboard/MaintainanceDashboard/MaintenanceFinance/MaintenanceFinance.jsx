@@ -30,6 +30,11 @@ const tabs = [
     path: "voucher",
     permission: PERMISSIONS.MAINTENANCE_VOUCHER.value,
   },
+   {
+    label: "Reject Voucher",
+    path: "reject-voucher",
+    permission: PERMISSIONS.MAINTENANCE_REJECT_VOUCHER.value,
+  },
   {
     label: "Voucher History",
     path: "voucher-history",
