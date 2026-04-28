@@ -30,6 +30,11 @@ const FrontendFinLayout = () => {
       path: "voucher",
       permission: PERMISSIONS.FRONTEND_VOUCHER.value,
     },
+    {
+    label: "Reject Voucher",
+    path: "reject-voucher",
+    permission: PERMISSIONS.FRONTEND_REJECT_VOUCHER.value,
+  },
       {
       label: "Voucher History",
       path: "voucher-history",

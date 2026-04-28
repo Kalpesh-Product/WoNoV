@@ -761,6 +761,18 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings",
   },
+    FINANCE_DEPARTMENT_WISE_BUDGET_MIX_BAG: {
+    value: "finance_department_wise_budget_mix_bag",
+    title: "FINANCE DEPARTMENT WISE BUDGET MIX BAG",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget",
+  },
+  FINANCE_COLLECTION_PAYMENTS_MIX_BAG: {
+    value: "finance_collection_payments_mix_bag",
+    title: "FINANCE COLLECTION & PAYMENTS MIX BAG",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/collection-payments",
+  },
   FINANCE_DATA: { value: "finance_data_card", title: "FINANCE DATA", type: "read" },
   FINANCE_SETTINGS: {
     value: "finance_settings_card",
@@ -848,6 +860,13 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/budget",
   },
+   FINANCE_BUDGET_HISTORY: {
+    value: "finance_budget_history_tab",
+    title: "FINANCE BUDGET HISTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/finance/budget-history",
+  },
   FINANCE_REQUEST_BUDGET_BUTTON: {
     value: "finance_request_budget_button",
     title: "REQUEST BUDGET BUTTON",
@@ -868,6 +887,21 @@ export const PERMISSIONS = {
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/finance/voucher",
+  },
+  
+   FINANCE_REJECT_VOUCHER: {
+    value: "finance_reject_voucher_tab",
+    title: "FINANCE REJECT VOUCHER",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/finance/reject-voucher",
+  },
+   FINANCE_VOUCHER_HISTORY: {
+    value: "finance_voucher_history_tab",
+    title: "FINANCE VOUCHER HISTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/finance/voucher-history",
   },
   FINANCE_DEPT_WISE_BUDGET: {
     value: "finance_dept_wise_budget_tab",
@@ -943,6 +977,13 @@ export const PERMISSIONS = {
     access: "page",
     route:
       "/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher",
+  },
+   FINANCE_BILLING_REJECT_VOUCHER: {
+    value: "finance_reject_voucher_tab",
+    title: "FINANCE REJECT VOUCHER",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/billing/voucher-request/reject-voucher",
   },
   FINANCE_BILLING_VOUCHER_HISTORY: {
     value: "finance_voucher_history_tab",
@@ -1179,6 +1220,12 @@ export const PERMISSIONS = {
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/sales-dashboard/finance/voucher",
+  },
+  SALES_REJECT_VOUCHER: {
+    value: "sales_reject_voucher_finance_tab",
+    title: "REJECT VOUCHER",
+    type: "read",
+    route: "/app/dashboard/sales-dashboard/finance/reject-voucher",
   },
    SALES_VOUCHER_HISTORY: {
     value: "sales_voucher_history_finance_tab",
@@ -1610,6 +1657,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/HR-dashboard/finance/voucher",
   },
+   HR_REJECT_VOUCHER: {
+    value: "hr_reject_voucher_tab",
+    title: "REJECT VOUCHER",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/finance/reject-voucher",
+  },
   HR_VOUCHER_HISTORY: {
     value: "hr_voucher_history_tab",
     title: "VOUCHER HISTORY",
@@ -1889,6 +1942,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/admin-dashboard/finance/voucher",
   },
+    ADMIN_REJECT_VOUCHER: {
+    value: "admin_reject_voucher_tab",
+    title: "REJECT VOUCHER",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/finance/reject-voucher",
+  },
   ADMIN_VOUCHER_HISTORY: {
     value: "admin_voucher_history_tab",
     title: "VOUCHER HISTORY",
@@ -2164,6 +2223,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/finance/voucher",
   },
+   MAINTENANCE_REJECT_VOUCHER: {
+    value: "maintenance_reject_voucher_tab",
+    title: "REJECT VOUCHER",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/finance/reject-voucher",
+  },
   MAINTENANCE_VOUCHER_HISTORY: {
     value: "maintenance_voucher_history_tab",
     title: "VOUCHER HISTORY",
@@ -2417,6 +2482,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     type: "read",
     route: "/app/dashboard/IT-dashboard/finance/voucher",
   },
+   IT_REJECT_VOUCHER: {
+    value: "it_reject_voucher_tab",
+    title: "REJECT VOUCHER",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/finance/reject-voucher",
+  },
   IT_VOUCHER_HISTORY: {
     value: "it_voucher_history_tab",
     title: "VOUCHER HISTORY",
@@ -2599,6 +2670,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     title: "VOUCHER",
     type: "read",
     route: "/app/dashboard/frontend-dashboard/finance/voucher",
+  },
+  FRONTEND_REJECT_VOUCHER: {
+    value: "frontend_reject_voucher_tab",
+    title: "REJECT VOUCHER",
+    type: "read",
+    route: "/app/dashboard/frontend-dashboard/finance/reject-voucher",
   },
   FRONTEND_VOUCHER_HISTORY: {
     value: "frontend_voucher_history_tab",

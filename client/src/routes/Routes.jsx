@@ -288,6 +288,7 @@ import SqWiseData from "../pages/Dashboard/FinanceDashboard/SqftWiseData/SqWiseD
 import InvoiceCreation from "../pages/Dashboard/FinanceDashboard/Billing/InvoiceCreation";
 import VoucherCreation from "../pages/Dashboard/FinanceDashboard/Billing/VoucherCreation";
 import PendingApprovals from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovals";
+import RejectedVoucher from "../pages/Dashboard/FinanceDashboard/Billing/RejectedVoucher";
 import PendingApprovalsBudget from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovalsBudget";
 import DepartmentInvoiceBudget from "../pages/Dashboard/FinanceDashboard/Billing/DepartmentInvoiceBudget";
 import BillingsLayout from "../pages/Dashboard/FinanceDashboard/Billing/BillingsLayout";
@@ -396,6 +397,7 @@ import MaintenancOfficesNew from "../pages/Dashboard/MaintainanceDashboard/Maint
 import PaymentScheduleCommon from "../components/Pages/PaymentScheduleCommon";
 import DepartmentBudgetHistory from "../components/Pages/DepartmentBudgetHistory";
 import DepartmentVoucherHistory from "../components/Pages/DepartmentVoucherHistory";
+import DepartmentRejectedVoucher from "../components/Pages/DepartmentRejectedVoucher";
 import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew";
 import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
 import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
@@ -442,6 +444,7 @@ import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeFo
 import AccessPages from "../pages/Access/AccessPages";
 import ModulePermissions from "../pages/Access/ModulePermissions";
 import ManageMeetingsFinanceLayout from "../pages/Dashboard/FinanceDashboard/MixBag/ManageMeetingsFinanceLayout";
+import CollectionPaymentsFinanceLayout from "../pages/Dashboard/FinanceDashboard/MixBag/CollectionPaymentsFinanceLayout";
 import CreateWebsite from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/CreateWebsite";
 import EditWebsite from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/EditWebsite";
 import Websites from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/Websites";
@@ -600,6 +603,10 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
+                           {
+                            path: "reject-voucher",
+                            element: <DepartmentRejectedVoucher />,
+                          },
                           {
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
@@ -700,6 +707,40 @@ export const routes = createBrowserRouter([
                       {
                         path: "directors-company-KYC/:name",
                         element: <DirectorData />,
+                      },
+                       {
+                        path: "mix-bag/department-wise-budget",
+                        element: <DeptWiseBudget />,
+                      },
+                      {
+                        path: "mix-bag/department-wise-budget/:department",
+                        element: <DeptWiseBudgetDetails />,
+                      },
+                      {
+                        path: "mix-bag/collection-payments",
+                        element: <CollectionPaymentsFinanceLayout />,
+                        children: [
+                          {
+                            path: "collection",
+                            element: <Collections />,
+                          },
+                          {
+                            path: "collection/paid",
+                            element: <CollectionsLayout />,
+                          },
+                          {
+                            path: "statutory-payments",
+                            element: <StatutoryPayments />,
+                          },
+                          {
+                            path: "landlord-payments",
+                            element: <LandlordPayments />,
+                          },
+                          {
+                            path: "landlord-payments-unit",
+                            element: <LandlordPaymentLocation />,
+                          },
+                        ],
                       },
                       {
                         path: "cashflow",
@@ -825,6 +866,10 @@ export const routes = createBrowserRouter([
                                 element: <PendingApprovals />,
                               },
                               {
+                                path: "reject-voucher",
+                                element: <RejectedVoucher />,
+                              },
+                              {
                                 path: "voucher-history",
                                 element: <VoucherCreation />,
                               },
@@ -908,42 +953,55 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
+                             {
+                            path: "budget-history",
+                            element: <DepartmentBudgetHistory />,
+                          },
                           {
                             path: "voucher",
                             element: <Reimbursement />,
                           },
                           {
-                            path: "dept-wise-budget",
-                            element: <DeptWiseBudget />,
+                            path: "reject-voucher",
+                            element: <DepartmentRejectedVoucher />,
                           },
-                          {
-                            path: "dept-wise-budget/:department",
-                            element: <DeptWiseBudgetDetails />,
+                           {
+                            path: "voucher-history",
+                            element: <DepartmentVoucherHistory />,
                           },
+                          
+                          // {
+                          //   path: "dept-wise-budget",
+                          //   element: <DeptWiseBudget />,
+                          // },
+                          // {
+                          //   path: "dept-wise-budget/:department",
+                          //   element: <DeptWiseBudgetDetails />,
+                          // },
                           {
                             path: "payment-schedule",
                             element: <PaymentScheduleCommon />,
                           },
-                          {
-                            path: "collections",
-                            element: <Collections />,
-                          },
-                          {
-                            path: "collections/paid",
-                            element: <CollectionsLayout />,
-                          },
-                          {
-                            path: "statutory-payments",
-                            element: <StatutoryPayments />,
-                          },
-                          {
-                            path: "landlord-payments",
-                            element: <LandlordPayments />,
-                          },
-                          {
-                            path: "landlord-payments-unit",
-                            element: <LandlordPaymentLocation />,
-                          },
+                          // {
+                          //   path: "collections",
+                          //   element: <Collections />,
+                          // },
+                          // {
+                          //   path: "collections/paid",
+                          //   element: <CollectionsLayout />,
+                          // },
+                          // {
+                          //   path: "statutory-payments",
+                          //   element: <StatutoryPayments />,
+                          // },
+                          // {
+                          //   path: "landlord-payments",
+                          //   element: <LandlordPayments />,
+                          // },
+                          // {
+                          //   path: "landlord-payments-unit",
+                          //   element: <LandlordPaymentLocation />,
+                          // },
                         ],
                       },
                     ],
@@ -1018,6 +1076,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher",
                             element: <Reimbursement />,
+                          },
+                          {
+                            path: "reject-voucher",
+                            element: <DepartmentRejectedVoucher />,
                           },
                           {
                             path: "voucher-history",
@@ -1293,6 +1355,10 @@ export const routes = createBrowserRouter([
                             element: <Reimbursement />,
                           },
                           {
+                            path: "reject-voucher",
+                            element: <DepartmentRejectedVoucher />,
+                          },
+                          {
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
                           },
@@ -1485,6 +1551,10 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
+                           {
+                            path: "reject-voucher",
+                            element: <DepartmentRejectedVoucher />,
+                          },
                           {
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
@@ -1660,6 +1730,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher",
                             element: <Reimbursement />,
+                          },
+                            {
+                            path: "reject-voucher",
+                            element: <DepartmentRejectedVoucher />,
                           },
                           {
                             path: "voucher-history",
@@ -2298,6 +2372,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher",
                             element: <Reimbursement />,
+                          },
+                            {
+                            path: "reject-voucher",
+                            element: <DepartmentRejectedVoucher />,
                           },
                           {
                             path: "voucher-history",

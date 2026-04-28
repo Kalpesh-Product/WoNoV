@@ -3,7 +3,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import { TextField, IconButton } from "@mui/material";
+import { TextField, IconButton, Chip } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import MuiModal from "../../../../components/MuiModal";
@@ -28,8 +28,12 @@ const VoucherCreation = () => {
   const { data: voucherData = [], isPending: isVoucherPending } = useQuery({
     queryKey: ["voucherData"],
     queryFn: async () => {
-      const response = await axios.get("/api/budget/approved-budgets");
-      return response.data.allBudgets;
+      const response = await axios.get("/api/budget/company-budget");
+      return Array.isArray(response.data.allBudgets)
+        ? response.data.allBudgets
+        : [];
+      // const response = await axios.get("/api/budget/approved-budgets");
+      // return response.data.allBudgets;
     },
   });
 
@@ -57,6 +61,37 @@ const VoucherCreation = () => {
     { field: "chequeNo", headerName: "Cheque No", flex: 1,hide: true },
     { field: "chequeDate", headerName: "Cheque Date", flex: 1,hide: true },
     { field: "approvedAt", headerName: "Approved Date", flex: 1, cellRenderer : (params)=>(humanDate(params.value)) },
+    {
+      field: "status",
+      headerName: "Approval Status",
+      flex: 1,
+      cellRenderer: (params) => {
+        const status = String(params?.value || "-");
+        const normalizedStatus = status.toLowerCase();
+
+        const styleMap = {
+          approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+          rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+        };
+
+        const chipStyle = styleMap[normalizedStatus] || {
+          backgroundColor: "#F5F5F5",
+          color: "#616161",
+        };
+
+        return (
+          <Chip
+            label={status}
+            size="small"
+            sx={{
+              ...chipStyle,
+              fontWeight: 500,
+              textTransform: "capitalize",
+            }}
+          />
+        );
+      },
+    },
     {
       field: "actions",
       headerName: "Actions",
