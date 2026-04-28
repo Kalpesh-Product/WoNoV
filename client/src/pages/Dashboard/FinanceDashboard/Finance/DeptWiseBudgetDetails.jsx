@@ -269,7 +269,8 @@ const DeptWiseBudgetDetails = () => {
   // BUDGET NEW END
 
   return (
-    <div className="flex flex-col gap-8">
+    // <div className="flex flex-col gap-8">
+      <div className="p-4 flex flex-col gap-8">
       <YearlyGraph
         data={expenseRawSeries}
         options={expenseOptions}

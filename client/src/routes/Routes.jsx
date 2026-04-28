@@ -444,6 +444,7 @@ import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeFo
 import AccessPages from "../pages/Access/AccessPages";
 import ModulePermissions from "../pages/Access/ModulePermissions";
 import ManageMeetingsFinanceLayout from "../pages/Dashboard/FinanceDashboard/MixBag/ManageMeetingsFinanceLayout";
+import CollectionPaymentsFinanceLayout from "../pages/Dashboard/FinanceDashboard/MixBag/CollectionPaymentsFinanceLayout";
 import CreateWebsite from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/CreateWebsite";
 import EditWebsite from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/EditWebsite";
 import Websites from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder/Websites";
@@ -707,6 +708,40 @@ export const routes = createBrowserRouter([
                         path: "directors-company-KYC/:name",
                         element: <DirectorData />,
                       },
+                       {
+                        path: "mix-bag/department-wise-budget",
+                        element: <DeptWiseBudget />,
+                      },
+                      {
+                        path: "mix-bag/department-wise-budget/:department",
+                        element: <DeptWiseBudgetDetails />,
+                      },
+                      {
+                        path: "mix-bag/collection-payments",
+                        element: <CollectionPaymentsFinanceLayout />,
+                        children: [
+                          {
+                            path: "collection",
+                            element: <Collections />,
+                          },
+                          {
+                            path: "collection/paid",
+                            element: <CollectionsLayout />,
+                          },
+                          {
+                            path: "statutory-payments",
+                            element: <StatutoryPayments />,
+                          },
+                          {
+                            path: "landlord-payments",
+                            element: <LandlordPayments />,
+                          },
+                          {
+                            path: "landlord-payments-unit",
+                            element: <LandlordPaymentLocation />,
+                          },
+                        ],
+                      },
                       {
                         path: "cashflow",
                         element: <Cashflow />,
@@ -935,38 +970,38 @@ export const routes = createBrowserRouter([
                             element: <DepartmentVoucherHistory />,
                           },
                           
-                          {
-                            path: "dept-wise-budget",
-                            element: <DeptWiseBudget />,
-                          },
-                          {
-                            path: "dept-wise-budget/:department",
-                            element: <DeptWiseBudgetDetails />,
-                          },
+                          // {
+                          //   path: "dept-wise-budget",
+                          //   element: <DeptWiseBudget />,
+                          // },
+                          // {
+                          //   path: "dept-wise-budget/:department",
+                          //   element: <DeptWiseBudgetDetails />,
+                          // },
                           {
                             path: "payment-schedule",
                             element: <PaymentScheduleCommon />,
                           },
-                          {
-                            path: "collections",
-                            element: <Collections />,
-                          },
-                          {
-                            path: "collections/paid",
-                            element: <CollectionsLayout />,
-                          },
-                          {
-                            path: "statutory-payments",
-                            element: <StatutoryPayments />,
-                          },
-                          {
-                            path: "landlord-payments",
-                            element: <LandlordPayments />,
-                          },
-                          {
-                            path: "landlord-payments-unit",
-                            element: <LandlordPaymentLocation />,
-                          },
+                          // {
+                          //   path: "collections",
+                          //   element: <Collections />,
+                          // },
+                          // {
+                          //   path: "collections/paid",
+                          //   element: <CollectionsLayout />,
+                          // },
+                          // {
+                          //   path: "statutory-payments",
+                          //   element: <StatutoryPayments />,
+                          // },
+                          // {
+                          //   path: "landlord-payments",
+                          //   element: <LandlordPayments />,
+                          // },
+                          // {
+                          //   path: "landlord-payments-unit",
+                          //   element: <LandlordPaymentLocation />,
+                          // },
                         ],
                       },
                     ],

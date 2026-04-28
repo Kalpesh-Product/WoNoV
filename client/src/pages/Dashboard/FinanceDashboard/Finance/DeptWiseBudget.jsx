@@ -50,7 +50,8 @@ const DeptWiseBudget = () => {
               cellRenderer: (params) => {
                 const handleClick = () => {
                   navigate(
-                    `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`
+                    // `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`
+                   `/app/dashboard/finance-dashboard/mix-bag/department-wise-budget/${encodeURIComponent(params.value)}`
                   );
                 };
                 return (
@@ -130,7 +131,8 @@ const DeptWiseBudget = () => {
           cellRenderer: (params) => {
             const handleClick = () => {
               navigate(
-                `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`,
+               // `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`,
+                `/app/dashboard/finance-dashboard/mix-bag/department-wise-budget/${encodeURIComponent(params.value)}`,
                 {
                   state: {
                     deptId: params.data?.deptId,
@@ -308,7 +310,8 @@ const expenseRawSeries = useMemo(() => {
 
 
   return (
-    <div className="flex flex-col gap-8">
+    // <div className="flex flex-col gap-8">
+       <div className="p-4 flex flex-col gap-8">
       <YearlyGraph2
         data={expenseRawSeries}
         options={expenseOptions}

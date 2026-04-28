@@ -5,11 +5,29 @@ import { IoIosSearch } from "react-icons/io";
 import { TextField } from "@mui/material";
 import Card from "../../../../components/Card";
 import { PERMISSIONS } from "../../../../constants/permissions";
-
+import useAuth from "../../../../hooks/useAuth";  
 const MixBag = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const { auth } = useAuth();
+  const userPermissions = auth?.user?.permissions?.permissions || [];
   const routes = [
+      {
+      title: "Manage Meetings",
+      route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings",
+      permission: PERMISSIONS.FINANCE_MANAGE_MEETINGS_MIX_BAG.value,
+    },
+     {
+      title: "Department Wise Budget",
+      route: "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget",
+      permission:
+        PERMISSIONS.FINANCE_DEPARTMENT_WISE_BUDGET_MIX_BAG.value,
+    },
+    {
+      title: "Collection & Payments",
+      route: "/app/dashboard/finance-dashboard/mix-bag/collection-payments",
+      permission: PERMISSIONS.FINANCE_COLLECTION_PAYMENTS_MIX_BAG.value,
+    },
     {
       title: "Directors & Company KYC",
       route: "/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC",
@@ -30,18 +48,18 @@ const MixBag = () => {
       route: "/app/dashboard/finance-dashboard/mix-bag/client-agreements",
       permission: PERMISSIONS.FINANCE_CLIENT_AGREEMENTS_MIX_BAG.value,
     },
-    {
-      title: "Manage Meetings",
-      route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings",
-      permission: PERMISSIONS.FINANCE_MANAGE_MEETINGS_MIX_BAG.value,
-    },
   ];
 
   const handleSearch = (event) => {
     setSearch(event.target.value);
   };
 
-  const filteredRoutes = routes.filter((route) =>
+  // const filteredRoutes = routes.filter((route) =>
+    const allowedRoutes = routes.filter(
+    (route) => !route.permission || userPermissions.includes(route.permission)
+  );
+
+  const filteredRoutes = allowedRoutes.filter((route) =>
     route.title.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -63,8 +81,10 @@ const MixBag = () => {
           }}
         />
       </div> */}
-      <div className="h-[50vh] uppercase">
-        <WidgetSection key={filteredRoutes.length} layout={2} padding>
+      {/* <div className="h-[50vh] uppercase">
+        <WidgetSection key={filteredRoutes.length} layout={2} padding> */}
+        <div className="min-h-[50vh] uppercase pt-2">
+        <WidgetSection layout={2} padding>
           {filteredRoutes.map((route, index) => {
             return (
               <Card

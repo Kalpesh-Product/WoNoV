@@ -761,6 +761,18 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings",
   },
+    FINANCE_DEPARTMENT_WISE_BUDGET_MIX_BAG: {
+    value: "finance_department_wise_budget_mix_bag",
+    title: "FINANCE DEPARTMENT WISE BUDGET MIX BAG",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget",
+  },
+  FINANCE_COLLECTION_PAYMENTS_MIX_BAG: {
+    value: "finance_collection_payments_mix_bag",
+    title: "FINANCE COLLECTION & PAYMENTS MIX BAG",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/collection-payments",
+  },
   FINANCE_DATA: { value: "finance_data_card", title: "FINANCE DATA", type: "read" },
   FINANCE_SETTINGS: {
     value: "finance_settings_card",

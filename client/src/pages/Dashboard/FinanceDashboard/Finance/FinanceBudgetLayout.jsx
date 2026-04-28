@@ -34,26 +34,26 @@ const FinanceBudgetLayout = () => {
       path: "voucher-history",
       permission: PERMISSIONS.FINANCE_VOUCHER_HISTORY.value,
     },
-    {
-      label: "Dept. Wise Budget",
-      path: "dept-wise-budget",
-      permission: PERMISSIONS.FINANCE_DEPT_WISE_BUDGET.value,
-    },
-    {
-      label: "Collections",
-      path: "collections",
-      permission: PERMISSIONS.FINANCE_COLLECTIONS.value,
-    },
-    {
-      label: "Statutory Payments",
-      path: "statutory-payments",
-      permission: PERMISSIONS.FINANCE_STATUTORY_PAYMENTS.value,
-    },
-    {
-      label: "Landlord Payments",
-      path: "landlord-payments",
-      permission: PERMISSIONS.FINANCE_LANDLORD_PAYMENTS.value,
-    },
+    // {
+    //   label: "Dept. Wise Budget",
+    //   path: "dept-wise-budget",
+    //   permission: PERMISSIONS.FINANCE_DEPT_WISE_BUDGET.value,
+    // },
+    // {
+    //   label: "Collections",
+    //   path: "collections",
+    //   permission: PERMISSIONS.FINANCE_COLLECTIONS.value,
+    // },
+    // {
+    //   label: "Statutory Payments",
+    //   path: "statutory-payments",
+    //   permission: PERMISSIONS.FINANCE_STATUTORY_PAYMENTS.value,
+    // },
+    // {
+    //   label: "Landlord Payments",
+    //   path: "landlord-payments",
+    //   permission: PERMISSIONS.FINANCE_LANDLORD_PAYMENTS.value,
+    // },
   ];
 
   return (
@@ -62,10 +62,10 @@ const FinanceBudgetLayout = () => {
       basePath={"/app/dashboard/finance-dashboard/finance"}
       defaultTabPath={"budget"}
       scrollable={true}
-      hideTabsOnPaths={[
-        "/app/dashboard/finance-dashboard/finance/dept-wise-budget/:id",
-        "/app/dashboard/finance-dashboard/finance/landlord-payments-unit",
-      ]}
+      // hideTabsOnPaths={[
+      //   "/app/dashboard/finance-dashboard/finance/dept-wise-budget/:id",
+      //   "/app/dashboard/finance-dashboard/finance/landlord-payments-unit",
+      // ]}
     />
   );
 };
