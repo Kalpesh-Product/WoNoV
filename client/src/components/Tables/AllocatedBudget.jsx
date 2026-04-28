@@ -513,7 +513,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     list: { sx: { p: 0 } },
   }}
 >
-  <MenuItem
+  {/* <MenuItem  (For edit with upload invoice button)
     sx={{
       justifyContent: "flex-start", // 👉 left side
       fontWeight: 500,
@@ -532,7 +532,26 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     }}
   >
     Edit
-  </MenuItem>
+  </MenuItem> */}
+
+   {actionRow?.status !== "Approved" && (
+    <MenuItem
+      sx={{
+        justifyContent: "flex-start",
+        fontWeight: 500,
+        color: "#1E3D73",
+        py: 1.1,
+      }}
+      onClick={() => {
+        if (actionRow) {
+          handleOpenEditModal(actionRow);
+        }
+        handleCloseActionMenu();
+      }}
+    >
+      Edit
+    </MenuItem>
+  )}
 
   {actionRow?.status === "Approved" && (
     <MenuItem
