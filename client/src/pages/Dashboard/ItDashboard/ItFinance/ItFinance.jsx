@@ -30,6 +30,11 @@ const ItFinance = () => {
     path: "voucher",
     permission: PERMISSIONS.IT_VOUCHER.value,
   },
+   {
+    label: "Reject Voucher",
+    path: "reject-voucher",
+    permission: PERMISSIONS.IT_REJECT_VOUCHER.value,
+  },
   {
     label: "Voucher History",
     path: "voucher-history",

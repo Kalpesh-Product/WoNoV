@@ -46,6 +46,7 @@ const AllocatedBudget = ({
   showInvoice = false,
   newTitle,
   enableActionMenu = false,
+  filterApprovedAndPendingOnly = false,
 }) => {
  const axios = useAxiosPrivate();
   const [selectedTab, setSelectedTab] = useState(0);
@@ -248,8 +249,22 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         const date = new Date(fd.month);
         return isWithinInterval(date, { start: startDate, end: endDate });
       })
-      .flatMap((fd) => fd.tableData?.rows || []);
-  }, [financialData, dateRange]);
+      //.flatMap((fd) => fd.tableData?.rows || []);
+        .flatMap((fd) => fd.tableData?.rows || [])
+      .filter((row) => {
+        if (!filterApprovedAndPendingOnly) return true;
+
+        const normalizedStatus = String(row?.status || "")
+          .trim()
+          .toLowerCase();
+
+        return normalizedStatus === "approved" || normalizedStatus === "pending";
+      })
+      .map((row, index) => ({
+        ...row,
+        srNo: index + 1,
+      }));
+  }, [financialData, dateRange, filterApprovedAndPendingOnly]);
 
   const tableColumns = useMemo(() => {
     const sample = financialData?.[0]?.tableData?.columns || [];
@@ -498,7 +513,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     list: { sx: { p: 0 } },
   }}
 >
-  <MenuItem
+  {/* <MenuItem  (For edit with upload invoice button)
     sx={{
       justifyContent: "flex-start", // 👉 left side
       fontWeight: 500,
@@ -517,7 +532,26 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     }}
   >
     Edit
-  </MenuItem>
+  </MenuItem> */}
+
+   {actionRow?.status !== "Approved" && (
+    <MenuItem
+      sx={{
+        justifyContent: "flex-start",
+        fontWeight: 500,
+        color: "#1E3D73",
+        py: 1.1,
+      }}
+      onClick={() => {
+        if (actionRow) {
+          handleOpenEditModal(actionRow);
+        }
+        handleCloseActionMenu();
+      }}
+    >
+      Edit
+    </MenuItem>
+  )}
 
   {actionRow?.status === "Approved" && (
     <MenuItem

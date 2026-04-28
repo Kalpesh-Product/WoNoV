@@ -8,12 +8,13 @@ import {
 } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 const CheckAvailability = ({ landlord }) => {
   const navigate = useNavigate();
+  const currentLocation = useLocation();
   const axios = useAxiosPrivate();
 
   const { control, handleSubmit, watch } = useForm({
@@ -64,8 +65,14 @@ const CheckAvailability = ({ landlord }) => {
 
   const onSubmit = (data) => {
     const { location, floor } = data;
+      const landlordUnitRoute = currentLocation.pathname.includes(
+      "/mix-bag/collection-payments"
+    )
+      ? "/app/dashboard/finance-dashboard/mix-bag/collection-payments/landlord-payments-unit"
+      : "/app/dashboard/finance-dashboard/finance/landlord-payments-unit";
+
     navigate(
-      `/app/dashboard/finance-dashboard/finance/landlord-payments-unit?location=${location}&floor=${floor}`,
+      `${landlordUnitRoute}?location=${location}&floor=${floor}`,
       {
         state: {
           unitId: selectedUnitId,

@@ -52,7 +52,7 @@ const PendingApprovals = () => {
           return [];
         }
       },
-    }
+    },
   );
   const {
     handleSubmit: reasonSubmit,
@@ -73,7 +73,7 @@ const PendingApprovals = () => {
     mutationFn: async (data) => {
       const response = await axios.patch(
         `/api/budget/reject-budget/${selectedBudget._id}`,
-        data
+        data,
       );
       return response.data;
     },
@@ -114,7 +114,7 @@ const PendingApprovals = () => {
     { field: "expanseName", headerName: "Expense Name ", width: 200 },
     { field: "department", headerName: "Department", width: 150 },
     { field: "expanseType", headerName: "Expense Type " },
-    { field: "projectedAmount", headerName: "Particular Amount (INR)"},
+    { field: "projectedAmount", headerName: "Particular Amount (INR)" },
     { field: "reimbursementDate", headerName: "Date" },
     {
       field: "actions",
@@ -128,7 +128,7 @@ const PendingApprovals = () => {
                 <CircularProgress />
               </div>
             ) : (
-               <div className="h-10 flex items-center gap-3">
+              <div className="h-10 flex items-center gap-3">
                 <MdOutlineRemoveRedEye
                   className="cursor-pointer text-lg"
                   onClick={() => {
@@ -146,7 +146,7 @@ const PendingApprovals = () => {
                         dispatch(setVoucherDetails(params.data));
                         setSelectedBudget(params.data);
                         navigate(
-                          `/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher/review-request`
+                          `/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher/review-request`,
                         );
                       },
                     },
@@ -226,13 +226,10 @@ const PendingApprovals = () => {
           {modalType === "view" && selectedBudget && (
             <div className="flex flex-col gap-4">
               <span className="text-subtitle font-pmedium text-primary my-0.5 uppercase">
-                 Pending Approval Voucher
-                </span>
+                Pending Approval Voucher
+              </span>
               {/* <DetalisFormatted title="Sr No" detail={selectedBudget.srNo} /> */}
-              <DetalisFormatted
-                title="Sr No"
-                detail={selectedBudget.srNo}
-              />
+              <DetalisFormatted title="Sr No" detail={selectedBudget.srNo} />
               <DetalisFormatted
                 title="Expense Name"
                 detail={selectedBudget.expanseName}
@@ -255,38 +252,39 @@ const PendingApprovals = () => {
                 title="Building"
                 detail={selectedBudget.buildingName}
               />
-              
-           {Array.isArray(selectedBudget.particulars) &&
-            selectedBudget.particulars.length > 0 ? (
-              <>
-                {selectedBudget.particulars.map((item, idx) => (
-                  <DetalisFormatted
-                    key={`${item.particularName}-${idx}`}
-                    title={`Particular ${idx + 1}`}
-                    detail={`${item.particularName || "-"} — INR ${
-                      inrFormat(item.particularAmount || 0)
-                    }`}
-                  />
-                ))}
-              </>
-            ) : (
-              <DetalisFormatted title="Particulars" detail="-" />
-)}
 
-            
+              {Array.isArray(selectedBudget.particulars) &&
+              selectedBudget.particulars.length > 0 ? (
+                <>
+                  {selectedBudget.particulars.map((item, idx) => (
+                    <DetalisFormatted
+                      key={`${item.particularName}-${idx}`}
+                      title={`Particular ${idx + 1}`}
+                      detail={`${item.particularName || "-"} — INR ${inrFormat(
+                        item.particularAmount || 0,
+                      )}`}
+                    />
+                  ))}
+                </>
+              ) : (
+                <DetalisFormatted title="Particulars" detail="-" />
+              )}
 
               {/* <DetalisFormatted
                 title="Particular Amount"
                 detail={selectedBudget.projectedAmount?.toLocaleString()}
               /> */}
-              
+
               <DetalisFormatted
                 title="Total Amount"
                 // detail={`₹${(selectedBudget.projectedAmount || 0).toLocaleString()}`}
                 detail={`INR ${(selectedBudget.projectedAmount || 0).toLocaleString()}`}
               />
               <DetalisFormatted title="GSTIN" detail={selectedBudget.gstIn} />
-              <DetalisFormatted title="Approval Status" detail={selectedBudget.status} />
+              <DetalisFormatted
+                title="Approval Status"
+                detail={selectedBudget.status}
+              />
               <DetalisFormatted
                 title="Paid Status"
                 detail={selectedBudget.isPaid}
@@ -326,14 +324,18 @@ const PendingApprovals = () => {
               <DetalisFormatted
                 title="Invoice Link"
                 detail={
-                  <a
-                    href={selectedBudget.invoice?.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline"
-                  >
-                    View Invoice
-                  </a>
+                  selectedBudget.invoice?.link ? (
+                    <a
+                      href={selectedBudget.invoice.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline cursor-pointer"
+                    >
+                      View Invoice
+                    </a>
+                  ) : (
+                    "-"
+                  )
                 }
               />
               <DetalisFormatted
@@ -347,14 +349,18 @@ const PendingApprovals = () => {
               <DetalisFormatted
                 title="Voucher Link"
                 detail={
-                  <a
-                    href={selectedBudget.voucher?.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline cursor-pointer"
-                  >
-                    View Voucher
-                  </a>
+                  selectedBudget.voucher?.link ? (
+                    <a
+                      href={selectedBudget.voucher.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline cursor-pointer"
+                    >
+                      View Voucher
+                    </a>
+                  ) : (
+                    "-"
+                  )
                 }
               />
 
@@ -389,10 +395,10 @@ const PendingApprovals = () => {
                   FY{" "}
                   {new Date().getMonth() + 1 >= 4
                     ? `${String(new Date().getFullYear()).slice(2)}-${String(
-                        new Date().getFullYear() + 1
+                        new Date().getFullYear() + 1,
                       ).slice(2)}`
                     : `${String(new Date().getFullYear() - 1).slice(
-                        2
+                        2,
                       )}-${String(new Date().getFullYear()).slice(2)}`}
                 </div>
 
@@ -454,7 +460,7 @@ const PendingApprovals = () => {
                           ?.reduce(
                             (sum, item) =>
                               sum + Number(item.particularAmount || 0),
-                            0
+                            0,
                           )
                           .toFixed(0)}
                       </td>

@@ -77,6 +77,7 @@ const MeetingSettings = () => {
         location: selectedRoom.location?.building?._id ?? "",
         unit: selectedRoom.location?._id ?? "",
         isActive: selectedRoom.isActive ?? "",
+        roomImage: selectedRoom.image?.url ?? null,
       });
     }
   }, [selectedRoom, resetEditForm]);
@@ -88,7 +89,7 @@ const MeetingSettings = () => {
       seats: room.seats,
       description: room.description,
       location: room.location,
-      roomImage: null,
+      roomImage: room.image?.url ?? null,
     });
     setEditFile(null);
     setOpenEditModal(true);
@@ -108,7 +109,7 @@ const MeetingSettings = () => {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
       return response.data;
     },
@@ -129,7 +130,9 @@ const MeetingSettings = () => {
     formData.append("description", data.description);
     formData.append("location", data.unit);
     formData.append("isActive", data.isActive === "false" ? false : true);
-    formData.append("room", data.roomImage);
+    if (data.roomImage instanceof File) {
+      formData.append("room", data.roomImage);
+    }
 
     editRoomMutation.mutate({ id: selectedRoom._id, formData });
   };
@@ -562,14 +565,22 @@ const MeetingSettings = () => {
                 name="roomImage"
                 control={editControl}
                 defaultValue={null}
-                render={({ field }) => (
-                  <UploadFileInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    allowedExtensions={["jpeg"]}
-                    previewType="jpeg"
-                  />
-                )}
+                render={({ field }) => {
+                  const previewUrl =
+                    field.value instanceof File
+                      ? URL.createObjectURL(field.value)
+                      : field.value;
+
+                  return (
+                    <UploadFileInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      allowedExtensions={["jpg", "jpeg", "png", "webp"]}
+                      previewType="auto"
+                      previewUrl={previewUrl}
+                    />
+                  );
+                }}
               />
               <Controller
                 name="isActive"

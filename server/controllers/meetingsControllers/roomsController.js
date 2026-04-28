@@ -3,13 +3,19 @@ const idGenerator = require("../../utils/idGenerator");
 const User = require("../../models/hr/UserData");
 const sharp = require("sharp");
 const mongoose = require("mongoose");
-const {
-  handleFileUpload,
-  handleFileDelete,
-} = require("../../config/s3Config");
+const { handleFileUpload, handleFileDelete } = require("../../config/s3Config");
 const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const Unit = require("../../models/locations/Unit");
+
+const parseOptionalNumber = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) ? parsedValue : undefined;
+};
 
 const addRoom = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -48,6 +54,7 @@ const addRoom = async (req, res, next) => {
       })
       .lean()
       .exec();
+    console.log("Found user with company:", foundUser.company);
 
     if (!foundUser || !foundUser.company) {
       throw new CustomError(
@@ -92,18 +99,25 @@ const addRoom = async (req, res, next) => {
       imageUrl = uploadResult.secure_url;
     }
 
+    const parsedPerHourCredit = parseOptionalNumber(perHourCredit);
+    const parsedPerHourPrice = parseOptionalNumber(perHourPrice);
+    const parsedDailyHours = parseOptionalNumber(dailyHours);
+    const parsedMonthlyHours = parseOptionalNumber(monthlyHours);
+    const parsedPerSeatPrice = parseOptionalNumber(perSeatPrice);
+    const parsedPerHourGstPrice = parseOptionalNumber(perHourGstPrice);
+
     const room = new Room({
       roomId,
       name,
       seats,
       description,
       location,
-      perHourCredit: Number(perHourCredit),
-      perHourPrice: Number(perHourPrice),
-      dailyHours: Number(dailyHours),
-      monthlyHours: Number(monthlyHours),
-      perSeatPrice: Number(perSeatPrice),
-      perHourGstPrice: Number(perHourGstPrice),
+      perHourCredit: parsedPerHourCredit,
+      perHourPrice: parsedPerHourPrice,
+      dailyHours: parsedDailyHours,
+      monthlyHours: parsedMonthlyHours,
+      perSeatPrice: parsedPerSeatPrice,
+      perHourGstPrice: parsedPerHourGstPrice,
       assignedAssets: [],
       company: company._id,
       image: {
@@ -265,47 +279,65 @@ const updateRoom = async (req, res, next) => {
         req.body.isActive === true || req.body.isActive === "true";
     }
 
+    const parsedPerHourCredit = parseOptionalNumber(req.body.perHourCredit);
+
     if (
       Object.hasOwn(req.body, "perHourCredit") &&
-      Number(req.body.perHourCredit) !== room.perHourCredit
+      parsedPerHourCredit !== undefined &&
+      parsedPerHourCredit !== room.perHourCredit
     ) {
-      updatedFields.perHourCredit = Number(req.body.perHourCredit);
+      updatedFields.perHourCredit = parsedPerHourCredit;
     }
-
+    const parsedPerHourPrice = parseOptionalNumber(req.body.perHourPrice);
     if (
       Object.hasOwn(req.body, "perHourPrice") &&
-      Number(req.body.perHourPrice) !== room.perHourPrice
+      parsedPerHourPrice !== undefined &&
+      parsedPerHourPrice !== room.perHourPrice
     ) {
-      updatedFields.perHourPrice = Number(req.body.perHourPrice);
+      updatedFields.perHourPrice = parsedPerHourPrice;
     }
 
+    const parsedDailyHours = parseOptionalNumber(req.body.dailyHours);
     if (
       Object.hasOwn(req.body, "dailyHours") &&
-      Number(req.body.dailyHours) !== room.dailyHours
+      parsedDailyHours !== undefined &&
+      parsedDailyHours !== room.dailyHours
     ) {
-      updatedFields.dailyHours = Number(req.body.dailyHours);
+      updatedFields.dailyHours = parsedDailyHours;
     }
 
+    const parsedMonthlyHours = parseOptionalNumber(req.body.monthlyHours);
     if (
       Object.hasOwn(req.body, "monthlyHours") &&
-      Number(req.body.monthlyHours) !== room.monthlyHours
+      parsedMonthlyHours !== undefined &&
+      parsedMonthlyHours !== room.monthlyHours
     ) {
-      updatedFields.monthlyHours = Number(req.body.monthlyHours);
+      updatedFields.monthlyHours = parsedMonthlyHours;
     }
-
+    const parsedPerSeatPrice = parseOptionalNumber(req.body.perSeatPrice);
     if (
       Object.hasOwn(req.body, "perSeatPrice") &&
-      Number(req.body.perSeatPrice) !== room.perSeatPrice
+      parsedPerSeatPrice !== undefined &&
+      parsedPerSeatPrice !== room.perSeatPrice
     ) {
-      updatedFields.perSeatPrice = Number(req.body.perSeatPrice);
+      updatedFields.perSeatPrice = parsedPerSeatPrice;
     }
+
+    const parsedPerHourGstPrice = parseOptionalNumber(req.body.perHourGstPrice);
 
     if (
       Object.hasOwn(req.body, "perHourGstPrice") &&
-      Number(req.body.perHourGstPrice) !== room.perHourGstPrice
+      parsedPerHourGstPrice !== undefined &&
+      parsedPerHourGstPrice !== room.perHourGstPrice
     ) {
-      updatedFields.perHourGstPrice = Number(req.body.perHourGstPrice);
+      updatedFields.perHourGstPrice = parsedPerHourGstPrice;
     }
+
+    const foundUser = await User.findById(user)
+      .select("company")
+      .populate({ path: "company", select: "companyName workLocations" })
+      .lean()
+      .exec();
 
     // Handle image update
     if (req.file) {
@@ -321,7 +353,10 @@ const updateRoom = async (req, res, next) => {
         await handleFileDelete(room.image.id);
       }
 
-      const uploadResult = await handleFileUpload(base64Image, "rooms");
+      const uploadResult = await handleFileUpload(
+        base64Image,
+        `${foundUser.company.companyName}/rooms`,
+      );
       updatedFields.image = {
         id: uploadResult.public_id,
         url: uploadResult.secure_url,

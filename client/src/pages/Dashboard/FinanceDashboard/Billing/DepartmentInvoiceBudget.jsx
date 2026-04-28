@@ -10,6 +10,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import StatusChip from "../../../../components/StatusChip";
 
 const DepartmentInvoiceBudget = () => {
   const navigate = useNavigate();
@@ -57,7 +58,36 @@ const DepartmentInvoiceBudget = () => {
     { headerName: "Due Date", field: "dueDate", flex: 1 },
     { headerName: "Invoice Name", field: "invoiceName", flex: 1, hide: true },
     { headerName: "Invoice Date", field: "invoiceDate", flex: 1, hide: true },
-    { headerName: "Approval Status", field: "status", flex: 1, hide: true },
+    { headerName: "Approval Status", field: "status", flex: 1,   
+      // cellRenderer: (params) => <StatusChip status={params.value || "-"} />,},
+      cellRenderer: (params) => {
+        const status = String(params?.value || "-");
+        const normalizedStatus = status.toLowerCase();
+
+        const styleMap = {
+          approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+          pending: { backgroundColor: "#FEF3C7", color: "#92400E" },
+         // rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+        };
+
+        const chipStyle = styleMap[normalizedStatus] || {
+          backgroundColor: "#F5F5F5",
+          color: "#616161",
+        };
+
+        return (
+          <Chip
+            label={status}
+            size="small"
+            sx={{
+              ...chipStyle,
+              fontWeight: 500,
+              textTransform: "capitalize",
+            }}
+          />
+        );
+      },
+    },
     { headerName: "Paid Status", field: "isPaid", flex: 1, hide: true },
     { headerName: "Invoice File", field: "invoiceLink", flex: 1, hide: true },
     //{ headerName: "Invoice Name", field: "invoiceName", flex: 1 },
@@ -85,7 +115,8 @@ const DepartmentInvoiceBudget = () => {
     },
   ];
 
-  const mappedRows = (hrFinance || []).map((item, index) => {
+   const mappedRows = (hrFinance || [])
+    .map((item) => {
     const invoice = item.invoice || {};
     const finance = item.finance || {};
     const unit = item.unit || {};
@@ -127,7 +158,8 @@ const DepartmentInvoiceBudget = () => {
       },
       unit: unit,
     };
-  });
+   })
+    .filter((row) => ["Approved", "Pending"].includes(row.status));
 
 
   return (

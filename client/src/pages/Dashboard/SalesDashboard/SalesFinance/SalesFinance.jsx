@@ -31,6 +31,11 @@ const ManageAssets = () => {
     permission: PERMISSIONS.SALES_VOUCHER.value,
   },
   {
+    label: "Reject Voucher",
+    path: "reject-voucher",
+    permission: PERMISSIONS.SALES_REJECT_VOUCHER.value,
+  },
+  {
     label: "Voucher History",
     path: "voucher-history",
     permission: PERMISSIONS.SALES_VOUCHER_HISTORY.value,

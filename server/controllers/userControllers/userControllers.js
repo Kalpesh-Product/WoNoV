@@ -17,6 +17,373 @@ const Agreements = require("../../models/hr/Agreements");
 const TestUserData = require("../../models/hr/TestUserData");
 const TestAgreements = require("../../models/hr/TestAgreements");
 
+// const createUser = async (req, res, next) => {
+//   const logPath = "hr/HrLog";
+//   const logAction = "Create User";
+//   const logSourceKey = "user";
+//   const { user } = req;
+//   const company = req.company;
+//   const ip = req.ip;
+
+//   try {
+//     const {
+//       empId,
+//       firstName,
+//       middleName,
+//       lastName,
+//       gender,
+//       dateOfBirth,
+//       phone,
+//       email,
+//       role,
+//       departments,
+//       employeeType,
+//       designation,
+//       jobTitle,
+//       jobDescription,
+//       startDate,
+//       workLocation,
+//       reportsTo,
+//       shift,
+//       policies,
+//       attendanceSource,
+//       homeAddress,
+//       bankInformation,
+//       panAadhaarDetails,
+//       payrollInformation,
+//       familyInformation,
+//     } = req.body;
+
+//     const companyId = req.company;
+
+//     // Validate required fields
+//     const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/i;
+//     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i;
+//     const aadhaarRegex = /^[0-9]{12}$/;
+//     const accountNumberRegex = /^[0-9]{9,18}$/;
+//     const pfUANRegex = /^[0-9]{12}$/;
+//     const pfAccountNumberRegex = /^[A-Z0-9\/-]{10,25}$/i;
+//     const esiAccountNumberRegex = /^[0-9]{10,17}$/;
+
+//     const validationSchema = yup.object({
+//       empId: yup.string().trim().required("empId is required"),
+//       firstName: yup.string().trim().required("firstName is required"),
+
+//       lastName: yup.string().trim().required("lastName is required"),
+//       gender: yup.string().trim().required("gender is required"),
+//       dateOfBirth: yup.mixed().required("dateOfBirth is required"),
+//       phone: yup.string().trim().required("phone is required"),
+//       email: yup.string().trim().email().required("email is required"),
+//       role: yup
+//         .mixed()
+//         .test("role-required", "role is required", (value) =>
+//           Array.isArray(value) ? value.length > 0 : Boolean(value),
+//         ),
+//       departments: yup
+//         .array()
+//         .of(yup.string().required())
+//         .min(1, "departments is required")
+//         .required("departments is required"),
+//       employeeType: yup
+//         .mixed()
+//         .test("employeeType-required", "employeeType is required", (value) => {
+//           if (!value) return false;
+//           if (typeof value === "string") return value.trim() !== "";
+//           if (typeof value === "object") {
+//             return typeof value.name === "string" && value.name.trim() !== "";
+//           }
+//           return false;
+//         }),
+//       jobTitle: yup.string().trim().required("jobTitle is required"),
+//       jobDescription: yup
+//         .string()
+//         .trim()
+//         .required("jobDescription is required"),
+//       startDate: yup.mixed().required("startDate is required"),
+//       workLocation: yup.string().trim().required("workLocation is required"),
+//       reportsTo: yup.string().trim().required("reportsTo is required"),
+//       attendanceSource: yup
+//         .string()
+//         .trim()
+//         .required("attendanceSource is required"),
+//       policies: yup.object({
+//         workSchedulePolicy: yup
+//           .string()
+//           .trim()
+//           .required("workSchedulePolicy is required"),
+//         leavePolicy: yup.string().trim().required("leavePolicy is required"),
+//         holidayPolicy: yup
+//           .string()
+//           .trim()
+//           .required("holidayPolicy is required"),
+//       }),
+//       homeAddress: yup.object({
+//         addressLine1: yup.string().trim().required("addressLine1 is required"),
+//         addressLine2: yup.string().trim().required("addressLine2 is required"),
+//         country: yup.string().trim().required("country is required"),
+//         state: yup.string().trim().required("state is required"),
+//         city: yup.string().trim().required("city is required"),
+//         pinCode: yup.string().trim().required("pinCode is required"),
+//       }),
+//       bankInformation: yup.object({
+//         bankIFSC: yup
+//           .string()
+//           .trim()
+//           .matches(ifscRegex, "bankIFSC is invalid")
+//           .required("bankIFSC is required"),
+//         bankName: yup.string().trim().required("bankName is required"),
+//         branchName: yup.string().trim().required("branchName is required"),
+//         nameOnAccount: yup
+//           .string()
+//           .trim()
+//           .required("nameOnAccount is required"),
+//         accountNumber: yup
+//           .string()
+//           .trim()
+//           .matches(accountNumberRegex, "accountNumber is invalid")
+//           .required("accountNumber is required"),
+//       }),
+//       panAadhaarDetails: yup.object({
+//         aadhaarId: yup
+//           .string()
+//           .trim()
+//           .matches(aadhaarRegex, "aadhaarId is invalid")
+//           .required("aadhaarId is required"),
+//         pan: yup
+//           .string()
+//           .trim()
+//           .matches(panRegex, "pan is invalid")
+//           .required("pan is required"),
+//         pfAccountNumber: yup
+//           .string()
+//           .trim()
+//           .required("pfAccountNumber is required")
+//           .matches(pfAccountNumberRegex, "pfAccountNumber is invalid"),
+//         pfUAN: yup
+//           .string()
+//           .trim()
+//           .required("pfUAN is required")
+//           .matches(pfUANRegex, "pfUAN is invalid"),
+//         esiAccountNumber: yup
+//           .string()
+//           .trim()
+//           .required("esiAccountNumber is required")
+//           .matches(esiAccountNumberRegex, "esiAccountNumber is invalid"),
+//       }),
+//       payrollInformation: yup.object({
+//         includeInPayroll: yup.mixed().required("includeInPayroll is required"),
+//         payrollBatch: yup.string().trim().required("payrollBatch is required"),
+//         professionTaxExemption: yup
+//           .mixed()
+//           .required("professionTaxExemption is required"),
+//         includePF: yup.mixed().required("includePF is required"),
+//         pfContributionRate: yup
+//           .string()
+//           .trim()
+//           .required("pfContributionRate is required"),
+//         employeePF: yup.string().trim().required("employeePF is required"),
+//         employerPf: yup.string().trim().required("employerPf is required"),
+//         includeEsi: yup.mixed().required("includeEsi is required"),
+//         esiContribution: yup
+//           .string()
+//           .trim()
+//           .required("esiContribution is required"),
+//         hraType: yup.string().trim().required("hraType is required"),
+//         tdsCalculationBasedOn: yup
+//           .string()
+//           .trim()
+//           .required("tdsCalculationBasedOn is required"),
+//         incomeTaxRegime: yup
+//           .string()
+//           .trim()
+//           .required("incomeTaxRegime is required"),
+//       }),
+//       familyInformation: yup.object({
+//         fatherName: yup.string().trim().required("fatherName is required"),
+//         motherName: yup.string().trim().required("motherName is required"),
+//         maritalStatus: yup
+//           .string()
+//           .trim()
+//           .required("maritalStatus is required"),
+//         emergencyPhone: yup
+//           .string()
+//           .trim()
+//           .required("emergencyPhone is required"),
+//       }),
+//     });
+
+//     try {
+//       await validationSchema.validate(req.body, {
+//         abortEarly: false,
+//         stripUnknown: true,
+//       });
+//     } catch (error) {
+//       if (error instanceof yup.ValidationError) {
+//         throw new CustomError(
+//           `Missing or invalid fields: ${error.errors.join(", ")}`,
+//           logPath,
+//           logAction,
+//           logSourceKey,
+//         );
+//       }
+//       throw error;
+//     }
+
+//     // Validate departments: check for any invalid department IDs
+//     const invalidDepartmentIds = departments.filter(
+//       (id) => !mongoose.Types.ObjectId.isValid(id),
+//     );
+//     if (invalidDepartmentIds.length > 0) {
+//       throw new CustomError(
+//         "Invalid department ID provided",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     const departmentExists = await Department.find({
+//       _id: { $in: departments },
+//     })
+//       .lean()
+//       .exec();
+//     if (!departmentExists || departmentExists.length === 0) {
+//       throw new CustomError(
+//         "Department not found",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     // Check if company exists
+//     const companyExists = await Company.findOne({ _id: companyId })
+//       .lean()
+//       .exec();
+//     if (!companyExists) {
+//       throw new CustomError(
+//         "Company not found",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     // Check if the employee ID or email is already registered
+//     const existingUser = await User.findOne({
+//       $or: [{ company: company, empId }, { email }],
+//     }).exec();
+//     if (existingUser) {
+//       throw new CustomError(
+//         "Employee ID or email already exists",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     // Check role validity
+//     const roleValue = await Role.findOne({ _id: role }).lean().exec();
+//     if (!roleValue) {
+//       throw new CustomError(
+//         "Invalid role provided",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     // Master Admin check: only one Master Admin allowed per company
+//     if (roleValue.roleID === "ROLE_MASTER_ADMIN") {
+//       const doesMasterAdminExist = await User.findOne({
+//         role: { $in: [roleValue._id] },
+//         company: companyId,
+//       })
+//         .lean()
+//         .exec();
+//       if (doesMasterAdminExist) {
+//         throw new CustomError(
+//           "A master admin already exists",
+//           logPath,
+//           logAction,
+//           logSourceKey,
+//         );
+//       }
+//     }
+
+//     // Hash the default password
+//     const defaultPassword = `${firstName.trim()}@0625`;
+//     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+//     const newUser = new User({
+//       empId,
+//       firstName,
+//       middleName,
+//       lastName,
+//       gender,
+//       dateOfBirth,
+//       phone,
+//       email,
+//       role,
+//       company,
+//       password: hashedPassword,
+//       attendanceSource,
+//       departments,
+//       employeeType,
+//       jobTitle,
+//       jobDescription,
+//       designation,
+//       startDate,
+//       workLocation,
+//       reportsTo,
+//       policies,
+//       homeAddress,
+//       bankInformation,
+//       panAadhaarDetails,
+//       payrollInformation,
+//       familyInformation,
+//       isActive: true,
+//     });
+
+//     const savedUser = await newUser.save();
+
+//     const policyAgreements = [
+//       {
+//         name: "Work Schedule Policy",
+//         value: policies.workSchedulePolicy,
+//       },
+//       { name: "Leave Policy", value: policies.leavePolicy },
+//       { name: "Holiday Policy", value: policies.holidayPolicy },
+//     ];
+
+//     const agreementsToCreate = policyAgreements
+//       .filter((policy) => policy.value)
+//       .map((policy) => {
+//         const value = String(policy.value);
+//         const isUrl = value.startsWith("https");
+
+//         return {
+//           name: policy.name,
+//           user: savedUser._id,
+//           url: isUrl ? value : undefined,
+//           type:
+//             policy.name === "Work Schedule Policy" && !isUrl
+//               ? value
+//               : undefined,
+//           isActive: true,
+//         };
+//       });
+
+//     if (agreementsToCreate.length) {
+//       await Agreements.insertMany(agreementsToCreate);
+//     }
+
+//     return res.status(201).json({ message: "Employee onboarded successfully" });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const createUser = async (req, res, next) => {
   const logPath = "hr/HrLog";
   const logAction = "Create User";
@@ -56,7 +423,6 @@ const createUser = async (req, res, next) => {
 
     const companyId = req.company;
 
-    // Validate required fields
     const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/i;
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i;
     const aadhaarRegex = /^[0-9]{12}$/;
@@ -66,11 +432,18 @@ const createUser = async (req, res, next) => {
     const esiAccountNumberRegex = /^[0-9]{10,17}$/;
 
     const validationSchema = yup.object({
+      // ── Core required fields (still required in schema) ──────────────────
       empId: yup.string().trim().required("empId is required"),
       firstName: yup.string().trim().required("firstName is required"),
-
       lastName: yup.string().trim().required("lastName is required"),
-      gender: yup.string().trim().required("gender is required"),
+      gender: yup
+        .string()
+        .trim()
+        .oneOf(
+          ["Male", "Female", "Other"],
+          "gender must be Male, Female, or Other",
+        )
+        .required("gender is required"),
       dateOfBirth: yup.mixed().required("dateOfBirth is required"),
       phone: yup.string().trim().required("phone is required"),
       email: yup.string().trim().email().required("email is required"),
@@ -94,122 +467,120 @@ const createUser = async (req, res, next) => {
           }
           return false;
         }),
-      jobTitle: yup.string().trim().required("jobTitle is required"),
-      jobDescription: yup
-        .string()
-        .trim()
-        .required("jobDescription is required"),
-      startDate: yup.mixed().required("startDate is required"),
-      workLocation: yup.string().trim().required("workLocation is required"),
       reportsTo: yup.string().trim().required("reportsTo is required"),
       attendanceSource: yup
         .string()
         .trim()
         .required("attendanceSource is required"),
-      policies: yup.object({
-        workSchedulePolicy: yup
-          .string()
-          .trim()
-          .required("workSchedulePolicy is required"),
-        leavePolicy: yup.string().trim().required("leavePolicy is required"),
-        holidayPolicy: yup
-          .string()
-          .trim()
-          .required("holidayPolicy is required"),
-      }),
-      homeAddress: yup.object({
-        addressLine1: yup.string().trim().required("addressLine1 is required"),
-        addressLine2: yup.string().trim().required("addressLine2 is required"),
-        country: yup.string().trim().required("country is required"),
-        state: yup.string().trim().required("state is required"),
-        city: yup.string().trim().required("city is required"),
-        pinCode: yup.string().trim().required("pinCode is required"),
-      }),
-      bankInformation: yup.object({
-        bankIFSC: yup
-          .string()
-          .trim()
-          .matches(ifscRegex, "bankIFSC is invalid")
-          .required("bankIFSC is required"),
-        bankName: yup.string().trim().required("bankName is required"),
-        branchName: yup.string().trim().required("branchName is required"),
-        nameOnAccount: yup
-          .string()
-          .trim()
-          .required("nameOnAccount is required"),
-        accountNumber: yup
-          .string()
-          .trim()
-          .matches(accountNumberRegex, "accountNumber is invalid")
-          .required("accountNumber is required"),
-      }),
-      panAadhaarDetails: yup.object({
-        aadhaarId: yup
-          .string()
-          .trim()
-          .matches(aadhaarRegex, "aadhaarId is invalid")
-          .required("aadhaarId is required"),
-        pan: yup
-          .string()
-          .trim()
-          .matches(panRegex, "pan is invalid")
-          .required("pan is required"),
-        pfAccountNumber: yup
-          .string()
-          .trim()
-          .required("pfAccountNumber is required")
-          .matches(pfAccountNumberRegex, "pfAccountNumber is invalid"),
-        pfUAN: yup
-          .string()
-          .trim()
-          .required("pfUAN is required")
-          .matches(pfUANRegex, "pfUAN is invalid"),
-        esiAccountNumber: yup
-          .string()
-          .trim()
-          .required("esiAccountNumber is required")
-          .matches(esiAccountNumberRegex, "esiAccountNumber is invalid"),
-      }),
-      payrollInformation: yup.object({
-        includeInPayroll: yup.mixed().required("includeInPayroll is required"),
-        payrollBatch: yup.string().trim().required("payrollBatch is required"),
-        professionTaxExemption: yup
-          .mixed()
-          .required("professionTaxExemption is required"),
-        includePF: yup.mixed().required("includePF is required"),
-        pfContributionRate: yup
-          .string()
-          .trim()
-          .required("pfContributionRate is required"),
-        employeePF: yup.string().trim().required("employeePF is required"),
-        employerPf: yup.string().trim().required("employerPf is required"),
-        includeEsi: yup.mixed().required("includeEsi is required"),
-        esiContribution: yup
-          .string()
-          .trim()
-          .required("esiContribution is required"),
-        hraType: yup.string().trim().required("hraType is required"),
-        tdsCalculationBasedOn: yup
-          .string()
-          .trim()
-          .required("tdsCalculationBasedOn is required"),
-        incomeTaxRegime: yup
-          .string()
-          .trim()
-          .required("incomeTaxRegime is required"),
-      }),
-      familyInformation: yup.object({
-        fatherName: yup.string().trim().required("fatherName is required"),
-        motherName: yup.string().trim().required("motherName is required"),
-        maritalStatus: yup
-          .string()
-          .trim()
-          .required("maritalStatus is required"),
-        emergencyPhone: yup
-          .string()
-          .trim()
-          .required("emergencyPhone is required"),
-      }),
+
+      // ── Optional in updated schema ────────────────────────────────────────
+      middleName: yup.string().trim().optional(),
+      designation: yup.string().trim().optional(),
+      jobTitle: yup.string().trim().optional(),
+      jobDescription: yup.string().trim().optional(),
+      startDate: yup.mixed().optional(),
+      workLocation: yup.string().trim().optional(),
+      shift: yup.string().trim().optional(),
+
+      // ── Policies (optional object) ────────────────────────────────────────
+      policies: yup
+        .object({
+          workSchedulePolicy: yup.string().trim().optional(),
+          leavePolicy: yup.string().trim().optional(),
+          holidayPolicy: yup.string().trim().optional(),
+        })
+        .optional(),
+
+      // ── homeAddress (all fields optional) ────────────────────────────────
+      homeAddress: yup
+        .object({
+          addressLine1: yup.string().trim().optional(),
+          addressLine2: yup.string().trim().optional(),
+          country: yup.string().trim().optional(),
+          state: yup.string().trim().optional(),
+          city: yup.string().trim().optional(),
+          pinCode: yup.string().trim().optional(),
+          notes: yup.string().trim().optional(),
+        })
+        .optional(),
+
+      // ── bankInformation (all fields optional, validate format if present) ─
+      bankInformation: yup
+        .object({
+          bankIFSC: yup
+            .string()
+            .trim()
+            .matches(ifscRegex, "bankIFSC is invalid")
+            .optional(),
+          bankName: yup.string().trim().optional(),
+          branchName: yup.string().trim().optional(),
+          nameOnAccount: yup.string().trim().optional(),
+          accountNumber: yup
+            .string()
+            .trim()
+            .matches(accountNumberRegex, "accountNumber is invalid")
+            .optional(),
+        })
+        .optional(),
+
+      // ── panAadhaarDetails (all fields optional, validate format if present)
+      panAadhaarDetails: yup
+        .object({
+          aadhaarId: yup
+            .string()
+            .trim()
+            .matches(aadhaarRegex, "aadhaarId is invalid")
+            .optional(),
+          pan: yup
+            .string()
+            .trim()
+            .matches(panRegex, "pan is invalid")
+            .optional(),
+          pfAccountNumber: yup
+            .string()
+            .trim()
+            .matches(pfAccountNumberRegex, "pfAccountNumber is invalid")
+            .optional(),
+          pfUAN: yup
+            .string()
+            .trim()
+            .matches(pfUANRegex, "pfUAN is invalid")
+            .optional(),
+          esiAccountNumber: yup
+            .string()
+            .trim()
+            .matches(esiAccountNumberRegex, "esiAccountNumber is invalid")
+            .optional(),
+        })
+        .optional(),
+
+      // ── payrollInformation (all fields optional) ──────────────────────────
+      payrollInformation: yup
+        .object({
+          includeInPayroll: yup.mixed().optional(),
+          payrollBatch: yup.string().trim().optional(),
+          professionTaxExemption: yup.mixed().optional(),
+          includePF: yup.mixed().optional(),
+          pfContributionRate: yup.string().trim().optional(),
+          employeePF: yup.string().trim().optional(),
+          employerPf: yup.string().trim().optional(),
+          includeEsi: yup.mixed().optional(),
+          esiContribution: yup.string().trim().optional(),
+          hraType: yup.string().trim().optional(),
+          tdsCalculationBasedOn: yup.string().trim().optional(),
+          incomeTaxRegime: yup.string().trim().optional(),
+        })
+        .optional(),
+
+      // ── familyInformation (all fields optional) ───────────────────────────
+      familyInformation: yup
+        .object({
+          fatherName: yup.string().trim().optional(),
+          motherName: yup.string().trim().optional(),
+          maritalStatus: yup.string().trim().optional(),
+          emergencyPhone: yup.string().trim().optional(),
+        })
+        .optional(),
     });
 
     try {
@@ -229,7 +600,7 @@ const createUser = async (req, res, next) => {
       throw error;
     }
 
-    // Validate departments: check for any invalid department IDs
+    // Validate departments
     const invalidDepartmentIds = departments.filter(
       (id) => !mongoose.Types.ObjectId.isValid(id),
     );
@@ -269,7 +640,7 @@ const createUser = async (req, res, next) => {
       );
     }
 
-    // Check if the employee ID or email is already registered
+    // Check if employee ID or email already exists
     const existingUser = await User.findOne({
       $or: [{ company: company, empId }, { email }],
     }).exec();
@@ -293,7 +664,7 @@ const createUser = async (req, res, next) => {
       );
     }
 
-    // Master Admin check: only one Master Admin allowed per company
+    // Master Admin check
     if (roleValue.roleID === "ROLE_MASTER_ADMIN") {
       const doesMasterAdminExist = await User.findOne({
         role: { $in: [roleValue._id] },
@@ -336,6 +707,7 @@ const createUser = async (req, res, next) => {
       startDate,
       workLocation,
       reportsTo,
+      shift,
       policies,
       homeAddress,
       bankInformation,
@@ -347,35 +719,34 @@ const createUser = async (req, res, next) => {
 
     const savedUser = await newUser.save();
 
-    const policyAgreements = [
-      {
-        name: "Work Schedule Policy",
-        value: policies.workSchedulePolicy,
-      },
-      { name: "Leave Policy", value: policies.leavePolicy },
-      { name: "Holiday Policy", value: policies.holidayPolicy },
-    ];
+    // Only create agreements if policies exist
+    if (policies) {
+      const policyAgreements = [
+        { name: "Work Schedule Policy", value: policies.workSchedulePolicy },
+        { name: "Leave Policy", value: policies.leavePolicy },
+        { name: "Holiday Policy", value: policies.holidayPolicy },
+      ];
 
-    const agreementsToCreate = policyAgreements
-      .filter((policy) => policy.value)
-      .map((policy) => {
-        const value = String(policy.value);
-        const isUrl = value.startsWith("https");
+      const agreementsToCreate = policyAgreements
+        .filter((policy) => policy.value)
+        .map((policy) => {
+          const value = String(policy.value);
+          const isUrl = value.startsWith("https");
+          return {
+            name: policy.name,
+            user: savedUser._id,
+            url: isUrl ? value : undefined,
+            type:
+              policy.name === "Work Schedule Policy" && !isUrl
+                ? value
+                : undefined,
+            isActive: true,
+          };
+        });
 
-        return {
-          name: policy.name,
-          user: savedUser._id,
-          url: isUrl ? value : undefined,
-          type:
-            policy.name === "Work Schedule Policy" && !isUrl
-              ? value
-              : undefined,
-          isActive: true,
-        };
-      });
-
-    if (agreementsToCreate.length) {
-      await Agreements.insertMany(agreementsToCreate);
+      if (agreementsToCreate.length) {
+        await Agreements.insertMany(agreementsToCreate);
+      }
     }
 
     return res.status(201).json({ message: "Employee onboarded successfully" });
@@ -438,38 +809,6 @@ const fetchUser = async (req, res, next) => {
 const fetchSingleUser = async (req, res) => {
   try {
     const { empid } = req.params;
-    // const user = await User.findOne({ empId: empid })
-    //   .select("-password")
-    //   .populate([
-    //     { path: "reportsTo" },
-    //     { path: "departments", select: "name" },
-    //     { path: "company", select: "name" },
-    //     { path: "role", select: "roleTitle modulePermissions" },
-    //     {
-    //       path: "workLocation",
-    //       select: "_id unitName unitNo",
-    //       populate: {
-    //         path: "building",
-    //         select: "_id buildingName fullAddress",
-    //       },
-    //     },
-    //   ])
-    //   .lean()
-    //   .exec();
-
-    // if (!user) {
-    //   return res.status(404).json({ message: "User not found" });
-    // }
-
-    // const reportsTo = await User.findOne({
-    //   role: { $in: [user.reportsTo] },
-    // }).select("firstName lastName");
-
-    // const policies = await Agreements.find({
-    //   user: { $in: [user._id] },
-    // });
-
-    // console.log("policies", policies);
 
     const user = await User.findOne({ empId: empid })
       .select("-password")
@@ -537,7 +876,7 @@ const fetchSingleUser = async (req, res) => {
       attendanceSource: user?.attendanceSource || "",
       leavePolicy: policyMap?.["Leave Policy"]?.url || "",
       holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
-       status: user.isActive ? "Active" : "Inactive",
+      status: user.isActive ? "Active" : "Inactive",
       isActive: Boolean(user.isActive),
       aadhaarID: user.panAadhaarDetails?.aadhaarId || "",
       pan: user.panAadhaarDetails?.pan || "",
@@ -578,6 +917,7 @@ const fetchSingleUser = async (req, res) => {
         user.payrollInformation?.tdsCalculationBasedOn || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
     };
+    console.log("Formatted User: ", policyMap);
 
     res.status(200).json(formattedUser);
   } catch (error) {
@@ -662,7 +1002,7 @@ const updateProfile = async (req, res, next) => {
     const updateData = req.body;
     const newProfilePicture = req.file;
 
-     const targetEmpId = updateData?.empId;
+    const targetEmpId = updateData?.empId;
     const targetUser = targetEmpId
       ? await User.findOne({ empId: targetEmpId, company }).lean().exec()
       : await User.findOne({ _id: loggedInUserId, company }).lean().exec();
@@ -735,16 +1075,17 @@ const updateProfile = async (req, res, next) => {
       });
     });
 
-      if (typeof updateData?.isActive === "boolean") {
+    if (typeof updateData?.isActive === "boolean") {
       updatePayload.isActive = updateData.isActive;
     }
-
 
     let profilePictureUpdate = null;
 
     if (newProfilePicture) {
-     // const foundUser = await User.findOne({ _id: userId }).lean().exec();
-           const foundUser = await User.findOne({ _id: targetUser._id }).lean().exec();
+      // const foundUser = await User.findOne({ _id: userId }).lean().exec();
+      const foundUser = await User.findOne({ _id: targetUser._id })
+        .lean()
+        .exec();
       if (foundUser?.profilePicture?.id) {
         try {
           const response = await handleFileDelete(foundUser.profilePicture.id);

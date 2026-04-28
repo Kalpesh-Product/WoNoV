@@ -329,7 +329,7 @@ const addAsset = async (req, res, next) => {
           .toBuffer();
         const uploadRes = await handleFileUpload(
           `data:image/webp;base64,${buffer.toString("base64")}`,
-          `${foundUser?.company?.companyName}/departments/assets/${subcategory.category.categoryName}/${subcategory.subCategoryName}/${name}`,
+          `${foundCompany.companyName}/departments/assets/${subcategory.category.categoryName}/${subcategory.subCategoryName}/${name}`,
         );
         assetImage = {
           url: uploadRes.secure_url,
@@ -610,6 +610,7 @@ const editAsset = async (req, res, next) => {
         .webp({ quality: 80 })
         .toBuffer();
 
+      console.log("found company", foundCompany.companyName);
       const uploadRes = await handleFileUpload(
         `data:image/webp;base64,${buffer.toString("base64")}`,
         `${foundCompany.companyName}/departments/assets/${subCategory.category.categoryName}/${subCategory.subCategoryName}/${name}`,
