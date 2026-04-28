@@ -97,10 +97,10 @@ const userDataSchema = new mongoose.Schema(
       trim: true,
     },
     employeeType: {
-      name: { type: String, required: true },
+      name: { type: String, trim: true },
       leavesCount: [
         {
-          leaveType: { type: String, required: true },
+          leaveType: { type: String, trim: true },
           count: { type: Number, default: 0, min: 0 },
         },
       ],
@@ -109,7 +109,7 @@ const userDataSchema = new mongoose.Schema(
       type: String,
 
       trim: true,
-      required: true,
+      // required: true,
     },
     jobDescription: {
       type: String,
@@ -141,14 +141,14 @@ const userDataSchema = new mongoose.Schema(
     },
     startDate: {
       type: Date,
-      required: true,
+      // required: true,
     },
     endDate: {
       type: Date,
     },
     workLocation: {
       type: String,
-      required: true,
+      // required: true,
       trim: true,
       // type: mongoose.Schema.Types.ObjectId,
       // ref: "Unit",
