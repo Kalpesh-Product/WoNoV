@@ -27,7 +27,7 @@ const EditDetails = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/users/fetch-single-user/${employmentID}`
+          `/api/users/fetch-single-user/${employmentID}`,
         );
         return response.data;
       } catch (error) {
@@ -78,19 +78,20 @@ const EditDetails = () => {
 
   const [isEditing, setIsEditing] = useState(false);
 
-   useEffect(() => {
+  useEffect(() => {
     if (!employeeData) return;
 
     reset({
       ...employeeData,
-      status: employeeData.status || (employeeData.isActive ? "Active" : "Inactive"),
+      status:
+        employeeData.status || (employeeData.isActive ? "Active" : "Inactive"),
     });
   }, [employeeData, reset]);
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const hasEmployeeEditAccess = userPermissions.includes(
-    PERMISSIONS.HR_EMPLOYEE_EDIT.value
+    PERMISSIONS.HR_EMPLOYEE_EDIT.value,
   );
 
   const handleEditToggle = () => {
@@ -113,7 +114,7 @@ const EditDetails = () => {
     },
     onError: (error) => {
       toast.error(
-        error?.response?.data?.message || "Failed to update employee details"
+        error?.response?.data?.message || "Failed to update employee details",
       );
     },
   });
@@ -131,13 +132,19 @@ const EditDetails = () => {
   const transformEmployeeData = isLoading
     ? []
     : {
-      ...employeeData,
-      dob: dayjs(employeeData.dob).format("DD-MM-YYYY"),
-      startDate: dayjs(employeeData.startDate).format(
-        "DD-MM-YYYY"
-      ),
-      status: employeeData?.status || (employeeData?.isActive ? "Active" : "Inactive"),
-    };
+        ...employeeData,
+        dob:
+          employeeData.dob && dayjs(employeeData.dob).isValid()
+            ? dayjs(employeeData.dob).format("DD-MM-YYYY")
+            : "",
+        startDate:
+          employeeData.startDate && dayjs(employeeData.startDate).isValid()
+            ? dayjs(employeeData.startDate).format("DD-MM-YYYY")
+            : "",
+        status:
+          employeeData?.status ||
+          (employeeData?.isActive ? "Active" : "Inactive"),
+      };
 
   return (
     <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">
@@ -181,53 +188,53 @@ const EditDetails = () => {
                   {isLoading
                     ? []
                     : [
-                      "firstName",
-                      "middleName",
-                      "lastName",
-                      "gender",
-                      "dob",
-                      "employeeID",
-                      "mobilePhone",
-                    ].map((fieldKey) => (
-                      <div key={fieldKey}>
-                        {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())
-                                  .replace(/\bI\sD\b/gi, "ID")}
-                                fullWidth
-                              />
-                            )}
-                          />
-                        ) : (
-                          <div className="py-2 flex justify-between items-center gap-2">
-                            <div className="w-[100%] justify-start flex">
-                              <span className="font-pmedium text-gray-600 text-content">
-                                {fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())
-                                  .replace(/\bI\sD\b/gi, "ID")}
-                              </span>{" "}
+                        "firstName",
+                        "middleName",
+                        "lastName",
+                        "gender",
+                        "dob",
+                        "employeeID",
+                        "mobilePhone",
+                      ].map((fieldKey) => (
+                        <div key={fieldKey}>
+                          {isEditing ? (
+                            <Controller
+                              name={fieldKey}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  size="small"
+                                  label={fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())
+                                    .replace(/\bI\sD\b/gi, "ID")}
+                                  fullWidth
+                                />
+                              )}
+                            />
+                          ) : (
+                            <div className="py-2 flex justify-between items-center gap-2">
+                              <div className="w-[100%] justify-start flex">
+                                <span className="font-pmedium text-gray-600 text-content">
+                                  {fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())
+                                    .replace(/\bI\sD\b/gi, "ID")}
+                                </span>{" "}
+                              </div>
+                              <div className="">
+                                <span>:</span>
+                              </div>
+                              <div className="w-full">
+                                <span className="text-gray-500">
+                                  {transformEmployeeData[fieldKey]}
+                                </span>
+                              </div>
                             </div>
-                            <div className="">
-                              <span>:</span>
-                            </div>
-                            <div className="w-full">
-                              <span className="text-gray-500">
-                                {transformEmployeeData[fieldKey]}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      ))}
                 </div>
               </div>
 
@@ -243,50 +250,50 @@ const EditDetails = () => {
                   {isLoading
                     ? []
                     : [
-                      "startDate",
-                      "workLocation",
-                      "employeeType",
-                      "department",
-                      "reportsTo",
-                      "jobTitle",
-                    ].map((fieldKey) => (
-                      <div key={fieldKey}>
-                        {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                                fullWidth
-                              />
-                            )}
-                          />
-                        ) : (
-                          <div className="py-2 flex justify-between items-start gap-2">
-                            <div className="w-[35%] justify-start flex">
-                              <span className="font-pmedium text-gray-600 text-content">
-                                {fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                              </span>{" "}
+                        "startDate",
+                        "workLocation",
+                        "employeeType",
+                        "department",
+                        "reportsTo",
+                        "jobTitle",
+                      ].map((fieldKey) => (
+                        <div key={fieldKey}>
+                          {isEditing ? (
+                            <Controller
+                              name={fieldKey}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  size="small"
+                                  label={fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  fullWidth
+                                />
+                              )}
+                            />
+                          ) : (
+                            <div className="py-2 flex justify-between items-start gap-2">
+                              <div className="w-[35%] justify-start flex">
+                                <span className="font-pmedium text-gray-600 text-content">
+                                  {fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                </span>{" "}
+                              </div>
+                              <div className="">
+                                <span>:</span>
+                              </div>
+                              <div className="w-full">
+                                <span className="text-gray-500">
+                                  {transformEmployeeData[fieldKey]}
+                                </span>
+                              </div>
                             </div>
-                            <div className="">
-                              <span>:</span>
-                            </div>
-                            <div className="w-full">
-                              <span className="text-gray-500">
-                                {transformEmployeeData[fieldKey]}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      ))}
                 </div>
               </div>
               <div>
@@ -299,80 +306,84 @@ const EditDetails = () => {
                   {isLoading
                     ? []
                     : [
-                      "shift",
-                      "workSchedulePolicy",
-                      "attendanceSource",
-                      "leavePolicy",
-                      "holidayPolicy",
-                      "status",
-                    ].map((fieldKey) => (
-                      <div key={fieldKey}>
-                        {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                            fieldKey === "status" ? (
-                                <TextField
-                                  {...field}
-                                  select
-                                  size="small"
-                                  label="Status"
-                                  fullWidth
-                                >
-                                  <MenuItem value="Active">Active</MenuItem>
-                                  <MenuItem value="Inactive">Inactive</MenuItem>
-                                </TextField>
-                              ) : (
-                                <TextField
-                                  {...field}
-                                  size="small"
-                                  label={fieldKey
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
-                                  fullWidth
-                                />
-                              )
-                            )}
-                          />
-                        ) : (
-                          <div className="py-2 flex justify-between items-center gap-2">
-                            <div className="w-[100%] justify-start flex">
-                              <span className="font-pmedium text-gray-600 text-content">
-                                {fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                              </span>{" "}
-                            </div>
-                            <div className="">
-                              <span>:</span>
-                            </div>
-                            <div className="w-full">
-                              {["leavePolicy", "holidayPolicy"].includes(
-                                fieldKey
-                              ) && transformEmployeeData[fieldKey] ? (
-                                <a
-                                  href={transformEmployeeData[fieldKey]}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 underline"
-                                >
+                        "shift",
+                        "workSchedulePolicy",
+                        "attendanceSource",
+                        "leavePolicy",
+                        "holidayPolicy",
+                        "status",
+                      ].map((fieldKey) => (
+                        <div key={fieldKey}>
+                          {isEditing ? (
+                            <Controller
+                              name={fieldKey}
+                              control={control}
+                              render={({ field }) =>
+                                fieldKey === "status" ? (
+                                  <TextField
+                                    {...field}
+                                    select
+                                    size="small"
+                                    label="Status"
+                                    fullWidth
+                                  >
+                                    <MenuItem value="Active">Active</MenuItem>
+                                    <MenuItem value="Inactive">
+                                      Inactive
+                                    </MenuItem>
+                                  </TextField>
+                                ) : (
+                                  <TextField
+                                    {...field}
+                                    size="small"
+                                    label={fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) =>
+                                        str.toUpperCase(),
+                                      )}
+                                    fullWidth
+                                  />
+                                )
+                              }
+                            />
+                          ) : (
+                            <div className="py-2 flex justify-between items-center gap-2">
+                              <div className="w-[100%] justify-start flex">
+                                <span className="font-pmedium text-gray-600 text-content">
                                   {fieldKey
                                     .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) =>
-                                      str.toUpperCase()
-                                    )}
-                                </a>
-                              ) : (
-                                <span className="text-gray-500">
-                                  {transformEmployeeData[fieldKey]}
-                                </span>
-                              )}
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                </span>{" "}
+                              </div>
+                              <div className="">
+                                <span>:</span>
+                              </div>
+                              <div className="w-full">
+                                {["leavePolicy", "holidayPolicy"].includes(
+                                  fieldKey,
+                                ) && transformEmployeeData[fieldKey] ? (
+                                  <a
+                                    href={transformEmployeeData[fieldKey]}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 underline"
+                                  >
+                                    {fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) =>
+                                        str.toUpperCase(),
+                                      )}
+                                  </a>
+                                ) : (
+                                  <span className="text-gray-500">
+                                    {transformEmployeeData[fieldKey]}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      ))}
                 </div>
               </div>
               <div>
@@ -385,47 +396,47 @@ const EditDetails = () => {
                   {isLoading
                     ? []
                     : ["aadharID", "pan", "pFAcNo"].map((fieldKey) => (
-                      <div key={fieldKey}>
-                        {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())
-                                  .replace(/\bI\sD\b/gi, "ID")
-                                  .replace(/\bP\sF\b/gi, "PF")}
-                                fullWidth
-                              />
-                            )}
-                          />
-                        ) : (
-                          <div className="py-2 flex justify-between items-center gap-2">
-                            <div className="w-[35%] justify-start flex">
-                              <span className="font-pmedium text-gray-600 text-content">
-                                {fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())
-                                  .replace(/\bI\sD\b/gi, "ID")
-                                  .replace(/\bP\sF\b/gi, "PF")}
-                              </span>{" "}
+                        <div key={fieldKey}>
+                          {isEditing ? (
+                            <Controller
+                              name={fieldKey}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  size="small"
+                                  label={fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())
+                                    .replace(/\bI\sD\b/gi, "ID")
+                                    .replace(/\bP\sF\b/gi, "PF")}
+                                  fullWidth
+                                />
+                              )}
+                            />
+                          ) : (
+                            <div className="py-2 flex justify-between items-center gap-2">
+                              <div className="w-[35%] justify-start flex">
+                                <span className="font-pmedium text-gray-600 text-content">
+                                  {fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())
+                                    .replace(/\bI\sD\b/gi, "ID")
+                                    .replace(/\bP\sF\b/gi, "PF")}
+                                </span>{" "}
+                              </div>
+                              <div className="">
+                                <span>:</span>
+                              </div>
+                              <div className="w-full">
+                                <span className="text-gray-500">
+                                  {transformEmployeeData[fieldKey]}
+                                </span>
+                              </div>
                             </div>
-                            <div className="">
-                              <span>:</span>
-                            </div>
-                            <div className="w-full">
-                              <span className="text-gray-500">
-                                {transformEmployeeData[fieldKey]}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      ))}
                 </div>
               </div>
               <div>
@@ -440,49 +451,49 @@ const EditDetails = () => {
                   {isLoading
                     ? []
                     : [
-                      "addressLine1",
-                      "addressLine2",
-                      "state",
-                      "city",
-                      "pinCode",
-                    ].map((fieldKey) => (
-                      <div key={fieldKey}>
-                        {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                                fullWidth
-                              />
-                            )}
-                          />
-                        ) : (
-                          <div className="py-2 flex justify-between items-center gap-2">
-                            <div className="w-[35%] justify-start flex">
-                              <span className="font-pmedium text-gray-600 text-content">
-                                {fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                              </span>{" "}
+                        "addressLine1",
+                        "addressLine2",
+                        "state",
+                        "city",
+                        "pinCode",
+                      ].map((fieldKey) => (
+                        <div key={fieldKey}>
+                          {isEditing ? (
+                            <Controller
+                              name={fieldKey}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  size="small"
+                                  label={fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  fullWidth
+                                />
+                              )}
+                            />
+                          ) : (
+                            <div className="py-2 flex justify-between items-center gap-2">
+                              <div className="w-[35%] justify-start flex">
+                                <span className="font-pmedium text-gray-600 text-content">
+                                  {fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                </span>{" "}
+                              </div>
+                              <div className="">
+                                <span>:</span>
+                              </div>
+                              <div className="w-full">
+                                <span className="text-gray-500">
+                                  {transformEmployeeData[fieldKey]}
+                                </span>
+                              </div>
                             </div>
-                            <div className="">
-                              <span>:</span>
-                            </div>
-                            <div className="w-full">
-                              <span className="text-gray-500">
-                                {transformEmployeeData[fieldKey]}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      ))}
                 </div>
               </div>
               <div>
@@ -497,52 +508,52 @@ const EditDetails = () => {
                   {isLoading
                     ? []
                     : [
-                      "includeInPayroll",
-                      "payrollBatch",
-                      "professionalTaxExemption",
-                      "includePF",
-                      "pFContributionRate",
-                      "employeePF",
-                    ].map((fieldKey) => (
-                      <div key={fieldKey}>
-                        {isEditing ? (
-                          <Controller
-                            name={fieldKey}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                label={fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())
-                                  .replace(/\bP\sF\b/gi, "PF")}
-                                fullWidth
-                              />
-                            )}
-                          />
-                        ) : (
-                          <div className="py-2 flex justify-between items-center gap-2">
-                            <div className="w-[100%] justify-start flex">
-                              <span className="font-pmedium text-gray-600 text-content">
-                                {fieldKey
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())
-                                  .replace(/\bP\sF\b/gi, "PF")}
-                              </span>{" "}
+                        "includeInPayroll",
+                        "payrollBatch",
+                        "professionalTaxExemption",
+                        "includePF",
+                        "pFContributionRate",
+                        "employeePF",
+                      ].map((fieldKey) => (
+                        <div key={fieldKey}>
+                          {isEditing ? (
+                            <Controller
+                              name={fieldKey}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  size="small"
+                                  label={fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())
+                                    .replace(/\bP\sF\b/gi, "PF")}
+                                  fullWidth
+                                />
+                              )}
+                            />
+                          ) : (
+                            <div className="py-2 flex justify-between items-center gap-2">
+                              <div className="w-[100%] justify-start flex">
+                                <span className="font-pmedium text-gray-600 text-content">
+                                  {fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())
+                                    .replace(/\bP\sF\b/gi, "PF")}
+                                </span>{" "}
+                              </div>
+                              <div className="">
+                                <span>:</span>
+                              </div>
+                              <div className="w-full">
+                                <span className="text-gray-500">
+                                  {transformEmployeeData[fieldKey]}
+                                </span>
+                              </div>
                             </div>
-                            <div className="">
-                              <span>:</span>
-                            </div>
-                            <div className="w-full">
-                              <span className="text-gray-500">
-                                {transformEmployeeData[fieldKey]}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      ))}
                 </div>
               </div>
             </div>

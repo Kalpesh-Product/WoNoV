@@ -108,12 +108,22 @@ const addBuilding = async (req, res, next) => {
 const editBuilding = async (req, res, next) => {
   const { company } = req;
   const { buildingId } = req.params;
-  const { buildingName } = req.body;
+  const { buildingName, address, city, state, country, pincode, isActive } =
+    req.body;
 
   try {
-    if (!company || !buildingId || !buildingName) {
+    const hasEditableField =
+      buildingName !== undefined ||
+      address !== undefined ||
+      city !== undefined ||
+      state !== undefined ||
+      country !== undefined ||
+      pincode !== undefined ||
+      isActive !== undefined;
+
+    if (!buildingId || !hasEditableField) {
       return res.status(400).json({
-        message: "Company, building ID, and new building name are required",
+        message: "building ID, and at least one editable field are required",
       });
     }
 
@@ -137,16 +147,35 @@ const editBuilding = async (req, res, next) => {
       });
     }
 
-    existingBuilding.buildingName = buildingName;
+    if (buildingName !== undefined) {
+      existingBuilding.buildingName = String(buildingName).trim();
+    }
+    if (address !== undefined) {
+      existingBuilding.address = String(address).trim();
+    }
+    if (city !== undefined) {
+      existingBuilding.city = String(city).trim();
+    }
+    if (state !== undefined) {
+      existingBuilding.state = String(state).trim();
+    }
+    if (country !== undefined) {
+      existingBuilding.country = String(country).trim();
+    }
+    if (pincode !== undefined) {
+      existingBuilding.pincode = Number(pincode);
+    }
+    if (isActive !== undefined) existingBuilding.isActive = isActive;
+
     const updatedBuilding = await existingBuilding.save();
 
     return res.status(200).json({
-      message: "Building name updated successfully",
+      message: "Building updated successfully",
       workLocation: updatedBuilding,
     });
   } catch (error) {
     return res.status(500).json({
-      message: "An error occurred while updating the building name",
+      message: "An error occurred while updating the building",
       error: error.message,
     });
   }

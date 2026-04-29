@@ -1,9 +1,6 @@
 const sharp = require("sharp");
 const mongoose = require("mongoose");
-const {
-  handleFileUpload,
-  handleFileDelete,
-} = require("../../config/s3Config");
+const { handleFileUpload, handleFileDelete } = require("../../config/s3Config");
 const Company = require("../../models/hr/Company");
 const {
   updateWorkLocationStatus,
@@ -73,7 +70,11 @@ const addCompany = async (req, res, next) => {
       meetingCreditBalance: 0,
       meetingCreditBalanceHistory: [
         {
-          monthStartDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          monthStartDate: new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            1,
+          ),
           remainingCredit: 0,
           consumedCredit: 0,
         },
@@ -477,15 +478,13 @@ const getCompanyAttandances = async (req, res, next) => {
       .lean()
       .exec();
     const workingDays = 365 - (holidays.length + sundays);
-    res
-      .status(200)
-      .json({
-        activeEmployees,
-        companyAttandances,
-        workingDays,
-        holidays,
-        allLeaves,
-      });
+    res.status(200).json({
+      activeEmployees,
+      companyAttandances,
+      workingDays,
+      holidays,
+      allLeaves,
+    });
   } catch (error) {
     if (error instanceof CustomError) {
       next(error);
@@ -540,14 +539,40 @@ const updateCompanySubItem = async (req, res) => {
 
       if (isDeleted !== undefined) item.isDeleted = isDeleted;
       if (type === "shifts") {
+        let parsedStartTime = item.startTime;
+        let parsedEndTime = item.endTime;
+
         if (startTime) {
-          const parsedStartTime = new Date(startTime);
-          item.startTime = parsedStartTime;
+          parsedStartTime = new Date(startTime);
+          if (isNaN(parsedStartTime)) {
+            return res.status(400).json({ message: "Invalid startTime" });
+          }
         }
+
         if (endTime) {
-          const parsedEndTime = new Date(endTime);
-          item.endTime = parsedEndTime;
+          parsedEndTime = new Date(endTime);
+          if (isNaN(parsedEndTime)) {
+            return res.status(400).json({ message: "Invalid endTime" });
+          }
         }
+
+        // Only validate if both exist
+        if (parsedStartTime && parsedEndTime) {
+          const diffHours =
+            (parsedEndTime.getTime() - parsedStartTime.getTime()) /
+            (1000 * 60 * 60);
+
+          const adjustedHours = diffHours < 0 ? diffHours + 24 : diffHours;
+
+          if (adjustedHours <= 0 || adjustedHours > 16) {
+            return res.status(400).json({
+              message: `Invalid shift duration: Provided duration is ${adjustedHours.toFixed(2)} hours.`,
+            });
+          }
+        }
+
+        item.startTime = parsedStartTime;
+        item.endTime = parsedEndTime;
       }
       item.updatedAt = new Date();
       updated = true;
@@ -564,7 +589,6 @@ const updateCompanySubItem = async (req, res) => {
       .json({ message: "Internal Server Error", error: error.message });
   }
 };
-
 
 //Appends departmnet ticket issues
 const addDepartmentTicketIssues = async (req, res) => {
