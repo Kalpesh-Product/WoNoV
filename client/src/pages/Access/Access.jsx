@@ -15,8 +15,7 @@ import MuiAccordion from "../../components/MuiAccordion";
 import { PERMISSIONS } from "../../constants/permissions";
 import Permissions from "../../components/Permissions/Permissions";
 
-// const Access = () => {
-const Access = ({ showDepartments = true }) => {
+const Access = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -52,7 +51,7 @@ const Access = ({ showDepartments = true }) => {
   };
 
   return (
-    <div className="flex flex-col gap-4 pb-4">
+    <div className="flex flex-col gap-4 p-4">
       {/* <div>
         <AccessTree clickState={true} autoExpandFirst />
       </div> */}
@@ -66,7 +65,7 @@ const Access = ({ showDepartments = true }) => {
         </div>
       </PageFrame>
 
-      {/* <PageFrame>
+      <PageFrame>
         <MuiAccordion
           data={departments}
           titleKey="name"
@@ -74,8 +73,7 @@ const Access = ({ showDepartments = true }) => {
           itemClick={handleEmployeeClick}
           disabledKey="isActive"
         />
-      </PageFrame> */}
-      
+      </PageFrame>
     </div>
   );
 };
