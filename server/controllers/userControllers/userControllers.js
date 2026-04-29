@@ -449,29 +449,26 @@ const createUser = async (req, res, next) => {
       email: yup.string().trim().email().required("email is required"),
       role: yup
         .mixed()
-        .test("role-required", "role is required", (value) =>
-          Array.isArray(value) ? value.length > 0 : Boolean(value),
-        ),
-      departments: yup
-        .array()
-        .of(yup.string().required())
-        .min(1, "departments is required")
-        .required("departments is required"),
-      employeeType: yup
-        .mixed()
-        .test("employeeType-required", "employeeType is required", (value) => {
-          if (!value) return false;
-          if (typeof value === "string") return value.trim() !== "";
-          if (typeof value === "object") {
-            return typeof value.name === "string" && value.name.trim() !== "";
-          }
-          return false;
+        .optional()
+        .test((value) => {
+          if (!value) return true; // allow undefined/missing
+          if (Array.isArray(value)) return value.length > 0;
+          return Boolean(value);
         }),
-      reportsTo: yup.string().trim().required("reportsTo is required"),
-      attendanceSource: yup
-        .string()
-        .trim()
-        .required("attendanceSource is required"),
+      departments: yup.array().of(yup.string().required()),
+      employeeType: yup.mixed().test((value) => {
+        if (!value) return false;
+        if (typeof value === "string") return value.trim() !== "";
+        if (typeof value === "object") {
+          return typeof value.name === "string" && value.name.trim() !== "";
+        }
+        return false;
+      }),
+      // reportsTo: yup.string().trim().required("reportsTo is required"),
+      // attendanceSource: yup
+      //   .string()
+      //   .trim()
+      //   .required("attendanceSource is required"),
 
       // ── Optional in updated schema ────────────────────────────────────────
       middleName: yup.string().trim().optional(),
@@ -601,30 +598,32 @@ const createUser = async (req, res, next) => {
     }
 
     // Validate departments
-    const invalidDepartmentIds = departments.filter(
-      (id) => !mongoose.Types.ObjectId.isValid(id),
-    );
-    if (invalidDepartmentIds.length > 0) {
-      throw new CustomError(
-        "Invalid department ID provided",
-        logPath,
-        logAction,
-        logSourceKey,
+    if (departments && departments.length > 0) {
+      const invalidDepartmentIds = departments.filter(
+        (id) => !mongoose.Types.ObjectId.isValid(id),
       );
-    }
+      if (invalidDepartmentIds.length > 0) {
+        throw new CustomError(
+          "Invalid department ID provided",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
 
-    const departmentExists = await Department.find({
-      _id: { $in: departments },
-    })
-      .lean()
-      .exec();
-    if (!departmentExists || departmentExists.length === 0) {
-      throw new CustomError(
-        "Department not found",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      const departmentExists = await Department.find({
+        _id: { $in: departments },
+      })
+        .lean()
+        .exec();
+      if (!departmentExists || departmentExists.length === 0) {
+        throw new CustomError(
+          "Department not found",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
     }
 
     // Check if company exists
@@ -654,31 +653,33 @@ const createUser = async (req, res, next) => {
     }
 
     // Check role validity
-    const roleValue = await Role.findOne({ _id: role }).lean().exec();
-    if (!roleValue) {
-      throw new CustomError(
-        "Invalid role provided",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    // Master Admin check
-    if (roleValue.roleID === "ROLE_MASTER_ADMIN") {
-      const doesMasterAdminExist = await User.findOne({
-        role: { $in: [roleValue._id] },
-        company: companyId,
-      })
-        .lean()
-        .exec();
-      if (doesMasterAdminExist) {
+    if (role && role.length > 0) {
+      const roleValue = await Role.findOne({ _id: role }).lean().exec();
+      if (!roleValue) {
         throw new CustomError(
-          "A master admin already exists",
+          "Invalid role provided",
           logPath,
           logAction,
           logSourceKey,
         );
+      }
+
+      // Master Admin check
+      if (roleValue.roleID === "ROLE_MASTER_ADMIN") {
+        const doesMasterAdminExist = await User.findOne({
+          role: { $in: [roleValue._id] },
+          company: companyId,
+        })
+          .lean()
+          .exec();
+        if (doesMasterAdminExist) {
+          throw new CustomError(
+            "A master admin already exists",
+            logPath,
+            logAction,
+            logSourceKey,
+          );
+        }
       }
     }
 
@@ -832,18 +833,28 @@ const fetchSingleUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const [reportsTo, policies] = await Promise.all([
-      User.findOne({ role: { $in: [user.reportsTo] } })
+    // const [reportsTo, policies] = await Promise.all([
+    //   User.findOne({ role: { $in: [user.reportsTo] } })
+    //     .select("firstName lastName")
+    //     .lean(),
+
+    //   Agreements.find({ user: user._id }).lean(),
+    // ]);
+
+    // const policyMap = policies.reduce((acc, policy) => {
+    //   acc[policy.name] = policy;
+    //   return acc;
+    // }, {});
+
+    let reportsTo = null;
+
+    if (user.reportsTo) {
+      reportsTo = await User.findOne({ role: { $in: [user.reportsTo] } })
         .select("firstName lastName")
-        .lean(),
+        .lean();
+    }
 
-      Agreements.find({ user: user._id }).lean(),
-    ]);
-
-    const policyMap = policies.reduce((acc, policy) => {
-      acc[policy.name] = policy;
-      return acc;
-    }, {});
+    const policyMap = await Agreements.find({ user: user._id }).lean();
 
     const formattedUser = {
       firstName: user.firstName || "",
@@ -866,9 +877,9 @@ const fetchSingleUser = async (req, res) => {
         user.departments?.map((department) => department?.name).join(", ") ||
         "",
       role: user.role?.map((role) => role?.roleTitle).join(", ") || "",
-      reportsTo:
-        `${reportsTo?.firstName} ${reportsTo?.lastName} (${user.reportsTo?.roleTitle})` ||
-        "",
+      reportsTo: reportsTo
+        ? `${reportsTo.firstName} ${reportsTo.lastName} (${user.reportsTo?.roleTitle || ""})`
+        : "",
       jobTitle: user.designation || "",
       jobDescription: user.jobDescription || "",
       shift: user.policies?.shift || "",
@@ -917,7 +928,6 @@ const fetchSingleUser = async (req, res) => {
         user.payrollInformation?.tdsCalculationBasedOn || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
     };
-    console.log("Formatted User: ", policyMap);
 
     res.status(200).json(formattedUser);
   } catch (error) {
@@ -999,7 +1009,7 @@ const updateProfile = async (req, res, next) => {
     const { user, ip, company } = req;
     const loggedInUserId = req.user;
     //const userId = req.user;
-    const updateData = req.body;
+    const updateData = req.body.data ? JSON.parse(req.body.data) : null;
     const newProfilePicture = req.file;
 
     const targetEmpId = updateData?.empId;
@@ -1011,73 +1021,50 @@ const updateProfile = async (req, res, next) => {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
     }
 
-    // Allowed top-level fields
-    const allowedFields = [
-      "firstName",
-      "middleName",
-      "lastName",
-      "phone",
-      "dateOfBirth",
-      "gender",
-      "email",
-    ];
     const trimIfString = (value) =>
       typeof value === "string" ? value.trim() : value;
     const updatePayload = {};
 
-    for (const field of allowedFields) {
-      if (updateData[field] !== undefined) {
-        updatePayload[field] = trimIfString(updateData[field]);
-      }
-    }
+    // KYC fields are intentionally blocked from profile updates
+    const blockedSections = new Set(["bankInformation"]);
+    const blockedTopLevelFields = new Set([
+      "_id",
+      "company",
+      "createdAt",
+      "updatedAt",
+      "password",
+      "refreshToken",
+      "empId",
+    ]);
 
-    const allowedNestedFields = {
-      homeAddress: [
-        "addressLine1",
-        "addressLine2",
-        "country",
-        "state",
-        "city",
-        "pinCode",
-      ],
-      bankInformation: [
-        "bankName",
-        "bankIFSC",
-        "branchName",
-        "nameOnAccount",
-        "accountNumber",
-      ],
-      panAadhaarDetails: [
-        "aadhaarId",
-        "pan",
-        "pfUAN",
-        "pfAccountNumber",
-        "esiAccountNumber",
-      ],
-      familyInformation: [
-        "fatherName",
-        "motherName",
-        "maritalStatus",
-        "emergencyPhone",
-      ],
+    const addFlattenedFields = (value, path = [], rootKey = null) => {
+      if (value === undefined) return;
+
+      const currentRootKey = rootKey ?? path[0];
+      if (currentRootKey && blockedSections.has(currentRootKey)) {
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        updatePayload[path.join(".")] = value;
+        return;
+      }
+
+      if (value && typeof value === "object") {
+        Object.entries(value).forEach(([key, childValue]) => {
+          addFlattenedFields(childValue, [...path, key], currentRootKey || key);
+        });
+        return;
+      }
+
+      if (!path.length) return;
+      updatePayload[path.join(".")] = trimIfString(value);
     };
 
-    Object.entries(allowedNestedFields).forEach(([section, fields]) => {
-      const sectionData = updateData?.[section];
-      if (!sectionData || typeof sectionData !== "object") return;
-
-      fields.forEach((field) => {
-        if (sectionData[field] !== undefined) {
-          updatePayload[`${section}.${field}`] = trimIfString(
-            sectionData[field],
-          );
-        }
-      });
+    Object.entries(updateData || {}).forEach(([key, value]) => {
+      if (blockedTopLevelFields.has(key)) return;
+      addFlattenedFields(value, [key], key);
     });
-
-    if (typeof updateData?.isActive === "boolean") {
-      updatePayload.isActive = updateData.isActive;
-    }
 
     let profilePictureUpdate = null;
 

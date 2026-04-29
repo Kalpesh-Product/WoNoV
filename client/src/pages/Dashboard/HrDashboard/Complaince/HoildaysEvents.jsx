@@ -86,7 +86,8 @@ const HoildaysEvents = ({ title }) => {
 
     const payload = {
       title: data.title.trim(),
-      type: { $in: ["Holiday", "holiday"] },
+      //type: { $in: ["Holiday", "holiday"] },
+      type: "holiday",
       description: data.description,
       start: data.startDate,
       end: data.startDate,

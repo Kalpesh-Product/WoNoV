@@ -142,6 +142,19 @@ const EmployeeOnboard = () => {
   const normalizePolicyValue = (value) =>
     typeof value === "string" ? value : "";
 
+  const stripEmpty = (obj) => {
+    if (Array.isArray(obj)) return obj.length ? obj : undefined;
+    if (obj && typeof obj === "object") {
+      const cleaned = Object.fromEntries(
+        Object.entries(obj)
+          .map(([k, v]) => [k, stripEmpty(v)])
+          .filter(([_, v]) => v !== undefined && v !== "" && v !== null),
+      );
+      return Object.keys(cleaned).length ? cleaned : undefined;
+    }
+    return obj === "" || obj === null ? undefined : obj;
+  };
+
   const { mutate: createUser, isPending } = useMutation({
     mutationFn: async (payload) => {
       const response = await axios.post("/api/users/create-user", payload);
@@ -153,29 +166,31 @@ const EmployeeOnboard = () => {
     },
     onError: (error) => {
       toast.error(
-        error?.response?.data?.message || "Failed to onboard employee"
+        error?.response?.data?.message || "Failed to onboard employee",
       );
     },
   });
 
   const onSubmit = (data) => {
-    const payload = {
+    const rawPayload = {
       empId: data.empId?.trim(),
       firstName: data.firstName?.trim(),
       middleName: data.middleName?.trim(),
       lastName: data.lastName?.trim(),
       gender: data.gender,
-      dateOfBirth: data.dateOfBirth,
+      dateOfBirth: data.dateOfBirth
+        ? data.dateOfBirth.toISOString()
+        : undefined,
       phone: data.phone?.trim(),
 
       email: data.email?.trim(),
-      role: data.role,
-      departments: data.departments ? data.departments : [],
+      role: data.role?.length ? data.role : undefined,
+      departments: data.departments?.length ? data.departments : undefined,
       employeeType: data.employeeType ? { name: data.employeeType } : undefined,
       designation: data.jobTitle?.trim(),
       jobTitle: data.jobTitle?.trim(),
       jobDescription: data.jobDescription?.trim(),
-      startDate: data.startDate,
+      startDate: data.startDate ? data.startDate.toISOString() : undefined,
       workLocation: data.workLocation,
       reportsTo: data.reportsTo || undefined,
       shift: data.shift,
@@ -230,6 +245,7 @@ const EmployeeOnboard = () => {
       },
     };
 
+    const payload = stripEmpty(rawPayload);
     createUser(payload);
   };
 
@@ -241,6 +257,14 @@ const EmployeeOnboard = () => {
     queryKey: ["unitsData"],
     queryFn: async () => {
       const response = await axios.get("/api/company/fetch-units");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
+  const { data: usersData = [] } = useQuery({
+    queryKey: ["usersData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/users/fetch-users");
       return Array.isArray(response.data) ? response.data : [];
     },
   });
@@ -265,14 +289,14 @@ const EmployeeOnboard = () => {
   const departmentNameById = useMemo(
     () =>
       new Map(
-        departmentsData.map((department) => [department._id, department.name])
+        departmentsData.map((department) => [department._id, department.name]),
       ),
-    [departmentsData]
+    [departmentsData],
   );
 
   const roleTitleById = useMemo(
     () => new Map(rolesData.map((role) => [role._id, role.roleTitle])),
-    [rolesData]
+    [rolesData],
   );
 
   const workLocations = useMemo(() => {
@@ -291,10 +315,30 @@ const EmployeeOnboard = () => {
   const adminRoles = useMemo(
     () =>
       rolesData.filter((role) =>
-        role.roleTitle?.toLowerCase().endsWith("admin")
+        role.roleTitle?.toLowerCase().endsWith("admin"),
       ),
-    [rolesData]
+    [rolesData],
   );
+
+  const reportingManagerByRoleId = useMemo(() => {
+    const map = new Map();
+
+    adminRoles.forEach((role) => {
+      const manager = usersData.find((user) =>
+        user?.role?.some(
+          (assignedRole) => assignedRole?.roleTitle === role.roleTitle,
+        ),
+      );
+
+      const managerName = manager
+        ? `${manager.firstName ?? ""} ${manager.lastName ?? ""}`.trim()
+        : "";
+
+      map.set(role._id, managerName);
+    });
+
+    return map;
+  }, [adminRoles, usersData]);
 
   return (
     <PageFrame>
@@ -475,7 +519,6 @@ const EmployeeOnboard = () => {
                   name="addressLine1"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Address Line 1 is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -491,7 +534,6 @@ const EmployeeOnboard = () => {
                   name="addressLine2"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Address Line 2 is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -508,7 +550,6 @@ const EmployeeOnboard = () => {
                     name="country"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "Country is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -524,7 +565,6 @@ const EmployeeOnboard = () => {
                     name="state"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "State is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -541,7 +581,6 @@ const EmployeeOnboard = () => {
                     name="city"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "City is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -558,7 +597,6 @@ const EmployeeOnboard = () => {
                     name="pinCode"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "Pin Code is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -586,7 +624,6 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="startDate"
                     control={control}
-                    rules={{ required: "Start Date is required" }}
                     render={({ field }) => (
                       <DesktopDatePicker
                         inputFormat="DD/MM/YYYY"
@@ -607,7 +644,6 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="workLocation"
                     control={control}
-                    rules={{ required: "Work Location is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -633,7 +669,6 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="employeeType"
                     control={control}
-                    rules={{ required: "Employee Type is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -658,7 +693,6 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="departments"
                     control={control}
-                    rules={{ required: "Department is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -673,7 +707,7 @@ const EmployeeOnboard = () => {
                             selected
                               .map(
                                 (deptId) =>
-                                  departmentNameById.get(deptId) || deptId
+                                  departmentNameById.get(deptId) || deptId,
                               )
                               .join(", "),
                         }}
@@ -698,10 +732,10 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="role"
                     control={control}
-                    rules={{
-                      validate: (value) =>
-                        value?.length ? true : "Role is required",
-                    }}
+                    // rules={{
+                    //   validate: (value) =>
+                    //     value?.length ? true : "Role is required",
+                    // }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -715,7 +749,7 @@ const EmployeeOnboard = () => {
                           renderValue: (selected) =>
                             selected
                               .map(
-                                (roleId) => roleTitleById.get(roleId) || roleId
+                                (roleId) => roleTitleById.get(roleId) || roleId,
                               )
                               .join(", "),
                         }}
@@ -740,7 +774,6 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="reportsTo"
                     control={control}
-                    rules={{ required: "Reporting Manager is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -756,7 +789,7 @@ const EmployeeOnboard = () => {
                         </MenuItem>
                         {adminRoles.map((role) => (
                           <MenuItem key={role._id} value={role._id}>
-                            {role.roleTitle}
+                            {`${role.roleTitle}${reportingManagerByRoleId.get(role._id) ? ` (${reportingManagerByRoleId.get(role._id)})` : ""}`}
                           </MenuItem>
                         ))}
                       </TextField>
@@ -767,7 +800,6 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="jobTitle"
                     control={control}
-                    rules={{ required: "Job Title is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -783,7 +815,6 @@ const EmployeeOnboard = () => {
                   <Controller
                     name="jobDescription"
                     control={control}
-                    rules={{ required: "Job Description is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -809,7 +840,6 @@ const EmployeeOnboard = () => {
                     name="workSchedulePolicy"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "Shift is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -832,7 +862,6 @@ const EmployeeOnboard = () => {
                     name="attendanceSource"
                     control={control}
                     defaultValue="web"
-                    rules={{ required: "Attendance source is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -868,7 +897,6 @@ const EmployeeOnboard = () => {
                     name="leavePolicy"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "Leave Policy is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -884,7 +912,6 @@ const EmployeeOnboard = () => {
                     name="holidayPolicy"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "Holiday Policy is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -912,7 +939,6 @@ const EmployeeOnboard = () => {
                   name="includeInPayroll"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Include In Payroll is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -936,7 +962,6 @@ const EmployeeOnboard = () => {
                   name="payrollBatch"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Payroll Batch is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -953,7 +978,6 @@ const EmployeeOnboard = () => {
                   name="professionTaxExemption"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Profession Tax Exemption is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -978,7 +1002,6 @@ const EmployeeOnboard = () => {
                     name="includePF"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "Include PF is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -1001,7 +1024,6 @@ const EmployeeOnboard = () => {
                     name="pfContributionRate"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "PF Contribution Rate is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -1018,7 +1040,6 @@ const EmployeeOnboard = () => {
                   name="employeePF"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Employee PF is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1046,7 +1067,6 @@ const EmployeeOnboard = () => {
                     name="employerPf"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "Employer PF is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -1070,7 +1090,6 @@ const EmployeeOnboard = () => {
                     name="includeEsi"
                     control={control}
                     defaultValue=""
-                    rules={{ required: "Include ESI is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
@@ -1094,7 +1113,6 @@ const EmployeeOnboard = () => {
                   name="esiContribution"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "ESI Contribution is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1119,7 +1137,6 @@ const EmployeeOnboard = () => {
                   name="hraType"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "HRA is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1147,7 +1164,6 @@ const EmployeeOnboard = () => {
                   name="tdsCalculationBasedOn"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "TDS Calculation Based on is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1174,7 +1190,6 @@ const EmployeeOnboard = () => {
                   name="incomeTaxRegime"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Income Tax Regime is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1208,7 +1223,7 @@ const EmployeeOnboard = () => {
                   control={control}
                   defaultValue=""
                   rules={{
-                    required: "Bank IFSC is required",
+                    // required: "Bank IFSC is required",
                     pattern: {
                       value: /^[A-Z]{4}0[A-Z0-9]{6}$/i,
                       message: "Enter a valid IFSC code",
@@ -1230,7 +1245,6 @@ const EmployeeOnboard = () => {
                   name="bankName"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Bank Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1247,7 +1261,6 @@ const EmployeeOnboard = () => {
                   name="branchName"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Branch Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1264,7 +1277,6 @@ const EmployeeOnboard = () => {
                   name="nameOnAccount"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Name On Account is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1281,7 +1293,7 @@ const EmployeeOnboard = () => {
                   control={control}
                   defaultValue=""
                   rules={{
-                    required: "Account Number is required",
+                    // required: "Account Number is required",
                     pattern: {
                       value: /^[0-9]{9,18}$/,
                       message: "Enter a valid account number",
@@ -1311,7 +1323,7 @@ const EmployeeOnboard = () => {
                   control={control}
                   defaultValue=""
                   rules={{
-                    required: "Aadhar ID is required",
+                    // required: "Aadhar ID is required",
                     pattern: {
                       value: /^[0-9]{12}$/,
                       message: "Enter a valid Aadhar ID",
@@ -1334,7 +1346,7 @@ const EmployeeOnboard = () => {
                   control={control}
                   defaultValue=""
                   rules={{
-                    required: "PAN is required",
+                    // required: "PAN is required",
                     pattern: {
                       value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i,
                       message: "Enter a valid PAN",
@@ -1357,7 +1369,7 @@ const EmployeeOnboard = () => {
                   control={control}
                   defaultValue=""
                   rules={{
-                    required: "PF UAN is required",
+                    // required: "PF UAN is required",
                     pattern: {
                       value: /^[0-9]{12}$/,
                       message: "Enter a valid PF UAN",
@@ -1380,7 +1392,7 @@ const EmployeeOnboard = () => {
                   control={control}
                   defaultValue=""
                   rules={{
-                    required: "PF A/c No is required",
+                    // required: "PF A/c No is required",
                     pattern: {
                       value: /^[A-Z0-9/-]{10,25}$/i,
                       message: "Enter a valid PF A/c No",
@@ -1403,7 +1415,7 @@ const EmployeeOnboard = () => {
                   control={control}
                   defaultValue=""
                   rules={{
-                    required: "ESI A/c No is required",
+                    // required: "ESI A/c No is required",
                     pattern: {
                       value: /^[0-9]{10,17}$/,
                       message: "Enter a valid ESI A/c No",
@@ -1435,7 +1447,6 @@ const EmployeeOnboard = () => {
                   name="fatherName"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Father Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1452,7 +1463,6 @@ const EmployeeOnboard = () => {
                   name="motherName"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Mother Name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1469,7 +1479,6 @@ const EmployeeOnboard = () => {
                   name="maritalStatus"
                   control={control}
                   defaultValue=""
-                  rules={{ required: "Marital Status is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -1485,7 +1494,7 @@ const EmployeeOnboard = () => {
                   name="emergencyPhone"
                   control={control}
                   rules={{
-                    required: "Emergency Mobile Number is required",
+                    // required: "Emergency Mobile Number is required",
                     pattern: {
                       value: /^[0-9]{10}$/,
                       message: "Enter a valid 10-digit number",

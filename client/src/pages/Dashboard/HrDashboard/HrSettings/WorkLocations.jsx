@@ -16,6 +16,8 @@ import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
+  const [modalType, setModalType] = useState("add");
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [countries] = useState(Country.getAllCountries());
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -82,6 +84,48 @@ const WorkLocations = () => {
     mutateWorkLocation(data);
   };
 
+  const { mutate: editWorkLocation, isPending: isEditWorkLocation } =
+    useMutation({
+      mutationFn: async ({ buildingId, payload }) => {
+        const response = await axios.patch(
+          `/api/company/edit-building/${buildingId}`,
+          payload,
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Work Location updated");
+        queryClient.invalidateQueries(["workLocation"]);
+        setOpenModal(false);
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message || "Failed to update Work Location",
+        );
+      },
+    });
+
+  const handleEdit = (row) => {
+    setSelectedLocation(row);
+    setModalType("edit");
+    reset({
+      workLocation: row.name || "",
+      country: "",
+      city: "",
+      state: "",
+      address: "",
+      pincode: "",
+    });
+    setOpenModal(true);
+  };
+
+  const handleMarkStatus = (row) => {
+    editWorkLocation({
+      buildingId: row.mongoId,
+      payload: { isActive: !row.status },
+    });
+  };
+
   const { data: workLocations = [], isLoading } = useQuery({
     queryKey: ["workLocation"],
     queryFn: async () => {
@@ -146,16 +190,11 @@ const WorkLocations = () => {
           menuItems={[
             {
               label: "Edit",
-              // onClick: () => {
-              //   handleEdit(params.data);
-              // },
+              onClick: () => handleEdit(params.data),
             },
             {
-              label: "Mark As Inactive",
-              onClick: () => {
-                console.log("Clicked");
-              },
-              disabled: true,
+              label: params.data.status ? "Mark As Inactive" : "Mark As Active",
+              onClick: () => handleMarkStatus(params.data),
             },
           ]}
         />
@@ -170,7 +209,18 @@ const WorkLocations = () => {
   };
 
   const handleAddLocation = () => {
+    setModalType("add");
+    setSelectedLocation(null);
+    reset();
     setOpenModal(true);
+  };
+
+  const onEditSubmit = (data) => {
+    if (!selectedLocation?.mongoId) return;
+    editWorkLocation({
+      buildingId: selectedLocation.mongoId,
+      payload: { buildingName: data.workLocation },
+    });
   };
 
   return (
@@ -192,6 +242,7 @@ const WorkLocations = () => {
                 ...workLocations.map((location, index) => ({
                   id: index + 1, // Auto-increment Sr No
                   name: location.buildingName,
+                  mongoId: location._id,
                   status: location.isActive,
                 })),
               ]}
@@ -203,22 +254,26 @@ const WorkLocations = () => {
       <MuiModal
         open={openModal}
         onClose={handleCloseModal}
-        title={"Add Work Location"}
+        title={
+          modalType === "edit" ? "Edit Work Location" : "Add Work Location"
+        }
       >
         <div>
           <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(
+              modalType === "edit" ? onEditSubmit : onSubmit,
+            )}
             className="flex flex-col gap-4"
           >
             <Controller
               name="workLocation"
-              rules={{
-                required: "Work location is required",
-                validate: {
-                  noOnlyWhitespace,
-                  isAlphanumeric,
-                },
-              }}
+              // rules={{
+              //   required: "Work location is required",
+              //   validate: {
+              //     noOnlyWhitespace,
+              //     isAlphanumeric,
+              //   },
+              // }}
               control={control}
               render={({ field }) => (
                 <TextField
@@ -231,151 +286,154 @@ const WorkLocations = () => {
                 />
               )}
             />
-            <Controller
-              name="address"
-              rules={{
-                required: "Address is required",
-                validate: {
-                  noOnlyWhitespace,
-                  isAlphanumeric,
-                },
-              }}
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  label="Address"
-                  multiline
-                  rows={2}
-                  fullWidth
-                  error={!!errors.address}
-                  helperText={errors.address?.message}
+            {modalType === "add" && (
+              <>
+                <Controller
+                  name="address"
+                  rules={{
+                    required: "Address is required",
+                    validate: {
+                      noOnlyWhitespace,
+                      isAlphanumeric,
+                    },
+                  }}
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Address"
+                      multiline
+                      rows={2}
+                      fullWidth
+                      error={!!errors.address}
+                      helperText={errors.address?.message}
+                    />
+                  )}
                 />
-              )}
-            />
 
-            {/* Country Dropdown */}
-            <Controller
-              name="country"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  size="small"
-                  label="Country"
-                  fullWidth
-                  onChange={(e) => {
-                    const selectedCode = e.target.value;
-                    field.onChange(e); // Let MUI handle its state first
-                    setTimeout(() => {
-                      handleCountrySelect(selectedCode);
-                      control.setValue("state", "");
-                      control.setValue("city", "");
-                    }, 0);
-                  }}
-                >
-                  <MenuItem value="">Select a Country</MenuItem>
-                  {countries.map((item) => (
-                    <MenuItem key={item.isoCode} value={item.isoCode}>
-                      {item.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-
-            {/* State Dropdown */}
-            <Controller
-              name="state"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  select
-                  label="State"
-                  fullWidth
-                  disabled={!control._formValues.country}
-                  onChange={(e) => {
-                    const selectedStateCode = e.target.value;
-                    field.onChange(e);
-                    setTimeout(() => {
-                      handleStateSelect(
-                        control._formValues.country,
-                        selectedStateCode
-                      );
-                      control.setValue("city", "");
-                    }, 0);
-                  }}
-                >
-                  <MenuItem value="">Select a State</MenuItem>
-                  {states.map((item) => (
-                    <MenuItem value={item.isoCode} key={item.isoCode}>
-                      {item.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-
-            {/* City Dropdown */}
-            <Controller
-              name="city"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  select
-                  label="City"
-                  fullWidth
-                  disabled={!control._formValues.state}
-                >
-                  <MenuItem value="">Select a City</MenuItem>
-                  {cities.map((item) => (
-                    <MenuItem
-                      value={item.name}
-                      key={`${item.name}-${item.stateCode}-${item.latitude}`}
+                {/* Country Dropdown */}
+                <Controller
+                  name="country"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      size="small"
+                      label="Country"
+                      fullWidth
+                      onChange={(e) => {
+                        const selectedCode = e.target.value;
+                        field.onChange(e); // Let MUI handle its state first
+                        setTimeout(() => {
+                          handleCountrySelect(selectedCode);
+                          control.setValue("state", "");
+                          control.setValue("city", "");
+                        }, 0);
+                      }}
                     >
-                      {item.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-
-            <Controller
-              name="pincode"
-              rules={{
-                required: "Pincode is required",
-                validate: {
-                  noOnlyWhitespace,
-                },
-                pattern: {
-                  value: /^[1-9][0-9]{5}$/, // Indian 6-digit pincode starting with non-zero
-                  message: "Enter a valid 6-digit pincode",
-                },
-              }}
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  size="small"
-                  label="Pincode"
-                  fullWidth
-                  error={!!errors.pincode}
-                  helperText={errors.pincode?.message}
+                      <MenuItem value="">Select a Country</MenuItem>
+                      {countries.map((item) => (
+                        <MenuItem key={item.isoCode} value={item.isoCode}>
+                          {item.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
                 />
-              )}
-            />
 
+                {/* State Dropdown */}
+                <Controller
+                  name="state"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="State"
+                      fullWidth
+                      disabled={!control._formValues.country}
+                      onChange={(e) => {
+                        const selectedStateCode = e.target.value;
+                        field.onChange(e);
+                        setTimeout(() => {
+                          handleStateSelect(
+                            control._formValues.country,
+                            selectedStateCode,
+                          );
+                          control.setValue("city", "");
+                        }, 0);
+                      }}
+                    >
+                      <MenuItem value="">Select a State</MenuItem>
+                      {states.map((item) => (
+                        <MenuItem value={item.isoCode} key={item.isoCode}>
+                          {item.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+
+                {/* City Dropdown */}
+                <Controller
+                  name="city"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      select
+                      label="City"
+                      fullWidth
+                      disabled={!control._formValues.state}
+                    >
+                      <MenuItem value="">Select a City</MenuItem>
+                      {cities.map((item) => (
+                        <MenuItem
+                          value={item.name}
+                          key={`${item.name}-${item.stateCode}-${item.latitude}`}
+                        >
+                          {item.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+
+                <Controller
+                  name="pincode"
+                  rules={{
+                    required: "Pincode is required",
+                    validate: {
+                      noOnlyWhitespace,
+                    },
+                    pattern: {
+                      value: /^[1-9][0-9]{5}$/, // Indian 6-digit pincode starting with non-zero
+                      message: "Enter a valid 6-digit pincode",
+                    },
+                  }}
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Pincode"
+                      fullWidth
+                      error={!!errors.pincode}
+                      helperText={errors.pincode?.message}
+                    />
+                  )}
+                />
+              </>
+            )}
             <PrimaryButton
               type={"submit"}
-              title={"Submit"}
-              disabled={isAddWorkLocation}
-              isLoading={isAddWorkLocation}
+              title={modalType === "edit" ? "Update" : "Submit"}
+              disabled={isAddWorkLocation || isEditWorkLocation}
+              isLoading={isAddWorkLocation || isEditWorkLocation}
             />
           </form>
         </div>

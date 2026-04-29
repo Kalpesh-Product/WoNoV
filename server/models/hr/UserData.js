@@ -59,7 +59,7 @@ const userDataSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Department",
-        required: true,
+        // required: true,
       },
     ],
     password: {
@@ -75,7 +75,7 @@ const userDataSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Role",
-        required: true,
+        // required: true,
       },
     ],
     permissions: {
@@ -156,7 +156,7 @@ const userDataSchema = new mongoose.Schema(
     reportsTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
-      required: true,
+      // required: true,
     },
     refreshToken: { type: String },
     dateOfExit: { type: Date, default: null },
