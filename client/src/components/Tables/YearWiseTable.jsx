@@ -39,6 +39,7 @@ const YearWiseTable = ({
   hideTitle = true,
   search = true,
   onMonthChange,
+  onDateFilterChange,
   totalKey = "actualAmount",
 }) => {
   const agGridRef = useRef(null);
@@ -134,6 +135,14 @@ const YearWiseTable = ({
       return isWithinInterval(itemDate.toDate(), { start, end });
     });
   }, [data, dateColumn, dateRange]);
+
+   useEffect(() => {
+    if (!onDateFilterChange) return;
+    onDateFilterChange({
+      isDateFilterActive: isUserChangedRange,
+      filteredData,
+    });
+  }, [filteredData, isUserChangedRange, onDateFilterChange]);
 
   const rangeTotal = useMemo(() => {
     if (!filteredData.length || !totalKey) return 0;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import WidgetSection from "../../../../../components/WidgetSection";
 import AgTable from "../../../../../components/AgTable";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ import SecondaryButton from "../../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { CircularProgress, Skeleton, TextField } from "@mui/material";
 import humanTime from "../../../../../utils/humanTime";
-import { useMemo } from "react";
+//import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { formatDuration } from "../../../../../utils/dateFormat";
 import {
@@ -58,8 +58,20 @@ const Attendance = () => {
     },
   });
   const [openModal, setOpenModal] = useState(false);
+   const [filteredAttendanceForGraph, setFilteredAttendanceForGraph] =
+    useState(null);
+  const lastGraphFilterSignature = useRef("default");
   const employmentID = useSelector((state) => state.hr.selectedEmployee);
   const name = localStorage.getItem("employeeName") || "Employee";
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  const currentMonthName = currentDate.toLocaleString("default", {
+    month: "long",
+  });
+  const currentMonthYearLabel = `${currentMonthName} ${currentYear}`;
+  const currentMonthCardLabel = `${currentMonthName}-${currentYear}`;
+
 
   const fetchAttendance = async () => {
     try {
@@ -97,28 +109,31 @@ const Attendance = () => {
     },
   });
   const attendanceColumns = [
-    { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "srNo", headerName: "Sr No", flex: 0.5 },
     {
       field: "date",
       headerName: "Date",
-      width: 200,
+      flex: 1,
       cellRenderer: (params) => params.value,
     },
-    { field: "inTime", headerName: "In Time" },
-    { field: "outTime", headerName: "Out Time" },
-    { field: "workHours", headerName: "Work Hours" },
-    { field: "breakHours", headerName: "Break Hours" },
+    { field: "inTime", headerName: "In Time" ,flex: 1},
+    { field: "outTime", headerName: "Out Time", flex: 1 },
+    { field: "workHours", headerName: "Work Hours", flex: 1 },
+    { field: "breakHours", headerName: "Break Hours", flex: 1 },
 
-    { field: "totalHours", headerName: "Total Hours" },
+    { field: "totalHours", headerName: "Total Hours", flex: 1 },
     // { field: "entryType", headerName: "Entry Type" },
   ];
 
   //Attendace of January is being showed
-  function formatAttendance(data) {
+  const formatAttendance = useCallback((data) => {
     const formatted = data
       .filter((entry) => {
         const inDate = new Date(entry.inTime);
-        return inDate.getMonth() === 0;
+        return (
+          inDate.getMonth() === currentMonth &&
+          inDate.getFullYear() === currentYear
+        );
       })
       .sort((a, b) => new Date(a.inTime) - new Date(b.inTime))
       .map((entry) => {
@@ -179,12 +194,68 @@ const Attendance = () => {
       });
 
     return formatted;
-  }
+ }, [currentMonth, currentYear]);
+
+  const sourceAttendanceForGraph = useMemo(() => {
+    if (Array.isArray(filteredAttendanceForGraph)) {
+      return filteredAttendanceForGraph;
+    }
+    return attendance;
+  }, [attendance, filteredAttendanceForGraph]);
 
   const attendanceData = useMemo(() => {
-    if (isLoading || !attendance) return [];
-    return formatAttendance(attendance);
-  }, [attendance, isLoading]);
+    if (isLoading || !sourceAttendanceForGraph) return [];
+    return formatAttendance(sourceAttendanceForGraph);
+  }, [formatAttendance, isLoading, sourceAttendanceForGraph]);
+
+  const attendanceCardSummary = useMemo(() => {
+    if (!Array.isArray(attendance) || attendance.length === 0) {
+      return {
+        accurateCheckIns: 0,
+        lateCheckIns: 0,
+        lateCheckOuts: 0,
+      };
+    }
+
+    return attendance.reduce(
+      (summary, entry) => {
+        if (!entry?.inTime) return summary;
+
+        const inDate = new Date(entry.inTime);
+        if (
+          inDate.getMonth() !== currentMonth ||
+          inDate.getFullYear() !== currentYear
+        ) {
+          return summary;
+        }
+
+        const expectedIn = new Date(inDate);
+        expectedIn.setHours(9, 30, 0, 0);
+
+        if (inDate <= expectedIn) {
+          summary.accurateCheckIns += 1;
+        } else {
+          summary.lateCheckIns += 1;
+        }
+
+        if (entry?.outTime) {
+          const outDate = new Date(entry.outTime);
+          const expectedOut = new Date(inDate);
+          expectedOut.setHours(18, 30, 0, 0);
+          if (outDate > expectedOut) {
+            summary.lateCheckOuts += 1;
+          }
+        }
+
+        return summary;
+      },
+      {
+        accurateCheckIns: 0,
+        lateCheckIns: 0,
+        lateCheckOuts: 0,
+      }
+    );
+  }, [attendance, currentMonth, currentYear]);
 
   const attendanceSeries = [
     {
@@ -203,6 +274,13 @@ const Attendance = () => {
       color: "#EB5C45",
     },
   ];
+   const formatTime = (durationInHours) => {
+    const safeValue = Math.max(0, Number(durationInHours) || 0);
+    if (safeValue < 1) {
+      return `${Math.round(safeValue * 60)}m`;
+    }
+    return `${safeValue.toFixed(2)}h`;
+  };
 
   const options = {
     chart: {
@@ -255,14 +333,33 @@ const Attendance = () => {
         const red = attendanceData[dataPointIndex].sections[2].value;
 
         // Helper function to format hours and minutes
-        const formatTime = (hours) => {
-          const h = Math.floor(hours);
-          const m = Math.round((hours - h) * 60);
-          if (h === 0 && m > 0) return `${m}m`; // Only minutes
-          if (m === 0) return `${h}h`; // Only hours
-          return `${h}. ${m}m`; // Hours and minutes
-        };
+        // const formatTime = (hours) => {
+        //   const h = Math.floor(hours);
+        //   const m = Math.round((hours - h) * 60);
+        //   if (h === 0 && m > 0) return `${m}m`; // Only minutes
+        //   if (m === 0) return `${h}h`; // Only hours
+        //   return `${h}. ${m}m`; // Hours and minutes
+        // };
 
+        // Always display in hours with `h` suffix for check-in/completed values.
+        // const formatHours = (hours) => `${hours.toFixed(2)}h`;
+        // const formatRemaining = (hours) => {
+        //   const h = Math.floor(hours);
+        //   const m = Math.round((hours - h) * 60);
+        //   if (h === 0 && m > 0) return `${m}m`;
+        //   if (m === 0) return `${h}h`;
+        //   return `${h}. ${m}m`;
+        // };
+          //  const formatHours = (hours) =>
+          // `${Number(hours).toFixed(2)}h`;
+        
+        //  const formatTime = (hoursValue) => {
+        //   const safeValue = Number(hoursValue) || 0;
+        //   if (safeValue < 1) {
+        //     return `${Math.round(safeValue * 60)}m`;
+        //   }
+        //   return `${safeValue.toFixed(2)}h`;  
+        //   };
         return `
           <div style="padding: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
             <div style="display: flex; justify-content: space-between; gap: 2rem;">
@@ -272,11 +369,11 @@ const Attendance = () => {
             </div>
             <div style="display: flex; justify-content: space-between; gap: 2rem;">
               <div style="text-align: start;"><strong>Late Check-In</strong></div>
-              <div style="text-align: end;">${formatTime(gray)}</div>
+                <div style="text-align: end;">${formatTime(gray)}</div>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 2rem;">
               <div style="text-align: start;"><strong>Completed</strong></div>
-              <div style="text-align: end;">${formatTime(green)}</div>
+            <div style="text-align: end;">${formatTime(green)}</div>
             </div>
             <div style="display: flex; justify-content: space-between; gap: 2rem;">
               <div style="text-align: start;"><strong>Remaining</strong></div>
@@ -290,12 +387,21 @@ const Attendance = () => {
     dataLabels: {
       enabled: true,
       formatter: function (value) {
+        return formatTime(value);
+          //return `${Number(value).toFixed(2)}h`;
+
         // Helper function to format hours and minutes
-        const h = Math.floor(value);
-        const m = Math.round((value - h) * 60);
-        if (h === 0 && m > 0) return `${m}m`; // Only minutes
-        if (m === 0) return `${h}h`; // Only hours
-        return `${h}.${m}`; // Hours and minutes
+        // const h = Math.floor(value);
+        // const m = Math.round((value - h) * 60);
+        // if (h === 0 && m > 0) return `${m}m`; // Only minutes
+        // if (m === 0) return `${h}h`; // Only hours
+        // return `${h}.${m}`; // Hours and minutes
+
+        // const safeValue = Number(value) || 0;
+        // if (safeValue < 1) {
+        //   return `${Math.round(safeValue * 60)}m`;
+        // }
+        // return `${safeValue.toFixed(2)}h`;
       },
       style: {
         fontSize: "12px",
@@ -311,7 +417,64 @@ const Attendance = () => {
   const onSubmit = (data) => {
     correctionPost(data);
   };
+const attendanceTableData = useMemo(() => {
+    if (isLoading || attendance.length === 0) {
+      return [
+        {
+          id: 1,
+          date: "No Data",
+          inTime: "-",
+          outTime: "-",
+          workHours: "-",
+          breakHours: "-",
+          totalHours: "-",
+        },
+      ];
+    }
 
+    return attendance.map((record, index) => ({
+      id: index + 1,
+      rawRecord: record,
+      date: record?.inTime ? record?.inTime : "N/A",
+      inTime: record?.inTime ? humanTime(record.inTime) : "N/A",
+      outTime: record?.outTime ? humanTime(record.outTime) : "N/A",
+      workHours:
+        record?.inTime && record?.outTime
+          ? formatDuration(record.inTime, record.outTime)
+          : "N/A",
+      breakHours: record?.breakDuration ?? "N/A",
+      totalHours:
+        record?.inTime && record?.outTime
+          ? formatDuration(record.inTime, record.outTime)
+          : "N/A",
+    }));
+  }, [attendance, isLoading]);
+
+  const handleDateFilterChange = useCallback(
+    ({ isDateFilterActive, filteredData }) => {
+      if (!isDateFilterActive) {
+        if (lastGraphFilterSignature.current !== "default") {
+          lastGraphFilterSignature.current = "default";
+          setFilteredAttendanceForGraph(null);
+        }
+        return;
+      }
+
+      const filteredRawAttendance = (filteredData || [])
+        .map((item) => item?.rawRecord)
+        .filter(Boolean);
+
+      const nextSignature = filteredRawAttendance
+        .map((record) => `${record?._id || ""}-${record?.inTime || ""}`)
+        .join("|");
+
+      if (lastGraphFilterSignature.current === nextSignature) return;
+
+      lastGraphFilterSignature.current = nextSignature;
+      setFilteredAttendanceForGraph(filteredRawAttendance);
+    },
+    []
+  );
   // Convert milliseconds to hours and minutes (e.g., "8:30")
   const formatHours = (ms) => {
     const totalMinutes = Math.floor(ms / (1000 * 60));
@@ -325,7 +488,8 @@ const Attendance = () => {
       <div>
         <WidgetSection
           layout={1}
-          titleLabel={"April 2025"}
+          // titleLabel={"April 2025"}
+          titleLabel={currentMonthYearLabel}
           title={"Attendance"}
           border
         >
@@ -341,7 +505,22 @@ const Attendance = () => {
             </div>
           )}
           <WidgetSection layout={3} padding>
+             <DataCard
+              data={attendanceCardSummary.accurateCheckIns}
+              title={"Accurate Check-ins"}
+              description={`Current Month : ${currentMonthCardLabel}`}
+            />
             <DataCard
+              data={attendanceCardSummary.lateCheckIns}
+              title={"Late Check-ins"}
+              description={`Current Month : ${currentMonthCardLabel}`}
+            />
+            <DataCard
+              data={attendanceCardSummary.lateCheckOuts}
+              title={"Late Check-outs"}
+              description={`Current Month : ${currentMonthCardLabel}`}
+            />
+            {/* <DataCard
               data={"27"}
               title={"Accurate Checkins"}
               description={`Current Month : April-25`}
@@ -355,7 +534,7 @@ const Attendance = () => {
               data={"10"}
               title={"Late Checkouts"}
               description={`Current Month : April-25`}
-            />
+            /> */}
           </WidgetSection>
         </WidgetSection>
       </div>
@@ -390,39 +569,10 @@ const Attendance = () => {
               //       }))
               //     : []
               // }
-              data={
-                !isLoading && attendance.length > 0
-                  ? attendance.map((record, index) => ({
-                    id: index + 1,
-                    date: record?.inTime ? record?.inTime : "N/A",
-                    inTime: record?.inTime ? humanTime(record.inTime) : "N/A",
-                    outTime: record?.outTime
-                      ? humanTime(record.outTime)
-                      : "N/A",
-                    workHours:
-                      record?.inTime && record?.outTime
-                        ? formatDuration(record.inTime, record.outTime)
-                        : "N/A",
-                    breakHours: record?.breakDuration ?? "N/A",
-                    totalHours:
-                      record?.inTime && record?.outTime
-                        ? formatDuration(record.inTime, record.outTime)
-                        : "N/A",
-                  }))
-                  : [
-                    {
-                      id: 1,
-                      date: "No Data",
-                      inTime: "-",
-                      outTime: "-",
-                      workHours: "-",
-                      breakHours: "-",
-                      totalHours: "-",
-                    },
-                  ]
-              }
+               data={attendanceTableData}
               columns={attendanceColumns}
               dateColumn="date"
+               onDateFilterChange={handleDateFilterChange}
             />
           </PageFrame>
         ) : (
