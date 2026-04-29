@@ -180,7 +180,8 @@ const CompanyHandbook = () => {
       </div> */}
       <div className="flex">
         <div className="w-full h-full rounded-md">
-          <Access />
+          {/* <Access /> */}
+           <Access showDepartments={false} />
         </div>
       </div>
 

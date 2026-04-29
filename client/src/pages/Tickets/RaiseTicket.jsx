@@ -327,9 +327,9 @@ const RaiseTicket = () => {
                                 (dept) =>
                                   dept?.department?.name !== "Sales" &&
                                   dept?.department?.name !== "HR" &&
-                                  dept?.department?.name !== "Finance" &&
+                                  //dept?.department?.name !== "Finance" &&
                                   // dept.department.name !== "IT" &&
-                                  dept?.department?.name !== "Maintenance" &&
+                                  //dept?.department?.name !== "Maintenance" &&
                                   dept?.department?.name !== "Top Management" &&
                                   dept?.department?.name !== "Test Dept 1" &&
                                   dept?.department?.name !== "Cafe" &&
@@ -353,9 +353,9 @@ const RaiseTicket = () => {
                           <MenuItem value="HR" disabled>
                             HR
                           </MenuItem>
-                          <MenuItem value="Finance" disabled>
+                          {/* <MenuItem value="Finance" disabled>
                             Finance
-                          </MenuItem>
+                          </MenuItem> */}
                           {/* <MenuItem value="IT" disabled>
                             IT
                           </MenuItem> */}
