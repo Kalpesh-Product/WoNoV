@@ -33,6 +33,11 @@ const Templates = () => {
     mode: "onChange",
   });
   const watchedFile = watch("file");
+  const isPdfFile = (file) => {
+    if (!file) return false;
+    const fileName = file?.name?.toLowerCase?.() || "";
+    return file.type === "application/pdf" || fileName.endsWith(".pdf");
+  };
   const { data: templatesData = [], isLoading: isTemplatesLoading } = useQuery({
     queryKey: ["templates"],
     queryFn: async () => {
@@ -220,19 +225,32 @@ const Templates = () => {
                 name="file"
                 rules={{
                   required: "File is required",
+                    validate: (file) =>
+                    isPdfFile(file) || "Only PDF files are allowed",
                 }}
                 render={({ field }) => (
                   <>
                     <input
                       ref={imageInputRef}
                       type="file"
-                      accept="image/*,application/pdf,.doc,.docx,.ppt,.pptx"
+                     // accept="image/*,application/pdf,.doc,.docx,.ppt,.pptx"
+                      accept="application/pdf,.pdf"
                       hidden
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) {
-                          setValue("file", file);
+                        // if (file) {
+                        //   setValue("file", file);
+                         if (!file) return;
+
+                        if (!isPdfFile(file)) {
+                          toast.error("Only PDF files are allowed.");
+                          setValue("file", null, { shouldValidate: true });
+                          e.target.value = "";
+                          return;
                         }
+
+                        setValue("file", file, { shouldValidate: true });
+                        
                       }}
                     />
 

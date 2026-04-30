@@ -457,7 +457,7 @@ const createUser = async (req, res, next) => {
         }),
       departments: yup.array().of(yup.string().required()),
       employeeType: yup.mixed().test((value) => {
-        if (!value) return false;
+        if (!value) return true;
         if (typeof value === "string") return value.trim() !== "";
         if (typeof value === "object") {
           return typeof value.name === "string" && value.name.trim() !== "";
@@ -687,6 +687,10 @@ const createUser = async (req, res, next) => {
     const defaultPassword = `${firstName.trim()}@0625`;
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
+    const resolvedAttendanceSource =
+      attendanceSource || policies?.attendanceSource;
+    const resolvedShift = shift || policies?.workSchedulePolicy;
+
     const newUser = new User({
       empId,
       firstName,
@@ -699,7 +703,7 @@ const createUser = async (req, res, next) => {
       role,
       company,
       password: hashedPassword,
-      attendanceSource,
+      attendanceSource: resolvedAttendanceSource,
       departments,
       employeeType,
       jobTitle,
@@ -708,8 +712,7 @@ const createUser = async (req, res, next) => {
       startDate,
       workLocation,
       reportsTo,
-      shift,
-      policies,
+      shift: resolvedShift,
       homeAddress,
       bankInformation,
       panAadhaarDetails,
@@ -745,6 +748,7 @@ const createUser = async (req, res, next) => {
           };
         });
 
+      console.log("Agreements to create:", agreementsToCreate);
       if (agreementsToCreate.length) {
         await Agreements.insertMany(agreementsToCreate);
       }
@@ -849,12 +853,19 @@ const fetchSingleUser = async (req, res) => {
     let reportsTo = null;
 
     if (user.reportsTo) {
-      reportsTo = await User.findOne({ role: { $in: [user.reportsTo] } })
+      reportsTo = await User.findOne({
+        role: { $in: [user.reportsTo] },
+        isActive: true,
+      })
         .select("firstName lastName")
         .lean();
     }
 
-    const policyMap = await Agreements.find({ user: user._id }).lean();
+    const policies = await Agreements.find({ user: user._id }).lean();
+    const policyMap = policies.reduce((acc, policy) => {
+      if (policy?.name) acc[policy.name] = policy;
+      return acc;
+    }, {});
 
     const formattedUser = {
       firstName: user.firstName || "",
@@ -882,8 +893,11 @@ const fetchSingleUser = async (req, res) => {
         : "",
       jobTitle: user.designation || "",
       jobDescription: user.jobDescription || "",
-      shift: user.policies?.shift || "",
-      workSchedulePolicy: policyMap?.["Work Schedule Policy"]?.type || "",
+      shift: user.shift || "",
+      workSchedulePolicy:
+        policyMap?.["Work Schedule Policy"]?.type ||
+        policyMap?.["Work Schedule Policy"]?.url ||
+        "",
       attendanceSource: user?.attendanceSource || "",
       leavePolicy: policyMap?.["Leave Policy"]?.url || "",
       holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
@@ -928,6 +942,7 @@ const fetchSingleUser = async (req, res) => {
         user.payrollInformation?.tdsCalculationBasedOn || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
     };
+    console.log("Formatted user data: ", policyMap);
 
     res.status(200).json(formattedUser);
   } catch (error) {
@@ -1009,7 +1024,7 @@ const updateProfile = async (req, res, next) => {
     const { user, ip, company } = req;
     const loggedInUserId = req.user;
     //const userId = req.user;
-    const updateData = req.body.data ? JSON.parse(req.body.data) : null;
+    const updateData = req.body 
     const newProfilePicture = req.file;
 
     const targetEmpId = updateData?.empId;
@@ -1065,6 +1080,22 @@ const updateProfile = async (req, res, next) => {
       if (blockedTopLevelFields.has(key)) return;
       addFlattenedFields(value, [key], key);
     });
+
+    const incomingPolicies = updateData?.policies;
+    if (incomingPolicies && typeof incomingPolicies === "object") {
+      if (incomingPolicies.attendanceSource) {
+        updatePayload.attendanceSource = trimIfString(
+          incomingPolicies.attendanceSource,
+        );
+      }
+      if (incomingPolicies.workSchedulePolicy) {
+        updatePayload.shift = trimIfString(incomingPolicies.workSchedulePolicy);
+      }
+      delete updatePayload["policies.attendanceSource"];
+      delete updatePayload["policies.workSchedulePolicy"];
+      delete updatePayload["policies.leavePolicy"];
+      delete updatePayload["policies.holidayPolicy"];
+    }
 
     let profilePictureUpdate = null;
 
@@ -1141,6 +1172,42 @@ const updateProfile = async (req, res, next) => {
       { $set: updatePayload },
       { new: true, runValidators: true },
     ).select("-password");
+
+    if (incomingPolicies && typeof incomingPolicies === "object") {
+      const policyAgreements = [
+        {
+          name: "Work Schedule Policy",
+          value: incomingPolicies.workSchedulePolicy,
+        },
+        { name: "Leave Policy", value: incomingPolicies.leavePolicy },
+        { name: "Holiday Policy", value: incomingPolicies.holidayPolicy },
+      ];
+
+      await Promise.all(
+        policyAgreements.map(async ({ name, value }) => {
+          if (value === undefined || value === null || value === "") return;
+          const stringValue = String(value);
+          const isUrl = stringValue.startsWith("https");
+          await Agreements.findOneAndUpdate(
+            { user: targetUser._id, name },
+            {
+              $set: {
+                name,
+                user: targetUser._id,
+                url: isUrl ? stringValue : undefined,
+                type:
+                  name === "Work Schedule Policy" && !isUrl
+                    ? stringValue
+                    : undefined,
+                isActive: true,
+                isDeleted: false,
+              },
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true },
+          );
+        }),
+      );
+    }
 
     if (!updatedUser) {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);

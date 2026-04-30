@@ -8,7 +8,7 @@ import PageFrame from "./PageFrame";
 import { queryClient } from "../../main";
 import MuiModal from "../MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { TextField } from "@mui/material";
+import { Chip, TextField } from "@mui/material";
 import UploadFileInput from "../UploadFileInput";
 import ThreeDotMenu from "../ThreeDotMenu";
 import YearWiseTable from "../Tables/YearWiseTable";
@@ -174,7 +174,24 @@ const PolicyUpload = () => {
     },
     { field: "date", headerName: "Upload Date", flex: 1 },
     { field: "updatedAt", headerName: "Modified Date", flex: 1 },
-    { field: "status", headerName: "Status", flex: 1 },
+    //{ field: "status", headerName: "Status", flex: 1 },
+     {
+      field: "status",
+      headerName: "Status",
+      flex: 1,
+      cellRenderer: (params) => {
+        const isActive = params.value === "Active";
+        return (
+          <Chip
+            label={params.value}
+            style={{
+              backgroundColor: isActive ? "#90EE90" : "#FFECC5",
+              color: isActive ? "#006400" : "#CC8400",
+            }}
+          />
+        );
+      },
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -282,6 +299,10 @@ const PolicyUpload = () => {
                     value={field.value}
                     onChange={field.onChange}
                     previewType="pdf"
+                    allowedExtensions={["pdf"]}
+                    onInvalidFile={() =>
+                      toast.error("Only PDF files are allowed.")
+                    }
                   />
                 )}
               />

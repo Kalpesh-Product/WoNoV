@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, IconButton, TextField, DialogActions, MenuItem } from "@mui/material";
+import {
+  Chip,
+  IconButton,
+  TextField,
+  DialogActions,
+  MenuItem,
+} from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import MuiModal from "../../../../components/MuiModal";
@@ -46,7 +52,9 @@ const HrSOP = () => {
   const { data: sops = [] } = useQuery({
     queryKey: ["sops"],
     queryFn: async () => {
-      const response = await axios.get("/api/company/get-company-documents/sop");
+      const response = await axios.get(
+        "/api/company/get-company-documents/sop",
+      );
       return response.data.sop;
     },
   });
@@ -56,7 +64,7 @@ const HrSOP = () => {
       const response = await axios.post(
         "/api/company/upload-company-document",
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { "Content-Type": "multipart/form-data" } },
       );
       return response.data;
     },
@@ -73,7 +81,10 @@ const HrSOP = () => {
 
   const updateSopMutation = useMutation({
     mutationFn: async (payload) => {
-      const response = await axios.patch("/api/company/update-company-data", payload);
+      const response = await axios.patch(
+        "/api/company/update-company-data",
+        payload,
+      );
       return response.data;
     },
     onSuccess: () => {
@@ -88,11 +99,16 @@ const HrSOP = () => {
 
   const makeInactiveSopMutation = useMutation({
     mutationFn: async (payload) => {
-      const response = await axios.patch("/api/company/update-company-data", payload);
+      const response = await axios.patch(
+        "/api/company/update-company-data",
+        payload,
+      );
       return response.data;
     },
     onSuccess: () => {
-      toast.success("SOP marked inactive successfully");
+      toast.success(
+        `SOP marked ${selectedSop?.isActive ? "inactive" : "active"} successfully`,
+      );
       queryClient.invalidateQueries({ queryKey: ["sops"] });
       setOpenModal(false);
     },
@@ -115,7 +131,7 @@ const HrSOP = () => {
       itemId: selectedSop.mongoId,
       oldDocumentName: selectedSop.sopname,
       name: data.sopName,
-      isActive: data.status === "true",
+      // isActive: data.status === "true",
     });
   };
 
@@ -125,7 +141,7 @@ const HrSOP = () => {
       itemId: selectedSop.mongoId,
       oldDocumentName: selectedSop.sopname,
       newDocumentName: null,
-      isActive: false,
+      isActive: !selectedSop.isActive,
     });
   };
 
@@ -140,7 +156,6 @@ const HrSOP = () => {
     setSelectedSop(row);
     resetEditForm({
       sopName: row.sopname,
-      status: row.status?.toString(),
     });
     setOpenModal(true);
   };
@@ -171,7 +186,7 @@ const HrSOP = () => {
     { field: "uploadedDate", headerName: "Uploaded Date", width: 150 },
     { field: "updatedDate", headerName: "Updated Date", width: 150 },
     {
-      field: "status",
+      field: "isActive",
       headerName: "Status",
       sort: "desc",
       cellRenderer: (params) => {
@@ -189,16 +204,16 @@ const HrSOP = () => {
       field: "actions",
       headerName: "Actions",
       cellRenderer: (params) => {
-        const isActive = params.data.status;
+        const isActive = params.data.isActive;
+        console.log("isActive", isActive);
         const items = [
           { label: "Edit", onClick: () => handleOpenEdit(params.data) },
-        ];
-        if (isActive) {
-          items.push({
-            label: "Mark As Inactive",
+          {
+            label: `Mark As ${params.data.isActive ? "Inactive" : "Active"}`,
             onClick: () => handleOpenInactive(params.data),
-          });
-        }
+          },
+        ];
+
         return <ThreeDotMenu rowId={params.data.id} menuItems={items} />;
       },
     },
@@ -216,7 +231,7 @@ const HrSOP = () => {
           id: i + 1,
           mongoId: sop._id,
           sopname: sop.name,
-          status: sop.isActive,
+          isActive: sop.isActive,
           sopLink: sop.documentLink,
           uploadedDate: humanDate(sop.createdAt),
           updatedDate: humanDate(sop.updatedAt),
@@ -232,18 +247,25 @@ const HrSOP = () => {
           modalType === "edit"
             ? "Edit SOP"
             : modalType === "inactive"
-              ? "Mark SOP As Inactive"
+              ? `Mark SOP As ${selectedSop?.isActive ? "Active" : "Inactive"}`
               : "Add New SOP"
         }
       >
         {modalType === "inactive" ? (
           <div className="space-y-4">
             <p>
-              Are you sure you want to mark <b>{selectedSop?.sopname}</b> as inactive?
+              Are you sure you want to mark <b>{selectedSop?.sopname}</b> as{" "}
+              {selectedSop?.isActive ? "Inactive" : "Active"}?
             </p>
             <DialogActions>
-              <PrimaryButton title="Confirm" handleSubmit={handleMarkInactive} />
-              <PrimaryButton title="Cancel" handleSubmit={() => setOpenModal(false)} />
+              <PrimaryButton
+                title="Confirm"
+                handleSubmit={handleMarkInactive}
+              />
+              <PrimaryButton
+                title="Cancel"
+                handleSubmit={() => setOpenModal(false)}
+              />
             </DialogActions>
           </div>
         ) : modalType === "edit" ? (
@@ -268,24 +290,6 @@ const HrSOP = () => {
                   error={!!editErrors?.sopName}
                   helperText={editErrors?.sopName?.message}
                 />
-              )}
-            />
-
-            <Controller
-              name="status"
-              control={editControl}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Status"
-                  size="small"
-                  fullWidth
-                  variant="outlined"
-                >
-                  <MenuItem value="true">Active</MenuItem>
-                  <MenuItem value="false">Inactive</MenuItem>
-                </TextField>
               )}
             />
 
