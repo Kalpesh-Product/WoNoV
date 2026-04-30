@@ -112,14 +112,9 @@ const HrSettingsPolicies = () => {
     setOpenModal(true);
   };
 
-  const handleInactive = (row) => {
+  const handleStatus = (row) => {
     setSelectedPolicy(row);
-    setModalType("inactive");
-    setOpenModal(true);
-  };
-  const handleActive = (row) => {
-    setSelectedPolicy(row);
-    setModalType("inactive");
+    setModalType("status");
     setOpenModal(true);
   };
 
@@ -132,22 +127,13 @@ const HrSettingsPolicies = () => {
     });
   };
 
-  const handleMarkInactive = () => {
+  const handleMarkStatus = (status) => {
     updatePolicyMutation.mutate({
       type: "policies",
       itemId: selectedPolicy.mongoId,
       oldDocumentName: selectedPolicy.policyname,
       newDocumentName: null,
-      isActive: false,
-    });
-  };
-  const handleMarkActive = () => {
-    updatePolicyMutation.mutate({
-      type: "policies",
-      itemId: selectedPolicy.mongoId,
-      oldDocumentName: selectedPolicy.policyname,
-      newDocumentName: null,
-      isActive: true,
+      isActive: status ? false : true,
     });
   };
 
@@ -199,19 +185,11 @@ const HrSettingsPolicies = () => {
         const isActive = params.data.status;
         const actions = [
           { label: "Edit", onClick: () => handleEdit(params.data) },
+          {
+            label: `Mark As ${isActive ? "Inactive" : "Active"}`,
+            onClick: () => handleStatus(params.data),
+          },
         ];
-
-        if (isActive === true) {
-          actions.push({
-            label: "Mark As Inactive",
-            onClick: () => handleInactive(params.data),
-          });
-        } else if (isActive === false) {
-          actions.push({
-            label: "Mark As Active",
-            onClick: () => handleActive(params.data), // You probably want a separate handler here
-          });
-        }
 
         return <ThreeDotMenu rowId={params.data.id} menuItems={actions} />;
       },
@@ -249,8 +227,8 @@ const HrSettingsPolicies = () => {
         title={
           modalType === "edit"
             ? "Edit Policy Name"
-            : modalType === "inactive"
-              ? "Mark Policy As Inactive"
+            : modalType === "status"
+              ? `Mark Policy As ${selectedPolicy?.status ? "Inactive" : "Active"}`
               : "Add New Policy"
         }
       >
@@ -361,32 +339,17 @@ const HrSettingsPolicies = () => {
             />
           </form>
         )}
-        {modalType === "inactive" && (
+        {modalType === "status" && (
           <div className="space-y-4">
             <p>
               Are you sure you want to mark <b>{selectedPolicy?.policyname}</b>{" "}
-              as inactive?
+              as {selectedPolicy?.status ? "Inactive" : "Active"}?
             </p>
             <DialogActions>
               <PrimaryButton
                 title="Confirm"
-                handleSubmit={handleMarkInactive}
+                handleSubmit={() => handleMarkStatus(selectedPolicy?.status)}
               />
-              <PrimaryButton
-                title="Cancel"
-                handleSubmit={() => setOpenModal(false)}
-              />
-            </DialogActions>
-          </div>
-        )}
-        {modalType === "active" && (
-          <div className="space-y-4">
-            <p>
-              Are you sure you want to mark <b>{selectedPolicy?.policyname}</b>{" "}
-              as active
-            </p>
-            <DialogActions>
-              <PrimaryButton title="Confirm" handleSubmit={handleMarkActive} />
               <PrimaryButton
                 title="Cancel"
                 handleSubmit={() => setOpenModal(false)}

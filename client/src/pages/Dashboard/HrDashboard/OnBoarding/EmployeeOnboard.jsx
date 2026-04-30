@@ -130,6 +130,16 @@ const EmployeeOnboard = () => {
     // },
   });
 
+  const normalizeMultiSelectValue = (value) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string")
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    return [];
+  };
+
   const normalizeBoolean = (value) => {
     if (typeof value === "boolean") return value;
     if (typeof value !== "string") return undefined;
@@ -703,8 +713,12 @@ const EmployeeOnboard = () => {
                         select
                         SelectProps={{
                           multiple: true,
+                          onChange: (event) =>
+                            field.onChange(
+                              normalizeMultiSelectValue(event.target.value),
+                            ),
                           renderValue: (selected) =>
-                            selected
+                            normalizeMultiSelectValue(selected)
                               .map(
                                 (deptId) =>
                                   departmentNameById.get(deptId) || deptId,
@@ -720,7 +734,9 @@ const EmployeeOnboard = () => {
                         {departmentsData.map((department) => (
                           <MenuItem key={department._id} value={department._id}>
                             <Checkbox
-                              checked={field.value?.includes(department._id)}
+                              checked={normalizeMultiSelectValue(
+                                field.value,
+                              ).includes(department._id)}
                             />
                             <ListItemText primary={department.name} />
                           </MenuItem>
@@ -746,8 +762,12 @@ const EmployeeOnboard = () => {
                         select
                         SelectProps={{
                           multiple: true,
+                          onChange: (event) =>
+                            field.onChange(
+                              normalizeMultiSelectValue(event.target.value),
+                            ),
                           renderValue: (selected) =>
-                            selected
+                            normalizeMultiSelectValue(selected)
                               .map(
                                 (roleId) => roleTitleById.get(roleId) || roleId,
                               )
@@ -762,7 +782,9 @@ const EmployeeOnboard = () => {
                         {rolesData.map((role) => (
                           <MenuItem key={role._id} value={role._id}>
                             <Checkbox
-                              checked={field.value?.includes(role._id)}
+                              checked={normalizeMultiSelectValue(
+                                field.value,
+                              ).includes(role._id)}
                             />
                             <ListItemText primary={role.roleTitle} />
                           </MenuItem>
