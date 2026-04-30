@@ -108,26 +108,31 @@ const CompanyHandbook = () => {
       title: "Policies",
       content: (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-content">Work From Home Policy</span>
-            </div>
-            <div className="flex-row">
-              <button className="p-2 border-default border-black rounded-md text-content">
-                <IoIosArrowForward />
-              </button>
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-content">Timings Policy</span>
-            </div>
-            <div>
-              <button className="p-2 border-default border-black rounded-md text-content">
-                <IoIosArrowForward />
-              </button>
-            </div>
-          </div>
+          {isDocumentsLoading ? (
+            <span className="text-sm text-gray-500">Loading...</span>
+          ) : companyDocuments?.[generalDoc]?.length > 0 ? (
+            companyDocuments[generalDoc].map((doc) => (
+              <div key={doc._id} className="flex justify-between items-center">
+                <div>
+                  <span className="text-content">{doc.name}</span>
+                </div>
+                <div>
+                  <a
+                    href={doc.documentLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 border-default border-black rounded-md text-content flex items-center"
+                  >
+                    <IoIosArrowForward />
+                  </a>
+                </div>
+              </div>
+            ))
+          ) : (
+            <span className="text-sm text-gray-500">
+              No documents available.
+            </span>
+          )}
         </div>
       ),
     },
