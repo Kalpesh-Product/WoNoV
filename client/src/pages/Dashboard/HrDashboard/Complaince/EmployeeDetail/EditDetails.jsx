@@ -166,24 +166,28 @@ const EditDetails = () => {
     [rolesData],
   );
 
-  const reportingManagerByRoleId = useMemo(() => {
-    const map = new Map();
-    adminRoles.forEach((role) => {
-      const manager = usersData.find((user) =>
-        user?.role?.some((assignedRole) => assignedRole?._id === role?._id),
-      );
-      if (manager) {
-        map.set(
-          role._id,
-          `${manager?.firstName || ""} ${manager?.lastName || ""}`.trim(),
-        );
-      }
-    });
-    return map;
-  }, [adminRoles, usersData]);
-
   const stateOptions = useMemo(() => State.getStatesOfCountry("IN"), []);
+ const stateNameByCode = useMemo(
+    () =>
+      stateOptions.reduce((acc, stateItem) => {
+        acc[stateItem.isoCode] = stateItem.name;
+        return acc;
+      }, {}),
+    [stateOptions],
+  );
 
+  const normalizedStateCode = useMemo(() => {
+    const stateValue = employeeData?.state;
+    if (!stateValue) return "";
+    if (stateOptions.some((stateItem) => stateItem.isoCode === stateValue)) {
+      return stateValue;
+    }
+    const matchedState = stateOptions.find(
+      (stateItem) =>
+        stateItem.name.toLowerCase() === String(stateValue).toLowerCase(),
+    );
+    return matchedState?.isoCode || "";
+  }, [employeeData?.state, stateOptions]);
   useEffect(() => {
     if (!employeeData) return;
 
@@ -192,33 +196,71 @@ const EditDetails = () => {
       // status:
       //   employeeData.status || (employeeData.isActive ? "Active" : "Inactive"),
       dob: employeeData?.dob,
-      mobilePhone: employeeData?.phone,
+      mobilePhone: employeeData?.mobilePhone || "",
+      //mobilePhone: employeeData?.phone,
       //employeeType: employeeData?.employeeType?.name || employeeData?.employeeType,
       employeeType:
-  typeof employeeData?.employeeType === "object"
-    ? employeeData?.employeeType?.name
-    : employeeData?.employeeType || "",
+       typeof employeeData?.employeeType === "object"
+      ? employeeData?.employeeType?.name
+      : employeeData?.employeeType || "",
       department: normalizeDepartmentIds(departmentIds),
       role: normalizedRoles
         .map((item) => (typeof item === "object" ? item?._id : item))
         .filter(Boolean),
       reportsTo: normalizedReportsTo,
       shift: employeeData?.shift || "",
-      workSchedulePolicy: employeeData?.policies?.workSchedulePolicy || "",
-      attendanceSource: employeeData?.policies?.attendanceSource || "",
-      leavePolicy: employeeData?.policies?.leavePolicy || "",
-      holidayPolicy: employeeData?.policies?.holidayPolicy || "",
-      aadharID: employeeData?.panAadhaarDetails?.aadhaarId || "",
+      workSchedulePolicy: employeeData?.workSchedulePolicy || "",
+      attendanceSource: employeeData?.attendanceSource || "",
+      leavePolicy: employeeData?.leavePolicy || "",
+      holidayPolicy: employeeData?.holidayPolicy || "",
+            state: normalizedStateCode,
+ city:
+        employeeData?.homeAddress?.city ||
+        employeeData?.city ||
+        employeeData?.address?.city ||
+        "",      aadharID:
+        employeeData?.panAadhaarDetails?.aadhaarId ||
+        employeeData?.aadhaarID ||
+        "",
       pan: employeeData?.panAadhaarDetails?.pan || employeeData?.pan || "",
-      pfAcNo: employeeData?.panAadhaarDetails?.pfAccountNumber || "",
-      pfContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
-      pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
-      payrollBatch: employeeData?.payrollInformation?.payrollBatch || "",
-      employeePF: employeeData?.payrollInformation?.employeePF || "",
+       pfAcNo:
+        employeeData?.panAadhaarDetails?.pfAccountNumber ||
+        employeeData?.pfAccountNumber ||
+        "",
+ pfContributionRate:
+        employeeData?.payrollInformation?.pfContributionRate ||
+        employeeData?.pFContributionRate ||
+        "",
+      pFContributionRate:
+        employeeData?.payrollInformation?.pfContributionRate ||
+        employeeData?.pFContributionRate ||
+        "",     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
+       payrollBatch:
+        employeeData?.payrollInformation?.payrollBatch ||
+        employeeData?.payrollBatch ||
+        "",
+      //employeePF: employeeData?.payrollInformation?.employeePF || "",
       status: employeeData?.status || (employeeData?.isActive ? "Active" : "Inactive"),
     });
-   }, [employeeData, departmentIds, normalizedReportsTo, normalizedRoles, reset]);  
+  }, [employeeData, departmentIds, normalizedReportsTo, normalizedRoles, normalizedStateCode, reset]);  
   // }, [employeeData, reset]);
+
+  useEffect(() => {
+  if (!cityOptions.length) return;
+
+  const cityValue =
+    employeeData?.homeAddress?.city ||
+    employeeData?.city ||
+    employeeData?.address?.city ||
+    "";
+
+  if (cityValue) {
+    reset((prev) => ({
+      ...prev,
+      city: cityValue,
+    }));
+  }
+}, [cityOptions]);
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -285,27 +327,19 @@ const normalizeDepartmentIds = (departmentsValue) => {
         //     ? formData.employeeType
         //     : { name: formData.employeeType }
         //   : undefined,
-        employeeType: {
-  name: formData?.employeeType || "",
-},
         departments: normalizeDepartmentIds(formData?.department),
         department: normalizeDepartmentIds(formData?.department),
-        reportsTo:
-          usersData.find((user) => user?._id === formData?.reportsTo)?._id ||
-          usersData.find((user) =>
-            user?.role?.some((assignedRole) => assignedRole?._id === formData?.reportsTo),
-          )?._id ||
-          (/^[a-f\d]{24}$/i.test(formData?.reportsTo || "")
-            ? formData?.reportsTo
-            : undefined),
+        reportsTo: /^[a-f\d]{24}$/i.test(formData?.reportsTo || "")
+          ? formData?.reportsTo
+          : undefined,
         // role: Array.isArray(formData?.role)
         //   ? formData.role
         //   : formData?.role
         //     ? [formData.role]
         //     : [],
         role: Array.isArray(formData?.role)
-  ? formData.role.filter((id) => /^[a-f\d]{24}$/i.test(id))
-  : [],
+        ? formData.role.filter((id) => /^[a-f\d]{24}$/i.test(id))
+        : [],
         jobTitle: formData?.jobTitle || "",
         jobDescription: formData?.jobDescription || "",
         shift: formData?.shift || "",
@@ -316,12 +350,20 @@ const normalizeDepartmentIds = (departmentsValue) => {
         addressLine2: formData?.addressLine2 || "",
         state: formData?.state || "",
         city: formData?.city || "",
+         homeAddress: {
+          addressLine1: formData?.addressLine1 || "",
+          addressLine2: formData?.addressLine2 || "",
+          state: formData?.state || "",
+          city: formData?.city || "",
+          pinCode: formData?.pinCode || "",
+        },
         pinCode: formData?.pinCode || "",
         includeInPayroll: normalizeBoolean(formData?.includeInPayroll),
         payrollBatch: formData?.payrollBatch || "",
         professionalTaxExemption: normalizeBoolean(
           formData?.professionalTaxExemption,
         ),
+        
         includePF: normalizeBoolean(formData?.includePF),
         pfContributionRate:
           formData?.pfContributionRate || formData?.pFContributionRate || "",
@@ -344,6 +386,9 @@ const normalizeDepartmentIds = (departmentsValue) => {
           employeePF: formData?.employeePF || "",
           includeInPayroll: normalizeBoolean(formData?.includeInPayroll),
           professionTaxExemption: normalizeBoolean(
+            formData?.professionalTaxExemption,
+          ),
+          professionalTaxExemption: normalizeBoolean(
             formData?.professionalTaxExemption,
           ),
           includePF: normalizeBoolean(formData?.includePF),
@@ -396,38 +441,54 @@ const normalizeDepartmentIds = (departmentsValue) => {
           (employeeData?.isActive ? "Active" : "Inactive"),
         department: departmentNames.join(", "),
         reportsTo:
-          usersData.find((user) => user?._id === employeeData?.reportsTo)?.firstName ||
-          employeeData?.reportsTo ||
-          "",
-        // role: normalizedRoles
-        //   .map((item) =>
-        //     typeof item === "object" ? item?.roleTitle || item?.name : item,
-        //   )
-        //   .filter(Boolean)
+        usersData.find((user) => user?._id === normalizedReportsTo)
+            ? `${usersData.find((user) => user?._id === normalizedReportsTo)?.firstName || ""} ${usersData.find((user) => user?._id === normalizedReportsTo)?.lastName || ""}`.trim()
+            : employeeData?.reportsTo || "",
         role: normalizedRoles
-  .map((item) => {
-    if (typeof item === "object") return item?._id;
-
-    // अगर string है तो rolesData से match करो
-    const matchedRole = rolesData.find(
-      (role) =>
-        role.roleTitle?.toLowerCase() === String(item).toLowerCase()
-    );
-
-    return matchedRole?._id || null;
-  })
-  .filter(Boolean)
-          .join(", "),
-        workSchedulePolicy: employeeData?.policies?.workSchedulePolicy || "",
-        attendanceSource: employeeData?.policies?.attendanceSource || "",
-        leavePolicy: employeeData?.policies?.leavePolicy || "",
-        holidayPolicy: employeeData?.policies?.holidayPolicy || "",
-        aadharID: employeeData?.panAadhaarDetails?.aadhaarId || "",
+          .map((item) =>
+            typeof item === "object" ? item?.roleTitle || item?.name : item,
+          )
+          .filter(Boolean).join(", "),
+        workSchedulePolicy: employeeData?.workSchedulePolicy || "",
+        attendanceSource: employeeData?.attendanceSource || "",
+        leavePolicy: employeeData?.leavePolicy || "",
+        holidayPolicy: employeeData?.holidayPolicy || "",
+        aadharID:
+          employeeData?.panAadhaarDetails?.aadhaarId ||
+          employeeData?.aadhaarID ||
+          "",
         pan: employeeData?.panAadhaarDetails?.pan || employeeData?.pan || "",
-        pfAcNo: employeeData?.panAadhaarDetails?.pfAccountNumber || "",
-        pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
-        payrollBatch: employeeData?.payrollInformation?.payrollBatch || "",
-        employeePF: employeeData?.payrollInformation?.employeePF || "",  
+        pfAcNo:
+          employeeData?.panAadhaarDetails?.pfAccountNumber ||
+          employeeData?.pfAccountNumber ||
+          "",
+        state:
+          stateNameByCode[normalizedStateCode] || employeeData?.state || "",
+          city:
+          employeeData?.homeAddress?.city ||
+          employeeData?.city ||
+          employeeData?.address?.city ||
+          "",
+        pFContributionRate:
+          employeeData?.payrollInformation?.pfContributionRate ||
+          employeeData?.pFContributionRate ||
+          "",
+        pfContributionRate:
+          employeeData?.payrollInformation?.pfContributionRate ||
+          employeeData?.pFContributionRate ||
+          "",
+        payrollBatch:
+          employeeData?.payrollInformation?.payrollBatch ||
+          employeeData?.payrollBatch ||
+          "",
+        employeePF: employeeData?.payrollInformation?.employeePF || "",
+        includeInPayroll:
+          employeeData?.payrollInformation?.includeInPayroll ?? "",
+        professionalTaxExemption:
+           employeeData?.payrollInformation?.professionTaxExemption ??
+          employeeData?.payrollInformation?.professionalTaxExemption ??
+          "",
+        includePF: employeeData?.payrollInformation?.includePF ?? "",
       };
 
   return (
@@ -614,11 +675,23 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                 ) : fieldKey === "reportsTo" ? (
                                   <TextField {...field} size="small" label="Reports To" fullWidth select>
                                     <MenuItem value="">Select Reporting Manager</MenuItem>
-                                    {adminRoles.map((role) => (
-                                      <MenuItem key={role._id} value={role._id}>
-                                        {`${role.roleTitle}${reportingManagerByRoleId.get(role._id) ? ` (${reportingManagerByRoleId.get(role._id)})` : ""}`}
-                                      </MenuItem>
-                                    ))}
+                                     {usersData
+                                      .filter((user) =>
+                                        user?.role?.some((assignedRole) =>
+                                          adminRoles.some(
+                                            (adminRole) => adminRole?._id === assignedRole?._id,
+                                          ),
+                                        ),
+                                      )
+                                      .map((user) => {
+                                        const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+                                        const firstRole = user?.role?.[0]?.roleTitle || "";
+                                        return (
+                                          <MenuItem key={user._id} value={user._id}>
+                                            {`${fullName}${firstRole ? ` (${firstRole})` : ""}`}
+                                          </MenuItem>
+                                        );
+                                      })}
                                   </TextField>
                                 ) : (
                                   <TextField
@@ -854,7 +927,14 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                 //   fullWidth
                                 // />
                                 fieldKey === "state" ? (
-                                  <TextField {...field} size="small" label="State" fullWidth select>
+                                 <TextField
+  {...field}
+  value={field.value || ""}
+  size="small"
+  label="State"
+  fullWidth
+  select
+>
                                     <MenuItem value="">Select State</MenuItem>
                                     {stateOptions.map((state) => (
                                       <MenuItem key={state.isoCode} value={state.isoCode}>
@@ -863,8 +943,21 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                     ))}
                                   </TextField>
                                 ) : fieldKey === "city" ? (
-                                  <TextField {...field} size="small" label="City" fullWidth select>
+                                 <TextField
+  {...field}
+  value={field.value || ""}
+  size="small"
+  label="City"
+  fullWidth
+  select
+>
                                     <MenuItem value="">Select City</MenuItem>
+                                    <MenuItem value={field.value}>
+  {field.value}
+</MenuItem>
+                                    {field.value && !cityOptions.find(c => c.name === field.value) && (
+  <MenuItem value={field.value}>{field.value}</MenuItem>
+)}
                                     {cityOptions.map((city) => (
                                       <MenuItem key={city.name} value={city.name}>
                                         {city.name}
