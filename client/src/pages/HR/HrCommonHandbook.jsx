@@ -29,7 +29,7 @@ const HrCommonHandbook = () => {
         if (!generalDoc) return {}; // don't run until type is selected
         try {
           const response = await axios.get(
-            `/api/company/get-company-documents/${generalDoc}`
+            `/api/company/get-company-documents/${generalDoc}`,
           );
           return response.data;
         } catch (error) {
@@ -66,7 +66,7 @@ const HrCommonHandbook = () => {
   const filteredAccordionData = isTop.isTop
     ? departmentList
     : departmentList.filter(
-        (dep) => userDepartmentIds.includes(dep.id) // assuming dep.id is the department's ID in `departmentList`
+        (dep) => userDepartmentIds.includes(dep.id), // assuming dep.id is the department's ID in `departmentList`
       );
 
   console.log("Filtered Departments:", filteredAccordionData);
@@ -182,7 +182,7 @@ const HrCommonHandbook = () => {
       </div> */}
       <div className="flex">
         <div className="w-full h-full rounded-md">
-          <Access />
+          <Access showDepartmentAccordion={false} />
         </div>
       </div>
 
@@ -244,7 +244,7 @@ const HrCommonHandbook = () => {
                           state: {
                             departmentId: item.id,
                             departmentName: item.title,
-                            documentType : "sop"
+                            documentType: "sop",
                           },
                         })
                       }
@@ -262,7 +262,7 @@ const HrCommonHandbook = () => {
                           state: {
                             departmentId: item.id,
                             departmentName: item.title,
-                            documentType : "policies"
+                            documentType: "policies",
                           },
                         })
                       }
