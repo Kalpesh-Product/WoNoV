@@ -192,29 +192,30 @@ const EditDetails = () => {
       // status:
       //   employeeData.status || (employeeData.isActive ? "Active" : "Inactive"),
       dob: employeeData?.dob,
-      mobilePhone: employeeData?.phone,
+      mobilePhone: employeeData?.mobilePhone || "",
+      //mobilePhone: employeeData?.phone,
       //employeeType: employeeData?.employeeType?.name || employeeData?.employeeType,
       employeeType:
-  typeof employeeData?.employeeType === "object"
-    ? employeeData?.employeeType?.name
-    : employeeData?.employeeType || "",
+       typeof employeeData?.employeeType === "object"
+      ? employeeData?.employeeType?.name
+      : employeeData?.employeeType || "",
       department: normalizeDepartmentIds(departmentIds),
       role: normalizedRoles
         .map((item) => (typeof item === "object" ? item?._id : item))
         .filter(Boolean),
       reportsTo: normalizedReportsTo,
       shift: employeeData?.shift || "",
-      workSchedulePolicy: employeeData?.policies?.workSchedulePolicy || "",
-      attendanceSource: employeeData?.policies?.attendanceSource || "",
-      leavePolicy: employeeData?.policies?.leavePolicy || "",
-      holidayPolicy: employeeData?.policies?.holidayPolicy || "",
+      workSchedulePolicy: employeeData?.workSchedulePolicy || "",
+      attendanceSource: employeeData?.attendanceSource || "",
+      leavePolicy: employeeData?.leavePolicy || "",
+      holidayPolicy: employeeData?.holidayPolicy || "",
       aadharID: employeeData?.panAadhaarDetails?.aadhaarId || "",
       pan: employeeData?.panAadhaarDetails?.pan || employeeData?.pan || "",
       pfAcNo: employeeData?.panAadhaarDetails?.pfAccountNumber || "",
       pfContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
-      pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
+     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
       payrollBatch: employeeData?.payrollInformation?.payrollBatch || "",
-      employeePF: employeeData?.payrollInformation?.employeePF || "",
+      //employeePF: employeeData?.payrollInformation?.employeePF || "",
       status: employeeData?.status || (employeeData?.isActive ? "Active" : "Inactive"),
     });
    }, [employeeData, departmentIds, normalizedReportsTo, normalizedRoles, reset]);  
@@ -285,9 +286,6 @@ const normalizeDepartmentIds = (departmentsValue) => {
         //     ? formData.employeeType
         //     : { name: formData.employeeType }
         //   : undefined,
-        employeeType: {
-  name: formData?.employeeType || "",
-},
         departments: normalizeDepartmentIds(formData?.department),
         department: normalizeDepartmentIds(formData?.department),
         reportsTo:
@@ -304,8 +302,8 @@ const normalizeDepartmentIds = (departmentsValue) => {
         //     ? [formData.role]
         //     : [],
         role: Array.isArray(formData?.role)
-  ? formData.role.filter((id) => /^[a-f\d]{24}$/i.test(id))
-  : [],
+        ? formData.role.filter((id) => /^[a-f\d]{24}$/i.test(id))
+        : [],
         jobTitle: formData?.jobTitle || "",
         jobDescription: formData?.jobDescription || "",
         shift: formData?.shift || "",
@@ -399,35 +397,21 @@ const normalizeDepartmentIds = (departmentsValue) => {
           usersData.find((user) => user?._id === employeeData?.reportsTo)?.firstName ||
           employeeData?.reportsTo ||
           "",
-        // role: normalizedRoles
-        //   .map((item) =>
-        //     typeof item === "object" ? item?.roleTitle || item?.name : item,
-        //   )
-        //   .filter(Boolean)
         role: normalizedRoles
-  .map((item) => {
-    if (typeof item === "object") return item?._id;
-
-    // अगर string है तो rolesData से match करो
-    const matchedRole = rolesData.find(
-      (role) =>
-        role.roleTitle?.toLowerCase() === String(item).toLowerCase()
-    );
-
-    return matchedRole?._id || null;
-  })
-  .filter(Boolean)
-          .join(", "),
-        workSchedulePolicy: employeeData?.policies?.workSchedulePolicy || "",
-        attendanceSource: employeeData?.policies?.attendanceSource || "",
-        leavePolicy: employeeData?.policies?.leavePolicy || "",
-        holidayPolicy: employeeData?.policies?.holidayPolicy || "",
+          .map((item) =>
+            typeof item === "object" ? item?.roleTitle || item?.name : item,
+          )
+          .filter(Boolean).join(", "),
+        workSchedulePolicy: employeeData?.workSchedulePolicy || "",
+        attendanceSource: employeeData?.attendanceSource || "",
+        leavePolicy: employeeData?.leavePolicy || "",
+        holidayPolicy: employeeData?.holidayPolicy || "",
         aadharID: employeeData?.panAadhaarDetails?.aadhaarId || "",
         pan: employeeData?.panAadhaarDetails?.pan || employeeData?.pan || "",
         pfAcNo: employeeData?.panAadhaarDetails?.pfAccountNumber || "",
-        pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
+       // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
         payrollBatch: employeeData?.payrollInformation?.payrollBatch || "",
-        employeePF: employeeData?.payrollInformation?.employeePF || "",  
+        //employeePF: employeeData?.payrollInformation?.employeePF || "",  
       };
 
   return (
