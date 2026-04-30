@@ -39,8 +39,7 @@ const HrEvents = ({ title }) => {
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "title", headerName: "Event", flex: 1 },
-    { field: "startDate", headerName: "Start Date" },
-    { field: "endDate", headerName: "End Date" },
+    { field: "startDate", headerName: "Date" },
     { field: "day", headerName: "Day" },
   ];
 
@@ -54,12 +53,10 @@ const HrEvents = ({ title }) => {
 
   const combinedEvents = [...holidayEvents].map((holiday) => {
     const date = dayjs(holiday.start);
-    const endDate = holiday.end ? dayjs(holiday.end) : null;
     return {
       title: holiday.title,
       day: date.format("dddd"),
-      startDate: date.format("DD-MM-YYYY"),
-      endDate: endDate ? endDate.format("DD-MM-YYYY") : "-",
+      startDate: holiday.start,
     };
   });
 
