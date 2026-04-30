@@ -1,5 +1,5 @@
 import { MenuItem, TextField } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import SecondaryButton from "../../../../../components/SecondaryButton";
@@ -13,7 +13,8 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useSelector } from "react-redux";
 import useAuth from "../../../../../hooks/useAuth";
 import { PERMISSIONS } from "../../../../../constants/permissions";
-
+import { Checkbox, ListItemText } from "@mui/material";
+import { City, State } from "country-state-city";
 dayjs.extend(customParseFormat);
 
 const EditDetails = () => {
@@ -36,57 +37,188 @@ const EditDetails = () => {
     },
   });
 
-  const { control, handleSubmit, reset } = useForm({
-    defaultValues: {
-      firstName: "Aiwin",
-      middleName: "Raj",
-      lastName: "K.S",
-      gender: "Male",
-      dob: "1990-01-01",
-      employeeID: "WO01",
-      mobilePhone: "7904895106",
-      startDate: "1990-01-01",
-      workLocation: "Bangalore",
-      employeeType: "Full-Time",
-      department: "Engineering",
-      reportsTo: "Kalpesh Naik",
-      jobTitle: "Software Engineer",
-      jobDescription:
-        "Responsible for developing and maintaining web applications.",
-      shift: "Day Shift",
-      workSchedulePolicy: "Standard 9-5",
-      attendanceSource: "Biometric",
-      leavePolicy: "Standard",
-      holidayPolicy: "Company Approved",
-      status: "Active",
-      aadharID: "1234-5678-9123",
-      pan: "ABCDE1234F",
-      pfAcNo: "PF123456789",
-      addressLine1: "123, Tech Park",
-      addressLine2: "Near City Center",
-      state: "Karnataka",
-      city: "Bangalore",
-      pinCode: "560001",
-      includeInPayroll: "Yes",
-      payrollBatch: "Batch A",
-      professionTaxExemption: "No",
-      includePF: "Yes",
-      pfContributionRate: "12%",
-      employeePF: "1500",
+  // const { control, handleSubmit, reset } = useForm({
+  //   defaultValues: {
+  //     firstName: "Aiwin",
+  //     middleName: "Raj",
+  //     lastName: "K.S",
+  //     gender: "Male",
+  //     dob: "1990-01-01",
+  //     employeeID: "WO01",
+  //     mobilePhone: "7904895106",
+  //     startDate: "1990-01-01",
+  //     workLocation: "Bangalore",
+  //     employeeType: "Full-Time",
+  //     department: "Engineering",
+  //     reportsTo: "Kalpesh Naik",
+  //     jobTitle: "Software Engineer",
+  //     jobDescription:
+  //       "Responsible for developing and maintaining web applications.",
+  //     shift: "Day Shift",
+  //     workSchedulePolicy: "Standard 9-5",
+  //     attendanceSource: "Biometric",
+  //     leavePolicy: "Standard",
+  //     holidayPolicy: "Company Approved",
+  //     status: "Active",
+  //     aadharID: "1234-5678-9123",
+  //     pan: "ABCDE1234F",
+  //     pfAcNo: "PF123456789",
+  //     addressLine1: "123, Tech Park",
+  //     addressLine2: "Near City Center",
+  //     state: "Karnataka",
+  //     city: "Bangalore",
+  //     pinCode: "560001",
+  //     includeInPayroll: "Yes",
+  //     payrollBatch: "Batch A",
+  //     professionTaxExemption: "No",
+  //     includePF: "Yes",
+  //     pfContributionRate: "12%",
+  //     employeePF: "1500",
+   const { control, handleSubmit, reset, watch } = useForm({ defaultValues: {} });
+  const selectedStateCode = watch("state");
+  const cityOptions = useMemo(
+    () =>
+      selectedStateCode ? City.getCitiesOfState("IN", selectedStateCode) : [],
+    [selectedStateCode],
+  );
+
+  const { data: departmentsData = [] } = useQuery({
+    queryKey: ["departmentsData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/departments/get-departments");
+      return response.data || [];
+    },
+  });
+
+  const { data: usersData = [] } = useQuery({
+    queryKey: ["usersData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/users/fetch-users");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+  const { data: rolesData = [] } = useQuery({
+    queryKey: ["rolesData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/roles/get-roles");
+      return Array.isArray(response.data) ? response.data : [];
     },
   });
 
   const [isEditing, setIsEditing] = useState(false);
+
+  const normalizedDepartments = useMemo(
+    () =>
+      Array.isArray(employeeData?.departments)
+        ? employeeData.departments
+        : employeeData?.departments
+          ? [employeeData.departments]
+          : [],
+    [employeeData?.departments],
+  );
+
+  const departmentIds = useMemo(
+    () =>
+      normalizedDepartments
+        .map((item) => (typeof item === "object" ? item?._id || item?.name : item))
+        .filter(Boolean),
+    [normalizedDepartments],
+  );
+
+  const departmentNames = useMemo(
+    () =>
+      normalizedDepartments
+        .map((item) => (typeof item === "object" ? item?.name : item))
+        .filter(Boolean),
+    [normalizedDepartments],
+  );
+
+  const normalizedRoles = useMemo(() => {
+    if (Array.isArray(employeeData?.role)) return employeeData.role;
+    if (employeeData?.role) return [employeeData.role];
+    return [];
+  }, [employeeData?.role]);
+
+  const normalizedReportsTo = useMemo(() => {
+    const value = employeeData?.reportsTo;
+    if (!value) return "";
+    if (typeof value === "object") return value?._id || "";
+
+    const matchedUser = usersData.find((user) => {
+      const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+      return (
+        user?._id === value ||
+        fullName.toLowerCase() === String(value).toLowerCase() ||
+        `${fullName} (${user?.role?.[0]?.roleTitle || ""})`
+          .trim()
+          .toLowerCase() === String(value).toLowerCase()
+      );
+    });
+
+    return matchedUser?._id || value;
+  }, [employeeData?.reportsTo, usersData]);
+
+  const adminRoles = useMemo(
+    () =>
+      rolesData.filter((role) =>
+        role?.roleTitle?.toLowerCase().endsWith("admin"),
+      ),
+    [rolesData],
+  );
+
+  const reportingManagerByRoleId = useMemo(() => {
+    const map = new Map();
+    adminRoles.forEach((role) => {
+      const manager = usersData.find((user) =>
+        user?.role?.some((assignedRole) => assignedRole?._id === role?._id),
+      );
+      if (manager) {
+        map.set(
+          role._id,
+          `${manager?.firstName || ""} ${manager?.lastName || ""}`.trim(),
+        );
+      }
+    });
+    return map;
+  }, [adminRoles, usersData]);
+
+  const stateOptions = useMemo(() => State.getStatesOfCountry("IN"), []);
 
   useEffect(() => {
     if (!employeeData) return;
 
     reset({
       ...employeeData,
-      status:
-        employeeData.status || (employeeData.isActive ? "Active" : "Inactive"),
+      // status:
+      //   employeeData.status || (employeeData.isActive ? "Active" : "Inactive"),
+      dob: employeeData?.dob,
+      mobilePhone: employeeData?.phone,
+      //employeeType: employeeData?.employeeType?.name || employeeData?.employeeType,
+      employeeType:
+  typeof employeeData?.employeeType === "object"
+    ? employeeData?.employeeType?.name
+    : employeeData?.employeeType || "",
+      department: normalizeDepartmentIds(departmentIds),
+      role: normalizedRoles
+        .map((item) => (typeof item === "object" ? item?._id : item))
+        .filter(Boolean),
+      reportsTo: normalizedReportsTo,
+      shift: employeeData?.shift || "",
+      workSchedulePolicy: employeeData?.policies?.workSchedulePolicy || "",
+      attendanceSource: employeeData?.policies?.attendanceSource || "",
+      leavePolicy: employeeData?.policies?.leavePolicy || "",
+      holidayPolicy: employeeData?.policies?.holidayPolicy || "",
+      aadharID: employeeData?.panAadhaarDetails?.aadhaarId || "",
+      pan: employeeData?.panAadhaarDetails?.pan || employeeData?.pan || "",
+      pfAcNo: employeeData?.panAadhaarDetails?.pfAccountNumber || "",
+      pfContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
+      pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
+      payrollBatch: employeeData?.payrollInformation?.payrollBatch || "",
+      employeePF: employeeData?.payrollInformation?.employeePF || "",
+      status: employeeData?.status || (employeeData?.isActive ? "Active" : "Inactive"),
     });
-  }, [employeeData, reset]);
+   }, [employeeData, departmentIds, normalizedReportsTo, normalizedRoles, reset]);  
+  // }, [employeeData, reset]);
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -98,12 +230,129 @@ const EditDetails = () => {
     setIsEditing(!isEditing);
   };
 
+const normalizeDepartmentIds = (departmentsValue) => {
+    const values = Array.isArray(departmentsValue)
+      ? departmentsValue
+      : departmentsValue
+        ? [departmentsValue]
+        : [];
+
+    return values
+      .map((value) => {
+        if (!value) return null;
+        if (typeof value === "object") return value?._id || null;
+        if (/^[a-f\d]{24}$/i.test(value)) return value;
+
+        const matchedDepartment = departmentsData.find(
+          (department) =>
+            department?.name?.trim().toLowerCase() ===
+            String(value).trim().toLowerCase(),
+        );
+
+        return matchedDepartment?._id || null;
+      })
+      .filter(Boolean);
+  };
+
+  const normalizeBoolean = (value) => {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      if (["yes", "true", "1"].includes(normalized)) return true;
+      if (["no", "false", "0"].includes(normalized)) return false;
+    }
+    return undefined;
+  };
+
   const updateEmployeeStatus = useMutation({
-    mutationFn: async (statusValue) => {
-      return axios.patch("/api/users/update-single-user", {
+    // mutationFn: async (statusValue) => {
+    //   return axios.patch("/api/users/update-single-user", {
+     mutationFn: async (formData) => {
+      const payload = {
         empId: employmentID,
-        isActive: statusValue === "Active",
-      });
+        //isActive: statusValue === "Active",
+        firstName: formData?.firstName || "",
+        middleName: formData?.middleName || "",
+        lastName: formData?.lastName || "",
+        gender: formData?.gender || "",
+        dob: formData?.dob || "",
+        employeeID: formData?.employeeID || "",
+        phone: formData?.mobilePhone || "",
+        startDate: formData?.startDate || "",
+        workLocation: formData?.workLocation || "",
+        // employeeType: formData?.employeeType
+        //   ? typeof formData.employeeType === "object"
+        //     ? formData.employeeType
+        //     : { name: formData.employeeType }
+        //   : undefined,
+        employeeType: {
+  name: formData?.employeeType || "",
+},
+        departments: normalizeDepartmentIds(formData?.department),
+        department: normalizeDepartmentIds(formData?.department),
+        reportsTo:
+          usersData.find((user) => user?._id === formData?.reportsTo)?._id ||
+          usersData.find((user) =>
+            user?.role?.some((assignedRole) => assignedRole?._id === formData?.reportsTo),
+          )?._id ||
+          (/^[a-f\d]{24}$/i.test(formData?.reportsTo || "")
+            ? formData?.reportsTo
+            : undefined),
+        // role: Array.isArray(formData?.role)
+        //   ? formData.role
+        //   : formData?.role
+        //     ? [formData.role]
+        //     : [],
+        role: Array.isArray(formData?.role)
+  ? formData.role.filter((id) => /^[a-f\d]{24}$/i.test(id))
+  : [],
+        jobTitle: formData?.jobTitle || "",
+        jobDescription: formData?.jobDescription || "",
+        shift: formData?.shift || "",
+        attendanceSource: formData?.attendanceSource || "",
+        leavePolicy: formData?.leavePolicy || "",
+        holidayPolicy: formData?.holidayPolicy || "",
+        addressLine1: formData?.addressLine1 || "",
+        addressLine2: formData?.addressLine2 || "",
+        state: formData?.state || "",
+        city: formData?.city || "",
+        pinCode: formData?.pinCode || "",
+        includeInPayroll: normalizeBoolean(formData?.includeInPayroll),
+        payrollBatch: formData?.payrollBatch || "",
+        professionalTaxExemption: normalizeBoolean(
+          formData?.professionalTaxExemption,
+        ),
+        includePF: normalizeBoolean(formData?.includePF),
+        pfContributionRate:
+          formData?.pfContributionRate || formData?.pFContributionRate || "",
+        employeePF: formData?.employeePF || "",
+        policies: {
+          workSchedulePolicy: formData?.workSchedulePolicy || "",
+          attendanceSource: formData?.attendanceSource || "",
+          leavePolicy: formData?.leavePolicy || "",
+          holidayPolicy: formData?.holidayPolicy || "",
+        },
+        panAadhaarDetails: {
+          aadhaarId: formData?.aadharID || "",
+          pan: formData?.pan || "",
+          pfAccountNumber: formData?.pfAcNo || "",
+        },
+        payrollInformation: {
+          payrollBatch: formData?.payrollBatch || "",
+          pfContributionRate:
+            formData?.pfContributionRate || formData?.pFContributionRate || "",
+          employeePF: formData?.employeePF || "",
+          includeInPayroll: normalizeBoolean(formData?.includeInPayroll),
+          professionTaxExemption: normalizeBoolean(
+            formData?.professionalTaxExemption,
+          ),
+          includePF: normalizeBoolean(formData?.includePF),
+        },
+        status: formData?.status,
+        isActive: formData?.status === "Active",
+      };
+
+      return axios.patch("/api/users/update-single-user", payload);
     },
     onSuccess: () => {
       toast.success("User details updated successfully");
@@ -122,7 +371,8 @@ const EditDetails = () => {
   const onSubmit = (data) => {
     // setIsEditing(!isEditing);
     // toast.success("User details updated successfully");
-    updateEmployeeStatus.mutate(data.status);
+    //updateEmployeeStatus.mutate(data.status);
+    updateEmployeeStatus.mutate(data);
   };
 
   const handleReset = () => {
@@ -144,6 +394,40 @@ const EditDetails = () => {
         status:
           employeeData?.status ||
           (employeeData?.isActive ? "Active" : "Inactive"),
+        department: departmentNames.join(", "),
+        reportsTo:
+          usersData.find((user) => user?._id === employeeData?.reportsTo)?.firstName ||
+          employeeData?.reportsTo ||
+          "",
+        // role: normalizedRoles
+        //   .map((item) =>
+        //     typeof item === "object" ? item?.roleTitle || item?.name : item,
+        //   )
+        //   .filter(Boolean)
+        role: normalizedRoles
+  .map((item) => {
+    if (typeof item === "object") return item?._id;
+
+    // अगर string है तो rolesData से match करो
+    const matchedRole = rolesData.find(
+      (role) =>
+        role.roleTitle?.toLowerCase() === String(item).toLowerCase()
+    );
+
+    return matchedRole?._id || null;
+  })
+  .filter(Boolean)
+          .join(", "),
+        workSchedulePolicy: employeeData?.policies?.workSchedulePolicy || "",
+        attendanceSource: employeeData?.policies?.attendanceSource || "",
+        leavePolicy: employeeData?.policies?.leavePolicy || "",
+        holidayPolicy: employeeData?.policies?.holidayPolicy || "",
+        aadharID: employeeData?.panAadhaarDetails?.aadhaarId || "",
+        pan: employeeData?.panAadhaarDetails?.pan || employeeData?.pan || "",
+        pfAcNo: employeeData?.panAadhaarDetails?.pfAccountNumber || "",
+        pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
+        payrollBatch: employeeData?.payrollInformation?.payrollBatch || "",
+        employeePF: employeeData?.payrollInformation?.employeePF || "",  
       };
 
   return (
@@ -254,6 +538,7 @@ const EditDetails = () => {
                         "workLocation",
                         "employeeType",
                         "department",
+                        "role",
                         "reportsTo",
                         "jobTitle",
                       ].map((fieldKey) => (
@@ -263,14 +548,88 @@ const EditDetails = () => {
                               name={fieldKey}
                               control={control}
                               render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  size="small"
-                                  label={fieldKey
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
-                                  fullWidth
-                                />
+                                // <TextField
+                                //   {...field}
+                                //   size="small"
+                                //   label={fieldKey
+                                //     .replace(/([A-Z])/g, " $1")
+                                //     .replace(/^./, (str) => str.toUpperCase())}
+                                //   fullWidth
+                                // />
+                                 fieldKey === "department" ? (
+                                  <TextField
+                                    {...field}
+                                    value={field.value || []}
+                                    size="small"
+                                    label="Department"
+                                    fullWidth
+                                    select
+                                    SelectProps={{
+                                      multiple: true,
+                                      renderValue: (selected) =>
+                                        selected
+                                          .map(
+                                            (deptId) =>
+                                              departmentsData.find((item) => item._id === deptId)
+                                                ?.name || deptId,
+                                          )
+                                          .join(", "),
+                                    }}
+                                  >
+                                    {departmentsData.map((department) => (
+                                      <MenuItem key={department._id} value={department._id}>
+                                        <Checkbox checked={field.value?.includes(department._id)} />
+                                        <ListItemText primary={department.name} />
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
+                                ) : fieldKey === "role" ? (
+                                  <TextField
+                                    {...field}
+                                    value={field.value || []}
+                                    size="small"
+                                    label="Role"
+                                    fullWidth
+                                    select
+                                    SelectProps={{
+                                      multiple: true,
+                                      renderValue: (selected) =>
+                                        selected
+                                          .map(
+                                            (roleId) =>
+                                              rolesData.find((item) => item._id === roleId)
+                                                ?.roleTitle || roleId,
+                                          )
+                                          .join(", "),
+                                    }}
+                                  >
+                                    <MenuItem value="" disabled>Select Role</MenuItem>
+                                    {rolesData.map((role) => (
+                                      <MenuItem key={role._id} value={role._id}>
+                                        <Checkbox checked={field.value?.includes(role._id)} />
+                                        <ListItemText primary={role.roleTitle} />
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
+                                ) : fieldKey === "reportsTo" ? (
+                                  <TextField {...field} size="small" label="Reports To" fullWidth select>
+                                    <MenuItem value="">Select Reporting Manager</MenuItem>
+                                    {adminRoles.map((role) => (
+                                      <MenuItem key={role._id} value={role._id}>
+                                        {`${role.roleTitle}${reportingManagerByRoleId.get(role._id) ? ` (${reportingManagerByRoleId.get(role._id)})` : ""}`}
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
+                                ) : (
+                                  <TextField
+                                    {...field}
+                                    size="small"
+                                    label={fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) => str.toUpperCase())}
+                                    fullWidth
+                                  />
+                                )
                               )}
                             />
                           ) : (
@@ -331,6 +690,28 @@ const EditDetails = () => {
                                     <MenuItem value="Inactive">
                                       Inactive
                                     </MenuItem>
+                                  </TextField>
+                                    ) : fieldKey === "workSchedulePolicy" ? (
+                                  <TextField
+                                    {...field}
+                                    select
+                                    size="small"
+                                    label="Work Schedule Policy"
+                                    fullWidth
+                                  >
+                                    <MenuItem value="General Shift">General Shift</MenuItem>
+                                    <MenuItem value="Night Shift">Night Shift</MenuItem>
+                                  </TextField>
+                                ) : fieldKey === "attendanceSource" ? (
+                                  <TextField
+                                    {...field}
+                                    select
+                                    size="small"
+                                    label="Attendance Source"
+                                    fullWidth
+                                  >
+                                    <MenuItem value="web">Web</MenuItem>
+                                    <MenuItem value="mobile">Mobile</MenuItem>
                                   </TextField>
                                 ) : (
                                   <TextField
@@ -395,7 +776,8 @@ const EditDetails = () => {
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                   {isLoading
                     ? []
-                    : ["aadharID", "pan", "pFAcNo"].map((fieldKey) => (
+                    //: ["aadharID", "pan", "pFAcNo"].map((fieldKey) => (
+                      : ["aadharID", "pan", "pfAcNo"].map((fieldKey) => (
                         <div key={fieldKey}>
                           {isEditing ? (
                             <Controller
@@ -463,14 +845,42 @@ const EditDetails = () => {
                               name={fieldKey}
                               control={control}
                               render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  size="small"
-                                  label={fieldKey
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
-                                  fullWidth
-                                />
+                                // <TextField
+                                //   {...field}
+                                //   size="small"
+                                //   label={fieldKey
+                                //     .replace(/([A-Z])/g, " $1")
+                                //     .replace(/^./, (str) => str.toUpperCase())}
+                                //   fullWidth
+                                // />
+                                fieldKey === "state" ? (
+                                  <TextField {...field} size="small" label="State" fullWidth select>
+                                    <MenuItem value="">Select State</MenuItem>
+                                    {stateOptions.map((state) => (
+                                      <MenuItem key={state.isoCode} value={state.isoCode}>
+                                        {state.name}
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
+                                ) : fieldKey === "city" ? (
+                                  <TextField {...field} size="small" label="City" fullWidth select>
+                                    <MenuItem value="">Select City</MenuItem>
+                                    {cityOptions.map((city) => (
+                                      <MenuItem key={city.name} value={city.name}>
+                                        {city.name}
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
+                                ) : (
+                                  <TextField
+                                    {...field}
+                                    size="small"
+                                    label={fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) => str.toUpperCase())}
+                                    fullWidth
+                                  />
+                                )
                               )}
                             />
                           ) : (
