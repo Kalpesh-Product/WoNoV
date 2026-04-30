@@ -214,8 +214,11 @@ const EditDetails = () => {
       leavePolicy: employeeData?.leavePolicy || "",
       holidayPolicy: employeeData?.holidayPolicy || "",
             state: normalizedStateCode,
-      city: employeeData?.city || employeeData?.address?.city || "",
-      aadharID:
+ city:
+        employeeData?.homeAddress?.city ||
+        employeeData?.city ||
+        employeeData?.address?.city ||
+        "",      aadharID:
         employeeData?.panAadhaarDetails?.aadhaarId ||
         employeeData?.aadhaarID ||
         "",
@@ -224,8 +227,14 @@ const EditDetails = () => {
         employeeData?.panAadhaarDetails?.pfAccountNumber ||
         employeeData?.pfAccountNumber ||
         "",
-      pfContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
-     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
+ pfContributionRate:
+        employeeData?.payrollInformation?.pfContributionRate ||
+        employeeData?.pFContributionRate ||
+        "",
+      pFContributionRate:
+        employeeData?.payrollInformation?.pfContributionRate ||
+        employeeData?.pFContributionRate ||
+        "",     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
        payrollBatch:
         employeeData?.payrollInformation?.payrollBatch ||
         employeeData?.payrollBatch ||
@@ -235,6 +244,23 @@ const EditDetails = () => {
     });
   }, [employeeData, departmentIds, normalizedReportsTo, normalizedRoles, normalizedStateCode, reset]);  
   // }, [employeeData, reset]);
+
+  useEffect(() => {
+  if (!cityOptions.length) return;
+
+  const cityValue =
+    employeeData?.homeAddress?.city ||
+    employeeData?.city ||
+    employeeData?.address?.city ||
+    "";
+
+  if (cityValue) {
+    reset((prev) => ({
+      ...prev,
+      city: cityValue,
+    }));
+  }
+}, [cityOptions]);
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -303,14 +329,9 @@ const normalizeDepartmentIds = (departmentsValue) => {
         //   : undefined,
         departments: normalizeDepartmentIds(formData?.department),
         department: normalizeDepartmentIds(formData?.department),
-        reportsTo:
-          usersData.find((user) => user?._id === formData?.reportsTo)?._id ||
-          usersData.find((user) =>
-            user?.role?.some((assignedRole) => assignedRole?._id === formData?.reportsTo),
-          )?._id ||
-          (/^[a-f\d]{24}$/i.test(formData?.reportsTo || "")
-            ? formData?.reportsTo
-            : undefined),
+        reportsTo: /^[a-f\d]{24}$/i.test(formData?.reportsTo || "")
+          ? formData?.reportsTo
+          : undefined,
         // role: Array.isArray(formData?.role)
         //   ? formData.role
         //   : formData?.role
@@ -329,12 +350,20 @@ const normalizeDepartmentIds = (departmentsValue) => {
         addressLine2: formData?.addressLine2 || "",
         state: formData?.state || "",
         city: formData?.city || "",
+         homeAddress: {
+          addressLine1: formData?.addressLine1 || "",
+          addressLine2: formData?.addressLine2 || "",
+          state: formData?.state || "",
+          city: formData?.city || "",
+          pinCode: formData?.pinCode || "",
+        },
         pinCode: formData?.pinCode || "",
         includeInPayroll: normalizeBoolean(formData?.includeInPayroll),
         payrollBatch: formData?.payrollBatch || "",
         professionalTaxExemption: normalizeBoolean(
           formData?.professionalTaxExemption,
         ),
+        
         includePF: normalizeBoolean(formData?.includePF),
         pfContributionRate:
           formData?.pfContributionRate || formData?.pFContributionRate || "",
@@ -357,6 +386,9 @@ const normalizeDepartmentIds = (departmentsValue) => {
           employeePF: formData?.employeePF || "",
           includeInPayroll: normalizeBoolean(formData?.includeInPayroll),
           professionTaxExemption: normalizeBoolean(
+            formData?.professionalTaxExemption,
+          ),
+          professionalTaxExemption: normalizeBoolean(
             formData?.professionalTaxExemption,
           ),
           includePF: normalizeBoolean(formData?.includePF),
@@ -432,9 +464,19 @@ const normalizeDepartmentIds = (departmentsValue) => {
           "",
         state:
           stateNameByCode[normalizedStateCode] || employeeData?.state || "",
-        city: employeeData?.city || employeeData?.address?.city || "",
+          city:
+          employeeData?.homeAddress?.city ||
+          employeeData?.city ||
+          employeeData?.address?.city ||
+          "",
         pFContributionRate:
-          employeeData?.payrollInformation?.pfContributionRate || "",
+          employeeData?.payrollInformation?.pfContributionRate ||
+          employeeData?.pFContributionRate ||
+          "",
+        pfContributionRate:
+          employeeData?.payrollInformation?.pfContributionRate ||
+          employeeData?.pFContributionRate ||
+          "",
         payrollBatch:
           employeeData?.payrollInformation?.payrollBatch ||
           employeeData?.payrollBatch ||
@@ -443,7 +485,9 @@ const normalizeDepartmentIds = (departmentsValue) => {
         includeInPayroll:
           employeeData?.payrollInformation?.includeInPayroll ?? "",
         professionalTaxExemption:
-          employeeData?.payrollInformation?.professionTaxExemption ?? "",
+           employeeData?.payrollInformation?.professionTaxExemption ??
+          employeeData?.payrollInformation?.professionalTaxExemption ??
+          "",
         includePF: employeeData?.payrollInformation?.includePF ?? "",
       };
 
@@ -883,7 +927,14 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                 //   fullWidth
                                 // />
                                 fieldKey === "state" ? (
-                                  <TextField {...field} size="small" label="State" fullWidth select>
+                                 <TextField
+  {...field}
+  value={field.value || ""}
+  size="small"
+  label="State"
+  fullWidth
+  select
+>
                                     <MenuItem value="">Select State</MenuItem>
                                     {stateOptions.map((state) => (
                                       <MenuItem key={state.isoCode} value={state.isoCode}>
@@ -892,8 +943,21 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                     ))}
                                   </TextField>
                                 ) : fieldKey === "city" ? (
-                                  <TextField {...field} size="small" label="City" fullWidth select>
+                                 <TextField
+  {...field}
+  value={field.value || ""}
+  size="small"
+  label="City"
+  fullWidth
+  select
+>
                                     <MenuItem value="">Select City</MenuItem>
+                                    <MenuItem value={field.value}>
+  {field.value}
+</MenuItem>
+                                    {field.value && !cityOptions.find(c => c.name === field.value) && (
+  <MenuItem value={field.value}>{field.value}</MenuItem>
+)}
                                     {cityOptions.map((city) => (
                                       <MenuItem key={city.name} value={city.name}>
                                         {city.name}
