@@ -166,24 +166,28 @@ const EditDetails = () => {
     [rolesData],
   );
 
-  const reportingManagerByRoleId = useMemo(() => {
-    const map = new Map();
-    adminRoles.forEach((role) => {
-      const manager = usersData.find((user) =>
-        user?.role?.some((assignedRole) => assignedRole?._id === role?._id),
-      );
-      if (manager) {
-        map.set(
-          role._id,
-          `${manager?.firstName || ""} ${manager?.lastName || ""}`.trim(),
-        );
-      }
-    });
-    return map;
-  }, [adminRoles, usersData]);
-
   const stateOptions = useMemo(() => State.getStatesOfCountry("IN"), []);
+ const stateNameByCode = useMemo(
+    () =>
+      stateOptions.reduce((acc, stateItem) => {
+        acc[stateItem.isoCode] = stateItem.name;
+        return acc;
+      }, {}),
+    [stateOptions],
+  );
 
+  const normalizedStateCode = useMemo(() => {
+    const stateValue = employeeData?.state;
+    if (!stateValue) return "";
+    if (stateOptions.some((stateItem) => stateItem.isoCode === stateValue)) {
+      return stateValue;
+    }
+    const matchedState = stateOptions.find(
+      (stateItem) =>
+        stateItem.name.toLowerCase() === String(stateValue).toLowerCase(),
+    );
+    return matchedState?.isoCode || "";
+  }, [employeeData?.state, stateOptions]);
   useEffect(() => {
     if (!employeeData) return;
 
@@ -209,16 +213,27 @@ const EditDetails = () => {
       attendanceSource: employeeData?.attendanceSource || "",
       leavePolicy: employeeData?.leavePolicy || "",
       holidayPolicy: employeeData?.holidayPolicy || "",
-      aadharID: employeeData?.panAadhaarDetails?.aadhaarId || "",
+            state: normalizedStateCode,
+      city: employeeData?.city || employeeData?.address?.city || "",
+      aadharID:
+        employeeData?.panAadhaarDetails?.aadhaarId ||
+        employeeData?.aadhaarID ||
+        "",
       pan: employeeData?.panAadhaarDetails?.pan || employeeData?.pan || "",
-      pfAcNo: employeeData?.panAadhaarDetails?.pfAccountNumber || "",
+       pfAcNo:
+        employeeData?.panAadhaarDetails?.pfAccountNumber ||
+        employeeData?.pfAccountNumber ||
+        "",
       pfContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
      // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
-      payrollBatch: employeeData?.payrollInformation?.payrollBatch || "",
+       payrollBatch:
+        employeeData?.payrollInformation?.payrollBatch ||
+        employeeData?.payrollBatch ||
+        "",
       //employeePF: employeeData?.payrollInformation?.employeePF || "",
       status: employeeData?.status || (employeeData?.isActive ? "Active" : "Inactive"),
     });
-   }, [employeeData, departmentIds, normalizedReportsTo, normalizedRoles, reset]);  
+  }, [employeeData, departmentIds, normalizedReportsTo, normalizedRoles, normalizedStateCode, reset]);  
   // }, [employeeData, reset]);
 
   const { auth } = useAuth();
@@ -394,9 +409,9 @@ const normalizeDepartmentIds = (departmentsValue) => {
           (employeeData?.isActive ? "Active" : "Inactive"),
         department: departmentNames.join(", "),
         reportsTo:
-          usersData.find((user) => user?._id === employeeData?.reportsTo)?.firstName ||
-          employeeData?.reportsTo ||
-          "",
+        usersData.find((user) => user?._id === normalizedReportsTo)
+            ? `${usersData.find((user) => user?._id === normalizedReportsTo)?.firstName || ""} ${usersData.find((user) => user?._id === normalizedReportsTo)?.lastName || ""}`.trim()
+            : employeeData?.reportsTo || "",
         role: normalizedRoles
           .map((item) =>
             typeof item === "object" ? item?.roleTitle || item?.name : item,
@@ -406,12 +421,30 @@ const normalizeDepartmentIds = (departmentsValue) => {
         attendanceSource: employeeData?.attendanceSource || "",
         leavePolicy: employeeData?.leavePolicy || "",
         holidayPolicy: employeeData?.holidayPolicy || "",
-        aadharID: employeeData?.panAadhaarDetails?.aadhaarId || "",
+        aadharID:
+          employeeData?.panAadhaarDetails?.aadhaarId ||
+          employeeData?.aadhaarID ||
+          "",
         pan: employeeData?.panAadhaarDetails?.pan || employeeData?.pan || "",
-        pfAcNo: employeeData?.panAadhaarDetails?.pfAccountNumber || "",
-       // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
-        payrollBatch: employeeData?.payrollInformation?.payrollBatch || "",
-        //employeePF: employeeData?.payrollInformation?.employeePF || "",  
+        pfAcNo:
+          employeeData?.panAadhaarDetails?.pfAccountNumber ||
+          employeeData?.pfAccountNumber ||
+          "",
+        state:
+          stateNameByCode[normalizedStateCode] || employeeData?.state || "",
+        city: employeeData?.city || employeeData?.address?.city || "",
+        pFContributionRate:
+          employeeData?.payrollInformation?.pfContributionRate || "",
+        payrollBatch:
+          employeeData?.payrollInformation?.payrollBatch ||
+          employeeData?.payrollBatch ||
+          "",
+        employeePF: employeeData?.payrollInformation?.employeePF || "",
+        includeInPayroll:
+          employeeData?.payrollInformation?.includeInPayroll ?? "",
+        professionalTaxExemption:
+          employeeData?.payrollInformation?.professionTaxExemption ?? "",
+        includePF: employeeData?.payrollInformation?.includePF ?? "",
       };
 
   return (
@@ -598,11 +631,23 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                 ) : fieldKey === "reportsTo" ? (
                                   <TextField {...field} size="small" label="Reports To" fullWidth select>
                                     <MenuItem value="">Select Reporting Manager</MenuItem>
-                                    {adminRoles.map((role) => (
-                                      <MenuItem key={role._id} value={role._id}>
-                                        {`${role.roleTitle}${reportingManagerByRoleId.get(role._id) ? ` (${reportingManagerByRoleId.get(role._id)})` : ""}`}
-                                      </MenuItem>
-                                    ))}
+                                     {usersData
+                                      .filter((user) =>
+                                        user?.role?.some((assignedRole) =>
+                                          adminRoles.some(
+                                            (adminRole) => adminRole?._id === assignedRole?._id,
+                                          ),
+                                        ),
+                                      )
+                                      .map((user) => {
+                                        const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+                                        const firstRole = user?.role?.[0]?.roleTitle || "";
+                                        return (
+                                          <MenuItem key={user._id} value={user._id}>
+                                            {`${fullName}${firstRole ? ` (${firstRole})` : ""}`}
+                                          </MenuItem>
+                                        );
+                                      })}
                                   </TextField>
                                 ) : (
                                   <TextField
