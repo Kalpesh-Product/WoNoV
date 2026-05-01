@@ -469,26 +469,26 @@ const normalizeDepartmentIds = (departmentsValue) => {
           employeeData?.city ||
           employeeData?.address?.city ||
           "",
-        pFContributionRate:
-          employeeData?.payrollInformation?.pfContributionRate ||
-          employeeData?.pFContributionRate ||
-          "",
-        pfContributionRate:
-          employeeData?.payrollInformation?.pfContributionRate ||
-          employeeData?.pFContributionRate ||
-          "",
+        // pFContributionRate:
+        //   employeeData?.payrollInformation?.pfContributionRate ||
+        //   employeeData?.pFContributionRate ||
+        //   "",
+        // pfContributionRate:
+        //   employeeData?.payrollInformation?.pfContributionRate ||
+        //   employeeData?.pFContributionRate ||
+        //   "",
         payrollBatch:
           employeeData?.payrollInformation?.payrollBatch ||
           employeeData?.payrollBatch ||
           "",
-        employeePF: employeeData?.payrollInformation?.employeePF || "",
-        includeInPayroll:
-          employeeData?.payrollInformation?.includeInPayroll ?? "",
-        professionalTaxExemption:
-           employeeData?.payrollInformation?.professionTaxExemption ??
-          employeeData?.payrollInformation?.professionalTaxExemption ??
-          "",
-        includePF: employeeData?.payrollInformation?.includePF ?? "",
+        // employeePF: employeeData?.payrollInformation?.employeePF || "",
+        // includeInPayroll:
+        //   employeeData?.payrollInformation?.includeInPayroll ?? "",
+        // professionalTaxExemption:
+        //    employeeData?.payrollInformation?.professionTaxExemption ??
+        //   employeeData?.payrollInformation?.professionalTaxExemption ??
+        //   "",
+        // includePF: employeeData?.payrollInformation?.includePF ?? "",
       };
 
   return (
