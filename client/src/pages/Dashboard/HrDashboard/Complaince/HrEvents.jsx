@@ -39,8 +39,9 @@ const HrEvents = ({ title }) => {
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "title", headerName: "Event", flex: 1 },
-    { field: "startDate", headerName: "Date" },
-    { field: "day", headerName: "Day" },
+    { field: "startDate", headerName: "Start Date" },
+    { field: "endDate", headerName: "End Date" },
+    // { field: "day", headerName: "Day" },
   ];
 
   const { data: holidayEvents = [] } = useQuery({
@@ -51,12 +52,15 @@ const HrEvents = ({ title }) => {
     },
   });
 
-  const combinedEvents = [...holidayEvents].map((holiday) => {
+  const combinedEvents = [...holidayEvents].map((holiday, index) => {
     const date = dayjs(holiday.start);
+    const endDate = holiday.end ? dayjs(holiday.end) : null;
     return {
+      srNo: index + 1,
       title: holiday.title,
       day: date.format("dddd"),
-      startDate: holiday.start,
+      startDate: date.format("DD-MM-YYYY"),
+      endDate: endDate ? endDate.format("DD-MM-YYYY") : "-",
     };
   });
 
