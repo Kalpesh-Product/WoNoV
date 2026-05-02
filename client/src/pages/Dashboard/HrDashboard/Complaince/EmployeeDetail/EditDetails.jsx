@@ -134,10 +134,35 @@ const EditDetails = () => {
   );
 
   const normalizedRoles = useMemo(() => {
-    if (Array.isArray(employeeData?.role)) return employeeData.role;
-    if (employeeData?.role) return [employeeData.role];
-    return [];
-  }, [employeeData?.role]);
+  //   if (Array.isArray(employeeData?.role)) return employeeData.role;
+  //   if (employeeData?.role) return [employeeData.role];
+  //   return [];
+  // }, [employeeData?.role]);
+   const rawRoles = Array.isArray(employeeData?.role)
+      ? employeeData.role
+      : employeeData?.role
+        ? String(employeeData.role)
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : [];
+
+    return rawRoles
+      .map((item) => {
+        if (!item) return null;
+        if (typeof item === "object") return item?._id || item;
+        if (/^[a-f\d]{24}$/i.test(item)) return item;
+
+        const matchedRole = rolesData.find(
+          (role) =>
+            role?.roleTitle?.trim().toLowerCase() ===
+            String(item).trim().toLowerCase(),
+        );
+
+        return matchedRole?._id || null;
+      })
+      .filter(Boolean);
+  }, [employeeData?.role, rolesData]);
 
   const normalizedReportsTo = useMemo(() => {
     const value = employeeData?.reportsTo;
@@ -157,6 +182,12 @@ const EditDetails = () => {
 
     return matchedUser?._id || value;
   }, [employeeData?.reportsTo, usersData]);
+
+  const selectedReportsToUser = useMemo(
+    () => usersData.find((user) => user?._id === normalizedReportsTo),
+    [normalizedReportsTo, usersData],
+  );
+
 
   const adminRoles = useMemo(
     () =>
@@ -445,10 +476,19 @@ const normalizeDepartmentIds = (departmentsValue) => {
             ? `${usersData.find((user) => user?._id === normalizedReportsTo)?.firstName || ""} ${usersData.find((user) => user?._id === normalizedReportsTo)?.lastName || ""}`.trim()
             : employeeData?.reportsTo || "",
         role: normalizedRoles
-          .map((item) =>
-            typeof item === "object" ? item?.roleTitle || item?.name : item,
-          )
-          .filter(Boolean).join(", "),
+          // .map((item) =>
+          //   typeof item === "object" ? item?.roleTitle || item?.name : item,
+          // )
+          // .filter(Boolean).join(", "),
+            .map((item) => {
+            if (typeof item === "object") return item?.roleTitle || item?.name || "";
+            if (/^[a-f\d]{24}$/i.test(String(item))) {
+              return rolesData.find((roleItem) => roleItem?._id === String(item))?.roleTitle || "";
+            }
+            return item;
+          })
+          .filter(Boolean)
+          .join(", "),
         workSchedulePolicy: employeeData?.workSchedulePolicy || "",
         attendanceSource: employeeData?.attendanceSource || "",
         leavePolicy: employeeData?.leavePolicy || "",
@@ -481,6 +521,14 @@ const normalizeDepartmentIds = (departmentsValue) => {
           employeeData?.payrollInformation?.payrollBatch ||
           employeeData?.payrollBatch ||
           "",
+         pFContributionRate:
+          employeeData?.payrollInformation?.pfContributionRate ||
+          employeeData?.pFContributionRate ||
+          "",
+        employeePF:
+          employeeData?.payrollInformation?.employeePF ||
+          employeeData?.employeePF ||
+          "",  
         // employeePF: employeeData?.payrollInformation?.employeePF || "",
         // includeInPayroll:
         //   employeeData?.payrollInformation?.includeInPayroll ?? "",
@@ -675,6 +723,20 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                 ) : fieldKey === "reportsTo" ? (
                                   <TextField {...field} size="small" label="Reports To" fullWidth select>
                                     <MenuItem value="">Select Reporting Manager</MenuItem>
+                                                                        {selectedReportsToUser &&
+                                      !usersData
+                                        .filter((user) =>
+                                          user?.role?.some((assignedRole) =>
+                                            adminRoles.some(
+                                              (adminRole) => adminRole?._id === assignedRole?._id,
+                                            ),
+                                          ),
+                                        )
+                                        .some((user) => user?._id === selectedReportsToUser?._id) && (
+                                        <MenuItem value={selectedReportsToUser._id}>
+                                          {`${selectedReportsToUser?.firstName || ""} ${selectedReportsToUser?.lastName || ""}`.trim()}
+                                        </MenuItem>
+                                      )}
                                      {usersData
                                       .filter((user) =>
                                         user?.role?.some((assignedRole) =>
