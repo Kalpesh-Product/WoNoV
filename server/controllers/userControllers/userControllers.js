@@ -748,6 +748,8 @@ const updateProfile = async (req, res, next) => {
       }
     }
 
+    console.log("empIdExists", empIdExists?.empId);
+
     const trimIfString = (value) =>
       typeof value === "string" ? value.trim() : value;
     const updatePayload = {};
