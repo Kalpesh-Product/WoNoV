@@ -64,6 +64,10 @@ import HrPayroll from "../pages/Dashboard/HrDashboard/Finance/HrPayroll";
 import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
 import HrReports from "../pages/Dashboard/HrDashboard/Data/Reports";
 import ComapanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHandbook";
+import CompanySettings from "../pages/Dashboard/HrDashboard/Complaince/CompanySection/CompanySettings";
+import StructureWorkforce from "../pages/Dashboard/HrDashboard/Complaince/CompanySection/StructureWorkforce";
+import CalendarActivities from "../pages/Dashboard/HrDashboard/Complaince/CompanySection/CalendarActivities";
+import TemplatesConfiguration from "../pages/Dashboard/HrDashboard/Complaince/CompanySection/TemplatesConfiguration";
 import MeetingLayout from "../pages/Meetings/MeetingLayout";
 import MeetingDashboard from "../pages/Meetings/MeetingDashboard";
 import BookMeetings from "../pages/Meetings/BookMeetings";
@@ -2189,58 +2193,87 @@ export const routes = createBrowserRouter([
                         element: <Compliances />,
                         children: [
                           {
-                            path: "company-logo",
-                            element: <CompanyLogo />,
+                          //   path: "company-logo",
+                          //   element: <CompanyLogo />,
+                          // },
+                          // {
+                          //   path: "departments",
+                          //   element: <HrSettingsDepartments />,
+                          // },
+                          // {
+                          //   path: "work-locations",
+                          //   element: <WorkLocations />,
+                          // },
+                          // {
+                          //   path: "holidays",
+                          //   element: <HolidaysEvents />,
+                          // },
+                          // {
+                          //   path: "events",
+                          //   element: <HrEvents />,
+                          // },
+                          // {
+                          //   path: "company-handbook",
+                          //   element: <ComapanyHandbook />,
+                          // },
+                          // {
+                          //   path: "company-handbook/:department",
+                          //   element: <DepartmentSOP />,
+                          // },
+
+                          // {
+                          //   path: "policies",
+                          //   element: <HrSettingsPolicies />,
+                          // },
+                          // {
+                          //   path: "sops",
+                          //   element: <HrSOP />,
+                          // },
+                          // {
+                          //   path: "employee-type",
+                          //   element: <EmployeeType />,
+                            path: "company-settings",
+                            element: <CompanySettings />,
+                            children: [
+                              { path: "company-logo", element: <CompanyLogo /> },
+                              { path: "company-handbook", element: <ComapanyHandbook /> },
+                              { path: "company-handbook/:department", element: <DepartmentSOP /> },
+                              { path: "policies", element: <HrSettingsPolicies /> },
+                              { path: "sops", element: <HrSOP /> },
+                            ],
                           },
                           {
-                            path: "departments",
-                            element: <HrSettingsDepartments />,
-                          },
-                          {
-                            path: "work-locations",
-                            element: <WorkLocations />,
-                          },
-                          {
-                            path: "holidays",
-                            element: <HolidaysEvents />,
-                          },
-                          {
-                            path: "events",
-                            element: <HrEvents />,
-                          },
-                          {
-                            path: "company-handbook",
-                            element: <ComapanyHandbook />,
-                          },
-                          {
-                            path: "company-handbook/:department",
-                            element: <DepartmentSOP />,
+                            // path: "shifts",
+                            // element: <Shifts />,
+                             path: "company-structure-workforce",
+                            element: <StructureWorkforce />,
+                            children: [
+                              { path: "departments", element: <HrSettingsDepartments /> },
+                              { path: "work-locations", element: <WorkLocations /> },
+                              { path: "employee-type", element: <EmployeeType /> },
+                              { path: "shifts", element: <Shifts /> },
+                            ],
                           },
 
                           {
-                            path: "policies",
-                            element: <HrSettingsPolicies />,
+                            // path: "templates",
+                            // element: <Templates />,
+                             path: "company-calendar-activities",
+                            element: <CalendarActivities />,
+                            children: [
+                              { path: "holidays", element: <HolidaysEvents /> },
+                              { path: "events", element: <HrEvents /> },
+                            ],
                           },
                           {
-                            path: "sops",
-                            element: <HrSOP />,
-                          },
-                          {
-                            path: "employee-type",
-                            element: <EmployeeType />,
-                          },
-                          {
-                            path: "shifts",
-                            element: <Shifts />,
-                          },
-
-                          {
-                            path: "templates",
-                            element: <Templates />,
-                          },
-                          {
-                            path: "templates/:id",
-                            element: <ViewTemplate />,
+                            // path: "templates/:id",
+                            // element: <ViewTemplate />,
+                             path: "company-templates-configuration",
+                            element: <TemplatesConfiguration />,
+                            children: [
+                              { path: "templates", element: <Templates /> },
+                              { path: "templates/:id", element: <ViewTemplate /> },
+                            ],
                           },
                         ],
                       },
