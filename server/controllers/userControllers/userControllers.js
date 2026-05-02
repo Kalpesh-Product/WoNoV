@@ -26,6 +26,56 @@ const isValidHttpUrl = (value) => {
   }
 };
 
+const buildPolicyAgreements = ({
+  policies,
+  userId,
+  logPath,
+  logAction,
+  logSourceKey,
+}) => {
+  if (!policies || typeof policies !== "object") return [];
+
+  const policyAgreements = [
+    { name: "Work Schedule Policy", value: policies.workSchedulePolicy },
+    { name: "Leave Policy", value: policies.leavePolicy },
+    { name: "Holiday Policy", value: policies.holidayPolicy },
+  ];
+
+  return policyAgreements
+    .filter(
+      ({ value }) =>
+        value !== undefined && value !== null && String(value).trim() !== "",
+    )
+    .map(({ name, value }) => {
+      const stringValue = String(value).trim();
+      const isHttpUrl = isValidHttpUrl(stringValue);
+
+      if (
+        (name === "Leave Policy" || name === "Holiday Policy") &&
+        !isHttpUrl
+      ) {
+        throw new CustomError(
+          `${name} link is invalid. Please provide a valid http/https URL`,
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      return {
+        name,
+        user: userId,
+        url: isHttpUrl ? stringValue : undefined,
+        type:
+          name === "Work Schedule Policy" && !isHttpUrl
+            ? stringValue
+            : undefined,
+        isActive: true,
+        isDeleted: false,
+      };
+    });
+};
+
 const createUser = async (req, res, next) => {
   const logPath = "hr/HrLog";
   const logAction = "Create User";
@@ -364,45 +414,17 @@ const createUser = async (req, res, next) => {
       isActive: true,
     });
 
+    const agreementsToCreate = buildPolicyAgreements({
+      policies,
+      userId: newUser._id,
+      logPath,
+      logAction,
+      logSourceKey,
+    });
+
     const savedUser = await newUser.save();
-    // Only create agreements if policies exist
-    if (policies) {
-      const policyAgreements = [
-        { name: "Work Schedule Policy", value: policies.workSchedulePolicy },
-        { name: "Leave Policy", value: policies.leavePolicy },
-        { name: "Holiday Policy", value: policies.holidayPolicy },
-      ];
-
-      const agreementsToCreate = policyAgreements
-        .filter((policy) => policy.value)
-        .map((policy) => {
-          const value = String(policy.value).trim();
-          const isUrl = isValidHttpUrl(value);
-
-          if (
-            (policy.name === "Leave Policy" ||
-              policy.name === "Holiday Policy") &&
-            !isUrl
-          ) {
-            throw new CustomError(
-              `${policy.name} link is invalid. Please provide a valid http/https URL`,
-              logPath,
-              logAction,
-              logSourceKey,
-            );
-          }
-
-          return {
-            name: policy.name,
-            user: savedUser._id,
-            url: isUrl ? value : undefined,
-            type:
-              policy.name === "Work Schedule Policy" && !isUrl
-                ? value
-                : undefined,
-            isActive: true,
-          };
-        });
+    if (agreementsToCreate.length) {
+      await Agreements.insertMany(agreementsToCreate);
 
       console.log("Agreements to create:", agreementsToCreate);
       if (agreementsToCreate.length) {
@@ -679,17 +701,39 @@ const updateProfile = async (req, res, next) => {
   try {
     const { user, ip, company } = req;
     const loggedInUserId = req.user;
-    //const userId = req.user;
+
     const updateData = req.body;
+    const { userId } = req.params;
     const newProfilePicture = req.file;
 
-    const targetEmpId = updateData?.empId;
-    const targetUser = targetEmpId
-      ? await User.findOne({ empId: targetEmpId, company }).lean().exec()
-      : await User.findOne({ _id: loggedInUserId, company }).lean().exec();
+    //Check user exists
+    const targetedUserId = userId;
+    const targetUser = await User.findOne({ _id: userId, company })
+      .lean()
+      .exec();
 
     if (!targetUser) {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
+    }
+
+    //Check if the updated employee ID already exists for another user in the same company
+    const updatedEmpId = updateData.empId;
+    const empIdExists = await User.findOne({
+      $and: [
+        {
+          empId: updatedEmpId,
+          _id: { $ne: targetedUserId },
+        },
+        { company },
+      ],
+    })
+      .lean()
+      .exec();
+
+    if (empIdExists) {
+      return res
+        .status(400)
+        .json({ message: "Employee ID already exists for another user" });
     }
 
     const trimIfString = (value) =>
@@ -823,57 +867,26 @@ const updateProfile = async (req, res, next) => {
       );
     }
 
+    const agreementsToUpsert = buildPolicyAgreements({
+      policies: incomingPolicies,
+      userId: targetUser._id,
+      logPath,
+      logAction,
+      logSourceKey,
+    });
+
     const updatedUser = await User.findByIdAndUpdate(
       targetUser._id,
       { $set: updatePayload },
       { new: true, runValidators: true },
     ).select("-password");
 
-    if (incomingPolicies && typeof incomingPolicies === "object") {
-      const policyAgreements = [
-        {
-          name: "Work Schedule Policy",
-          value: incomingPolicies.workSchedulePolicy,
-        },
-        { name: "Leave Policy", value: incomingPolicies.leavePolicy },
-        { name: "Holiday Policy", value: incomingPolicies.holidayPolicy },
-      ];
-
+    if (agreementsToUpsert.length) {
       await Promise.all(
-        policyAgreements.map(async ({ name, value }) => {
-          if (value === undefined || value === null || value === "") return;
-          const stringValue = String(value).trim();
-          const isHttpUrl = isValidHttpUrl(stringValue);
-
-          if (
-            (name === "Leave Policy" || name === "Holiday Policy") &&
-            !isHttpUrl
-          ) {
-            throw new CustomError(
-              `${name} link is invalid. Please provide a valid http/https URL`,
-              logPath,
-              logAction,
-              logSourceKey,
-            );
-          }
-
+        agreementsToUpsert.map(async (agreement) => {
           await Agreements.findOneAndUpdate(
-            { user: targetUser._id, name },
-            {
-              $set: {
-                name,
-                user: targetUser._id,
-                url:
-                  name === "Work Schedule Policy"
-                    ? isHttpUrl
-                      ? stringValue
-                      : undefined
-                    : stringValue,
-                type: name === "Work Schedule Policy" && !isHttpUrl,
-                isActive: true,
-                isDeleted: false,
-              },
-            },
+            { user: targetUser._id, name: agreement.name },
+            { $set: agreement },
             { upsert: true, new: true, setDefaultsOnInsert: true },
           );
         }),
