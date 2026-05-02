@@ -24,7 +24,7 @@ const EditDetails = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const { data: employeeData, isLoading } = useQuery({
-    queryKey: ["employeeData"],
+   queryKey: ["employeeData", employmentID],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -134,20 +134,54 @@ const EditDetails = () => {
   );
 
   const normalizedRoles = useMemo(() => {
-    if (Array.isArray(employeeData?.role)) return employeeData.role;
-    if (employeeData?.role) return [employeeData.role];
-    return [];
-  }, [employeeData?.role]);
+  //   if (Array.isArray(employeeData?.role)) return employeeData.role;
+  //   if (employeeData?.role) return [employeeData.role];
+  //   return [];
+  // }, [employeeData?.role]);
+   const rawRoles = Array.isArray(employeeData?.role)
+      ? employeeData.role
+      : employeeData?.role
+        ? String(employeeData.role)
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : [];
+
+    return rawRoles
+      .map((item) => {
+        if (!item) return null;
+        if (typeof item === "object") return item?._id || item;
+        if (/^[a-f\d]{24}$/i.test(item)) return item;
+
+        const matchedRole = rolesData.find(
+          (role) =>
+            role?.roleTitle?.trim().toLowerCase() ===
+            String(item).trim().toLowerCase(),
+        );
+
+        return matchedRole?._id || null;
+      })
+      .filter(Boolean);
+  }, [employeeData?.role, rolesData]);
 
   const normalizedReportsTo = useMemo(() => {
     const value = employeeData?.reportsTo;
     if (!value) return "";
-    if (typeof value === "object") return value?._id || "";
+     if (typeof value === "object") {
+      const objectIdValue = value?._id || "";
+      const matchedByUserId = usersData.find((user) => user?._id === objectIdValue);
+      return matchedByUserId?.role?.[0]?._id || objectIdValue;
+    }
+
+    if (/^[a-f\d]{24}$/i.test(String(value))) {
+      const matchedByUserId = usersData.find((user) => user?._id === String(value));
+      return matchedByUserId?.role?.[0]?._id || String(value);
+    }
 
     const matchedUser = usersData.find((user) => {
       const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
       return (
-        user?._id === value ||
+       // user?._id === value ||
         fullName.toLowerCase() === String(value).toLowerCase() ||
         `${fullName} (${user?.role?.[0]?.roleTitle || ""})`
           .trim()
@@ -155,8 +189,38 @@ const EditDetails = () => {
       );
     });
 
-    return matchedUser?._id || value;
+    return matchedUser?.role?.[0]?._id || "";
   }, [employeeData?.reportsTo, usersData]);
+
+  const selectedReportsToUser = useMemo(
+       () =>
+      usersData.find((user) =>
+        user?.role?.some((assignedRole) => assignedRole?._id === normalizedReportsTo),
+      ),
+    [normalizedReportsTo, usersData],
+  );
+
+  const normalizeReportsToRoleId = (value) => {
+    if (!value) return "";
+    if (typeof value === "object") {
+      const objectIdValue = value?._id || "";
+      const matchedByUserId = usersData.find((user) => user?._id === objectIdValue);
+      return matchedByUserId?.role?.[0]?._id || objectIdValue;
+    }
+    if (/^[a-f\d]{24}$/i.test(String(value))) {
+      const matchedByUserId = usersData.find((user) => user?._id === String(value));
+      return matchedByUserId?.role?.[0]?._id || String(value);
+    }
+
+    const matchedUser = usersData.find((user) => {
+      const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+      const fullNameWithRole = `${fullName}${user?.role?.[0]?.roleTitle ? ` (${user.role[0].roleTitle})` : ""}`.trim();
+      const raw = String(value).trim().toLowerCase();
+      return fullName.toLowerCase() === raw || fullNameWithRole.toLowerCase() === raw;
+    });
+
+    return matchedUser?.role?.[0]?._id || "";
+  };
 
   const adminRoles = useMemo(
     () =>
@@ -329,9 +393,13 @@ const normalizeDepartmentIds = (departmentsValue) => {
         //   : undefined,
         departments: normalizeDepartmentIds(formData?.department),
         department: normalizeDepartmentIds(formData?.department),
-        reportsTo: /^[a-f\d]{24}$/i.test(formData?.reportsTo || "")
-          ? formData?.reportsTo
-          : undefined,
+        // reportsTo: /^[a-f\d]{24}$/i.test(formData?.reportsTo || "")
+        //   ? formData?.reportsTo
+        //   : undefined,
+         reportsTo:
+          normalizeReportsToRoleId(formData?.reportsTo) ||
+          normalizeReportsToRoleId(employeeData?.reportsTo) ||
+          undefined,
         // role: Array.isArray(formData?.role)
         //   ? formData.role
         //   : formData?.role
@@ -397,12 +465,27 @@ const normalizeDepartmentIds = (departmentsValue) => {
         isActive: formData?.status === "Active",
       };
 
-      return axios.patch("/api/users/update-single-user", payload);
+     const response = await axios.patch("/api/users/update-single-user", payload);
+      return { response, payload };
     },
-    onSuccess: () => {
+    onSuccess: ({ payload }) => {
       toast.success("User details updated successfully");
+
+      queryClient.setQueryData(["employeeData", employmentID], (previousData) => {
+        if (!previousData) return previousData;
+        return {
+          ...previousData,
+          ...payload,
+          reportsTo: payload?.reportsTo || previousData?.reportsTo,
+          payrollInformation: {
+            ...(previousData?.payrollInformation || {}),
+            ...(payload?.payrollInformation || {}),
+          },
+        };
+      });
+
       setIsEditing(false);
-      queryClient.invalidateQueries({ queryKey: ["employeeData"] });
+      queryClient.invalidateQueries({ queryKey: ["employeeData", employmentID] });
       queryClient.invalidateQueries({ queryKey: ["employees"] });
       queryClient.invalidateQueries({ queryKey: ["past-employees"] });
     },
@@ -441,14 +524,26 @@ const normalizeDepartmentIds = (departmentsValue) => {
           (employeeData?.isActive ? "Active" : "Inactive"),
         department: departmentNames.join(", "),
         reportsTo:
-        usersData.find((user) => user?._id === normalizedReportsTo)
-            ? `${usersData.find((user) => user?._id === normalizedReportsTo)?.firstName || ""} ${usersData.find((user) => user?._id === normalizedReportsTo)?.lastName || ""}`.trim()
-            : employeeData?.reportsTo || "",
+        // usersData.find((user) => user?._id === normalizedReportsTo)
+        //     ? `${usersData.find((user) => user?._id === normalizedReportsTo)?.firstName || ""} ${usersData.find((user) => user?._id === normalizedReportsTo)?.lastName || ""}`.trim()
+        //     : employeeData?.reportsTo || "",
+                 `${selectedReportsToUser?.firstName || ""} ${selectedReportsToUser?.lastName || ""}`.trim() ||
+          employeeData?.reportsTo ||
+          "",
         role: normalizedRoles
-          .map((item) =>
-            typeof item === "object" ? item?.roleTitle || item?.name : item,
-          )
-          .filter(Boolean).join(", "),
+          // .map((item) =>
+          //   typeof item === "object" ? item?.roleTitle || item?.name : item,
+          // )
+          // .filter(Boolean).join(", "),
+            .map((item) => {
+            if (typeof item === "object") return item?.roleTitle || item?.name || "";
+            if (/^[a-f\d]{24}$/i.test(String(item))) {
+              return rolesData.find((roleItem) => roleItem?._id === String(item))?.roleTitle || "";
+            }
+            return item;
+          })
+          .filter(Boolean)
+          .join(", "),
         workSchedulePolicy: employeeData?.workSchedulePolicy || "",
         attendanceSource: employeeData?.attendanceSource || "",
         leavePolicy: employeeData?.leavePolicy || "",
@@ -469,26 +564,34 @@ const normalizeDepartmentIds = (departmentsValue) => {
           employeeData?.city ||
           employeeData?.address?.city ||
           "",
-        pFContributionRate:
-          employeeData?.payrollInformation?.pfContributionRate ||
-          employeeData?.pFContributionRate ||
-          "",
-        pfContributionRate:
-          employeeData?.payrollInformation?.pfContributionRate ||
-          employeeData?.pFContributionRate ||
-          "",
+        // pFContributionRate:
+        //   employeeData?.payrollInformation?.pfContributionRate ||
+        //   employeeData?.pFContributionRate ||
+        //   "",
+        // pfContributionRate:
+        //   employeeData?.payrollInformation?.pfContributionRate ||
+        //   employeeData?.pFContributionRate ||
+        //   "",
         payrollBatch:
           employeeData?.payrollInformation?.payrollBatch ||
           employeeData?.payrollBatch ||
           "",
-        employeePF: employeeData?.payrollInformation?.employeePF || "",
-        includeInPayroll:
-          employeeData?.payrollInformation?.includeInPayroll ?? "",
-        professionalTaxExemption:
-           employeeData?.payrollInformation?.professionTaxExemption ??
-          employeeData?.payrollInformation?.professionalTaxExemption ??
+         pFContributionRate:
+          employeeData?.payrollInformation?.pfContributionRate ||
+          employeeData?.pFContributionRate ||
           "",
-        includePF: employeeData?.payrollInformation?.includePF ?? "",
+        employeePF:
+          employeeData?.payrollInformation?.employeePF ||
+          employeeData?.employeePF ||
+          "",  
+        // employeePF: employeeData?.payrollInformation?.employeePF || "",
+        // includeInPayroll:
+        //   employeeData?.payrollInformation?.includeInPayroll ?? "",
+        // professionalTaxExemption:
+        //    employeeData?.payrollInformation?.professionTaxExemption ??
+        //   employeeData?.payrollInformation?.professionalTaxExemption ??
+        //   "",
+        // includePF: employeeData?.payrollInformation?.includePF ?? "",
       };
 
   return (
@@ -675,6 +778,20 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                 ) : fieldKey === "reportsTo" ? (
                                   <TextField {...field} size="small" label="Reports To" fullWidth select>
                                     <MenuItem value="">Select Reporting Manager</MenuItem>
+                                                                        {selectedReportsToUser &&
+                                      !usersData
+                                        .filter((user) =>
+                                          user?.role?.some((assignedRole) =>
+                                            adminRoles.some(
+                                              (adminRole) => adminRole?._id === assignedRole?._id,
+                                            ),
+                                          ),
+                                        )
+                                          .some((user) => user?.role?.some((assignedRole) => assignedRole?._id === normalizedReportsTo)) && (
+                                        <MenuItem value={selectedReportsToUser?.role?.[0]?._id}>
+                                          {`${selectedReportsToUser?.firstName || ""} ${selectedReportsToUser?.lastName || ""}`.trim()}
+                                        </MenuItem>
+                                      )}
                                      {usersData
                                       .filter((user) =>
                                         user?.role?.some((assignedRole) =>
@@ -687,7 +804,8 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                         const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
                                         const firstRole = user?.role?.[0]?.roleTitle || "";
                                         return (
-                                          <MenuItem key={user._id} value={user._id}>
+                                          // <MenuItem key={user._id} value={user._id}>
+                                            <MenuItem key={user._id} value={user?.role?.[0]?._id || ""} disabled={!user?.role?.[0]?._id}>
                                             {`${fullName}${firstRole ? ` (${firstRole})` : ""}`}
                                           </MenuItem>
                                         );
