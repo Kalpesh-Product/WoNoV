@@ -1,4 +1,5 @@
 import { MenuItem, TextField } from "@mui/material";
+import { DesktopDatePicker } from "@mui/x-date-pickers";
 import React, { useEffect, useMemo, useState } from "react";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -312,10 +313,10 @@ const EditDetails = () => {
         employeeData?.payrollInformation?.pfContributionRate ||
         employeeData?.pFContributionRate ||
         "",
-      pFContributionRate:
-        employeeData?.payrollInformation?.pfContributionRate ||
-        employeeData?.pFContributionRate ||
-        "",     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
+      // pFContributionRate:
+      //   employeeData?.payrollInformation?.pfContributionRate ||
+      //   employeeData?.pFContributionRate ||
+      //   "",     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
        payrollBatch:
         employeeData?.payrollInformation?.payrollBatch ||
         employeeData?.payrollBatch ||
@@ -425,7 +426,7 @@ const normalizeDepartmentIds = (departmentsValue) => {
         role: Array.isArray(formData?.role)
         ? formData.role.filter((id) => /^[a-f\d]{24}$/i.test(id))
         : [],
-        jobTitle: formData?.jobTitle || "",
+        designation: formData?.jobTitle || "",
         jobDescription: formData?.jobDescription || "",
         shift: formData?.shift || "",
         attendanceSource: formData?.attendanceSource || "",
@@ -451,7 +452,7 @@ const normalizeDepartmentIds = (departmentsValue) => {
         
         includePF: normalizeBoolean(formData?.includePF),
         pfContributionRate:
-          formData?.pfContributionRate || formData?.pFContributionRate || "",
+          formData?.pfContributionRate || formData?.pFContributionRate ||"",
         employeePF: formData?.employeePF || "",
         policies: {
           workSchedulePolicy: formData?.workSchedulePolicy || "",
@@ -593,10 +594,10 @@ const normalizeDepartmentIds = (departmentsValue) => {
           employeeData?.payrollInformation?.payrollBatch ||
           employeeData?.payrollBatch ||
           "",
-         pFContributionRate:
-          employeeData?.payrollInformation?.pfContributionRate ||
-          employeeData?.pFContributionRate ||
-          "",
+        pfContributionRate:
+  employeeData?.payrollInformation?.pfContributionRate ||
+  employeeData?.pFContributionRate ||
+  "",
         employeePF:
           employeeData?.payrollInformation?.employeePF ||
           employeeData?.employeePF ||
@@ -674,15 +675,17 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                     <MenuItem value="Female">Female</MenuItem>
                                   </TextField>
                                 ) : fieldKey === "dob" ? (
-                                  <TextField
-                                    {...field}
-                                    value={field.value ? dayjs(field.value).format("YYYY-MM-DD") : ""}
-                                    onChange={(e) => field.onChange(e.target.value)}
-                                    type="date"
-                                    size="small"
+                                <DesktopDatePicker
+                                    inputFormat="DD/MM/YYYY"
                                     label="DOB"
-                                    InputLabelProps={{ shrink: true }}
-                                    fullWidth
+                                    value={field.value ? dayjs(field.value) : null}
+                                    onChange={(newValue) => field.onChange(newValue ? dayjs(newValue).toISOString() : "")}
+                                    slotProps={{
+                                      textField: {
+                                        size: "small",
+                                        fullWidth: true,
+                                      },
+                                    }}
                                   />
                                 ) : (
                                   <TextField
@@ -848,15 +851,17 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                       })}
                                   </TextField>
                                    ) : fieldKey === "startDate" ? (
-                                  <TextField
-                                    {...field}
-                                    value={field.value ? dayjs(field.value).format("YYYY-MM-DD") : ""}
-                                    onChange={(e) => field.onChange(e.target.value)}
-                                    type="date"
-                                    size="small"
+                                   <DesktopDatePicker
+                                    inputFormat="DD/MM/YYYY"
                                     label="Start Date"
-                                    InputLabelProps={{ shrink: true }}
-                                    fullWidth
+                                    value={field.value ? dayjs(field.value) : null}
+                                    onChange={(newValue) => field.onChange(newValue ? dayjs(newValue).toISOString() : "")}
+                                    slotProps={{
+                                      textField: {
+                                        size: "small",
+                                        fullWidth: true,
+                                      },
+                                    }}
                                   />
                                 ) : fieldKey === "workLocation" ? (
                                   <TextField {...field} size="small" label="Work Location" fullWidth select>
@@ -1189,7 +1194,7 @@ const normalizeDepartmentIds = (departmentsValue) => {
                         "payrollBatch",
                         "professionalTaxExemption",
                         "includePF",
-                        "pFContributionRate",
+                        "pfContributionRate",
                         "employeePF",
                       ].map((fieldKey) => (
                         <div key={fieldKey}>

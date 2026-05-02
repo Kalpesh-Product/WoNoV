@@ -1024,8 +1024,13 @@ const updateProfile = async (req, res, next) => {
     const { user, ip, company } = req;
     const loggedInUserId = req.user;
     //const userId = req.user;
-    const updateData = req.body 
+   const updateData = { ...(req.body || {}) };
     const newProfilePicture = req.file;
+
+    if (updateData?.dob !== undefined) {
+      updateData.dateOfBirth = updateData.dob;
+      delete updateData.dob;
+    }
 
     const targetEmpId = updateData?.empId;
     const targetUser = targetEmpId
