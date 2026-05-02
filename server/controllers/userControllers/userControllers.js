@@ -723,7 +723,10 @@ const updateProfile = async (req, res, next) => {
     }
 
     //Check if the updated employee ID already exists for another user in the same company
-    const updatedEmpId = updateData.empId;
+
+    const updatedEmpId = updateData.employeeID
+      ? String(updateData.employeeID).trim()
+      : null;
     const empIdExists = await User.findOne({
       $and: [
         {
@@ -736,10 +739,13 @@ const updateProfile = async (req, res, next) => {
       .lean()
       .exec();
 
+    console.log("Checking empId uniqueness for:", updateData.empId);
+    console.log("Target user ID:", targetedUserId);
+
     if (empIdExists) {
-      return res
-        .status(400)
-        .json({ message: "Employee ID already exists for another user" });
+      return res.status(400).json({
+        message: `Employee ID: ${updatedEmpId} already exists for another user`,
+      });
     }
 
     const trimIfString = (value) =>
