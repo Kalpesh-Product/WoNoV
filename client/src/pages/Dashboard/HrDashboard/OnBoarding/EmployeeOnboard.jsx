@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { City, Country, State } from "country-state-city";
 import { useForm, Controller } from "react-hook-form";
 import { Checkbox, ListItemText, MenuItem, TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -16,6 +17,8 @@ const EmployeeOnboard = () => {
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -288,6 +291,23 @@ const EmployeeOnboard = () => {
     },
   });
 
+  const selectedCountryCode = watch("country");
+  const selectedStateCode = watch("state");
+
+  const countryOptions = useMemo(() => Country.getAllCountries(), []);
+
+  const stateOptions = useMemo(
+    () => (selectedCountryCode ? State.getStatesOfCountry(selectedCountryCode) : []),
+    [selectedCountryCode],
+  );
+
+  const cityOptions = useMemo(
+    () =>
+      selectedCountryCode && selectedStateCode
+        ? City.getCitiesOfState(selectedCountryCode, selectedStateCode)
+        : [],
+    [selectedCountryCode, selectedStateCode],
+  );
   const { data: rolesData = [] } = useQuery({
     queryKey: ["rolesData"],
     queryFn: async () => {
@@ -566,9 +586,24 @@ const EmployeeOnboard = () => {
                         size="small"
                         label="Country"
                         fullWidth
+                        select
+                        onChange={(event) => {
+                          field.onChange(event.target.value);
+                          setValue("state", "");
+                          setValue("city", "");
+                        }}
                         helperText={errors?.country?.message}
                         error={!!errors.country}
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select Country
+                        </MenuItem>
+                        {countryOptions.map((country) => (
+                          <MenuItem key={country.isoCode} value={country.isoCode}>
+                            {country.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
                     )}
                   />
                   <Controller
@@ -581,9 +616,23 @@ const EmployeeOnboard = () => {
                         size="small"
                         label="State"
                         fullWidth
+                         select
+                        onChange={(event) => {
+                          field.onChange(event.target.value);
+                          setValue("city", "");
+                        }}
                         helperText={errors?.state?.message}
                         error={!!errors.state}
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select State
+                        </MenuItem>
+                        {stateOptions.map((state) => (
+                          <MenuItem key={state.isoCode} value={state.isoCode}>
+                            {state.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
                     )}
                   />
 
@@ -597,9 +646,19 @@ const EmployeeOnboard = () => {
                         size="small"
                         label="City"
                         fullWidth
+                        select
                         helperText={errors?.city?.message}
                         error={!!errors.city}
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select City
+                        </MenuItem>
+                        {cityOptions.map((city) => (
+                          <MenuItem key={city.name} value={city.name}>
+                            {city.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
                     )}
                   />
 
@@ -792,7 +851,7 @@ const EmployeeOnboard = () => {
                       </TextField>
                     )}
                   />
-
+                </div>
                   <Controller
                     name="reportsTo"
                     control={control}
@@ -817,8 +876,8 @@ const EmployeeOnboard = () => {
                       </TextField>
                     )}
                   />
-                </div>
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 ">
+                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 "> */}
                   <Controller
                     name="jobTitle"
                     control={control}
@@ -848,8 +907,10 @@ const EmployeeOnboard = () => {
                       />
                     )}
                   />
-                </div>
+                {/* </div> */}
               </div>
+                </div>
+                
             </div>
             <div>
               {/* Section: Policies */}

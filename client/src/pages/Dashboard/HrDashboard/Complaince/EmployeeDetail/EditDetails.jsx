@@ -1,4 +1,5 @@
 import { MenuItem, TextField } from "@mui/material";
+import { DesktopDatePicker } from "@mui/x-date-pickers";
 import React, { useEffect, useMemo, useState } from "react";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -104,8 +105,25 @@ const EditDetails = () => {
       return Array.isArray(response.data) ? response.data : [];
     },
   });
+ const { data: unitsData = [] } = useQuery({
+    queryKey: ["unitsData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
 
   const [isEditing, setIsEditing] = useState(false);
+  const workLocations = useMemo(() => {
+    const unitSet = new Set();
+    return unitsData
+      .map((unit) => unit.unitNo)
+      .filter((unitNo) => {
+        if (!unitNo || unitSet.has(unitNo)) return false;
+        unitSet.add(unitNo);
+        return true;
+      });
+  }, [unitsData]);
 
   const normalizedDepartments = useMemo(
     () =>
@@ -295,10 +313,10 @@ const EditDetails = () => {
         employeeData?.payrollInformation?.pfContributionRate ||
         employeeData?.pFContributionRate ||
         "",
-      pFContributionRate:
-        employeeData?.payrollInformation?.pfContributionRate ||
-        employeeData?.pFContributionRate ||
-        "",     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
+      // pFContributionRate:
+      //   employeeData?.payrollInformation?.pfContributionRate ||
+      //   employeeData?.pFContributionRate ||
+      //   "",     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
        payrollBatch:
         employeeData?.payrollInformation?.payrollBatch ||
         employeeData?.payrollBatch ||
@@ -408,7 +426,7 @@ const normalizeDepartmentIds = (departmentsValue) => {
         role: Array.isArray(formData?.role)
         ? formData.role.filter((id) => /^[a-f\d]{24}$/i.test(id))
         : [],
-        jobTitle: formData?.jobTitle || "",
+        designation: formData?.jobTitle || "",
         jobDescription: formData?.jobDescription || "",
         shift: formData?.shift || "",
         attendanceSource: formData?.attendanceSource || "",
@@ -434,7 +452,7 @@ const normalizeDepartmentIds = (departmentsValue) => {
         
         includePF: normalizeBoolean(formData?.includePF),
         pfContributionRate:
-          formData?.pfContributionRate || formData?.pFContributionRate || "",
+          formData?.pfContributionRate || formData?.pFContributionRate ||"",
         employeePF: formData?.employeePF || "",
         policies: {
           workSchedulePolicy: formData?.workSchedulePolicy || "",
@@ -513,11 +531,11 @@ const normalizeDepartmentIds = (departmentsValue) => {
         ...employeeData,
         dob:
           employeeData.dob && dayjs(employeeData.dob).isValid()
-            ? dayjs(employeeData.dob).format("DD-MM-YYYY")
+              ? dayjs(employeeData.dob).format("DD MMM YYYY")
             : "",
         startDate:
           employeeData.startDate && dayjs(employeeData.startDate).isValid()
-            ? dayjs(employeeData.startDate).format("DD-MM-YYYY")
+            ? dayjs(employeeData.startDate).format("DD MMM YYYY")
             : "",
         status:
           employeeData?.status ||
@@ -576,10 +594,10 @@ const normalizeDepartmentIds = (departmentsValue) => {
           employeeData?.payrollInformation?.payrollBatch ||
           employeeData?.payrollBatch ||
           "",
-         pFContributionRate:
-          employeeData?.payrollInformation?.pfContributionRate ||
-          employeeData?.pFContributionRate ||
-          "",
+        pfContributionRate:
+  employeeData?.payrollInformation?.pfContributionRate ||
+  employeeData?.pFContributionRate ||
+  "",
         employeePF:
           employeeData?.payrollInformation?.employeePF ||
           employeeData?.employeePF ||
@@ -650,15 +668,36 @@ const normalizeDepartmentIds = (departmentsValue) => {
                               name={fieldKey}
                               control={control}
                               render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  size="small"
-                                  label={fieldKey
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())
-                                    .replace(/\bI\sD\b/gi, "ID")}
-                                  fullWidth
-                                />
+                                fieldKey === "gender" ? (
+                                  <TextField {...field} size="small" label="Gender" fullWidth select>
+                                    <MenuItem value="">Select Gender</MenuItem>
+                                    <MenuItem value="Male">Male</MenuItem>
+                                    <MenuItem value="Female">Female</MenuItem>
+                                  </TextField>
+                                ) : fieldKey === "dob" ? (
+                                <DesktopDatePicker
+                                    inputFormat="DD/MM/YYYY"
+                                    label="DOB"
+                                    value={field.value ? dayjs(field.value) : null}
+                                    onChange={(newValue) => field.onChange(newValue ? dayjs(newValue).toISOString() : "")}
+                                    slotProps={{
+                                      textField: {
+                                        size: "small",
+                                        fullWidth: true,
+                                      },
+                                    }}
+                                  />
+                                ) : (
+                                  <TextField
+                                    {...field}
+                                    size="small"
+                                    label={fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) => str.toUpperCase())
+                                      .replace(/\bI\sD\b/gi, "ID")}
+                                    fullWidth
+                                  />
+                                )
                               )}
                             />
                           ) : (
@@ -810,6 +849,28 @@ const normalizeDepartmentIds = (departmentsValue) => {
                                           </MenuItem>
                                         );
                                       })}
+                                  </TextField>
+                                   ) : fieldKey === "startDate" ? (
+                                   <DesktopDatePicker
+                                    inputFormat="DD/MM/YYYY"
+                                    label="Start Date"
+                                    value={field.value ? dayjs(field.value) : null}
+                                    onChange={(newValue) => field.onChange(newValue ? dayjs(newValue).toISOString() : "")}
+                                    slotProps={{
+                                      textField: {
+                                        size: "small",
+                                        fullWidth: true,
+                                      },
+                                    }}
+                                  />
+                                ) : fieldKey === "workLocation" ? (
+                                  <TextField {...field} size="small" label="Work Location" fullWidth select>
+                                    <MenuItem value="">Select Work Location</MenuItem>
+                                    {workLocations.map((unitNo) => (
+                                      <MenuItem key={unitNo} value={unitNo}>
+                                        {unitNo}
+                                      </MenuItem>
+                                    ))}
                                   </TextField>
                                 ) : (
                                   <TextField
@@ -1133,7 +1194,7 @@ const normalizeDepartmentIds = (departmentsValue) => {
                         "payrollBatch",
                         "professionalTaxExemption",
                         "includePF",
-                        "pFContributionRate",
+                        "pfContributionRate",
                         "employeePF",
                       ].map((fieldKey) => (
                         <div key={fieldKey}>
@@ -1142,15 +1203,34 @@ const normalizeDepartmentIds = (departmentsValue) => {
                               name={fieldKey}
                               control={control}
                               render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  size="small"
-                                  label={fieldKey
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())
-                                    .replace(/\bP\sF\b/gi, "PF")}
-                                  fullWidth
-                                />
+                               ["includeInPayroll", "professionalTaxExemption", "includePF"].includes(fieldKey) ? (
+                                  <TextField
+                                    {...field}
+                                    value={field.value === true ? "Yes" : field.value === false ? "No" : field.value || ""}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    select
+                                    size="small"
+                                    label={fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) => str.toUpperCase())
+                                      .replace(/\bP\sF\b/gi, "PF")}
+                                    fullWidth
+                                  >
+                                    <MenuItem value="">Select</MenuItem>
+                                    <MenuItem value="Yes">Yes</MenuItem>
+                                    <MenuItem value="No">No</MenuItem>
+                                  </TextField>
+                                ) : (
+                                  <TextField
+                                    {...field}
+                                    size="small"
+                                    label={fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) => str.toUpperCase())
+                                      .replace(/\bP\sF\b/gi, "PF")}
+                                    fullWidth
+                                  />
+                                )
                               )}
                             />
                           ) : (

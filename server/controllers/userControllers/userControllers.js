@@ -706,6 +706,11 @@ const updateProfile = async (req, res, next) => {
     const { userId } = req.params;
     const newProfilePicture = req.file;
 
+    if (updateData?.dob !== undefined) {
+      updateData.dateOfBirth = updateData.dob;
+      delete updateData.dob;
+    }
+
     //Check user exists
     const targetedUserId = userId;
     const targetUser = await User.findOne({ _id: userId, company })
