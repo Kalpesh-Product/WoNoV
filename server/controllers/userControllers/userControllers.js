@@ -17,6 +17,15 @@ const Agreements = require("../../models/hr/Agreements");
 const TestUserData = require("../../models/hr/TestUserData");
 const TestAgreements = require("../../models/hr/TestAgreements");
 
+const isValidHttpUrl = (value) => {
+  try {
+    const parsedUrl = new URL(String(value).trim());
+    return ["http:", "https:"].includes(parsedUrl.protocol);
+  } catch (error) {
+    return false;
+  }
+};
+
 const createUser = async (req, res, next) => {
   const logPath = "hr/HrLog";
   const logAction = "Create User";
@@ -276,6 +285,7 @@ const createUser = async (req, res, next) => {
     const existingUser = await User.findOne({
       $or: [{ company: company, empId }, { email }],
     }).exec();
+    console.log("Existing user check:", { existingUser });
     if (existingUser) {
       throw new CustomError(
         "Employee ID or email already exists",
@@ -355,7 +365,6 @@ const createUser = async (req, res, next) => {
     });
 
     const savedUser = await newUser.save();
-
     // Only create agreements if policies exist
     if (policies) {
       const policyAgreements = [
@@ -367,8 +376,22 @@ const createUser = async (req, res, next) => {
       const agreementsToCreate = policyAgreements
         .filter((policy) => policy.value)
         .map((policy) => {
-          const value = String(policy.value);
-          const isUrl = value.startsWith("https");
+          const value = String(policy.value).trim();
+          const isUrl = isValidHttpUrl(value);
+
+          if (
+            (policy.name === "Leave Policy" ||
+              policy.name === "Holiday Policy") &&
+            !isUrl
+          ) {
+            throw new CustomError(
+              `${policy.name} link is invalid. Please provide a valid http/https URL`,
+              logPath,
+              logAction,
+              logSourceKey,
+            );
+          }
+
           return {
             name: policy.name,
             user: savedUser._id,
@@ -820,7 +843,20 @@ const updateProfile = async (req, res, next) => {
         policyAgreements.map(async ({ name, value }) => {
           if (value === undefined || value === null || value === "") return;
           const stringValue = String(value).trim();
-          const isHttpUrl = /^https?:\/\//i.test(stringValue);
+          const isHttpUrl = isValidHttpUrl(stringValue);
+
+          if (
+            (name === "Leave Policy" || name === "Holiday Policy") &&
+            !isHttpUrl
+          ) {
+            throw new CustomError(
+              `${name} link is invalid. Please provide a valid http/https URL`,
+              logPath,
+              logAction,
+              logSourceKey,
+            );
+          }
+
           await Agreements.findOneAndUpdate(
             { user: targetUser._id, name },
             {
