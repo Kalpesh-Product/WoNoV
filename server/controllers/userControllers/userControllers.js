@@ -546,6 +546,7 @@ const fetchSingleUser = async (req, res) => {
     }, {});
 
     const formattedUser = {
+      _id: user._id,
       firstName: user.firstName || "",
       middleName: user.middleName || "",
       lastName: user.lastName || "",
