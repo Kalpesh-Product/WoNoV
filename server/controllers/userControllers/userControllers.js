@@ -723,25 +723,29 @@ const updateProfile = async (req, res, next) => {
 
     //Check if the updated employee ID already exists for another user in the same company
 
-    const updatedEmpId = updateData.employeeID
-      ? String(updateData.employeeID).trim()
-      : null;
-    const empIdExists = await User.findOne({
-      $and: [
-        {
-          empId: updatedEmpId,
-          _id: { $ne: targetedUserId },
-        },
-        { company },
-      ],
-    })
-      .lean()
-      .exec();
+    const incomingEmpId =
+      updateData?.employeeID !== undefined
+        ? updateData.employeeID
+        : updateData?.empId;
+    const updatedEmpId =
+      incomingEmpId !== undefined && incomingEmpId !== null
+        ? String(incomingEmpId).trim()
+        : null;
 
-    if (empIdExists) {
-      return res.status(400).json({
-        message: `Employee ID: ${updatedEmpId} already exists for another user`,
-      });
+    if (updatedEmpId) {
+      const empIdExists = await User.findOne({
+        empId: updatedEmpId,
+        _id: { $ne: targetedUserId },
+        company,
+      })
+        .lean()
+        .exec();
+
+      if (empIdExists) {
+        return res.status(400).json({
+          message: `Employee ID: ${updatedEmpId} already exists for another user`,
+        });
+      }
     }
 
     const trimIfString = (value) =>
@@ -783,6 +787,10 @@ const updateProfile = async (req, res, next) => {
       if (!path.length) return;
       updatePayload[path.join(".")] = trimIfString(value);
     };
+
+    if (updatedEmpId) {
+      updatePayload.empId = updatedEmpId;
+    }
 
     Object.entries(updateData || {}).forEach(([key, value]) => {
       if (blockedTopLevelFields.has(key)) return;
