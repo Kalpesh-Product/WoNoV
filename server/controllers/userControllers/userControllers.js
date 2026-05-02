@@ -621,7 +621,6 @@ const fetchSingleUser = async (req, res) => {
         user.payrollInformation?.tdsCalculationBasedOn || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
     };
-    console.log("Formatted user data: ", policyMap);
 
     res.status(200).json(formattedUser);
   } catch (error) {
@@ -738,9 +737,6 @@ const updateProfile = async (req, res, next) => {
     })
       .lean()
       .exec();
-
-    console.log("Checking empId uniqueness for:", updateData.empId);
-    console.log("Target user ID:", targetedUserId);
 
     if (empIdExists) {
       return res.status(400).json({
