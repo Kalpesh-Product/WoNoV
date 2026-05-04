@@ -433,6 +433,7 @@ import HrKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrKPA";
 import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTasks";
 import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
 import VendorTable from "../components/Pages/VendorTable";
+import MonthlyBudgetCommon from "../components/Pages/MonthlyBudgetCommon";
 import AssetsHome from "../pages/Assets/AssetsHome";
 import ManageAssetsHome from "../pages/Assets/ManageAssetsHome";
 import ViewClientInfo from "../pages/Dashboard/SalesDashboard/ViewClientInfo";
@@ -550,6 +551,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "website-issue-reports",
                             element: <FrontendWebsiteIssueReports />,
+                          },
+                          {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
                           },
                           {
                             path: "monthly-invoice-reports",
@@ -779,6 +784,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "asset-list",
                             element: <DepartmentAssetCommon />,
+                          },
+                          {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
                           },
                           {
                             path: "monthly-invoice-reports",
@@ -1201,6 +1210,10 @@ export const routes = createBrowserRouter([
                             element: <AdminElectricityExpenses />,
                           },
                           {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
+                          },
+                          {
                             path: "monthly-invoice-reports",
                             element: <MonthlyInvoiceCommon />,
                           },
@@ -1409,6 +1422,10 @@ export const routes = createBrowserRouter([
                             element: <MaintenanceAmcRecords />,
                           },
                           {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
+                          },
+                          {
                             path: "monthly-invoice-reports",
                             element: <MonthlyInvoiceCommon />,
                           },
@@ -1584,6 +1601,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "vendor/:id",
                             element: <ViewVendor />,
+                          },
+                          {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
                           },
                           {
                             path: "monthly-invoice-reports",
@@ -2052,6 +2073,10 @@ export const routes = createBrowserRouter([
                             element: <DepartmentAssetCommon />,
                           },
                           {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
+                          },
+                          {
                             path: "monthly-invoice-reports",
                             element: <MonthlyInvoiceCommon />,
                           },
@@ -2374,6 +2399,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "vendor/:id",
                             element: <ViewVendor />,
+                          },
+                          {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
                           },
                           {
                             path: "monthly-invoice-reports",

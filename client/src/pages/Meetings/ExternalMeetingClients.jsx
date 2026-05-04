@@ -745,7 +745,8 @@ const ExternalMeetingCLients = () => {
                   label: "Mark As Completed",
                   onClick: () => handleCompleted("complete", params.data._id),
                 },
-                !isCancelled && {
+                // !isCancelled && {
+                  isUpcoming && {
                   label: "Cancel",
                   onClick: () => handleSelectedMeeting("cancel", params.data),
                 },

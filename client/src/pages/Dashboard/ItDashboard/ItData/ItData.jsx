@@ -20,6 +20,11 @@ const ItData = () => {
     path: "asset-list",
     permission: PERMISSIONS.IT_ASSET_LIST.value,
   },
+   {
+    label: "Monthly Budget Reports",
+    path: "monthly-budget-report",
+    permission: PERMISSIONS.IT_MONTHLY_BUDGET_REPORT.value,
+  },
   {
     label: "Monthly Invoice Reports",
     path: "monthly-invoice-reports",
