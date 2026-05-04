@@ -4,7 +4,7 @@ import BarGraph from "./BarGraph";
 import SecondaryButton from "../SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
-const YearlyGraph = ({
+const YearlyGraph2 = ({
   options,
   data,
   dataPoint,
@@ -171,4 +171,4 @@ const YearlyGraph = ({
   );
 };
 
-export default YearlyGraph;
+export default YearlyGraph2;
