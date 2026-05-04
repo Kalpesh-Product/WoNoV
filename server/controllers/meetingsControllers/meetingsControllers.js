@@ -221,6 +221,7 @@ const addMeetings = async (req, res, next) => {
       bookedRoom: roomAvailable._id,
       startDate: { $lte: endDateObj },
       endDate: { $gte: startDateObj },
+      status: { $ne: "Cancelled" },
       $or: [
         {
           $and: [
