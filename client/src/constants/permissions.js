@@ -1008,6 +1008,12 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/finance-dashboard/data/monthly-invoice-reports",
   },
+  FINANCE_DATA_MONTHLY_BUDGET_REPORT: {
+    value: "finance_data_monthly_budget_report_tab",
+    title: "MONTHLY BUDGET REPORT",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/data/monthly-budget-report",
+  },
   FINANCE_DATA_VENDORS: {
     value: "finance_data_vendors_tab",
     title: "FINANCE DATA VENDORS",
@@ -1283,6 +1289,12 @@ export const PERMISSIONS = {
     title: "MONTHLY INVOICE REPORTS",
     type: "read",
     route: "/app/dashboard/sales-dashboard/data/monthly-invoice-reports",
+  },
+  SALES_MONTHLY_BUDGET_REPORT: {
+    value: "sales_monthly_budget_report_tab",
+    title: "MONTHLY BUDGET REPORT",
+    type: "read",
+    route: "/app/dashboard/sales-dashboard/data/monthly-budget-report",
   },
   SALES_VENDOR: {
     value: "sales_vendor_data_tab",
@@ -1573,6 +1585,41 @@ export const PERMISSIONS = {
     route: "/app/dashboard/HR-dashboard/leaves",
   },
 
+HR_EMPLOYEE_EDIT_DETAILS: {
+    value: "hr_employee_edit_details_tab",
+    title: "EDIT EMPLOYEE DETAILS",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/employee/employee-list/:id/edit-details",
+  },
+
+  HR_EMPLOYEE_ATTENDANCE_DETAILS: {
+    value: "hr_employee_attendance_tab",
+    title: "EMPLOYEE ATTENDANCE",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/employee/employee-list/:id/attendance",
+  },
+
+  HR_EMPLOYEE_LEAVES_DETAILS: {
+    value: "hr_employee_leaves_tab",
+    title: "EMPLOYEE LEAVES",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/employee/employee-list/:id/leaves",
+  },
+
+  HR_EMPLOYEE_AGREEMENTS_DETAILS: {
+    value: "hr_employee_agreements_tab",
+    title: "EMPLOYEE AGREEMENTS",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/employee/employee-list/:id/agreements",
+  },
+
+  HR_EMPLOYEE_PAYSLIP_DETAILS: {
+    value: "hr_employee_payslip_tab",
+    title: "EMPLOYEE PAYSLIP",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/employee/employee-list/:id/payslip",
+  },
+
   HR_EMPLOYEE_ONBOARDING: {
     value: "hr_employee_onboarding_tab",
     title: "EMPLOYEE ONBOARDING",
@@ -1745,6 +1792,12 @@ export const PERMISSIONS = {
     title: "VENDOR",
     type: "read",
     route: "/app/dashboard/HR-dashboard/data/vendor",
+  },
+    HR_MONTHLY_BUDGET_REPORT: {
+    value: "hr_monthly_budget_report_tab",
+    title: "MONTHLY BUDGET REPORT",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/data/monthly-budget-report",
   },
   //Settings
   HR_BULK_UPLOAD: {
@@ -2050,6 +2103,13 @@ export const PERMISSIONS = {
     route:
       "/app/dashboard/admin-dashboard/mix-bag/infra-expenses/monthly-invoice-reports",
   },
+  ADMIN_MONTHLY_BUDGET_REPORT: {
+    value: "admin_monthly_budget_report_tab",
+    title: "MONTHLY BUDGET REPORT",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/data/monthly-budget-report",
+  },
+
   ADMIN_VENDOR: {
     value: "admin_vendor_tab",
     title: "VENDOR",
@@ -2291,7 +2351,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/data/monthly-invoice-reports",
   },
-
+ MAINTENANCE_MONTHLY_BUDGET_REPORT: {
+    value: "maintenance_monthly_budget_report_tab",
+    title: "MONTHLY BUDGET REPORT",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/data/monthly-budget-report",
+  },
   MAINTENANCE_VENDOR: {
     value: "maintenance_vendor_tab",
     title: "VENDOR",
@@ -2548,6 +2613,12 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     type: "read",
     route: "/app/dashboard/IT-dashboard/data/monthly-invoice-reports",
   },
+   IT_MONTHLY_BUDGET_REPORT: {
+    value: "it_monthly_budget_report_tab",
+    title: "MONTHLY BUDGET REPORT",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/data/monthly-budget-report",
+  },
   IT_VENDOR: {
     value: "it_vendor_tab",
     title: "VENDOR",
@@ -2743,6 +2814,13 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     type: "read",
     route: "/app/dashboard/frontend-dashboard/data/monthly-invoice-reports",
   },
+  FRONTEND_MONTHLY_BUDGET_REPORT: {
+    value: "frontend_monthly_budget_report_tab",
+    title: "MONTHLY BUDGET REPORT",
+    type: "read",
+    route: "/app/dashboard/frontend-dashboard/data/monthly-budget-report",
+  },
+
   FRONTEND_VENDOR: {
     value: "frontend_vendor_tab",
     title: "VENDOR",

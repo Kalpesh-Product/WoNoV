@@ -9,6 +9,11 @@ const tabs = [
     permission: PERMISSIONS.SALES_ASSET_LIST.value,
   },
   {
+    label: "Monthly Budget Reports",
+    path: "monthly-budget-report",
+    permission: PERMISSIONS.SALES_MONTHLY_BUDGET_REPORT.value,
+  },
+  {
     label: "Monthly Invoice Reports",
     path: "monthly-invoice-reports",
     permission: PERMISSIONS.SALES_MONTHLY_INVOICE_REPORTS.value,
