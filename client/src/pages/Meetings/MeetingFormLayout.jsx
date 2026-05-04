@@ -466,7 +466,14 @@ useEffect(() => {
   const transformEvents = (bookings) => {
     if (!Array.isArray(bookings)) return;
 
-    const formattedEvents = bookings.map((booking) => ({
+    // const formattedEvents = bookings.map((booking) => ({
+    const activeBookings = bookings.filter((booking) => {
+      const bookingStatus =
+        booking?.meetingStatus || booking?.status || "";
+      return bookingStatus.toLowerCase() !== "cancelled";
+    });
+
+    const formattedEvents = activeBookings.map((booking) => ({      
       id: booking._id,
       title: "Booked",
       start: new Date(booking.startTime), // ⬅️ already full datetime
