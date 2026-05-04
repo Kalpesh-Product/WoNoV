@@ -21,6 +21,11 @@ const AdminData = () => {
     permission: PERMISSIONS.ADMIN_ASSET_LIST.value,
   },
   {
+    label: "Monthly Budget Reports",
+    path: "monthly-budget-report",
+    permission: PERMISSIONS.ADMIN_MONTHLY_BUDGET_REPORT.value,
+  },
+  {
     label: "Monthly Invoice Reports",
     path: "monthly-invoice-reports",
     permission: PERMISSIONS.ADMIN_MONTHLY_INVOICE_REPORTS.value,

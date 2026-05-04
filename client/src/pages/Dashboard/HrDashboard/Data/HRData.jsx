@@ -23,6 +23,11 @@ const Data = () => {
       path: "asset-list",
       permission: PERMISSIONS.HR_ASSET_LIST.value,
     },
+     {
+      label: "Monthly Budget Reports",
+      path: "monthly-budget-report",
+      permission: PERMISSIONS.HR_MONTHLY_BUDGET_REPORT.value,
+    },
     {
       label: "Monthly Invoice Reports",
       path: "monthly-invoice-reports",

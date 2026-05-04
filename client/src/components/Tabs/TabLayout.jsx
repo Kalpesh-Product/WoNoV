@@ -55,6 +55,12 @@ const TabLayout = ({
     }
   }, [location, navigate, basePath, defaultTabPath, filteredTabs]);
 
+   useEffect(() => {
+    if (!isAuthorized && filteredTabs.length > 0) {
+      navigate(`${basePath}/${filteredTabs[0].path}`, { replace: true });
+    }
+  }, [isAuthorized, filteredTabs, navigate, basePath]);
+
   const activeTab = filteredTabs.findIndex((tab) =>
     location.pathname.includes(tab.path)
   );
@@ -65,7 +71,7 @@ const TabLayout = ({
     !hideTabsCondition(location.pathname, location) &&
     !hideTabsOnPaths.some((path) => location.pathname.includes(path));
 
-  if (!isAuthorized) {
+  if (!isAuthorized && filteredTabs.length === 0) {
     return null; // Or show an "Unauthorized" message wrapper
   }
 
