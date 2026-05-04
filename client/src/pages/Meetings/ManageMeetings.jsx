@@ -670,7 +670,8 @@ const ManageMeetings = () => {
             label: "Extend Meeting",
             onClick: () => handleExtendMeetingModal("extend", params.data),
           },
-          !isCancelled && {
+          // !isCancelled && {
+            isUpcoming && {
             label: "Cancel",
             onClick: () => handleSelectedMeeting("cancel", params.data),
           },
