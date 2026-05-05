@@ -50,8 +50,8 @@ const MeetingFormLayout = () => {
   const locationState = useLocation();
   const meetingRoomId = locationState.state?.meetingRoomId || "";
   const { perHourCredit, perHourPrice } = locationState.state;
-  const [events, setEvents] = useState([])
-   const [currentTime, setCurrentTime] = useState(() => dayjs());
+  const [events, setEvents] = useState([]);
+  const [currentTime, setCurrentTime] = useState(() => dayjs());
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   let showExternalType = false;
@@ -89,7 +89,7 @@ const MeetingFormLayout = () => {
       // Global Admins
       roles.includes("Super Admin") ||
       roles.includes("Master Admin"),
-    [roles]
+    [roles],
   );
 
   if (
@@ -133,7 +133,7 @@ const MeetingFormLayout = () => {
   });
 
   const isReceptionist = auth.user?.role?.some((item) =>
-    item.roleTitle.startsWith("Administration")
+    item.roleTitle.startsWith("Administration"),
   );
 
   // useEffect(() => {
@@ -152,8 +152,7 @@ const MeetingFormLayout = () => {
   const externalCompany = watch("externalCompany");
   const bookedBy = watch("bookedBy");
 
-
-useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(dayjs());
     }, 60 * 1000);
@@ -180,7 +179,7 @@ useEffect(() => {
   const isSameDaySelection = useMemo(
     () =>
       startDate && endDate && dayjs(startDate).isSame(dayjs(endDate), "day"),
-    [endDate, startDate]
+    [endDate, startDate],
   );
 
   useEffect(() => {
@@ -212,12 +211,12 @@ useEffect(() => {
 
   const startDateTime = useMemo(
     () => buildDateTime(startDate, startTime),
-    [startDate, startTime]
+    [startDate, startTime],
   );
 
   const endDateTime = useMemo(
     () => buildDateTime(endDate, endTime),
-    [endDate, endTime]
+    [endDate, endTime],
   );
 
   const shouldCheckAvailability =
@@ -238,12 +237,12 @@ useEffect(() => {
 
   const selectedClient = useMemo(
     () => clientsData.find((item) => item._id === company),
-    [clientsData, company]
+    [clientsData, company],
   );
 
   const selectedCreditMonth = useMemo(
     () => (startDate ? dayjs(startDate) : dayjs()),
-    [startDate]
+    [startDate],
   );
 
   const getMonthlyRemainingCredit = (clientData, month) => {
@@ -253,20 +252,15 @@ useEffect(() => {
     const monthHistory = clientData?.meetingCreditBalanceHistory?.find(
       (history) =>
         history?.monthStartDate &&
-        dayjs(history.monthStartDate).isSame(month, "month")
+        dayjs(history.monthStartDate).isSame(month, "month"),
     );
 
     if (monthHistory) {
       return Number(monthHistory.remainingCredit || 0);
     }
 
-    if (month.isSame(dayjs(), "month")) {
-      return Number(clientData?.meetingCreditBalance || 0);
-    }
-
     return totalMonthlyCredit;
   };
-
 
   const remainingMeetingCredits = useMemo(() => {
     if (!company) return "-";
@@ -276,7 +270,9 @@ useEffect(() => {
   //-------------------------------API-------------------------------//
   const displayedRemainingCredits = isReceptionist
     ? remainingMeetingCredits
-    : (remainingMeetingCredits !== "-" ? remainingMeetingCredits : getMonthlyRemainingCredit(auth.user?.company, selectedCreditMonth));
+    : remainingMeetingCredits !== "-"
+      ? remainingMeetingCredits
+      : getMonthlyRemainingCredit(auth.user?.company, selectedCreditMonth);
 
   const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 
@@ -298,7 +294,7 @@ useEffect(() => {
           client.members.map((member) => ({
             ...member,
             clientName: client.clientName,
-          }))
+          })),
         );
         // Flatten members and inject clientName for context
         return flattened.filter((item) => {
@@ -330,7 +326,7 @@ useEffect(() => {
 
   const availableEmployeeIds = useMemo(
     () => new Set(availableEmployees.map((user) => user._id)),
-    [availableEmployees]
+    [availableEmployees],
   );
 
   const participantOptions = shouldCheckAvailability
@@ -363,7 +359,7 @@ useEffect(() => {
     if (!isSameDaySelection) return false;
 
     return !currentUserAvailability?.some(
-      (user) => user._id === auth.user?._id
+      (user) => user._id === auth.user?._id,
     );
   }, [
     auth?.user?._id,
@@ -378,9 +374,11 @@ useEffect(() => {
     // Collect all unique client/company entries
     const opts = [];
 
-    // Add BizNest first to ensure it's at the top if needed, 
+    // Add BizNest first to ensure it's at the top if needed,
     // but check if it's already in clientsData to avoid duplicates
-    const hasBizNestInClients = clientsData?.some(c => c._id === BIZNEST_COMPANY_ID);
+    const hasBizNestInClients = clientsData?.some(
+      (c) => c._id === BIZNEST_COMPANY_ID,
+    );
 
     if (!hasBizNestInClients) {
       opts.push({
@@ -451,7 +449,7 @@ useEffect(() => {
       queryKey: ["checkAvailability", meetingRoomId],
       queryFn: async () => {
         const response = await axios.get(
-          `/api/meetings/get-room-meetings/${meetingRoomId}`
+          `/api/meetings/get-room-meetings/${meetingRoomId}`,
         );
         return response.data;
       },
@@ -468,12 +466,11 @@ useEffect(() => {
 
     // const formattedEvents = bookings.map((booking) => ({
     const activeBookings = bookings.filter((booking) => {
-      const bookingStatus =
-        booking?.meetingStatus || booking?.status || "";
+      const bookingStatus = booking?.meetingStatus || booking?.status || "";
       return bookingStatus.toLowerCase() !== "cancelled";
     });
 
-    const formattedEvents = activeBookings.map((booking) => ({      
+    const formattedEvents = activeBookings.map((booking) => ({
       id: booking._id,
       title: "Booked",
       start: new Date(booking.startTime), // ⬅️ already full datetime
@@ -539,7 +536,9 @@ useEffect(() => {
 
   const externalCompanyMembers = useMemo(() => {
     if (!externalCompany) return [];
-    const selectedVisitor = externalUsers.find((v) => v._id === externalCompany);
+    const selectedVisitor = externalUsers.find(
+      (v) => v._id === externalCompany,
+    );
     if (!selectedVisitor || selectedVisitor.visitorFlag !== "Client") return [];
 
     return [selectedVisitor];
@@ -555,7 +554,6 @@ useEffect(() => {
   }, [externalUsers]);
 
   //-------------------------------API vISITORS-------------------------------//
-
 
   const onSubmit = (data) => {
     const { manualExternalParticipants, ...restData } = data;
@@ -796,15 +794,22 @@ useEffect(() => {
                     name="company"
                     control={control}
                     rules={{ required: "Company is required" }} // ← optional but recommended
-                    render={({ field: { onChange, value, ...field }, fieldState }) => (
+                    render={({
+                      field: { onChange, value, ...field },
+                      fieldState,
+                    }) => (
                       <Autocomplete
                         {...field}
-                        options={companyOptions}                    // ← defined below
-                        getOptionLabel={(option) => option.label}   // what to show in input & dropdown
-                        isOptionEqualToValue={(option, val) => option.id === val}
-                        value={companyOptions.find((opt) => opt.id === value) || null}
+                        options={companyOptions} // ← defined below
+                        getOptionLabel={(option) => option.label} // what to show in input & dropdown
+                        isOptionEqualToValue={(option, val) =>
+                          option.id === val
+                        }
+                        value={
+                          companyOptions.find((opt) => opt.id === value) || null
+                        }
                         onChange={(_, newValue) => {
-                          onChange(newValue ? newValue.id : "");   // store only _id in form
+                          onChange(newValue ? newValue.id : ""); // store only _id in form
                         }}
                         loading={isClientsDataPending}
                         renderInput={(params) => (
@@ -819,7 +824,12 @@ useEffect(() => {
                               ...params.InputProps,
                               endAdornment: (
                                 <>
-                                  {isClientsDataPending ? <CircularProgress color="inherit" size={20} /> : null}
+                                  {isClientsDataPending ? (
+                                    <CircularProgress
+                                      color="inherit"
+                                      size={20}
+                                    />
+                                  ) : null}
                                   {params.InputProps.endAdornment}
                                 </>
                               ),
@@ -850,53 +860,63 @@ useEffect(() => {
                     InputProps={{
                       sx: isRemainingCreditsNegative
                         ? {
-                          "& .MuiInputBase-input.Mui-disabled": {
-                            WebkitTextFillColor: "#d32f2f",
-                          },
-                        }
+                            "& .MuiInputBase-input.Mui-disabled": {
+                              WebkitTextFillColor: "#d32f2f",
+                            },
+                          }
                         : undefined,
                     }}
                   />
                 ) : null}
-
 
                 {isReceptionist ? (
                   <div className="col-span-1">
                     <Controller
                       name="bookedBy"
                       control={control}
-                      rules={{ required: "Please select who is booking the meeting" }}
+                      rules={{
+                        required: "Please select who is booking the meeting",
+                      }}
                       render={({ field }) => (
                         <Autocomplete
                           options={participantOptions}
                           loading={isEmployeesLoading || isAvailableEmployees}
                           getOptionLabel={(user) =>
                             isBizNest
-                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Unnamed"
+                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
+                                "Unnamed"
                               : `${user.employeeName ?? ""}`.trim() || "Unnamed"
                           }
                           value={
-                            participantOptions.find((u) => u._id === field.value) || null
+                            participantOptions.find(
+                              (u) => u._id === field.value,
+                            ) || null
                           }
                           // Very important when company changes
-                          key={company}   // ← forces remount when company changes
+                          key={company} // ← forces remount when company changes
                           onFocus={() => setShouldFetchParticipants(true)}
                           onChange={(_, newValue) => {
                             const selectedId = newValue?._id || "";
 
                             // Auto-add the bookedBy person to participants (common UX)
-                            const currentParticipants = getValues("internalParticipants") || [];
-                            if (selectedId && !currentParticipants.includes(selectedId)) {
+                            const currentParticipants =
+                              getValues("internalParticipants") || [];
+                            if (
+                              selectedId &&
+                              !currentParticipants.includes(selectedId)
+                            ) {
                               setValue(
                                 "internalParticipants",
                                 [...currentParticipants, selectedId],
-                                { shouldDirty: true }
+                                { shouldDirty: true },
                               );
                             }
 
                             field.onChange(selectedId);
                           }}
-                          isOptionEqualToValue={(option, value) => option._id === value?._id}
+                          isOptionEqualToValue={(option, value) =>
+                            option._id === value?._id
+                          }
                           renderInput={(params) => (
                             <TextField
                               {...params}
@@ -924,8 +944,9 @@ useEffect(() => {
                         size="small"
                         value={`${auth.user?._id} `}
                         disabled
-                        label={`${isReceptionist ? "Receptionist" : "Booked By"
-                          }`}
+                        label={`${
+                          isReceptionist ? "Receptionist" : "Booked By"
+                        }`}
                       />
                     )}
                   />
@@ -951,12 +972,13 @@ useEffect(() => {
                           getOptionLabel={(user) =>
                             isBizNest
                               ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
-                              : `${user.employeeName ?? ""} (${user.clientName ?? ""
-                              })`
+                              : `${user.employeeName ?? ""} (${
+                                  user.clientName ?? ""
+                                })`
                           }
                           onFocus={() => setShouldFetchParticipants(true)}
                           value={participantOptions.filter((user) =>
-                            field.value?.includes(user._id)
+                            field.value?.includes(user._id),
                           )}
                           onChange={(_, newValue) =>
                             field.onChange(newValue.map((user) => user._id))
@@ -967,10 +989,12 @@ useEffect(() => {
                                 key={user._id}
                                 label={
                                   isBizNest
-                                    ? `${user.firstName ?? ""} ${user.lastName ?? ""
-                                    }`
-                                    : `${user.employeeName ?? ""} (${user.clientName ?? ""
-                                    })`
+                                    ? `${user.firstName ?? ""} ${
+                                        user.lastName ?? ""
+                                      }`
+                                    : `${user.employeeName ?? ""} (${
+                                        user.clientName ?? ""
+                                      })`
                                 }
                                 {...getTagProps({ index })}
                                 deleteIcon={<IoMdClose />}
@@ -995,7 +1019,7 @@ useEffect(() => {
             {/* New Start */}
             {meetingType === "External" ? (
               <>
-               <div className="hidden">
+                <div className="hidden">
                   <Controller
                     name="internalBooked"
                     control={control}
@@ -1022,20 +1046,28 @@ useEffect(() => {
                       label="Receptionist"
                     />
                   </div>
-                ) : null} 
+                ) : null}
 
-                
                 <div className="col-span-1">
                   <Controller
                     name="externalCompany"
                     control={control}
-                    render={({ field: { onChange, value, ...field }, fieldState }) => (
+                    render={({
+                      field: { onChange, value, ...field },
+                      fieldState,
+                    }) => (
                       <Autocomplete
                         {...field}
                         options={externalCompanyOptions}
                         getOptionLabel={(option) => option.label}
-                        isOptionEqualToValue={(option, val) => option.id === val}
-                        value={externalCompanyOptions.find((opt) => opt.id === value) || null}
+                        isOptionEqualToValue={(option, val) =>
+                          option.id === val
+                        }
+                        value={
+                          externalCompanyOptions.find(
+                            (opt) => opt.id === value,
+                          ) || null
+                        }
                         onChange={(_, newValue) => {
                           onChange(newValue ? newValue.id : "");
                         }}
@@ -1053,7 +1085,10 @@ useEffect(() => {
                               endAdornment: (
                                 <>
                                   {externalUsersLoading ? (
-                                    <CircularProgress color="inherit" size={20} />
+                                    <CircularProgress
+                                      color="inherit"
+                                      size={20}
+                                    />
                                   ) : null}
                                   {params.InputProps.endAdornment}
                                 </>
@@ -1065,31 +1100,39 @@ useEffect(() => {
                     )}
                   />
                 </div>
-                 <div className="col-span-1">
+                <div className="col-span-1">
                   {isReceptionist ? (
                     <Controller
                       name="bookedBy"
                       control={control}
-                      rules={{ required: "Please select who is booking the meeting" }}
+                      rules={{
+                        required: "Please select who is booking the meeting",
+                      }}
                       render={({ field }) => (
                         <Autocomplete
                           options={externalCompanyMembers}
                           loading={externalUsersLoading}
                           getOptionLabel={(user) =>
-                            `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Unnamed"
+                            `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
+                            "Unnamed"
                           }
                           value={
-                            externalCompanyMembers.find((u) => u._id === field.value) || null
+                            externalCompanyMembers.find(
+                              (u) => u._id === field.value,
+                            ) || null
                           }
-                          key={externalCompany}   // ← forces remount when external company changes
+                          key={externalCompany} // ← forces remount when external company changes
                           onFocus={() => setShouldFetchParticipants(true)}
                           onChange={(_, newValue) => {
                             const selectedId = newValue?._id || "";
 
-                            const currentParticipants = getValues("externalParticipants") || [];
-                            const isAlreadyParticipant = currentParticipants.some(
-                              (p) => p.mobileNumber === newValue?.mobileNumber
-                            );
+                            const currentParticipants =
+                              getValues("externalParticipants") || [];
+                            const isAlreadyParticipant =
+                              currentParticipants.some(
+                                (p) =>
+                                  p.mobileNumber === newValue?.mobileNumber,
+                              );
 
                             if (newValue && !isAlreadyParticipant) {
                               setValue(
@@ -1099,15 +1142,17 @@ useEffect(() => {
                                   {
                                     name: `${newValue.firstName ?? ""} ${newValue.lastName ?? ""}`.trim(),
                                     mobileNumber: newValue.mobileNumber,
-                                  }
+                                  },
                                 ],
-                                { shouldDirty: true }
+                                { shouldDirty: true },
                               );
                             }
 
                             field.onChange(selectedId);
                           }}
-                          isOptionEqualToValue={(option, value) => option._id === value?._id}
+                          isOptionEqualToValue={(option, value) =>
+                            option._id === value?._id
+                          }
                           renderInput={(params) => (
                             <TextField
                               {...params}
@@ -1122,7 +1167,7 @@ useEffect(() => {
                         />
                       )}
                     />
-                   ) : (
+                  ) : (
                     <TextField
                       name="internalBooked"
                       fullWidth
