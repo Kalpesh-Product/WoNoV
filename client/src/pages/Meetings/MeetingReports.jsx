@@ -55,7 +55,7 @@ const MeetingReports = () => {
   const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
   const isTechEmployee = roleTitles.includes("Tech Employee"); // With Tech Employee and show report only own Department
   const hasGlobalReportsAccess =
-    isTop && !isTechEmployee ||
+    (isTop && !isTechEmployee) ||
     roleTitles.some((roleTitle) =>
       [
         "Super Admin",
@@ -66,7 +66,7 @@ const MeetingReports = () => {
       ].includes(roleTitle),
     );
 
-// Without Tech Employee and show report All Derpartment
+  // Without Tech Employee and show report All Derpartment
 
   // const loggedDeptIds = auth.user?.departments?.map((d) => d._id) || [];
   // const currentUserId = auth?.user?._id;
@@ -98,7 +98,8 @@ const MeetingReports = () => {
       bookedById?.toString() === currentUserId?.toString() ||
       meeting?.clientBookedBy?._id?.toString() === currentUserId?.toString() ||
       (meeting?.participants || []).some(
-        (participant) => participant?._id?.toString() === currentUserId?.toString(),
+        (participant) =>
+          participant?._id?.toString() === currentUserId?.toString(),
       )
     );
   };
@@ -106,23 +107,23 @@ const MeetingReports = () => {
   const filteredMeetings = isMeetingsPending
     ? []
     : meetings.filter((meeting) => {
-       if (isCurrentUserParticipant(meeting)) return true;
+        if (isCurrentUserParticipant(meeting)) return true;
         const bookedByDepts =
           meeting.bookedBy?.departments?.map((d) => d._id) || [];
         return bookedByDepts.some((deptId) => loggedDeptIds.includes(deptId));
       });
 
-   const employeeOwnMeetings = isMeetingsPending
+  const employeeOwnMeetings = isMeetingsPending
     ? []
     : meetings.filter((meeting) => isCurrentUserParticipant(meeting));
 
-    // : meetings.filter((meeting) => {
-    //   const bookedById =
-    //     typeof meeting?.bookedBy === "object"
-    //       ? meeting?.bookedBy?._id
-    //       : meeting?.bookedBy;
-    //   return bookedById?.toString() === currentUserId?.toString();
-    // });    
+  // : meetings.filter((meeting) => {
+  //   const bookedById =
+  //     typeof meeting?.bookedBy === "object"
+  //       ? meeting?.bookedBy?._id
+  //       : meeting?.bookedBy;
+  //   return bookedById?.toString() === currentUserId?.toString();
+  // });
 
   const getEffectiveEndTime = (meeting) => {
     const extendTime = meeting?.extendTime;
@@ -164,10 +165,9 @@ const MeetingReports = () => {
     ? meetings
     : isTechEmployee
       ? employeeOwnMeetings
-    : isEmployeeLevelUser
-      ? employeeOwnMeetings
-      : filteredMeetings;
-
+      : isEmployeeLevelUser
+        ? employeeOwnMeetings
+        : filteredMeetings;
 
   const displayMeetings = useMemo(() => {
     if (sourceFilter === "biz-nest") {
@@ -176,7 +176,7 @@ const MeetingReports = () => {
           meeting?.meetingType === "Internal" && meeting?.client === "BIZNest",
       );
     }
-     if (sourceFilter === "cancelled") {
+    if (sourceFilter === "cancelled") {
       return meetingReportsData.filter(
         (meeting) => meeting?.meetingStatus === "Cancelled",
       );
@@ -192,6 +192,7 @@ const MeetingReports = () => {
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
+    { field: "client", headerName: "Client" },
     { field: "bookedBy", headerName: "Booked By" },
     { field: "buildingName", headerName: "Building Name" },
     { field: "roomName", headerName: "Room Name" },
@@ -276,6 +277,12 @@ const MeetingReports = () => {
                   return {
                     srNo: index + 1,
                     id: index + 1,
+                    client:
+                      item?.company?.companyName ||
+                      item?.client ||
+                      item?.companyName ||
+                      item?.externalClient ||
+                      "N/A",
                     bookedBy: item.bookedBy
                       ? `${item.bookedBy.firstName} ${item.bookedBy.lastName}`
                       : item.clientBookedBy?.employeeName || "Unknown",
@@ -285,6 +292,7 @@ const MeetingReports = () => {
                       item?.companyName ||
                       item?.externalClient ||
                       "N/A",
+
                     receptionist: item?.receptionist,
                     // department: item.department,
                     department: item.department?.length
