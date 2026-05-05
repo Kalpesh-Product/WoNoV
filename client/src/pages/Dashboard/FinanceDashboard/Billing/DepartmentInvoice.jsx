@@ -171,7 +171,7 @@ const DepartmentInvoice = () => {
       dueDate: item.dueDate || "-",
       gstIn: item.gstIn || "-",
       status: item.status || "Pending",
-      isPaid: item.isPaid || "Unpaid",
+      isPaid: item.status === "Approved" ? "Paid" : "Unpaid",
       isExtraBudget: Boolean(item.isExtraBudget),
       isExtraBudgetText: item.isExtraBudget ? "Yes" : "No",
       preApproved: Boolean(item.preApproved),
