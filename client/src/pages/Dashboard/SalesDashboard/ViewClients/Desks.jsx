@@ -35,12 +35,25 @@ const Desks = () => {
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    setValue("unitImage", file);
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setImagePreview(imageUrl);
-      setSelectedFile(file);
+    // setValue("unitImage", file);
+    // if (file) {
+    //   const imageUrl = URL.createObjectURL(file);
+    //   setImagePreview(imageUrl);
+    //   setSelectedFile(file);
+    //}
+        if (!file) return;
+
+    if (!file.type?.startsWith("image/")) {
+      toast.error("Only image files are allowed.");
+      setValue("unitImage", null);
+      setSelectedFile(null);
+      return;
     }
+
+    setValue("unitImage", file);
+    const imageUrl = URL.createObjectURL(file);
+    setImagePreview(imageUrl);
+    setSelectedFile(file);
   };
 
   // 🧠 Derive seat data from selectedClient
@@ -79,7 +92,7 @@ const Desks = () => {
     formData.append("clientId", selectedClient._id);
 
     const response = await axios.post(
-      "/api/sales/upload-unit-image",
+     "/api/sales/upload-client-unit-image",
       formData,
       {
         headers: {
@@ -95,7 +108,9 @@ const Desks = () => {
     mutationKey: ["uploadImage"],
     mutationFn: uploadRoomImage,
     onSuccess: (data) => toast.success(data.message),
-    onError: (error) => toast.error(error.message),
+    //onError: (error) => toast.error(error.message),
+    onError: (error) =>
+      toast.error(error?.response?.data?.message || error.message || "Upload failed"),
   });
 
   const onSubmit = () => {
@@ -178,6 +193,7 @@ const Desks = () => {
                 {...register("unitImage")}
                 type="file"
                 className="hidden"
+                accept="image/*"
                 onChange={handleFileChange}
               />
             </label>
