@@ -869,7 +869,7 @@ export const PERMISSIONS = {
   },
   FINANCE_REQUEST_BUDGET_BUTTON: {
     value: "finance_request_budget_button",
-    title: "REQUEST BUDGET BUTTON",
+    title: "FINANCE REQUEST BUDGET BUTTON",
     type: "write",
     access: "button",
     route: "/app/dashboard/finance-dashboard/finance/budget",
@@ -956,42 +956,80 @@ export const PERMISSIONS = {
   },
 
   FINANCE_BILLING_CLIENT_INVOICE: {
-    value: "finance_client_invoice_tab",
-    title: "CLIENT INVOICE",
+    value: "billing_client_invoicing",
+    title: "BILLING CLIENT INVOICING",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/billing/client-invoicing",
   },
+  FINANCE_BILLING_VOUCHER_REQUEST: {
+    value: "billing_voucher_request_card",
+    title: "BILLING VOUCHER REQUEST",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/billing/voucher-request",
+   },
+  FINANCE_BILLING_BUDGET_REQUEST: {
+    value: "billing_budget_request_card",
+    title: "BILLING BUDGET REQUEST",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/billing/budget-request",
+  },  
   FINANCE_BILLING_DEPARTMENT_INVOICE: {
-    value: "finance_department_invoice_tab",
-    title: "DEPARTMENT INVOICE",
+    value: "billing_department_invoice_voucher_tab",
+    title: "BILLING DEPARTMENT INVOICE VOUCHER",
     type: "read",
     access: "page",
      route:
       "/app/dashboard/finance-dashboard/billing/voucher-request/department-invoice-voucher",
   },
   FINANCE_BILLING_PENDING_APPROVALS: {
-    value: "finance_pending_approvals_tab",
-    title: "FINANCE PENDING APPROVALS",
+    value: "billing_pending_approvals_voucher_tab",
+    title: "BILLING PENDING APPROVALS VOUCHER",
     type: "read",
     access: "page",
     route:
       "/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher",
   },
    FINANCE_BILLING_REJECT_VOUCHER: {
-    value: "finance_reject_voucher_tab",
-    title: "FINANCE REJECT VOUCHER",
+    value: "billing_reject_voucher_tab",
+    title: "BILLING REJECT VOUCHER",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/billing/voucher-request/reject-voucher",
   },
   FINANCE_BILLING_VOUCHER_HISTORY: {
-    value: "finance_voucher_history_tab",
-    title: "FINANCE VOUCHER HISTORY",
+    value: "billing_voucher_history_tab",
+    title: "BILLING VOUCHER HISTORY",
     type: "read",
     access: "page",
     // route: "/app/dashboard/finance-dashboard/billing/voucher-history",
     route: "/app/dashboard/finance-dashboard/billing/voucher-request/voucher-history",
+  },
+
+   FINANCE_BILLING_DEPARTMENT_INVOICE_BUDGET: {
+    value: "billing_department_invoice_budget_tab",
+    title: "BILLING DEPARTMENT INVOICE BUDGET",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/budget-request/department-invoice-budget",
+  },
+  FINANCE_BILLING_PENDING_APPROVALS_BUDGET: {
+    value: "billing_pending_approvals_budget_tab",
+    title: "BILLING PENDING APPROVALS BUDGET",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/budget-request/pending-approvals-budget",
+  },
+  FINANCE_BILLING_BUDGET_HISTORY: {
+    value: "billing_budget_history_tab",
+    title: "BILLING BUDGET HISTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard/billing/budget-request/budget-history",
   },
 
   FINANCE_DATA_ASSET_LIST: {
