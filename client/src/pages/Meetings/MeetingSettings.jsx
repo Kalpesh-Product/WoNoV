@@ -566,18 +566,19 @@ const MeetingSettings = () => {
                 control={editControl}
                 defaultValue={null}
                 render={({ field }) => {
-                  const previewUrl =
-                    field.value instanceof File
-                      ? URL.createObjectURL(field.value)
-                      : field.value;
+                  // const previewUrl =
+                  //   field.value instanceof File
+                  //     ? URL.createObjectURL(field.value)
+                  //     : field.value;
 
                   return (
                     <UploadFileInput
                       value={field.value}
                       onChange={field.onChange}
                       allowedExtensions={["jpg", "jpeg", "png", "webp"]}
-                      previewType="auto"
-                      previewUrl={previewUrl}
+                      // previewType="auto"
+                      // previewUrl={previewUrl}
+                       previewType="image"
                     />
                   );
                 }}

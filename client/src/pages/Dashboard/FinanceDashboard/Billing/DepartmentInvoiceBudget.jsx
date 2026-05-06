@@ -135,7 +135,9 @@ const DepartmentInvoiceBudget = () => {
       buildingName: building.buildingName || "-",
       dueDate: item.dueDate || "-",
       gstIn: item.gstIn || "-",
-      isPaid: item.isPaid || "Unpaid",
+       // isPaid: item.isPaid || "Unpaid",
+      //isPaid: item.status === "Approved" ? "Paid" : "Unpaid",
+      isPaid: item.status === "Approved" ? "Paid" : "Unpaid",
       projectedAmount: item.projectedAmount || 0,
       actualAmount: item.actualAmount || 0,
 

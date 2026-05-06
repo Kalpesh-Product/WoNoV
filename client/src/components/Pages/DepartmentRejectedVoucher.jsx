@@ -50,16 +50,17 @@ const DepartmentRejectedVoucher = () => {
   });
 
   const columns = [
-    { field: "srno", headerName: "Sr No", width: 100 },
-    { field: "expanseName", headerName: "Expense Name ", width: 200 },
-    { field: "department", headerName: "Department", width: 150 },
-    { field: "expanseType", headerName: "Expense Type " },
-    { field: "projectedAmount", headerName: "Particular Amount (INR)" },
+    { field: "srno", headerName: "Sr No", flex:0.5},
+    { field: "expanseName", headerName: "Expense Name ", flex:1},
+    { field: "department", headerName: "Department", flex:1 , hide:true},
+    { field: "expanseType", headerName: "Expense Type " ,flex:1},
+    { field: "projectedAmount", headerName: "Particular Amount (INR)" ,flex:1},
    // { field: "reimbursementDate", headerName: "Date" },
-    { field: "dueDate", headerName: "Due Date" },
+    { field: "dueDate", headerName: "Due Date" ,flex:1},
     {
       field: "status",
       headerName: "Approval Status",
+      flex:1,
       cellRenderer: (params) => (
         <Chip
           label={params.value || "-"}
@@ -76,6 +77,7 @@ const DepartmentRejectedVoucher = () => {
     {
       field: "actions",
       headerName: "Actions",
+      flex:1,
       pinned: "right",
       cellRenderer: (params) => (
         <div className="h-10 flex items-center gap-3">
