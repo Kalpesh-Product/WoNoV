@@ -7,17 +7,20 @@ const BudgetRequest = () => {
     {
       label: "Department Invoice Budget",
       path: "department-invoice-budget",
-      permission: PERMISSIONS.FINANCE_BILLING_DEPARTMENT_INVOICE.value,
+      permission: PERMISSIONS.FINANCE_BILLING_DEPARTMENT_INVOICE_BUDGET.value,
+     // permission: PERMISSIONS.FINANCE_BILLING_DEPARTMENT_INVOICE.value,
     },
     {
       label: "Pending Approvals Budget",
       path: "pending-approvals-budget",
-      permission: PERMISSIONS.FINANCE_BILLING_PENDING_APPROVALS.value,
+      permission: PERMISSIONS.FINANCE_BILLING_PENDING_APPROVALS_BUDGET.value,
+      //permission: PERMISSIONS.FINANCE_BILLING_PENDING_APPROVALS.value,
     },
     {
       label: "Budget History",
       path: "budget-history",
-      permission: PERMISSIONS.FINANCE_BILLING_VOUCHER_HISTORY.value,
+      permission: PERMISSIONS.FINANCE_BILLING_BUDGET_HISTORY.value,
+      //permission: PERMISSIONS.FINANCE_BILLING_VOUCHER_HISTORY.value,
     },
   ];
 
