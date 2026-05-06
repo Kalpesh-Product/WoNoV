@@ -57,7 +57,7 @@ const MonthlyInvoiceCommon = () => {
 
   const invoiceCreationColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asec" },
-    { headerName: "Department", field: "department", flex: 1 },
+    { headerName: "Department", field: "department", flex: 1,hide:true },
     { headerName: "Expense Name", field: "expanseName", flex: 1 },
     { headerName: "Invoice Name", field: "invoiceName", flex: 1 },
     { headerName: "GSTIN", field: "gstIn", flex: 1 },
@@ -177,27 +177,38 @@ const MonthlyInvoiceCommon = () => {
     return voucherOnlyBudgets.map((item, index) => {
   
       const invoice = item.invoice || {};
+      const voucher = item.voucher || {};
       const finance = item.finance || {};
       const unit = item.unit || {};
       const building = unit.building || {};
       const departmentName = item.department?.name || "-";
+       const particulars = Array.isArray(item.particulars) ? item.particulars : [];
+      const particularDetails = particulars.map((p, idx) => ({
+        label: `Particular ${idx + 1}`,
+        name: p?.particularName || "-",
+        amount: Number(p?.particularAmount || 0),
+      }));
 
       return {
         ...item,
         id: item._id,
         srNo: index + 1,
+        voucherSrNo: item.srNo || "-",
         expanseName: item.expanseName || "-",
         expanseType: item.expanseType || "-",
         department: departmentName,
         unitName: unit.unitName || "-",
         unitNo: unit.unitNo || "-",
         buildingName: building.buildingName || "-",
+        particularDetails,
         dueDate: item.dueDate || "-",
         gstIn: item.gstIn || "-",
-        isPaid: item.isPaid || "Unpaid",
+        isPaid: item?.status === "Approved" ? "Paid" : "Unpaid",
         invoiceName: invoice.name || "-",
         invoiceLink: invoice.link || "-",
         invoiceDate: invoice.date || null,
+        voucherName: voucher.name || "-",
+        voucherLink: voucher.link || "-",
         finance: {
           fSrNo: finance.fSrNo || "-",
           modeOfPayment: finance.modeOfPayment || "-",
@@ -205,7 +216,7 @@ const MonthlyInvoiceCommon = () => {
           chequeDate: finance.chequeDate || null,
           approvedAt: finance.approvedAt || null,
           expectedDateInvoice: finance.expectedDateInvoice || null,
-          amount: finance.amount || 0,
+          advanceAmount: finance.advanceAmount || 0,
           voucher: finance.voucher || null,
           particulars: Array.isArray(finance.particulars)
             ? finance.particulars
@@ -230,7 +241,7 @@ const MonthlyInvoiceCommon = () => {
             columns={invoiceCreationColumns}
             search
             tableTitle={`${department?.name || ""
-               } Department - Voucher Invoice Reports`}
+               } Department - Invoice Voucher Reports`}
             dateColumn="dueDate"
             formatDate={true}
             tableHeight={450}

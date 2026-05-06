@@ -40,11 +40,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const [expandedModule, setExpandedModule] = useState(0);
   const { auth } = useAuth();
 
-  const allowedVisitorDeptIds = [
-    "6798bae6e469e809084e24a4",
-    "67b2cf85b9b6ed5cedeb9a2e",
-    "6798ba9de469e809084e2494",
-  ];
+  // const allowedVisitorDeptIds = [
+  //   "6798bae6e469e809084e24a4",
+  //   "67b2cf85b9b6ed5cedeb9a2e",
+  //   "6798ba9de469e809084e2494",
+  // ];
 
   useEffect(() => {
     setMobileOpen(drawerOpen);
@@ -54,11 +54,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const canAccessSidebarItem = (permission) =>
     !permission || userPermissions.includes(permission);
 
-  const userDeptIds = auth?.user?.departments?.map((d) => d._id) || [];
+  // const userDeptIds = auth?.user?.departments?.map((d) => d._id) || [];
 
-  const canAccessVisitorsByDepartment = userDeptIds.some((id) =>
-    allowedVisitorDeptIds.includes(id),
-  );
+  // const canAccessVisitorsByDepartment = userDeptIds.some((id) =>
+  //   allowedVisitorDeptIds.includes(id),
+  // );
 
   // Menu items array (without DASHBOARD)
   const menuItems = [
@@ -100,11 +100,12 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       route: "visitors",
       permission: PERMISSIONS.SIDEBAR_VISITORS.value,
     },
-  ].filter(
-    (item) =>
-      canAccessSidebarItem(item.permission) &&
-      (item.route !== "visitors" || canAccessVisitorsByDepartment),
-  );
+     ].filter((item) => canAccessSidebarItem(item.permission));
+  // ].filter(
+  //   (item) =>
+  //     canAccessSidebarItem(item.permission) &&
+  //     (item.route !== "visitors" || canAccessVisitorsByDepartment),
+  // );
 
   const generalItems = [
     {

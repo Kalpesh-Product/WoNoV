@@ -71,7 +71,7 @@ const MonthlyBudgetCommon = () => {
         invoiceDate: item?.invoice?.date || null,
         invoiceLink: item?.invoice?.link || "-",
         status: item?.status || "-",
-        isPaid: item?.isPaid || "Unpaid",
+        isPaid: item?.status === "Approved" ? "Paid" : "Unpaid",
       })),
     [budgetOnlyData],
   );
@@ -79,7 +79,7 @@ const MonthlyBudgetCommon = () => {
   const columns = [
     { headerName: "Sr No", field: "srNo", width: 100 },
    // { headerName: "Section", field: "section", flex: 1.6 },
-    { headerName: "Department", field: "department", flex: 1 },
+    { headerName: "Department", field: "department", flex: 1,hide:true },
     { headerName: "Expense Name", field: "expanseName", flex: 1 },
     { headerName: "Expense Type", field: "expanseType", flex: 1 },
     {
