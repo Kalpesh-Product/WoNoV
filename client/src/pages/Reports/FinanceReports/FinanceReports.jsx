@@ -9,7 +9,7 @@ import React from "react";
 import DepartmentReportCommon from "../DepartmentReportCommon";
 
 const FinanceReports = () => {
-  return <DepartmentReportCommon />;
+  return <DepartmentReportCommon title="Finance Department Report" />;
 };
 
 export default FinanceReports;

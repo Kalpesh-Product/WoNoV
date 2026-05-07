@@ -2,7 +2,7 @@ import React from "react";
 import DepartmentReportCommon from "../DepartmentReportCommon";
 
 const VisitorReports = () => {
-  return <DepartmentReportCommon />;
+  return <DepartmentReportCommon title="Visitor Report" />;
 };
 
 export default VisitorReports;
