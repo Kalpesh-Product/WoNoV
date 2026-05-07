@@ -717,6 +717,13 @@ export const PERMISSIONS = {
     access: "button",
   },
 
+  //Reports Module
+  REPORTS_DASHBOARD: { value: "reports_dashboard", title: "REPORTS DASHBOARD", type: "read" },
+  REPORTS_FINANCE: { value: "reports_finance", title: "FINANCE REPORTS", type: "read" },
+  REPORTS_TICKETS: { value: "reports_tickets", title: "TICKET REPORTS", type: "read" },
+  REPORTS_MEETINGS: { value: "reports_meetings", title: "MEETING REPORTS", type: "read" },
+  REPORTS_VISITORS: { value: "reports_visitors", title: "VISITOR REPORTS", type: "read" },
+
   // Finance Module
   FINANCE_CASHFLOW: { value: "finance_cashflow_card", title: "CASHFLOW", type: "read" },
   FINANCE_FINANCE: {
@@ -2887,6 +2894,8 @@ MAINTENANCE_REQUEST_BUDGET_BUTTON: {
     type: "read",
     route: "/app/dashboard/frontend-dashboard/settings/policies",
   },
+
+
 
   // Sidebar
   // Sidebar
