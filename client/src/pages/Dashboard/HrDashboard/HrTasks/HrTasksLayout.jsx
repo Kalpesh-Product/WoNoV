@@ -3,7 +3,7 @@ import { useLocation, useMatch } from "react-router-dom";
 
 const HrTasksLayout = () => {
  const { pathname } = useLocation();
-  const isMixBagRoute = pathname.includes("/mix-bag/overall-KPA");
+   const isMixBagRoute = pathname.includes("/mix-bag/department-kpa-kra");
   const matchKPA = useMatch(
     "/app/dashboard/HR-dashboard/overall-KPA/department-KPA/:department"
   );
@@ -12,13 +12,13 @@ const HrTasksLayout = () => {
   );
 
   const matchKpaMixBag = useMatch(
-    "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-KPA/:department"
+    "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/:department"
   );
   const matchTaskMixBag = useMatch(
-    "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-task/:department"
+    "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-task/:department"
   );
   const matchTasksMixBag = useMatch(
-    "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-tasks/:department"
+    "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-tasks/:department"
   );
 
    const isDepartmentView =
@@ -39,7 +39,7 @@ const HrTasksLayout = () => {
      // basePath="/app/dashboard/HR-dashboard/overall-KPA"
        basePath={
         isMixBagRoute
-          ? "/app/dashboard/HR-dashboard/mix-bag/overall-KPA"
+         ? "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra"
           : "/app/dashboard/HR-dashboard/overall-KPA"
       }
       defaultTabPath="department-KPA"

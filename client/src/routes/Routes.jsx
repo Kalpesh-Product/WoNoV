@@ -2161,7 +2161,7 @@ export const routes = createBrowserRouter([
                         element: <HrMixBag />,
                       },
                       {
-                        path: "mix-bag/overall-KPA",
+                          path: "mix-bag/department-kpa-kra",
                         element: <HrTasksLayout />,
                         children: [
                           {

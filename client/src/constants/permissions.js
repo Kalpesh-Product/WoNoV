@@ -1417,17 +1417,17 @@ export const PERMISSIONS = {
     route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
   },
 
- HR_DEPARTMENT_KPA_MIX_BAG: {
-    value: "hr_department_kpa_tab",
-    title: "Department KPA",
+ HR_DEPARTMENT_KPA_KRA_MIX_BAG: {
+    value: "hr_department_kpa_card",
+     title: "Department KPA/KRA",
     type: "read",
-    route: "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-KPA",
+     route: "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA",
   },
   HR_DEPARTMENT_TASK_MIX_BAG: {
     value: "hr_department_task_tab",
-    title: "Department Task",
+    title: "Department Tasks",
     type: "read",
-    route: "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-task",
+     route: "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-task",
   },
 
 
