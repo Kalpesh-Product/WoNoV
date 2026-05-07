@@ -6,13 +6,22 @@ import PersistLogin from "../layouts/PersistLogin";
 
 // Import main pages
 import Dashboard from "../pages/Dashboard/Dashboard";
-import Reports from "../pages/Reports";
+//import Reports from "../pages/Reports";
 import Calender from "../pages/Calendar";
 import Access from "../pages/Access/Access";
 import AccessProfile from "../pages/Access/AccessProfile";
 import Notifications from "../pages/Notifications";
 import Chat from "../pages/Chat";
 import Profile from "../pages/Profile/Profile";
+
+//Reports Pages
+import ReportsLayout from "../pages/Reports/ReportsLayout";
+import ReportsDashboard from "../pages/Reports/ReportsDashboard";
+import FinanceReports from "../pages/Reports/FinanceReports/FinanceReports";
+import TicketReportsPage from "../pages/Reports/TicketReports/TicketReports";
+import MeetingReportsPage from "../pages/Reports/MeetingReports/MeetingReports";
+import VisitorReportsPage from "../pages/Reports/VisitorReports/VisitorReports";
+import DepartmentReportCommon from "../pages/Reports/DepartmentReportCommon";
 
 // Import tickets pages
 import TicketDashboard from "../pages/Tickets/TicketDashboard";
@@ -2488,7 +2497,64 @@ export const routes = createBrowserRouter([
 
               {
                 path: "reports",
-                element: <Reports />,
+                  element: <ReportsLayout />,
+                children: [
+                  {
+                    path: "",
+                    index: true,
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_DASHBOARD]}
+                        element={<ReportsDashboard />}
+                      />
+                    ),
+                  },
+                  {
+                    path: "finance-reports",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_FINANCE]}
+                        element={<FinanceReports />}
+                      />
+                    ),
+                  },
+                  {
+                    path: "ticket-reports",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_TICKETS]}
+                        element={<TicketReportsPage />}
+                      />
+                    ),
+                  },
+                  {
+                    path: "meeting-reports",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_MEETINGS]}
+                        element={<MeetingReportsPage />}
+                      />
+                    ),
+                  },
+                  {
+                    path: "visitor-reports",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_VISITORS]}
+                        element={<VisitorReportsPage />}
+                      />
+                    ),
+                  },
+                   {
+                    path: "department-report-common",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_DASHBOARD]}
+                        element={<DepartmentReportCommon />}
+                      />
+                    ),
+                  },
+                ],
               },
               {
                 path: "calendar",

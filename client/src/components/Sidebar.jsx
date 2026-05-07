@@ -138,7 +138,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
     {
       name: "Reports",
       icon: <TbReportSearch />,
-      route: "#",
+      route: "reports",
       permission: PERMISSIONS.SIDEBAR_REPORTS.value,
     },
     // {
