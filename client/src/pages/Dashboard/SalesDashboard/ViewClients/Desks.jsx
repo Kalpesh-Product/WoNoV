@@ -41,7 +41,7 @@ const Desks = () => {
     //   setImagePreview(imageUrl);
     //   setSelectedFile(file);
     //}
-        if (!file) return;
+    if (!file) return;
 
     if (!file.type?.startsWith("image/")) {
       toast.error("Only image files are allowed.");
@@ -76,12 +76,15 @@ const Desks = () => {
     ];
   }, [selectedClient]);
 
+  const occupiedRoomImage = selectedClient?.occupiedImage || clientOccupied;
+
+  console.log("Selected Client:", selectedClient);
   const currentRoomData = [
     {
       id: 1,
       title: "Occupied",
-      image: clientClear, // ✅ show clear image instead of occupied
-      type: "clearImage", // ✅ update image type accordingly
+      image: occupiedRoomImage, // ✅ show occupied image instead of clear
+      type: "occupiedImage", // ✅ update image type accordingly
     },
   ];
 
@@ -92,13 +95,13 @@ const Desks = () => {
     formData.append("clientId", selectedClient._id);
 
     const response = await axios.post(
-     "/api/sales/upload-client-unit-image",
+      "/api/sales/upload-client-unit-image",
       formData,
       {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
 
     return response.data;
@@ -110,7 +113,9 @@ const Desks = () => {
     onSuccess: (data) => toast.success(data.message),
     //onError: (error) => toast.error(error.message),
     onError: (error) =>
-      toast.error(error?.response?.data?.message || error.message || "Upload failed"),
+      toast.error(
+        error?.response?.data?.message || error.message || "Upload failed",
+      ),
   });
 
   const onSubmit = () => {
@@ -166,8 +171,16 @@ const Desks = () => {
                   data={rows}
                   columns={[
                     { field: "totalSeats", headerName: "Total Seats", flex: 1 },
-                    { field: "bookedSeats", headerName: "Occupied Seats", flex: 1 },
-                    { field: "remaining", headerName: "Remaining Seats", flex: 1 },
+                    {
+                      field: "bookedSeats",
+                      headerName: "Occupied Seats",
+                      flex: 1,
+                    },
+                    {
+                      field: "remaining",
+                      headerName: "Remaining Seats",
+                      flex: 1,
+                    },
                     { field: "occupancy", headerName: "Occupancy %" },
                   ]}
                   tableHeight={150}
