@@ -1,7 +1,16 @@
 import React from "react";
+import DepartmentReportCommon from "../DepartmentReportCommon";
 
 const MeetingReports = () => {
-  return <div className="bg-white p-4">Meeting Reports</div>;
+  return <DepartmentReportCommon />;
 };
 
 export default MeetingReports;
+
+// import React from "react";
+
+// const MeetingReports = () => {
+//   return <div className="bg-white p-4">Meeting Reports</div>;
+// };
+
+// export default MeetingReports;

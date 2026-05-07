@@ -21,6 +21,7 @@ import FinanceReports from "../pages/Reports/FinanceReports/FinanceReports";
 import TicketReportsPage from "../pages/Reports/TicketReports/TicketReports";
 import MeetingReportsPage from "../pages/Reports/MeetingReports/MeetingReports";
 import VisitorReportsPage from "../pages/Reports/VisitorReports/VisitorReports";
+import DepartmentReportCommon from "../pages/Reports/DepartmentReportCommon";
 
 // Import tickets pages
 import TicketDashboard from "../pages/Tickets/TicketDashboard";
@@ -2541,6 +2542,15 @@ export const routes = createBrowserRouter([
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_VISITORS]}
                         element={<VisitorReportsPage />}
+                      />
+                    ),
+                  },
+                   {
+                    path: "department-report-common",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_DASHBOARD]}
+                        element={<DepartmentReportCommon />}
                       />
                     ),
                   },

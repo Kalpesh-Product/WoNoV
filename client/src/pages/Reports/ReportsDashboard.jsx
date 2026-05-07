@@ -1,15 +1,42 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { PERMISSIONS } from "../../constants/permissions";
+import useUserPermissions from "../../hooks/useUserPermissions";
 
 const reportModules = [
-  { title: "FINANCE", subtitle: "Finance Reports", route: "finance-reports" },
-  { title: "TICKETS", subtitle: "Ticket Reports", route: "ticket-reports" },
-  { title: "MEETINGS", subtitle: "Meeting Reports", route: "meeting-reports" },
-  { title: "VISITORS", subtitle: "Visitor Reports", route: "visitor-reports" },
+  {
+    title: "FINANCE",
+    subtitle: "Finance Reports",
+    route: "finance-reports",
+    permission: PERMISSIONS.REPORTS_FINANCE.value,
+  },
+  {
+    title: "TICKETS",
+    subtitle: "Ticket Reports",
+    route: "ticket-reports",
+    permission: PERMISSIONS.REPORTS_TICKETS.value,
+  },
+  {
+    title: "MEETINGS",
+    subtitle: "Meeting Reports",
+    route: "meeting-reports",
+    permission: PERMISSIONS.REPORTS_MEETINGS.value,
+  },
+  {
+    title: "VISITORS",
+    subtitle: "Visitor Reports",
+    route: "visitor-reports",
+    permission: PERMISSIONS.REPORTS_VISITORS.value,
+  },
 ];
 
 const ReportsDashboard = () => {
   const navigate = useNavigate();
+  const { permissions } = useUserPermissions();
+
+  const visibleReportModules = reportModules.filter(
+    (module) => !module.permission || permissions.includes(module.permission)
+  );
 
   return (
     <div className="bg-white p-4 min-h-full">
@@ -17,7 +44,7 @@ const ReportsDashboard = () => {
         <h1 className="text-title text-primary font-pmedium">Reports</h1>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {reportModules.map((module) => (
+        {visibleReportModules.map((module) => (
           <button
             key={module.title}
             onClick={() => navigate(module.route)}
