@@ -30,11 +30,29 @@ const calendarMonths = [
 const getDefaultFiscalMonth = () =>
   calendarMonths[(new Date().getMonth() + 9) % 12];
 
+const getCurrentFiscalStartYear = () => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  return currentMonth >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+};
+
+const getFiscalDisplayYear = (monthName) => {
+  const fiscalStartYear = getCurrentFiscalStartYear();
+  const monthIndex = calendarMonths.findIndex(
+    (month) => month.toLowerCase() === monthName?.toLowerCase()
+  );
+
+  if (monthIndex === -1) return fiscalStartYear;
+
+  return monthIndex >= 9 ? fiscalStartYear + 1 : fiscalStartYear;
+};
+
 const HrOverallTasks = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
     const activeMonth = selectedMonth || getDefaultFiscalMonth();
+    const activeYear = getFiscalDisplayYear(activeMonth);
   const axios = useAxiosPrivate();
   // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
@@ -77,15 +95,14 @@ const HrOverallTasks = () => {
   );
 
   const handlePrevMonth = () => {
-    if (currentMonthIndex > 0) {
-      dispatch(setSelectedMonth(calendarMonths[currentMonthIndex - 1]));
-    }
+    const prevIndex =
+      (currentMonthIndex - 1 + calendarMonths.length) % calendarMonths.length;
+    dispatch(setSelectedMonth(calendarMonths[prevIndex]));
   };
 
   const handleNextMonth = () => {
-    if (currentMonthIndex < calendarMonths.length - 1) {
-      dispatch(setSelectedMonth(calendarMonths[currentMonthIndex + 1]));
-    }
+    const nextIndex = (currentMonthIndex + 1) % calendarMonths.length;
+    dispatch(setSelectedMonth(calendarMonths[nextIndex]));
   };
 
   const filteredTasks = useMemo(() => {
@@ -141,7 +158,7 @@ const HrOverallTasks = () => {
   const graphData = [
     {
       name: "Completed Tasks",
-       group: `Tasks - ${activeMonth}`,
+        group: `Tasks - ${activeMonth} ${activeYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -153,7 +170,7 @@ const HrOverallTasks = () => {
     },
     {
       name: "Remaining Tasks",
-      group: `Tasks - ${activeMonth}`,
+     group: `Tasks - ${activeMonth} ${activeYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -294,7 +311,7 @@ const HrOverallTasks = () => {
               }
             )
           }
-          className="text-primary underline cursor-pointer"
+          className="text-primary cursor-pointer"
         >
           {params.value}
         </span>
@@ -309,9 +326,7 @@ const HrOverallTasks = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-         title={`Tasks overview - ${activeMonth} ${
-          yearArray[0]?.split("-")[2]
-        }`}
+         title={`Tasks overview - ${activeMonth} ${activeYear}`}
         border
         padding
         greenTitle={"completed"}
@@ -333,7 +348,7 @@ const HrOverallTasks = () => {
               // disabled={!isPrevAvailable}
             />
             <div className="text-sm min-w-[120px] text-center">
-                   {activeMonth}
+                  {`${activeMonth} ${activeYear}`}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}

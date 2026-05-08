@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
@@ -8,6 +8,49 @@ import { useSelector } from "react-redux";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const getCurrentFiscalStartYear = () => {
+  const now = new Date();
+  const month = now.getMonth();
+  return month >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+};
+
+const getFiscalMonths = (startYear) => {
+  const months = [];
+  for (let i = 0; i < 12; i += 1) {
+    const date = new Date(startYear, 3 + i, 1);
+    const shortMonth = SHORT_MONTHS[date.getMonth()];
+    const shortYear = String(date.getFullYear()).slice(2);
+    months.push(`${shortMonth}-${shortYear}`);
+  }
+  return months;
+};
+
+const getTaskMonthLabel = (assignedDate) => {
+  const [day, month, year] = (assignedDate || "").split("-").map(Number);
+  if (!day || !month || !year) return null;
+
+  const jsDate = new Date(year, month - 1, day);
+  if (Number.isNaN(jsDate.getTime())) return null;
+
+  return `${SHORT_MONTHS[jsDate.getMonth()]}-${String(jsDate.getFullYear()).slice(2)}`;
+};
+
 
 const HrDepartmentKPA = () => {
   const location = useLocation();
@@ -27,33 +70,46 @@ const HrDepartmentKPA = () => {
     Nov: "November",
     Dec: "December",
   };
-  const fyMonths = [
-    "Apr-25",
-    "May-25",
-    "Jun-25",
-    "Jul-25",
-    "Aug-25",
-    "Sep-25",
-    "Oct-25",
-    "Nov-25",
-    "Dec-25",
-    "Jan-26",
-    "Feb-26",
-    "Mar-26",
-  ];
+ const [overviewFiscalStartYear, setOverviewFiscalStartYear] = useState(
+    getCurrentFiscalStartYear()
+  );
+
+  const overviewFyMonths = useMemo(
+    () => getFiscalMonths(overviewFiscalStartYear),
+    [overviewFiscalStartYear]
+  );
+
+  const overviewFiscalYearLabel = `FY ${overviewFiscalStartYear}-${String(
+    overviewFiscalStartYear + 1
+  ).slice(2)}`;
+  const currentMonthLabel = `${SHORT_MONTHS[new Date().getMonth()]}-${String(
+    new Date().getFullYear()
+  ).slice(2)}`;
+  
   const initialShortMonth = Object.keys(fullMonthNames).find(
     (key) => fullMonthNames[key] === month
   );
 
-  const initialMonthIndex = fyMonths.findIndex((m) =>
-    m.startsWith(initialShortMonth)
-  );
+  const initialMonthIndex = overviewFyMonths.findIndex((label) => {
+    if (initialShortMonth) {
+      return label.startsWith(initialShortMonth);
+    }
+    return label === currentMonthLabel;
+  });
 
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(
+  const [detailsFiscalStartYear, setDetailsFiscalStartYear] = useState(
+    overviewFiscalStartYear
+  );
+  const [detailsMonthIndex, setDetailsMonthIndex] = useState(
     initialMonthIndex !== -1 ? initialMonthIndex : 0
   );
 
-  const selectedMonth = fyMonths[selectedMonthIndex];
+  const detailsFyMonths = useMemo(
+    () => getFiscalMonths(detailsFiscalStartYear),
+    [detailsFiscalStartYear]
+  );
+
+  const selectedMonth = detailsFyMonths[detailsMonthIndex];
   const shortMonth = selectedMonth.split("-")[0];
 
   if (!department || !tasks?.length) {
@@ -65,20 +121,46 @@ const HrDepartmentKPA = () => {
   const departmentName = filteredData[0]?.department;
   const tasksData = filteredData[0]?.tasks;
 
-  const handlePrevMonth = () => {
-    if (selectedMonthIndex > 0) {
-      setSelectedMonthIndex((prev) => prev - 1);
+   const handlePrevMonth = () => {
+    if (detailsMonthIndex > 0) {
+      setDetailsMonthIndex((prev) => prev - 1);
+      return;
     }
+
+    setDetailsFiscalStartYear((prev) => prev - 1);
+    setDetailsMonthIndex(11);
   };
 
   const handleNextMonth = () => {
-    if (selectedMonthIndex < fyMonths.length - 1) {
-      setSelectedMonthIndex((prev) => prev + 1);
+    if (detailsMonthIndex < detailsFyMonths.length - 1) {
+      setDetailsMonthIndex((prev) => prev + 1);
+      return;
     }
+
+    setDetailsFiscalStartYear((prev) => prev + 1);
+    setDetailsMonthIndex(0);
+  };
+
+  const handlePrevFiscalYear = () => {
+    setOverviewFiscalStartYear((prev) => {
+      const nextYear = prev - 1;
+      setDetailsFiscalStartYear(nextYear);
+            setDetailsMonthIndex(0);
+      return nextYear;
+    });
+  };
+
+  const handleNextFiscalYear = () => {
+    setOverviewFiscalStartYear((prev) => {
+      const nextYear = prev + 1;
+      setDetailsFiscalStartYear(nextYear);
+          setDetailsMonthIndex(0);
+      return nextYear;
+    });
   };
 
   const monthlyMap = {};
-  fyMonths.forEach((label) => {
+  overviewFyMonths.forEach((label) => {
     monthlyMap[label] = { total: 0, achieved: 0 };
   });
 
@@ -101,7 +183,7 @@ const HrDepartmentKPA = () => {
     {
       name: "Completed Tasks",
       group: `${departmentName} - ${month}`,
-      data: fyMonths.map((label) => {
+       data: overviewFyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
           total: 0,
           achieved: 0,
@@ -117,7 +199,7 @@ const HrDepartmentKPA = () => {
     {
       name: "Remaining Tasks",
       group: `${departmentName} - ${month}`,
-      data: fyMonths.map((label) => {
+      data: overviewFyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
           total: 0,
           achieved: 0,
@@ -156,7 +238,7 @@ const HrDepartmentKPA = () => {
     },
     xaxis: {
       title: { text: "Months" },
-      categories: fyMonths,
+       categories: overviewFyMonths,
     },
     yaxis: {
       title: { text: "Completion (%)" },
@@ -219,8 +301,9 @@ const HrDepartmentKPA = () => {
       field: "assignedTo",
       headerName: "Assigned To",
       flex: 1,
+      hide:true,
     },
-    { field: "assignedBy", headerName: "Assigned By", flex: 1 },
+    { field: "assignedBy", headerName: "Assigned By", flex: 1,hide:true, },
     { field: "assignedDate", headerName: "Assigned Date", flex: 1 },
     // { field: "totalPercent", headerName: "Total (%)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
@@ -254,12 +337,9 @@ const HrDepartmentKPA = () => {
     },
   ];
 
-  const filteredTasks = tasksData.filter((task) => {
-    const [day, month, year] = task.assignedDate.split("-").map(Number);
-    const taskMonth =
-      fyMonths[(new Date(year, month - 1, day).getMonth() + 9) % 12];
-    return taskMonth === selectedMonth;
-  });
+   const filteredTasks = tasksData.filter((task) =>
+    getTaskMonthLabel(task.assignedDate) === selectedMonth
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -269,12 +349,18 @@ const HrDepartmentKPA = () => {
         border
         TitleAmount={`TOTAL KPA :  ${tasksData.length || 0}`}
       >
+         
         <NormalBarGraph
           data={graphData}
           options={graphOptions}
           year={false}
           height={350}
         />
+         <div className="flex justify-center items-center gap-4 pb-4">
+          <SecondaryButton title={<MdNavigateBefore />} handleSubmit={handlePrevFiscalYear} />
+                   <div className="text-subtitle text-center font-pmedium">{overviewFiscalYearLabel}</div>
+          <PrimaryButton title={<MdNavigateNext />} handleSubmit={handleNextFiscalYear} />
+        </div>
       </WidgetSection>
 
       <WidgetSection
@@ -290,7 +376,7 @@ const HrDepartmentKPA = () => {
               <SecondaryButton
                 title={<MdNavigateBefore />}
                 handleSubmit={handlePrevMonth}
-                disabled={selectedMonthIndex === 0}
+               // disabled={selectedMonthIndex === 0}
               />
               <div className="text-subtitle  text-center font-pmedium">
                 {selectedMonth}
@@ -298,7 +384,7 @@ const HrDepartmentKPA = () => {
               <PrimaryButton
                 title={<MdNavigateNext />}
                 handleSubmit={handleNextMonth}
-                disabled={selectedMonthIndex === fyMonths.length - 1}
+               // disabled={selectedMonthIndex === fyMonths.length - 1}
               />
             </div>
         {filteredTasks.length === 0 ? (
@@ -324,6 +410,22 @@ const HrDepartmentKPA = () => {
             />
           </div>
         )}
+          {/* <div>
+          <AgTable
+            tableHeight={300}
+            hideFilter
+            columns={tasksColumns}
+            data={filteredTasks.map((item, index) => ({
+              id: index + 1,
+              taskName: item.taskName,
+              assignedTo: item.assignedTo,
+              assignedBy: item.assignedBy,
+              assignedDate: item.assignedDate,
+              dueDate: item.dueDate,
+              status: item.status,
+            }))}
+          />
+        </div> */}
       </WidgetSection>
     </div>
   );

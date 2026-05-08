@@ -2156,12 +2156,35 @@ export const routes = createBrowserRouter([
                           },
                         ],
                       },
+                       {
+                        path: "mix-bag/department-tasks",
+                        element: <HrTasksLayout />,
+                        children: [
+                          {
+                            path: "department-KPA",
+                            element: <HrKPA />,
+                            index: true,
+                          },
+                          {
+                            path: "department-task",
+                            element: <HrOverallTasks />,
+                          },
+                          {
+                            path: "department-KPA/:department",
+                            element: <HrDepartmentKPA />,
+                          },
+                          {
+                            path: "department-task/:department",
+                            element: <HrDepartmentTasks />,
+                          },
+                        ],
+                      },
                       {
                         path: "mix-bag",
                         element: <HrMixBag />,
                       },
                       {
-                        path: "mix-bag/overall-KPA",
+                          path: "mix-bag/department-kpa-kra",
                         element: <HrTasksLayout />,
                         children: [
                           {

@@ -1417,17 +1417,41 @@ export const PERMISSIONS = {
     route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
   },
 
- HR_DEPARTMENT_KPA_MIX_BAG: {
-    value: "hr_department_kpa_tab",
-    title: "Department KPA",
+  HR_DEPARTMENT_KPA_KRA_MIX_BAG: {
+    value: "hr_department_kpa_kra_card",
+    title: "Department KPA/KRA",
     type: "read",
-    route: "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-KPA",
+    route: "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA",
+  },
+  HR_DEPARTMENT_KPA_KRA_MIX_BAG_TAB: {
+    value: "hr_department_kpa_tab",
+    title: "DEPARTMENT KPA",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA",
+  },
+  HR_DEPARTMENT_KPA_KRA_MIX_BAG_TASK_TAB: {
+    value: "hr_department_task_tab",
+    title: "DEPARTMENT TASK",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-task",
   },
   HR_DEPARTMENT_TASK_MIX_BAG: {
-    value: "hr_department_task_tab",
-    title: "Department Task",
+    value: "hr_department_tasks_card",
+    title: "Department Tasks",
     type: "read",
-    route: "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-task",
+    route: "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-task",
+  },
+  HR_DEPARTMENT_TASK_MIX_BAG_KPA_KRA_TAB: {
+    value: "hr_department_kpa[task]_tab",
+    title: "DEPARTMENT KPA[TASK]",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-KPA",
+  },
+  HR_DEPARTMENT_TASK_MIX_BAG_TASK_TAB: {
+    value: "hr_department_task[task]_tab",
+    title: "DEPARTMENT TASK[TASK]",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-task",
   },
 
 

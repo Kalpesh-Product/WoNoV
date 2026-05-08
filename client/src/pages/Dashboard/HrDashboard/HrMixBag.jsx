@@ -26,15 +26,15 @@ const HrMixBag = () => {
       permission: PERMISSIONS.HR_LEAVE_REQUESTS_MIX_BAG.value,
     },
 
-      {
-      title: "Department KPA",
-      route: "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-KPA",
-      permission: PERMISSIONS.HR_DEPARTMENT_KPA_MIX_BAG.value,
+     {
+      title: "Department KPA/KRA",
+      route: "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA",
+      permission: PERMISSIONS.HR_DEPARTMENT_KPA_KRA_MIX_BAG.value,
     },
     {
-      title: "Department Task",
-      route:
-        "/app/dashboard/HR-dashboard/mix-bag/overall-KPA/department-task",
+      title: "Department Tasks",
+      route: "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-task",
+
       permission: PERMISSIONS.HR_DEPARTMENT_TASK_MIX_BAG.value,
     },
 
