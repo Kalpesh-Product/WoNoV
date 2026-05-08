@@ -167,12 +167,20 @@ const HrDepartmentTasks = () => {
     setSelectedMonthIndex(0);
   };
 
-  const handlePrevFiscalYear = () => {
-    setOverviewFiscalStartYear((prev) => prev - 1);
+   const handlePrevFiscalYear = () => {
+    setOverviewFiscalStartYear((prev) => {
+      const updatedYear = prev - 1;
+      setDetailsFiscalStartYear(updatedYear);
+      return updatedYear;
+    });
   };
 
   const handleNextFiscalYear = () => {
-    setOverviewFiscalStartYear((prev) => prev + 1);
+    setOverviewFiscalStartYear((prev) => {
+      const updatedYear = prev + 1;
+      setDetailsFiscalStartYear(updatedYear);
+      return updatedYear;
+    });
   };
 
   const monthlyMap = {};
@@ -354,9 +362,12 @@ const HrDepartmentTasks = () => {
 
   const filteredTasks = tasksData.filter((task) => {
     const [day, month, year] = task.assignedDate.split("-").map(Number);
-    const taskMonth =
-       detailsFyMonths[(new Date(year, month - 1, day).getMonth() + 9) % 12];
-    return taskMonth === selectedMonth;
+       const taskDate = new Date(year, month - 1, day);
+    const taskMonthLabel = `${SHORT_MONTHS[taskDate.getMonth()]}-${String(
+      taskDate.getFullYear()
+    ).slice(2)}`;
+
+    return taskMonthLabel === selectedMonth;
   });
 
   return (
