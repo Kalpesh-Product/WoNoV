@@ -41,6 +41,17 @@ const getFiscalMonths = (startYear) => {
   return months;
 };
 
+const getTaskMonthLabel = (assignedDate) => {
+  const [day, month, year] = (assignedDate || "").split("-").map(Number);
+  if (!day || !month || !year) return null;
+
+  const jsDate = new Date(year, month - 1, day);
+  if (Number.isNaN(jsDate.getTime())) return null;
+
+  return `${SHORT_MONTHS[jsDate.getMonth()]}-${String(jsDate.getFullYear()).slice(2)}`;
+};
+
+
 const HrDepartmentKPA = () => {
   const location = useLocation();
   const { month, department, tasks, year } = location.state || {};
@@ -134,6 +145,7 @@ const HrDepartmentKPA = () => {
     setOverviewFiscalStartYear((prev) => {
       const nextYear = prev - 1;
       setDetailsFiscalStartYear(nextYear);
+            setDetailsMonthIndex(0);
       return nextYear;
     });
   };
@@ -142,6 +154,7 @@ const HrDepartmentKPA = () => {
     setOverviewFiscalStartYear((prev) => {
       const nextYear = prev + 1;
       setDetailsFiscalStartYear(nextYear);
+          setDetailsMonthIndex(0);
       return nextYear;
     });
   };
@@ -324,12 +337,9 @@ const HrDepartmentKPA = () => {
     },
   ];
 
-  const filteredTasks = tasksData.filter((task) => {
-    const [day, month, year] = task.assignedDate.split("-").map(Number);
-    const taskMonth =
-      detailsFyMonths[(new Date(year, month - 1, day).getMonth() + 9) % 12];
-    return taskMonth === selectedMonth;
-  });
+   const filteredTasks = tasksData.filter((task) =>
+    getTaskMonthLabel(task.assignedDate) === selectedMonth
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -400,6 +410,22 @@ const HrDepartmentKPA = () => {
             />
           </div>
         )}
+          {/* <div>
+          <AgTable
+            tableHeight={300}
+            hideFilter
+            columns={tasksColumns}
+            data={filteredTasks.map((item, index) => ({
+              id: index + 1,
+              taskName: item.taskName,
+              assignedTo: item.assignedTo,
+              assignedBy: item.assignedBy,
+              assignedDate: item.assignedDate,
+              dueDate: item.dueDate,
+              status: item.status,
+            }))}
+          />
+        </div> */}
       </WidgetSection>
     </div>
   );

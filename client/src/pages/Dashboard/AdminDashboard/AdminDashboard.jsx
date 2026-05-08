@@ -1252,7 +1252,7 @@ const AdminDashboard = () => {
       key: PERMISSIONS.ADMIN_TOTAL_ADMIN_OFFICES.value,
       title: "Total",
       data: Array.isArray(unitsData) ? unitsData.length : 0,
-      description: "Admin Offices",
+      description: "Offices Under Management",
       route: "admin-offices",
     },
     {

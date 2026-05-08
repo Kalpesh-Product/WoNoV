@@ -922,9 +922,9 @@ const ItDashboard = () => {
   const dataCardConfigs = [
     {
       key: PERMISSIONS.IT_OFFICES_UNDER_MANAGEMENT.value,
-      title: "Offices",
+      title: "Total",
       data: Array.isArray(unitsData) ? unitsData.length : 0,
-      description: "Under Management",
+      description: "Offices Under Management",
       route: "IT-offices",
     },
     {
