@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { setSelectedMonth } from "../../../../redux/slices/hrSlice";
+import { useSelector } from "react-redux";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -23,51 +22,44 @@ const calendarMonths = [
   "March",
 ];
 
-const getCurrentFiscalMonth = () => {
-  const now = new Date();
-  return calendarMonths[(now.getMonth() + 9) % 12];
+const getFiscalMonthName = (date) => calendarMonths[(date.getMonth() + 9) % 12];
+
+const shiftMonth = (date, direction) => {
+  const shifted = new Date(date);
+  shifted.setMonth(shifted.getMonth() + direction);
+  return shifted;
 };
 
-const getDisplayYear = (monthName) => {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  return ["January", "February", "March"].includes(monthName)
-    ? currentYear
-    : currentYear + 1;
-};  
+const getDisplayYear = (date) => date.getFullYear();
 
 const HrKPA = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const selectedMonth = useSelector((state) => state.hr.selectedMonth);
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
-  const effectiveSelectedMonth = selectedMonth || getCurrentFiscalMonth();
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const effectiveSelectedMonth = getFiscalMonthName(selectedDate);
   const yearArray = tasksRawData.map(
     (item) => item.tasks?.map((task) => task.assignedDate)[0]
   );
 
-  const currentMonthIndex = calendarMonths.findIndex(
-    (m) => m.toLowerCase() === effectiveSelectedMonth.toLowerCase()
-  );
-
   useEffect(() => {
-    if (!selectedMonth) {
-      dispatch(setSelectedMonth(getCurrentFiscalMonth()));
-    }
-  }, [dispatch, selectedMonth]);
+    const interval = setInterval(() => {
+      const now = new Date();
+      const isMonthChanged =
+        now.getMonth() !== selectedDate.getMonth() ||
+        now.getFullYear() !== selectedDate.getFullYear();
 
-  const handlePrevMonth = () => {
-    if (currentMonthIndex > 0) {
-      dispatch(setSelectedMonth(calendarMonths[currentMonthIndex - 1]));
-    }
-  };
+      if (isMonthChanged) {
+        setSelectedDate(now);
+      }
+    }, 60 * 60 * 1000);
 
-  const handleNextMonth = () => {
-    if (currentMonthIndex < calendarMonths.length - 1) {
-      dispatch(setSelectedMonth(calendarMonths[currentMonthIndex + 1]));
-    }
-  };
+    return () => clearInterval(interval);
+  }, [selectedDate]);
+
+  const handlePrevMonth = () => setSelectedDate((prev) => shiftMonth(prev, -1));
+
+  const handleNextMonth = () => setSelectedDate((prev) => shiftMonth(prev, 1));
 
   const filteredTasks = useMemo(() => {
      if (!effectiveSelectedMonth || tasksRawData.length === 0) return [];
@@ -287,7 +279,7 @@ const HrKPA = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`KPA overview - ${effectiveSelectedMonth} ${yearArray?.[0]?.split("-")?.[2] || getDisplayYear(effectiveSelectedMonth)}`}
+        title={`KPA overview - ${effectiveSelectedMonth} ${yearArray?.[0]?.split("-")?.[2] || getDisplayYear(selectedDate)}`}
         border
         padding
         greenTitle={"completed"}

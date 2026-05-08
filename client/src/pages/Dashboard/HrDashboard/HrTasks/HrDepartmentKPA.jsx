@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
@@ -62,20 +62,30 @@ const HrDepartmentKPA = () => {
   const [selectedFiscalStartYear, setSelectedFiscalStartYear] = useState(
     getCurrentFiscalStartYear()
   );
-  const fyMonths = getFiscalMonths(selectedFiscalStartYear);
+ const fyMonths = useMemo(
+    () => getFiscalMonths(selectedFiscalStartYear),
+    [selectedFiscalStartYear]
+  );
   const fiscalYearLabel = `FY ${selectedFiscalStartYear}-${String(
     selectedFiscalStartYear + 1
+  ).slice(2)}`;
+  const currentMonthLabel = `${SHORT_MONTHS[new Date().getMonth()]}-${String(
+    new Date().getFullYear()
   ).slice(2)}`;
   
   const initialShortMonth = Object.keys(fullMonthNames).find(
     (key) => fullMonthNames[key] === month
   );
 
-  const may26Index = fyMonths.findIndex((m) => m === "May-26");
-  const initialMonthIndex = fyMonths.findIndex((m) => m.startsWith(initialShortMonth));
+   const initialMonthIndex = fyMonths.findIndex((label) => {
+    if (initialShortMonth) {
+      return label.startsWith(initialShortMonth);
+    }
+    return label === currentMonthLabel;
+  });
 
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(
-    may26Index !== -1 ? may26Index : initialMonthIndex !== -1 ? initialMonthIndex : 0
+    initialMonthIndex !== -1 ? initialMonthIndex : 0
   );
 
   const selectedMonth = fyMonths[selectedMonthIndex];
@@ -93,13 +103,21 @@ const HrDepartmentKPA = () => {
   const handlePrevMonth = () => {
     if (selectedMonthIndex > 0) {
       setSelectedMonthIndex((prev) => prev - 1);
+      return;
     }
+
+    setSelectedFiscalStartYear((prev) => prev - 1);
+    setSelectedMonthIndex(11);
   };
 
   const handleNextMonth = () => {
     if (selectedMonthIndex < fyMonths.length - 1) {
       setSelectedMonthIndex((prev) => prev + 1);
+      return;
     }
+
+    setSelectedFiscalStartYear((prev) => prev + 1);
+    setSelectedMonthIndex(0);
   };
 
   const handlePrevFiscalYear = () => {
@@ -254,8 +272,9 @@ const HrDepartmentKPA = () => {
       field: "assignedTo",
       headerName: "Assigned To",
       flex: 1,
+      hide:true,
     },
-    { field: "assignedBy", headerName: "Assigned By", flex: 1 },
+    { field: "assignedBy", headerName: "Assigned By", flex: 1,hide:true, },
     { field: "assignedDate", headerName: "Assigned Date", flex: 1 },
     // { field: "totalPercent", headerName: "Total (%)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
@@ -331,7 +350,7 @@ const HrDepartmentKPA = () => {
               <SecondaryButton
                 title={<MdNavigateBefore />}
                 handleSubmit={handlePrevMonth}
-                disabled={selectedMonthIndex === 0}
+               // disabled={selectedMonthIndex === 0}
               />
               <div className="text-subtitle  text-center font-pmedium">
                 {selectedMonth}
@@ -339,7 +358,7 @@ const HrDepartmentKPA = () => {
               <PrimaryButton
                 title={<MdNavigateNext />}
                 handleSubmit={handleNextMonth}
-                disabled={selectedMonthIndex === fyMonths.length - 1}
+               // disabled={selectedMonthIndex === fyMonths.length - 1}
               />
             </div>
         {filteredTasks.length === 0 ? (
