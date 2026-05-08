@@ -59,15 +59,17 @@ const HrDepartmentKPA = () => {
     Nov: "November",
     Dec: "December",
   };
-  const [selectedFiscalStartYear, setSelectedFiscalStartYear] = useState(
+ const [overviewFiscalStartYear, setOverviewFiscalStartYear] = useState(
     getCurrentFiscalStartYear()
   );
- const fyMonths = useMemo(
-    () => getFiscalMonths(selectedFiscalStartYear),
-    [selectedFiscalStartYear]
+
+  const overviewFyMonths = useMemo(
+    () => getFiscalMonths(overviewFiscalStartYear),
+    [overviewFiscalStartYear]
   );
-  const fiscalYearLabel = `FY ${selectedFiscalStartYear}-${String(
-    selectedFiscalStartYear + 1
+
+  const overviewFiscalYearLabel = `FY ${overviewFiscalStartYear}-${String(
+    overviewFiscalStartYear + 1
   ).slice(2)}`;
   const currentMonthLabel = `${SHORT_MONTHS[new Date().getMonth()]}-${String(
     new Date().getFullYear()
@@ -77,18 +79,26 @@ const HrDepartmentKPA = () => {
     (key) => fullMonthNames[key] === month
   );
 
-   const initialMonthIndex = fyMonths.findIndex((label) => {
+  const initialMonthIndex = overviewFyMonths.findIndex((label) => {
     if (initialShortMonth) {
       return label.startsWith(initialShortMonth);
     }
     return label === currentMonthLabel;
   });
 
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(
+  const [detailsFiscalStartYear, setDetailsFiscalStartYear] = useState(
+    overviewFiscalStartYear
+  );
+  const [detailsMonthIndex, setDetailsMonthIndex] = useState(
     initialMonthIndex !== -1 ? initialMonthIndex : 0
   );
 
-  const selectedMonth = fyMonths[selectedMonthIndex];
+  const detailsFyMonths = useMemo(
+    () => getFiscalMonths(detailsFiscalStartYear),
+    [detailsFiscalStartYear]
+  );
+
+  const selectedMonth = detailsFyMonths[detailsMonthIndex];
   const shortMonth = selectedMonth.split("-")[0];
 
   if (!department || !tasks?.length) {
@@ -100,38 +110,44 @@ const HrDepartmentKPA = () => {
   const departmentName = filteredData[0]?.department;
   const tasksData = filteredData[0]?.tasks;
 
-  const handlePrevMonth = () => {
-    if (selectedMonthIndex > 0) {
-      setSelectedMonthIndex((prev) => prev - 1);
+   const handlePrevMonth = () => {
+    if (detailsMonthIndex > 0) {
+      setDetailsMonthIndex((prev) => prev - 1);
       return;
     }
 
-    setSelectedFiscalStartYear((prev) => prev - 1);
-    setSelectedMonthIndex(11);
+    setDetailsFiscalStartYear((prev) => prev - 1);
+    setDetailsMonthIndex(11);
   };
 
   const handleNextMonth = () => {
-    if (selectedMonthIndex < fyMonths.length - 1) {
-      setSelectedMonthIndex((prev) => prev + 1);
+    if (detailsMonthIndex < detailsFyMonths.length - 1) {
+      setDetailsMonthIndex((prev) => prev + 1);
       return;
     }
 
-    setSelectedFiscalStartYear((prev) => prev + 1);
-    setSelectedMonthIndex(0);
+    setDetailsFiscalStartYear((prev) => prev + 1);
+    setDetailsMonthIndex(0);
   };
 
   const handlePrevFiscalYear = () => {
-    setSelectedFiscalStartYear((prev) => prev - 1);
-    setSelectedMonthIndex(0);
+    setOverviewFiscalStartYear((prev) => {
+      const nextYear = prev - 1;
+      setDetailsFiscalStartYear(nextYear);
+      return nextYear;
+    });
   };
 
   const handleNextFiscalYear = () => {
-    setSelectedFiscalStartYear((prev) => prev + 1);
-    setSelectedMonthIndex(0);
+    setOverviewFiscalStartYear((prev) => {
+      const nextYear = prev + 1;
+      setDetailsFiscalStartYear(nextYear);
+      return nextYear;
+    });
   };
 
   const monthlyMap = {};
-  fyMonths.forEach((label) => {
+  overviewFyMonths.forEach((label) => {
     monthlyMap[label] = { total: 0, achieved: 0 };
   });
 
@@ -154,7 +170,7 @@ const HrDepartmentKPA = () => {
     {
       name: "Completed Tasks",
       group: `${departmentName} - ${month}`,
-      data: fyMonths.map((label) => {
+       data: overviewFyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
           total: 0,
           achieved: 0,
@@ -170,7 +186,7 @@ const HrDepartmentKPA = () => {
     {
       name: "Remaining Tasks",
       group: `${departmentName} - ${month}`,
-      data: fyMonths.map((label) => {
+      data: overviewFyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
           total: 0,
           achieved: 0,
@@ -209,7 +225,7 @@ const HrDepartmentKPA = () => {
     },
     xaxis: {
       title: { text: "Months" },
-      categories: fyMonths,
+       categories: overviewFyMonths,
     },
     yaxis: {
       title: { text: "Completion (%)" },
@@ -311,7 +327,7 @@ const HrDepartmentKPA = () => {
   const filteredTasks = tasksData.filter((task) => {
     const [day, month, year] = task.assignedDate.split("-").map(Number);
     const taskMonth =
-      fyMonths[(new Date(year, month - 1, day).getMonth() + 9) % 12];
+      detailsFyMonths[(new Date(year, month - 1, day).getMonth() + 9) % 12];
     return taskMonth === selectedMonth;
   });
 
@@ -332,7 +348,7 @@ const HrDepartmentKPA = () => {
         />
          <div className="flex justify-center items-center gap-4 pb-4">
           <SecondaryButton title={<MdNavigateBefore />} handleSubmit={handlePrevFiscalYear} />
-          <div className="text-subtitle text-center font-pmedium">{fiscalYearLabel}</div>
+                   <div className="text-subtitle text-center font-pmedium">{overviewFiscalYearLabel}</div>
           <PrimaryButton title={<MdNavigateNext />} handleSubmit={handleNextFiscalYear} />
         </div>
       </WidgetSection>
