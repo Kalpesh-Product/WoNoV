@@ -97,6 +97,17 @@ const HrDepartmentKPA = () => {
     return label === currentMonthLabel;
   });
 
+  const formatMonthYearLabel = (monthLabel) => {
+  const [shortMonth, shortYear] = (monthLabel || "").split("-");
+  if (!shortMonth || !shortYear) return monthLabel;
+
+  const fullMonth = fullMonthNames[shortMonth];
+  if (!fullMonth) return monthLabel;
+
+  return `${fullMonth.toUpperCase()} 20${shortYear}`;
+};
+
+
   const [detailsFiscalStartYear, setDetailsFiscalStartYear] = useState(
     overviewFiscalStartYear
   );
@@ -111,6 +122,7 @@ const HrDepartmentKPA = () => {
 
   const selectedMonth = detailsFyMonths[detailsMonthIndex];
   const shortMonth = selectedMonth.split("-")[0];
+  const selectedMonthDisplay = formatMonthYearLabel(selectedMonth);
 
   if (!department || !tasks?.length) {
     return <div className="">No tasks found for this department.</div>;
@@ -379,7 +391,7 @@ const HrDepartmentKPA = () => {
                // disabled={selectedMonthIndex === 0}
               />
               <div className="text-subtitle  text-center font-pmedium">
-                {selectedMonth}
+               {selectedMonthDisplay}
               </div>
               <PrimaryButton
                 title={<MdNavigateNext />}
@@ -387,31 +399,10 @@ const HrDepartmentKPA = () => {
                // disabled={selectedMonthIndex === fyMonths.length - 1}
               />
             </div>
-        {filteredTasks.length === 0 ? (
-          <div className="text-center flex justify-center items-center py-8 text-gray-500 h-80">
-            No data available
-          </div>
-        ) : (
+        
           <div>
-          
-            <AgTable
-              tableHeight={300}
-              hideFilter
-              columns={tasksColumns}
-              data={filteredTasks.map((item, index) => ({
-                id: index + 1,
-                taskName: item.taskName,
-                assignedTo: item.assignedTo,
-                assignedBy: item.assignedBy,
-                assignedDate: item.assignedDate,
-                dueDate: item.dueDate,
-                status: item.status,
-              }))}
-            />
-          </div>
-        )}
-          {/* <div>
           <AgTable
+          key={selectedMonth}
             tableHeight={300}
             hideFilter
             columns={tasksColumns}
@@ -425,7 +416,7 @@ const HrDepartmentKPA = () => {
               status: item.status,
             }))}
           />
-        </div> */}
+        </div> 
       </WidgetSection>
     </div>
   );

@@ -9,7 +9,7 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import humanDate from "../../../../utils/humanDateForamt";
+//import humanDate from "../../../../utils/humanDateForamt";
 import dateToHyphen from "../../../../utils/dateToHyphen";
 
 const calendarMonths = [
@@ -36,27 +36,23 @@ const getCurrentFiscalStartYear = () => {
   return currentMonth >= 3 ? now.getFullYear() : now.getFullYear() - 1;
 };
 
-const getFiscalDisplayYear = (monthName) => {
-  const fiscalStartYear = getCurrentFiscalStartYear();
-  const monthIndex = calendarMonths.findIndex(
-    (month) => month.toLowerCase() === monthName?.toLowerCase()
-  );
-
-  if (monthIndex === -1) return fiscalStartYear;
-
-  return monthIndex >= 9 ? fiscalStartYear + 1 : fiscalStartYear;
+const getYearFromTaskDate = (assignedDate) => {
+  const [, , year] = (assignedDate || "").split("-").map(Number);
+  return year || null;
 };
 
 const HrOverallTasks = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
-    const activeMonth = selectedMonth || getDefaultFiscalMonth();
-    const activeYear = getFiscalDisplayYear(activeMonth);
+   const [selectedYear, setSelectedYear] = useState(getCurrentFiscalStartYear());
+  const activeMonth = selectedMonth || getDefaultFiscalMonth();
+  const activeYear = selectedYear;
+  const activeMonthYear = `${activeMonth} ${activeYear}`;
   const axios = useAxiosPrivate();
   // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
-  const { data: tasksRawData = [], isLoading: isTasksLoading } = useQuery({
+  const { data: tasksRawData = [] } = useQuery({
     queryKey: ["tasksRawData"],
     queryFn: async () => {
       const response = await axios.get("api/tasks/get-tasks-summary");
@@ -86,23 +82,32 @@ const HrOverallTasks = () => {
   //       ...item,
   //     }));
 
-  const yearArray = tasksRawData.map(
-    (item) => item.tasks?.map((task) => task.assignedDate)[0]
-  );
+  // const yearArray = tasksRawData.map(
+  //   (item) => item.tasks?.map((task) => task.assignedDate)[0]
+  // );
 
   const currentMonthIndex = calendarMonths.findIndex(
      (m) => m.toLowerCase() === activeMonth.toLowerCase()
   );
 
-  const handlePrevMonth = () => {
-    const prevIndex =
-      (currentMonthIndex - 1 + calendarMonths.length) % calendarMonths.length;
-    dispatch(setSelectedMonth(calendarMonths[prevIndex]));
+   const handlePrevMonth = () => {
+    if (currentMonthIndex === 0) {
+      dispatch(setSelectedMonth(calendarMonths[calendarMonths.length - 1]));
+      setSelectedYear((prev) => prev - 1);
+      return;
+    }
+
+    dispatch(setSelectedMonth(calendarMonths[currentMonthIndex - 1]));
   };
 
   const handleNextMonth = () => {
-    const nextIndex = (currentMonthIndex + 1) % calendarMonths.length;
-    dispatch(setSelectedMonth(calendarMonths[nextIndex]));
+    if (currentMonthIndex === calendarMonths.length - 1) {
+      dispatch(setSelectedMonth(calendarMonths[0]));
+      setSelectedYear((prev) => prev + 1);
+      return;
+    }
+
+    dispatch(setSelectedMonth(calendarMonths[currentMonthIndex + 1]));
   };
 
   const filteredTasks = useMemo(() => {
@@ -113,11 +118,16 @@ const HrOverallTasks = () => {
           const taskMonth =
             calendarMonths[(new Date(y, m - 1, day).getMonth() + 9) % 12];
 
-            return taskMonth?.toLowerCase() === activeMonth.toLowerCase();
+            const taskYear = getYearFromTaskDate(task.assignedDate);
+
+            return (
+              taskMonth?.toLowerCase() === activeMonth.toLowerCase() &&
+              taskYear === activeYear
+            );
         })
         .map((task) => ({ department: dept.department, ...task }))
     );
-  }, [tasksRawData, activeMonth]);
+  }, [tasksRawData, activeMonth, activeYear]);
 
   const totalCompleted = filteredTasks.filter(
     (t) => t.status === "Completed"
@@ -158,7 +168,7 @@ const HrOverallTasks = () => {
   const graphData = [
     {
       name: "Completed Tasks",
-        group: `Tasks - ${activeMonth} ${activeYear}`,
+          group: `Tasks - ${activeMonthYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -170,7 +180,7 @@ const HrOverallTasks = () => {
     },
     {
       name: "Remaining Tasks",
-     group: `Tasks - ${activeMonth} ${activeYear}`,
+       group: `Tasks - ${activeMonthYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -201,7 +211,7 @@ const HrOverallTasks = () => {
                month: activeMonth,
               department: clickedDept,
               tasks: departmentTasks,
-              year: yearArray[0].split("-")[2],
+                year: activeYear,
             },
           });
         },
@@ -303,10 +313,10 @@ const HrOverallTasks = () => {
               `/app/dashboard/HR-dashboard/overall-KPA/department-tasks/${params.value}`,
               {
                 state: {
-                  month: selectedMonth,
+                    month: activeMonth,
                   department: params.value,
                   tasks: groupedTasks[params.value],
-                  year: yearArray[0].split("-")[2],
+                  year: activeYear,
                 },
               }
             )
@@ -326,7 +336,7 @@ const HrOverallTasks = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-         title={`Tasks overview - ${activeMonth} ${activeYear}`}
+        title={`Tasks overview - ${activeMonthYear}`}
         border
         padding
         greenTitle={"completed"}
@@ -348,7 +358,7 @@ const HrOverallTasks = () => {
               // disabled={!isPrevAvailable}
             />
             <div className="text-sm min-w-[120px] text-center">
-                  {`${activeMonth} ${activeYear}`}
+                   {activeMonthYear}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}
