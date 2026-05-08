@@ -294,7 +294,7 @@ const HrOverallTasks = () => {
               }
             )
           }
-          className="text-primary underline cursor-pointer"
+          className="text-primary cursor-pointer"
         >
           {params.value}
         </span>

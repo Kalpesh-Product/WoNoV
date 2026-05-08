@@ -9,6 +9,38 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const getCurrentFiscalStartYear = () => {
+  const now = new Date();
+  const month = now.getMonth();
+  return month >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+};
+
+const getFiscalMonths = (startYear) => {
+  const months = [];
+  for (let i = 0; i < 12; i += 1) {
+    const date = new Date(startYear, 3 + i, 1);
+    const shortMonth = SHORT_MONTHS[date.getMonth()];
+    const shortYear = String(date.getFullYear()).slice(2);
+    months.push(`${shortMonth}-${shortYear}`);
+  }
+  return months;
+};
+
 const HrDepartmentKPA = () => {
   const location = useLocation();
   const { month, department, tasks, year } = location.state || {};
@@ -27,30 +59,23 @@ const HrDepartmentKPA = () => {
     Nov: "November",
     Dec: "December",
   };
-  const fyMonths = [
-    "Apr-25",
-    "May-25",
-    "Jun-25",
-    "Jul-25",
-    "Aug-25",
-    "Sep-25",
-    "Oct-25",
-    "Nov-25",
-    "Dec-25",
-    "Jan-26",
-    "Feb-26",
-    "Mar-26",
-  ];
+  const [selectedFiscalStartYear, setSelectedFiscalStartYear] = useState(
+    getCurrentFiscalStartYear()
+  );
+  const fyMonths = getFiscalMonths(selectedFiscalStartYear);
+  const fiscalYearLabel = `FY ${selectedFiscalStartYear}-${String(
+    selectedFiscalStartYear + 1
+  ).slice(2)}`;
+  
   const initialShortMonth = Object.keys(fullMonthNames).find(
     (key) => fullMonthNames[key] === month
   );
 
-  const initialMonthIndex = fyMonths.findIndex((m) =>
-    m.startsWith(initialShortMonth)
-  );
+  const may26Index = fyMonths.findIndex((m) => m === "May-26");
+  const initialMonthIndex = fyMonths.findIndex((m) => m.startsWith(initialShortMonth));
 
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(
-    initialMonthIndex !== -1 ? initialMonthIndex : 0
+    may26Index !== -1 ? may26Index : initialMonthIndex !== -1 ? initialMonthIndex : 0
   );
 
   const selectedMonth = fyMonths[selectedMonthIndex];
@@ -75,6 +100,16 @@ const HrDepartmentKPA = () => {
     if (selectedMonthIndex < fyMonths.length - 1) {
       setSelectedMonthIndex((prev) => prev + 1);
     }
+  };
+
+  const handlePrevFiscalYear = () => {
+    setSelectedFiscalStartYear((prev) => prev - 1);
+    setSelectedMonthIndex(0);
+  };
+
+  const handleNextFiscalYear = () => {
+    setSelectedFiscalStartYear((prev) => prev + 1);
+    setSelectedMonthIndex(0);
   };
 
   const monthlyMap = {};
@@ -269,12 +304,18 @@ const HrDepartmentKPA = () => {
         border
         TitleAmount={`TOTAL KPA :  ${tasksData.length || 0}`}
       >
+         
         <NormalBarGraph
           data={graphData}
           options={graphOptions}
           year={false}
           height={350}
         />
+         <div className="flex justify-center items-center gap-4 pb-4">
+          <SecondaryButton title={<MdNavigateBefore />} handleSubmit={handlePrevFiscalYear} />
+          <div className="text-subtitle text-center font-pmedium">{fiscalYearLabel}</div>
+          <PrimaryButton title={<MdNavigateNext />} handleSubmit={handleNextFiscalYear} />
+        </div>
       </WidgetSection>
 
       <WidgetSection

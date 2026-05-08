@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedMonth } from "../../../../redux/slices/hrSlice";
@@ -23,21 +23,39 @@ const calendarMonths = [
   "March",
 ];
 
+const getCurrentFiscalMonth = () => {
+  const now = new Date();
+  return calendarMonths[(now.getMonth() + 9) % 12];
+};
+
+const getDisplayYear = (monthName) => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  return ["January", "February", "March"].includes(monthName)
+    ? currentYear
+    : currentYear + 1;
+};  
+
 const HrKPA = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const selectedMonth = useSelector((state) => state.hr.selectedMonth);
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
-
-  console.log("tasks data", selectedMonth, tasksRawData);
+  const effectiveSelectedMonth = selectedMonth || getCurrentFiscalMonth();
   const yearArray = tasksRawData.map(
     (item) => item.tasks?.map((task) => task.assignedDate)[0]
   );
 
   const currentMonthIndex = calendarMonths.findIndex(
-    (m) => m.toLowerCase() === selectedMonth?.toLowerCase()
+    (m) => m.toLowerCase() === effectiveSelectedMonth.toLowerCase()
   );
+
+  useEffect(() => {
+    if (!selectedMonth) {
+      dispatch(setSelectedMonth(getCurrentFiscalMonth()));
+    }
+  }, [dispatch, selectedMonth]);
 
   const handlePrevMonth = () => {
     if (currentMonthIndex > 0) {
@@ -52,7 +70,7 @@ const HrKPA = () => {
   };
 
   const filteredTasks = useMemo(() => {
-    if (!selectedMonth || tasksRawData.length === 0) return [];
+     if (!effectiveSelectedMonth || tasksRawData.length === 0) return [];
 
     return tasksRawData.flatMap((dept) =>
       dept.tasks
@@ -61,11 +79,11 @@ const HrKPA = () => {
           const taskMonth =
             calendarMonths[(new Date(y, m - 1, day).getMonth() + 9) % 12];
 
-          return taskMonth.toLowerCase() === selectedMonth.toLowerCase();
+          return taskMonth.toLowerCase() === effectiveSelectedMonth.toLowerCase();
         })
         .map((task) => ({ department: dept.department, ...task }))
     );
-  }, [tasksRawData, selectedMonth]);
+  }, [tasksRawData, effectiveSelectedMonth]);
 
   const totalCompleted = filteredTasks.filter(
     (t) => t.status === "Completed"
@@ -101,7 +119,7 @@ const HrKPA = () => {
   const graphData = [
     {
       name: "Completed KPA",
-      group: `KPA - ${selectedMonth}`,
+       group: `KPA - ${effectiveSelectedMonth}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -113,7 +131,7 @@ const HrKPA = () => {
     },
     {
       name: "Remaining KPA",
-      group: `KPA - ${selectedMonth}`,
+      group: `KPA - ${effectiveSelectedMonth}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -141,10 +159,10 @@ const HrKPA = () => {
 
           navigate(`/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${clickedDept}`, {
             state: {
-              month: selectedMonth,
+              month: effectiveSelectedMonth,
               department: clickedDept,
               tasks: departmentTasks,
-              year: yearArray[0].split("-")[2],
+              year: yearArray?.[0]?.split("-")?.[2] || getDisplayYear(effectiveSelectedMonth),
             },
           });
         },
@@ -246,15 +264,15 @@ const HrKPA = () => {
               `/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${params.value}`,
               {
                 state: {
-                  month: selectedMonth,
+                   month: effectiveSelectedMonth,
                   department: params.value,
                   tasks: groupedTasks[params.value],
-                  year: yearArray[0].split("-")[2],
+                  year: yearArray?.[0]?.split("-")?.[2] || getDisplayYear(effectiveSelectedMonth),
                 },
               }
             )
           }
-          className="text-primary underline cursor-pointer"
+          className="text-primary cursor-pointer"
         >
           {params.value}
         </span>
@@ -269,7 +287,7 @@ const HrKPA = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`KPA overview - ${selectedMonth} ${yearArray[0].split("-")[2]}`}
+        title={`KPA overview - ${effectiveSelectedMonth} ${yearArray?.[0]?.split("-")?.[2] || getDisplayYear(effectiveSelectedMonth)}`}
         border
         padding
         greenTitle={"completed"}
@@ -291,7 +309,7 @@ const HrKPA = () => {
               // disabled={!isPrevAvailable}
             />
             <div className="text-sm min-w-[120px] text-center">
-              {selectedMonth}
+                 {effectiveSelectedMonth}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}
