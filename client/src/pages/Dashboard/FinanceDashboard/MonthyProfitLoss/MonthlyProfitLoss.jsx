@@ -275,7 +275,8 @@ const MonthlyProfitLoss = () => {
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/finance/dept-wise-budget"
+             // "/app/dashboard/finance-dashboard/finance/dept-wise-budget"
+              "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget"
             )
           }
           className="text-primary underline cursor-pointer"
