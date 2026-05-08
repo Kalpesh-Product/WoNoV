@@ -93,7 +93,7 @@ const LoginPage = () => {
 
   const filteredModules = defaultModules.map((module) => {
     const filteredSubmenus = module.submenus?.filter((submenu) =>
-      userDepartments?.includes(submenu.codeName)
+      userDepartments?.includes(submenu.codeName),
     );
 
     return {
@@ -103,7 +103,7 @@ const LoginPage = () => {
   });
 
   const hasAnySubmenus = filteredModules.some(
-    (module) => module.submenus.length > 0
+    (module) => module.submenus.length > 0,
   );
 
   // If there are matches, use first matched route. Else fallback to Finance Dashboard
@@ -130,7 +130,7 @@ const LoginPage = () => {
         { email, password },
         {
           withCredentials: true,
-        }
+        },
       );
       setAuth((prevState) => {
         return {
@@ -331,14 +331,14 @@ const LoginPage = () => {
                   </Grid>
                 </div>
 
-                <div className="mt-2 col-span-2 text-end">
+                {/* <div className="mt-2 col-span-2 text-end">
                   <Link
                     to="https://wono.co/forgot-password"
                     className="hover:underline text-black"
                   >
                     Forgot Password?
                   </Link>
-                </div>
+                </div> */}
                 <div className="flex">
                   <div className="flex flex-col justify-center w-full items-center gap-4 mt-4">
                     <Grid item xs={12}>
@@ -356,7 +356,7 @@ const LoginPage = () => {
                         </button>
                       </div>
                     </Grid>
-                    <p className="text-[0.9rem]">
+                    {/* <p className="text-[0.9rem]">
                       Don't have an account?{" "}
                       <span
                         onClick={() =>
@@ -366,7 +366,7 @@ const LoginPage = () => {
                       >
                         Sign Up
                       </span>
-                    </p>
+                    </p> */}
                   </div>
                 </div>
               </Box>
