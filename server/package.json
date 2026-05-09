@@ -7,7 +7,10 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "structure": "node generateStructure.js > structure.txt",
-    "migrate:externalvisits": "node scripts/migrateExternalVisits.js"
+    "migrate:externalvisits": "node scripts/migrateExternalVisits.js",
+    "start:worker": "node src/workers/index.js",
+    "dev:api": "nodemon src/server.js",
+    "dev:worker": "nodemon src/workers/index.js"
   },
   "keywords": [],
   "author": "",

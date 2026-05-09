@@ -1,6 +1,6 @@
 // POST /reports/generate
-const { reportQueue } = require("../queues/report.queue");
-const ReportJob = require("../models/ReportJob");
+const { reportQueue } = require("../../queues/report.queue");
+const ReportJob = require("../../models/reports/ReportJob");
 
 async function generateReport(req, res) {
   const { report, department, filters } = req.body;

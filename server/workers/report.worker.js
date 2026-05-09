@@ -2,7 +2,9 @@
 const { Worker } = require("bullmq");
 const { connection } = require("../config/redis");
 const ReportJob = require("../models/reports/ReportJob");
-const { getBudgetReport, getSalesReport } = require("../services/reports");
+const {
+  fetchBudget,
+} = require("../controllers/budgetControllers/budgetController");
 
 const worker = new Worker(
   "report-generation",
@@ -22,8 +24,8 @@ const worker = new Worker(
       let data;
 
       switch (reportJob.report.reportName) {
-        case "budget":
-          data = await getBudgetReport(reportJob.filters);
+        case "Expense And Budget":
+          data = await fetchBudget(reportJob.filters);
           break;
         case "sales":
           data = await getSalesReport(reportJob.filters);
