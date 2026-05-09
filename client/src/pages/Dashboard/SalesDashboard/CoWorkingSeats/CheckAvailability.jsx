@@ -293,37 +293,46 @@ const CheckAvailability = () => {
       );
   };
 
+  const isActiveClient = (client) => {
+    if (typeof client?.isActive === "boolean") return client.isActive;
+    if (typeof client?.status === "string") {
+      return client.status.toLowerCase() === "active";
+    }
+    return true;
+  };
+
   const inventoryStats = {
     ST: { total: 0, occupied: 0 },
     DTC: { total: 0, occupied: 0 },
   };
 
-  const seenUnits = new Set();
-
-  clientsData.forEach((client, index) => {
-    if (!client.unit || !client.unit.building) return;
-
-    const unit = client.unit;
-    const unitNo = unit.unitNo || "N/A";
-    const buildingName = unit.building.buildingName || "Unknown";
-
-    const isNewUnit = !seenUnits.has(unitNo);
-    if (isNewUnit) seenUnits.add(unitNo);
-
-    const unitOpenDesks = Number(unit.openDesks) || 0;
-    const unitCabinDesks = Number(unit.cabinDesks) || 0;
-    const totalSeats = unitOpenDesks + unitCabinDesks;
-    const bookedSeats = Number(client.totalDesks) || 0;
+   workLocations.forEach((unit) => {
+    const buildingName = unit?.building?.buildingName || "";
+    const totalSeats = (Number(unit?.openDesks) || 0) + (Number(unit?.cabinDesks) || 0);
 
     if (buildingName.includes("Sunteck Kanaka")) {
-      if (isNewUnit) {
-        inventoryStats.ST.total += totalSeats;
-      }
+      inventoryStats.ST.total += totalSeats;
+    } else if (
+      buildingName.includes("Dempo Trade Centre") ||
+      buildingName.includes("Dempo Trade Center")
+    ) {
+      inventoryStats.DTC.total += totalSeats;
+    }
+  });
+
+  clientsData.forEach((client) => {
+    if (!isActiveClient(client)) return;
+    const buildingName = client?.unit?.building?.buildingName || "";
+    const bookedSeats =
+      Number(client?.totalDesks) ||
+      (Number(client?.openDesks) || 0) + (Number(client?.cabinDesks) || 0);
+
+    if (buildingName.includes("Sunteck Kanaka")) {
       inventoryStats.ST.occupied += bookedSeats;
-    } else if (buildingName.includes("Dempo Trade Centre")) {
-      if (isNewUnit) {
-        inventoryStats.DTC.total += totalSeats;
-      }
+    } else if (
+      buildingName.includes("Dempo Trade Centre") ||
+      buildingName.includes("Dempo Trade Center")
+    ) {
       inventoryStats.DTC.occupied += bookedSeats;
     }
   });
@@ -331,6 +340,7 @@ const CheckAvailability = () => {
   const allBuildings = new Set();
 
   clientsData.forEach((client) => {
+     if (!isActiveClient(client)) return;
     const buildingName = client.unit?.building?.buildingName;
     if (buildingName) allBuildings.add(buildingName);
   });
@@ -388,8 +398,11 @@ const CheckAvailability = () => {
       {
         title: "ST Free Inventory",
         value: String(
+          Math.max(
           (Number(inventoryStats.ST?.total) || 0) -
-          (Number(inventoryStats.ST?.occupied) || 0)
+            (Number(inventoryStats.ST?.occupied) || 0),
+          0
+        )
         ),
         route:
           "/app/dashboard/sales-dashboard/mix-bag/inventory/Sunteck%20Kanaka",
@@ -398,8 +411,11 @@ const CheckAvailability = () => {
       {
         title: "DTC Free Inventory",
         value: String(
+          Math.max(
           (Number(inventoryStats.DTC?.total) || 0) -
-          (Number(inventoryStats.DTC?.occupied) || 0)
+            (Number(inventoryStats.DTC?.occupied) || 0),
+          0
+        )
         ),
         route:
           "/app/dashboard/sales-dashboard/mix-bag/inventory/Dempo%20Trade%20Centre",
@@ -408,10 +424,16 @@ const CheckAvailability = () => {
       {
         title: "Total Free Inventory",
         value: String(
+          Math.max(
           (Number(inventoryStats.ST?.total) || 0) -
-          (Number(inventoryStats.ST?.occupied) || 0) +
+            (Number(inventoryStats.ST?.occupied) || 0),
+          0
+        ) +
+          Math.max(
           (Number(inventoryStats.DTC?.total) || 0) -
-          (Number(inventoryStats.DTC?.occupied) || 0)
+            (Number(inventoryStats.DTC?.occupied) || 0),
+          0
+        )
         ),
         route: "#",
       },
