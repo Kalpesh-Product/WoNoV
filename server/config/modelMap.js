@@ -110,6 +110,8 @@ const modelKeyGroups = {
   Vendor: ["vendorId"],
 
   // Add more models as needed
+  //Report IDs
+  Report: ["id"],
 };
 
 // Flatten into a key → model map
