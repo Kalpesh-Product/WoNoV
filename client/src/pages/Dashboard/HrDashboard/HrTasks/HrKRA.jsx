@@ -284,6 +284,7 @@ const HrKRA = () => {
         redTitle={"remaining"}
         TitleAmountRed={remainingTasks}
         
+        
       >
         <NormalBarGraph
           data={graphData}
