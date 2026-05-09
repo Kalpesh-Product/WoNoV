@@ -144,29 +144,45 @@ const HrKRA = () => {
   const graphOptions = {
     chart: {
       type: "bar",
+       animations: {
+        enabled: false,
+      },
       stacked: true,
       toolbar: {
         show: false,
       },
+       fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: (_event, _chartContext, config) => {
-          const clickedDept =
+        const clickedDept =
             config.w.config.series[config.seriesIndex].data[
               config.dataPointIndex
             ].x;
-
+        const departmentTasks = groupedTasks[clickedDept] || [];
           navigate(`${clickedDept}`, {
             state: {
               department: clickedDept,
-              tasks: groupedTasks[clickedDept],
+               tasks: departmentTasks,
               selectedDate: selectedDateKey,
             },
           });
         },
       },
     },
+     plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "20%",
+        borderRadius: 3,
+      },
+    },
     dataLabels: {
       enabled: false,
+    },
+    stroke: {
+      show: true,
+      width: 1,
+      colors: ["#fff"],
     },
     xaxis: {
       categories: allDepartments,
@@ -176,11 +192,16 @@ const HrKRA = () => {
     },
     yaxis: {
       max: 100,
+       title: {
+        text: "Completion (%)",
+      },
       labels: {
         formatter: (value) => `${value.toFixed(0)}%`,
       },
     },
-     legend: { position: "top" },
+    legend: {
+      position: "top",
+    },
     tooltip: {
       custom: ({ dataPointIndex, w }) => {
         const departmentName = w.config.series[0].data[dataPointIndex].x;
