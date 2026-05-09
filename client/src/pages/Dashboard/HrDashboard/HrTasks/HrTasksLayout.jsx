@@ -12,6 +12,12 @@ const HrTasksLayout = () => {
     : isMixBagDepartmentTasksRoute
       ? PERMISSIONS.HR_DEPARTMENT_TASK_MIX_BAG_KPA_KRA_TAB.value
       : undefined;
+   const kraTabPermission = isMixBagKpaKraRoute
+    ? PERMISSIONS.HR_DEPARTMENT_KPA_KRA_MIX_BAG_KRA_TAB.value
+    : isMixBagDepartmentTasksRoute
+      ? PERMISSIONS.HR_DEPARTMENT_TASK_MIX_BAG_KRA_TAB.value
+      : undefined;
+    
   const taskTabPermission = isMixBagKpaKraRoute
     ? PERMISSIONS.HR_DEPARTMENT_KPA_KRA_MIX_BAG_TASK_TAB.value
     : isMixBagDepartmentTasksRoute
@@ -61,6 +67,11 @@ const HrTasksLayout = () => {
       permission: kpaTabPermission,
     },
     //{ label: "Department Tasks", path: "department-tasks" },
+     {
+      label: "Department KRA",
+      path: "department-KRA",
+      permission: kraTabPermission,
+    },
     {
       label: "Department Tasks",
       path: isMixBagRoute ? "department-task" : "department-tasks",

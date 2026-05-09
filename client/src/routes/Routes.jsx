@@ -439,8 +439,10 @@ import HouseKeepingMembersList from "../pages/Dashboard/AdminDashboard/HouseKeep
 import HouseKeepingLayout from "../pages/Dashboard/AdminDashboard/HouseKeepingLayout";
 import HouseKeepingOnboard from "../pages/Dashboard/AdminDashboard/HouseKeepingOnboard";
 import HrKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrKPA";
+import HrKRA from "../pages/Dashboard/HrDashboard/HrTasks/HrKRA";
 import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTasks";
 import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
+import HrDepartmentKRA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKRA";
 import VendorTable from "../components/Pages/VendorTable";
 import MonthlyBudgetCommon from "../components/Pages/MonthlyBudgetCommon";
 import AssetsHome from "../pages/Assets/AssetsHome";
@@ -2140,7 +2142,10 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
-
+                           {
+                            path: "department-KRA",
+                            element: <HrKRA />,
+                          },
                           {
                             path: "department-tasks",
                             element: <HrOverallTasks />,
@@ -2149,6 +2154,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
+                          },
+                           {
+                            path: "department-KRA/:department",
+                            element: <HrDepartmentKRA />,
                           },
                           {
                             path: "department-tasks/:department",
@@ -2165,6 +2174,10 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
+                           {
+                            path: "department-KRA",
+                            element: <HrKRA />,
+                          },
                           {
                             path: "department-task",
                             element: <HrOverallTasks />,
@@ -2172,6 +2185,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
+                          },
+                           {
+                            path: "department-KRA/:department",
+                            element: <HrDepartmentKRA />,
                           },
                           {
                             path: "department-task/:department",
@@ -2192,6 +2209,10 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
+                            {
+                            path: "department-KRA",
+                            element: <HrKRA />,
+                          },
                           {
                             path: "department-task",
                             element: <HrOverallTasks />,
@@ -2203,6 +2224,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
+                          },
+                           {
+                            path: "department-KRA/:department",
+                            element: <HrDepartmentKRA />,
                           },
                           {
                             path: "department-task/:department",
