@@ -14,11 +14,11 @@ const {
 //report routes
 router.post("/", addReport);
 router.get("/", getReports);
-router.get("/:reportId", getSingleReport);
 router.post("/seed-reports", seedReports);
 
 //report job routes
 router.post("/generate", generateReport);
 router.get("/status/:jobId", getReportStatus);
+router.get("/:reportId", getSingleReport);
 
 module.exports = router;

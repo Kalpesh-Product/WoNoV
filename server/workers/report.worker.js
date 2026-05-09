@@ -60,6 +60,14 @@ worker.on("completed", (job) => {
   console.log("Report Generation Successful:", job.id);
 });
 
+worker.on("ready", () => {
+  console.log("Report worker is ready and listening for jobs");
+});
+
 worker.on("failed", (job, err) => {
   console.error("Report Generation Failed:", job?.id, err.message);
+});
+
+worker.on("error", (err) => {
+  console.error("Report worker connection error:", err.message);
 });
