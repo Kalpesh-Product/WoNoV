@@ -275,7 +275,8 @@ const LoginPage = () => {
         </div>
       </Drawer>
       {/* Header */}
-      <div className="login-section loginTopPadding loginBottomPadding poppinsRegular heightPadding">
+      {/* <div className="login-section loginTopPadding loginBottomPadding poppinsRegular heightPadding"> */}
+      <div className="login-section loginTopPadding loginBottomPadding login-page-content-gap poppinsRegular heightPadding">
         <h1 className="text-center text-4xl font-bold">SIGN IN</h1>
         <div className="loginDividingContainer shrink-container">
           <div className="loginLeftContainer">
