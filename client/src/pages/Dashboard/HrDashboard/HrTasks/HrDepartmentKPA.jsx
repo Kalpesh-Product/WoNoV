@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
@@ -54,7 +54,10 @@ const getTaskMonthLabel = (assignedDate) => {
 
 const HrDepartmentKPA = () => {
   const location = useLocation();
-  const { month, department, tasks, year } = location.state || {};
+  //const { month, department, tasks, year } = location.state || {};
+   const { department: departmentParam } = useParams();
+  const { month, department: departmentFromState, tasks, year } = location.state || {};
+  const department = departmentFromState || departmentParam;
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
   const fullMonthNames = {
     Jan: "January",
@@ -97,6 +100,17 @@ const HrDepartmentKPA = () => {
     return label === currentMonthLabel;
   });
 
+  const formatMonthYearLabel = (monthLabel) => {
+  const [shortMonth, shortYear] = (monthLabel || "").split("-");
+  if (!shortMonth || !shortYear) return monthLabel;
+
+  const fullMonth = fullMonthNames[shortMonth];
+  if (!fullMonth) return monthLabel;
+
+  return `${fullMonth.toUpperCase()} 20${shortYear}`;
+};
+
+
   const [detailsFiscalStartYear, setDetailsFiscalStartYear] = useState(
     overviewFiscalStartYear
   );
@@ -111,15 +125,19 @@ const HrDepartmentKPA = () => {
 
   const selectedMonth = detailsFyMonths[detailsMonthIndex];
   const shortMonth = selectedMonth.split("-")[0];
+  const selectedMonthDisplay = formatMonthYearLabel(selectedMonth);
 
-  if (!department || !tasks?.length) {
-    return <div className="">No tasks found for this department.</div>;
-  }
+  // if (!department || !tasks?.length) {
+  //   return <div className="">No tasks found for this department.</div>;
+  // }
   const filteredData = tasksRawData.filter(
     (item) => item.department === department
   );
-  const departmentName = filteredData[0]?.department;
-  const tasksData = filteredData[0]?.tasks;
+  // const departmentName = filteredData[0]?.department;
+  // const tasksData = filteredData[0]?.tasks;
+
+  const departmentName = filteredData[0]?.department || department || "Department";
+  const tasksData = filteredData[0]?.tasks || tasks || [];
 
    const handlePrevMonth = () => {
     if (detailsMonthIndex > 0) {
@@ -379,7 +397,7 @@ const HrDepartmentKPA = () => {
                // disabled={selectedMonthIndex === 0}
               />
               <div className="text-subtitle  text-center font-pmedium">
-                {selectedMonth}
+               {selectedMonthDisplay}
               </div>
               <PrimaryButton
                 title={<MdNavigateNext />}
@@ -387,31 +405,10 @@ const HrDepartmentKPA = () => {
                // disabled={selectedMonthIndex === fyMonths.length - 1}
               />
             </div>
-        {filteredTasks.length === 0 ? (
-          <div className="text-center flex justify-center items-center py-8 text-gray-500 h-80">
-            No data available
-          </div>
-        ) : (
+        
           <div>
-          
-            <AgTable
-              tableHeight={300}
-              hideFilter
-              columns={tasksColumns}
-              data={filteredTasks.map((item, index) => ({
-                id: index + 1,
-                taskName: item.taskName,
-                assignedTo: item.assignedTo,
-                assignedBy: item.assignedBy,
-                assignedDate: item.assignedDate,
-                dueDate: item.dueDate,
-                status: item.status,
-              }))}
-            />
-          </div>
-        )}
-          {/* <div>
           <AgTable
+          key={selectedMonth}
             tableHeight={300}
             hideFilter
             columns={tasksColumns}
@@ -425,7 +422,7 @@ const HrDepartmentKPA = () => {
               status: item.status,
             }))}
           />
-        </div> */}
+        </div> 
       </WidgetSection>
     </div>
   );

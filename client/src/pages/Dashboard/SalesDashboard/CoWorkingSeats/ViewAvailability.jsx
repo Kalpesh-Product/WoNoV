@@ -11,10 +11,11 @@ import CollapsibleTable from "../../../../components/Tables/MuiCollapsibleTable"
 import DataCard from "../../../../components/DataCard";
 import WidgetSection from "../../../../components/WidgetSection";
 import { useLocation, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import DoubleDataCard from "../../../../components/DoubleDataCard";
 import sortByNumberDesc from "../../../../utils/sortByNumberDesc";
+import { toast } from "sonner";
 
 const ViewAvailability = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -22,12 +23,14 @@ const ViewAvailability = () => {
   const [openModal, setOpenModal] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
   const [memberDetails, setMemberDetails] = useState({});
-  const [selectedFile, setSelectedFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(occupied);
-  const [occupiedImage, setOccupiedImage] = useState(occupied);
+  const [pendingImagePreview, setPendingImagePreview] = useState("");
+  const [pendingImagePreviewFile, setPendingImagePreviewFile] = useState(null);
+  const [occupiedImage] = useState(occupied);
   const [clearedImagePreview, setClearedImagePreview] = useState(cleared);
+  const [pendingClearedImagePreview, setPendingClearedImagePreview] = useState("");
+  const [pendingClearedImagePreviewFile, setPendingClearedImagePreviewFile] = useState(null);
   const [clearedImageOpen, setClearedImageOpen] = useState(false);
-  const [clearedFile, setClearedFile] = useState(null);
   const [tabIndex, setTabIndex] = useState(0);
   const currentMonthLabel = dayjs().format("MMM-YYYY");
   const handleTabChange = (event, newValue) => {
@@ -45,6 +48,7 @@ const ViewAvailability = () => {
   // console.log("locations param : ", location);
   // const floorParam = params.get("floor") || "Unknown Floor";
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   // const formatUnitDisplay = (unitNo, buildingName = "") => {
   //   const match = unitNo?.match(/^([\d]+)\(?([A-Za-z]*)\)?$/);
   //   if (!match) return `${unitNo || "N/A"} ${buildingName}`;
@@ -73,6 +77,24 @@ const ViewAvailability = () => {
     enabled: !!unit,
   });
 
+ const { mutate: uploadImageMutation, isPending: isUploadingImage } = useMutation({
+    mutationFn: async ({ file, imageType }) => {
+      const formData = new FormData();
+      formData.append("locationImage", file);
+      formData.append("unitId", unit);
+      formData.append("imageType", imageType);
+      return axios.post("/api/company/upload-location-image", formData);
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["unitDetails"] });
+      toast.success(`${variables?.imageType === "clearImage" ? "Clear" : "Occupied"} image uploaded successfully`);
+      variables?.onSuccess?.();
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || "Failed to upload image");
+    },
+  });
+
   const totalOccupied = Number(unitDetails?.totalOccupiedDesks) || 0;
   const totalActualOccupied =
     unitDetails?.clientDetails?.reduce(
@@ -89,9 +111,8 @@ const ViewAvailability = () => {
     const file = event.target?.files?.[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      setSelectedFile(file);
-      setImagePreview(imageUrl);
-      setImageOpen(false);
+    setPendingImagePreview(imageUrl);
+      setPendingImagePreviewFile(file);
     }
   };
 
@@ -99,10 +120,37 @@ const ViewAvailability = () => {
     const file = event.target?.files?.[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      setClearedFile(file);
-      setClearedImagePreview(imageUrl);
-      setClearedImageOpen(false);
+       setPendingClearedImagePreview(imageUrl);
+      setPendingClearedImagePreviewFile(file);
     }
+  };
+
+  const handleOccupiedUpload = () => {
+    if (!pendingImagePreview || !pendingImagePreviewFile) return;
+    uploadImageMutation({
+      file: pendingImagePreviewFile,
+      imageType: "occupiedImage",
+      onSuccess: () => {
+        setImagePreview(pendingImagePreview);
+        setImageOpen(false);
+        setPendingImagePreview("");
+        setPendingImagePreviewFile(null);
+      },
+    });
+  };
+
+  const handleClearUpload = () => {
+    if (!pendingClearedImagePreview || !pendingClearedImagePreviewFile) return;
+    uploadImageMutation({
+      file: pendingClearedImagePreviewFile,
+      imageType: "clearImage",
+      onSuccess: () => {
+        setClearedImagePreview(pendingClearedImagePreview);
+        setClearedImageOpen(false);
+        setPendingClearedImagePreview("");
+        setPendingClearedImagePreviewFile(null);
+      },
+    });
   };
 
   const handleViewModal = (rowData) => {
@@ -306,31 +354,51 @@ const ViewAvailability = () => {
 
       <MuiModal
         open={imageOpen}
-        onClose={() => setImageOpen(false)}
+         onClose={() => {
+          setImageOpen(false);
+          setPendingImagePreview("");
+          setPendingImagePreviewFile(null);
+        }}
         title="Upload occupied space"
       >
         <div className="flex flex-col items-center justify-center gap-4 p-6">
-          <span className="text-subtitle font-pmedium">Upload New Image</span>
+                   <span className="text-subtitle font-psemibold">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
             <MdUploadFile className="text-4xl text-gray-500" />
             <span className="text-gray-500">Click to upload</span>
             <input type="file" className="hidden" onChange={handleFileChange} />
           </label>
-          {selectedFile && (
-            <div className="mt-4 text-gray-700">
-              Selected File: {selectedFile.name}
-            </div>
+           {pendingImagePreview && (
+            <>
+              <img
+                src={pendingImagePreview}
+                alt="Occupied Preview"
+                className="w-full max-h-[28rem] object-contain"
+              />
+              <button
+                type="button"
+                className="w-full bg-primary text-white py-2 rounded-lg text-lg font-medium"
+                onClick={handleOccupiedUpload}
+                disabled={isUploadingImage}
+              >
+                {isUploadingImage ? "Uploading..." : "Upload"}
+              </button>
+            </>
           )}
         </div>
       </MuiModal>
 
       <MuiModal
         open={clearedImageOpen}
-        onClose={() => setClearedImageOpen(false)}
+        onClose={() => {
+          setClearedImageOpen(false);
+          setPendingClearedImagePreview("");
+          setPendingClearedImagePreviewFile(null);
+        }}
         title="Upload clear space"
       >
         <div className="flex flex-col items-center justify-center gap-4 p-6">
-          <span className="text-subtitle font-pmedium">Upload New Image</span>
+          <span className="text-subtitle font-psemibold">Upload New Image</span>
           <label className="cursor-pointer flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-100">
             <MdUploadFile className="text-4xl text-gray-500" />
             <span className="text-gray-500">Click to upload</span>
@@ -340,10 +408,22 @@ const ViewAvailability = () => {
               onChange={handleClearedFileChange}
             />
           </label>
-          {clearedFile && (
-            <div className="mt-4 text-gray-700">
-              Selected File: {clearedFile.name}
-            </div>
+          {pendingClearedImagePreview && (
+            <>
+              <img
+                src={pendingClearedImagePreview}
+                alt="Clear Preview"
+                className="w-full max-h-[28rem] object-contain"
+              />
+              <button
+                type="button"
+                className="w-full bg-primary text-white py-2 rounded-lg text-lg font-medium"
+                onClick={handleClearUpload}
+                disabled={isUploadingImage}
+              >
+                {isUploadingImage ? "Uploading..." : "Upload"}
+              </button>
+            </>
           )}
         </div>
       </MuiModal>
