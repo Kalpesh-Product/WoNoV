@@ -5,7 +5,7 @@ import AgTable from "../../../../components/AgTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useSelector, useDispatch } from "react-redux";
 import { setBuildingName } from "../../../../redux/slices/salesSlice";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { inrFormat } from "../../../../utils/currencyFormat";
 
 export default function BuildingUnits() {
@@ -37,25 +37,62 @@ export default function BuildingUnits() {
     enabled: Boolean(selectedBuilding),
   });
 
-  const { data: clientsData = [] } = useQuery({
-    queryKey: ["inventory-clients-data"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/company/fetch-clients");
-        return response.data || [];
-      } catch (error) {
-        console.error("Error fetching clients data:", error);
-        return [];
-      }
-    },
-  });
+  const activeUnits = useMemo(
+    () =>
+      unitsData.filter(
+        (item) =>
+          item.isActive &&
+          !item.isOnlyBudget &&
+          item.building?.buildingName === selectedBuilding,
+      ),
+    [selectedBuilding, unitsData],
+  );
 
-  const occupiedByUnit = clientsData.reduce((acc, client) => {
-    const unitId = client?.unit?._id;
-    if (!unitId) return acc;
+  const occupancyQueryKey = useMemo(
+    () => [
+      "inventory-co-working-members",
+      selectedBuilding,
+      activeUnits.map((unit) => unit._id).sort().join("|"),
+    ],
+    [activeUnits, selectedBuilding],
+  );
 
-    const occupiedDesks = Number(client?.totalDesks) || 0;
-    acc[unitId] = (acc[unitId] || 0) + occupiedDesks;
+  const { data: occupancyData = [], isPending: isOccupancyDataPending } =
+    useQuery({
+      queryKey: occupancyQueryKey,
+      queryFn: async () => {
+        try {
+          const results = await Promise.allSettled(
+            activeUnits.map(async (unit) => {
+              const response = await axios.get(
+                "/api/sales/co-working-members",
+                {
+                  params: { unitId: unit._id, active: true },
+                },
+              );
+
+              return {
+                unitId: unit._id,
+                totalOccupiedDesks:
+                  Number(response.data?.totalOccupiedDesks) || 0,
+              };
+            }),
+          );
+
+          return results
+            .filter((result) => result.status === "fulfilled")
+            .map((result) => result.value);
+        } catch (error) {
+          console.error("Error fetching co-working occupancy data:", error);
+          return [];
+        }
+      },
+      enabled: activeUnits.length > 0,
+    });
+
+  const occupiedByUnit = occupancyData.reduce((acc, item) => {
+    if (!item?.unitId) return acc;
+    acc[item.unitId] = Number(item.totalOccupiedDesks) || 0;
     return acc;
   }, {});
 
@@ -77,8 +114,13 @@ export default function BuildingUnits() {
     fullData: item, // store full unit for edit
   }));
 
+   const totalDesksCount = tableData.reduce(
+    (sum, item) => sum + (Number(item.totalDesks) || 0),
+    0
+  );
+
   const columns = [
-    { headerName: "SR NO", field: "srNo", width: 100 },
+    { headerName: "Sr No", field: "srNo", width: 100 },
     {
       headerName: "Unit No",
       field: "unitNo",
@@ -129,7 +171,13 @@ export default function BuildingUnits() {
           search
           tableTitle={`${selectedBuilding || buildingName?.title || ""
             } units`}
-          loading={isUnitsDataPending}
+          loading={isUnitsDataPending || isOccupancyDataPending}
+           headerActions={
+            <span className="font-pmedium text-title text-primary uppercase">
+              Total Desks : {totalDesksCount}
+            </span>
+          }
+
         />
       </PageFrame>
     </div>
