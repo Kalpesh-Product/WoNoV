@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
@@ -83,8 +83,11 @@ const formatAssignedUser = (value, userIdToNameMap = new Map()) => {
 
 const HrDepartmentTasks = () => {
   const location = useLocation();
+  const { department: departmentParam } = useParams();
   const axios = useAxiosPrivate()
-  const { month, department, tasks, year } = location.state || {};
+  const { month, department: departmentFromState, tasks, year } = location.state || {};
+  const department = departmentFromState || departmentParam;
+ // const { month, department, tasks, year } = location.state || {};
   // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
    const { data: usersDirectory = [] } = useQuery({
@@ -197,16 +200,19 @@ const HrDepartmentTasks = () => {
 
  const selectedMonth = detailsFyMonths[selectedMonthIndex];
     const [shortMonth, shortYear] = selectedMonth.split("-");
-  const selectedMonthDisplay = `${fullMonthNames[shortMonth]} 20${shortYear}`;
+   const selectedMonthDisplay = `${fullMonthNames[shortMonth].toUpperCase()} - 20${shortYear}`;
 
-  if (!department || !tasks?.length) {
-    return <div className="">No tasks found for this department.</div>;
-  }
+  // if (!department || !tasks?.length) {
+  //   return <div className="">No tasks found for this department.</div>;
+  // }
   const filteredData = tasksRawData.filter(
     (item) => item.department === department
   );
-  const departmentName = filteredData[0]?.department;
-  const tasksData = filteredData[0]?.tasks;
+  // const departmentName = filteredData[0]?.department;
+  // const tasksData = filteredData[0]?.tasks;
+
+    const departmentName = filteredData[0]?.department || department || "Department";
+  const tasksData = filteredData[0]?.tasks || tasks || [];
 
  const handlePrevMonth = () => {
     if (selectedMonthIndex > 0) {

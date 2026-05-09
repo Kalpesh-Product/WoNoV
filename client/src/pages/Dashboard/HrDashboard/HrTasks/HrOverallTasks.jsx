@@ -206,7 +206,7 @@ const HrOverallTasks = () => {
           // Fetch all tasks for the clicked department for the selected month
           const departmentTasks = groupedTasks[clickedDept] || [];
 
-          navigate("department-tasks", {
+            navigate(`${clickedDept}`, {
             state: {
                month: activeMonth,
               department: clickedDept,
@@ -310,7 +310,8 @@ const HrOverallTasks = () => {
           role="button"
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/overall-KPA/department-tasks/${params.value}`,
+             // `/app/dashboard/HR-dashboard/overall-KPA/department-tasks/${params.value}`,
+              `${params.value}`,
               {
                 state: {
                     month: activeMonth,

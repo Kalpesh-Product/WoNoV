@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
@@ -54,7 +54,10 @@ const getTaskMonthLabel = (assignedDate) => {
 
 const HrDepartmentKPA = () => {
   const location = useLocation();
-  const { month, department, tasks, year } = location.state || {};
+  //const { month, department, tasks, year } = location.state || {};
+   const { department: departmentParam } = useParams();
+  const { month, department: departmentFromState, tasks, year } = location.state || {};
+  const department = departmentFromState || departmentParam;
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
   const fullMonthNames = {
     Jan: "January",
@@ -124,14 +127,17 @@ const HrDepartmentKPA = () => {
   const shortMonth = selectedMonth.split("-")[0];
   const selectedMonthDisplay = formatMonthYearLabel(selectedMonth);
 
-  if (!department || !tasks?.length) {
-    return <div className="">No tasks found for this department.</div>;
-  }
+  // if (!department || !tasks?.length) {
+  //   return <div className="">No tasks found for this department.</div>;
+  // }
   const filteredData = tasksRawData.filter(
     (item) => item.department === department
   );
-  const departmentName = filteredData[0]?.department;
-  const tasksData = filteredData[0]?.tasks;
+  // const departmentName = filteredData[0]?.department;
+  // const tasksData = filteredData[0]?.tasks;
+
+  const departmentName = filteredData[0]?.department || department || "Department";
+  const tasksData = filteredData[0]?.tasks || tasks || [];
 
    const handlePrevMonth = () => {
     if (detailsMonthIndex > 0) {
