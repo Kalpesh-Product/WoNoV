@@ -1,0 +1,63 @@
+// workers/report.worker.js
+const { Worker } = require("bullmq");
+const { connection } = require("../config/redis");
+const ReportJob = require("../models/reports/ReportJob");
+const { getBudgetReport, getSalesReport } = require("../services/reports");
+
+const worker = new Worker(
+  "report-generation",
+  async (job) => {
+    const { reportJobId } = job.data;
+
+    const reportJob = await ReportJob.findById(reportJobId).populate(
+      "report",
+      "reportName",
+    );
+    if (!reportJob) throw new Error("ReportJob not found");
+
+    reportJob.status = "processing";
+    await reportJob.save();
+
+    try {
+      let data;
+
+      switch (reportJob.report.reportName) {
+        case "budget":
+          data = await getBudgetReport(reportJob.filters);
+          break;
+        case "sales":
+          data = await getSalesReport(reportJob.filters);
+          break;
+        default:
+          throw new Error(
+            `Unsupported template: ${reportJob.report.reportName}`,
+          );
+      }
+
+      reportJob.data = data;
+      reportJob.status = "completed";
+      reportJob.completedAt = new Date();
+      reportJob.error = undefined;
+      await reportJob.save();
+
+      return { ok: true, reportJobId };
+    } catch (err) {
+      reportJob.status = "failed";
+      reportJob.error = err.message;
+      await reportJob.save();
+      throw err; // important so BullMQ marks failed/retry
+    }
+  },
+  {
+    connection,
+    concurrency: 2, // replaces your activeJobs >= 2 logic
+  },
+);
+
+worker.on("completed", (job) => {
+  console.log("Report Generation Successful:", job.id);
+});
+
+worker.on("failed", (job, err) => {
+  console.error("Report Generation Failed:", job?.id, err.message);
+});

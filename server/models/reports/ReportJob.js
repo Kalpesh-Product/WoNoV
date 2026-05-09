@@ -6,7 +6,6 @@ const ReportJobSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
-    module: String,
     report: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Report",
