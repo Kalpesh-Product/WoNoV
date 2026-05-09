@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -16,47 +16,50 @@ const CheckAvailability = () => {
   const axios = useAxiosPrivate();
   const clientsData = useSelector((state) => state.sales.clientsData);
 
-  //-------------  Remove Duplicates----------------------//
-  // STEP 2: Build unique units map by unitNo (to ensure uniqueness)
-  const unitMap = new Map();
+  const {
+    data: workLocations = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["workLocations"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
 
-  clientsData.forEach((item) => {
-    const unit = item.unit;
-    if (unit && unit.unitNo && !unitMap.has(unit.unitNo)) {
-      unitMap.set(unit.unitNo, unit);
-    }
+      return response.data;
+    },
   });
 
-  const uniqueUnits = Array.from(unitMap.values());
+  const chartData = useMemo(() => {
+    const groupedByBuilding = new Map();
 
-  // STEP 3: Group units by building name
-  const groupedByBuilding = new Map();
+    (workLocations || []).forEach((unit) => {
+      const buildingName = unit?.building?.buildingName;
+      if (!buildingName) return;
 
-  uniqueUnits.forEach((unit) => {
-    const buildingName = unit.building?.buildingName || "Unknown";
-    if (!groupedByBuilding.has(buildingName)) {
-      groupedByBuilding.set(buildingName, []);
-    }
-    groupedByBuilding.get(buildingName).push(unit);
-  });
-
-  const chartData = Array.from(groupedByBuilding.entries()).map(
-    ([buildingName, units]) => {
-      const totalSeats = units.reduce(
-        (sum, unit) => sum + (unit.openDesks || 0) + (unit.cabinDesks || 0),
-        0
+      const totalSeats = (Number(unit?.openDesks) || 0) + (Number(unit?.cabinDesks) || 0);
+      groupedByBuilding.set(
+        buildingName,
+        (groupedByBuilding.get(buildingName) || 0) + totalSeats,
       );
+    });
 
-      const occupiedSeats = clientsData
-        .filter(
-          (client) => client.unit?.building?.buildingName === buildingName
-        )
-        .reduce(
-          (sum, client) =>
-            sum + (client.openDesks || 0) + (client.cabinDesks || 0),
-          0
-        );
+    const occupiedByBuilding = new Map();
+    (clientsData || []).forEach((client) => {
+      const buildingName = client?.unit?.building?.buildingName;
+      if (!buildingName) return;
 
+      const occupiedSeats =
+        Number(client?.totalDesks) ||
+        (Number(client?.openDesks) || 0) + (Number(client?.cabinDesks) || 0);
+
+      occupiedByBuilding.set(
+        buildingName,
+        (occupiedByBuilding.get(buildingName) || 0) + occupiedSeats,
+      );
+    });
+
+    return Array.from(groupedByBuilding.entries()).map(([buildingName, totalSeats]) => {
+      const occupiedSeats = occupiedByBuilding.get(buildingName) || 0;
       const remainingSeats = Math.max(totalSeats - occupiedSeats, 0);
 
       return {
@@ -64,8 +67,58 @@ const CheckAvailability = () => {
         occupied: occupiedSeats,
         remaining: remainingSeats,
       };
-    }
-  );
+    });
+  }, [workLocations, clientsData]);
+  // //-------------  Remove Duplicates----------------------//
+  // // STEP 2: Build unique units map by unitNo (to ensure uniqueness)
+  // const unitMap = new Map();
+
+  // clientsData.forEach((item) => {
+  //   const unit = item.unit;
+  //   if (unit && unit.unitNo && !unitMap.has(unit.unitNo)) {
+  //     unitMap.set(unit.unitNo, unit);
+  //   }
+  // });
+
+  // const uniqueUnits = Array.from(unitMap.values());
+
+  // // STEP 3: Group units by building name
+  // const groupedByBuilding = new Map();
+
+  // uniqueUnits.forEach((unit) => {
+  //   const buildingName = unit.building?.buildingName || "Unknown";
+  //   if (!groupedByBuilding.has(buildingName)) {
+  //     groupedByBuilding.set(buildingName, []);
+  //   }
+  //   groupedByBuilding.get(buildingName).push(unit);
+  // });
+
+  // const chartData = Array.from(groupedByBuilding.entries()).map(
+  //   ([buildingName, units]) => {
+  //     const totalSeats = units.reduce(
+  //       (sum, unit) => sum + (unit.openDesks || 0) + (unit.cabinDesks || 0),
+  //       0
+  //     );
+
+  //     const occupiedSeats = clientsData
+  //       .filter(
+  //         (client) => client.unit?.building?.buildingName === buildingName
+  //       )
+  //       .reduce(
+  //         (sum, client) =>
+  //           sum + (client.openDesks || 0) + (client.cabinDesks || 0),
+  //         0
+  //       );
+
+      // const remainingSeats = Math.max(totalSeats - occupiedSeats, 0);
+
+      // return {
+      //   name: buildingName,
+      //   occupied: occupiedSeats,
+      //   remaining: remainingSeats,
+      // };
+  //   }
+  // );
 
   const barGraphSeries = [
     {
@@ -77,6 +130,11 @@ const CheckAvailability = () => {
       data: chartData.map((item) => item.remaining),
     },
   ];
+
+  const totalInventoryCount = chartData.reduce(
+    (sum, item) => sum + (Number(item?.occupied) || 0) + (Number(item?.remaining) || 0),
+    0,
+  );
 
   const barGraphOptions = {
     chart: {
@@ -129,10 +187,11 @@ const CheckAvailability = () => {
     },
     colors: ["#36BA98", "#E83F25"],
     tooltip: {
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+      custom: function ({ dataPointIndex, w }) {
         const buildingName = w.globals.labels[dataPointIndex];
-        const occupied = w.globals.initialSeries[0].data[dataPointIndex];
-        const remaining = w.globals.initialSeries[1].data[dataPointIndex];
+        const selectedBuilding = chartData[dataPointIndex] || {};
+        const occupied = Number(selectedBuilding.occupied) || 0;
+        const remaining = Number(selectedBuilding.remaining) || 0;
         const total = occupied + remaining;
 
         return `
@@ -187,18 +246,18 @@ const CheckAvailability = () => {
     setValue("floor", "");
   }, [selectedLocation, setValue]);
 
-  const {
-    data: workLocations = [],
-    isLoading: locationsLoading,
-    error: locationsError,
-  } = useQuery({
-    queryKey: ["workLocations"],
-    queryFn: async () => {
-      const response = await axios.get("/api/company/fetch-units");
+  // const {
+  //   data: workLocations = [],
+  //   isLoading: locationsLoading,
+  //   error: locationsError,
+  // } = useQuery({
+  //   queryKey: ["workLocations"],
+  //   queryFn: async () => {
+  //     const response = await axios.get("/api/company/fetch-units");
 
-      return response.data;
-    },
-  });
+  //     return response.data;
+  //   },
+  // });
 
   const selectedUnitId = locationsLoading
     ? []
@@ -446,7 +505,9 @@ const CheckAvailability = () => {
         layout={1}
         border
         normalCase={true}
-        title={"TOTAL v/s OCCUPIED FY 2025-26"}
+        title={"TOTAL v/s OCCUPIED"}
+        //titleLabel={`Total Inventory : ${totalInventoryCount}`}
+         TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
       >
         {chartData.length > 0 ? (
           <NormalBarGraph
