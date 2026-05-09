@@ -1430,7 +1430,7 @@ export const PERMISSIONS = {
     route: "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA",
   },
    HR_DEPARTMENT_KPA_KRA_MIX_BAG_KRA_TAB: {
-    value: "hr_department_kra_tab",
+    value: "hr_department_kra_mix_bag_tab",
     title: "DEPARTMENT KRA",
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA",

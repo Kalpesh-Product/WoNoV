@@ -10,11 +10,27 @@ import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 const formatDateKey = (date) => date.toISOString().slice(0, 10);
 
 const toDate = (value) => {
-  const [d, m, y] = (value || "").split("-").map(Number);
+  if (!value) return null;
 
-  if (!d || !m || !y) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
 
-  const parsed = new Date(y, m - 1, d);
+  if (typeof value === "string" && value.includes("-")) {
+    const [a, b, c] = value.split("-");
+    if (a?.length === 4) {
+      const parsedIso = new Date(value);
+      return Number.isNaN(parsedIso.getTime()) ? null : parsedIso;
+    }
+
+    const [d, m, y] = [Number(a), Number(b), Number(c)];
+    if (d && m && y) {
+      const parsed = new Date(y, m - 1, d);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+  }
+
+  const parsed = new Date(value);
 
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
@@ -33,7 +49,7 @@ const HrKRA = () => {
     month: "long",
     year: "numeric",
   });
-
+  const selectedDateLabelUpper = selectedDateLabel.toUpperCase();
   const allDepartments = useMemo(() => {
     return Array.from(
       new Set(tasksRawData.map((data) => data.department).filter(Boolean))
@@ -66,6 +82,12 @@ const HrKRA = () => {
       return acc;
     }, {});
   }, [filteredTasks]);
+
+  const totalTasks = filteredTasks.length;
+  const completedTasks = filteredTasks.filter(
+    (task) => task.status === "Completed"
+  ).length;
+  const remainingTasks = totalTasks - completedTasks;
 
   const tableData = allDepartments.map((department) => {
     const deptTasks = groupedTasks[department] || [];
@@ -158,6 +180,25 @@ const HrKRA = () => {
         formatter: (value) => `${value.toFixed(0)}%`,
       },
     },
+     legend: { position: "top" },
+    tooltip: {
+      custom: ({ dataPointIndex, w }) => {
+        const departmentName = w.config.series[0].data[dataPointIndex].x;
+        const completed = w.config.series[0].data[dataPointIndex].raw;
+        const remaining = w.config.series[1].data[dataPointIndex].raw;
+        const total = completed + remaining;
+
+        return `
+          <div style="padding:8px; font-family: Poppins, sans-serif; font-size: 13px; width: 220px;">
+            <strong>${departmentName}</strong>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+            <div style="display: flex; justify-content: space-between;"><span>Total KRA</span><span>${total}</span></div>
+            <div style="display: flex; justify-content: space-between;"><span>Completed KRA</span><span>${completed}</span></div>
+            <div style="display: flex; justify-content: space-between;"><span>Remaining KRA</span><span>${remaining}</span></div>
+          </div>
+        `;
+      },
+    },
     colors: ["#54C4A7", "#EB5C45"],
   };
 
@@ -235,9 +276,13 @@ const HrKRA = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`KRA Overview - ${selectedDateLabel}`}
+        title={`KRA overview - ${selectedDateLabel}`}
         border
         padding
+        greenTitle={"completed"}
+        TitleAmountGreen={completedTasks}
+        redTitle={"remaining"}
+        TitleAmountRed={remainingTasks}
         
       >
         <NormalBarGraph
@@ -266,7 +311,20 @@ const HrKRA = () => {
         </div>
       </WidgetSection>
 
-      <WidgetSection title="Department-wise KRA overview" border>
+       {/* <WidgetSection title="Department-wise KRA overview" border> */}
+         {/* <WidgetSection
+        title="Department-wise KRA overview"
+        titleLabel={`TOTAL TASKS : ${totalTasks}`}
+        border
+      > */}
+      <WidgetSection
+  title="Department-wise KRA overview"
+  border
+  TitleAmount={`TOTAL TASKS : ${tableData.reduce(
+    (sum, item) => item.totalTasks + sum,
+    0
+  )}`}
+>
         <AgTable
           columns={tasksColumns}
           data={tableData}
