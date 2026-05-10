@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -7,14 +7,12 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
-import { useSelector } from "react-redux";
 import FinanceCard from "../../../../components/FinanceCard";
 
 const CheckAvailability = () => {
   const navigate = useNavigate();
   const address = useLocation();
   const axios = useAxiosPrivate();
-  const clientsData = useSelector((state) => state.sales.clientsData);
 
   const {
     data: workLocations = [],
@@ -29,46 +27,82 @@ const CheckAvailability = () => {
     },
   });
 
+  const activeUnits = useMemo(
+    () =>
+      (workLocations || []).filter(
+        (unit) => unit?.isActive && !unit?.isOnlyBudget && unit?.building?.buildingName,
+      ),
+    [workLocations],
+  );
+
+  const occupancyQueryKey = useMemo(
+    () => [
+      "co-working-occupancy-by-unit",
+      activeUnits.map((unit) => unit._id).sort().join("|"),
+    ],
+    [activeUnits],
+  );
+
+  const { data: occupancyData = [] } = useQuery({
+    queryKey: occupancyQueryKey,
+    queryFn: async () => {
+      const results = await Promise.allSettled(
+        activeUnits.map(async (unit) => {
+          const response = await axios.get("/api/sales/co-working-members", {
+            params: { unitId: unit._id, active: true },
+          });
+
+          return {
+            unitId: unit._id,
+            occupiedDesks: Number(response.data?.totalOccupiedDesks) || 0,
+          };
+        }),
+      );
+
+      return results
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value);
+    },
+    enabled: activeUnits.length > 0,
+  });
+
+  const occupiedByUnit = useMemo(
+    () =>
+      occupancyData.reduce((acc, item) => {
+        if (!item?.unitId) return acc;
+        acc[item.unitId] = Number(item.occupiedDesks) || 0;
+        return acc;
+      }, {}),
+    [occupancyData],
+  );
+
   const chartData = useMemo(() => {
     const groupedByBuilding = new Map();
 
-    (workLocations || []).forEach((unit) => {
+    activeUnits.forEach((unit) => {
       const buildingName = unit?.building?.buildingName;
       if (!buildingName) return;
 
       const totalSeats = (Number(unit?.openDesks) || 0) + (Number(unit?.cabinDesks) || 0);
-      groupedByBuilding.set(
-        buildingName,
-        (groupedByBuilding.get(buildingName) || 0) + totalSeats,
-      );
+      const occupiedSeats = Number(occupiedByUnit[unit._id]) || 0;
+      const current = groupedByBuilding.get(buildingName) || { total: 0, occupied: 0 };
+
+      groupedByBuilding.set(buildingName, {
+        total: current.total + totalSeats,
+        occupied: current.occupied + occupiedSeats,
+      });
     });
 
-    const occupiedByBuilding = new Map();
-    (clientsData || []).forEach((client) => {
-      const buildingName = client?.unit?.building?.buildingName;
-      if (!buildingName) return;
-
-      const occupiedSeats =
-        Number(client?.totalDesks) ||
-        (Number(client?.openDesks) || 0) + (Number(client?.cabinDesks) || 0);
-
-      occupiedByBuilding.set(
-        buildingName,
-        (occupiedByBuilding.get(buildingName) || 0) + occupiedSeats,
-      );
-    });
-
-    return Array.from(groupedByBuilding.entries()).map(([buildingName, totalSeats]) => {
-      const occupiedSeats = occupiedByBuilding.get(buildingName) || 0;
-      const remainingSeats = Math.max(totalSeats - occupiedSeats, 0);
+    return Array.from(groupedByBuilding.entries()).map(([buildingName, data]) => {
+      const remainingSeats = Math.max(data.total - data.occupied, 0);
 
       return {
         name: buildingName,
-        occupied: occupiedSeats,
+        occupied: data.occupied,
         remaining: remainingSeats,
       };
     });
-  }, [workLocations, clientsData]);
+  }, [activeUnits, occupiedByUnit]);
   // //-------------  Remove Duplicates----------------------//
   // // STEP 2: Build unique units map by unitNo (to ensure uniqueness)
   // const unitMap = new Map();
@@ -352,56 +386,26 @@ const CheckAvailability = () => {
       );
   };
 
-  const isActiveClient = (client) => {
-    if (typeof client?.isActive === "boolean") return client.isActive;
-    if (typeof client?.status === "string") {
-      return client.status.toLowerCase() === "active";
-    }
-    return true;
-  };
-
   const inventoryStats = {
     ST: { total: 0, occupied: 0 },
     DTC: { total: 0, occupied: 0 },
   };
 
-   workLocations.forEach((unit) => {
+  activeUnits.forEach((unit) => {
     const buildingName = unit?.building?.buildingName || "";
     const totalSeats = (Number(unit?.openDesks) || 0) + (Number(unit?.cabinDesks) || 0);
+    const occupiedSeats = Number(occupiedByUnit[unit._id]) || 0;
 
     if (buildingName.includes("Sunteck Kanaka")) {
       inventoryStats.ST.total += totalSeats;
+      inventoryStats.ST.occupied += occupiedSeats;
     } else if (
       buildingName.includes("Dempo Trade Centre") ||
       buildingName.includes("Dempo Trade Center")
     ) {
       inventoryStats.DTC.total += totalSeats;
+      inventoryStats.DTC.occupied += occupiedSeats;
     }
-  });
-
-  clientsData.forEach((client) => {
-    if (!isActiveClient(client)) return;
-    const buildingName = client?.unit?.building?.buildingName || "";
-    const bookedSeats =
-      Number(client?.totalDesks) ||
-      (Number(client?.openDesks) || 0) + (Number(client?.cabinDesks) || 0);
-
-    if (buildingName.includes("Sunteck Kanaka")) {
-      inventoryStats.ST.occupied += bookedSeats;
-    } else if (
-      buildingName.includes("Dempo Trade Centre") ||
-      buildingName.includes("Dempo Trade Center")
-    ) {
-      inventoryStats.DTC.occupied += bookedSeats;
-    }
-  });
-
-  const allBuildings = new Set();
-
-  clientsData.forEach((client) => {
-     if (!isActiveClient(client)) return;
-    const buildingName = client.unit?.building?.buildingName;
-    if (buildingName) allBuildings.add(buildingName);
   });
 
   const inventoryCards = {
@@ -504,7 +508,7 @@ const CheckAvailability = () => {
       <WidgetSection
         layout={1}
         border
-        normalCase={true}
+        normalCase={true} 
         title={"TOTAL v/s OCCUPIED"}
         //titleLabel={`Total Inventory : ${totalInventoryCount}`}
          TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
