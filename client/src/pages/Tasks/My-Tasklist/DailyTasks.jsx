@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdDeleteForever, MdOutlineRemoveRedEye } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
@@ -118,6 +119,16 @@ const DailyTasks = () => {
   });
 
   const handleFormSubmit = (data) => {
+     if (modalMode === "edit-task" && selectedTask?.id) {
+      editMyTask({
+        id: selectedTask.id,
+        data: {
+          taskName: data.taskName,
+          description: data.description,
+        },
+      });
+      return;
+    }
     addMonthlyKpa(data);
   };
   //--------------POST REQUEST FOR MONTHLY KPA-----------------//
@@ -157,17 +168,35 @@ const DailyTasks = () => {
     },
   });
 
+  const { mutate: editMyTask, isPending: isEditPending } = useMutation({
+    mutationKey: ["editMyTask"],
+    mutationFn: async ({ id, data }) => {
+      const response = await axios.patch(`/api/tasks/update-task/${id}`, data);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["fetchMyTask"] });
+      toast.success(data.message || "Task updated");
+      reset(taskFormDefaultValues);
+      setOpenModal(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error updating task");
+    },
+  });
+
+
   //--------Column configs----------------//
 
   const formatDateTime = (value) =>
     value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
   const departmentColumns = [
-    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     {
       headerName: "Task List",
       field: "taskList",
-      width: 300,
+      flex:1,
       cellRenderer: (params) => (
         <div role="button" onClick={() => handleViewTask(params.data)}>
           <span className="underline text-primary cursor-pointer">
@@ -179,11 +208,13 @@ const DailyTasks = () => {
     {
       headerName: "Start Date",
       field: "assignedDate",
+      flex:1
     },
     // { headerName: "Assigned Time", field: "createdAt" },
     {
       headerName: "Due Date",
       field: "dueDate",
+      flex:1,
       cellRenderer: (params) => {
         const formattedDate = humanDate(params.data?.dueDate);
         const formattedTime = humanTime(params.data?.dueTime);
@@ -194,6 +225,7 @@ const DailyTasks = () => {
     {
       field: "status",
       headerName: "Status",
+      flex:1,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -224,6 +256,7 @@ const DailyTasks = () => {
       headerName: "Actions",
       field: "actions",
       pinned: "right",
+      width: 250,
       cellRenderer: (params) => {
         return (
           <div className="flex items-center">
@@ -246,7 +279,40 @@ const DailyTasks = () => {
               />
             </div>
 
-            {/* Delete Button */}
+
+             {/* Edit Button */}
+            <button
+              type="button"
+              title="Edit Task"
+              disabled={
+                !params.node.selected ||
+                isDeletePending ||
+                isUpdatePending ||
+                isEditPending
+              }
+              onClick={() => {
+                const taskData = params.data;
+                setSelectedTask(taskData);
+                setModalMode("edit-task");
+                reset({
+                  taskName: taskData?.taskList || "",
+                  description: taskData?.description || "",
+                  startDate: taskData?.assignedDate
+                    ? dayjs(taskData.assignedDate).toISOString()
+                    : null,
+                  endDate: taskData?.dueDate
+                    ? dayjs(taskData.dueDate).toISOString()
+                    : null,
+                  dueTime: taskData?.dueTime ? dayjs(taskData.dueTime) : null,
+                });
+                setOpenModal(true);
+              }}
+              className="ml-2 p-1 h-7 w-7 flex items-center justify-center disabled:cursor-not-allowed"
+            >
+              <HiPencilSquare size={26} color={!params.node.selected ? "#9ca3af" : "#111827"} />
+            </button>
+
+               {/* Delete Button */}
             <button
               type="button"
               title="Delete Task"
@@ -424,6 +490,7 @@ const DailyTasks = () => {
                     dueDate: item.dueDate,
                     status: item.status,
                     dueTime: item.dueTime,
+                    description: item.description,
                     // createdAt: humanTime(item.createdAt),
                     assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                   })),
@@ -459,12 +526,14 @@ const DailyTasks = () => {
         title={
           modalMode === "add-task"
             ? "Add My Task"
+              : modalMode === "edit-task"
+              ? "Edit My Task"
             : modalMode === "view"
               ? "View Task"
               : "Completed task"
         }
       >
-        {modalMode === "add-task" && (
+          {(modalMode === "add-task" || modalMode === "edit-task") && (
           <form
             onSubmit={submitDailyKra(handleFormSubmit)}
             className="grid grid-cols-1 lg:grid-cols-1 gap-4"
@@ -593,10 +662,13 @@ const DailyTasks = () => {
               />
             </LocalizationProvider>
             <PrimaryButton
-              type="submit"
-              title={"Submit"}
-              isLoading={isAddKpaPending}
-              disabled={isAddKpaPending}
+       title={modalMode === "edit-task" ? "Update" : "Submit"}
+              isLoading={
+                modalMode === "edit-task" ? isEditPending : isAddKpaPending
+              }
+              disabled={
+                modalMode === "edit-task" ? isEditPending : isAddKpaPending
+              }
             />
           </form>
         )}
