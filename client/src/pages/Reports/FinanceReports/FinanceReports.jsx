@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { IoMdDownload } from "react-icons/io";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { Chip } from "@mui/material";
 import { toast } from "sonner";
 import AgTable from "../../../components/AgTable";
@@ -10,6 +10,7 @@ import humanDate from "../../../utils/humanDateForamt";
 const FinanceReports = () => {
   const axios = useAxiosPrivate();
   const [reportJobId, setReportJobId] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const { data: budgetRows = [] } = useQuery({
     queryKey: ["finance-report-budget-rows"],
@@ -69,15 +70,6 @@ const FinanceReports = () => {
     },
   });
 
-  const statusLabel =
-    reportStatus?.status === "processing" || reportStatus?.status === "pending"
-      ? "Generating"
-      : reportStatus?.status === "completed"
-        ? "Active"
-        : reportStatus?.status === "failed"
-          ? "Failed"
-          : "Active";
-
   const financeColumns = [
     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
     { field: "reportName", headerName: "Report Name", flex: 1 },
@@ -86,20 +78,18 @@ const FinanceReports = () => {
       field: "isActive",
       flex: 1,
       sort: "desc",
-      cellRenderer: () => {
+      cellRenderer: (params) => {
+        const isActive = Boolean(params?.value);
+        const currentStatus = isActive ? "Active" : "Inactive";
         const statusColorMap = {
-          Failed: { backgroundColor: "#FFD6D6", color: "#B00020" },
-          Generating: { backgroundColor: "#FFECC5", color: "#CC8400" },
           Active: { backgroundColor: "#90EE90", color: "#006400" },
+          Inactive: { backgroundColor: "#FFD6D6", color: "#B00020" },
         };
 
-        const { backgroundColor, color } = statusColorMap[statusLabel] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
+        const { backgroundColor, color } = statusColorMap[currentStatus];
         return (
           <Chip
-            label={statusLabel}
+            label={currentStatus}
             style={{
               backgroundColor,
               color,
@@ -113,18 +103,53 @@ const FinanceReports = () => {
     {
       field: "download",
       headerName: "Download",
-      maxWidth: 140,
-      cellRenderer: () => (
-        <button
-          type="button"
-          onClick={handleFinanceDownload}
-          className="text-black"
-          title="Download"
-          disabled={generateReportMutation.isPending}
-        >
-          <IoMdDownload size={18} />
-        </button>
-      ),
+      minWidth: 190,
+      cellRenderer: () => {
+        const jobStatus = reportStatus?.status;
+
+        if (isDownloading) {
+          return (
+            <span className="inline-flex items-center gap-2 text-sm text-blue-700">
+              <AiOutlineLoading3Quarters className="animate-spin text-lg" />
+              Downloading...
+            </span>
+          );
+        }
+
+        if (!reportJobId && jobStatus !== "completed") {
+          return (
+            <button
+              type="button"
+              onClick={handleFinanceDownload}
+              className="rounded bg-blue-600 px-3 py-1 text-sm text-white"
+              disabled={generateReportMutation.isPending}
+            >
+              {generateReportMutation.isPending ? "Generating..." : "Generate"}
+            </button>
+          );
+        }
+
+        if (jobStatus === "processing" || jobStatus === "pending") {
+          return <span className="text-sm text-amber-600">Generating...</span>;
+        }
+
+        if (jobStatus === "completed") {
+          return (
+            <span className="text-sm text-green-700">Download started</span>
+          );
+        }
+
+        return (
+          <button
+            type="button"
+            onClick={handleFinanceDownload}
+            className="rounded bg-blue-600 px-3 py-1 text-sm text-white"
+            disabled={generateReportMutation.isPending}
+          >
+            Generate
+          </button>
+        );
+      },
     },
   ];
 
@@ -199,31 +224,39 @@ const FinanceReports = () => {
     await generateReportMutation.mutateAsync();
   };
 
+  const startDownload = useCallback(() => {
+    const rows = Array.isArray(reportStatus?.data)
+      ? reportStatus.data
+      : Array.isArray(reportStatus?.data?.allBudgets)
+        ? reportStatus.data.allBudgets
+        : [];
+
+    if (!rows.length) {
+      toast.warning("Report completed with no rows to download");
+      return;
+    }
+
+    setIsDownloading(true);
+    downloadCsv(rows);
+    toast.success("Download started");
+    setTimeout(() => setIsDownloading(false), 900);
+    setReportJobId(null);
+  }, [downloadCsv, reportStatus]);
+
   React.useEffect(() => {
     if (!reportStatus) return;
 
     if (reportStatus.status === "completed") {
-      const rows = Array.isArray(reportStatus?.data)
-        ? reportStatus.data
-        : Array.isArray(reportStatus?.data?.allBudgets)
-          ? reportStatus.data.allBudgets
-          : [];
-
-      if (!rows.length) {
-        toast.warning("Report completed with no rows to download");
-        setReportJobId(null);
-        return;
-      }
-      downloadCsv(rows);
-      toast.success("Report ready. Download started");
-      setReportJobId(null);
+      console.log("report data for download:", reportStatus.completedAt);
+      startDownload();
+      return;
     }
 
     if (reportStatus.status === "failed") {
       toast.error(reportStatus.error || "Report generation failed");
       setReportJobId(null);
     }
-  }, [downloadCsv, reportStatus]);
+  }, [reportStatus, startDownload]);
 
   const tableData = useMemo(
     () => [
@@ -231,13 +264,13 @@ const FinanceReports = () => {
         id: "expense-and-budget",
         srNo: 1,
         reportName: "Expense and Budget",
-        status: statusLabel,
+        isActive: true,
         date: "07-05-2026",
         lastModified: humanDate(reportStatus?.completedAt) || "",
         download: "Download",
       },
     ],
-    [reportStatus, statusLabel],
+    [reportStatus],
   );
 
   return (
