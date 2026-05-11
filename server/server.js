@@ -74,6 +74,8 @@ app.get("/", (req, res) => {
   }
 });
 
+require("./models/registerModels");
+
 app.use("/api/auth", auditLogger, authRoutes);
 
 app.use("/api/access", verifyJwt, auditLogger, accessRoutes);

@@ -1,6 +1,7 @@
 // workers/report.worker.js
 const { Worker } = require("bullmq");
 const { connection } = require("../config/redis");
+require("../models/registerModels"); // ensure all models are registered
 require("../models/reports/Report");
 const ReportJob = require("../models/reports/ReportJob");
 const { fetchBudgetService } = require("../services/reports/finance");
