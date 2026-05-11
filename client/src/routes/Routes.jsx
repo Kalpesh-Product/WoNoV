@@ -17,6 +17,7 @@ import Profile from "../pages/Profile/Profile";
 //Reports Pages
 import ReportsLayout from "../pages/Reports/ReportsLayout";
 import ReportsDashboard from "../pages/Reports/ReportsDashboard";
+import ReportsSection from "../pages/Reports/ReportsSection";
 import FinanceReports from "../pages/Reports/FinanceReports/FinanceReports";
 import TicketReportsPage from "../pages/Reports/TicketReports/TicketReports";
 import MeetingReportsPage from "../pages/Reports/MeetingReports/MeetingReports";
@@ -2554,6 +2555,15 @@ export const routes = createBrowserRouter([
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_DASHBOARD]}
                         element={<ReportsDashboard />}
+                      />
+                    ),
+                  },
+                    {
+                    path: "reports-section",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_SECTION]}
+                        element={<ReportsSection />}
                       />
                     ),
                   },
