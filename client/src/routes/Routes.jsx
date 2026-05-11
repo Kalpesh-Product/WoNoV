@@ -18,10 +18,6 @@ import Profile from "../pages/Profile/Profile";
 import ReportsLayout from "../pages/Reports/ReportsLayout";
 import ReportsDashboard from "../pages/Reports/ReportsDashboard";
 import ReportsSection from "../pages/Reports/ReportsSection";
-import FinanceReports from "../pages/Reports/FinanceReports/FinanceReports";
-import TicketReportsPage from "../pages/Reports/TicketReports/TicketReports";
-import MeetingReportsPage from "../pages/Reports/MeetingReports/MeetingReports";
-import VisitorReportsPage from "../pages/Reports/VisitorReports/VisitorReports";
 import DepartmentReportCommon from "../pages/Reports/DepartmentReportCommon";
 
 // Import tickets pages
@@ -612,7 +608,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                            {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -624,7 +620,7 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
-                           {
+                          {
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
@@ -676,7 +672,7 @@ export const routes = createBrowserRouter([
                             path: "external-clients",
                             element: <ExternalMeetingClients />,
                           },
-                           {
+                          {
                             path: "day-pass",
                             element: (
                               <ExternalClients
@@ -729,7 +725,7 @@ export const routes = createBrowserRouter([
                         path: "directors-company-KYC/:name",
                         element: <DirectorData />,
                       },
-                       {
+                      {
                         path: "mix-bag/department-wise-budget",
                         element: <DeptWiseBudget />,
                       },
@@ -904,7 +900,7 @@ export const routes = createBrowserRouter([
                               },
                             ],
                           },
-                         {
+                          {
                             path: "budget-request",
                             element: <BudgetRequest />,
                             children: [
@@ -917,23 +913,27 @@ export const routes = createBrowserRouter([
                                 element: <PendingApprovalsBudget />,
                               },
                               {
-                              path: "budget-history",
+                                path: "budget-history",
                                 element: <BudgetHistory />,
                               },
                               {
                                 path: "pending-approvals-budget/review-request",
                                 element: <ReviewRequest />,
                               },
-                               {
+                              {
                                 path: "voucher-history-budget",
-                                element: <Navigate to="../budget-history" replace />,
+                                element: (
+                                  <Navigate to="../budget-history" replace />
+                                ),
                               },
                             ],
                           },
                           // Legacy billing routes (temporary redirects)
                           {
                             path: "client-invoice",
-                            element: <Navigate to="../client-invoicing" replace />,
+                            element: (
+                              <Navigate to="../client-invoicing" replace />
+                            ),
                           },
                           {
                             path: "department-invoice",
@@ -944,13 +944,16 @@ export const routes = createBrowserRouter([
                               />
                             ),
                           },
-                           {
+                          {
                             path: "voucher-history",
                             element: (
-                              <Navigate to="../voucher-request/voucher-history" replace />
+                              <Navigate
+                                to="../voucher-request/voucher-history"
+                                replace
+                              />
                             ),
                           },
-                           {
+                          {
                             path: "pending-approvals",
                             element: (
                               <Navigate
@@ -978,7 +981,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                             {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -990,11 +993,11 @@ export const routes = createBrowserRouter([
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
-                           {
+                          {
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
                           },
-                          
+
                           // {
                           //   path: "dept-wise-budget",
                           //   element: <DeptWiseBudget />,
@@ -1077,7 +1080,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                          path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1331,7 +1334,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                             path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1347,7 +1350,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                             path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1371,7 +1374,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                           {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -1543,7 +1546,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                             path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1559,7 +1562,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                             path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1572,7 +1575,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                           {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -1584,7 +1587,7 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
-                           {
+                          {
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
@@ -1756,7 +1759,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                           {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -1768,7 +1771,7 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
-                            {
+                          {
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
@@ -2143,7 +2146,7 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
-                           {
+                          {
                             path: "department-KRA",
                             element: <HrKRA />,
                           },
@@ -2156,7 +2159,7 @@ export const routes = createBrowserRouter([
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
                           },
-                           {
+                          {
                             path: "department-KRA/:department",
                             element: <HrDepartmentKRA />,
                           },
@@ -2166,7 +2169,7 @@ export const routes = createBrowserRouter([
                           },
                         ],
                       },
-                       {
+                      {
                         path: "mix-bag/department-tasks",
                         element: <HrTasksLayout />,
                         children: [
@@ -2175,7 +2178,7 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
-                           {
+                          {
                             path: "department-KRA",
                             element: <HrKRA />,
                           },
@@ -2187,7 +2190,7 @@ export const routes = createBrowserRouter([
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
                           },
-                           {
+                          {
                             path: "department-KRA/:department",
                             element: <HrDepartmentKRA />,
                           },
@@ -2202,7 +2205,7 @@ export const routes = createBrowserRouter([
                         element: <HrMixBag />,
                       },
                       {
-                          path: "mix-bag/department-kpa-kra",
+                        path: "mix-bag/department-kpa-kra",
                         element: <HrTasksLayout />,
                         children: [
                           {
@@ -2210,7 +2213,7 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
-                            {
+                          {
                             path: "department-KRA",
                             element: <HrKRA />,
                           },
@@ -2226,7 +2229,7 @@ export const routes = createBrowserRouter([
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
                           },
-                           {
+                          {
                             path: "department-KRA/:department",
                             element: <HrDepartmentKRA />,
                           },
@@ -2276,64 +2279,85 @@ export const routes = createBrowserRouter([
                         element: <Compliances />,
                         children: [
                           {
-                          //   path: "company-logo",
-                          //   element: <CompanyLogo />,
-                          // },
-                          // {
-                          //   path: "departments",
-                          //   element: <HrSettingsDepartments />,
-                          // },
-                          // {
-                          //   path: "work-locations",
-                          //   element: <WorkLocations />,
-                          // },
-                          // {
-                          //   path: "holidays",
-                          //   element: <HolidaysEvents />,
-                          // },
-                          // {
-                          //   path: "events",
-                          //   element: <HrEvents />,
-                          // },
-                          // {
-                          //   path: "company-handbook",
-                          //   element: <ComapanyHandbook />,
-                          // },
-                          // {
-                          //   path: "company-handbook/:department",
-                          //   element: <DepartmentSOP />,
-                          // },
+                            //   path: "company-logo",
+                            //   element: <CompanyLogo />,
+                            // },
+                            // {
+                            //   path: "departments",
+                            //   element: <HrSettingsDepartments />,
+                            // },
+                            // {
+                            //   path: "work-locations",
+                            //   element: <WorkLocations />,
+                            // },
+                            // {
+                            //   path: "holidays",
+                            //   element: <HolidaysEvents />,
+                            // },
+                            // {
+                            //   path: "events",
+                            //   element: <HrEvents />,
+                            // },
+                            // {
+                            //   path: "company-handbook",
+                            //   element: <ComapanyHandbook />,
+                            // },
+                            // {
+                            //   path: "company-handbook/:department",
+                            //   element: <DepartmentSOP />,
+                            // },
 
-                          // {
-                          //   path: "policies",
-                          //   element: <HrSettingsPolicies />,
-                          // },
-                          // {
-                          //   path: "sops",
-                          //   element: <HrSOP />,
-                          // },
-                          // {
-                          //   path: "employee-type",
-                          //   element: <EmployeeType />,
+                            // {
+                            //   path: "policies",
+                            //   element: <HrSettingsPolicies />,
+                            // },
+                            // {
+                            //   path: "sops",
+                            //   element: <HrSOP />,
+                            // },
+                            // {
+                            //   path: "employee-type",
+                            //   element: <EmployeeType />,
                             path: "company-settings",
                             element: <CompanySettings />,
                             children: [
-                              { path: "company-logo", element: <CompanyLogo /> },
-                              { path: "company-handbook", element: <ComapanyHandbook /> },
-                              { path: "company-handbook/:department", element: <DepartmentSOP /> },
-                              { path: "policies", element: <HrSettingsPolicies /> },
+                              {
+                                path: "company-logo",
+                                element: <CompanyLogo />,
+                              },
+                              {
+                                path: "company-handbook",
+                                element: <ComapanyHandbook />,
+                              },
+                              {
+                                path: "company-handbook/:department",
+                                element: <DepartmentSOP />,
+                              },
+                              {
+                                path: "policies",
+                                element: <HrSettingsPolicies />,
+                              },
                               { path: "sops", element: <HrSOP /> },
                             ],
                           },
                           {
                             // path: "shifts",
                             // element: <Shifts />,
-                             path: "company-structure-workforce",
+                            path: "company-structure-workforce",
                             element: <StructureWorkforce />,
                             children: [
-                              { path: "departments", element: <HrSettingsDepartments /> },
-                              { path: "work-locations", element: <WorkLocations /> },
-                              { path: "employee-type", element: <EmployeeType /> },
+                              {
+                                path: "departments",
+                                element: <HrSettingsDepartments />,
+                              },
+                              {
+                                path: "work-locations",
+                                element: <WorkLocations />,
+                              },
+                              {
+                                path: "employee-type",
+                                element: <EmployeeType />,
+                              },
                               { path: "shifts", element: <Shifts /> },
                             ],
                           },
@@ -2341,7 +2365,7 @@ export const routes = createBrowserRouter([
                           {
                             // path: "templates",
                             // element: <Templates />,
-                             path: "company-calendar-activities",
+                            path: "company-calendar-activities",
                             element: <CalendarActivities />,
                             children: [
                               { path: "holidays", element: <HolidaysEvents /> },
@@ -2351,11 +2375,14 @@ export const routes = createBrowserRouter([
                           {
                             // path: "templates/:id",
                             // element: <ViewTemplate />,
-                             path: "company-templates-configuration",
+                            path: "company-templates-configuration",
                             element: <TemplatesConfiguration />,
                             children: [
                               { path: "templates", element: <Templates /> },
-                              { path: "templates/:id", element: <ViewTemplate /> },
+                              {
+                                path: "templates/:id",
+                                element: <ViewTemplate />,
+                              },
                             ],
                           },
                         ],
@@ -2481,7 +2508,7 @@ export const routes = createBrowserRouter([
                             index: true,
                             element: <BudgetPage />,
                           },
-                           {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -2493,7 +2520,7 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
-                            {
+                          {
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
@@ -2546,7 +2573,7 @@ export const routes = createBrowserRouter([
 
               {
                 path: "reports",
-                  element: <ReportsLayout />,
+                element: <ReportsLayout />,
                 children: [
                   {
                     path: "",
@@ -2558,7 +2585,7 @@ export const routes = createBrowserRouter([
                       />
                     ),
                   },
-                    {
+                  {
                     path: "reports-section",
                     element: (
                       <PerformancePermissionRoute
@@ -2568,42 +2595,15 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "reports-section/finance",
+                    path: "reports-section/:moduleKey",
                     element: (
                       <PerformancePermissionRoute
-                        permissions={[PERMISSIONS.REPORTS_FINANCE]}
-                        element={<FinanceReports />}
+                        permissions={[PERMISSIONS.REPORTS_SECTION]}
+                        element={<DepartmentReportCommon />}
                       />
                     ),
                   },
                   {
-                    path: "reports-section/ticket",
-                    element: (
-                      <PerformancePermissionRoute
-                        permissions={[PERMISSIONS.REPORTS_TICKETS]}
-                        element={<TicketReportsPage />}
-                      />
-                    ),
-                  },
-                  {
-                     path: "reports-section/meeting",
-                    element: (
-                      <PerformancePermissionRoute
-                        permissions={[PERMISSIONS.REPORTS_MEETINGS]}
-                        element={<MeetingReportsPage />}
-                      />
-                    ),
-                  },
-                  {
-                  path: "reports-section/visitor",
-                    element: (
-                      <PerformancePermissionRoute
-                        permissions={[PERMISSIONS.REPORTS_VISITORS]}
-                        element={<VisitorReportsPage />}
-                      />
-                    ),
-                  },
-                   {
                     path: "department-report-common",
                     element: (
                       <PerformancePermissionRoute
@@ -2891,7 +2891,7 @@ export const routes = createBrowserRouter([
                   {
                     path: "mix-bag",
                     element: <AssetsMixBag />,
-                      children: [
+                    children: [
                       {
                         path: "vendor",
                         element: <VendorTable />,
@@ -2932,7 +2932,7 @@ export const routes = createBrowserRouter([
                 children: [
                   {
                     path: "",
-                     element: (
+                    element: (
                       <PerformancePermissionRoute
                         permissions={[
                           PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS,
@@ -2948,7 +2948,7 @@ export const routes = createBrowserRouter([
                     index: true,
                   },
                   {
-                  path: "overall-department-kpa",
+                    path: "overall-department-kpa",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[
@@ -3090,7 +3090,9 @@ export const routes = createBrowserRouter([
                         path: "member-wise-kpa",
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KPA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_MEMBER_WISE_KPA,
+                            ]}
                             element={<PerformanceMemberWiseKraKpa />}
                           />
                         ),
@@ -3099,7 +3101,9 @@ export const routes = createBrowserRouter([
                         path: "member-wise-kra",
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA,
+                            ]}
                             element={<PerformanceMemberWiseKra />}
                           />
                         ),
@@ -3182,7 +3186,12 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "overall-KPA/department-KPA",
-                    element: <Navigate to="/app/performance/overall-department-kpa" replace />,
+                    element: (
+                      <Navigate
+                        to="/app/performance/overall-department-kpa"
+                        replace
+                      />
+                    ),
                   },
                   {
                     path: "overall-KPA/department-KPA/:department",
@@ -3197,22 +3206,34 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "overall-KPA/department-wise-KPA",
-                    element: <Navigate to="/app/performance/department-wise/overall-department-kpa" replace />,
+                    element: (
+                      <Navigate
+                        to="/app/performance/department-wise/overall-department-kpa"
+                        replace
+                      />
+                    ),
                   },
                   {
                     path: "overall-KPA/department-wise-kra-kpa",
-                    element: <Navigate to="/app/performance/department-wise/overall-department-kpa" replace />,
+                    element: (
+                      <Navigate
+                        to="/app/performance/department-wise/overall-department-kpa"
+                        replace
+                      />
+                    ),
                   },
-                    
+
                   {
                     path: "assign-kra-kpa",
-                     children: [
+                    children: [
                       {
                         path: "",
                         index: true,
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA,
+                            ]}
                             element={<PerformanceAssignKraKpa />}
                           />
                         ),
@@ -3260,7 +3281,7 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "report-kra-kpa",
-                      element: (
+                    element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}
                         element={<PerformanceReportKraKpa />}
@@ -3448,11 +3469,13 @@ export const routes = createBrowserRouter([
                     element: (
                       <PerformancePermissionRoute
                         element={<RepeatExternalCompaanies />}
-                        permissions={[PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS]}
+                        permissions={[
+                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS,
+                        ]}
                       />
                     ),
                   },
-                    {
+                  {
                     path: "mix-bag/visitors-to-client",
                     element: (
                       <Navigate
@@ -3472,7 +3495,7 @@ export const routes = createBrowserRouter([
                         ]}
                       />
                     ),
-                    },
+                  },
                   {
                     path: "mix-bag/repeat-visitors",
                     element: (
