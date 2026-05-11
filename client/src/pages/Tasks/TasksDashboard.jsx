@@ -825,7 +825,7 @@ const TasksDashboard = () => {
       responsiveResize: true,
       chartId: "bargraph-hr-expense",
       title: "OVERALL AVERAGE TASKS COMPLETION",
-      titleAmountLabel: "Total Tasks",
+      titleAmountLabel: "TOTAL TASKS",
       titleAmount: totalTasksForYear,
       onYearChange: { handleYearChange },
     },

@@ -789,3 +789,8 @@ h2 {
     font-size: 10px;
 }
 
+
+.login-page-content-gap {
+    padding-top: 10rem !important;
+    padding-bottom: 10rem !important;
+}

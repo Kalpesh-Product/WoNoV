@@ -719,6 +719,7 @@ export const PERMISSIONS = {
 
   //Reports Module
   REPORTS_DASHBOARD: { value: "reports_dashboard", title: "REPORTS DASHBOARD", type: "read" },
+  REPORTS_SECTION: { value: "reports_section", title: "REPORTS SECTION", type: "read" },
   REPORTS_FINANCE: { value: "reports_finance", title: "FINANCE REPORTS", type: "read" },
   REPORTS_TICKETS: { value: "reports_tickets", title: "TICKET REPORTS", type: "read" },
   REPORTS_MEETINGS: { value: "reports_meetings", title: "MEETING REPORTS", type: "read" },
