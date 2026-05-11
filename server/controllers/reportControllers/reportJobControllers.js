@@ -1,10 +1,30 @@
 // POST /reports/generate
 const { reportQueue } = require("../../queues/report.queue");
 const ReportJob = require("../../models/reports/ReportJob");
+const { default: mongoose } = require("mongoose");
+const Report = require("../../models/reports/Report");
 
 async function generateReport(req, res) {
   const { report, department, filters } = req.body;
   const userId = req.user._id;
+
+  if (!report || !department) {
+    return res
+      .status(400)
+      .json({ message: "report and department are required" });
+  }
+
+  if (
+    !mongoose.Types.ObjectId.isValid(report) ||
+    !mongoose.Types.ObjectId.isValid(department)
+  ) {
+    return res.status(400).json({ message: "Invalid report or department id" });
+  }
+
+  const foundReport = await Report.findById(report);
+  if (!foundReport) {
+    return res.status(404).json({ message: "Report not found" });
+  }
 
   const reportJob = await ReportJob.create({
     userId,

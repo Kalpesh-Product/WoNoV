@@ -23,6 +23,11 @@ const worker = new Worker(
     try {
       let data;
 
+      console.log(`Received job: ${job.data}`);
+      console.log("Report Data:", reportJob);
+      console.log(
+        `Processing report job ${reportJobId} for template: ${reportJob.report.reportName}`,
+      );
       switch (reportJob.report.reportName) {
         case "Expense And Budget":
           data = await fetchBudgetService(reportJob.filters);
