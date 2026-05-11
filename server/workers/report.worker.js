@@ -1,6 +1,7 @@
 // workers/report.worker.js
 const { Worker } = require("bullmq");
 const { connection } = require("../config/redis");
+require("../models/reports/Report");
 const ReportJob = require("../models/reports/ReportJob");
 const {
   fetchBudget,
