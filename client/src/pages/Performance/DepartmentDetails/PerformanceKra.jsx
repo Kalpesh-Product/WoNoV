@@ -284,7 +284,20 @@ const PerformanceKra = () => {
                   />
                 </div>
                   {/* Edit Recurrence */}
-                 <button
+                   {!isAddKraDisabled && (
+                  <>
+                    <button
+                      type="button"
+                      title="Edit"
+                      disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                      onClick={() => handleOpenEditModal(params.data)}
+                      className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                    >
+                      <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
+                    </button>
+                  </>
+                )}
+                 {/* <button
                   type="button"
                   title="Edit"
                   disabled={!params.node.selected || isUpdatePending || isDeletePending}
@@ -292,7 +305,7 @@ const PerformanceKra = () => {
                   className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                 >
                   <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
-                </button>
+                </button> */}
 
                 {/* Delete Recurrence */}
                 {canDeleteRecurrence && (

@@ -138,9 +138,16 @@ const PerformanceMonthly = () => {
     },
   });
 
+ const resetModalState = () => {
+    setOpenModal(false);
+    setIsEditMode(false);
+    setEditingTaskId(null);
+    reset();
+  };
+
    const handleOpenEditModal = (task) => {
     setIsEditMode(true);
-    setEditingTaskId(task.id);
+    setEditingTaskId(task.mongoId || task.id || null);
     reset({
       kpaName: task.taskName || "",
       description: task.description || "",
@@ -156,19 +163,20 @@ const PerformanceMonthly = () => {
         toast.error("Unable to update task. Please reopen edit popup.");
         return;
       }
-      await axios.patch(`/api/performance/update-task/${editingTaskId}`, {
-        task: data.kpaName,
-        description: data.description || "",
-        assignedDate: data.startDate,
-        dueDate: data.endDate,
-        kpaDuration: "Monthly",
-      });
-      toast.success("KPA updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
-      setOpenModal(false);
-      setIsEditMode(false);
-      setEditingTaskId(null);
-      reset();
+     try {
+        await axios.patch(`/api/performance/update-task/${editingTaskId}`, {
+          task: data.kpaName,
+          description: data.description || "",
+          assignedDate: data.startDate,
+          dueDate: data.endDate,
+          kpaDuration: "Monthly",
+        });
+        toast.success("KPA updated successfully");
+        queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
+        resetModalState();
+      } catch (error) {
+        toast.error(error?.response?.data?.message || "Unable to update KPA");
+      }
       return;
     }
     addMonthlyKpa(data);
@@ -327,7 +335,18 @@ const PerformanceMonthly = () => {
                 </div>
 
                 {/* Edit Recurrence */}
-                   <button
+                {!isAddKpaDisabled && (
+                  <button
+                    type="button"
+                    title="Edit"
+                    disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                    onClick={() => handleOpenEditModal(params.data)}
+                    className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                  >
+                    <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
+                  </button>
+                )}
+                   {/* <button
                   type="button"
                   title="Edit"
                   disabled={!params.node.selected || isUpdatePending || isDeletePending}
@@ -335,7 +354,7 @@ const PerformanceMonthly = () => {
                   className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                 >
                   <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
-                </button>
+                </button> */}
                  {/* Delete Recurrence */}
                 {canDeleteRecurrence && (
                   <button
@@ -427,7 +446,11 @@ const PerformanceMonthly = () => {
                 //tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
                 buttonTitle={"Add Monthly KPA"}
                 buttonDisabled={isAddKpaDisabled}
-                handleSubmit={() => setOpenModal(true)}
+                handleSubmit={() => {
+                  setIsEditMode(false);
+                  setEditingTaskId(null);
+                  setOpenModal(true);
+                }}
                 key={departmentKra.length}
                 data={[
                   ...departmentKra
@@ -481,7 +504,7 @@ const PerformanceMonthly = () => {
 
       <MuiModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
+        onClose={resetModalState}
        title={isEditMode ? "Edit Task" : "Add Monthly KPA"}
       >
         <form
