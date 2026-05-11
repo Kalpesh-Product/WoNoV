@@ -7,25 +7,25 @@ const reportModules = [
   {
     title: "FINANCE",
     subtitle: "Finance Reports",
-    route: "../finance-reports",
+    route: "../reports-section/finance",
     permission: PERMISSIONS.REPORTS_FINANCE.value,
   },
   {
     title: "TICKETS",
     subtitle: "Ticket Reports",
-    route: "../ticket-reports",
+    route: "../reports-section/ticket",
     permission: PERMISSIONS.REPORTS_TICKETS.value,
   },
   {
     title: "MEETINGS",
     subtitle: "Meeting Reports",
-    route: "../meeting-reports",
+    route: "../reports-section/meeting",
     permission: PERMISSIONS.REPORTS_MEETINGS.value,
   },
   {
     title: "VISITORS",
     subtitle: "Visitor Reports",
-    route: "../visitor-reports",
+    route: "../reports-section/visitor",
     permission: PERMISSIONS.REPORTS_VISITORS.value,
   },
 ];

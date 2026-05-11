@@ -2568,7 +2568,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "finance-reports",
+                    path: "reports-section/finance",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_FINANCE]}
@@ -2577,7 +2577,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "ticket-reports",
+                    path: "reports-section/ticket",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_TICKETS]}
@@ -2586,7 +2586,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "meeting-reports",
+                     path: "reports-section/meeting",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_MEETINGS]}
@@ -2595,7 +2595,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "visitor-reports",
+                  path: "reports-section/visitor",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_VISITORS]}
