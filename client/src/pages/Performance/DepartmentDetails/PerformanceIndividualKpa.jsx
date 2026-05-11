@@ -28,6 +28,7 @@ import {
 } from "../../../redux/slices/performanceSlice";
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
 
 const PerformanceIndividualKpa = () => {
     const axios = useAxiosPrivate();
@@ -35,6 +36,8 @@ const PerformanceIndividualKpa = () => {
     const { auth } = useAuth();
     const { department } = useParams();
     const [openModal, setOpenModal] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editingTaskId, setEditingTaskId] = useState(null);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
 
     const selectedDepartmentName = useSelector(
@@ -145,13 +148,56 @@ const PerformanceIndividualKpa = () => {
             reset();
             reset();
             setOpenModal(false);
+            setIsEditMode(false);
+           setEditingTaskId(null);
         },
         onError: (error) => {
             toast.error(error?.response?.data?.message || "Error Adding KPA");
         },
     });
 
-    const handleFormSubmit = (data) => {
+ const resetModalState = () => {
+        setOpenModal(false);
+        setIsEditMode(false);
+        setEditingTaskId(null);
+        reset();
+    };
+
+   const handleOpenEditModal = (task) => {
+    setIsEditMode(true);
+    setEditingTaskId(task.mongoId || task.id || null);
+    reset({
+      kpaName: task.taskName || "",
+      description: task.description || "",
+      startDate: task.startDate || task.assignedDate || null,
+      endDate: task.endDate || task.dueDate || null,
+    });
+    setOpenModal(true);
+  };
+
+  const handleFormSubmit = async (data) => {
+        if (isEditMode) {
+            if (!editingTaskId) {
+                toast.error("Unable to update task. Please reopen edit popup.");
+                return;
+            }
+ try {
+                await axios.patch(`/api/performance/update-task/${editingTaskId}`, {
+                    task: data.kpaName,
+                    description: data.description || "",
+                    assignedDate: data.startDate,
+                    dueDate: data.endDate,
+                    kpaDuration: "Monthly",
+                    assignTo: userId,
+                });
+                toast.success("KPA updated successfully");
+                queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
+                resetModalState();
+            } catch (error) {
+                toast.error(error?.response?.data?.message || "Unable to update KPA");
+            }
+            return;
+        }
         const payload = {
             ...data,
             assignTo: userId,
@@ -230,16 +276,19 @@ const PerformanceIndividualKpa = () => {
         {
             headerName: "Start Date",
             field: "assignedDate",
+            flex: 1,
             cellRenderer: (params) => formatDateTime(params.value),
         },
         {
             headerName: "End Date",
             field: "dueDate",
+            flex: 1,
             cellRenderer: (params) => formatDateTime(params.value),
         },
         {
             field: "status",
             headerName: "Status",
+            flex: 1,
             cellRenderer: (params) => {
                 const statusColorMap = {
                     Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -272,6 +321,7 @@ const PerformanceIndividualKpa = () => {
                     headerName: "Actions",
                     pinned: "right",
                     field: "actions",
+                    width:250,
                     cellRenderer: (params) => {
                         return (
                             <div className="flex items-center">
@@ -302,7 +352,19 @@ const PerformanceIndividualKpa = () => {
                                     />
                                 </div>
 
-                                {/* Delete Recurrence */}
+                 {!isAddKpaDisabled && (
+                                    <button
+                                        type="button"
+                                        title="Edit"
+                                        disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                                        onClick={() => handleOpenEditModal(params.data)}
+                                        className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                                    >
+                                        <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
+                                    </button>
+                                )}
+
+                {/* Delete Recurrence */}
                                 {canDeleteRecurrence && (
                                     <button
                                         type="button"
@@ -336,21 +398,24 @@ const PerformanceIndividualKpa = () => {
     ];
 
     const completedColumns = [
-        { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
-        { headerName: "KPA List", field: "taskName", width: 300 },
+        { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
+        { headerName: "KPA List", field: "taskName", flex: 1 },
 
-        { headerName: "Completed By", field: "completedBy" },
+        { headerName: "Completed By", field: "completedBy",flex: 1},
         {
             headerName: "Completed Date",
             field: "completionDate",
+            flex: 1
         },
         {
             headerName: "Completed Time",
             field: "completionTime",
+            flex: 1
         },
         {
             field: "status",
             headerName: "Status",
+            flex: 1,
             cellRenderer: (params) => {
                 const statusColorMap = {
                     Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -389,7 +454,11 @@ const PerformanceIndividualKpa = () => {
                                 tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
                                 buttonTitle={"Add Monthly KPA"}
                                 buttonDisabled={isAddKpaDisabled}
-                                handleSubmit={() => setOpenModal(true)}
+                                   handleSubmit={() => {
+                                    setIsEditMode(false);
+                                    setEditingTaskId(null);
+                                    setOpenModal(true);
+                                }}
                                 key={departmentKra.length}
                                 data={[
                                     ...departmentKra
@@ -444,8 +513,8 @@ const PerformanceIndividualKpa = () => {
 
             <MuiModal
                 open={openModal}
-                onClose={() => setOpenModal(false)}
-                title={"Add Monthly KPA"}
+                onClose={resetModalState}
+              title={isEditMode ? "Edit Task" : "Add Monthly KPA"}
             >
                 <form
                     onSubmit={submitDailyKra(handleFormSubmit)}

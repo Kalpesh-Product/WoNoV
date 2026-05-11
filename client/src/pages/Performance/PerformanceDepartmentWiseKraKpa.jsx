@@ -343,7 +343,7 @@ tooltip: {
     {
       headerName: "Department Monthly KPA",
       field: "monthlyKpa",
-     // hide: isEmployeeLevel,
+      hide: isEmployeeLevel,
       width: 300,
     },
     // { headerName: "Individual Daily KRA", field: "individualDailyKra" },
@@ -356,7 +356,7 @@ tooltip: {
     {
       headerName: "Team Monthly KPA",
       field: "teamMonthlyKpa",
-     // hide: isEmployeeLevel,
+     hide: isEmployeeLevel,
     },
   ];
   const visibleDepartmentColumns = departmentColumns.filter((column) => {
