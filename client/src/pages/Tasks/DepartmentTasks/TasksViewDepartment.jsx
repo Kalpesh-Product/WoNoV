@@ -35,6 +35,7 @@ import PageFrame from "../../../components/Pages/PageFrame";
 // import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { noOnlyWhitespace } from "../../../utils/validators";
 import { MdDeleteForever } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
 
@@ -181,6 +182,21 @@ const TasksViewDepartment = () => {
     },
   });
   const handleFormSubmit = (data) => {
+      if (modalMode === "edit-task" && selectedTask?.id) {
+      editDepartmentTask({
+        id: selectedTask.id,
+        data: {
+          taskName: data.taskName,
+          description: data.description,
+          assignTo: data.assignTo,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          dueTime: data.dueTime,
+          location: data.unit,
+        },
+      });
+      return;
+    }
     addDailyKra(data);
   };
 
@@ -224,6 +240,23 @@ const TasksViewDepartment = () => {
     },
     onError: (error) => {
       toast.error(error.message || "Error Updating");
+    },
+  });
+
+   const { mutate: editDepartmentTask, isPending: isEditPending } = useMutation({
+    mutationKey: ["editDepartmentTask"],
+    mutationFn: async ({ id, data }) => {
+      const response = await axios.patch(`/api/tasks/update-task/${id}`, data);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
+      toast.success(data.message || "Task updated");
+      setOpenModal(false);
+      reset();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error updating task");
     },
   });
 
@@ -314,11 +347,11 @@ const TasksViewDepartment = () => {
   };
 
   const departmentColumns = [
-    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     {
       headerName: "Task List",
       field: "taskName",
-      width: 300,
+      flex:1,
       cellRenderer: (params) => (
         <div
           role="button"
@@ -333,13 +366,14 @@ const TasksViewDepartment = () => {
         </div>
       ),
     },
-    { headerName: "Added By", field: "assignedBy", width: 300 },
-    { headerName: "Assign To", field: "assignedTo", width: 300 },
-    { headerName: "Start Date", field: "assignedDate" },
+    { headerName: "Added By", field: "assignedBy", flex:1,},
+    { headerName: "Assign To", field: "assignedTo",flex:1, },
+    { headerName: "Start Date", field: "assignedDate" ,flex:1,},
     // { headerName: "Assigned Time", field: "createdAt" },
     {
       headerName: "Due Date",
       field: "dueDate",
+      flex:1,
       cellRenderer: (params) => {
         const formattedDate = humanDate(params.data?.dueDate);
         const formattedTime = humanTime(params.data?.dueTime);
@@ -350,11 +384,12 @@ const TasksViewDepartment = () => {
     {
       headerName: "Unit No",
       field: "unitNo",
-      width: 150,
+      flex:1,
     },
     {
       field: "status",
       headerName: "Status",
+      flex:1,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -385,6 +420,7 @@ const TasksViewDepartment = () => {
       headerName: "Actions",
       pinned: "right",
       field: "actions",
+      width:250,
       cellRenderer: (params) => {
         return (
           <div className="flex items-center">
@@ -406,6 +442,44 @@ const TasksViewDepartment = () => {
                 className="px-2 py-1 text-xs w-28 h-7"
               />
             </div>
+
+             {/* Edit Button */}
+               {isManagerLevel && (
+              <button
+                type="button"
+                title="Edit Task"
+                disabled={
+                  !params.node.selected ||
+                  isDeletePending ||
+                  isUpdatePending ||
+                  isEditPending
+                }
+                onClick={() => {
+                  const taskData = params.data;
+                  setSelectedTask(taskData);
+                  setModalMode("edit-task");
+                  setOpenModal(true);
+                  reset({
+                    taskName: taskData?.taskName || "",
+                    description: taskData?.description || "",
+                    assignTo: taskData?.assignToId || "",
+                    location: taskData?.locationId || "",
+                    unit: taskData?.unitId || "",
+                    startDate: taskData?.assignedDate
+                      ? dayjs(taskData.assignedDate).toISOString()
+                      : null,
+                    endDate: taskData?.dueDate
+                      ? dayjs(taskData.dueDate).toISOString()
+                      : null,
+                    dueTime: taskData?.dueTime ? dayjs(taskData.dueTime) : null,
+                  });
+                }}
+                className="ml-2 p-1 h-7 w-7 flex items-center justify-center disabled:cursor-not-allowed"
+              >
+                <HiPencilSquare size={26} color={!params.node.selected ? "#9ca3af" : "#111827"} />
+              </button>
+            )}
+
 
             {/* Delete Button */}
             {isManagerLevel && (
@@ -434,11 +508,11 @@ const TasksViewDepartment = () => {
     },
   ];
   const completedColumns = [
-    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     {
       headerName: "Task List",
       field: "taskName",
-      width: 300,
+      flex:1,
       cellRenderer: (params) => (
         <div
           role="button"
@@ -454,21 +528,22 @@ const TasksViewDepartment = () => {
       ),
     },
     // { headerName: "Assigned Time", field: "assignedDate" },
-    { headerName: "Assign To", field: "assignedTo", width: 300 },
+    { headerName: "Assign To", field: "assignedTo", flex:1, },
     { headerName: "Description", field: "description", hide: true },
     { headerName: "Assigned Date", field: "assignedDate", hide: true },
     { headerName: "Due Date", field: "dueDate", hide: true },
     { headerName: "Due Time", field: "dueTime", hide: true },
-    { headerName: "Completed By", field: "completedBy", width: 300 },
+    { headerName: "Completed By", field: "completedBy", flex:1, },
     { headerName: "Completed Date", field: "completedDate" },
     {
       headerName: "Unit No",
       field: "unitNo",
-      width: 150,
+      flex:1,
     },
     {
       headerName: "Completed Time",
       field: "completedTime",
+      flex:1,
     },
 
     // {
@@ -513,7 +588,11 @@ const TasksViewDepartment = () => {
                   checkbox={showCheckBox}
                   buttonTitle={hasAccess ? "Add Task" : undefined}
                   buttonDisabled={isEmployee}
-                  handleSubmit={() => setOpenModal(true)}
+                  handleSubmit={() => {
+                    reset();
+                    setModalMode("add-task");
+                    setOpenModal(true);
+                  }}
                   tableTitle={`${department} DEPARTMENT TASKS`}
                   data={(departmentKra || [])
                     .filter(
@@ -530,6 +609,11 @@ const TasksViewDepartment = () => {
                       status: item.status,
                       dueDate: item.dueDate,
                       dueTime: item.dueTime,
+                      assignToId: Array.isArray(item.assignedTo)
+                        ? item.assignedTo?.[0]?._id
+                        : item.assignedTo?._id || "",
+                      locationId: item.location?.building?._id || "",
+                      unitId: item.location?._id || "",
                       location: item.location,
                       unitNo: item.location?.unitNo || "N/A",
                       assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
@@ -598,7 +682,7 @@ const TasksViewDepartment = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Department Task"}
+        title={modalMode === "edit-task" ? "Edit Department Task" : "Add Department Task"}
       >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
@@ -844,9 +928,9 @@ const TasksViewDepartment = () => {
           </LocalizationProvider>
           <PrimaryButton
             type="submit"
-            title={"Submit"}
-            isLoading={isAddKraPending}
-            disabled={isAddKraPending}
+            title={modalMode === "edit-task" ? "Update" : "Submit"}
+            isLoading={modalMode === "edit-task" ? isEditPending : isAddKraPending}
+            disabled={modalMode === "edit-task" ? isEditPending : isAddKraPending}
           />
         </form>
       </MuiModal>

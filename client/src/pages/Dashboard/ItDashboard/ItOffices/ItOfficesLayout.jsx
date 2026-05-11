@@ -169,7 +169,7 @@ const ItOfficesLayout = () => {
       {tabIndex === 0 && (
         <div className=" text-center">
           <div
-            onClick={() => setImageOpen(true)}
+          //  onClick={() => setImageOpen(true)}
             className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
           >
             <img
@@ -184,7 +184,7 @@ const ItOfficesLayout = () => {
       {tabIndex === 1 && (
         <div className=" text-center">
           <div
-            onClick={() => setClearedImageOpen(true)}
+           // onClick={() => setClearedImageOpen(true)}
             className="h-[32rem] w-full cursor-pointer p-4 border border-borderGray rounded-lg"
           >
             <img

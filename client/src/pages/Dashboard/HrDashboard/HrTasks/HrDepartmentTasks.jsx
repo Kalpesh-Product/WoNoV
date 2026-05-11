@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
@@ -47,12 +47,75 @@ const getFiscalStartYearFromDate = (date) => {
   const month = date.getMonth();
   return month >= 3 ? date.getFullYear() : date.getFullYear() - 1;
 };
+const formatAssignedUser = (value, userIdToNameMap = new Map()) => {
+  if (!value) return "-";
+
+  if (Array.isArray(value)) {
+    const formattedUsers = value
+      .map((item) => formatAssignedUser(item, userIdToNameMap))
+      .filter((name) => name && name !== "-");
+
+    return formattedUsers.length ? formattedUsers.join(", ") : "-";
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    const isObjectId = /^[a-f\d]{24}$/i.test(normalized);
+    if (isObjectId) return userIdToNameMap.get(normalized) || normalized;
+    return normalized || "-";
+  }
+
+  const source = value.assignee || value.user || value.userId || value;
+  const firstName = source.firstName || "";
+  const middleName = source.middleName || "";
+  const lastName = source.lastName || "";
+  const fullName = `${firstName} ${middleName} ${lastName}`.replace(/\s+/g, " ").trim();
+
+  if (fullName) return fullName;
+
+  if (source?._id && userIdToNameMap.has(source._id)) {
+    return userIdToNameMap.get(source._id);
+  }
+
+  return source.name || source.email || "-";
+};
+
 
 const HrDepartmentTasks = () => {
   const location = useLocation();
+  const { department: departmentParam } = useParams();
   const axios = useAxiosPrivate()
-  const { month, department, tasks, year } = location.state || {};
+  const { month, department: departmentFromState, tasks, year } = location.state || {};
+  const department = departmentFromState || departmentParam;
+ // const { month, department, tasks, year } = location.state || {};
   // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+
+   const { data: usersDirectory = [] } = useQuery({
+    queryKey: ["hrTaskUsersDirectory"],
+    queryFn: async () => {
+      const response = await axios.get("/api/users/fetch-users");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
+  const userIdToNameMap = useMemo(() => {
+    const map = new Map();
+
+    usersDirectory.forEach((user) => {
+      if (!user?._id) return;
+      const fullName = [user.firstName, user.middleName, user.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      if (fullName) {
+        map.set(user._id, fullName);
+      }
+    });
+
+    return map;
+  }, [usersDirectory]);
+
   const { data: tasksRawData = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasksRawData"],
     queryFn: async () => {
@@ -136,16 +199,20 @@ const HrDepartmentTasks = () => {
   );
 
  const selectedMonth = detailsFyMonths[selectedMonthIndex];
-  const shortMonth = selectedMonth.split("-")[0];
+    const [shortMonth, shortYear] = selectedMonth.split("-");
+   const selectedMonthDisplay = `${fullMonthNames[shortMonth].toUpperCase()} - 20${shortYear}`;
 
-  if (!department || !tasks?.length) {
-    return <div className="">No tasks found for this department.</div>;
-  }
+  // if (!department || !tasks?.length) {
+  //   return <div className="">No tasks found for this department.</div>;
+  // }
   const filteredData = tasksRawData.filter(
     (item) => item.department === department
   );
-  const departmentName = filteredData[0]?.department;
-  const tasksData = filteredData[0]?.tasks;
+  // const departmentName = filteredData[0]?.department;
+  // const tasksData = filteredData[0]?.tasks;
+
+    const departmentName = filteredData[0]?.department || department || "Department";
+  const tasksData = filteredData[0]?.tasks || tasks || [];
 
  const handlePrevMonth = () => {
     if (selectedMonthIndex > 0) {
@@ -401,7 +468,7 @@ const HrDepartmentTasks = () => {
       <WidgetSection
         title={`Tasks details`}
         border
-        TitleAmount={`${fullMonthNames[shortMonth]} : ${
+       TitleAmount={`${selectedMonthDisplay} : ${
           filteredTasks.length > 1
             ? `${filteredTasks.length} Tasks`
             : `${filteredTasks.length} Tasks`
@@ -414,7 +481,7 @@ const HrDepartmentTasks = () => {
            // disabled={selectedMonthIndex === 0}
           />
           <div className="text-subtitle  text-center font-pmedium">
-            {selectedMonth}
+                        {selectedMonthDisplay}
           </div>
           <PrimaryButton
             title={<MdNavigateNext />}
@@ -422,28 +489,24 @@ const HrDepartmentTasks = () => {
            // disabled={selectedMonthIndex === fyMonths.length - 1}
           />
         </div>
-        {filteredTasks.length === 0 ? (
-          <div className="text-center flex justify-center items-center py-8 text-gray-500 h-80">
-            No data available
-          </div>
-        ) : (
-          <div>
-            <AgTable
-              tableHeight={300}
-              hideFilter
-              columns={tasksColumns}
-              data={filteredTasks.map((item, index) => ({
-                id: index + 1,
-                taskName: item.taskName,
-                assignedTo: item.assignedTo,
-                assignedBy: `${item.assignedBy?.firstName || ""} ${item.assignedBy?.lastName || ""}`,
-                assignedDate: item.assignedDate,
-                dueDate: item.dueDate,
-                status: item.status,
-              }))}
-            />
-          </div>
-        )}
+        <div>
+          <AgTable
+           key={selectedMonth}
+            tableHeight={300}
+            hideFilter
+            columns={tasksColumns}
+            data={filteredTasks.map((item, index) => ({
+              id: index + 1,
+              taskName: item.taskName,
+              assignedTo: formatAssignedUser(item.assignedTo, userIdToNameMap),
+              assignedBy: formatAssignedUser(item.assignedBy, userIdToNameMap),
+              assignedDate: item.assignedDate,
+              dueDate: item.dueDate,
+              status: item.status,
+            }))}
+          />
+        </div>
+
       </WidgetSection>
     </div>
   );

@@ -325,7 +325,18 @@ const updateTask = async (req, res, next) => {
 
   try {
     const { id } = req.params;
-    const { taskName, description, status, priority, assignees } = req.body;
+    const {
+      taskName,
+      description,
+      status,
+      priority,
+      assignees,
+      startDate,
+      endDate,
+      dueTime,
+      assignTo,
+      location,
+    } = req.body;
 
     if (!id) {
       throw new CustomError(
@@ -340,6 +351,31 @@ const updateTask = async (req, res, next) => {
 
     if (taskName !== undefined) updates.taskName = taskName;
     if (description !== undefined) updates.description = description;
+     if (startDate !== undefined) {
+      const parsedAssignedDate = new Date(startDate);
+      if (isNaN(parsedAssignedDate.getTime())) {
+        throw new CustomError(
+          "Invalid start date",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+      updates.assignedDate = parsedAssignedDate;
+    }
+    if (endDate !== undefined) {
+      const parsedDueDate = new Date(endDate);
+      if (isNaN(parsedDueDate.getTime())) {
+        throw new CustomError(
+          "Invalid end date",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+      updates.dueDate = parsedDueDate;
+    }
+    if (dueTime !== undefined) updates.dueTime = dueTime;
     if (status !== undefined) {
       if (status !== "Completed") {
         throw new CustomError(
@@ -373,6 +409,46 @@ const updateTask = async (req, res, next) => {
         );
       }
       updates.assignedTo = assignees;
+    }
+     if (assignTo !== undefined) {
+      const existingUsers = await validateUsers([assignTo]);
+      if (existingUsers.length !== 1) {
+        throw new CustomError(
+          "Assignee is invalid or does not exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+      updates.assignedTo = existingUsers;
+    }
+    if (location !== undefined) {
+      if (!mongoose.Types.ObjectId.isValid(location)) {
+        throw new CustomError(
+          "Invalid location ID provided",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      const validatedLocation = await Unit.findOne({
+        _id: location,
+        company,
+        isActive: true,
+      })
+        .select("_id")
+        .lean();
+
+      if (!validatedLocation) {
+        throw new CustomError(
+          "Selected location does not exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+      updates.location = validatedLocation._id;
     }
 
     if (Object.keys(updates).length === 0) {

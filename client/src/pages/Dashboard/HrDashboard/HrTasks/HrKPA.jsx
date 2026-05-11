@@ -24,6 +24,8 @@ const calendarMonths = [
 
 const getFiscalMonthName = (date) => calendarMonths[(date.getMonth() + 9) % 12];
 
+const getDisplayMonthYear = (date) => `${getFiscalMonthName(date)} ${getDisplayYear(date)}`;
+
 const shiftMonth = (date, direction) => {
   const shifted = new Date(date);
   shifted.setMonth(shifted.getMonth() + direction);
@@ -38,9 +40,8 @@ const HrKPA = () => {
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const effectiveSelectedMonth = getFiscalMonthName(selectedDate);
-  const yearArray = tasksRawData.map(
-    (item) => item.tasks?.map((task) => task.assignedDate)[0]
-  );
+   const effectiveSelectedYear = getDisplayYear(selectedDate);
+  const effectiveSelectedMonthYear = getDisplayMonthYear(selectedDate);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -71,11 +72,16 @@ const HrKPA = () => {
           const taskMonth =
             calendarMonths[(new Date(y, m - 1, day).getMonth() + 9) % 12];
 
-          return taskMonth.toLowerCase() === effectiveSelectedMonth.toLowerCase();
+                    const taskYear = y;
+
+          return (
+            taskMonth.toLowerCase() === effectiveSelectedMonth.toLowerCase() &&
+            taskYear === effectiveSelectedYear
+          );
         })
         .map((task) => ({ department: dept.department, ...task }))
     );
-  }, [tasksRawData, effectiveSelectedMonth]);
+  }, [tasksRawData, effectiveSelectedMonth, effectiveSelectedYear]);
 
   const totalCompleted = filteredTasks.filter(
     (t) => t.status === "Completed"
@@ -111,7 +117,7 @@ const HrKPA = () => {
   const graphData = [
     {
       name: "Completed KPA",
-       group: `KPA - ${effectiveSelectedMonth}`,
+        group: `KPA - ${effectiveSelectedMonthYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -123,7 +129,7 @@ const HrKPA = () => {
     },
     {
       name: "Remaining KPA",
-      group: `KPA - ${effectiveSelectedMonth}`,
+       group: `KPA - ${effectiveSelectedMonthYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -148,13 +154,12 @@ const HrKPA = () => {
 
           // Fetch all tasks for the clicked department for the selected month
           const departmentTasks = groupedTasks[clickedDept] || [];
-
-          navigate(`/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${clickedDept}`, {
+          navigate(`${clickedDept}`, {
             state: {
               month: effectiveSelectedMonth,
               department: clickedDept,
               tasks: departmentTasks,
-              year: yearArray?.[0]?.split("-")?.[2] || getDisplayYear(effectiveSelectedMonth),
+               year: effectiveSelectedYear,
             },
           });
         },
@@ -253,13 +258,13 @@ const HrKPA = () => {
           role="button"
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${params.value}`,
+                 `${params.value}`,
               {
                 state: {
                    month: effectiveSelectedMonth,
                   department: params.value,
                   tasks: groupedTasks[params.value],
-                  year: yearArray?.[0]?.split("-")?.[2] || getDisplayYear(effectiveSelectedMonth),
+                   year: effectiveSelectedYear,
                 },
               }
             )
@@ -279,7 +284,7 @@ const HrKPA = () => {
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-        title={`KPA overview - ${effectiveSelectedMonth} ${yearArray?.[0]?.split("-")?.[2] || getDisplayYear(selectedDate)}`}
+       title={`KPA overview - ${effectiveSelectedMonthYear}`}
         border
         padding
         greenTitle={"completed"}
@@ -301,7 +306,7 @@ const HrKPA = () => {
               // disabled={!isPrevAvailable}
             />
             <div className="text-sm min-w-[120px] text-center">
-                 {effectiveSelectedMonth}
+                  {effectiveSelectedMonthYear}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}

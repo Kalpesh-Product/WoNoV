@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -7,65 +7,152 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
-import { useSelector } from "react-redux";
 import FinanceCard from "../../../../components/FinanceCard";
 
 const CheckAvailability = () => {
   const navigate = useNavigate();
   const address = useLocation();
   const axios = useAxiosPrivate();
-  const clientsData = useSelector((state) => state.sales.clientsData);
 
-  //-------------  Remove Duplicates----------------------//
-  // STEP 2: Build unique units map by unitNo (to ensure uniqueness)
-  const unitMap = new Map();
+  const {
+    data: workLocations = [],
+    isLoading: locationsLoading,
+    error: locationsError,
+  } = useQuery({
+    queryKey: ["workLocations"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
 
-  clientsData.forEach((item) => {
-    const unit = item.unit;
-    if (unit && unit.unitNo && !unitMap.has(unit.unitNo)) {
-      unitMap.set(unit.unitNo, unit);
-    }
+      return response.data;
+    },
   });
 
-  const uniqueUnits = Array.from(unitMap.values());
+  const activeUnits = useMemo(
+    () =>
+      (workLocations || []).filter(
+        (unit) => unit?.isActive && !unit?.isOnlyBudget && unit?.building?.buildingName,
+      ),
+    [workLocations],
+  );
 
-  // STEP 3: Group units by building name
-  const groupedByBuilding = new Map();
+  const occupancyQueryKey = useMemo(
+    () => [
+      "co-working-occupancy-by-unit",
+      activeUnits.map((unit) => unit._id).sort().join("|"),
+    ],
+    [activeUnits],
+  );
 
-  uniqueUnits.forEach((unit) => {
-    const buildingName = unit.building?.buildingName || "Unknown";
-    if (!groupedByBuilding.has(buildingName)) {
-      groupedByBuilding.set(buildingName, []);
-    }
-    groupedByBuilding.get(buildingName).push(unit);
-  });
+  const { data: occupancyData = [] } = useQuery({
+    queryKey: occupancyQueryKey,
+    queryFn: async () => {
+      const results = await Promise.allSettled(
+        activeUnits.map(async (unit) => {
+          const response = await axios.get("/api/sales/co-working-members", {
+            params: { unitId: unit._id, active: true },
+          });
 
-  const chartData = Array.from(groupedByBuilding.entries()).map(
-    ([buildingName, units]) => {
-      const totalSeats = units.reduce(
-        (sum, unit) => sum + (unit.openDesks || 0) + (unit.cabinDesks || 0),
-        0
+          return {
+            unitId: unit._id,
+            occupiedDesks: Number(response.data?.totalOccupiedDesks) || 0,
+          };
+        }),
       );
 
-      const occupiedSeats = clientsData
-        .filter(
-          (client) => client.unit?.building?.buildingName === buildingName
-        )
-        .reduce(
-          (sum, client) =>
-            sum + (client.openDesks || 0) + (client.cabinDesks || 0),
-          0
-        );
+      return results
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value);
+    },
+    enabled: activeUnits.length > 0,
+  });
 
-      const remainingSeats = Math.max(totalSeats - occupiedSeats, 0);
+  const occupiedByUnit = useMemo(
+    () =>
+      occupancyData.reduce((acc, item) => {
+        if (!item?.unitId) return acc;
+        acc[item.unitId] = Number(item.occupiedDesks) || 0;
+        return acc;
+      }, {}),
+    [occupancyData],
+  );
+
+  const chartData = useMemo(() => {
+    const groupedByBuilding = new Map();
+
+    activeUnits.forEach((unit) => {
+      const buildingName = unit?.building?.buildingName;
+      if (!buildingName) return;
+
+      const totalSeats = (Number(unit?.openDesks) || 0) + (Number(unit?.cabinDesks) || 0);
+      const occupiedSeats = Number(occupiedByUnit[unit._id]) || 0;
+      const current = groupedByBuilding.get(buildingName) || { total: 0, occupied: 0 };
+
+      groupedByBuilding.set(buildingName, {
+        total: current.total + totalSeats,
+        occupied: current.occupied + occupiedSeats,
+      });
+    });
+
+    return Array.from(groupedByBuilding.entries()).map(([buildingName, data]) => {
+      const remainingSeats = Math.max(data.total - data.occupied, 0);
 
       return {
         name: buildingName,
-        occupied: occupiedSeats,
+        occupied: data.occupied,
         remaining: remainingSeats,
       };
-    }
-  );
+    });
+  }, [activeUnits, occupiedByUnit]);
+  // //-------------  Remove Duplicates----------------------//
+  // // STEP 2: Build unique units map by unitNo (to ensure uniqueness)
+  // const unitMap = new Map();
+
+  // clientsData.forEach((item) => {
+  //   const unit = item.unit;
+  //   if (unit && unit.unitNo && !unitMap.has(unit.unitNo)) {
+  //     unitMap.set(unit.unitNo, unit);
+  //   }
+  // });
+
+  // const uniqueUnits = Array.from(unitMap.values());
+
+  // // STEP 3: Group units by building name
+  // const groupedByBuilding = new Map();
+
+  // uniqueUnits.forEach((unit) => {
+  //   const buildingName = unit.building?.buildingName || "Unknown";
+  //   if (!groupedByBuilding.has(buildingName)) {
+  //     groupedByBuilding.set(buildingName, []);
+  //   }
+  //   groupedByBuilding.get(buildingName).push(unit);
+  // });
+
+  // const chartData = Array.from(groupedByBuilding.entries()).map(
+  //   ([buildingName, units]) => {
+  //     const totalSeats = units.reduce(
+  //       (sum, unit) => sum + (unit.openDesks || 0) + (unit.cabinDesks || 0),
+  //       0
+  //     );
+
+  //     const occupiedSeats = clientsData
+  //       .filter(
+  //         (client) => client.unit?.building?.buildingName === buildingName
+  //       )
+  //       .reduce(
+  //         (sum, client) =>
+  //           sum + (client.openDesks || 0) + (client.cabinDesks || 0),
+  //         0
+  //       );
+
+      // const remainingSeats = Math.max(totalSeats - occupiedSeats, 0);
+
+      // return {
+      //   name: buildingName,
+      //   occupied: occupiedSeats,
+      //   remaining: remainingSeats,
+      // };
+  //   }
+  // );
 
   const barGraphSeries = [
     {
@@ -77,6 +164,11 @@ const CheckAvailability = () => {
       data: chartData.map((item) => item.remaining),
     },
   ];
+
+  const totalInventoryCount = chartData.reduce(
+    (sum, item) => sum + (Number(item?.occupied) || 0) + (Number(item?.remaining) || 0),
+    0,
+  );
 
   const barGraphOptions = {
     chart: {
@@ -129,10 +221,11 @@ const CheckAvailability = () => {
     },
     colors: ["#36BA98", "#E83F25"],
     tooltip: {
-      custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+      custom: function ({ dataPointIndex, w }) {
         const buildingName = w.globals.labels[dataPointIndex];
-        const occupied = w.globals.initialSeries[0].data[dataPointIndex];
-        const remaining = w.globals.initialSeries[1].data[dataPointIndex];
+        const selectedBuilding = chartData[dataPointIndex] || {};
+        const occupied = Number(selectedBuilding.occupied) || 0;
+        const remaining = Number(selectedBuilding.remaining) || 0;
         const total = occupied + remaining;
 
         return `
@@ -187,18 +280,18 @@ const CheckAvailability = () => {
     setValue("floor", "");
   }, [selectedLocation, setValue]);
 
-  const {
-    data: workLocations = [],
-    isLoading: locationsLoading,
-    error: locationsError,
-  } = useQuery({
-    queryKey: ["workLocations"],
-    queryFn: async () => {
-      const response = await axios.get("/api/company/fetch-units");
+  // const {
+  //   data: workLocations = [],
+  //   isLoading: locationsLoading,
+  //   error: locationsError,
+  // } = useQuery({
+  //   queryKey: ["workLocations"],
+  //   queryFn: async () => {
+  //     const response = await axios.get("/api/company/fetch-units");
 
-      return response.data;
-    },
-  });
+  //     return response.data;
+  //   },
+  // });
 
   const selectedUnitId = locationsLoading
     ? []
@@ -298,41 +391,21 @@ const CheckAvailability = () => {
     DTC: { total: 0, occupied: 0 },
   };
 
-  const seenUnits = new Set();
-
-  clientsData.forEach((client, index) => {
-    if (!client.unit || !client.unit.building) return;
-
-    const unit = client.unit;
-    const unitNo = unit.unitNo || "N/A";
-    const buildingName = unit.building.buildingName || "Unknown";
-
-    const isNewUnit = !seenUnits.has(unitNo);
-    if (isNewUnit) seenUnits.add(unitNo);
-
-    const unitOpenDesks = Number(unit.openDesks) || 0;
-    const unitCabinDesks = Number(unit.cabinDesks) || 0;
-    const totalSeats = unitOpenDesks + unitCabinDesks;
-    const bookedSeats = Number(client.totalDesks) || 0;
+  activeUnits.forEach((unit) => {
+    const buildingName = unit?.building?.buildingName || "";
+    const totalSeats = (Number(unit?.openDesks) || 0) + (Number(unit?.cabinDesks) || 0);
+    const occupiedSeats = Number(occupiedByUnit[unit._id]) || 0;
 
     if (buildingName.includes("Sunteck Kanaka")) {
-      if (isNewUnit) {
-        inventoryStats.ST.total += totalSeats;
-      }
-      inventoryStats.ST.occupied += bookedSeats;
-    } else if (buildingName.includes("Dempo Trade Centre")) {
-      if (isNewUnit) {
-        inventoryStats.DTC.total += totalSeats;
-      }
-      inventoryStats.DTC.occupied += bookedSeats;
+      inventoryStats.ST.total += totalSeats;
+      inventoryStats.ST.occupied += occupiedSeats;
+    } else if (
+      buildingName.includes("Dempo Trade Centre") ||
+      buildingName.includes("Dempo Trade Center")
+    ) {
+      inventoryStats.DTC.total += totalSeats;
+      inventoryStats.DTC.occupied += occupiedSeats;
     }
-  });
-
-  const allBuildings = new Set();
-
-  clientsData.forEach((client) => {
-    const buildingName = client.unit?.building?.buildingName;
-    if (buildingName) allBuildings.add(buildingName);
   });
 
   const inventoryCards = {
@@ -388,8 +461,11 @@ const CheckAvailability = () => {
       {
         title: "ST Free Inventory",
         value: String(
+          Math.max(
           (Number(inventoryStats.ST?.total) || 0) -
-          (Number(inventoryStats.ST?.occupied) || 0)
+            (Number(inventoryStats.ST?.occupied) || 0),
+          0
+        )
         ),
         route:
           "/app/dashboard/sales-dashboard/mix-bag/inventory/Sunteck%20Kanaka",
@@ -398,8 +474,11 @@ const CheckAvailability = () => {
       {
         title: "DTC Free Inventory",
         value: String(
+          Math.max(
           (Number(inventoryStats.DTC?.total) || 0) -
-          (Number(inventoryStats.DTC?.occupied) || 0)
+            (Number(inventoryStats.DTC?.occupied) || 0),
+          0
+        )
         ),
         route:
           "/app/dashboard/sales-dashboard/mix-bag/inventory/Dempo%20Trade%20Centre",
@@ -408,10 +487,16 @@ const CheckAvailability = () => {
       {
         title: "Total Free Inventory",
         value: String(
+          Math.max(
           (Number(inventoryStats.ST?.total) || 0) -
-          (Number(inventoryStats.ST?.occupied) || 0) +
+            (Number(inventoryStats.ST?.occupied) || 0),
+          0
+        ) +
+          Math.max(
           (Number(inventoryStats.DTC?.total) || 0) -
-          (Number(inventoryStats.DTC?.occupied) || 0)
+            (Number(inventoryStats.DTC?.occupied) || 0),
+          0
+        )
         ),
         route: "#",
       },
@@ -423,8 +508,10 @@ const CheckAvailability = () => {
       <WidgetSection
         layout={1}
         border
-        normalCase={true}
-        title={"TOTAL v/s OCCUPIED FY 2025-26"}
+        normalCase={true} 
+        title={"TOTAL v/s OCCUPIED"}
+        //titleLabel={`Total Inventory : ${totalInventoryCount}`}
+         TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
       >
         {chartData.length > 0 ? (
           <NormalBarGraph

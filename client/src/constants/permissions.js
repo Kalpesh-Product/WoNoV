@@ -719,6 +719,7 @@ export const PERMISSIONS = {
 
   //Reports Module
   REPORTS_DASHBOARD: { value: "reports_dashboard", title: "REPORTS DASHBOARD", type: "read" },
+  REPORTS_SECTION: { value: "reports_section", title: "REPORTS SECTION", type: "read" },
   REPORTS_FINANCE: { value: "reports_finance", title: "FINANCE REPORTS", type: "read" },
   REPORTS_TICKETS: { value: "reports_tickets", title: "TICKET REPORTS", type: "read" },
   REPORTS_MEETINGS: { value: "reports_meetings", title: "MEETING REPORTS", type: "read" },
@@ -1429,6 +1430,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA",
   },
+   HR_DEPARTMENT_KPA_KRA_MIX_BAG_KRA_TAB: {
+    value: "hr_department_kra_mix_bag_tab",
+    title: "DEPARTMENT KRA",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA",
+  },
   HR_DEPARTMENT_KPA_KRA_MIX_BAG_TASK_TAB: {
     value: "hr_department_task_tab",
     title: "DEPARTMENT TASK",
@@ -1446,6 +1453,12 @@ export const PERMISSIONS = {
     title: "DEPARTMENT KPA[TASK]",
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-KPA",
+  },
+    HR_DEPARTMENT_TASK_MIX_BAG_KRA_TAB: {
+    value: "hr_department_kra[task]_tab",
+    title: "DEPARTMENT KRA[TASK]",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-KRA",
   },
   HR_DEPARTMENT_TASK_MIX_BAG_TASK_TAB: {
     value: "hr_department_task[task]_tab",

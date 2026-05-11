@@ -185,7 +185,7 @@ export default function ManageUnit() {
           search
           tableTitle="Manage Units"
           loading={isUnitsDataPending}
-          buttonTitle="Add new unit"
+          buttonTitle="Add New Unit"
           handleClick={handleAddClick}
         />
       </PageFrame>

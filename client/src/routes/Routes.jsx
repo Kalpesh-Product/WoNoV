@@ -17,6 +17,7 @@ import Profile from "../pages/Profile/Profile";
 //Reports Pages
 import ReportsLayout from "../pages/Reports/ReportsLayout";
 import ReportsDashboard from "../pages/Reports/ReportsDashboard";
+import ReportsSection from "../pages/Reports/ReportsSection";
 import FinanceReports from "../pages/Reports/FinanceReports/FinanceReports";
 import TicketReportsPage from "../pages/Reports/TicketReports/TicketReports";
 import MeetingReportsPage from "../pages/Reports/MeetingReports/MeetingReports";
@@ -439,8 +440,10 @@ import HouseKeepingMembersList from "../pages/Dashboard/AdminDashboard/HouseKeep
 import HouseKeepingLayout from "../pages/Dashboard/AdminDashboard/HouseKeepingLayout";
 import HouseKeepingOnboard from "../pages/Dashboard/AdminDashboard/HouseKeepingOnboard";
 import HrKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrKPA";
+import HrKRA from "../pages/Dashboard/HrDashboard/HrTasks/HrKRA";
 import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTasks";
 import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
+import HrDepartmentKRA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKRA";
 import VendorTable from "../components/Pages/VendorTable";
 import MonthlyBudgetCommon from "../components/Pages/MonthlyBudgetCommon";
 import AssetsHome from "../pages/Assets/AssetsHome";
@@ -2140,7 +2143,10 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
-
+                           {
+                            path: "department-KRA",
+                            element: <HrKRA />,
+                          },
                           {
                             path: "department-tasks",
                             element: <HrOverallTasks />,
@@ -2149,6 +2155,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
+                          },
+                           {
+                            path: "department-KRA/:department",
+                            element: <HrDepartmentKRA />,
                           },
                           {
                             path: "department-tasks/:department",
@@ -2165,6 +2175,10 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
+                           {
+                            path: "department-KRA",
+                            element: <HrKRA />,
+                          },
                           {
                             path: "department-task",
                             element: <HrOverallTasks />,
@@ -2172,6 +2186,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
+                          },
+                           {
+                            path: "department-KRA/:department",
+                            element: <HrDepartmentKRA />,
                           },
                           {
                             path: "department-task/:department",
@@ -2192,6 +2210,10 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
+                            {
+                            path: "department-KRA",
+                            element: <HrKRA />,
+                          },
                           {
                             path: "department-task",
                             element: <HrOverallTasks />,
@@ -2203,6 +2225,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
+                          },
+                           {
+                            path: "department-KRA/:department",
+                            element: <HrDepartmentKRA />,
                           },
                           {
                             path: "department-task/:department",
@@ -2532,8 +2558,17 @@ export const routes = createBrowserRouter([
                       />
                     ),
                   },
+                    {
+                    path: "reports-section",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_SECTION]}
+                        element={<ReportsSection />}
+                      />
+                    ),
+                  },
                   {
-                    path: "finance-reports",
+                    path: "reports-section/finance",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_FINANCE]}
@@ -2542,7 +2577,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "ticket-reports",
+                    path: "reports-section/ticket",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_TICKETS]}
@@ -2551,7 +2586,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "meeting-reports",
+                     path: "reports-section/meeting",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_MEETINGS]}
@@ -2560,7 +2595,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "visitor-reports",
+                  path: "reports-section/visitor",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.REPORTS_VISITORS]}
