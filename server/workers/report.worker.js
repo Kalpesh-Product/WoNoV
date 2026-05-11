@@ -30,7 +30,10 @@ const worker = new Worker(
       );
       switch (reportJob.report.reportName) {
         case "Expense And Budget":
-          data = await fetchBudgetService(reportJob.filters);
+          data = await fetchBudgetService({
+            ...reportJob.filters,
+            departmentId: reportJob.department,
+          });
           break;
         case "sales":
           data = await getSalesReport(reportJob.filters);

@@ -203,9 +203,15 @@ const FinanceReports = () => {
     if (!reportStatus) return;
 
     if (reportStatus.status === "completed") {
-      const rows = Array.isArray(reportStatus.data) ? reportStatus.data : [];
+      const rows = Array.isArray(reportStatus?.data)
+        ? reportStatus.data
+        : Array.isArray(reportStatus?.data?.allBudgets)
+          ? reportStatus.data.allBudgets
+          : [];
+
       if (!rows.length) {
         toast.warning("Report completed with no rows to download");
+        setReportJobId(null);
         return;
       }
       downloadCsv(rows);
