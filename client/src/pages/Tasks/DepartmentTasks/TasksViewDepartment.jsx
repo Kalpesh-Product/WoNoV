@@ -188,6 +188,11 @@ const TasksViewDepartment = () => {
         data: {
           taskName: data.taskName,
           description: data.description,
+          assignTo: data.assignTo,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          dueTime: data.dueTime,
+          location: data.unit,
         },
       });
       return;
@@ -474,6 +479,7 @@ const TasksViewDepartment = () => {
                 <HiPencilSquare size={26} color={!params.node.selected ? "#9ca3af" : "#111827"} />
               </button>
             )}
+
 
             {/* Delete Button */}
             {isManagerLevel && (

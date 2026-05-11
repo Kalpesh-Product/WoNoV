@@ -119,12 +119,15 @@ const DailyTasks = () => {
   });
 
   const handleFormSubmit = (data) => {
-     if (modalMode === "edit-task" && selectedTask?.id) {
+    if (modalMode === "edit-task" && selectedTask?.id) {
       editMyTask({
         id: selectedTask.id,
         data: {
           taskName: data.taskName,
           description: data.description,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          dueTime: data.dueTime,
         },
       });
       return;
@@ -281,7 +284,7 @@ const DailyTasks = () => {
 
 
              {/* Edit Button */}
-            <button
+                      <button
               type="button"
               title="Edit Task"
               disabled={
@@ -451,6 +454,7 @@ const DailyTasks = () => {
         mongoId: item._id,
         taskList: item.taskName,
         department: item.department?.name,
+        description: item.description,
         completedBy: item.completedBy,
         assignedBy: item.assignedBy.firstName + " " + item.assignedBy.lastName,
         assignedDate: item.assignedDate,
@@ -676,6 +680,7 @@ const DailyTasks = () => {
         {modalMode === "view" && selectedTask && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
+            <DetalisFormatted title={"Description"} detail={selectedTask?.description} />
             <DetalisFormatted
               title={"Start Date"}
               detail={`${selectedTask?.assignedDate}`}
@@ -696,6 +701,7 @@ const DailyTasks = () => {
         {modalMode === "view-completed" && selectedTask && (
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             <DetalisFormatted title={"Task"} detail={selectedTask?.taskList} />
+            <DetalisFormatted title={"Description"} detail={selectedTask?.description}/>
             <DetalisFormatted
               title={"Start Date"}
               detail={selectedTask?.assignedDate}
