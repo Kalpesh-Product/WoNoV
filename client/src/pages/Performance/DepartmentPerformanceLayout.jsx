@@ -19,6 +19,9 @@ const DepartmentPerformanceLayout = () => {
       ? "/app/performance/assign-kra-kpa"
     : `/app/performance/${department}`;
 
+  const isMemberWiseKpaFlow = location.pathname.includes("/department-kpa/member-wise-kpa");
+  const isMemberWiseKraFlow = location.pathname.includes("/department-kra/member-wise-kra");
+
   // Map routes to tabs
   const tabs = [
     {
@@ -55,11 +58,23 @@ const DepartmentPerformanceLayout = () => {
     // { label: "Annual KPA", path: "annual-KPA" },
   ];
 
+ const visibleTabs = isMemberWiseKpaFlow
+    ? tabs.filter((tab) => tab.path.toLowerCase().includes("kpa"))
+    : isMemberWiseKraFlow
+      ? tabs.filter((tab) => tab.path.toLowerCase().includes("kra"))
+      : tabs;
+
+  const defaultTabPath = isMemberWiseKpaFlow
+    ? "monthly-KPA"
+    : isMemberWiseKraFlow
+      ? "daily-KRA"
+      : visibleTabs[0]?.path || "daily-KRA";
+
   return (
     <TabLayout
       basePath={basePath}
-      defaultTabPath="daily-KRA"
-      tabs={tabs}
+      defaultTabPath={defaultTabPath}
+      tabs={visibleTabs}
       hideTabsCondition={(pathname) =>
         pathname.includes("vendor/") || pathname.endsWith("/assign-kra-kpa")
       }
