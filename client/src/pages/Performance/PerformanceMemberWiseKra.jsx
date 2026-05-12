@@ -321,15 +321,19 @@ const PerformanceMemberWiseKra = () => {
             firstTab = "team-Daily-KRA";
           }
 
-            const overallSegment = location.pathname.includes("/overall-department-kra/")
-            ? "overall-department-kra"
-            : "overall-department-kpa";
+            // const overallSegment = location.pathname.includes("/overall-department-kra/")
+            // ? "overall-department-kra"
+            // : "overall-department-kpa";
+            const overallSegment = location.pathname.includes("/department-kra/")
+            ? "department-kra"
+            : "department-kpa";
           const memberWiseSegment = location.pathname.includes("/member-wise-kra")
             ? "member-wise-kra"
             : "member-wise-kpa";
 
           navigate(
-            `/app/performance/department-wise/${overallSegment}/${memberWiseSegment}/${firstTab}`
+            `/app/performance/${overallSegment}/${memberWiseSegment}/${firstTab}`
+          //  `/app/performance/department-wise/${overallSegment}/${memberWiseSegment}/${firstTab}`
           );
         };
 

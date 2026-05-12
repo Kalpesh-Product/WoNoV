@@ -243,8 +243,9 @@ const PerformanceHome = () => {
         dataPointSelection: (event, chartContext, config) => {
           const clickedMonth =
             config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
+            navigate("/app/performance/department-kpa", {
 
-            navigate("/app/performance/department-wise/overall-department-kpa", {
+            //navigate("/app/performance/department-wise/overall-department-kpa", {
             state: { month: clickedMonth },
           });
         },
@@ -412,19 +413,25 @@ const PerformanceHome = () => {
     },
   });
 
-  const canAccessDepartmentWiseCard =
-    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA) ||
-    hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA) ||
-    hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA);
+  const canAccessDepartmentKpaCard =
+    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD);
 
-   const canAccessEmployeeKraKpaCard =
+  const canAccessDepartmentKraCard =
+    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD);
+
+  const canAccessEmployeeKraKpaCard =
     hasPermission(PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA);
 
    const performanceCards = [
     {
-      title: "DEPARTMENT WISE KRA/KPA",
-      route: "/app/performance/department-wise",
-      hasAccess: canAccessDepartmentWiseCard,
+       title: "DEPARTMENT KPA",
+      route: "/app/performance/department-kpa",
+      hasAccess: canAccessDepartmentKpaCard,
+    },
+    {
+      title: "DEPARTMENT KRA",
+      route: "/app/performance/department-kra",
+      hasAccess: canAccessDepartmentKraCard,
     },
     {
       title: "EMPLOYEE KRA/KPA",

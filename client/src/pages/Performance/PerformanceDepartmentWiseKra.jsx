@@ -242,7 +242,8 @@ const PerformanceDepartmentWiseKra = () => {
     dispatch(setSelectedDepartmentName(departmentName));
     navigate(
       // `/app/performance/overall-department-kra/member-wise-kra-kpa/${departmentName}`,
-       `/app/performance/department-wise/overall-department-kra/member-wise-kra`,
+     //  `/app/performance/department-wise/overall-department-kra/member-wise-kra`,
+       `/app/performance/department-kra/member-wise-kra`,
       { state: { date: selectedDate } },
     );
   };
