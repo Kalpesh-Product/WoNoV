@@ -365,6 +365,7 @@ import PerformanceMemberWiseKraKpa from "../pages/Performance/PerformanceMemberW
 import PerformanceMemberWiseKra from "../pages/Performance/PerformanceMemberWiseKra";
 import PerformanceMemberWiseLayout from "../pages/Performance/PerformanceMemberWiseLayout";
 import DepartmentPerformanceLayout from "../pages/Performance/DepartmentPerformanceLayout";
+import EmployeePerformanceLayout from "../pages/Performance/EmployeePerformanceLayout";
 import PerformanceOverallKPA from "../pages/Performance/PerformanceOverallKPA";
 import PerformanceDepartmentKPA from "../pages/Performance/PerformanceDepartmentKPA";
 import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKra";
@@ -3258,6 +3259,46 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
+
+                    {
+                    path: "employee-kra-kpa",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA]}
+                        element={<EmployeePerformanceLayout />}
+                      />
+                    ),
+                    children: [
+                      {
+                        path: "daily-KRA",
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_DAILY_KRA]}
+                            element={<PerformanceKra />}
+                          />
+                        ),
+                      },
+                      {
+                        path: "individual-Daily-KRA",
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_INDIVIDUAL_DAILY_KRA]}
+                            element={<PerformanceIndividualKra />}
+                          />
+                        ),
+                      },
+                      {
+                        path: "individual-Monthly-KPA",
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_INDIVIDUAL_MONTHLY_KPA]}
+                            element={<PerformanceIndividualKpa />}
+                          />
+                        ),
+                      },
+                    ],
+                  },
+
                   {
                     path: "report-kra-kpa",
                       element: (

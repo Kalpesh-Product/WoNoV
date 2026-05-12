@@ -412,11 +412,13 @@ const PerformanceHome = () => {
     },
   });
 
-   const canAccessDepartmentWiseCard =
+  const canAccessDepartmentWiseCard =
     hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA) ||
     hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA) ||
     hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA);
 
+   const canAccessEmployeeKraKpaCard =
+    hasPermission(PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA);
 
    const performanceCards = [
     {
@@ -425,19 +427,28 @@ const PerformanceHome = () => {
       hasAccess: canAccessDepartmentWiseCard,
     },
     {
+      title: "EMPLOYEE KRA/KPA",
+      route: "/app/performance/employee-kra-kpa",
+      hasAccess: canAccessEmployeeKraKpaCard,
+    },
+    {
       title: "ASSIGN KRA/KPA",
       route: "/app/performance/assign-kra-kpa",
        hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA),
     },
     {
-      title: "Report KRA/KPA",
+      title: "REPORT KRA/KPA",
       route: "/app/performance/report-kra-kpa",
        hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA),
     },
   ].filter((card) => card.hasAccess);
 
     const getCardGridClass = () => {
-    if (performanceCards.length >= 3) {
+    if (performanceCards.length >= 4) {
+      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-4";
+    }
+
+    if (performanceCards.length === 3) {
       return "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
     }
 
