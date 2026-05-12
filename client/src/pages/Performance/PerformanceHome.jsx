@@ -424,12 +424,12 @@ const PerformanceHome = () => {
 
    const performanceCards = [
     {
-       title: "DEPARTMENT KPA",
+       title: "DEPARTMENT WISE KPA",
       route: "/app/performance/department-kpa",
       hasAccess: canAccessDepartmentKpaCard,
     },
     {
-      title: "DEPARTMENT KRA",
+      title: "DEPARTMENT WISE KRA",
       route: "/app/performance/department-kra",
       hasAccess: canAccessDepartmentKraCard,
     },
@@ -451,7 +451,12 @@ const PerformanceHome = () => {
   ].filter((card) => card.hasAccess);
 
     const getCardGridClass = () => {
-    if (performanceCards.length >= 4) {
+    if (performanceCards.length >= 5) {
+      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-5";
+    }
+
+    if (performanceCards.length === 4) {
+
       return "grid-cols-1 md:grid-cols-2 xl:grid-cols-4";
     }
 

@@ -2976,10 +2976,10 @@ export const routes = createBrowserRouter([
                     element: (
                       <PerformancePermissionRoute
                         permissions={[
-                          PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD,
+                        //  PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD,
                           PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
                         ]}
-                        mode="any"
+                        //mode="any"
                         element={<PerformanceDepartmentWiseKraKpa />}
                       />
                     ),
@@ -2998,10 +2998,10 @@ export const routes = createBrowserRouter([
                     element: (
                       <PerformancePermissionRoute
                         permissions={[
-                          PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD,
+                         // PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD,
                           PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
                         ]}
-                        mode="any"
+                       // mode="any"
                         element={<PerformanceDepartmentWiseKra />}
                       />
                     ),
