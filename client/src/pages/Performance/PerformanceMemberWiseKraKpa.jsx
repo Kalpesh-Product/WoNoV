@@ -34,6 +34,11 @@ const fiscalMonths = [
     "March",
 ];
 
+const getCurrentFiscalMonth = () => {
+    const currentMonthIndex = new Date().getMonth();
+    return fiscalMonths[(currentMonthIndex + 9) % 12];
+};
+
 const DEFAULT_COUNTS = {
     dailyKra: 0,
     monthlyKpa: 0,
@@ -81,7 +86,8 @@ const PerformanceMemberWiseKraKpa = () => {
     
     // State for dynamic month navigation
     const [selectedMonth, setSelectedMonth] = useState(
-        location.state?.month || new Date().toLocaleString("en-US", { month: "long" })
+       // location.state?.month || new Date().toLocaleString("en-US", { month: "long" })
+        location.state?.month || getCurrentFiscalMonth()
     );
 
     const canManageTeam =
