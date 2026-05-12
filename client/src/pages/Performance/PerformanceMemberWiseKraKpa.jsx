@@ -380,13 +380,10 @@ const PerformanceMemberWiseKraKpa = () => {
                     dispatch(setSelectedDepartment(targetDepartmentId));
                     dispatch(setSelectedDepartmentName(targetDepartmentName));
 
-                    let firstTab = "individual-Daily-KRA";
-
-                    if (canManageTeam && !isOwnRow) {
-                        firstTab = "team-Daily-KRA";
-                    } else if (isTop && isOwnRow) {
-                        firstTab = "individual-Daily-KRA";
-                    }
+                     let firstTab = "individual-Monthly-KPA";
+                     if (canManageTeam && !isOwnRow) {
+                      firstTab = "Monthly-KPA";
+                         }
 
                     navigate(`/app/performance/department-kpa/member-wise-kpa/${firstTab}`);
                 };
