@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+	import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -33,6 +33,11 @@ const fiscalMonths = [
     "February",
     "March",
 ];
+
+const getCurrentFiscalMonth = () => {
+    const currentMonthIndex = new Date().getMonth();
+    return fiscalMonths[(currentMonthIndex + 9) % 12];
+};
 
 const DEFAULT_COUNTS = {
     dailyKra: 0,
@@ -81,7 +86,8 @@ const PerformanceMemberWiseKraKpa = () => {
     
     // State for dynamic month navigation
     const [selectedMonth, setSelectedMonth] = useState(
-        location.state?.month || new Date().toLocaleString("en-US", { month: "long" })
+       // location.state?.month || new Date().toLocaleString("en-US", { month: "long" })
+        location.state?.month || getCurrentFiscalMonth()
     );
 
     const canManageTeam =
@@ -382,16 +388,7 @@ const PerformanceMemberWiseKraKpa = () => {
                         firstTab = "individual-Daily-KRA";
                     }
 
-                     const overallSegment = location.pathname.includes("/overall-department-kra/")
-                        ? "overall-department-kra"
-                        : "overall-department-kpa";
-                    const memberWiseSegment = location.pathname.includes("/member-wise-kra")
-                        ? "member-wise-kra"
-                        : "member-wise-kpa";
-
-                    navigate(
-                        `/app/performance/department-wise/${overallSegment}/${memberWiseSegment}/${firstTab}`
-                    );
+                    navigate(`/app/performance/department-kpa/member-wise-kpa/${firstTab}`);
                 };
 
                 return (

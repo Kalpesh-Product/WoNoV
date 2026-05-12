@@ -32,6 +32,11 @@ const fiscalMonths = [
   "March",
 ];
 
+const getCurrentFiscalMonth = () => {
+  const currentMonthIndex = new Date().getMonth();
+  return fiscalMonths[(currentMonthIndex + 9) % 12];
+};
+
 const PerformanceDepartmentWiseKraKpa = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -40,7 +45,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
   const location = useLocation();
   const clickedMonth = location.state?.month;
   const [selectedMonth, setSelectedMonth] = useState(
-    clickedMonth || fiscalMonths[0],
+    clickedMonth || getCurrentFiscalMonth(),
   );
   const userDepartmentIds =
     auth?.user?.departments
@@ -264,7 +269,8 @@ const PerformanceDepartmentWiseKraKpa = () => {
               setSelectedDepartmentName(departmentData.department?.name),
             );
             navigate(
-               `/app/performance/department-wise/overall-department-kpa/member-wise-kpa`,
+                             `/app/performance/department-kpa/member-wise-kpa`,
+             //  `/app/performance/department-wise/overall-department-kpa/member-wise-kpa`,
               // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${departmentData.department?.name}`,
               { state: { month: selectedMonth } },
             );
@@ -328,7 +334,8 @@ tooltip: {
             dispatch(setSelectedDepartment(params.data.mongoId));
             dispatch(setSelectedDepartmentName(params.data.department));
             navigate(
-                 `/app/performance/department-wise/overall-department-kpa/member-wise-kpa`,
+               `/app/performance/department-kpa/member-wise-kpa`,
+                // `/app/performance/department-wise/overall-department-kpa/member-wise-kpa`,
               // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${params.value}`,
               { state: { month: selectedMonth } },
             );
