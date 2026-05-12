@@ -467,6 +467,7 @@ import EditWebsiteTemp from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder
 import ProtectedDepartmentRoute from "../components/ProtectedDepartmentRoute";
 import PerformancePermissionRoute from "../pages/Performance/PerformancePermissionRoute";
 import { PERMISSIONS } from "../constants/permissions";
+import FinanceReports from "../pages/Reports/FinanceReports/FinanceReports";
 
 export const routes = createBrowserRouter([
   {
@@ -2612,6 +2613,24 @@ export const routes = createBrowserRouter([
                       />
                     ),
                   },
+                  // {
+                  //   path: "reports-section/:moduleKey",
+                  //   element: (
+                  //     <PerformancePermissionRoute
+                  //       permissions={[PERMISSIONS.REPORTS_SECTION]}
+                  //       element={<FinanceReports />}
+                  //     />
+                  //   ),
+                  // },
+                  // {
+                  //   path: "department-report-common",
+                  //   element: (
+                  //     <PerformancePermissionRoute
+                  //       permissions={[PERMISSIONS.REPORTS_DASHBOARD]}
+                  //       element={<FinanceReports />}
+                  //     />
+                  //   ),
+                  // },
                 ],
               },
               {

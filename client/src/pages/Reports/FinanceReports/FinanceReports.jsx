@@ -71,7 +71,8 @@ export default FinanceReports;
 //   const { data: reportStatus } = useQuery({
 //     queryKey: ["finance-report-status", reportJobId],
 //     queryFn: async () => {
-//       const response = await axios.get(`/api/reports/status/${reportJobId}`);
+//       // const response = await axios.get(`/api/reports/status/${reportJobId}`);
+//       const response = await axios.get(`/api/budget/company-budget`);
 //       return response.data;
 //     },
 //     enabled: Boolean(reportJobId),
@@ -114,57 +115,57 @@ export default FinanceReports;
 //     },
 //     { field: "date", headerName: "Date", flex: 1 },
 //     { field: "lastModified", headerName: "Last Modified", flex: 1 },
-//     {
-//       field: "download",
-//       headerName: "Download",
-//       minWidth: 190,
-//       cellRenderer: () => {
-//         const jobStatus = reportStatus?.status;
+//     // {
+//     //   field: "download",
+//     //   headerName: "Download",
+//     //   minWidth: 190,
+//     //   cellRenderer: () => {
+//     //     const jobStatus = reportStatus?.status;
 
-//         if (isDownloading) {
-//           return (
-//             <span className="inline-flex items-center gap-2 text-sm text-blue-700">
-//               <AiOutlineLoading3Quarters className="animate-spin text-lg" />
-//               Downloading...
-//             </span>
-//           );
-//         }
+//     //     if (isDownloading) {
+//     //       return (
+//     //         <span className="inline-flex items-center gap-2 text-sm text-blue-700">
+//     //           <AiOutlineLoading3Quarters className="animate-spin text-lg" />
+//     //           Downloading...
+//     //         </span>
+//     //       );
+//     //     }
 
-//         if (!reportJobId && jobStatus !== "completed") {
-//           return (
-//             <button
-//               type="button"
-//               onClick={handleFinanceDownload}
-//               className="rounded bg-blue-600 px-3 py-1 text-sm text-white"
-//               disabled={generateReportMutation.isPending}
-//             >
-//               {generateReportMutation.isPending ? "Generating..." : "Generate"}
-//             </button>
-//           );
-//         }
+//     //     if (!reportJobId && jobStatus !== "completed") {
+//     //       return (
+//     //         <button
+//     //           type="button"
+//     //           onClick={handleFinanceDownload}
+//     //           className="rounded bg-blue-600 px-3 py-1 text-sm text-white"
+//     //           disabled={generateReportMutation.isPending}
+//     //         >
+//     //           {generateReportMutation.isPending ? "Generating..." : "Generate"}
+//     //         </button>
+//     //       );
+//     //     }
 
-//         if (jobStatus === "processing" || jobStatus === "pending") {
-//           return <span className="text-sm text-amber-600">Generating...</span>;
-//         }
+//     //     if (jobStatus === "processing" || jobStatus === "pending") {
+//     //       return <span className="text-sm text-amber-600">Generating...</span>;
+//     //     }
 
-//         if (jobStatus === "completed") {
-//           return (
-//             <span className="text-sm text-green-700">Download started</span>
-//           );
-//         }
+//     //     if (jobStatus === "completed") {
+//     //       return (
+//     //         <span className="text-sm text-green-700">Download started</span>
+//     //       );
+//     //     }
 
-//         return (
-//           <button
-//             type="button"
-//             onClick={handleFinanceDownload}
-//             className="rounded bg-blue-600 px-3 py-1 text-sm text-white"
-//             disabled={generateReportMutation.isPending}
-//           >
-//             Generate
-//           </button>
-//         );
-//       },
-//     },
+//     //     return (
+//     //       <button
+//     //         type="button"
+//     //         onClick={handleFinanceDownload}
+//     //         className="rounded bg-blue-600 px-3 py-1 text-sm text-white"
+//     //         disabled={generateReportMutation.isPending}
+//     //       >
+//     //         Generate
+//     //       </button>
+//     //     );
+//     //   },
+//     // },
 //   ];
 
 //   const buildCsvRow = (values) =>
@@ -287,6 +288,7 @@ export default FinanceReports;
 //     [reportStatus],
 //   );
 
+//   console.log("Finance report status:", reportStatus);
 //   return (
 //     <div className="bg-white min-h-full p-4">
 //       <div className="rounded-xl border border-borderGray bg-white p-4 shadow-sm">

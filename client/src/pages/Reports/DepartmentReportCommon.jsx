@@ -1,11 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Chip } from "@mui/material";
+import { Chip, Popover } from "@mui/material";
 import { toast } from "sonner";
+import { DateRangePicker } from "react-date-range";
+import dayjs from "dayjs";
+import { MdCalendarToday } from "react-icons/md";
 import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 const REPORT_MODULE_MAP = {
   finance: { title: "Finance Department Report", module: "Finance" },
@@ -20,6 +25,20 @@ const DepartmentReportCommon = () => {
   const { moduleKey = "" } = useParams();
   const selectedModule = REPORT_MODULE_MAP[String(moduleKey).toLowerCase()];
   const [activeReportId, setActiveReportId] = useState(null);
+
+  const [dateRange, setDateRange] = useState([
+    {
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    },
+  ]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const isCalendarOpen = Boolean(anchorEl);
+
+  const handleDateRangeChange = (item) => {
+    setDateRange([item.selection]);
+  };
 
   useEffect(() => {
     if (selectedModule) return;
@@ -45,6 +64,14 @@ const DepartmentReportCommon = () => {
       const payload = {
         report: reportRow?._id,
         department: reportRow?.departmentId?._id,
+        filters: {
+          startDate: dateRange?.[0]?.startDate
+            ? dayjs(dateRange[0].startDate).startOf("day").toISOString()
+            : undefined,
+          endDate: dateRange?.[0]?.endDate
+            ? dayjs(dateRange[0].endDate).endOf("day").toISOString()
+            : undefined,
+        },
       };
 
       const response = await axios.post("/api/reports/generate", payload);
@@ -62,25 +89,34 @@ const DepartmentReportCommon = () => {
   const columns = [
     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
     { field: "reportName", headerName: "Report Name", flex: 1 },
-    {
-      field: "status",
-      headerName: "Status",
-      flex: 1,
-      cellRenderer: (params) => {
-        const isActive = Boolean(params?.value);
-        return (
-          <Chip
-            label={isActive ? "Active" : "Inactive"}
-            style={{
-              backgroundColor: isActive ? "#90EE90" : "#FFD6D6",
-              color: isActive ? "#006400" : "#B00020",
-            }}
-          />
-        );
-      },
-    },
-    { field: "date", headerName: "Date", flex: 1 },
-    { field: "lastModified", headerName: "Last Modified", flex: 1 },
+    // {
+    //   field: "status",
+    //   headerName: "Status",
+    //   flex: 1,
+    //   cellRenderer: (params) => {
+    //     const isActive = Boolean(params?.value);
+    //     return (
+    //       <Chip
+    //         label={isActive ? "Active" : "Inactive"}
+    //         style={{
+    //           backgroundColor: isActive ? "#90EE90" : "#FFD6D6",
+    //           color: isActive ? "#006400" : "#B00020",
+    //         }}
+    //       />
+    //     );
+    //   },
+    // },
+    { field: "startDate", headerName: "Start Date", flex: 1 },
+    { field: "endDate", headerName: "End Date", flex: 1 },
+    // {
+    //   field: "dateRange",
+    //   headerName: "Date Range",
+    //   renderCell: ({ row }) => {
+    //     if (!row.startDate || !row.endDate) return "—";
+
+    //     return `${humanDate(row.dateRange)} → ${humanDate(row.dateRange)}`;
+    //   },
+    // },
     {
       field: "download",
       headerName: "Download",
@@ -112,8 +148,12 @@ const DepartmentReportCommon = () => {
       reports.map((report, index) => ({
         ...report,
         srNo: index + 1,
-        date: humanDate(report?.createdAt) || "-",
-        lastModified: humanDate(report?.updatedAt) || "-",
+        startDate: humanDate(report?.filters?.startDate) || "-",
+        endDate: humanDate(report?.filters?.endDate) || "-",
+        dateRange:
+          report?.filters?.startDate && report?.filters?.endDate
+            ? `${humanDate(report.filters.startDate)} → ${humanDate(report.filters.endDate)}`
+            : "-",
         download: "Generate",
       })),
     [reports],
@@ -123,7 +163,47 @@ const DepartmentReportCommon = () => {
 
   return (
     <div className="bg-white min-h-full p-4">
-      <div className="rounded-xl border border-borderGray bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-borderGray bg-white p-4 shadow-sm flex flex-col gap-4">
+        <div className="flex justify-center items-center gap-2">
+          <div className="flex items-center gap-2 justify-center">
+            <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+              <span className="text-gray-600 text-content font-pregular">
+                {dayjs(dateRange?.[0]?.startDate).format("DD MMM YYYY")}
+              </span>{" "}
+            </div>
+
+            <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+              <span className="text-gray-600 text-content font-pregular">
+                {dayjs(dateRange?.[0]?.endDate).format("DD MMM YYYY")}
+              </span>
+            </div>
+          </div>
+
+          <div
+            className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+            onClick={(event) => setAnchorEl(event.currentTarget)}
+          >
+            <MdCalendarToday size={19} />
+          </div>
+
+          <Popover
+            open={isCalendarOpen}
+            anchorEl={anchorEl}
+            onClose={() => setAnchorEl(null)}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+          >
+            <DateRangePicker
+              onChange={handleDateRangeChange}
+              moveRangeOnFirstSelection={false}
+              ranges={dateRange}
+              direction="vertical"
+            />
+          </Popover>
+        </div>
+
         <AgTable
           tableTitle={selectedModule.title}
           data={tableData}
