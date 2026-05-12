@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+	import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -388,20 +388,7 @@ const PerformanceMemberWiseKraKpa = () => {
                         firstTab = "individual-Daily-KRA";
                     }
 
-                    // const overallSegment = location.pathname.includes("/overall-department-kra/")
-                    //     ? "overall-department-kra"
-                    //     : "overall-department-kpa"; 
-                       const overallSegment = location.pathname.includes("/department-kra/")
-                        ? "department-kra"
-                        : "department-kpa";
-                    const memberWiseSegment = location.pathname.includes("/member-wise-kra")
-                        ? "member-wise-kra"
-                        : "member-wise-kpa";
-
-                    navigate(
-                         `/app/performance/${overallSegment}/${memberWiseSegment}/${firstTab}`
-                       // `/app/performance/department-wise/${overallSegment}/${memberWiseSegment}/${firstTab}`
-                    );
+                    navigate(`/app/performance/department-kpa/member-wise-kpa/${firstTab}`);
                 };
 
                 return (
