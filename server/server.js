@@ -50,6 +50,8 @@ const reportRoutes = require("./routes/reportRoutes");
 const auditLogger = require("./middlewares/auditLogger");
 const CoworkingRevenue = require("./models/sales/CoworkingRevenue");
 const CoworkingClient = require("./models/sales/CoworkingClient");
+const bullBoardAdapter = require("./queues/bullBoard");
+require("./queues/queueEvents");
 require("./listeners/logEventListener");
 const app = express();
 const PORT = process.env.PORT || 5009;
@@ -118,6 +120,7 @@ app.use("/api/finance", verifyJwt, auditLogger, financeRoutes);
 app.use("/api/weekly-unit", verifyJwt, auditLogger, weeklyUnitRoutes);
 app.use("/api/reports", verifyJwt, auditLogger, reportRoutes);
 app.use("/api/logs", verifyJwt, logRoutes);
+app.use("/admin/queues", bullBoardAdapter.getRouter());
 app.all("*", (req, res) => {
   if (req.accepts("html")) {
     res.status(404).sendFile(path.join(__dirname, "views", "404.html"));

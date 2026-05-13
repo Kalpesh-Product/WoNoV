@@ -57,7 +57,7 @@ async function getReportStatus(req, res) {
 
   return res.json({
     status: reportJob.status, // pending|processing|completed|failed
-    // data: reportJob.data || null,
+    data: reportJob.data || null,
     error: reportJob.error || null,
     completedAt: reportJob.completedAt || null,
   });

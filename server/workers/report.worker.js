@@ -44,7 +44,7 @@ const worker = new Worker(
           );
       }
 
-      // reportJob.data = data;
+      reportJob.data = data;
       reportJob.status = "completed";
       reportJob.completedAt = new Date();
       reportJob.error = undefined;
