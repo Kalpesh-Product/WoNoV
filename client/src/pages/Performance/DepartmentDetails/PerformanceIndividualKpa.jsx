@@ -44,15 +44,20 @@ const PerformanceIndividualKpa = () => {
         (state) => state.performance.selectedDepartmentName
     );
 
+    const selectedMember = useSelector((state) => state.performance.selectedMember);
+
     const departmentName =
         selectedDepartmentName ||
         department ||
         auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
         "Department";
-         const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+    const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    const selectedMemberFromRoute = location.state?.selectedMember;
+    const activeMember = selectedMemberFromRoute || selectedMember;
+    const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
 
     const restrictedRoles = [
         "IT Employee",
@@ -447,6 +452,14 @@ const PerformanceIndividualKpa = () => {
             },
         },
     ];
+      const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
+        if (!activeMember?.memberName) return true;
+        return (item?.assignedTo || "").toString().trim() === activeMember.memberName;
+    });
+    const filteredCompletedEntries = (completedEntries || []).filter((item) => {
+        if (!activeMember?.memberName) return true;
+        return (item?.completedBy || "").toString().trim() === activeMember.memberName;
+    });
     return (
         <>
             <div className="flex flex-col gap-4">
@@ -456,7 +469,8 @@ const PerformanceIndividualKpa = () => {
                             <YearWiseTable
                                 checkbox={showCheckBox}
                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
-                                 tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                                tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
                                 buttonTitle={"Add Monthly KPA"}
                                 buttonDisabled={isAddKpaDisabled}
                                    handleSubmit={() => {
@@ -466,7 +480,7 @@ const PerformanceIndividualKpa = () => {
                                 }}
                                 key={departmentKra.length}
                                 data={[
-                                    ...departmentKra
+                                      ...filteredDepartmentKpa
                                         .filter((item) => item.status !== "Completed")
                                         .map((item, index) => ({
                                             mongoId: item.id,
@@ -492,10 +506,14 @@ const PerformanceIndividualKpa = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 exportData={true}
-                                tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                                // tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                                // key={completedEntries.length}
+                                // data={[
+                                //     ...completedEntries.map((item, index) => ({
+                                       tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
                                 key={completedEntries.length}
                                 data={[
-                                    ...completedEntries.map((item, index) => ({
+                                    ...filteredCompletedEntries.map((item, index) => ({
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
                                         completionDate: humanDate(item.completionDate),

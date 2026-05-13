@@ -11,6 +11,7 @@ import { useDispatch } from "react-redux";
 import {
     setSelectedDepartment,
     setSelectedDepartmentName,
+    setSelectedMember,
 } from "../../redux/slices/performanceSlice";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
@@ -379,13 +380,16 @@ const PerformanceMemberWiseKraKpa = () => {
 
                     dispatch(setSelectedDepartment(targetDepartmentId));
                     dispatch(setSelectedDepartmentName(targetDepartmentName));
+                    dispatch(setSelectedMember({ memberId, memberName: params.value }));
 
                      let firstTab = "individual-Monthly-KPA";
                      if (canManageTeam && !isOwnRow) {
                       firstTab = "Monthly-KPA";
                          }
 
-                     navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`);
+ navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
+                        state: { selectedMember: { memberId, memberName: params.value } },
+                    });
                 };
 
                 return (
@@ -406,6 +410,7 @@ const PerformanceMemberWiseKraKpa = () => {
         { headerName: "Department Monthly KPA", field: "monthlyKpa", hide: isEmployeeLevel },
         //{ headerName: "Individual Daily KRA", field: "individualDailyKra" },
         { headerName: "Individual Monthly KPA", field: "individualMonthlyKpa" },
+           //{ headerName: "Individual Monthly KPA", field: "teamMonthlyKpa" },
         //{ headerName: "Team Daily KRA", field: "teamDailyKra", hide: isEmployeeLevel },
         { headerName: "Team Monthly KPA", field: "teamMonthlyKpa", hide: isEmployeeLevel },
     ];

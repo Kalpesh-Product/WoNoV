@@ -4,7 +4,8 @@ const performanceSlice = createSlice({
   name: "performance",
   initialState: {
     selectedDepartment: '',
-    selectedDepartmentName : ''
+    selectedDepartmentName : '',
+    selectedMember: null,
   },
   reducers: {
     setSelectedDepartment: (state, action) => {
@@ -13,8 +14,11 @@ const performanceSlice = createSlice({
     setSelectedDepartmentName: (state, action) => {
       state.selectedDepartmentName = action.payload;
     },
+      setSelectedMember: (state, action) => {
+      state.selectedMember = action.payload;
+    },
   },
 });
 
-export const { setSelectedDepartment, setSelectedDepartmentName } = performanceSlice.actions;
+export const { setSelectedDepartment, setSelectedDepartmentName, setSelectedMember } = performanceSlice.actions;
 export default performanceSlice.reducer;
