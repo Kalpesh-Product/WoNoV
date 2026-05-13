@@ -318,10 +318,10 @@ const PerformanceMemberWiseKra = () => {
 
           let firstTab = "individual-Daily-KRA";
           if (canManageTeam && !isOwnRow) {
-            firstTab = "team-Daily-KRA";
+            firstTab = "Daily-KRA";
           }
 
-          navigate(`/app/performance/department-kra/member-wise-kra/${firstTab}`);
+            navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`);
         };
 
         return (

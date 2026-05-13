@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Chip, Tab, Tabs } from "@mui/material";
 import AgTable from "../../components/AgTable";
 import WidgetSection from "../../components/WidgetSection";
+import { useNavigate, useParams } from "react-router-dom";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
@@ -31,9 +32,8 @@ const tabSx = {
 
 const PerformanceReportKraKpa = () => {
     const axios = useAxiosPrivate();
-    const [activeTypeTab, setActiveTypeTab] = useState("KRA");
-    const [activeStatusTab, setActiveStatusTab] = useState("Completed");
-    const [activeDepartmentId, setActiveDepartmentId] = useState("");
+   const navigate = useNavigate();
+    const { departmentName: routeDepartmentName, reportType: routeReportType, reportStatus: routeReportStatus } = useParams();
 
     const { data: departmentMembers = [] } = useQuery({
         queryKey: ["performanceAccessibleDepartments"],
@@ -54,16 +54,39 @@ const PerformanceReportKraKpa = () => {
         [departmentMembers]
     );
 
-    useEffect(() => {
-        if (!departments.length) {
-            setActiveDepartmentId("");
-            return;
-        }
+const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departmentName || "");
+    const decodedRouteDepartmentName = decodeURIComponent(routeDepartmentName || "");
 
-        if (!activeDepartmentId || !departments.some((dept) => dept.id === activeDepartmentId)) {
-            setActiveDepartmentId(departments[0].id);
+    const activeTypeTab = routeReportType === "KPA" ? "KPA" : "KRA";
+    const activeStatusTab = routeReportStatus === "Pending" ? "Pending" : "Completed";
+    const selectedDepartmentByRoute = departments.find(
+        (department) => department.name === decodedRouteDepartmentName
+    );
+    const activeDepartmentId = selectedDepartmentByRoute?.id || departments[0]?.id || "";
+
+    useEffect(() => {
+        if (!departments.length) return;
+
+        const nextDepartment = departments.find(
+            (department) => department.name === decodedRouteDepartmentName
+        ) || departments[0];
+        const nextType = routeReportType === "KPA" ? "KPA" : "KRA";
+        const nextStatus = routeReportStatus === "Pending" ? "Pending" : "Completed";
+
+        if (
+            nextDepartment.name !== decodedRouteDepartmentName ||
+            nextType !== routeReportType ||
+            nextStatus !== routeReportStatus
+        ) {
+            navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(nextDepartment.name)}/${nextType}/${nextStatus}`, { replace: true });
         }
-    }, [departments, activeDepartmentId]);
+    }, [
+        departments,
+        navigate,
+        decodedRouteDepartmentName,
+        routeReportStatus,
+        routeReportType,
+    ]);
 
     const selectedDepartment = useMemo(
         () => departments.find((department) => department.id === activeDepartmentId),
@@ -155,7 +178,7 @@ const PerformanceReportKraKpa = () => {
         <div className="flex flex-col gap-4">
             <Tabs
                 value={activeDepartmentId}
-                onChange={(_, newValue) => setActiveDepartmentId(newValue)}
+                onChange={(_, newValue) => navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(departments.find((department) => department.id === newValue)?.name)}/${activeTypeTab}/${activeStatusTab}`) }
                 variant="fullWidth"
                 TabIndicatorProps={{ style: { display: "none" } }}
                 sx={tabSx}
@@ -169,7 +192,7 @@ const PerformanceReportKraKpa = () => {
 
             <Tabs
                 value={activeTypeTab}
-                onChange={(_, newValue) => setActiveTypeTab(newValue)}
+                onChange={(_, newValue) => navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(selectedDepartment?.name)}/${newValue}/${activeStatusTab}`) }
                 variant="fullWidth"
                 TabIndicatorProps={{ style: { display: "none" } }}
                 sx={tabSx}
@@ -182,7 +205,8 @@ const PerformanceReportKraKpa = () => {
                 <div className="pt-2">
                     <Tabs
                         value={activeStatusTab}
-                        onChange={(_, newValue) => setActiveStatusTab(newValue)}
+                        //onChange={(_, newValue) => setActiveStatusTab(newValue)}
+                       onChange={(_, newValue) => navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(selectedDepartment?.name)}/${activeTypeTab}/${newValue}`) }
                         variant="fullWidth"
                         TabIndicatorProps={{ style: { display: "none" } }}
                         sx={tabSx}

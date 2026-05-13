@@ -103,6 +103,10 @@ const fetchVisitors = async (req, res, next) => {
             path: "toMeet",
             select: "firstName lastName email",
           },
+           {
+            path: "toMeetCompany",
+            select: "clientName companyName name",
+          },
           {
             path: "clientToMeet",
             select: "employeeName email",
@@ -111,6 +115,14 @@ const fetchVisitors = async (req, res, next) => {
           //   path: "clientCompany",
           //   select: "clientName email",
           // },
+           {
+            path: "building",
+            select: "buildingName",
+          },
+          {
+            path: "unit",
+            select: "unitNo unitName",
+          },
           {
             path: "meeting",
           },
@@ -127,6 +139,10 @@ const fetchVisitors = async (req, res, next) => {
           {
             path: "toMeet",
             select: "firstName lastName email",
+          },
+           {
+            path: "toMeetCompany",
+            select: "clientName companyName name",
           },
           {
             path: "visitorCompany",
@@ -146,6 +162,14 @@ const fetchVisitors = async (req, res, next) => {
           },
           {
             path: "meeting",
+          },
+           {
+            path: "building",
+            select: "buildingName",
+          },
+          {
+            path: "unit",
+            select: "unitNo unitName",
           },
         ]);
         visitors = await attachExternalVisits(visitors);

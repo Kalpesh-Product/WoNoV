@@ -2,13 +2,18 @@ import TabLayout from "../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../constants/permissions";
 
 const EmployeePerformanceLayout = () => {
-  const basePath = "/app/performance/employee-kra-kpa";
+  const basePath = "/app/performance/employee-KRA-KPA";
 
   const tabs = [
     {
       label: "Department Daily KRA",
       path: "daily-KRA",
       permission: PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_DAILY_KRA.value,
+    },
+    {
+      label: "Department Monthly KPA",
+      path: "monthly-KPA",
+      permission: PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_MONTHLY_KPA.value,
     },
     {
       label: "Individual Daily KRA",

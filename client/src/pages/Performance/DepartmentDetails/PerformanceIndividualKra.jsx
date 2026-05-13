@@ -42,6 +42,10 @@ const PerformanceIndividualKra = () => {
         department ||
         auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
         "Department";
+         const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
     const userId = auth.user._id;
     const [selectedKra, setSelectedKra] = useState(null);
 
@@ -420,7 +424,8 @@ const PerformanceIndividualKra = () => {
                                 buttonTitle={"Add Daily KRA"}
                                 buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
-                                  tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA`}
+                                tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
+                                 // tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA`}
                                 //tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
                                 data={(departmentKra || [])
                                     .filter((item) => item.status !== "Completed")
@@ -449,7 +454,7 @@ const PerformanceIndividualKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                    tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA`}
+                                    tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
                                     exportData={true}
                                     checkAll={false}
                                     key={completedEntries.length}
