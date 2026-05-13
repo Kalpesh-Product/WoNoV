@@ -129,10 +129,25 @@ const DepartmentReportCommon = () => {
     return flatObject;
   };
 
-  const triggerDataDownload = (reportData, reportId) => {
-    if (!reportData) return false;
+  const normalizeReportRows = (reportData) => {
+    if (!reportData) return [];
 
-    const rows = Array.isArray(reportData) ? reportData : [reportData];
+    if (Array.isArray(reportData)) return reportData;
+
+    if (typeof reportData === "string") {
+      try {
+        const parsedData = JSON.parse(reportData);
+        return Array.isArray(parsedData) ? parsedData : [parsedData];
+      } catch {
+        return [];
+      }
+    }
+
+    return [reportData];
+  };
+
+  const triggerDataDownload = (reportData, reportId) => {
+    const rows = normalizeReportRows(reportData);
     if (!rows.length || typeof rows[0] !== "object" || rows[0] === null) {
       return false;
     }
@@ -194,8 +209,8 @@ const DepartmentReportCommon = () => {
 
         const reportData = response?.data?.data || null;
         const downloadStarted =
-          triggerReportDownload(downloadUrl) ||
-          triggerDataDownload(reportData, reportId);
+          triggerDataDownload(reportData, reportId) ||
+          triggerReportDownload(downloadUrl);
 
         setDownloadedByReportId((prev) => ({
           ...prev,
