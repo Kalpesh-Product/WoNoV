@@ -76,6 +76,105 @@ const DepartmentReportCommon = () => {
     return true;
   };
 
+  const toReadableHeader = (keyPath) =>
+    String(keyPath)
+      .split(".")
+      .map((segment) =>
+        segment
+          .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+          .replace(/[_-]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .replace(/^./, (char) => char.toUpperCase()),
+      )
+      .join(" - ");
+
+  const flattenRow = (value, prefix = "") => {
+    if (value === null || value === undefined) {
+      return prefix ? { [prefix]: "" } : {};
+    }
+
+    if (Array.isArray(value)) {
+      if (!value.length) return prefix ? { [prefix]: "" } : {};
+      const primitiveArray = value.every(
+        (item) =>
+          item === null ||
+          ["string", "number", "boolean"].includes(typeof item),
+      );
+      if (primitiveArray) {
+        return { [prefix]: value.join(" | ") };
+      }
+
+      return { [prefix]: JSON.stringify(value) };
+    }
+
+    if (typeof value !== "object") {
+      return prefix ? { [prefix]: value } : {};
+    }
+
+    const flatObject = {};
+    Object.entries(value).forEach(([key, nestedValue]) => {
+      const nextPrefix = prefix ? `${prefix}.${key}` : key;
+      if (
+        nestedValue !== null &&
+        typeof nestedValue === "object" &&
+        !Array.isArray(nestedValue)
+      ) {
+        Object.assign(flatObject, flattenRow(nestedValue, nextPrefix));
+      } else {
+        Object.assign(flatObject, flattenRow(nestedValue, nextPrefix));
+      }
+    });
+
+    return flatObject;
+  };
+
+  const triggerDataDownload = (reportData, reportId) => {
+    if (!reportData) return false;
+
+    const rows = Array.isArray(reportData) ? reportData : [reportData];
+    if (!rows.length || typeof rows[0] !== "object" || rows[0] === null) {
+      return false;
+    }
+
+    const normalizedRows = rows.map((row) => flattenRow(row));
+    const headers = [
+      ...new Set(normalizedRows.flatMap((row) => Object.keys(row || {}))),
+    ];
+    if (!headers.length) return false;
+
+    const escapeCsvValue = (value) => {
+      if (value === null || value === undefined) return "";
+      const stringValue =
+        typeof value === "object" ? JSON.stringify(value) : String(value);
+      const escaped = stringValue.replace(/"/g, '""');
+      return `"${escaped}"`;
+    };
+
+    const csvLines = [
+      headers
+        .map((header) => escapeCsvValue(toReadableHeader(header)))
+        .join(","),
+      ...normalizedRows.map((row) =>
+        headers.map((header) => escapeCsvValue(row?.[header])).join(","),
+      ),
+    ];
+
+    const blob = new Blob([csvLines.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = `report-${reportId || "result"}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(objectUrl);
+
+    return true;
+  };
+
   const pollReportStatus = async (jobId, reportId) => {
     let attempts = 0;
     const maxAttempts = 120;
@@ -93,7 +192,10 @@ const DepartmentReportCommon = () => {
         const downloadUrl =
           response?.data?.downloadUrl || response?.data?.fileUrl || null;
 
-        const downloadStarted = triggerReportDownload(downloadUrl);
+        const reportData = response?.data?.data || null;
+        const downloadStarted =
+          triggerReportDownload(downloadUrl) ||
+          triggerDataDownload(reportData, reportId);
 
         setDownloadedByReportId((prev) => ({
           ...prev,
@@ -103,7 +205,7 @@ const DepartmentReportCommon = () => {
         if (downloadStarted) {
           toast.success("Report generated and download started");
         } else {
-          toast.error("Report generated, but no download link was returned");
+          toast.error("Report generated, but no  file payload was returned");
         }
         return;
       }
