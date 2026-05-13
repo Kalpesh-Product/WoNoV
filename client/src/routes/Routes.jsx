@@ -2972,7 +2972,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                    {
-                    path: "department-kpa",
+                    path: "department-KPA",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[
@@ -2985,7 +2985,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "department-kpa/member-wise-kpa",
+                    path: "department-KPA/member-wise-KPA",
                     children: [
                       {
                         index: true,
@@ -3041,7 +3041,7 @@ export const routes = createBrowserRouter([
                     ],
                   },
                   {
-                    path: "department-kra",
+                   path: "department-KRA",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[
@@ -3054,7 +3054,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "department-kra/member-wise-kra",
+                   path: "department-KRA/member-wise-KRA",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA]}
@@ -3249,7 +3249,7 @@ export const routes = createBrowserRouter([
                     ],
                   },
                   {
-                    path: "department-kpa/member-wise-kpa/:department",
+                    path: "department-KPA/member-wise-KPA/:department",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KPA]}
@@ -3258,7 +3258,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "department-kpa/member-wise-kra/:department",
+                    path: "department-KRA/member-wise-KRA/:department",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA]}
@@ -3267,7 +3267,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "department-kra/member-wise-kra",
+                    path: "department-KRA/member-wise-KRA",
                     children: [
                       {
                         index: true,
@@ -3324,7 +3324,7 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "overall-KPA/department-KPA",
-                     element: <Navigate to="/app/performance/department-kpa" replace />,
+                      element: <Navigate to="/app/performance/department-KPA" replace />,
                   },
                   {
                     path: "overall-KPA/department-KPA/:department",
@@ -3339,15 +3339,15 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "overall-KPA/department-wise-KPA",
-                    element: <Navigate to="/app/performance/department-kpa" replace />,
+                    element: <Navigate to="/app/performance/department-KPA" replace />,
                   },
                   {
                     path: "overall-KPA/department-wise-kra-kpa",
-                    element: <Navigate to="/app/performance/department-kpa" replace />,
+                    element: <Navigate to="/app/performance/department-KPA" replace />,
                   },
                     
                   {
-                    path: "assign-kra-kpa",
+                    path: "assign-KRA-KPA",
                      children: [
                       {
                         path: "",
@@ -3402,7 +3402,7 @@ export const routes = createBrowserRouter([
                   },
 
                     {
-                    path: "employee-kra-kpa",
+                    path: "employee-KRA-KPA",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA]}
@@ -3441,7 +3441,7 @@ export const routes = createBrowserRouter([
                   },
 
                   {
-                    path: "report-kra-kpa",
+                    path: "report-KRA-KPA",
                       element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}

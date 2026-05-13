@@ -49,6 +49,10 @@ const PerformanceIndividualKpa = () => {
         department ||
         auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
         "Department";
+         const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 
     const restrictedRoles = [
         "IT Employee",
@@ -451,7 +455,8 @@ const PerformanceIndividualKpa = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 checkbox={showCheckBox}
-                                tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
+                               // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
+                                 tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                                 buttonTitle={"Add Monthly KPA"}
                                 buttonDisabled={isAddKpaDisabled}
                                    handleSubmit={() => {
@@ -487,7 +492,7 @@ const PerformanceIndividualKpa = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 exportData={true}
-                                tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA`}
+                                tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                                 key={completedEntries.length}
                                 data={[
                                     ...completedEntries.map((item, index) => ({

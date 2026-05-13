@@ -2,7 +2,7 @@ import TabLayout from "../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../constants/permissions";
 
 const EmployeePerformanceLayout = () => {
-  const basePath = "/app/performance/employee-kra-kpa";
+  const basePath = "/app/performance/employee-KRA-KPA";
 
   const tabs = [
     {

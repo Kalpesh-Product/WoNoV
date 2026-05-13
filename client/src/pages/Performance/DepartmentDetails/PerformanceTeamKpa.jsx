@@ -42,6 +42,11 @@ const PerformanceTeamKpa = () => {
     department ||
     auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
     "Department";
+     const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
   const userId = auth.user._id;
 
   const restrictedRoles = [
@@ -344,7 +349,8 @@ const PerformanceTeamKpa = () => {
                 buttonTitle={"Add Team Monthly KPA"}
                 buttonDisabled={isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
-                tableTitle={`${departmentName} TEAM - MONTHLY KPA`}
+                tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+               // tableTitle={`${departmentName} TEAM - MONTHLY KPA`}
                 // tableTitle={`${department} TEAM - MONTHLY KPA`}
                 data={(teamKpa || [])
                   .filter((item) => item.status !== "Completed")
@@ -373,7 +379,8 @@ const PerformanceTeamKpa = () => {
               <WidgetSection padding>
                 <YearWiseTable
                   formatTime
-                  tableTitle={`COMPLETED TEAM - MONTHLY KPA`}
+                  //tableTitle={`COMPLETED TEAM - MONTHLY KPA`}
+                  tableTitle={`COMPLETED - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                   exportData={true}
                   checkAll={false}
                   key={completedEntries.length}

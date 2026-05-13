@@ -385,7 +385,7 @@ const PerformanceMemberWiseKraKpa = () => {
                       firstTab = "Monthly-KPA";
                          }
 
-                    navigate(`/app/performance/department-kpa/member-wise-kpa/${firstTab}`);
+                     navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`);
                 };
 
                 return (

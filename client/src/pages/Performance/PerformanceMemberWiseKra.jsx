@@ -321,7 +321,7 @@ const PerformanceMemberWiseKra = () => {
             firstTab = "Daily-KRA";
           }
 
-          navigate(`/app/performance/department-kra/member-wise-kra/${firstTab}`);
+            navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`);
         };
 
         return (

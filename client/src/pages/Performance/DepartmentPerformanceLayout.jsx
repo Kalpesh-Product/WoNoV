@@ -5,22 +5,22 @@ import TabLayout from "../../components/Tabs/TabLayout";
 const DepartmentPerformanceLayout = () => {
   const location = useLocation();
   const { overallType, department, memberWiseType } = useParams();
-  const isDepartmentKraMemberWiseRoute = location.pathname.includes("/department-kra/member-wise-kra");
-  const isDepartmentKpaMemberWiseRoute = location.pathname.includes("/department-kpa/member-wise-kpa");
+   const isDepartmentKraMemberWiseRoute = location.pathname.includes("/department-KRA/member-wise-KRA");
+  const isDepartmentKpaMemberWiseRoute = location.pathname.includes("/department-KPA/member-wise-KPA");
   const isMemberHierarchyRoute = Boolean(overallType && memberWiseType);
   const isAssignRoute = location.pathname.includes("/assign-kra-kpa");
   const basePath = isDepartmentKraMemberWiseRoute
-    ? "/app/performance/department-kra/member-wise-kra"
+       ? "/app/performance/department-KRA/member-wise-KRA"
     : isDepartmentKpaMemberWiseRoute
-      ? "/app/performance/department-kpa/member-wise-kpa"
+      ? "/app/performance/department-KPA/member-wise-KPA"
     : isMemberHierarchyRoute
     ? `/app/performance/department-wise/${overallType}/${memberWiseType}`
     : isAssignRoute
       ? "/app/performance/assign-kra-kpa"
     : `/app/performance/${department}`;
 
-  const isMemberWiseKpaFlow = location.pathname.includes("/department-kpa/member-wise-kpa");
-  const isMemberWiseKraFlow = location.pathname.includes("/department-kra/member-wise-kra");
+   const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-wise-KPA");
+  const isMemberWiseKraFlow = location.pathname.includes("/department-KRA/member-wise-KRA");
 
   // Map routes to tabs
   const tabs = [
@@ -76,7 +76,7 @@ const DepartmentPerformanceLayout = () => {
       defaultTabPath={defaultTabPath}
       tabs={visibleTabs}
       hideTabsCondition={(pathname) =>
-        pathname.includes("vendor/") || pathname.endsWith("/assign-kra-kpa")
+        pathname.includes("vendor/") || pathname.endsWith("/assign-KRA-KPA")
       }
     />
   );

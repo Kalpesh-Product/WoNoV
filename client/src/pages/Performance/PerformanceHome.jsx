@@ -243,7 +243,7 @@ const PerformanceHome = () => {
         dataPointSelection: (event, chartContext, config) => {
           const clickedMonth =
             config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
-            navigate("/app/performance/department-kpa", {
+            navigate("/app/performance/department-KPA", {
 
             //navigate("/app/performance/department-wise/overall-department-kpa", {
             state: { month: clickedMonth },
@@ -424,28 +424,28 @@ const PerformanceHome = () => {
 
    const performanceCards = [
     {
-       title: "DEPARTMENT WISE KPA",
-      route: "/app/performance/department-kpa",
+       title: "DEPARTMENT WISE KPA MONTHLY",
+      route: "/app/performance/department-KPA",
       hasAccess: canAccessDepartmentKpaCard,
     },
     {
-      title: "DEPARTMENT WISE KRA",
-      route: "/app/performance/department-kra",
+      title: "DEPARTMENT WISE KRA DAILY",
+      route: "/app/performance/department-KRA",
       hasAccess: canAccessDepartmentKraCard,
     },
     {
       title: "EMPLOYEE KRA/KPA",
-      route: "/app/performance/employee-kra-kpa",
+      route: "/app/performance/employee-KRA-KPA",
       hasAccess: canAccessEmployeeKraKpaCard,
     },
     {
       title: "ASSIGN KRA/KPA",
-      route: "/app/performance/assign-kra-kpa",
+      route: "/app/performance/assign-KRA-KPA",
        hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA),
     },
     {
       title: "REPORT KRA/KPA",
-      route: "/app/performance/report-kra-kpa",
+      route: "/app/performance/report-KRA-KPA",
        hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA),
     },
   ].filter((card) => card.hasAccess);
