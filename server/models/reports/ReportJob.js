@@ -23,8 +23,11 @@ const ReportJobSchema = new mongoose.Schema(
       enum: ["pending", "processing", "completed", "failed"],
       default: "pending",
     },
-    data: Object, // report payload
-    error: String,
+    // data: Object, // report payload
+    error: {
+      message: String,
+      stack: String,
+    },
     completedAt: Date,
   },
   { timestamps: true },

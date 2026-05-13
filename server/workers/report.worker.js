@@ -44,7 +44,7 @@ const worker = new Worker(
           );
       }
 
-      reportJob.data = data;
+      // reportJob.data = data;
       reportJob.status = "completed";
       reportJob.completedAt = new Date();
       reportJob.error = undefined;
@@ -53,14 +53,28 @@ const worker = new Worker(
       return { ok: true, reportJobId };
     } catch (err) {
       reportJob.status = "failed";
-      reportJob.error = err.message;
+      reportJob.error = {
+        message: err.message,
+        stack: err.stack,
+      };
       await reportJob.save();
       throw err; // important so BullMQ marks failed/retry
     }
   },
   {
     connection,
-    concurrency: 2, // replaces your activeJobs >= 2 logic
+    concurrency: 2,
+    removeOnComplete: {
+      age: 24 * 3600 * 7,
+      count: 100,
+      limit: 10,
+    },
+
+    removeOnFail: {
+      age: 24 * 3600 * 7,
+      count: 500,
+      limit: 10,
+    },
   },
 );
 
@@ -79,3 +93,13 @@ worker.on("failed", (job, err) => {
 worker.on("error", (err) => {
   console.error("Report worker connection error:", err.message);
 });
+
+// Graceful shutdown on node process restart or deployment
+const shutdown = async () => {
+  console.log("Shutting down worker gracefully...");
+  await worker.close();
+  process.exit(0);
+};
+
+process.on("SIGTERM", shutdown); //Termination Signal
+process.on("SIGINT", shutdown); //Interrupt Signal
