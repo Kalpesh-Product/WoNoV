@@ -311,6 +311,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "employee-KRA-KPA/daily-KRA",
   },
+  PERFORMANCE_EMPLOYEE_DEPARTMENT_MONTHLY_KPA: {
+    value: "employee_department_monthly_kpa_tab",
+    title: "EMPLOYEE DEPARTMENT MONTHLY KPA",
+    type: "read",
+    route: "employee-KRA-KPA/monthly-KPA",
+  },
   PERFORMANCE_EMPLOYEE_INDIVIDUAL_DAILY_KRA: {
     value: "employee_individual_daily_kra_tab",
     title: "EMPLOYEE INDIVIDUAL DAILY KRA",

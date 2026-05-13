@@ -8,7 +8,7 @@ const DepartmentPerformanceLayout = () => {
    const isDepartmentKraMemberWiseRoute = location.pathname.includes("/department-KRA/member-wise-KRA");
   const isDepartmentKpaMemberWiseRoute = location.pathname.includes("/department-KPA/member-wise-KPA");
   const isMemberHierarchyRoute = Boolean(overallType && memberWiseType);
-  const isAssignRoute = location.pathname.includes("/assign-kra-kpa");
+  const isAssignRoute = location.pathname.includes("/assign-KRA-KPA");
   const basePath = isDepartmentKraMemberWiseRoute
        ? "/app/performance/department-KRA/member-wise-KRA"
     : isDepartmentKpaMemberWiseRoute
@@ -16,7 +16,7 @@ const DepartmentPerformanceLayout = () => {
     : isMemberHierarchyRoute
     ? `/app/performance/department-wise/${overallType}/${memberWiseType}`
     : isAssignRoute
-      ? "/app/performance/assign-kra-kpa"
+      ? "/app/performance/assign-KRA-KPA"
     : `/app/performance/${department}`;
 
    const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-wise-KPA");
@@ -58,17 +58,34 @@ const DepartmentPerformanceLayout = () => {
     // { label: "Annual KPA", path: "annual-KPA" },
   ];
 
- const visibleTabs = isMemberWiseKpaFlow
-    ? tabs.filter((tab) => tab.path.toLowerCase().includes("kpa"))
-    : isMemberWiseKraFlow
-      ? tabs.filter((tab) => tab.path.toLowerCase().includes("kra"))
-      : tabs;
+//  const visibleTabs = isMemberWiseKpaFlow
+//     ? tabs.filter((tab) => tab.path.toLowerCase().includes("kpa"))
+//     : isMemberWiseKraFlow
+//       ? tabs.filter((tab) => tab.path.toLowerCase().includes("kra"))
+//       : tabs;
 
-  const defaultTabPath = isMemberWiseKpaFlow
-    ? "monthly-KPA"
-    : isMemberWiseKraFlow
-      ? "daily-KRA"
-      : visibleTabs[0]?.path || "daily-KRA";
+//   const defaultTabPath = isMemberWiseKpaFlow
+//     ? "monthly-KPA"
+//     : isMemberWiseKraFlow
+//       ? "daily-KRA"
+//       : visibleTabs[0]?.path || "daily-KRA";
+ const visibleTabs = isAssignRoute
+    ? tabs.filter(
+        (tab) => tab.path === "team-Daily-KRA" || tab.path === "team-Monthly-KPA"
+      )
+    : isMemberWiseKpaFlow
+      ? tabs.filter((tab) => tab.path.toLowerCase().includes("kpa"))
+      : isMemberWiseKraFlow
+        ? tabs.filter((tab) => tab.path.toLowerCase().includes("kra"))
+        : tabs;
+
+  const defaultTabPath = isAssignRoute
+    ? "team-Daily-KRA"
+    : isMemberWiseKpaFlow
+      ? "monthly-KPA"
+      : isMemberWiseKraFlow
+        ? "daily-KRA"
+        : visibleTabs[0]?.path || "daily-KRA";
 
   return (
     <TabLayout

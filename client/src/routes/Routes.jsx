@@ -3419,6 +3419,15 @@ export const routes = createBrowserRouter([
                           />
                         ),
                       },
+                       {
+                        path: "monthly-KPA",
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_MONTHLY_KPA]}
+                            element={<PerformanceMonthly />}
+                          />
+                        ),
+                      },
                       {
                         path: "individual-Daily-KRA",
                         element: (
@@ -3449,7 +3458,34 @@ export const routes = createBrowserRouter([
                       />
                     ),
                   },
-                ],
+                      {
+                    path: "report-KRA-KPA/:departmentName",
+                      element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}
+                        element={<PerformanceReportKraKpa />}
+                      />
+                    ),
+                  },
+                  {
+                    path: "report-KRA-KPA/:departmentName/:reportType",
+                      element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}
+                        element={<PerformanceReportKraKpa />}
+                      />
+                    ),
+                  },
+                  {
+                    path: "report-KRA-KPA/:departmentName/:reportType/:reportStatus",
+                      element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}
+                        element={<PerformanceReportKraKpa />}
+                      />
+                    ),
+                  },
+                ],    
               },
               {
                 path: "tasks", // Parent path

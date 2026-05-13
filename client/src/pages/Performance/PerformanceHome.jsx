@@ -424,12 +424,12 @@ const PerformanceHome = () => {
 
    const performanceCards = [
     {
-       title: "DEPARTMENT WISE KPA MONTHLY",
+       title: "DEPARTMENT MONTHLY KPA",
       route: "/app/performance/department-KPA",
       hasAccess: canAccessDepartmentKpaCard,
     },
     {
-      title: "DEPARTMENT WISE KRA DAILY",
+      title: "DEPARTMENT DAILY KRA",
       route: "/app/performance/department-KRA",
       hasAccess: canAccessDepartmentKraCard,
     },

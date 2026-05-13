@@ -11,6 +11,11 @@ const EmployeePerformanceLayout = () => {
       permission: PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_DAILY_KRA.value,
     },
     {
+      label: "Department Monthly KPA",
+      path: "monthly-KPA",
+      permission: PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_MONTHLY_KPA.value,
+    },
+    {
       label: "Individual Daily KRA",
       path: "individual-Daily-KRA",
       permission: PERMISSIONS.PERFORMANCE_EMPLOYEE_INDIVIDUAL_DAILY_KRA.value,
