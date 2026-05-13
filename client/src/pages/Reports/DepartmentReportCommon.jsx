@@ -26,6 +26,7 @@ const DepartmentReportCommon = () => {
   const selectedModule = REPORT_MODULE_MAP[String(moduleKey).toLowerCase()];
   const [activeReportId, setActiveReportId] = useState(null);
   const [jobStatusByReportId, setJobStatusByReportId] = useState({});
+  const [downloadedByReportId, setDownloadedByReportId] = useState({});
 
   const [dateRange, setDateRange] = useState([
     {
@@ -60,6 +61,21 @@ const DepartmentReportCommon = () => {
     enabled: Boolean(selectedModule?.module),
   });
 
+  const triggerReportDownload = (downloadUrl) => {
+    if (!downloadUrl) return false;
+
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.download = "";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    return true;
+  };
+
   const pollReportStatus = async (jobId, reportId) => {
     let attempts = 0;
     const maxAttempts = 120;
@@ -77,11 +93,17 @@ const DepartmentReportCommon = () => {
         const downloadUrl =
           response?.data?.downloadUrl || response?.data?.fileUrl || null;
 
-        if (downloadUrl) {
-          window.open(downloadUrl, "_blank", "noopener,noreferrer");
+        const downloadStarted = triggerReportDownload(downloadUrl);
+
+        setDownloadedByReportId((prev) => ({
+          ...prev,
+          [reportId]: downloadStarted,
+        }));
+
+        if (downloadStarted) {
           toast.success("Report generated and download started");
         } else {
-          toast.success("Report generated successfully");
+          toast.error("Report generated, but no download link was returned");
         }
         return;
       }
@@ -119,6 +141,11 @@ const DepartmentReportCommon = () => {
       setJobStatusByReportId((prev) => ({
         ...prev,
         [reportRow?._id]: "pending",
+      }));
+
+      setDownloadedByReportId((prev) => ({
+        ...prev,
+        [reportRow?._id]: false,
       }));
 
       const response = await axios.post("/api/reports/generate", payload);
@@ -183,11 +210,14 @@ const DepartmentReportCommon = () => {
           generateReportMutation.isPending && activeReportId === row?._id;
         const isGenerating =
           status === "pending" || status === "processing" || isPending;
+        const isDownloaded = downloadedByReportId[row?._id];
         const buttonLabel =
           status === "processing"
             ? "Processing..."
             : status === "completed"
-              ? "Downloaded"
+              ? isDownloaded
+                ? "Downloaded"
+                : "Download failed"
               : status === "failed"
                 ? "Retry"
                 : isGenerating
@@ -202,7 +232,12 @@ const DepartmentReportCommon = () => {
               generateReportMutation.mutate(row);
             }}
             className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-300"
-            disabled={isGenerating || !row?._id || !row?.departmentId?._id}
+            disabled={
+              isGenerating ||
+              (status === "completed" && isDownloaded) ||
+              !row?._id ||
+              !row?.departmentId?._id
+            }
           >
             {buttonLabel}
           </button>
