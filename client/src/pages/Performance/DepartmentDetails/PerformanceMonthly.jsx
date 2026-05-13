@@ -37,9 +37,10 @@ const PerformanceMonthly = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
- const selectedDepartmentName = useSelector(
+  const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName
   );
+    const selectedMember = useSelector((state) => state.performance.selectedMember);
   const departmentName =
     selectedDepartmentName ||
     department ||
@@ -50,6 +51,9 @@ const PerformanceMonthly = () => {
     .filter(Boolean)
     .join(" ")
     .trim();
+   const selectedMemberFromRoute = location.state?.selectedMember;
+  const activeMember = selectedMemberFromRoute || selectedMember;
+  const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";  
 
   const restrictedRoles = [
     "IT Employee",
@@ -439,6 +443,14 @@ const PerformanceMonthly = () => {
       },
     },
   ];
+  const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
+    if (!activeMember?.memberName) return true;
+    return (item?.assignedTo || "").toString().trim() === activeMember.memberName;
+  });
+  const filteredCompletedEntries = (completedEntries || []).filter((item) => {
+    if (!activeMember?.memberName) return true;
+    return (item?.completedBy || "").toString().trim() === activeMember.memberName;
+  });
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -447,7 +459,8 @@ const PerformanceMonthly = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 checkbox={showCheckBox}
-                tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                  tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${activeMemberName}`}
+                //tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                 //tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
                 buttonTitle={"Add Monthly KPA"}
                 buttonDisabled={isAddKpaDisabled}
@@ -458,7 +471,8 @@ const PerformanceMonthly = () => {
                 }}
                 key={departmentKra.length}
                 data={[
-                  ...departmentKra
+                  // ...departmentKra
+                  ...filteredDepartmentKpa
                     .filter((item) => item.status !== "Completed")
                     .map((item, index) => ({
                       mongoId: item.id,
@@ -483,10 +497,14 @@ const PerformanceMonthly = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 exportData={true}
-                tableTitle={`COMPLETED - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                // tableTitle={`COMPLETED - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                // key={completedEntries.length}
+                // data={[
+                //   ...completedEntries.map((item, index) => ({
+                    tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
                 key={completedEntries.length}
                 data={[
-                  ...completedEntries.map((item, index) => ({
+                  ...filteredCompletedEntries.map((item, index) => ({
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
                     completionDate: humanDate(item.completionDate),
