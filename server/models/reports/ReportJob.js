@@ -29,6 +29,10 @@ const ReportJobSchema = new mongoose.Schema(
       stack: String,
     },
     completedAt: Date,
+    retryCount: Number,
+    startedAt: Date,
+    failedAt: Date,
+    bullJobId: String,
   },
   { timestamps: true },
 );
