@@ -25,6 +25,7 @@ const DepartmentReportCommon = () => {
   const { moduleKey = "" } = useParams();
   const selectedModule = REPORT_MODULE_MAP[String(moduleKey).toLowerCase()];
   const [activeReportId, setActiveReportId] = useState(null);
+  const [jobStatusByReportId, setJobStatusByReportId] = useState({});
 
   const [dateRange, setDateRange] = useState([
     {
@@ -59,6 +60,47 @@ const DepartmentReportCommon = () => {
     enabled: Boolean(selectedModule?.module),
   });
 
+  const pollReportStatus = async (jobId, reportId) => {
+    let attempts = 0;
+    const maxAttempts = 120;
+
+    while (attempts < maxAttempts) {
+      const response = await axios.get(`/api/reports/status/${jobId}`);
+      const status = response?.data?.status;
+
+      setJobStatusByReportId((prev) => ({
+        ...prev,
+        [reportId]: status || "pending",
+      }));
+
+      if (status === "completed") {
+        const downloadUrl =
+          response?.data?.downloadUrl || response?.data?.fileUrl || null;
+
+        if (downloadUrl) {
+          window.open(downloadUrl, "_blank", "noopener,noreferrer");
+          toast.success("Report generated and download started");
+        } else {
+          toast.success("Report generated successfully");
+        }
+        return;
+      }
+
+      if (status === "failed") {
+        throw new Error(
+          response?.data?.error?.message || "Report generation failed",
+        );
+      }
+
+      attempts += 1;
+      await new Promise((resolve) => {
+        setTimeout(resolve, 2000);
+      });
+    }
+
+    throw new Error("Report generation is taking longer than expected");
+  };
+
   const generateReportMutation = useMutation({
     mutationFn: async (reportRow) => {
       const payload = {
@@ -74,7 +116,20 @@ const DepartmentReportCommon = () => {
         },
       };
 
+      setJobStatusByReportId((prev) => ({
+        ...prev,
+        [reportRow?._id]: "pending",
+      }));
+
       const response = await axios.post("/api/reports/generate", payload);
+      const jobId = response?.data?.jobId;
+
+      if (!jobId) {
+        throw new Error("Report job id was not returned by the server");
+      }
+
+      await pollReportStatus(jobId, reportRow?._id);
+
       return response.data;
     },
     onSuccess: () => toast.success("Report generation started"),
@@ -123,8 +178,21 @@ const DepartmentReportCommon = () => {
       minWidth: 190,
       cellRenderer: (params) => {
         const row = params?.data;
+        const status = jobStatusByReportId[row?._id];
         const isPending =
           generateReportMutation.isPending && activeReportId === row?._id;
+        const isGenerating =
+          status === "pending" || status === "processing" || isPending;
+        const buttonLabel =
+          status === "processing"
+            ? "Processing..."
+            : status === "completed"
+              ? "Downloaded"
+              : status === "failed"
+                ? "Retry"
+                : isGenerating
+                  ? "Generating..."
+                  : "Generate";
 
         return (
           <button
@@ -134,9 +202,9 @@ const DepartmentReportCommon = () => {
               generateReportMutation.mutate(row);
             }}
             className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-300"
-            disabled={isPending || !row?._id || !row?.departmentId?._id}
+            disabled={isGenerating || !row?._id || !row?.departmentId?._id}
           >
-            {isPending ? "Generating..." : "Generate"}
+            {buttonLabel}
           </button>
         );
       },
