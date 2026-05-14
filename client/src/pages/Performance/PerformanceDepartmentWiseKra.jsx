@@ -408,9 +408,9 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
               mongoId: item.departmentId,
               department: item.departmentName,
               dailyKra: item.dailyKra,
-              individualDailyKra: item.individualDailyKra,
-              //  individualDailyKra:
-              //   (item.individualDailyKra || 0) + (item.teamDailyKra || 0),
+             // individualDailyKra: item.individualDailyKra,
+               individualDailyKra:
+                (item.individualDailyKra || 0) + (item.teamDailyKra || 0),
               teamDailyKra: item.teamDailyKra,
             }))}
             columns={visibleDepartmentColumns}

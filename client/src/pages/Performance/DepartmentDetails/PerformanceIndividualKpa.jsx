@@ -32,6 +32,7 @@ import { HiPencilSquare } from "react-icons/hi2";
 
 const PerformanceIndividualKpa = () => {
     const axios = useAxiosPrivate();
+     const location = useLocation();
     const dispatch = useDispatch();
     const { auth } = useAuth();
     const { department } = useParams();
@@ -44,15 +45,24 @@ const PerformanceIndividualKpa = () => {
         (state) => state.performance.selectedDepartmentName
     );
 
+    const selectedMember = useSelector((state) => state.performance.selectedMember);
+
     const departmentName =
         selectedDepartmentName ||
         department ||
         auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
         "Department";
-         const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+    const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    const selectedMemberFromRoute = location.state?.selectedMember;
+    const activeMember = selectedMemberFromRoute || selectedMember;
+     const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+    const activeMemberName = isEmployeeKraKpaRoute
+        ? loggedInUserName || "User Name"
+        : activeMember?.memberName || loggedInUserName || "User Name";
+    //const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
 
     const restrictedRoles = [
         "IT Employee",
@@ -94,6 +104,21 @@ const PerformanceIndividualKpa = () => {
     const matchingDepartment = auth.user?.departments?.some(
         (dept) => dept._id === deptId
     );
+
+       const normalizeValue = (value) =>
+        (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+    const isViewingOwnMember =
+        normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
+        normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    const shouldHideAddButtonForSelectedMemberView =
+        isManager && activeMember?.memberId && !isViewingOwnMember;
+    const shouldHideRowActionsForSelectedMemberView = shouldHideAddButtonForSelectedMemberView;
+    // const showCheckBoxForCurrentView =
+    //     showCheckBox && !shouldHideRowActionsForSelectedMemberView;
+      const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
+    const canShowControls = shouldShowManagerControlsInEmployeeRoute || !shouldHideAddButtonForSelectedMemberView;
+    const showCheckBoxForCurrentView =
+        (showCheckBox || shouldShowManagerControlsInEmployeeRoute) && canShowControls;
 
     const {
         handleSubmit: submitDailyKra,
@@ -248,6 +273,22 @@ const PerformanceIndividualKpa = () => {
         queryFn: fetchTasks,
     });
 
+        const { data: teamKpaForIndividual = [] } = useQuery({
+        queryKey: ["fetchedTeamKPAForIndividual", deptId],
+        queryFn: async () => {
+            try {
+                const response = await axios.get(
+                    `/api/performance/get-tasks?dept=${deptId}&type=TEAMKPA`
+                );
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        },
+        enabled: !!deptId,
+    });
+
     // const { data: assignees = [] } = useQuery({
     //     queryKey: ["fetchAssignees", deptId],
     //     queryFn: async () => {
@@ -269,6 +310,22 @@ const PerformanceIndividualKpa = () => {
                  return [];
             }
         },
+    });
+
+      const { data: completedTeamEntries = [] } = useQuery({
+        queryKey: ["completedTeamEntriesForIndividual", deptId],
+        queryFn: async () => {
+            try {
+                const response = await axios.get(
+                    `/api/performance/get-completed-tasks?dept=${deptId}&type=TEAMKPA`
+                );
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        },
+        enabled: !!deptId,
     });
 
     const formatDateTime = (value) =>
@@ -319,7 +376,8 @@ const PerformanceIndividualKpa = () => {
                 );
             },
         },
-        ...(matchingDepartment
+        ...(matchingDepartment && canShowControls
+    //    ...(matchingDepartment && !shouldHideRowActionsForSelectedMemberView
             ? [
                 {
                     headerName: "Actions",
@@ -447,6 +505,48 @@ const PerformanceIndividualKpa = () => {
             },
         },
     ];
+//   const selectedMemberId = activeMember?.memberId?.toString()?.trim();
+//     const selectedMemberName = activeMember?.memberName?.toString()?.trim();
+ const selectedMemberId = isEmployeeKraKpaRoute
+    ? userId?.toString()?.trim()
+    : activeMember?.memberId?.toString()?.trim();
+    const selectedMemberName = isEmployeeKraKpaRoute
+        ? loggedInUserName?.toString()?.trim()
+        : activeMember?.memberName?.toString()?.trim();
+    const matchesSelectedMember = (assigneeValue) => {
+        const assignees = Array.isArray(assigneeValue) ? assigneeValue : [assigneeValue];
+        return assignees.some((assignee) => {
+            const normalized = (assignee || "").toString().trim();
+            if (!normalized) return false;
+            return normalized === selectedMemberId || normalized === selectedMemberName;
+        });
+    };
+
+    const uniqueTaskMap = new Map();
+    [...(departmentKra || []), ...(teamKpaForIndividual || [])].forEach((item) => {
+        const taskId = item?.id?.toString?.();
+        if (!taskId || uniqueTaskMap.has(taskId)) return;
+        uniqueTaskMap.set(taskId, item);
+    });
+
+    const filteredDepartmentKpa = Array.from(uniqueTaskMap.values()).filter(
+        (item) => {
+            if (!selectedMemberId && !selectedMemberName) return true;
+            return matchesSelectedMember(item?.assignedTo);
+        }
+    );
+    const uniqueCompletedMap = new Map();
+    [...(completedEntries || []), ...(completedTeamEntries || [])].forEach((item) => {
+        const completedId = item?.id?.toString?.() || `${item?.taskName}-${item?.completionDate}`;
+        if (uniqueCompletedMap.has(completedId)) return;
+        uniqueCompletedMap.set(completedId, item);
+    });
+
+    const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
+        if (!selectedMemberName && !selectedMemberId) return true;
+        const completedBy = (item?.completedBy || "").toString().trim();
+        return completedBy === selectedMemberName || completedBy === selectedMemberId;
+    });
     return (
         <>
             <div className="flex flex-col gap-4">
@@ -454,19 +554,36 @@ const PerformanceIndividualKpa = () => {
                     {!isCompletedLoading && !isUpdatePending ? (
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
-                                checkbox={showCheckBox}
+                                 checkbox={showCheckBoxForCurrentView}
                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
-                                 tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
-                                buttonTitle={"Add Monthly KPA"}
-                                buttonDisabled={isAddKpaDisabled}
-                                   handleSubmit={() => {
+                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                                tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
+                                // buttonTitle={"Add Monthly KPA"}
+                                // buttonDisabled={isAddKpaDisabled}
+                                //    handleSubmit={() => {
+                                //   buttonTitle={
+                                //     shouldHideAddButtonForSelectedMemberView
+                                //         ? undefined
+                                //         : "Add Monthly KPA"
+                                // }
+                                // buttonDisabled={
+                                //     isAddKpaDisabled || shouldHideAddButtonForSelectedMemberView
+                                 buttonTitle={
+                                    !canShowControls
+                                        ? undefined
+                                        : "Add Monthly KPA"
+                                }
+                                buttonDisabled={
+                                    isAddKpaDisabled || !canShowControls
+                                }
+                                handleSubmit={() => {    
                                     setIsEditMode(false);
                                     setEditingTaskId(null);
                                     setOpenModal(true);
                                 }}
                                 key={departmentKra.length}
                                 data={[
-                                    ...departmentKra
+                                      ...filteredDepartmentKpa
                                         .filter((item) => item.status !== "Completed")
                                         .map((item, index) => ({
                                             mongoId: item.id,
@@ -492,10 +609,14 @@ const PerformanceIndividualKpa = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 exportData={true}
-                                tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                                // tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                                // key={completedEntries.length}
+                                // data={[
+                                //     ...completedEntries.map((item, index) => ({
+                                       tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
                                 key={completedEntries.length}
                                 data={[
-                                    ...completedEntries.map((item, index) => ({
+                                    ...filteredCompletedEntries.map((item, index) => ({
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
                                         completionDate: humanDate(item.completionDate),

@@ -10,6 +10,7 @@ import useAuth from "../../hooks/useAuth";
 import {
   setSelectedDepartment,
   setSelectedDepartmentName,
+    setSelectedMember,
 } from "../../redux/slices/performanceSlice";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
@@ -176,6 +177,21 @@ const PerformanceMemberWiseKra = () => {
         map.get(userId)[field] += 1;
       };
 
+      const upsertManagerTeamKraCount = (field) => {
+        const managerId = loggedInUserId || "unassigned";
+        const managerName = loggedInUserName || "Manager";
+
+        if (!map.has(managerId)) {
+          map.set(managerId, {
+            memberId: managerId,
+            member: managerName,
+            ...DEFAULT_COUNTS,
+          });
+        }
+
+        map.get(managerId)[field] += 1;
+      };
+
       const incrementPendingKra = (task) => {
          const assignedDateKey = getDateKey(task?.assignedDate);
         if (!assignedDateKey || assignedDateKey !== selectedDateKey) return;
@@ -227,7 +243,22 @@ const PerformanceMemberWiseKra = () => {
 
       getResponseData(teamKraResponse)
         .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
-        .forEach((task) => upsert(task, "teamDailyKra"));
+        .forEach((task) => {
+          if (canManageTeam) {
+            upsertManagerTeamKraCount("teamDailyKra");
+            const assigneeId = task?.assignToId?.toString?.();
+            const assigneeName = normalizeName(task?.assignedTo);
+            const managerName = normalizeName(loggedInUserName);
+            const isManagerAssignee =
+              (assigneeId && assigneeId === loggedInUserId) ||
+              (!!assigneeName && !!managerName && assigneeName === managerName);
+            if (!isManagerAssignee) {
+              upsert(task, "individualDailyKra");
+            }
+            return;
+          }
+          upsert(task, "teamDailyKra");
+        });
 
       getResponseData(kraResponse).forEach(incrementPendingKra);
       getResponseData(individualKraResponse).forEach(incrementPendingKra);
@@ -315,13 +346,16 @@ const PerformanceMemberWiseKra = () => {
 
           dispatch(setSelectedDepartment(targetDepartmentId));
           dispatch(setSelectedDepartmentName(targetDepartmentName));
+          dispatch(setSelectedMember({ memberId, memberName: params.value }));
 
           let firstTab = "individual-Daily-KRA";
           if (canManageTeam && !isOwnRow) {
-            firstTab = "Daily-KRA";
+            firstTab = "daily-KRA";
           }
 
-            navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`);
+             navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`, {
+              state: { selectedMember: { memberId, memberName: params.value } },
+            });
         };
 
         return (

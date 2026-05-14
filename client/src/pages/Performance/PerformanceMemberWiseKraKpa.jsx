@@ -11,6 +11,7 @@ import { useDispatch } from "react-redux";
 import {
     setSelectedDepartment,
     setSelectedDepartmentName,
+    setSelectedMember,
 } from "../../redux/slices/performanceSlice";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
@@ -192,6 +193,20 @@ const PerformanceMemberWiseKraKpa = () => {
 
                 map.get(userId)[field] += 1;
             };
+               const upsertManagerTeamKpaCount = (task, field) => {
+                const managerId = loggedInUserId || "unassigned";
+                const managerName = loggedInUserName || "Manager";
+
+                if (!map.has(managerId)) {
+                    map.set(managerId, {
+                        memberId: managerId,
+                        member: managerName,
+                        ...DEFAULT_COUNTS,
+                    });
+                }
+
+                map.get(managerId)[field] += 1;
+            };
 
              const incrementPendingKpa = (task) => {
                 const taskDate = new Date(task?.assignedDate);
@@ -247,7 +262,23 @@ const PerformanceMemberWiseKraKpa = () => {
                 .forEach((task) => upsert(task, "teamDailyKra"));
             getResponseData(teamKpaResponse)
                 .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
-                .forEach((task) => upsert(task, "teamMonthlyKpa"));
+                  .forEach((task) => {
+                    if (canManageTeam) {
+                        upsertManagerTeamKpaCount(task, "teamMonthlyKpa");
+                       upsert(task, "individualMonthlyKpa");
+                        return;
+                    }
+                    upsert(task, "teamMonthlyKpa");
+                });
+                
+                //upsertManagerTeamKpaCount(task, "teamMonthlyKpa");
+                //  .forEach((task) => {
+                //     if (canManageTeam) {
+                //         upsertManagerTeamKpaCount(task, "teamMonthlyKpa");
+                //         return;
+                //     }
+                //     upsert(task, "teamMonthlyKpa");
+                // });
 
              const getFiscalMonthFromDate = (dateValue) => {
                 const date = new Date(dateValue);
@@ -332,8 +363,10 @@ const PerformanceMemberWiseKraKpa = () => {
             : memberWiseData;
 
         return filteredData.map((item, index) => ({
-            srNo: index + 1,
-            ...item,
+    srNo: index + 1,
+    ...item,
+    individualMonthlyKpa: item?.individualMonthlyKpa || 0,
+
         }));
     }, [isEmployeeLevel, loggedInUserId, memberWiseData]);
 
@@ -379,13 +412,12 @@ const PerformanceMemberWiseKraKpa = () => {
 
                     dispatch(setSelectedDepartment(targetDepartmentId));
                     dispatch(setSelectedDepartmentName(targetDepartmentName));
+                    dispatch(setSelectedMember({ memberId, memberName: params.value }));
+ const firstTab = "individual-Monthly-KPA";
 
-                     let firstTab = "individual-Monthly-KPA";
-                     if (canManageTeam && !isOwnRow) {
-                      firstTab = "Monthly-KPA";
-                         }
-
-                     navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`);
+ navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
+                        state: { selectedMember: { memberId, memberName: params.value } },
+                    });
                 };
 
                 return (
@@ -406,6 +438,7 @@ const PerformanceMemberWiseKraKpa = () => {
         { headerName: "Department Monthly KPA", field: "monthlyKpa", hide: isEmployeeLevel },
         //{ headerName: "Individual Daily KRA", field: "individualDailyKra" },
         { headerName: "Individual Monthly KPA", field: "individualMonthlyKpa" },
+           //{ headerName: "Individual Monthly KPA", field: "teamMonthlyKpa" },
         //{ headerName: "Team Daily KRA", field: "teamDailyKra", hide: isEmployeeLevel },
         { headerName: "Team Monthly KPA", field: "teamMonthlyKpa", hide: isEmployeeLevel },
     ];

@@ -125,7 +125,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
           const departmentName = item?.department?.name;
           if (!departmentId || !departmentName) return null;
 
-          const [assignedResponse, completedResponse, individualAssignedResponse] =
+  const [assignedResponse, completedResponse, individualAssignedResponse, teamAssignedResponse] =
             await Promise.allSettled([
               axios.get(
                 `/api/performance/get-tasks?dept=${departmentId}&type=KPA&duration=Monthly`,
@@ -135,6 +135,9 @@ const PerformanceDepartmentWiseKraKpa = () => {
               ),
               axios.get(
                 `/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKPA&duration=Monthly`,
+              ),
+              axios.get(
+                `/api/performance/get-tasks?dept=${departmentId}&type=TEAMKPA&duration=Monthly`,
               ),
             ]);
 
@@ -150,6 +153,10 @@ const PerformanceDepartmentWiseKraKpa = () => {
             individualAssignedResponse?.status === "fulfilled"
               ? individualAssignedResponse.value?.data || []
               : [];
+            const teamAssignedTasks =
+            teamAssignedResponse?.status === "fulfilled"
+              ? teamAssignedResponse.value?.data || []
+              : [];    
 
           const monthlyAssignedCount = assignedTasks.filter((task) =>
             isSameSelectedMonth(task?.assignedDate),
@@ -158,6 +165,11 @@ const PerformanceDepartmentWiseKraKpa = () => {
             isSameSelectedMonth(task?.completionDate),
           ).length;
           const monthlyPendingCount = assignedTasks.filter(
+            (task) =>
+              isSameSelectedMonth(task?.assignedDate) &&
+              task?.status !== "Completed",
+          ).length;
+          const teamMonthlyPendingCount = teamAssignedTasks.filter(
             (task) =>
               isSameSelectedMonth(task?.assignedDate) &&
               task?.status !== "Completed",
@@ -174,7 +186,8 @@ const PerformanceDepartmentWiseKraKpa = () => {
             monthlyAssignedCount,
             monthlyCompletedCount,
             monthlyPendingCount,
-            individualMonthlyPendingCount,
+               individualMonthlyPendingCount:
+              individualMonthlyPendingCount + teamMonthlyPendingCount,
           };
         }),
       );
