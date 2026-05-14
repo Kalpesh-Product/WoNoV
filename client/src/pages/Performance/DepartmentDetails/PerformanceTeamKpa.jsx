@@ -342,15 +342,37 @@ const PerformanceTeamKpa = () => {
       },
     },
   ];
- const filteredTeamKpa = (teamKpa || []).filter((item) => {
-    if (!activeMember?.memberName) return true;
-    const assignees = Array.isArray(item?.assignedTo) ? item.assignedTo : [item?.assignedTo];
-    return assignees.some((name) => (name || "").toString().trim() === activeMember.memberName);
-  });
-  const filteredCompletedEntries = (completedEntries || []).filter((item) => {
-    if (!activeMember?.memberName) return true;
-    return (item?.completedBy || "").toString().trim() === activeMember.memberName;
-  });
+ const normalizeValue = (value) =>
+    (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+  const isSelectedSelf =
+    normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
+    normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+
+  const shouldHideTeamDataForSelectedMember =
+    isManager && activeMember?.memberId && !isSelectedSelf;
+
+  const filteredTeamKpa = shouldHideTeamDataForSelectedMember
+    ? []
+    : isManager && isSelectedSelf
+      ? teamKpa || []
+      : (teamKpa || []).filter((item) => {
+          if (!activeMember?.memberName) return true;
+          const assignees = Array.isArray(item?.assignedTo)
+            ? item.assignedTo
+            : [item?.assignedTo];
+          return assignees.some(
+            (name) => normalizeValue(name) === normalizeValue(activeMember.memberName)
+          );
+        });
+
+  const filteredCompletedEntries = shouldHideTeamDataForSelectedMember
+    ? []
+    : isManager && isSelectedSelf
+      ? completedEntries || []
+      : (completedEntries || []).filter((item) => {
+          if (!activeMember?.memberName) return true;
+          return normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName);
+        });
   return (
     <>
       <div className="flex flex-col gap-4">

@@ -253,6 +253,22 @@ const PerformanceIndividualKpa = () => {
         queryFn: fetchTasks,
     });
 
+        const { data: teamKpaForIndividual = [] } = useQuery({
+        queryKey: ["fetchedTeamKPAForIndividual", deptId],
+        queryFn: async () => {
+            try {
+                const response = await axios.get(
+                    `/api/performance/get-tasks?dept=${deptId}&type=TEAMKPA`
+                );
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        },
+        enabled: !!deptId,
+    });
+
     // const { data: assignees = [] } = useQuery({
     //     queryKey: ["fetchAssignees", deptId],
     //     queryFn: async () => {
@@ -274,6 +290,22 @@ const PerformanceIndividualKpa = () => {
                  return [];
             }
         },
+    });
+
+      const { data: completedTeamEntries = [] } = useQuery({
+        queryKey: ["completedTeamEntriesForIndividual", deptId],
+        queryFn: async () => {
+            try {
+                const response = await axios.get(
+                    `/api/performance/get-completed-tasks?dept=${deptId}&type=TEAMKPA`
+                );
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        },
+        enabled: !!deptId,
     });
 
     const formatDateTime = (value) =>
@@ -452,13 +484,41 @@ const PerformanceIndividualKpa = () => {
             },
         },
     ];
-      const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
-        if (!activeMember?.memberName) return true;
-        return (item?.assignedTo || "").toString().trim() === activeMember.memberName;
+  const selectedMemberId = activeMember?.memberId?.toString()?.trim();
+    const selectedMemberName = activeMember?.memberName?.toString()?.trim();
+    const matchesSelectedMember = (assigneeValue) => {
+        const assignees = Array.isArray(assigneeValue) ? assigneeValue : [assigneeValue];
+        return assignees.some((assignee) => {
+            const normalized = (assignee || "").toString().trim();
+            if (!normalized) return false;
+            return normalized === selectedMemberId || normalized === selectedMemberName;
+        });
+    };
+
+    const uniqueTaskMap = new Map();
+    [...(departmentKra || []), ...(teamKpaForIndividual || [])].forEach((item) => {
+        const taskId = item?.id?.toString?.();
+        if (!taskId || uniqueTaskMap.has(taskId)) return;
+        uniqueTaskMap.set(taskId, item);
     });
-    const filteredCompletedEntries = (completedEntries || []).filter((item) => {
-        if (!activeMember?.memberName) return true;
-        return (item?.completedBy || "").toString().trim() === activeMember.memberName;
+
+    const filteredDepartmentKpa = Array.from(uniqueTaskMap.values()).filter(
+        (item) => {
+            if (!selectedMemberId && !selectedMemberName) return true;
+            return matchesSelectedMember(item?.assignedTo);
+        }
+    );
+    const uniqueCompletedMap = new Map();
+    [...(completedEntries || []), ...(completedTeamEntries || [])].forEach((item) => {
+        const completedId = item?.id?.toString?.() || `${item?.taskName}-${item?.completionDate}`;
+        if (uniqueCompletedMap.has(completedId)) return;
+        uniqueCompletedMap.set(completedId, item);
+    });
+
+    const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
+        if (!selectedMemberName && !selectedMemberId) return true;
+        const completedBy = (item?.completedBy || "").toString().trim();
+        return completedBy === selectedMemberName || completedBy === selectedMemberId;
     });
     return (
         <>
