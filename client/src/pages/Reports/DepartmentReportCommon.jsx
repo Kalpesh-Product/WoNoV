@@ -359,7 +359,7 @@ const DepartmentReportCommon = () => {
     {
       field: "download",
       headerName: "Download",
-      minWidth: 190,
+      flex: 1,
       cellRenderer: (params) => {
         const row = params?.data;
         const status = jobStatusByReportId[row?._id];
@@ -400,19 +400,15 @@ const DepartmentReportCommon = () => {
               {buttonLabel}
             </button>
 
-            <button
-              type="button"
-              onClick={() => cancelReportGeneration(row?._id)}
-              className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
-              disabled={
-                !isGenerating ||
-                (status === "completed" && isDownloaded) ||
-                !row?._id ||
-                !row?.departmentId?._id
-              }
-            >
-              Cancel
-            </button>
+            {isGenerating ? (
+              <button
+                type="button"
+                onClick={() => cancelReportGeneration(row?._id)}
+                className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
+              >
+                Cancel
+              </button>
+            ) : null}
           </div>
         );
       },

@@ -17,7 +17,13 @@ const worker = new Worker(
     );
     if (!reportJob) throw new Error("ReportJob not found");
 
+    if (reportJob.status === "canceled") {
+      return;
+    }
+
     reportJob.status = "processing";
+    reportJob.startedAt = new Date();
+
     await reportJob.save();
 
     try {
@@ -42,6 +48,12 @@ const worker = new Worker(
           throw new Error(
             `Unsupported template: ${reportJob.report.reportName}`,
           );
+      }
+
+      const latestState =
+        await ReportJob.findById(reportJobId).select("status");
+      if (latestState?.status === "canceled") {
+        return;
       }
 
       reportJob.data = data;

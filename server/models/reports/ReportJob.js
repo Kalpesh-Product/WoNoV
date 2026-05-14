@@ -40,6 +40,9 @@ const ReportJobSchema = new mongoose.Schema(
     startedAt: Date,
     failedAt: Date,
     bullJobId: String,
+    cancelReason: String,
+    canceledAt: Date,
+    requestKey: String, //unique key to avoid multiple duplicate report jobs
   },
   { timestamps: true },
 );
