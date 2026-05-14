@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Chip, Popover } from "@mui/material";
@@ -27,6 +27,8 @@ const DepartmentReportCommon = () => {
   const [activeReportId, setActiveReportId] = useState(null);
   const [jobStatusByReportId, setJobStatusByReportId] = useState({});
   const [downloadedByReportId, setDownloadedByReportId] = useState({});
+  const reportJobByReportIdRef = useRef({});
+  const cancelledJobsRef = useRef(new Set());
 
   const [dateRange, setDateRange] = useState([
     {
@@ -191,10 +193,19 @@ const DepartmentReportCommon = () => {
   };
 
   const pollReportStatus = async (jobId, reportId) => {
+    cancelledJobsRef.current.delete(jobId);
     let attempts = 0;
     const maxAttempts = 120;
 
     while (attempts < maxAttempts) {
+      if (cancelledJobsRef.current.has(jobId)) {
+        setJobStatusByReportId((prev) => ({
+          ...prev,
+          [reportId]: "cancelled",
+        }));
+        return;
+      }
+
       const response = await axios.get(`/api/reports/status/${jobId}`);
       const status = response?.data?.status;
 
@@ -232,6 +243,13 @@ const DepartmentReportCommon = () => {
       }
 
       attempts += 1;
+      if (cancelledJobsRef.current.has(jobId)) {
+        setJobStatusByReportId((prev) => ({
+          ...prev,
+          [reportId]: "cancelled",
+        }));
+        return;
+      }
       await new Promise((resolve) => {
         setTimeout(resolve, 2000);
       });
@@ -274,6 +292,8 @@ const DepartmentReportCommon = () => {
 
       await pollReportStatus(jobId, reportRow?._id);
 
+      reportJobByReportIdRef.current[reportRow?._id] = jobId;
+
       return response.data;
     },
     onSuccess: () => toast.success("Report generation started"),
@@ -284,6 +304,26 @@ const DepartmentReportCommon = () => {
     },
     onSettled: () => setActiveReportId(null),
   });
+
+  const cancelReportGeneration = (reportId) => {
+    const jobId = reportJobByReportIdRef.current?.[reportId];
+
+    if (!jobId) {
+      setJobStatusByReportId((prev) => ({
+        ...prev,
+        [reportId]: "cancelled",
+      }));
+      toast.info("Report generation cancelled");
+      return;
+    }
+
+    cancelledJobsRef.current.add(jobId);
+    setJobStatusByReportId((prev) => ({
+      ...prev,
+      [reportId]: "cancelled",
+    }));
+    toast.info("Report generation cancelled");
+  };
 
   const columns = [
     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
@@ -335,29 +375,45 @@ const DepartmentReportCommon = () => {
               ? isDownloaded
                 ? "Downloaded"
                 : "Download failed"
-              : status === "failed"
+              : status === "failed" || status === "cancelled"
                 ? "Retry"
                 : isGenerating
                   ? "Generating..."
                   : "Generate";
 
         return (
-          <button
-            type="button"
-            onClick={() => {
-              setActiveReportId(row?._id || null);
-              generateReportMutation.mutate(row);
-            }}
-            className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-300"
-            disabled={
-              isGenerating ||
-              (status === "completed" && isDownloaded) ||
-              !row?._id ||
-              !row?.departmentId?._id
-            }
-          >
-            {buttonLabel}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveReportId(row?._id || null);
+                generateReportMutation.mutate(row);
+              }}
+              className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-300"
+              disabled={
+                isGenerating ||
+                (status === "completed" && isDownloaded) ||
+                !row?._id ||
+                !row?.departmentId?._id
+              }
+            >
+              {buttonLabel}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => cancelReportGeneration(row?._id)}
+              className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
+              disabled={
+                !isGenerating ||
+                (status === "completed" && isDownloaded) ||
+                !row?._id ||
+                !row?.departmentId?._id
+              }
+            >
+              Cancel
+            </button>
+          </div>
         );
       },
     },
