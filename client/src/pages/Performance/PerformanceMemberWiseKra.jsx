@@ -318,19 +318,10 @@ const PerformanceMemberWiseKra = () => {
 
           let firstTab = "individual-Daily-KRA";
           if (canManageTeam && !isOwnRow) {
-            firstTab = "team-Daily-KRA";
+            firstTab = "Daily-KRA";
           }
 
-            const overallSegment = location.pathname.includes("/overall-department-kra/")
-            ? "overall-department-kra"
-            : "overall-department-kpa";
-          const memberWiseSegment = location.pathname.includes("/member-wise-kra")
-            ? "member-wise-kra"
-            : "member-wise-kpa";
-
-          navigate(
-            `/app/performance/department-wise/${overallSegment}/${memberWiseSegment}/${firstTab}`
-          );
+            navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`);
         };
 
         return (

@@ -241,8 +241,9 @@ const PerformanceDepartmentWiseKra = () => {
     dispatch(setSelectedDepartment(departmentId));
     dispatch(setSelectedDepartmentName(departmentName));
     navigate(
-      // `/app/performance/overall-department-kra/member-wise-kra-kpa/${departmentName}`,
-       `/app/performance/department-wise/overall-department-kra/member-wise-kra`,
+           // `/app/performance/overall-department-KRA/member-wise-KRA-kpa/${departmentName}`,
+     //  `/app/performance/department-wise/overall-department-KRA/member-wise-KRA`,
+       `/app/performance/department-KRA/member-wise-KRA`,
       { state: { date: selectedDate } },
     );
   };

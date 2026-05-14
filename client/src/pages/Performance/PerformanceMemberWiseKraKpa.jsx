@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+	import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -11,6 +11,7 @@ import { useDispatch } from "react-redux";
 import {
     setSelectedDepartment,
     setSelectedDepartmentName,
+    setSelectedMember,
 } from "../../redux/slices/performanceSlice";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
@@ -33,6 +34,11 @@ const fiscalMonths = [
     "February",
     "March",
 ];
+
+const getCurrentFiscalMonth = () => {
+    const currentMonthIndex = new Date().getMonth();
+    return fiscalMonths[(currentMonthIndex + 9) % 12];
+};
 
 const DEFAULT_COUNTS = {
     dailyKra: 0,
@@ -81,7 +87,8 @@ const PerformanceMemberWiseKraKpa = () => {
     
     // State for dynamic month navigation
     const [selectedMonth, setSelectedMonth] = useState(
-        location.state?.month || new Date().toLocaleString("en-US", { month: "long" })
+       // location.state?.month || new Date().toLocaleString("en-US", { month: "long" })
+        location.state?.month || getCurrentFiscalMonth()
     );
 
     const canManageTeam =
@@ -373,25 +380,16 @@ const PerformanceMemberWiseKraKpa = () => {
 
                     dispatch(setSelectedDepartment(targetDepartmentId));
                     dispatch(setSelectedDepartmentName(targetDepartmentName));
+                    dispatch(setSelectedMember({ memberId, memberName: params.value }));
 
-                    let firstTab = "individual-Daily-KRA";
+                     let firstTab = "individual-Monthly-KPA";
+                     if (canManageTeam && !isOwnRow) {
+                      firstTab = "Monthly-KPA";
+                         }
 
-                    if (canManageTeam && !isOwnRow) {
-                        firstTab = "team-Daily-KRA";
-                    } else if (isTop && isOwnRow) {
-                        firstTab = "individual-Daily-KRA";
-                    }
-
-                     const overallSegment = location.pathname.includes("/overall-department-kra/")
-                        ? "overall-department-kra"
-                        : "overall-department-kpa";
-                    const memberWiseSegment = location.pathname.includes("/member-wise-kra")
-                        ? "member-wise-kra"
-                        : "member-wise-kpa";
-
-                    navigate(
-                        `/app/performance/department-wise/${overallSegment}/${memberWiseSegment}/${firstTab}`
-                    );
+ navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
+                        state: { selectedMember: { memberId, memberName: params.value } },
+                    });
                 };
 
                 return (
@@ -412,6 +410,7 @@ const PerformanceMemberWiseKraKpa = () => {
         { headerName: "Department Monthly KPA", field: "monthlyKpa", hide: isEmployeeLevel },
         //{ headerName: "Individual Daily KRA", field: "individualDailyKra" },
         { headerName: "Individual Monthly KPA", field: "individualMonthlyKpa" },
+           //{ headerName: "Individual Monthly KPA", field: "teamMonthlyKpa" },
         //{ headerName: "Team Daily KRA", field: "teamDailyKra", hide: isEmployeeLevel },
         { headerName: "Team Monthly KPA", field: "teamMonthlyKpa", hide: isEmployeeLevel },
     ];

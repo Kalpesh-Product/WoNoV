@@ -24,12 +24,15 @@ import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
 
 const PerformanceIndividualKra = () => {
     const axios = useAxiosPrivate();
     const { auth } = useAuth();
     const { department } = useParams();
     const [openModal, setOpenModal] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editingTaskId, setEditingTaskId] = useState(null);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
  const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
@@ -39,6 +42,10 @@ const PerformanceIndividualKra = () => {
         department ||
         auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
         "Department";
+         const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
     const userId = auth.user._id;
     const [selectedKra, setSelectedKra] = useState(null);
 
@@ -136,13 +143,41 @@ const PerformanceIndividualKra = () => {
             toast.success(data.message || "KRA Added");
             reset();
             setOpenModal(false);
+            setIsEditMode(false);
+            setEditingTaskId(null);
         },
         onError: (error) => {
             toast.error("Adding failed");
             // toast.error(error.message || "Error Adding KRA");
         },
     });
-    const handleFormSubmit = (data) => {
+   const handleOpenEditModal = (task) => {
+    setIsEditMode(true);
+    setEditingTaskId(task.id);
+    reset({
+      individualDailyKra: task.taskName || "",
+      assignedDate: task.assignedDate || null,
+      description: task.description || "",
+    });
+    setOpenModal(true);
+  };
+
+  const handleFormSubmit = async (data) => {
+        if (isEditMode && editingTaskId) {
+            await axios.patch(`/api/performance/update-task/${editingTaskId}`, {
+                task: data.individualDailyKra,
+                assignedDate: data.assignedDate,
+                description: data.description || "",
+                assignTo: userId,
+            });
+            toast.success("KRA updated successfully");
+            queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
+            setOpenModal(false);
+            setIsEditMode(false);
+            setEditingTaskId(null);
+            reset();
+            return;
+        }
         const payload = {
             ...data,
             assignTo: userId,
@@ -215,10 +250,11 @@ const PerformanceIndividualKra = () => {
     const departmentColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
         { headerName: "KRA List", field: "taskName", flex: 1 },
-        { headerName: "DueTime", field: "dueTime" },
+        { headerName: "DueTime", field: "dueTime",flex: 1},
         {
             field: "status",
             headerName: "Status",
+            flex: 1,
             cellRenderer: (params) => {
                 const statusColorMap = {
                     Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
@@ -242,6 +278,7 @@ const PerformanceIndividualKra = () => {
                     headerName: "Actions",
                     pinned: "right",
                     field: "actions",
+                    width:250,
                     cellRenderer: (params) => {
                         return (
                             <div className="flex items-center">
@@ -272,7 +309,28 @@ const PerformanceIndividualKra = () => {
                                     />
                                 </div>
 
-                                {/* Delete Recurrence */}
+                               {/* <button
+                  type="button"
+                  title="Edit"
+                  disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                  onClick={() => handleOpenEditModal(params.data)}
+                  className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                >
+                  <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
+                </button> */}
+                {!isAddKraDisabled && (
+                                    <button
+                                        type="button"
+                                        title="Edit"
+                                        disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                                        onClick={() => handleOpenEditModal(params.data)}
+                                        className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                                    >
+                                        <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
+                                    </button>
+                                )}
+
+                {/* Delete Recurrence */}
                                 {canDeleteRecurrence && (
                                     <button
                                         type="button"
@@ -308,22 +366,25 @@ const PerformanceIndividualKra = () => {
         value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
     const completedColumns = [
-        { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
+        { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
         { headerName: "KRA List", field: "taskName", flex: 1 },
         // { headerName: "Assigned Time", field: "assignedDate" },
 
-        { headerName: "Completed By", field: "completedBy" },
+        { headerName: "Completed By", field: "completedBy",flex: 1},
         {
             headerName: "Completed Date",
             field: "completionDate",
+            flex: 1
         },
         {
             headerName: "Completed Time",
             field: "completionTime",
+            flex: 1
         },
         {
             field: "status",
             headerName: "Status",
+            flex: 1,
             cellRenderer: (params) => {
                 const statusColorMap = {
                     Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -363,7 +424,8 @@ const PerformanceIndividualKra = () => {
                                 buttonTitle={"Add Daily KRA"}
                                 buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
-                                  tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA`}
+                                tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
+                                 // tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA`}
                                 //tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
                                 data={(departmentKra || [])
                                     .filter((item) => item.status !== "Completed")
@@ -392,7 +454,7 @@ const PerformanceIndividualKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                    tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA`}
+                                    tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
                                     exportData={true}
                                     checkAll={false}
                                     key={completedEntries.length}
@@ -423,7 +485,7 @@ const PerformanceIndividualKra = () => {
             <MuiModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                title={"Add Daily KRA"}
+                title={isEditMode ? "Edit Task" : "Add Daily KRA"}
             >
                 <form
                     onSubmit={submitDailyKra(handleFormSubmit)}

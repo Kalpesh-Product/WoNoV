@@ -243,8 +243,9 @@ const PerformanceHome = () => {
         dataPointSelection: (event, chartContext, config) => {
           const clickedMonth =
             config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
+            navigate("/app/performance/department-KPA", {
 
-            navigate("/app/performance/department-wise/overall-department-kpa", {
+            //navigate("/app/performance/department-wise/overall-department-kpa", {
             state: { month: clickedMonth },
           });
         },
@@ -412,32 +413,54 @@ const PerformanceHome = () => {
     },
   });
 
-   const canAccessDepartmentWiseCard =
-    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA) ||
-    hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA) ||
-    hasPermission(PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA);
+  const canAccessDepartmentKpaCard =
+    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD);
 
+  const canAccessDepartmentKraCard =
+    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD);
+
+  const canAccessEmployeeKraKpaCard =
+    hasPermission(PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA);
 
    const performanceCards = [
     {
-      title: "DEPARTMENT WISE KRA/KPA",
-      route: "/app/performance/department-wise",
-      hasAccess: canAccessDepartmentWiseCard,
+       title: "DEPARTMENT MONTHLY KPA",
+      route: "/app/performance/department-KPA",
+      hasAccess: canAccessDepartmentKpaCard,
+    },
+    {
+      title: "DEPARTMENT DAILY KRA",
+      route: "/app/performance/department-KRA",
+      hasAccess: canAccessDepartmentKraCard,
+    },
+    {
+      title: "EMPLOYEE KRA/KPA",
+      route: "/app/performance/employee-KRA-KPA",
+      hasAccess: canAccessEmployeeKraKpaCard,
     },
     {
       title: "ASSIGN KRA/KPA",
-      route: "/app/performance/assign-kra-kpa",
+      route: "/app/performance/assign-KRA-KPA",
        hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA),
     },
     {
-      title: "Report KRA/KPA",
-      route: "/app/performance/report-kra-kpa",
+      title: "REPORT KRA/KPA",
+      route: "/app/performance/report-KRA-KPA",
        hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA),
     },
   ].filter((card) => card.hasAccess);
 
     const getCardGridClass = () => {
-    if (performanceCards.length >= 3) {
+    if (performanceCards.length >= 5) {
+      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-5";
+    }
+
+    if (performanceCards.length === 4) {
+
+      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-4";
+    }
+
+    if (performanceCards.length === 3) {
       return "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
     }
 

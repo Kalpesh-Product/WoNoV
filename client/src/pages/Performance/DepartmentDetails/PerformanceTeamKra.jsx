@@ -23,12 +23,15 @@ import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
 
 const PerformanceTeamKra = () => {
     const axios = useAxiosPrivate();
     const { auth } = useAuth();
     const { department } = useParams();
     const [openModal, setOpenModal] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editingTaskId, setEditingTaskId] = useState(null);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
      const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
@@ -38,6 +41,7 @@ const PerformanceTeamKra = () => {
         department ||
         auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
         "Department";
+        const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]  .filter(Boolean)   .join(" ")   .trim();        
     const userId = auth.user._id;
 
     const restrictedRoles = [
@@ -111,6 +115,8 @@ const PerformanceTeamKra = () => {
             toast.success(data.message || "Team KPA Added");
             reset();
             setOpenModal(false);
+            setIsEditMode(false);
+            setEditingTaskId(null);
         },
         onError: (error) => {
             toast.error("Adding failed");
@@ -129,8 +135,35 @@ const PerformanceTeamKra = () => {
             }
         },
     });
+ const handleOpenEditModal = (task) => {
+    setIsEditMode(true);
+    setEditingTaskId(task.id);
+    reset({
+      teamDailyKra: task.taskName || "",
+      assignedDate: task.assignedDate || null,
+      assignTo: Array.isArray(task.assignedTo)
+        ? task.assignedTo
+        : task.assignedTo
+          ? [task.assignedTo]
+          : [],
+    });
+    setOpenModal(true);
+  };
 
-    const handleFormSubmit = (data) => {
+  const handleFormSubmit = async (data) => {
+        if (isEditMode && editingTaskId) {
+            await axios.patch(`/api/performance/update-task/${editingTaskId}`, {
+                task: data.teamDailyKra,
+                assignedDate: data.assignedDate,
+            });
+            toast.success("Team KRA updated successfully");
+            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA"] });
+            setOpenModal(false);
+            setIsEditMode(false);
+            setEditingTaskId(null);
+            reset();
+            return;
+        }
         const normalizedAssignees = Array.isArray(data.assignTo)
             ? data.assignTo
             : typeof data.assignTo === "string"
@@ -175,10 +208,11 @@ const PerformanceTeamKra = () => {
         { headerName: "Sr No", field: "srNo", width: 100 },
         { headerName: "KRA List", field: "taskName", flex: 1 },
         { headerName: "Assigned To", field: "assignedTo", flex: 1 },
-        { headerName: "DueTime", field: "dueTime" },
+        { headerName: "DueTime", field: "dueTime" ,flex: 1 },
         {
             field: "status",
             headerName: "Status",
+            flex: 1 ,
             cellRenderer: (params) => {
                 const statusColorMap = {
                     Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
@@ -196,9 +230,17 @@ const PerformanceTeamKra = () => {
                 {
                     headerName: "Actions",
                     field: "actions",
+                    pinned: "right",
                     cellRenderer: (params) => (
                         <div className="p-2 flex gap-2 items-center">
-
+                            <button
+                                    type="button"
+                                    title="Edit"
+                                    onClick={() => handleOpenEditModal(params.data)}
+                                    className="ml-2"
+                                >
+                                    <HiPencilSquare size={24} color="#111827" />
+                                </button>
                             {canDeleteRecurrence && (
                                 <button
                                     type="button"
@@ -217,22 +259,25 @@ const PerformanceTeamKra = () => {
             : []),
     ];
     const completedColumns = [
-        { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
+        { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
         { headerName: "KPA List", field: "taskName", flex: 1 },
         // { headerName: "Assigned Time", field: "assignedDate" },
 
-        { headerName: "Completed By", field: "completedBy" },
+        { headerName: "Completed By", field: "completedBy" ,flex: 1 },
         {
             headerName: "Completed Date",
             field: "completionDate",
+            flex: 1 
         },
         {
             headerName: "Completed Time",
             field: "completionTime",
+            flex: 1 
         },
         {
             field: "status",
             headerName: "Status",
+            flex: 1 ,
             cellRenderer: (params) => {
                 const statusColorMap = {
                     Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -273,7 +318,8 @@ const PerformanceTeamKra = () => {
                                 buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
                                // tableTitle={`${department} TEAM - DAILY KRA`}
-                                tableTitle={`${departmentName} TEAM - DAILY KRA`}
+                                //tableTitle={`${departmentName} TEAM - DAILY KRA`}
+                                tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}    
                                 data={(teamKra || [])
                                     .filter((item) => item.status !== "Completed")
                                     .map((item, index) => ({
@@ -301,7 +347,8 @@ const PerformanceTeamKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                    tableTitle={`COMPLETED TEAM - DAILY KRA`}
+                                    //tableTitle={`COMPLETED TEAM - DAILY KRA`}
+                                    tableTitle={`COMPLETED - DAILY KRA - ${loggedInUserName || "User Name"}`}   
                                     exportData={true}
                                     checkAll={false}
                                     key={completedEntries.length}
@@ -333,7 +380,7 @@ const PerformanceTeamKra = () => {
             <MuiModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                title={"Add Team Daily KRA"}
+               title={isEditMode ? "Edit Task" : "Add Team Daily KRA"}
             >
                 <form
                     onSubmit={submitDailyKra(handleFormSubmit)}
@@ -381,7 +428,7 @@ const PerformanceTeamKra = () => {
                         )}
                     />
 
-                    <Controller
+                       {!isEditMode && <Controller
                         name="assignTo"
                         control={control}
                         rules={{ required: "Select at least one team member" }}
@@ -430,7 +477,7 @@ const PerformanceTeamKra = () => {
                                 ))}
                             </TextField>
                         )}
-                    />
+                      />}
 
                     <PrimaryButton
                         type="submit"

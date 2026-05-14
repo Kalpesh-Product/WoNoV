@@ -54,6 +54,8 @@ const VisitorReports = () => {
       headerName: "Date Of Visit",
     },
     { field: "gender", headerName: "Gender", hide: true },
+    { field: "building", headerName: "Building" ,hide: true },
+    { field: "unit", headerName: "Unit" ,hide: true },
     { field: "visitorCompany", headerName: "Visitor Company", hide: true },
     { field: "toMeetCompany", headerName: "Company To Meet", hide: true },
     { field: "department", headerName: "Department", hide: true },
@@ -141,6 +143,7 @@ const VisitorReports = () => {
         : visitor?.toMeetCompany?.clientName ||
           visitor?.toMeetCompany?.companyName ||
           visitor?.toMeetCompany?.name ||
+          visitor?.toMeetCompany?.company?.companyName ||
           visitor?.toMeetCompany ||
           "-";
 
@@ -149,6 +152,12 @@ const VisitorReports = () => {
       name:
         `${visitor.firstName || ""} ${visitor.lastName || ""}`.trim() || "-",
       gender: visitor.gender || "-",
+      building: visitor?.building?.buildingName || visitor?.building || "-",
+      unit:
+        visitor?.unit?.unitNo ||
+        visitor?.unit?.unitName ||
+        visitor?.unit ||
+        "-",
       email: visitor.email || "-",
       phone: visitor.phoneNumber || "-",
       purpose: visitor.purposeOfVisit || "-",
@@ -219,6 +228,19 @@ const VisitorReports = () => {
             <DetalisFormatted title="Gender" detail={selectedVisitor.gender} />
             <DetalisFormatted title="Phone" detail={selectedVisitor.phone} />
             <DetalisFormatted title="Email" detail={selectedVisitor.email} />
+             <DetalisFormatted
+              title="Building"
+              detail={selectedVisitor?.building?.buildingName || selectedVisitor?.building || "-"}
+            />
+            <DetalisFormatted
+              title="Unit"
+              detail={
+                selectedVisitor?.unit?.unitNo ||
+                selectedVisitor?.unit?.unitName ||
+                selectedVisitor?.unit ||
+                "-"
+              }
+            />
             {selectedVisitor.visitorFlag !== "Client" && (
               <DetalisFormatted
                 title="Visitor Company"

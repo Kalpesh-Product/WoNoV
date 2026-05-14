@@ -24,21 +24,33 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
 
 const PerformanceTeamKpa = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName
   );
+  const selectedMember = useSelector((state) => state.performance.selectedMember);
   const departmentName =
     selectedDepartmentName ||
     department ||
     auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
     "Department";
+    const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const selectedMemberFromRoute = location.state?.selectedMember;
+  const activeMember = selectedMemberFromRoute || selectedMember;
+  const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
+
   const userId = auth.user._id;
 
   const restrictedRoles = [
@@ -115,6 +127,8 @@ const PerformanceTeamKpa = () => {
       toast.success(data.message || "Team KPA Added");
       reset();
       setOpenModal(false);
+      setIsEditMode(false);
+      setEditingTaskId(null);
     },
     onError: (error) => {
       toast.error("Task type should be KRA");
@@ -134,7 +148,38 @@ const PerformanceTeamKpa = () => {
     },
   });
 
-  const handleFormSubmit = (data) => {
+  const handleOpenEditModal = (task) => {
+    setIsEditMode(true);
+    setEditingTaskId(task.id);
+    reset({
+      teamKpaName: task.taskName || "",
+      startDate: task.startDate || task.assignedDate || null,
+      endDate: task.endDate || task.dueDate || null,
+      assignTo: Array.isArray(task.assignedTo)
+        ? task.assignedTo
+        : task.assignedTo
+          ? [task.assignedTo]
+          : [],
+    });
+    setOpenModal(true);
+  };
+
+  const handleFormSubmit = async (data) => {
+    if (isEditMode && editingTaskId) {
+      await axios.patch(`/api/performance/update-task/${editingTaskId}`, {
+        task: data.teamKpaName,
+        assignedDate: data.startDate,
+        dueDate: data.endDate,
+        kpaDuration: "Monthly",
+      });
+      toast.success("Team KPA updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["fetchedTeamKPA"] });
+      setOpenModal(false);
+      setIsEditMode(false);
+      setEditingTaskId(null);
+      reset();
+      return;
+    }
     const normalizedAssignees = Array.isArray(data.assignTo)
       ? data.assignTo
       : typeof data.assignTo === "string"
@@ -189,16 +234,19 @@ const PerformanceTeamKpa = () => {
     {
       headerName: "Start Date",
       field: "assignedDate",
+      flex: 1,
       cellRenderer: (params) => formatDateTime(params.value),
     },
     {
       headerName: "End Date",
       field: "dueDate",
+      flex: 1,
       cellRenderer: (params) => formatDateTime(params.value),
     },
     {
       field: "status",
       headerName: "Status",
+      flex: 1,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
@@ -216,10 +264,20 @@ const PerformanceTeamKpa = () => {
         {
           headerName: "Actions",
           field: "actions",
+          pinned:"right",
           cellRenderer: (params) => (
             <div className="p-2 flex gap-2 items-center">
 
-              {canDeleteRecurrence && (
+              <button
+                                    type="button"
+                                    title="Edit"
+                                    onClick={() => handleOpenEditModal(params.data)}
+                                    className="ml-2"
+                                >
+                                    <HiPencilSquare size={24} color="#111827" />
+                                </button>
+
+                            {canDeleteRecurrence && (
                 <button
                   type="button"
                   title="Delete Recurrence"
@@ -238,22 +296,25 @@ const PerformanceTeamKpa = () => {
   ];
 
   const completedColumns = [
-    { headerName: "Sr No", field: "srNo", width: 100, sort: "desc" },
+    { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
     // { headerName: "Assigned Time", field: "assignedDate" },
 
-    { headerName: "Completed By", field: "completedBy" },
+    { headerName: "Completed By", field: "completedBy" ,flex: 1 },
     {
       headerName: "Completed Date",
       field: "completionDate",
+      flex: 1 
     },
     {
       headerName: "Completed Time",
       field: "completionTime",
+      flex: 1 
     },
     {
       field: "status",
       headerName: "Status",
+      flex: 1 ,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -281,7 +342,15 @@ const PerformanceTeamKpa = () => {
       },
     },
   ];
-
+ const filteredTeamKpa = (teamKpa || []).filter((item) => {
+    if (!activeMember?.memberName) return true;
+    const assignees = Array.isArray(item?.assignedTo) ? item.assignedTo : [item?.assignedTo];
+    return assignees.some((name) => (name || "").toString().trim() === activeMember.memberName);
+  });
+  const filteredCompletedEntries = (completedEntries || []).filter((item) => {
+    if (!activeMember?.memberName) return true;
+    return (item?.completedBy || "").toString().trim() === activeMember.memberName;
+  });
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -292,9 +361,11 @@ const PerformanceTeamKpa = () => {
                 buttonTitle={"Add Team Monthly KPA"}
                 buttonDisabled={isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
-                tableTitle={`${departmentName} TEAM - MONTHLY KPA`}
+                 tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${activeMemberName}`}
+                //tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+               // tableTitle={`${departmentName} TEAM - MONTHLY KPA`}
                 // tableTitle={`${department} TEAM - MONTHLY KPA`}
-                data={(teamKpa || [])
+                data={filteredTeamKpa
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
                     srNo: index + 1,
@@ -321,11 +392,13 @@ const PerformanceTeamKpa = () => {
               <WidgetSection padding>
                 <YearWiseTable
                   formatTime
-                  tableTitle={`COMPLETED TEAM - MONTHLY KPA`}
+                  //tableTitle={`COMPLETED TEAM - MONTHLY KPA`}
+                  //tableTitle={`COMPLETED - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
+                  tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
                   exportData={true}
                   checkAll={false}
-                  key={completedEntries.length}
-                  data={completedEntries.map((item, index) => ({
+                  key={filteredCompletedEntries.length}
+                  data={filteredCompletedEntries.map((item, index) => ({
                     srno: index + 1,
                     id: item.id,
                     taskName: item.taskName,
@@ -353,7 +426,7 @@ const PerformanceTeamKpa = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Add Team Monthly KPA"}
+         title={isEditMode ? "Edit Task" : "Add Team Monthly KPA"}
       >
         <form
           onSubmit={submitMonthlyKpa(handleFormSubmit)}
@@ -454,7 +527,7 @@ const PerformanceTeamKpa = () => {
             )}
           />
 
-          <Controller
+           {!isEditMode && <Controller
             name="assignTo"
             control={control}
             rules={{ required: "Select at least one team member" }}
@@ -505,7 +578,7 @@ const PerformanceTeamKpa = () => {
                 ))}
               </TextField>
             )}
-          />
+        />}
 
           <PrimaryButton
             type="submit"

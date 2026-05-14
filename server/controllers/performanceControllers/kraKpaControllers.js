@@ -230,6 +230,40 @@ const updateTaskStatus = async (req, res, next) => {
   }
 };
 
+const updateKraKpaTask = async (req, res, next) => {
+  try {
+    const { company } = req;
+    const { taskId } = req.params;
+    const { task, assignedDate, dueDate, assignTo, description, kpaDuration } = req.body;
+
+    if (!taskId || !mongoose.Types.ObjectId.isValid(taskId)) {
+      return res.status(400).json({ message: "Invalid task ID provided" });
+    }
+
+    const existingTask = await kraKpaRole.findOne({
+      _id: taskId,
+      company,
+      isDeleted: { $ne: true },
+    });
+    if (!existingTask) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    const updateDoc = {};
+    if (typeof task === "string" && task.trim()) updateDoc.task = task.trim();
+    if (typeof description === "string") updateDoc.description = description;
+    if (assignedDate) updateDoc.assignedDate = new Date(assignedDate);
+    if (dueDate) updateDoc.dueDate = new Date(dueDate);
+    if (kpaDuration) updateDoc.kpaDuration = kpaDuration;
+    if (assignTo && mongoose.Types.ObjectId.isValid(assignTo)) updateDoc.assignTo = assignTo;
+
+    const updatedTask = await kraKpaRole.findByIdAndUpdate(taskId, updateDoc, { new: true });
+    return res.status(200).json({ message: "Task updated successfully", data: updatedTask });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteTaskRecurrence = async (req, res, next) => {
   try {
     const { taskId } = req.params;
@@ -932,6 +966,7 @@ module.exports = {
   getMyKraKpaTasks,
   getAllDeptTasks,
   updateTaskStatus,
+  updateKraKpaTask,
   deleteTaskRecurrence,
   getCompletedKraKpaTasks,
   bulkInsertKraKpaTasks,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   TextField,
@@ -149,6 +149,28 @@ const AddVisitor = () => {
   const departmentEmployees = employees.filter((item) =>
     item.departments?.some((dept) => dept._id === selectedDepartment)
   );
+
+  const filteredClientCompanies = useMemo(() => {
+    const seenNames = new Set();
+
+    return clientCompanies.filter((client) => {
+      if (client?.isActive === false) return false;
+
+      const normalizedName = (client?.clientName || "").trim().toLowerCase();
+      if (!normalizedName) return false;
+
+      if (["biznest", "biz nest"].includes(normalizedName)) {
+        return false;
+      }
+
+      if (seenNames.has(normalizedName)) {
+        return false;
+      }
+
+      seenNames.add(normalizedName);
+      return true;
+    });
+  }, [clientCompanies]);
   //---------------------------------------Data processing----------------------------------------------------//
   const { mutate: addVisitor, isPending: isMutateVisitor } = useMutation({
     mutationKey: ["addVisitor"],
@@ -482,7 +504,7 @@ const AddVisitor = () => {
                       <MenuItem value="6799f0cd6a01edbe1bc3fcea">
                         BIZNest
                       </MenuItem>
-                      {clientCompanies.map((client) => (
+                       {filteredClientCompanies.map((client) => (
                         <MenuItem key={client._id} value={client._id}>
                           {client.clientName}
                         </MenuItem>
