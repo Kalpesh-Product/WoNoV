@@ -229,7 +229,9 @@ const DepartmentReportCommon = () => {
         }));
 
         if (downloadStarted) {
-          toast.success("Report generated and download started");
+          toast.success(
+            "Report Generated. Your download should begin shortly.",
+          );
         } else {
           toast.error("Report generated, but no  file payload was returned");
         }
@@ -411,9 +413,9 @@ const DepartmentReportCommon = () => {
             ? "Processing..."
             : status === "completed"
               ? isDownloaded
-                ? "Downloaded"
-                : "Download failed"
-              : status === "failed" || status === "cancelled"
+                ? "Generated"
+                : "Generation failed"
+              : status === "failed"
                 ? "Retry"
                 : isGenerating
                   ? "Generating..."
