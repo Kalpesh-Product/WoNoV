@@ -29,6 +29,7 @@ import { HiPencilSquare } from "react-icons/hi2";
 const PerformanceIndividualKra = () => {
     const axios = useAxiosPrivate();
     const { auth } = useAuth();
+    const location = useLocation();
     const { department } = useParams();
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -50,7 +51,10 @@ const PerformanceIndividualKra = () => {
     const userId = auth.user._id;
      const selectedMemberFromRoute = location.state?.selectedMember;
     const activeMember = selectedMemberFromRoute || selectedMember;
-    const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
+    const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+    const activeMemberName = isEmployeeKraKpaRoute
+        ? loggedInUserName || "User Name"
+        : activeMember?.memberName || loggedInUserName || "User Name";
     const [selectedKra, setSelectedKra] = useState(null);
 
     const restrictedRoles = [
@@ -99,6 +103,9 @@ const PerformanceIndividualKra = () => {
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
     const shouldHideControlsForSelectedMemberView =
         isManager && activeMember?.memberId && !isViewingOwnMember;
+         const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
+    const canShowControls = shouldShowManagerControlsInEmployeeRoute || !shouldHideControlsForSelectedMemberView;
+    const canUseCheckbox = showCheckBox || shouldShowManagerControlsInEmployeeRoute;
 
     useEffect(() => {
         queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
@@ -315,7 +322,8 @@ const PerformanceIndividualKra = () => {
                 return <Chip label={params.value} style={{ backgroundColor, color }} />;
             },
         },
-          ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
+          ...(matchingDepartment && canShowControls
+       //   ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
             ? [
                 {
                     headerName: "Actions",
@@ -461,11 +469,13 @@ const PerformanceIndividualKra = () => {
         if (!taskId || uniqueTaskMap.has(taskId)) return;
         uniqueTaskMap.set(taskId, item);
     });
+      const targetMemberName = isEmployeeKraKpaRoute ? loggedInUserName : activeMember?.memberName;
+    const targetMemberId = isEmployeeKraKpaRoute ? userId : activeMember?.memberId;
     const filteredDepartmentKra = Array.from(uniqueTaskMap.values()).filter((item) => {
-        if (!activeMember?.memberName && !activeMember?.memberId) return true;
+         if (!targetMemberName && !targetMemberId) return true;
         return (
-            normalizeValue(item?.assignedTo) === normalizeValue(activeMember?.memberName) ||
-            normalizeValue(item?.assignToId) === normalizeValue(activeMember?.memberId)
+            normalizeValue(item?.assignedTo) === normalizeValue(targetMemberName) ||
+            normalizeValue(item?.assignToId) === normalizeValue(targetMemberId)
         );
     });
     const uniqueCompletedMap = new Map();
@@ -475,10 +485,10 @@ const PerformanceIndividualKra = () => {
         uniqueCompletedMap.set(completedId, item);
     });
     const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
-        if (!activeMember?.memberName && !activeMember?.memberId) return true;
+        if (!targetMemberName && !targetMemberId) return true;
         return (
-            normalizeValue(item?.completedBy) === normalizeValue(activeMember?.memberName) ||
-            normalizeValue(item?.completedBy) === normalizeValue(activeMember?.memberId)
+            normalizeValue(item?.completedBy) === normalizeValue(targetMemberName) ||
+            normalizeValue(item?.completedBy) === normalizeValue(targetMemberId)
         );
     });
     return (
@@ -490,14 +500,22 @@ const PerformanceIndividualKra = () => {
                             <YearWiseTable
                                 formatTime
                                 // checkbox={showCheckBox}
-                                 checkbox={showCheckBox && !shouldHideControlsForSelectedMemberView}
+                                //  checkbox={showCheckBox && !shouldHideControlsForSelectedMemberView}
+                                // buttonTitle={
+                                //     shouldHideControlsForSelectedMemberView
+                                //         ? undefined
+                                //         : "Add Daily KRA"
+                                // }
+                                // buttonDisabled={
+                                //     isAddKraDisabled || shouldHideControlsForSelectedMemberView
+                                  checkbox={canUseCheckbox && canShowControls}
                                 buttonTitle={
-                                    shouldHideControlsForSelectedMemberView
+                                    !canShowControls
                                         ? undefined
                                         : "Add Daily KRA"
                                 }
                                 buttonDisabled={
-                                    isAddKraDisabled || shouldHideControlsForSelectedMemberView
+                                    isAddKraDisabled || !canShowControls
                                 }
                                 handleSubmit={() => setOpenModal(true)}
                                 tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${activeMemberName}`}

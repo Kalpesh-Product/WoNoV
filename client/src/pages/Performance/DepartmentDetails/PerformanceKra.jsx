@@ -1,4 +1,4 @@
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -87,17 +87,33 @@ const PerformanceKra = () => {
   const matchingDepartment = auth.user?.departments?.some(
     (dept) => dept._id === deptId
   );
-
    const selectedMemberFromRoute = location.state?.selectedMember;
   const activeMember = selectedMemberFromRoute || selectedMember;
-  const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
+  const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+  const activeMemberName = isEmployeeKraKpaRoute
+    ? loggedInUserName || "User Name"
+    : activeMember?.memberName || loggedInUserName || "User Name";
+  //  const selectedMemberFromRoute = location.state?.selectedMember;
+  // const activeMember = selectedMemberFromRoute || selectedMember;
+  // const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
   const normalizeValue = (value) =>
     (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+     const targetMemberId = activeMember?.memberId;
+  const targetMemberName = activeMember?.memberName;
   const isViewingOwnMember =
-    normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
-    normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    normalizeValue(targetMemberId) === normalizeValue(userId) ||
+    normalizeValue(targetMemberName) === normalizeValue(loggedInUserName);
   const shouldHideControlsForSelectedMemberView =
-    isManager && activeMember?.memberId && !isViewingOwnMember;
+    isManager && targetMemberId && !isViewingOwnMember;
+  const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
+  const canShowControls = shouldShowManagerControlsInEmployeeRoute || !shouldHideControlsForSelectedMemberView;
+  const canUseCheckbox = showCheckBox || shouldShowManagerControlsInEmployeeRoute;
+    // isManager && targetMemberId && !isViewingOwnMember;
+  //const isViewingOwnMember =
+  //   normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
+  //   normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+  // const shouldHideControlsForSelectedMemberView =
+  //   isManager && activeMember?.memberId && !isViewingOwnMember;
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
@@ -267,7 +283,8 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-    ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
+      ...(matchingDepartment && canShowControls
+   // ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
       ? [
         {
           headerName: "Actions",
@@ -419,14 +436,22 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 formatTime
-                checkbox={showCheckBox && !shouldHideControlsForSelectedMemberView}
+                // checkbox={showCheckBox && !shouldHideControlsForSelectedMemberView}
+                // buttonTitle={
+                //   shouldHideControlsForSelectedMemberView
+                //     ? undefined
+                //     : "Add Daily KRA"
+                // }
+                // buttonDisabled={
+                //   isAddKraDisabled || shouldHideControlsForSelectedMemberView
+                  checkbox={canUseCheckbox && canShowControls}
                 buttonTitle={
-                  shouldHideControlsForSelectedMemberView
+                  !canShowControls
                     ? undefined
                     : "Add Daily KRA"
                 }
                 buttonDisabled={
-                  isAddKraDisabled || shouldHideControlsForSelectedMemberView
+                  isAddKraDisabled || !canShowControls
                 }
                 handleSubmit={() => setOpenModal(true)}
                  tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}

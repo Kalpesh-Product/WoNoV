@@ -1,4 +1,4 @@
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -51,9 +51,10 @@ const PerformanceMonthly = () => {
     .filter(Boolean)
     .join(" ")
     .trim();
-   const selectedMemberFromRoute = location.state?.selectedMember;
-  const activeMember = selectedMemberFromRoute || selectedMember;
-  const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";  
+    const activeMemberName = loggedInUserName || "User Name"; 
+  //  const selectedMemberFromRoute = location.state?.selectedMember;
+  // const activeMember = selectedMemberFromRoute || selectedMember;
+  // const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";  
 
   const restrictedRoles = [
     "IT Employee",
@@ -443,14 +444,16 @@ const PerformanceMonthly = () => {
       },
     },
   ];
-  const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
-    if (!activeMember?.memberName) return true;
-    return (item?.assignedTo || "").toString().trim() === activeMember.memberName;
-  });
-  const filteredCompletedEntries = (completedEntries || []).filter((item) => {
-    if (!activeMember?.memberName) return true;
-    return (item?.completedBy || "").toString().trim() === activeMember.memberName;
-  });
+   const filteredDepartmentKpa = departmentKra || [];
+  const filteredCompletedEntries = completedEntries || [];
+  // const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
+  //   if (!activeMember?.memberName) return true;
+  //   return (item?.assignedTo || "").toString().trim() === activeMember.memberName;
+  // });
+  // const filteredCompletedEntries = (completedEntries || []).filter((item) => {
+  //   if (!activeMember?.memberName) return true;
+  //   return (item?.completedBy || "").toString().trim() === activeMember.memberName;
+  // });
   return (
     <>
       <div className="flex flex-col gap-4">

@@ -32,6 +32,7 @@ import { HiPencilSquare } from "react-icons/hi2";
 
 const PerformanceIndividualKpa = () => {
     const axios = useAxiosPrivate();
+     const location = useLocation();
     const dispatch = useDispatch();
     const { auth } = useAuth();
     const { department } = useParams();
@@ -57,7 +58,11 @@ const PerformanceIndividualKpa = () => {
         .trim();
     const selectedMemberFromRoute = location.state?.selectedMember;
     const activeMember = selectedMemberFromRoute || selectedMember;
-    const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
+     const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+    const activeMemberName = isEmployeeKraKpaRoute
+        ? loggedInUserName || "User Name"
+        : activeMember?.memberName || loggedInUserName || "User Name";
+    //const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
 
     const restrictedRoles = [
         "IT Employee",
@@ -108,8 +113,12 @@ const PerformanceIndividualKpa = () => {
     const shouldHideAddButtonForSelectedMemberView =
         isManager && activeMember?.memberId && !isViewingOwnMember;
     const shouldHideRowActionsForSelectedMemberView = shouldHideAddButtonForSelectedMemberView;
+    // const showCheckBoxForCurrentView =
+    //     showCheckBox && !shouldHideRowActionsForSelectedMemberView;
+      const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
+    const canShowControls = shouldShowManagerControlsInEmployeeRoute || !shouldHideAddButtonForSelectedMemberView;
     const showCheckBoxForCurrentView =
-        showCheckBox && !shouldHideRowActionsForSelectedMemberView;
+        (showCheckBox || shouldShowManagerControlsInEmployeeRoute) && canShowControls;
 
     const {
         handleSubmit: submitDailyKra,
@@ -367,7 +376,8 @@ const PerformanceIndividualKpa = () => {
                 );
             },
         },
-       ...(matchingDepartment && !shouldHideRowActionsForSelectedMemberView
+        ...(matchingDepartment && canShowControls
+    //    ...(matchingDepartment && !shouldHideRowActionsForSelectedMemberView
             ? [
                 {
                     headerName: "Actions",
@@ -495,8 +505,14 @@ const PerformanceIndividualKpa = () => {
             },
         },
     ];
-  const selectedMemberId = activeMember?.memberId?.toString()?.trim();
-    const selectedMemberName = activeMember?.memberName?.toString()?.trim();
+//   const selectedMemberId = activeMember?.memberId?.toString()?.trim();
+//     const selectedMemberName = activeMember?.memberName?.toString()?.trim();
+ const selectedMemberId = isEmployeeKraKpaRoute
+    ? userId?.toString()?.trim()
+    : activeMember?.memberId?.toString()?.trim();
+    const selectedMemberName = isEmployeeKraKpaRoute
+        ? loggedInUserName?.toString()?.trim()
+        : activeMember?.memberName?.toString()?.trim();
     const matchesSelectedMember = (assigneeValue) => {
         const assignees = Array.isArray(assigneeValue) ? assigneeValue : [assigneeValue];
         return assignees.some((assignee) => {
@@ -545,13 +561,20 @@ const PerformanceIndividualKpa = () => {
                                 // buttonTitle={"Add Monthly KPA"}
                                 // buttonDisabled={isAddKpaDisabled}
                                 //    handleSubmit={() => {
-                                  buttonTitle={
-                                    shouldHideAddButtonForSelectedMemberView
+                                //   buttonTitle={
+                                //     shouldHideAddButtonForSelectedMemberView
+                                //         ? undefined
+                                //         : "Add Monthly KPA"
+                                // }
+                                // buttonDisabled={
+                                //     isAddKpaDisabled || shouldHideAddButtonForSelectedMemberView
+                                 buttonTitle={
+                                    !canShowControls
                                         ? undefined
                                         : "Add Monthly KPA"
                                 }
                                 buttonDisabled={
-                                    isAddKpaDisabled || shouldHideAddButtonForSelectedMemberView
+                                    isAddKpaDisabled || !canShowControls
                                 }
                                 handleSubmit={() => {    
                                     setIsEditMode(false);
