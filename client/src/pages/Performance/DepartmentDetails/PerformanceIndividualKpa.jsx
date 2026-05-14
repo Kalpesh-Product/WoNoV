@@ -100,6 +100,17 @@ const PerformanceIndividualKpa = () => {
         (dept) => dept._id === deptId
     );
 
+       const normalizeValue = (value) =>
+        (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+    const isViewingOwnMember =
+        normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
+        normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    const shouldHideAddButtonForSelectedMemberView =
+        isManager && activeMember?.memberId && !isViewingOwnMember;
+    const shouldHideRowActionsForSelectedMemberView = shouldHideAddButtonForSelectedMemberView;
+    const showCheckBoxForCurrentView =
+        showCheckBox && !shouldHideRowActionsForSelectedMemberView;
+
     const {
         handleSubmit: submitDailyKra,
         control,
@@ -356,7 +367,7 @@ const PerformanceIndividualKpa = () => {
                 );
             },
         },
-        ...(matchingDepartment
+       ...(matchingDepartment && !shouldHideRowActionsForSelectedMemberView
             ? [
                 {
                     headerName: "Actions",
@@ -527,13 +538,22 @@ const PerformanceIndividualKpa = () => {
                     {!isCompletedLoading && !isUpdatePending ? (
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
-                                checkbox={showCheckBox}
+                                 checkbox={showCheckBoxForCurrentView}
                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
                                 // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                                 tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
-                                buttonTitle={"Add Monthly KPA"}
-                                buttonDisabled={isAddKpaDisabled}
-                                   handleSubmit={() => {
+                                // buttonTitle={"Add Monthly KPA"}
+                                // buttonDisabled={isAddKpaDisabled}
+                                //    handleSubmit={() => {
+                                  buttonTitle={
+                                    shouldHideAddButtonForSelectedMemberView
+                                        ? undefined
+                                        : "Add Monthly KPA"
+                                }
+                                buttonDisabled={
+                                    isAddKpaDisabled || shouldHideAddButtonForSelectedMemberView
+                                }
+                                handleSubmit={() => {    
                                     setIsEditMode(false);
                                     setEditingTaskId(null);
                                     setOpenModal(true);

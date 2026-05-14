@@ -86,7 +86,9 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
         (tab) => tab.path === "team-Daily-KRA" || tab.path === "team-Monthly-KPA"
       )
    : isMemberWiseKpaFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
-      ? tabs.filter((tab) => tab.path === "individual-Monthly-KPA")    
+      ? tabs.filter((tab) => tab.path === "individual-Monthly-KPA")
+    : isMemberWiseKraFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+      ? tabs.filter((tab) => tab.path === "daily-KRA" || tab.path === "individual-Daily-KRA")    
     : isMemberWiseKpaFlow
       ? tabs.filter((tab) => tab.path.toLowerCase().includes("kpa"))
       : isMemberWiseKraFlow
@@ -97,6 +99,8 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
     ? "team-Daily-KRA"
        : isMemberWiseKpaFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
       ? "individual-Monthly-KPA"
+    : isMemberWiseKraFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+      ? "daily-KRA"
     : isMemberWiseKpaFlow
       ? "monthly-KPA"
       : isMemberWiseKraFlow

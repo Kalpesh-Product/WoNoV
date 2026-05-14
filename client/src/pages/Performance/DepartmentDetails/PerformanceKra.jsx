@@ -24,6 +24,7 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
+import { PERMISSIONS } from "../../../constants/permissions";
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -32,6 +33,7 @@ const PerformanceKra = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+   const selectedMember = useSelector((state) => state.performance.selectedMember);
   const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName
   );
@@ -77,11 +79,25 @@ const PerformanceKra = () => {
   });
 
   const showCheckBox = allowedDept;
+   const userId = auth.user._id;
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_DAILY_KRA.value);
   const isHr = department === "HR";
 
   const matchingDepartment = auth.user?.departments?.some(
     (dept) => dept._id === deptId
   );
+
+   const selectedMemberFromRoute = location.state?.selectedMember;
+  const activeMember = selectedMemberFromRoute || selectedMember;
+  const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
+  const normalizeValue = (value) =>
+    (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+  const isViewingOwnMember =
+    normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
+    normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+  const shouldHideControlsForSelectedMemberView =
+    isManager && activeMember?.memberId && !isViewingOwnMember;
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
@@ -251,7 +267,7 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-    ...(matchingDepartment
+    ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
       ? [
         {
           headerName: "Actions",
@@ -403,13 +419,20 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 formatTime
-                checkbox={showCheckBox}
-                buttonTitle={"Add Daily KRA"}
-                buttonDisabled={isAddKraDisabled}
+                checkbox={showCheckBox && !shouldHideControlsForSelectedMemberView}
+                buttonTitle={
+                  shouldHideControlsForSelectedMemberView
+                    ? undefined
+                    : "Add Daily KRA"
+                }
+                buttonDisabled={
+                  isAddKraDisabled || shouldHideControlsForSelectedMemberView
+                }
                 handleSubmit={() => setOpenModal(true)}
+                 tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}
                 //tableTitle={`${department} DEPARTMENT - DAILY KRA`}
                  //tableTitle={`${departmentName} DEPARTMENT - DAILY KRA`}
-                  tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}
+                 // tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}
                 data={(departmentKra || [])
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
@@ -436,7 +459,8 @@ const PerformanceKra = () => {
               <WidgetSection padding>
                 <YearWiseTable
                   formatTime
-                  tableTitle={`COMPLETED - DAILY KRA - ${loggedInUserName || "User Name"}`}
+                   tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName}`}
+                 // tableTitle={`COMPLETED - DAILY KRA - ${loggedInUserName || "User Name"}`}
                   exportData={true}
                   checkAll={false}
                   key={completedEntries.length}

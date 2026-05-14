@@ -34,6 +34,7 @@ const PerformanceIndividualKra = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
+    const selectedMember = useSelector((state) => state.performance.selectedMember);
  const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
     );
@@ -47,6 +48,9 @@ const PerformanceIndividualKra = () => {
     .join(" ")
     .trim();
     const userId = auth.user._id;
+     const selectedMemberFromRoute = location.state?.selectedMember;
+    const activeMember = selectedMemberFromRoute || selectedMember;
+    const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
     const [selectedKra, setSelectedKra] = useState(null);
 
     const restrictedRoles = [
@@ -87,6 +91,14 @@ const PerformanceIndividualKra = () => {
     const matchingDepartment = auth.user?.departments?.some(
         (dept) => dept._id === deptId
     );
+
+     const normalizeValue = (value) =>
+        (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+    const isViewingOwnMember =
+        normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
+        normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    const shouldHideControlsForSelectedMemberView =
+        isManager && activeMember?.memberId && !isViewingOwnMember;
 
     useEffect(() => {
         queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
@@ -223,6 +235,22 @@ const PerformanceIndividualKra = () => {
         queryFn: fetchTasks,
     });
 
+    const { data: teamKraForIndividual = [] } = useQuery({
+        queryKey: ["fetchedTeamKRAForIndividual", deptId],
+        queryFn: async () => {
+            try {
+                const response = await axios.get(
+                    `/api/performance/get-tasks?dept=${deptId}&type=TEAMKRA`
+                );
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        },
+        enabled: !!deptId,
+    });
+
     // const { data: assignees = [] } = useQuery({
     //     queryKey: ["fetchAssignees", deptId],
     //     queryFn: async () => {
@@ -246,6 +274,21 @@ const PerformanceIndividualKra = () => {
                 }
             },
         });
+    const { data: completedTeamEntries = [] } = useQuery({
+        queryKey: ["completedTeamEntriesKRA", deptId],
+        queryFn: async () => {
+            try {
+                const response = await axios.get(
+                    `/api/performance/get-completed-tasks?dept=${deptId}&type=TEAMKRA`
+                );
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        },
+        enabled: !!deptId,
+    });    
 
     const departmentColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -272,7 +315,7 @@ const PerformanceIndividualKra = () => {
                 return <Chip label={params.value} style={{ backgroundColor, color }} />;
             },
         },
-        ...(matchingDepartment
+          ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
             ? [
                 {
                     headerName: "Actions",
@@ -412,6 +455,32 @@ const PerformanceIndividualKra = () => {
             },
         },
     ];
+     const uniqueTaskMap = new Map();
+    [...(departmentKra || []), ...(teamKraForIndividual || [])].forEach((item) => {
+        const taskId = item?.id?.toString?.();
+        if (!taskId || uniqueTaskMap.has(taskId)) return;
+        uniqueTaskMap.set(taskId, item);
+    });
+    const filteredDepartmentKra = Array.from(uniqueTaskMap.values()).filter((item) => {
+        if (!activeMember?.memberName && !activeMember?.memberId) return true;
+        return (
+            normalizeValue(item?.assignedTo) === normalizeValue(activeMember?.memberName) ||
+            normalizeValue(item?.assignToId) === normalizeValue(activeMember?.memberId)
+        );
+    });
+    const uniqueCompletedMap = new Map();
+    [...(completedEntries || []), ...(completedTeamEntries || [])].forEach((item) => {
+        const completedId = item?.id?.toString?.() || `${item?.taskName}-${item?.completionDate}`;
+        if (uniqueCompletedMap.has(completedId)) return;
+        uniqueCompletedMap.set(completedId, item);
+    });
+    const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
+        if (!activeMember?.memberName && !activeMember?.memberId) return true;
+        return (
+            normalizeValue(item?.completedBy) === normalizeValue(activeMember?.memberName) ||
+            normalizeValue(item?.completedBy) === normalizeValue(activeMember?.memberId)
+        );
+    });
     return (
         <>
             <div className="flex flex-col gap-4">
@@ -420,14 +489,22 @@ const PerformanceIndividualKra = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 formatTime
-                                checkbox={showCheckBox}
-                                buttonTitle={"Add Daily KRA"}
-                                buttonDisabled={isAddKraDisabled}
+                                // checkbox={showCheckBox}
+                                 checkbox={showCheckBox && !shouldHideControlsForSelectedMemberView}
+                                buttonTitle={
+                                    shouldHideControlsForSelectedMemberView
+                                        ? undefined
+                                        : "Add Daily KRA"
+                                }
+                                buttonDisabled={
+                                    isAddKraDisabled || shouldHideControlsForSelectedMemberView
+                                }
                                 handleSubmit={() => setOpenModal(true)}
-                                tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
+                                tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${activeMemberName}`}
+                               // tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
                                  // tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA`}
                                 //tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
-                                data={(departmentKra || [])
+                                 data={filteredDepartmentKra
                                     .filter((item) => item.status !== "Completed")
                                     .map((item, index) => ({
                                         srno: index + 1,
@@ -454,11 +531,12 @@ const PerformanceIndividualKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                    tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
+                                       tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA - ${activeMemberName}`}
+                                    //tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
                                     exportData={true}
                                     checkAll={false}
-                                    key={completedEntries.length}
-                                    data={completedEntries.map((item, index) => ({
+                                     key={filteredCompletedEntries.length}
+                                    data={filteredCompletedEntries.map((item, index) => ({
                                         srno: index + 1,
                                         id: item.id,
                                         taskName: item.taskName,

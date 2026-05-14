@@ -265,11 +265,13 @@ const PerformanceMemberWiseKraKpa = () => {
                   .forEach((task) => {
                     if (canManageTeam) {
                         upsertManagerTeamKpaCount(task, "teamMonthlyKpa");
-                        upsert(task, "individualMonthlyKpa");
+                       upsert(task, "individualMonthlyKpa");
                         return;
                     }
                     upsert(task, "teamMonthlyKpa");
                 });
+                
+                //upsertManagerTeamKpaCount(task, "teamMonthlyKpa");
                 //  .forEach((task) => {
                 //     if (canManageTeam) {
                 //         upsertManagerTeamKpaCount(task, "teamMonthlyKpa");
@@ -361,9 +363,10 @@ const PerformanceMemberWiseKraKpa = () => {
             : memberWiseData;
 
         return filteredData.map((item, index) => ({
-            srNo: index + 1,
-            ...item,
-              individualMonthlyKpa: (item?.individualMonthlyKpa || 0) + (item?.teamMonthlyKpa || 0),
+    srNo: index + 1,
+    ...item,
+    individualMonthlyKpa: item?.individualMonthlyKpa || 0,
+
         }));
     }, [isEmployeeLevel, loggedInUserId, memberWiseData]);
 
