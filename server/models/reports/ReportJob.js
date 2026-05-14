@@ -43,6 +43,11 @@ const ReportJobSchema = new mongoose.Schema(
     cancelReason: String,
     canceledAt: Date,
     requestKey: String, //unique key to avoid multiple duplicate report jobs
+    isManualRetry: {
+      type: Boolean,
+      default: false,
+    },
+    retryWindowStartedAt: Date,
   },
   { timestamps: true },
 );

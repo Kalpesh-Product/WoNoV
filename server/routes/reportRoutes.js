@@ -10,6 +10,7 @@ const {
   generateReport,
   getReportStatus,
   cancelReport,
+  retryReport,
 } = require("../controllers/reportControllers/reportJobControllers");
 
 //report routes
@@ -20,6 +21,7 @@ router.post("/seed-reports", seedReports);
 //report job routes
 router.post("/generate", generateReport);
 router.patch("/cancel/:jobId", cancelReport);
+router.post("/retry/:jobId", retryReport);
 router.get("/status/:jobId", getReportStatus);
 router.get("/:reportId", getSingleReport);
 

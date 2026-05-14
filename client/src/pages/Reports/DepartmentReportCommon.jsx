@@ -27,6 +27,7 @@ const DepartmentReportCommon = () => {
   const [activeReportId, setActiveReportId] = useState(null);
   const [jobStatusByReportId, setJobStatusByReportId] = useState({});
   const [downloadedByReportId, setDownloadedByReportId] = useState({});
+  const [retryCooldownByReportId, setRetryCooldownByReportId] = useState({});
   const reportJobByReportIdRef = useRef({});
   const cancelledJobsRef = useRef(new Set());
 
@@ -192,6 +193,13 @@ const DepartmentReportCommon = () => {
     return true;
   };
 
+  const getRetryCountdownLabel = (retryAt) => {
+    if (!retryAt) return null;
+    const remainingMs = Math.max(0, dayjs(retryAt).diff(dayjs()));
+    const minutes = Math.ceil(remainingMs / (60 * 1000));
+    return minutes > 0 ? `Generate after ${minutes} mins` : "Generate";
+  };
+
   const pollReportStatus = async (jobId, reportId) => {
     cancelledJobsRef.current.delete(jobId);
     let attempts = 0;
@@ -239,9 +247,11 @@ const DepartmentReportCommon = () => {
       }
 
       if (status === "failed") {
-        throw new Error(
-          response?.data?.error?.message || "Report generation failed",
-        );
+        setDownloadedByReportId((prev) => ({
+          ...prev,
+          [reportId]: false,
+        }));
+        return;
       }
 
       attempts += 1;
@@ -361,6 +371,31 @@ const DepartmentReportCommon = () => {
     },
   });
 
+  const retryReportMutation = useMutation({
+    mutationFn: async ({ reportId, jobId }) => {
+      const response = await axios.post(`/api/reports/retry/${jobId}`);
+      return { reportId, jobId: response?.data?.jobId, data: response?.data };
+    },
+    onSuccess: async ({ reportId, jobId }) => {
+      setRetryCooldownByReportId((prev) => ({ ...prev, [reportId]: null }));
+      reportJobByReportIdRef.current[reportId] = jobId;
+      setJobStatusByReportId((prev) => ({ ...prev, [reportId]: "pending" }));
+      await pollReportStatus(jobId, reportId);
+    },
+    onError: (error, variables) => {
+      if (error?.response?.status === 429) {
+        const retryAvailableAt = error?.response?.data?.retryAvailableAt;
+        setRetryCooldownByReportId((prev) => ({
+          ...prev,
+          [variables.reportId]: retryAvailableAt || null,
+        }));
+        toast.error("Report generation unavailable. Please try again later.");
+        return;
+      }
+      toast.error(error?.response?.data?.message || "Retry failed");
+    },
+  });
+
   const columns = [
     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
     { field: "reportName", headerName: "Report Name", flex: 1 },
@@ -408,15 +443,22 @@ const DepartmentReportCommon = () => {
           cancelReportMutation.isPending &&
           cancelReportMutation.variables?.reportId === row?._id;
 
-        const buttonLabel =
+        const retryAvailableAt = retryCooldownByReportId[row?._id];
+        const hasCooldown =
+          retryAvailableAt && dayjs(retryAvailableAt).isAfter(dayjs());
+        const retryLabel = hasCooldown
+          ? getRetryCountdownLabel(retryAvailableAt)
+          : "Retry";
+
+        const primaryButtonLabel =
           status === "processing"
             ? "Processing..."
             : status === "completed"
               ? isDownloaded
                 ? "Generated"
-                : "Generation failed"
+                : "Download failed"
               : status === "failed"
-                ? "Retry"
+                ? "Failed"
                 : isGenerating
                   ? "Generating..."
                   : "Generate";
@@ -426,14 +468,36 @@ const DepartmentReportCommon = () => {
             <button
               type="button"
               onClick={() => {
+                if (status === "failed") return;
                 setActiveReportId(row?._id || null);
                 generateReportMutation.mutate(row);
               }}
               className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-300"
-              disabled={isGenerating || !row?._id || !row?.departmentId?._id}
+              disabled={
+                isGenerating ||
+                status === "failed" ||
+                !row?._id ||
+                !row?.departmentId?._id
+              }
             >
-              {buttonLabel}
+              {primaryButtonLabel}
             </button>
+            {status === "failed" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const jobId = reportJobByReportIdRef.current?.[row?._id];
+                  if (!jobId || hasCooldown) return;
+                  retryReportMutation.mutate({ reportId: row?._id, jobId });
+                }}
+                className="rounded bg-orange-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-orange-300"
+                disabled={
+                  retryReportMutation.isPending || hasCooldown || !row?._id
+                }
+              >
+                {retryReportMutation.isPending ? "Retrying..." : retryLabel}
+              </button>
+            ) : null}
 
             {isGenerating ? (
               <button

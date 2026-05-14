@@ -17,6 +17,13 @@ const worker = new Worker(
     );
     if (!reportJob) throw new Error("ReportJob not found");
 
+    console.log("Attempts made:", job.attemptsMade);
+
+    // Simulate transient failure on first attempt to test retry logic. Remove in production.
+    if (job.attemptsMade < 1) {
+      throw new Error("Temporary failure");
+    }
+
     if (reportJob.status === "canceled") {
       await job.log("Job canceled");
 
@@ -30,6 +37,7 @@ const worker = new Worker(
 
     await reportJob.save();
 
+    //delay added to simulate long processing time and test retry/cancellation flows. Remove in production.
     await new Promise((resolve) => setTimeout(resolve, 10000));
     try {
       let data;
@@ -41,6 +49,7 @@ const worker = new Worker(
       );
       switch (reportJob.report.reportName) {
         case "Expense And Budget":
+          // throw new Error("Testing retry flow");
           data = await fetchBudgetService({
             ...reportJob.filters,
             departmentId: reportJob.department,
