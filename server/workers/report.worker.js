@@ -18,7 +18,11 @@ const worker = new Worker(
     if (!reportJob) throw new Error("ReportJob not found");
 
     if (reportJob.status === "canceled") {
-      return;
+      await job.log("Job canceled");
+
+      return {
+        status: "canceled",
+      };
     }
 
     reportJob.status = "processing";
@@ -26,6 +30,7 @@ const worker = new Worker(
 
     await reportJob.save();
 
+    await new Promise((resolve) => setTimeout(resolve, 10000));
     try {
       let data;
 
@@ -53,7 +58,11 @@ const worker = new Worker(
       const latestState =
         await ReportJob.findById(reportJobId).select("status");
       if (latestState?.status === "canceled") {
-        return;
+        await job.log("Job canceled");
+
+        return {
+          status: "canceled",
+        };
       }
 
       reportJob.data = data;

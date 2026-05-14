@@ -290,13 +290,12 @@ const DepartmentReportCommon = () => {
         throw new Error("Report job id was not returned by the server");
       }
 
-      await pollReportStatus(jobId, reportRow?._id);
-
       reportJobByReportIdRef.current[reportRow?._id] = jobId;
+
+      await pollReportStatus(jobId, reportRow?._id);
 
       return response.data;
     },
-    onSuccess: () => toast.success("Report generation started"),
     onError: (error) => {
       toast.error(
         error?.response?.data?.message || "Failed to generate report",
@@ -305,25 +304,60 @@ const DepartmentReportCommon = () => {
     onSettled: () => setActiveReportId(null),
   });
 
-  const cancelReportGeneration = (reportId) => {
-    const jobId = reportJobByReportIdRef.current?.[reportId];
+  const cancelReportMutation = useMutation({
+    mutationFn: async ({ reportId, jobId }) => {
+      const response = await axios.patch(`/api/reports/cancel/${jobId}`);
 
-    if (!jobId) {
+      return {
+        reportId,
+        jobId,
+        data: response.data,
+      };
+    },
+
+    onSuccess: ({ reportId, jobId, data }) => {
+      cancelledJobsRef.current.add(jobId);
+
       setJobStatusByReportId((prev) => ({
         ...prev,
         [reportId]: "cancelled",
       }));
-      toast.info("Report generation cancelled");
-      return;
-    }
 
-    cancelledJobsRef.current.add(jobId);
-    setJobStatusByReportId((prev) => ({
-      ...prev,
-      [reportId]: "cancelled",
-    }));
-    toast.info("Report generation cancelled");
-  };
+      toast.success("Report generation cancelled");
+    },
+
+    onError: (error, variables) => {
+      const status = error?.response?.data?.status;
+      const message = error?.response?.data?.message;
+
+      if (status === "completed") {
+        setJobStatusByReportId((prev) => ({
+          ...prev,
+          [variables.reportId]: "completed",
+        }));
+
+        toast.info("Report already generated");
+        return;
+      }
+
+      if (status === "failed") {
+        toast.info("Report already failed");
+        return;
+      }
+
+      if (status === "canceled") {
+        setJobStatusByReportId((prev) => ({
+          ...prev,
+          [variables.reportId]: "cancelled",
+        }));
+
+        toast.info("Report already cancelled");
+        return;
+      }
+
+      toast.error(message || "Failed to cancel report");
+    },
+  });
 
   const columns = [
     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
@@ -368,6 +402,10 @@ const DepartmentReportCommon = () => {
         const isGenerating =
           status === "pending" || status === "processing" || isPending;
         const isDownloaded = downloadedByReportId[row?._id];
+        const isCancelling =
+          cancelReportMutation.isPending &&
+          cancelReportMutation.variables?.reportId === row?._id;
+
         const buttonLabel =
           status === "processing"
             ? "Processing..."
@@ -390,12 +428,7 @@ const DepartmentReportCommon = () => {
                 generateReportMutation.mutate(row);
               }}
               className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-300"
-              disabled={
-                isGenerating ||
-                (status === "completed" && isDownloaded) ||
-                !row?._id ||
-                !row?.departmentId?._id
-              }
+              disabled={isGenerating || !row?._id || !row?.departmentId?._id}
             >
               {buttonLabel}
             </button>
@@ -403,10 +436,23 @@ const DepartmentReportCommon = () => {
             {isGenerating ? (
               <button
                 type="button"
-                onClick={() => cancelReportGeneration(row?._id)}
+                onClick={() => {
+                  const jobId = reportJobByReportIdRef.current?.[row?._id];
+
+                  if (!jobId) {
+                    toast.info("This report is already completed or cancelled");
+                    return;
+                  }
+
+                  cancelReportMutation.mutate({
+                    reportId: row?._id,
+                    jobId,
+                  });
+                }}
                 className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
+                disabled={isCancelling}
               >
-                Cancel
+                {isCancelling ? "Cancelling..." : "Cancel"}
               </button>
             ) : null}
           </div>

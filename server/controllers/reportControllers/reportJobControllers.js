@@ -74,7 +74,7 @@ async function generateReport(req, res) {
 
 async function cancelReport(req, res) {
   const { jobId } = req.params;
-  const userId = req.user._id;
+  const userId = req.user;
 
   const reportJob = await ReportJob.findOne({ _id: jobId, userId });
   if (!reportJob) return res.status(404).json({ message: "Job not found" });
