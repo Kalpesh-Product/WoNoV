@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { Controller, useForm } from "react-hook-form";
@@ -28,11 +28,13 @@ import { HiPencilSquare } from "react-icons/hi2";
 const PerformanceTeamKra = () => {
     const axios = useAxiosPrivate();
     const { auth } = useAuth();
+    const location = useLocation();
     const { department } = useParams();
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
     const deptId = useSelector((state) => state.performance.selectedDepartment);
+    const selectedMember = useSelector((state) => state.performance.selectedMember);
      const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
     );
@@ -41,8 +43,20 @@ const PerformanceTeamKra = () => {
         department ||
         auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
         "Department";
-        const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]  .filter(Boolean)   .join(" ")   .trim();        
+    const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
     const userId = auth.user._id;
+    const selectedMemberFromRoute = location.state?.selectedMember;
+    const activeMember = selectedMemberFromRoute || selectedMember;
+    const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
+    const normalizeValue = (value) =>
+        (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+    const isViewingOwnMember =
+        normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
+        normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    const shouldPrefillAssignTo = !!activeMember?.memberId && !isViewingOwnMember;
 
     const restrictedRoles = [
         "IT Employee",
@@ -77,10 +91,20 @@ const PerformanceTeamKra = () => {
         mode: "onChange",
         defaultValues: {
             teamDailyKra: "",
-            assignTo: [], // Multi-select
+            assignTo: shouldPrefillAssignTo ? [activeMember.memberId.toString()] : [], // Multi-select
             assignedDate: dayjs().toISOString(),
         },
     });
+
+    useEffect(() => {
+        if (isEditMode) return;
+
+        reset({
+            teamDailyKra: "",
+            assignTo: shouldPrefillAssignTo ? [activeMember.memberId.toString()] : [],
+            assignedDate: dayjs().toISOString(),
+        });
+    }, [activeMember?.memberId, isEditMode, reset, shouldPrefillAssignTo]);
 
     const { mutate: deleteDailyKraRecurrence, isPending: isDeletePending } = useMutation({
         mutationKey: ["deleteDailyKraRecurrence"],
@@ -204,6 +228,40 @@ const PerformanceTeamKra = () => {
         enabled: !!deptId,
     });
 
+    const filteredTeamKra = useMemo(() => {
+        if (!activeMember?.memberId || isViewingOwnMember) return teamKra || [];
+
+        return (teamKra || []).filter((item) => {
+            const assignedToList = Array.isArray(item?.assignedTo)
+                ? item.assignedTo
+                : item?.assignedTo
+                    ? [item.assignedTo]
+                    : [];
+            const assignedToId = item?.assignToId?.toString?.() || item?.assignedToId?.toString?.();
+
+            return (
+                normalizeValue(assignedToId) === normalizeValue(activeMember.memberId) ||
+                assignedToList.some((name) => {
+                    const normalizedName = normalizeValue(name);
+                    return (
+                        normalizedName === normalizeValue(activeMember.memberName) ||
+                        normalizedName === normalizeValue(activeMember.memberId)
+                    );
+                })
+            );
+        });
+    }, [activeMember?.memberId, activeMember?.memberName, isViewingOwnMember, teamKra]);
+
+    const filteredCompletedEntries = useMemo(() => {
+        if (!activeMember?.memberId || isViewingOwnMember) return completedEntries || [];
+
+        return (completedEntries || []).filter(
+            (item) =>
+                normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
+                normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
+        );
+    }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isViewingOwnMember]);
+
     const teamColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
         { headerName: "KRA List", field: "taskName", flex: 1 },
@@ -317,10 +375,8 @@ const PerformanceTeamKra = () => {
                                 buttonTitle={"Add Team KRA"}
                                 buttonDisabled={isAddKraDisabled}
                                 handleSubmit={() => setOpenModal(true)}
-                               // tableTitle={`${department} TEAM - DAILY KRA`}
-                                //tableTitle={`${departmentName} TEAM - DAILY KRA`}
-                                tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}    
-                                data={(teamKra || [])
+                                tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}
+                                data={filteredTeamKra
                                     .filter((item) => item.status !== "Completed")
                                     .map((item, index) => ({
                                         srno: index + 1,
@@ -347,12 +403,11 @@ const PerformanceTeamKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                    //tableTitle={`COMPLETED TEAM - DAILY KRA`}
-                                    tableTitle={`COMPLETED - DAILY KRA - ${loggedInUserName || "User Name"}`}   
+                                    tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName}`}
                                     exportData={true}
                                     checkAll={false}
-                                    key={completedEntries.length}
-                                    data={completedEntries.map((item, index) => ({
+                                    key={filteredCompletedEntries.length}
+                                    data={filteredCompletedEntries.map((item, index) => ({
                                         srno: index + 1,
                                         id: item.id,
                                         taskName: item.taskName,

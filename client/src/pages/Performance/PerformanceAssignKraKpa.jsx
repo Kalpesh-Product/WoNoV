@@ -7,6 +7,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import {
     setSelectedDepartment,
     setSelectedDepartmentName,
+    setSelectedMember,
 } from "../../redux/slices/performanceSlice";
 
 const PerformanceAssignKraKpa = () => {
@@ -29,10 +30,27 @@ const PerformanceAssignKraKpa = () => {
         return countB - countA; // Descending order
     });
 
-    const handleMemberClick = (department) => {
+    const handleMemberClick = (department, member) => {
         dispatch(setSelectedDepartment(department?._id));
         dispatch(setSelectedDepartmentName(department?.name));
-           navigate("/app/performance/assign-KRA-KPA/team-Daily-KRA");
+        const memberName =
+            `${member?.firstName || ""} ${member?.lastName || ""}`.trim() ||
+            member?.email ||
+            "User Name";
+        dispatch(
+            setSelectedMember({
+                memberId: member?._id?.toString?.() || "",
+                memberName,
+            }),
+        );
+        navigate("/app/performance/assign-KRA-KPA/team-Daily-KRA", {
+            state: {
+                selectedMember: {
+                    memberId: member?._id?.toString?.() || "",
+                    memberName,
+                },
+            },
+        });
     };
 
     return (
@@ -73,7 +91,7 @@ const PerformanceAssignKraKpa = () => {
                                                 <li
                                                     key={member?._id || `${department?._id}-${fullName}`}
                                                     className="text-sm text-gray-700 text-primary font-pregular hover:underline cursor-pointer"
-                                                    onClick={() => handleMemberClick(department)}
+                                                    onClick={() => handleMemberClick(department, member)}
                                                 >
                                                     • {fullName || member?.email || "Unknown member"}
                                                 </li>
