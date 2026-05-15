@@ -13,7 +13,7 @@ import MuiModal from "../../../components/MuiModal";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 // import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
@@ -28,6 +28,7 @@ import {
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
+import { PERMISSIONS } from "../../../constants/permissions";
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
@@ -51,10 +52,43 @@ const PerformanceMonthly = () => {
     .filter(Boolean)
     .join(" ")
     .trim();
-    const activeMemberName = loggedInUserName || "User Name"; 
+   // const activeMemberName = loggedInUserName || "User Name"; 
   //  const selectedMemberFromRoute = location.state?.selectedMember;
   // const activeMember = selectedMemberFromRoute || selectedMember;
   // const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";  
+
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["performance-selectedDepartments-monthly"],
+    queryFn: async () => {
+      const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+      return response.data?.selectedDepartments || [];
+    },
+  });
+
+  const selectedDepartmentManagerName = useMemo(() => {
+    const normalize = (value) =>
+      (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+    const activeDepartmentName = selectedDepartmentName || departmentName;
+    const activeDepartmentId = deptId?.toString?.();
+
+    const matchedDepartment = selectedDepartments.find((item) => {
+      const itemDepartmentId = item?.department?._id?.toString?.();
+      const itemDepartmentName = item?.department?.name;
+
+      return (
+        (activeDepartmentId && itemDepartmentId && activeDepartmentId === itemDepartmentId) ||
+        (activeDepartmentName &&
+          itemDepartmentName &&
+          normalize(activeDepartmentName) === normalize(itemDepartmentName))
+      );
+    });
+
+    return matchedDepartment?.admin || "";
+  }, [departmentName, deptId, selectedDepartmentName, selectedDepartments]);
+
+  const activeMemberName =
+    selectedDepartmentManagerName || loggedInUserName || "User Name";
 
   const restrictedRoles = [
     "IT Employee",
@@ -71,7 +105,8 @@ const PerformanceMonthly = () => {
   const isAddKpaDisabled = auth?.user?.role?.some((role) =>
     restrictedRoles.includes(role.roleTitle)
   );
-
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_MONTHLY_KPA.value);
   const canDeleteRecurrence = !isAddKpaDisabled;
 
   const departmentAccess = [
@@ -89,7 +124,8 @@ const PerformanceMonthly = () => {
 
   const isHr = department === "HR";
   // const showCheckBox = !isTop || isHr
-  const showCheckBox = allowedDept;
+  //const showCheckBox = allowedDept;
+  const showCheckBox = allowedDept || isManager;
 
   const matchingDepartment = auth.user?.departments?.some(
     (dept) => dept._id === deptId
@@ -307,7 +343,8 @@ const PerformanceMonthly = () => {
         );
       },
     },
-    ...(matchingDepartment
+        ...(matchingDepartment || isManager
+   // ...(matchingDepartment
       ? [
         {
           headerName: "Actions",

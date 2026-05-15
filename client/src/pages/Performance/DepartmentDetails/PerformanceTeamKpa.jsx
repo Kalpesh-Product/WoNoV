@@ -28,6 +28,7 @@ import { HiPencilSquare } from "react-icons/hi2";
 
 const PerformanceTeamKpa = () => {
   const axios = useAxiosPrivate();
+  const location = useLocation();
   const { auth } = useAuth();
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
@@ -49,6 +50,7 @@ const PerformanceTeamKpa = () => {
     .trim();
   const selectedMemberFromRoute = location.state?.selectedMember;
   const activeMember = selectedMemberFromRoute || selectedMember;
+  const isActiveMemberManager = (activeMember?.memberRole || "").toLowerCase().includes("manager");
   const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
   const userId = auth.user._id;
   const normalizeValue = (value) =>
@@ -241,7 +243,8 @@ const PerformanceTeamKpa = () => {
   });
 
   const filteredTeamKpa = useMemo(() => {
-    if (!activeMember?.memberId || isViewingOwnMember) return teamKpa || [];
+    //if (!activeMember?.memberId || isViewingOwnMember) return teamKpa || [];
+     if (!activeMember?.memberId || isViewingOwnMember || isActiveMemberManager) return teamKpa || [];
 
     return (teamKpa || []).filter((item) => {
       const assignedToList = Array.isArray(item?.assignedTo)
@@ -262,18 +265,20 @@ const PerformanceTeamKpa = () => {
         })
       );
     });
-  }, [activeMember?.memberId, activeMember?.memberName, isViewingOwnMember, teamKpa]);
+      }, [activeMember?.memberId, activeMember?.memberName, isActiveMemberManager, isViewingOwnMember, teamKpa]);
+  // }, [activeMember?.memberId, activeMember?.memberName, isViewingOwnMember, teamKpa]);
 
   const filteredCompletedEntries = useMemo(() => {
-    if (!activeMember?.memberId || isViewingOwnMember) return completedEntries || [];
+   // if (!activeMember?.memberId || isViewingOwnMember) return completedEntries || [];
+       if (!activeMember?.memberId || isViewingOwnMember || isActiveMemberManager) return completedEntries || [];
 
     return (completedEntries || []).filter(
       (item) =>
         normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
         normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
     );
-  }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isViewingOwnMember]);
-
+  // }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isViewingOwnMember]);
+ }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isActiveMemberManager, isViewingOwnMember]);
   const formatDateTime = (value) =>
     value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 

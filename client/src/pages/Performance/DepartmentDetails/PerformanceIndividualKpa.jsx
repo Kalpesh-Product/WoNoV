@@ -95,11 +95,19 @@ const PerformanceIndividualKpa = () => {
     });
 
     const userId = auth.user._id;
+    const roleTitles =
+        auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+    const isRoleEmployee = roleTitles.some((roleTitle) =>
+        roleTitle?.includes("employee")
+    );
     const userPermissions = auth?.user?.permissions?.permissions || [];
-    const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_DAILY_KRA.value);
+    const isManager =
+        userPermissions.includes(PERMISSIONS.PERFORMANCE_INDIVIDUAL_KPA.value) ||
+        userPermissions.includes(PERMISSIONS.PERFORMANCE_MONTHLY_KPA.value);
     const isHr = department === "HR";
     // const showCheckBox = !isTop || isHr
-    const showCheckBox = allowedDept;
+    // const showCheckBox = allowedDept;
+    const showCheckBox = allowedDept || isManager;
 
     const matchingDepartment = auth.user?.departments?.some(
         (dept) => dept._id === deptId
@@ -111,12 +119,13 @@ const PerformanceIndividualKpa = () => {
         normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
     const shouldHideAddButtonForSelectedMemberView =
-        isManager && activeMember?.memberId && !isViewingOwnMember;
+        //isManager && activeMember?.memberId && !isViewingOwnMember;
+          !isManager && activeMember?.memberId && !isViewingOwnMember;
     const shouldHideRowActionsForSelectedMemberView = shouldHideAddButtonForSelectedMemberView;
     // const showCheckBoxForCurrentView =
     //     showCheckBox && !shouldHideRowActionsForSelectedMemberView;
       const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
-    const canShowControls = shouldShowManagerControlsInEmployeeRoute || !shouldHideAddButtonForSelectedMemberView;
+        const canShowControls = !isRoleEmployee && (isManager || shouldShowManagerControlsInEmployeeRoute || !shouldHideAddButtonForSelectedMemberView);
     const showCheckBoxForCurrentView =
         (showCheckBox || shouldShowManagerControlsInEmployeeRoute) && canShowControls;
 
@@ -376,7 +385,8 @@ const PerformanceIndividualKpa = () => {
                 );
             },
         },
-        ...(matchingDepartment && canShowControls
+        ...((matchingDepartment || isManager) && canShowControls
+        // ...(matchingDepartment && canShowControls
     //    ...(matchingDepartment && !shouldHideRowActionsForSelectedMemberView
             ? [
                 {
