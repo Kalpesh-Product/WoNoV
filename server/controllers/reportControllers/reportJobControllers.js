@@ -5,7 +5,7 @@ const { default: mongoose } = require("mongoose");
 const Report = require("../../models/reports/Report");
 
 const MAX_RETRIES = 3;
-const RETRY_COOLDOWN_MS = 30 * 60 * 1000;
+const RETRY_COOLDOWN_MS = 15 * 60 * 1000;
 
 async function queueReportJob({
   userId,
@@ -119,7 +119,7 @@ async function retryReport(req, res) {
     createdAt: { $gte: windowStart },
   });
 
-  if (retriesInWindow >= MAX_RETRIES) {
+  if (retriesInWindow > MAX_RETRIES) {
     const latestRetry = await ReportJob.findOne({
       userId,
       requestKey: failedJob.requestKey,

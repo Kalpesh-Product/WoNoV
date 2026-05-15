@@ -11,6 +11,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+import { downloadCsv } from "../../utils/downloadCsv";
 
 const REPORT_MODULE_MAP = {
   finance: { title: "Finance Department Report", module: "Finance" },
@@ -99,98 +100,114 @@ const DepartmentReportCommon = () => {
 
     if (Array.isArray(value)) {
       if (!value.length) return prefix ? { [prefix]: "" } : {};
-      const primitiveArray = value.every(
+
+      const allPrimitive = value.every(
         (item) =>
           item === null ||
           ["string", "number", "boolean"].includes(typeof item),
       );
-      if (primitiveArray) {
+
+      if (allPrimitive) {
         return { [prefix]: value.join(" | ") };
       }
 
-      return { [prefix]: JSON.stringify(value) };
+      // Array of objects — flatten each and prefix with index
+      const result = {};
+      value.forEach((item, i) => {
+        Object.assign(
+          result,
+          flattenRow(item, prefix ? `${prefix}.${i}` : `${i}`),
+        );
+      });
+      return result;
     }
 
-    if (typeof value !== "object") {
-      return prefix ? { [prefix]: value } : {};
+    if (typeof value === "object") {
+      const flat = {};
+      Object.entries(value).forEach(([key, nestedValue]) => {
+        const nextPrefix = prefix ? `${prefix}.${key}` : key;
+        Object.assign(flat, flattenRow(nestedValue, nextPrefix));
+      });
+      return flat;
     }
 
-    const flatObject = {};
-    Object.entries(value).forEach(([key, nestedValue]) => {
-      const nextPrefix = prefix ? `${prefix}.${key}` : key;
-      if (
-        nestedValue !== null &&
-        typeof nestedValue === "object" &&
-        !Array.isArray(nestedValue)
-      ) {
-        Object.assign(flatObject, flattenRow(nestedValue, nextPrefix));
+    // Primitive
+    return prefix ? { [prefix]: value } : {};
+  };
+
+  const flattenObject = (obj, prefix = "") => {
+    let result = {};
+
+    Object.entries(obj || {}).forEach(([key, value]) => {
+      const nextKey = prefix ? `${prefix}.${key}` : key;
+
+      if (value === null || value === undefined) {
+        result[nextKey] = "";
+      } else if (Array.isArray(value)) {
+        // skip arrays here
+        result[nextKey] = JSON.stringify(value);
+      } else if (typeof value === "object") {
+        Object.assign(result, flattenObject(value, nextKey));
       } else {
-        Object.assign(flatObject, flattenRow(nestedValue, nextPrefix));
+        result[nextKey] = value;
       }
     });
 
-    return flatObject;
+    return result;
   };
 
   const normalizeReportRows = (reportData) => {
-    if (!reportData) return [];
+    if (!reportData || typeof reportData !== "object") return [];
 
-    if (Array.isArray(reportData)) return reportData;
+    const rows = [];
 
-    if (typeof reportData === "string") {
-      try {
-        const parsedData = JSON.parse(reportData);
-        return Array.isArray(parsedData) ? parsedData : [parsedData];
-      } catch {
-        return [];
+    // parent-level primitive/object fields
+    const parentFields = {};
+
+    Object.entries(reportData).forEach(([key, value]) => {
+      if (!Array.isArray(value)) {
+        if (typeof value === "object" && value !== null) {
+          Object.assign(parentFields, flattenObject(value, key));
+        } else {
+          parentFields[key] = value;
+        }
       }
-    }
+    });
 
-    return [reportData];
+    // handle arrays
+    Object.entries(reportData).forEach(([key, value]) => {
+      if (!Array.isArray(value)) return;
+
+      // array of objects
+      if (
+        value.every(
+          (item) =>
+            typeof item === "object" && item !== null && !Array.isArray(item),
+        )
+      ) {
+        value.forEach((item) => {
+          rows.push({
+            ...parentFields,
+            ...flattenObject(item),
+          });
+        });
+      } else {
+        // primitive arrays
+        rows.push({
+          ...parentFields,
+          [key]: value.join(" | "),
+        });
+      }
+    });
+
+    return rows.length ? rows : [parentFields];
   };
 
-  const triggerDataDownload = (reportData, reportId) => {
-    const rows = normalizeReportRows(reportData);
-    if (!rows.length || typeof rows[0] !== "object" || rows[0] === null) {
-      return false;
-    }
-
-    const normalizedRows = rows.map((row) => flattenRow(row));
-    const headers = [
-      ...new Set(normalizedRows.flatMap((row) => Object.keys(row || {}))),
-    ];
-    if (!headers.length) return false;
-
-    const escapeCsvValue = (value) => {
-      if (value === null || value === undefined) return "";
-      const stringValue =
-        typeof value === "object" ? JSON.stringify(value) : String(value);
-      const escaped = stringValue.replace(/"/g, '""');
-      return `"${escaped}"`;
-    };
-
-    const csvLines = [
-      headers
-        .map((header) => escapeCsvValue(toReadableHeader(header)))
-        .join(","),
-      ...normalizedRows.map((row) =>
-        headers.map((header) => escapeCsvValue(row?.[header])).join(","),
-      ),
-    ];
-
-    const blob = new Blob([csvLines.join("\n")], {
-      type: "text/csv;charset=utf-8;",
+  const triggerDataDownload = (reportData, reportName) => {
+    return downloadCsv({
+      data: reportData,
+      fileName: reportName,
     });
-    const objectUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = objectUrl;
-    link.download = `report-${reportId || "result"}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(objectUrl);
-
-    return true;
   };
 
   const getRetryCountdownLabel = (retryAt) => {
@@ -227,8 +244,10 @@ const DepartmentReportCommon = () => {
           response?.data?.downloadUrl || response?.data?.fileUrl || null;
 
         const reportData = response?.data?.data || null;
+        const reportRow = reports.find((r) => r?._id === reportId);
+
         const downloadStarted =
-          triggerDataDownload(reportData, reportId) ||
+          triggerDataDownload(reportData, reportRow?.reportName) ||
           triggerReportDownload(downloadUrl);
 
         setDownloadedByReportId((prev) => ({

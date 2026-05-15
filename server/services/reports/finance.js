@@ -2,10 +2,15 @@
 const User = require("../../models/hr/UserData");
 const Budget = require("../../models/budget/Budget");
 
-const fetchBudgetService = async ({ departmentId }) => {
+const fetchBudgetService = async ({ dateFilter, departmentId }) => {
   const query = {};
+
   if (departmentId) {
     query.department = departmentId;
+  }
+
+  if (dateFilter) {
+    query.dueDate = dateFilter.dueDate;
   }
 
   const budgets = await Budget.find(query)
@@ -32,6 +37,7 @@ const fetchBudgetService = async ({ departmentId }) => {
     return budget;
   });
 
+  console.log("Fetched budgets:", allBudgets.length);
   return { allBudgets };
 };
 

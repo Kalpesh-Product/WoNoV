@@ -5,6 +5,7 @@ require("../models/registerModels"); // ensure all models are registered
 require("../models/reports/Report");
 const ReportJob = require("../models/reports/ReportJob");
 const { fetchBudgetService } = require("../services/reports/finance");
+const buildDateFilter = require("../utils/dateFilter");
 
 const worker = new Worker(
   "report-generation",
@@ -38,7 +39,7 @@ const worker = new Worker(
     await reportJob.save();
 
     //delay added to simulate long processing time and test retry/cancellation flows. Remove in production.
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    // await new Promise((resolve) => setTimeout(resolve, 5000));
     try {
       let data;
 
@@ -51,8 +52,13 @@ const worker = new Worker(
         case "Expense And Budget":
           // throw new Error("Testing retry flow");
           data = await fetchBudgetService({
-            ...reportJob.filters,
-            departmentId: reportJob.department,
+            dateFilter: {
+              ...buildDateFilter({
+                startDate: reportJob.filters?.startDate,
+                endDate: reportJob.filters?.endDate,
+                field: "dueDate",
+              }),
+            },
           });
           break;
         case "sales":
