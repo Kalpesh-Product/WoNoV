@@ -20,11 +20,6 @@ const worker = new Worker(
 
     console.log("Attempts made:", job.attemptsMade);
 
-    // Simulate transient failure on first attempt to test retry logic. Remove in production.
-    if (job.attemptsMade < 1) {
-      throw new Error("Temporary failure");
-    }
-
     if (reportJob.status === "canceled") {
       await job.log("Job canceled");
 
@@ -50,7 +45,7 @@ const worker = new Worker(
       );
       switch (reportJob.report.reportName) {
         case "Expense And Budget":
-          throw new Error("Testing retry flow");
+          // throw new Error("Testing retry flow");
           data = await fetchBudgetService({
             dateFilter: {
               ...buildDateFilter({

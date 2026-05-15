@@ -30,7 +30,24 @@ const DepartmentReportCommon = () => {
   const [activeReportId, setActiveReportId] = useState(null);
   const [jobStatusByReportId, setJobStatusByReportId] = useState({});
   const [downloadedByReportId, setDownloadedByReportId] = useState({});
-  const [retryCooldownByReportId, setRetryCooldownByReportId] = useState({});
+  // Replace the useState initialization
+  const [retryCooldownByReportId, setRetryCooldownByReportId] = useState(() => {
+    // Lazy initializer runs once — reads storage before any effect can clear it
+    try {
+      const stored = localStorage.getItem(RETRY_COOLDOWN_STORAGE_KEY);
+      if (!stored) return {};
+      const parsed = JSON.parse(stored);
+      const now = Date.now();
+
+      return Object.fromEntries(
+        Object.entries(parsed).filter(
+          ([, retryAt]) => retryAt && new Date(retryAt).getTime() > now,
+        ),
+      );
+    } catch {
+      return {};
+    }
+  });
   const reportJobByReportIdRef = useRef({});
   const cancelledJobsRef = useRef(new Set());
 
@@ -44,38 +61,20 @@ const DepartmentReportCommon = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const isCalendarOpen = Boolean(anchorEl);
 
+  // For storage — writes when cooldowns change
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(RETRY_COOLDOWN_STORAGE_KEY);
+    const activeCooldownEntries = Object.entries(
+      retryCooldownByReportId,
+    ).filter(([, retryAt]) => retryAt && dayjs(retryAt).isAfter(dayjs()));
 
-      if (!stored) return;
-
-      const parsed = JSON.parse(stored);
-
-      // remove expired cooldowns
-      const now = Date.now();
-
-      const validCooldowns = Object.fromEntries(
-        Object.entries(parsed).filter(
-          ([_, retryAt]) => new Date(retryAt).getTime() > now,
-        ),
-      );
-
-      setRetryCooldownByReportId(validCooldowns);
-
-      localStorage.setItem(
-        RETRY_COOLDOWN_STORAGE_KEY,
-        JSON.stringify(validCooldowns),
-      );
-    } catch (error) {
-      console.error("Failed to restore retry cooldowns", error);
+    if (!activeCooldownEntries.length) {
+      localStorage.removeItem(RETRY_COOLDOWN_STORAGE_KEY);
+      return;
     }
-  }, []);
 
-  useEffect(() => {
     localStorage.setItem(
       RETRY_COOLDOWN_STORAGE_KEY,
-      JSON.stringify(retryCooldownByReportId),
+      JSON.stringify(Object.fromEntries(activeCooldownEntries)),
     );
   }, [retryCooldownByReportId]);
 
@@ -248,10 +247,12 @@ const DepartmentReportCommon = () => {
   };
 
   const getRetryCountdownLabel = (retryAt) => {
-    if (!retryAt) return null;
+    if (!retryAt) return "Retry";
     const remainingMs = Math.max(0, dayjs(retryAt).diff(dayjs()));
-    const minutes = remainingMs / (60 * 1000);
-    return minutes > 0 ? `Generate after ${minutes} mins` : "Generate";
+    const minutes = Math.ceil(remainingMs / (60 * 1000));
+    return minutes > 0
+      ? `Generate after ${minutes} min${minutes > 1 ? "s" : ""}`
+      : "Generate";
   };
 
   const pollReportStatus = async (jobId, reportId) => {
@@ -474,6 +475,15 @@ const DepartmentReportCommon = () => {
     });
 
     setRetryCooldownByReportId(validCooldownByReportId);
+    setJobStatusByReportId((prev) => ({
+      ...prev,
+      ...Object.fromEntries(
+        Object.keys(validCooldownByReportId).map((reportId) => [
+          reportId,
+          "failed",
+        ]),
+      ),
+    }));
   }, [reports]);
 
   useEffect(() => {
@@ -578,7 +588,7 @@ const DepartmentReportCommon = () => {
             >
               {primaryButtonLabel}
             </button>
-            {status === "failed" ? (
+            {status === "failed" || hasCooldown ? (
               hasCooldown ? (
                 <span className="rounded bg-orange-100 px-3 py-1 text-sm text-orange-700">
                   {retryLabel}

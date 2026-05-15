@@ -5,8 +5,7 @@ const { default: mongoose } = require("mongoose");
 const Report = require("../../models/reports/Report");
 
 const MAX_RETRIES = 1;
-// const RETRY_COOLDOWN_MS = 15 * 60 * 1000;
-const RETRY_COOLDOWN_MS = 30 * 1000;
+const RETRY_COOLDOWN_MS = 15 * 60 * 1000;
 
 async function queueReportJob({
   userId,
@@ -61,6 +60,18 @@ async function generateReport(req, res) {
   const foundReport = await Report.findById(report);
   if (!foundReport) {
     return res.status(404).json({ message: "Report not found" });
+  }
+
+  // Check for existing active jobs for the user and enforce limits
+  const activeJobsCount = await ReportJob.countDocuments({
+    userId,
+    status: { $in: ["pending", "processing"] },
+  });
+
+  if (activeJobsCount >= 5) {
+    return res.status(429).json({
+      message: "Maximum 5 active reports allowed",
+    });
   }
 
   //Avoid multiple duplicate report jobs
@@ -128,8 +139,6 @@ async function retryReport(req, res) {
     isManualRetry: true,
     createdAt: { $gte: windowStart },
   });
-
-  console.log("retries count", retriesInWindow);
 
   if (retriesInWindow == MAX_RETRIES) {
     const latestRetry = await ReportJob.findOne({

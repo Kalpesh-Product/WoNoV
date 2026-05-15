@@ -20,6 +20,10 @@ const ReportSchema = new mongoose.Schema(
       startDate: Date,
       endDate: Date,
     },
+    latestReportJobStatus: {
+      type: String,
+      enum: ["pending", "processing", "completed", "failed", "canceled"],
+    },
     status: {
       type: Boolean,
       default: true,
