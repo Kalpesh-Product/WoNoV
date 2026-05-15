@@ -247,6 +247,22 @@ const PerformanceMemberWiseKraKpa = () => {
                  memberIdByName.set(normalizeName(memberName), memberId);
             });
 
+              const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
+            const normalizedLoggedInName = normalizeName(loggedInUserName);
+            if (normalizedManagerName && !memberIdByName.has(normalizedManagerName)) {
+                const managerRowId =
+                    normalizedManagerName === normalizedLoggedInName && loggedInUserId
+                        ? loggedInUserId
+                        : `manager-${normalizedManagerName}`;
+
+                map.set(managerRowId, {
+                    memberId: managerRowId,
+                    member: selectedDepartmentManagerName,
+                    memberRole: "Manager",
+                    ...DEFAULT_COUNTS,
+                });
+            }
+
             const upsert = (task, field) => {
                 const userId = task.assignToId || task.assignedTo || "unassigned";
                // const userName = task.assignedTo || "Unassigned";
@@ -263,8 +279,14 @@ const PerformanceMemberWiseKraKpa = () => {
                 map.get(userId)[field] += 1;
             };
                const upsertManagerTeamKpaCount = (task, field) => {
-                const managerId = loggedInUserId || "unassigned";
-                const managerName = loggedInUserName || "Manager";
+               // const managerId = loggedInUserId || "unassigned";
+                //const managerName = loggedInUserName || "Manager";
+                 const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
+                const existingManagerId = normalizedManagerName
+                    ? memberIdByName.get(normalizedManagerName)
+                    : null;
+                const managerId = existingManagerId || `manager-${normalizedManagerName || "unknown"}`;
+                const managerName = selectedDepartmentManagerName || "Manager";
 
                 if (!map.has(managerId)) {
                     map.set(managerId, {
@@ -493,11 +515,25 @@ const PerformanceMemberWiseKraKpa = () => {
 
                     dispatch(setSelectedDepartment(targetDepartmentId));
                     dispatch(setSelectedDepartmentName(targetDepartmentName));
-                    dispatch(setSelectedMember({ memberId, memberName: params.value }));
+                   // dispatch(setSelectedMember({ memberId, memberName: params.value }));
+                   dispatch(
+            setSelectedMember({
+              memberId,
+              memberName: params.value,
+              memberRole: params?.data?.memberRole || "Employee",
+            }),
+          );
  const firstTab = "individual-Monthly-KPA";
 
  navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
-                        state: { selectedMember: { memberId, memberName: params.value } },
+                        // state: { selectedMember: { memberId, memberName: params.value } },
+                                                state: {
+                selectedMember: {
+                  memberId,
+                  memberName: params.value,
+                  memberRole: params?.data?.memberRole || "Employee",
+                },
+              },
                     });
                 };
 

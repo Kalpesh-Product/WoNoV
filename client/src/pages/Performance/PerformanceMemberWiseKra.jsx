@@ -230,6 +230,33 @@ const PerformanceMemberWiseKra = () => {
         memberIdByName.set(normalizeName(memberName), memberId);
       });
 
+      //       const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
+      // if (normalizedManagerName && !memberIdByName.has(normalizedManagerName)) {
+      //   map.set(`manager-${normalizedManagerName}`, {
+      //     memberId: `manager-${normalizedManagerName}`,
+      //     member: selectedDepartmentManagerName,
+      //     memberRole: "Manager",
+      //     ...DEFAULT_COUNTS,
+      //   });
+      // }
+
+
+        const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
+      const normalizedLoggedInName = normalizeName(loggedInUserName);
+      if (normalizedManagerName && !memberIdByName.has(normalizedManagerName)) {
+        const managerRowId =
+          normalizedManagerName === normalizedLoggedInName && loggedInUserId
+            ? loggedInUserId
+            : `manager-${normalizedManagerName}`;
+
+        map.set(managerRowId, {
+          memberId: managerRowId,
+          member: selectedDepartmentManagerName,
+          memberRole: "Manager",
+          ...DEFAULT_COUNTS,
+        });
+      }
+
       const upsert = (task, field) => {
         const userId = task.assignToId || task.assignedTo || "unassigned";
         const userName = (task.assignedTo || "Unassigned").replace(/\s+/g, " ").trim();
@@ -247,8 +274,14 @@ const PerformanceMemberWiseKra = () => {
       };
 
       const upsertManagerTeamKraCount = (field) => {
-        const managerId = loggedInUserId || "unassigned";
-        const managerName = loggedInUserName || "Manager";
+        // const managerId = loggedInUserId || "unassigned";
+        // const managerName = loggedInUserName || "Manager";
+           const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
+        const existingManagerId = normalizedManagerName
+          ? memberIdByName.get(normalizedManagerName)
+          : null;
+        const managerId = existingManagerId || `manager-${normalizedManagerName || "unknown"}`;
+        const managerName = selectedDepartmentManagerName || "Manager";
 
         if (!map.has(managerId)) {
           map.set(managerId, {
@@ -427,7 +460,14 @@ const PerformanceMemberWiseKra = () => {
 
           dispatch(setSelectedDepartment(targetDepartmentId));
           dispatch(setSelectedDepartmentName(targetDepartmentName));
-          dispatch(setSelectedMember({ memberId, memberName: params.value }));
+         // dispatch(setSelectedMember({ memberId, memberName: params.value }));
+          dispatch(
+            setSelectedMember({
+              memberId,
+              memberName: params.value,
+              memberRole: params?.data?.memberRole || "Employee",
+            }),
+          );
 
           let firstTab = "individual-Daily-KRA";
           if (canManageTeam && !isOwnRow) {
@@ -435,7 +475,14 @@ const PerformanceMemberWiseKra = () => {
           }
 
              navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`, {
-              state: { selectedMember: { memberId, memberName: params.value } },
+             // state: { selectedMember: { memberId, memberName: params.value } },
+              state: {
+                selectedMember: {
+                  memberId,
+                  memberName: params.value,
+                  memberRole: params?.data?.memberRole || "Employee",
+                },
+              },
             });
         };
 
