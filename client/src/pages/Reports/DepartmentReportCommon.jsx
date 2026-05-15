@@ -44,6 +44,41 @@ const DepartmentReportCommon = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const isCalendarOpen = Boolean(anchorEl);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(RETRY_COOLDOWN_STORAGE_KEY);
+
+      if (!stored) return;
+
+      const parsed = JSON.parse(stored);
+
+      // remove expired cooldowns
+      const now = Date.now();
+
+      const validCooldowns = Object.fromEntries(
+        Object.entries(parsed).filter(
+          ([_, retryAt]) => new Date(retryAt).getTime() > now,
+        ),
+      );
+
+      setRetryCooldownByReportId(validCooldowns);
+
+      localStorage.setItem(
+        RETRY_COOLDOWN_STORAGE_KEY,
+        JSON.stringify(validCooldowns),
+      );
+    } catch (error) {
+      console.error("Failed to restore retry cooldowns", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      RETRY_COOLDOWN_STORAGE_KEY,
+      JSON.stringify(retryCooldownByReportId),
+    );
+  }, [retryCooldownByReportId]);
+
   const handleDateRangeChange = (item) => {
     setDateRange([item.selection]);
   };
@@ -215,7 +250,7 @@ const DepartmentReportCommon = () => {
   const getRetryCountdownLabel = (retryAt) => {
     if (!retryAt) return null;
     const remainingMs = Math.max(0, dayjs(retryAt).diff(dayjs()));
-    const minutes = Math.ceil(remainingMs / (60 * 1000));
+    const minutes = remainingMs / (60 * 1000);
     return minutes > 0 ? `Generate after ${minutes} mins` : "Generate";
   };
 
@@ -544,20 +579,24 @@ const DepartmentReportCommon = () => {
               {primaryButtonLabel}
             </button>
             {status === "failed" ? (
-              <button
-                type="button"
-                onClick={() => {
-                  const jobId = reportJobByReportIdRef.current?.[row?._id];
-                  if (!jobId || hasCooldown) return;
-                  retryReportMutation.mutate({ reportId: row?._id, jobId });
-                }}
-                className="rounded bg-orange-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-orange-300"
-                disabled={
-                  retryReportMutation.isPending || hasCooldown || !row?._id
-                }
-              >
-                {retryReportMutation.isPending ? "Retrying..." : retryLabel}
-              </button>
+              hasCooldown ? (
+                <span className="rounded bg-orange-100 px-3 py-1 text-sm text-orange-700">
+                  {retryLabel}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const jobId = reportJobByReportIdRef.current?.[row?._id];
+                    if (!jobId) return;
+                    retryReportMutation.mutate({ reportId: row?._id, jobId });
+                  }}
+                  className="rounded bg-orange-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-orange-300"
+                  disabled={retryReportMutation.isPending || !row?._id}
+                >
+                  {retryReportMutation.isPending ? "Retrying..." : retryLabel}
+                </button>
+              )
             ) : null}
 
             {isGenerating ? (
