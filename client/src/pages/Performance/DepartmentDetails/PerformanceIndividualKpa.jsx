@@ -115,6 +115,10 @@ const PerformanceIndividualKpa = () => {
 
        const normalizeValue = (value) =>
         (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+    const selectedMemberRole = normalizeValue(activeMember?.memberRole);
+    const isSelectedMemberManager = selectedMemberRole.includes("manager");
+    const isSelectedMemberEmployee = !!activeMember?.memberId && !isSelectedMemberManager;
+    const hideMemberLevelControls = isSelectedMemberEmployee;
     const isViewingOwnMember =
         normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
@@ -125,9 +129,14 @@ const PerformanceIndividualKpa = () => {
     // const showCheckBoxForCurrentView =
     //     showCheckBox && !shouldHideRowActionsForSelectedMemberView;
       const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
-        const canShowControls = !isRoleEmployee && (isManager || shouldShowManagerControlsInEmployeeRoute || !shouldHideAddButtonForSelectedMemberView);
+        const canShowControls =
+            !hideMemberLevelControls &&
+            !isRoleEmployee &&
+            (isManager || shouldShowManagerControlsInEmployeeRoute || !shouldHideAddButtonForSelectedMemberView);
     const showCheckBoxForCurrentView =
-        (showCheckBox || shouldShowManagerControlsInEmployeeRoute) && canShowControls;
+        !hideMemberLevelControls &&
+        (showCheckBox || shouldShowManagerControlsInEmployeeRoute) &&
+        canShowControls;
 
     const {
         handleSubmit: submitDailyKra,
@@ -582,12 +591,12 @@ const PerformanceIndividualKpa = () => {
                                 // buttonDisabled={
                                 //     isAddKpaDisabled || shouldHideAddButtonForSelectedMemberView
                                  buttonTitle={
-                                    !canShowControls
+                                    hideMemberLevelControls || !canShowControls
                                         ? undefined
                                         : "Add Monthly KPA"
                                 }
                                 buttonDisabled={
-                                    isAddKpaDisabled || !canShowControls
+                                    hideMemberLevelControls || isAddKpaDisabled || !canShowControls
                                 }
                                 handleSubmit={() => {    
                                     setIsEditMode(false);
