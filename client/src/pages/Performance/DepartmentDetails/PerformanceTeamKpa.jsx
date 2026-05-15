@@ -13,7 +13,7 @@ import MuiModal from "../../../components/MuiModal";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FaCheck } from "react-icons/fa6";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { queryClient } from "../../../main";
@@ -50,8 +50,13 @@ const PerformanceTeamKpa = () => {
   const selectedMemberFromRoute = location.state?.selectedMember;
   const activeMember = selectedMemberFromRoute || selectedMember;
   const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
-
   const userId = auth.user._id;
+  const normalizeValue = (value) =>
+    (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+  const isViewingOwnMember =
+    normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
+    normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+  const shouldPrefillAssignTo = !!activeMember?.memberId && !isViewingOwnMember;
 
   const restrictedRoles = [
     "IT Employee",
@@ -87,10 +92,21 @@ const PerformanceTeamKpa = () => {
       teamKpaName: "",
       startDate: null,
       endDate: null,
-      assignTo: [], // Multi-select
+      assignTo: shouldPrefillAssignTo ? [activeMember.memberId.toString()] : [], // Multi-select
     },
   });
   const startDate = watch("startDate");
+
+  useEffect(() => {
+    if (isEditMode) return;
+
+    reset({
+      teamKpaName: "",
+      startDate: null,
+      endDate: null,
+      assignTo: shouldPrefillAssignTo ? [activeMember.memberId.toString()] : [],
+    });
+  }, [activeMember?.memberId, isEditMode, reset, shouldPrefillAssignTo]);
 
   const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } = useMutation({
     mutationKey: ["deleteMonthlyKpaRecurrence"],
@@ -224,6 +240,40 @@ const PerformanceTeamKpa = () => {
     queryFn: fetchTasks,
   });
 
+  const filteredTeamKpa = useMemo(() => {
+    if (!activeMember?.memberId || isViewingOwnMember) return teamKpa || [];
+
+    return (teamKpa || []).filter((item) => {
+      const assignedToList = Array.isArray(item?.assignedTo)
+        ? item.assignedTo
+        : item?.assignedTo
+          ? [item.assignedTo]
+          : [];
+      const assignedToId = item?.assignToId?.toString?.() || item?.assignedToId?.toString?.();
+
+      return (
+        normalizeValue(assignedToId) === normalizeValue(activeMember.memberId) ||
+        assignedToList.some((name) => {
+          const normalizedName = normalizeValue(name);
+          return (
+            normalizedName === normalizeValue(activeMember.memberName) ||
+            normalizedName === normalizeValue(activeMember.memberId)
+          );
+        })
+      );
+    });
+  }, [activeMember?.memberId, activeMember?.memberName, isViewingOwnMember, teamKpa]);
+
+  const filteredCompletedEntries = useMemo(() => {
+    if (!activeMember?.memberId || isViewingOwnMember) return completedEntries || [];
+
+    return (completedEntries || []).filter(
+      (item) =>
+        normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
+        normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
+    );
+  }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isViewingOwnMember]);
+
   const formatDateTime = (value) =>
     value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
@@ -342,37 +392,6 @@ const PerformanceTeamKpa = () => {
       },
     },
   ];
- const normalizeValue = (value) =>
-    (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
-  const isSelectedSelf =
-    normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
-    normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
-
-  const shouldHideTeamDataForSelectedMember =
-    isManager && activeMember?.memberId && !isSelectedSelf;
-
-  const filteredTeamKpa = shouldHideTeamDataForSelectedMember
-    ? []
-    : isManager && isSelectedSelf
-      ? teamKpa || []
-      : (teamKpa || []).filter((item) => {
-          if (!activeMember?.memberName) return true;
-          const assignees = Array.isArray(item?.assignedTo)
-            ? item.assignedTo
-            : [item?.assignedTo];
-          return assignees.some(
-            (name) => normalizeValue(name) === normalizeValue(activeMember.memberName)
-          );
-        });
-
-  const filteredCompletedEntries = shouldHideTeamDataForSelectedMember
-    ? []
-    : isManager && isSelectedSelf
-      ? completedEntries || []
-      : (completedEntries || []).filter((item) => {
-          if (!activeMember?.memberName) return true;
-          return normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName);
-        });
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -383,10 +402,7 @@ const PerformanceTeamKpa = () => {
                 buttonTitle={"Add Team Monthly KPA"}
                 buttonDisabled={isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
-                 tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${activeMemberName}`}
-                //tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
-               // tableTitle={`${departmentName} TEAM - MONTHLY KPA`}
-                // tableTitle={`${department} TEAM - MONTHLY KPA`}
+                tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${activeMemberName}`}
                 data={filteredTeamKpa
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
@@ -414,8 +430,6 @@ const PerformanceTeamKpa = () => {
               <WidgetSection padding>
                 <YearWiseTable
                   formatTime
-                  //tableTitle={`COMPLETED TEAM - MONTHLY KPA`}
-                  //tableTitle={`COMPLETED - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                   tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
                   exportData={true}
                   checkAll={false}

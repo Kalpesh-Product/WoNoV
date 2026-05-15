@@ -34,6 +34,11 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
   const isManagerViewingOwnMemberRow =
     !!loggedInUserId && !!selectedMemberId && loggedInUserId === selectedMemberId;
 
+
+     const selectedMemberRole = (selectedMember?.memberRole || "").toLowerCase();
+  const isSelectedMemberManager = selectedMemberRole.includes("manager");
+  const isSelectedMemberEmployee = !!selectedMemberId && !isSelectedMemberManager;
+
   // Map routes to tabs
   const tabs = [
     {
@@ -85,10 +90,14 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
     ? tabs.filter(
         (tab) => tab.path === "team-Daily-KRA" || tab.path === "team-Monthly-KPA"
       )
-   : isMemberWiseKpaFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+  //  : isMemberWiseKpaFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+  //     ? tabs.filter((tab) => tab.path === "individual-Monthly-KPA")
+  //   : isMemberWiseKraFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+  //     ? tabs.filter((tab) => tab.path === "daily-KRA" || tab.path === "individual-Daily-KRA")    
+   : isMemberWiseKpaFlow && canManageTeam && isSelectedMemberEmployee && !isManagerViewingOwnMemberRow
       ? tabs.filter((tab) => tab.path === "individual-Monthly-KPA")
-    : isMemberWiseKraFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
-      ? tabs.filter((tab) => tab.path === "daily-KRA" || tab.path === "individual-Daily-KRA")    
+    : isMemberWiseKraFlow && canManageTeam && isSelectedMemberEmployee && !isManagerViewingOwnMemberRow
+      ? tabs.filter((tab) => tab.path === "daily-KRA" || tab.path === "individual-Daily-KRA")
     : isMemberWiseKpaFlow
       ? tabs.filter((tab) => tab.path.toLowerCase().includes("kpa"))
       : isMemberWiseKraFlow
@@ -97,9 +106,12 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
 
   const defaultTabPath = isAssignRoute
     ? "team-Daily-KRA"
-       : isMemberWiseKpaFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+    //    : isMemberWiseKpaFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+    //   ? "individual-Monthly-KPA"
+    // : isMemberWiseKraFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+      : isMemberWiseKpaFlow && canManageTeam && isSelectedMemberEmployee && !isManagerViewingOwnMemberRow
       ? "individual-Monthly-KPA"
-    : isMemberWiseKraFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+    : isMemberWiseKraFlow && canManageTeam && isSelectedMemberEmployee && !isManagerViewingOwnMemberRow
       ? "daily-KRA"
     : isMemberWiseKpaFlow
       ? "monthly-KPA"
