@@ -12,6 +12,7 @@ import humanDate from "../../utils/humanDateForamt";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { downloadCsv } from "../../utils/downloadCsv";
+import { queryClient } from "../../main";
 
 const REPORT_MODULE_MAP = {
   finance: { title: "Finance Department Report", module: "Finance" },
@@ -362,6 +363,11 @@ const DepartmentReportCommon = () => {
       await pollReportStatus(jobId, reportRow?._id);
 
       return response.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["department-reports", selectedModule?.module],
+      });
     },
     onError: (error) => {
       toast.error(
