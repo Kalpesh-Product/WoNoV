@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, TextField } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -29,6 +29,7 @@ const PerformanceKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { department } = useParams();
+  const location = useLocation();
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
@@ -81,6 +82,8 @@ const PerformanceKra = () => {
   const showCheckBox = allowedDept;
    const userId = auth.user._id;
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const roleTitles =
+    auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
   const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_DAILY_KRA.value);
   const isHr = department === "HR";
 
@@ -100,14 +103,21 @@ const PerformanceKra = () => {
     (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
      const targetMemberId = activeMember?.memberId;
   const targetMemberName = activeMember?.memberName;
+  const selectedMemberRole = normalizeValue(activeMember?.memberRole);
+  const isSelectedMemberManager = selectedMemberRole.includes("manager");
+  const isSelectedMemberEmployee = !!targetMemberId && !isSelectedMemberManager;
+  const isSuperOrMasterAdmin =
+    roleTitles.some((roleTitle) => roleTitle?.includes("super admin")) ||
+    roleTitles.some((roleTitle) => roleTitle?.includes("master admin"));
   const isViewingOwnMember =
     normalizeValue(targetMemberId) === normalizeValue(userId) ||
     normalizeValue(targetMemberName) === normalizeValue(loggedInUserName);
-  const shouldHideControlsForSelectedMemberView =
-    isManager && targetMemberId && !isViewingOwnMember;
-  const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
-  const canShowControls = shouldShowManagerControlsInEmployeeRoute || !shouldHideControlsForSelectedMemberView;
-  const canUseCheckbox = showCheckBox || shouldShowManagerControlsInEmployeeRoute;
+  const canManageSelectedMemberView = isManager || isSuperOrMasterAdmin;
+  const canShowControls =
+    !isSelectedMemberEmployee &&
+    (canManageSelectedMemberView || !targetMemberId || isViewingOwnMember);
+  const canUseCheckbox =
+    !isSelectedMemberEmployee && (showCheckBox || canManageSelectedMemberView);
     // isManager && targetMemberId && !isViewingOwnMember;
   //const isViewingOwnMember =
   //   normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
@@ -283,7 +293,7 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-      ...(matchingDepartment && canShowControls
+      ...((matchingDepartment || canManageSelectedMemberView) && canShowControls
    // ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
       ? [
         {
@@ -436,15 +446,7 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 formatTime
-                // checkbox={showCheckBox && !shouldHideControlsForSelectedMemberView}
-                // buttonTitle={
-                //   shouldHideControlsForSelectedMemberView
-                //     ? undefined
-                //     : "Add Daily KRA"
-                // }
-                // buttonDisabled={
-                //   isAddKraDisabled || shouldHideControlsForSelectedMemberView
-                  checkbox={canUseCheckbox && canShowControls}
+                checkbox={canUseCheckbox && canShowControls}
                 buttonTitle={
                   !canShowControls
                     ? undefined
@@ -485,7 +487,6 @@ const PerformanceKra = () => {
                 <YearWiseTable
                   formatTime
                    tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName}`}
-                 // tableTitle={`COMPLETED - DAILY KRA - ${loggedInUserName || "User Name"}`}
                   exportData={true}
                   checkAll={false}
                   key={completedEntries.length}

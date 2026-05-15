@@ -53,10 +53,26 @@ const PerformanceTeamKra = () => {
     const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
     const normalizeValue = (value) =>
         (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+    const selectedMemberRole = normalizeValue(activeMember?.memberRole);
+    const isActiveMemberManager = selectedMemberRole.includes("manager");
+    const isActiveMemberEmployee = !!activeMember?.memberId && !isActiveMemberManager;
+    const roleTitles =
+        auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+    const isSuperOrMasterAdmin =
+        roleTitles.some((roleTitle) => roleTitle?.includes("super admin")) ||
+        roleTitles.some((roleTitle) => roleTitle?.includes("master admin"));
+    const userPermissions = auth?.user?.permissions?.permissions || [];
+    const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value);
     const isViewingOwnMember =
         normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
     const shouldPrefillAssignTo = !!activeMember?.memberId && !isViewingOwnMember;
+    const canManageSelectedMemberView = isSuperOrMasterAdmin || isManager;
+    const canShowControls =
+        !isActiveMemberEmployee &&
+        (canManageSelectedMemberView || !activeMember?.memberId || isViewingOwnMember);
+    const canUseCheckbox =
+        !isActiveMemberEmployee && (canManageSelectedMemberView || isViewingOwnMember);
 
     const restrictedRoles = [
         "IT Employee",
@@ -74,9 +90,6 @@ const PerformanceTeamKra = () => {
     );
 
     const canDeleteRecurrence = !isAddKraDisabled;
-
-    const userPermissions = auth?.user?.permissions?.permissions || [];
-    const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value);
 
     useEffect(() => {
         queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA"] });
@@ -229,7 +242,7 @@ const PerformanceTeamKra = () => {
     });
 
     const filteredTeamKra = useMemo(() => {
-        if (!activeMember?.memberId || isViewingOwnMember) return teamKra || [];
+        if (!activeMember?.memberId || isActiveMemberManager) return teamKra || [];
 
         return (teamKra || []).filter((item) => {
             const assignedToList = Array.isArray(item?.assignedTo)
@@ -250,17 +263,17 @@ const PerformanceTeamKra = () => {
                 })
             );
         });
-    }, [activeMember?.memberId, activeMember?.memberName, isViewingOwnMember, teamKra]);
+    }, [activeMember?.memberId, activeMember?.memberName, isActiveMemberManager, teamKra]);
 
     const filteredCompletedEntries = useMemo(() => {
-        if (!activeMember?.memberId || isViewingOwnMember) return completedEntries || [];
+        if (!activeMember?.memberId || isActiveMemberManager) return completedEntries || [];
 
         return (completedEntries || []).filter(
             (item) =>
                 normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
                 normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
         );
-    }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isViewingOwnMember]);
+    }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isActiveMemberManager]);
 
     const teamColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -283,7 +296,7 @@ const PerformanceTeamKra = () => {
                 return <Chip label={params.value} style={{ backgroundColor, color }} />;
             },
         },
-        ...(!isAddKraDisabled
+        ...(canShowControls && !isAddKraDisabled
             ? [
                 {
                     headerName: "Actions",
@@ -372,8 +385,13 @@ const PerformanceTeamKra = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 formatTime
-                                buttonTitle={"Add Team KRA"}
-                                buttonDisabled={isAddKraDisabled}
+                                checkbox={!isActiveMemberManager && canUseCheckbox && canShowControls}
+                                buttonTitle={
+                                    !canShowControls
+                                        ? undefined
+                                        : "Add Team KRA"
+                                }
+                                buttonDisabled={isAddKraDisabled || !canShowControls}
                                 handleSubmit={() => setOpenModal(true)}
                                 tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}
                                 data={filteredTeamKra

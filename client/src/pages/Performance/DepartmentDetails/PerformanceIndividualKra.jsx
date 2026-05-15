@@ -87,9 +87,13 @@ const PerformanceIndividualKra = () => {
         return item._id.toString() === deptId.toString();
     });
 
-    const showCheckBox = allowedDept;
     const userPermissions = auth?.user?.permissions?.permissions || [];
+    const roleTitles =
+        auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
     const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_DAILY_KRA.value);
+    const isSuperOrMasterAdmin =
+        roleTitles.some((roleTitle) => roleTitle?.includes("super admin")) ||
+        roleTitles.some((roleTitle) => roleTitle?.includes("master admin"));
     const isHr = department === "HR";
 
     const matchingDepartment = auth.user?.departments?.some(
@@ -101,11 +105,18 @@ const PerformanceIndividualKra = () => {
     const isViewingOwnMember =
         normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    const selectedMemberCanManageView = isManager || isSuperOrMasterAdmin;
+    const selectedMemberRole = normalizeValue(activeMember?.memberRole);
+    const isSelectedMemberManager = selectedMemberRole.includes("manager");
+    const isSelectedMemberEmployee =
+        !!activeMember?.memberId && !isSelectedMemberManager;
+    const showCheckBox = allowedDept || selectedMemberCanManageView;
     const shouldHideControlsForSelectedMemberView =
-        isManager && activeMember?.memberId && !isViewingOwnMember;
-         const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
-    const canShowControls = shouldShowManagerControlsInEmployeeRoute || !shouldHideControlsForSelectedMemberView;
-    const canUseCheckbox = showCheckBox || shouldShowManagerControlsInEmployeeRoute;
+        isSelectedMemberEmployee && activeMember?.memberId;
+    const canShowControls =
+        !isSelectedMemberEmployee &&
+        (selectedMemberCanManageView || !activeMember?.memberId || isViewingOwnMember);
+    const canUseCheckbox = showCheckBox && !isSelectedMemberEmployee;
 
     useEffect(() => {
         queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
@@ -322,7 +333,7 @@ const PerformanceIndividualKra = () => {
                 return <Chip label={params.value} style={{ backgroundColor, color }} />;
             },
         },
-          ...(matchingDepartment && canShowControls
+          ...((matchingDepartment || selectedMemberCanManageView) && canShowControls
        //   ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
             ? [
                 {
