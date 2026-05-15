@@ -5,107 +5,143 @@ import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import {
-    setSelectedDepartment,
-    setSelectedDepartmentName,
-    setSelectedMember,
+  setSelectedDepartment,
+  setSelectedDepartmentName,
+  setSelectedMember,
 } from "../../redux/slices/performanceSlice";
 
 const PerformanceAssignKraKpa = () => {
-    const axios = useAxiosPrivate();
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
+  const axios = useAxiosPrivate();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-    const { data: departmentMembers = [] } = useQuery({
-        queryKey: ["performanceAccessibleDepartments"],
-        queryFn: async () => {
-            const response = await axios.get("/api/access/department-wise-employees");
-            return response.data?.data || [];
-        },
-    });
+  const getMemberRoleLabel = (member, departmentName) => {
+    const normalize = (value) =>
+      (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
 
-    // Sort departments by number of members in descending order
-    const sortedDepartments = [...departmentMembers].sort((a, b) => {
-        const countA = a?.employees?.length || 0;
-        const countB = b?.employees?.length || 0;
-        return countB - countA; // Descending order
-    });
+    const stripDepartmentPrefix = (roleTitle, departmentName) => {
+      const role = (roleTitle || "").toString().replace(/\s+/g, " ").trim();
+      const department = (departmentName || "").toString().replace(/\s+/g, " ").trim();
+      if (!role || !department) return role;
 
-    const handleMemberClick = (department, member) => {
-        dispatch(setSelectedDepartment(department?._id));
-        dispatch(setSelectedDepartmentName(department?.name));
-        const memberName =
-            `${member?.firstName || ""} ${member?.lastName || ""}`.trim() ||
-            member?.email ||
-            "User Name";
-        dispatch(
-            setSelectedMember({
-                memberId: member?._id?.toString?.() || "",
-                memberName,
-            }),
-        );
-        navigate("/app/performance/assign-KRA-KPA/team-Daily-KRA", {
-            state: {
-                selectedMember: {
-                    memberId: member?._id?.toString?.() || "",
-                    memberName,
-                },
-            },
-        });
+      const normalizedRole = normalize(role);
+      const normalizedDepartment = normalize(department);
+
+      if (normalizedRole.startsWith(`${normalizedDepartment} `)) {
+        return role.slice(department.length).trim();
+      }
+
+      return role;
     };
 
-    return (
-        <WidgetSection border title="DEPARTMENT">
-            {sortedDepartments.length === 0 ? (
-                <p className="text-sm text-gray-500">No departments found.</p>
-            ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    {sortedDepartments.map((department) => {
-                        const members = department?.employees || [];
-                        const memberCount = members.length;
+    const roleTitles = Array.isArray(member?.role)
+      ? member.role
+          .map((role) => stripDepartmentPrefix(role?.roleTitle, departmentName))
+          .filter(Boolean)
+      : [stripDepartmentPrefix(member?.role?.roleTitle, departmentName)].filter(Boolean);
 
-                        return (
-                            <div
-                                key={department?._id || department?.name}
-                                className="rounded-xl border border-gray-200 p-4 bg-white"
-                            >
-                                <div className="flex items-center justify-between gap-2 mb-3">
-                                    <h3 className="text-base font-semibold text-gray-800">
-                                        {department?.name || "Unknown Department"}
-                                    </h3>
-                                    <span className="text-xs font-medium text-gray-500">
-                                        {memberCount} member{memberCount === 1 ? "" : "s"}
-                                    </span>
-                                </div>
+    if (roleTitles.length > 0) {
+      return [...new Set(roleTitles)].join(", ");
+    }
 
-                                {memberCount === 0 ? (
-                                    <p className="text-sm text-gray-500">
-                                        No active members in this department.
-                                    </p>
-                                ) : (
-                                    <ul className="space-y-2">
-                                        {members.map((member) => {
-                                            const fullName =
-                                                `${member?.firstName || ""} ${member?.lastName || ""}`.trim();
+    return "Employee";
+  };
 
-                                            return (
-                                                <li
-                                                    key={member?._id || `${department?._id}-${fullName}`}
-                                                    className="text-sm text-gray-700 text-primary font-pregular hover:underline cursor-pointer"
-                                                    onClick={() => handleMemberClick(department, member)}
-                                                >
-                                                    • {fullName || member?.email || "Unknown member"}
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-        </WidgetSection>
+  const { data: departmentMembers = [] } = useQuery({
+    queryKey: ["performanceAccessibleDepartments"],
+    queryFn: async () => {
+      const response = await axios.get("/api/access/department-wise-employees");
+      return response.data?.data || [];
+    },
+  });
+
+  const sortedDepartments = [...departmentMembers].sort((a, b) => {
+    const countA = a?.employees?.length || 0;
+    const countB = b?.employees?.length || 0;
+    return countB - countA;
+  });
+
+  const handleMemberClick = (department, member) => {
+    dispatch(setSelectedDepartment(department?._id));
+    dispatch(setSelectedDepartmentName(department?.name));
+
+    const memberName =
+      `${member?.firstName || ""} ${member?.lastName || ""}`.trim() ||
+      member?.email ||
+      "User Name";
+
+    dispatch(
+      setSelectedMember({
+        memberId: member?._id?.toString?.() || "",
+        memberName,
+      }),
     );
+
+    navigate("/app/performance/assign-KRA-KPA/team-Daily-KRA", {
+      state: {
+        selectedMember: {
+          memberId: member?._id?.toString?.() || "",
+          memberName,
+        },
+      },
+    });
+  };
+
+  return (
+    <WidgetSection border title="DEPARTMENT">
+      {sortedDepartments.length === 0 ? (
+        <p className="text-sm text-gray-500">No departments found.</p>
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {sortedDepartments.map((department) => {
+            const members = department?.employees || [];
+            const memberCount = members.length;
+
+            return (
+              <div
+                key={department?._id || department?.name}
+                className="rounded-xl border border-gray-200 p-4 bg-white"
+              >
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <h3 className="text-base font-semibold text-gray-800">
+                    {department?.name || "Unknown Department"}
+                  </h3>
+                  <span className="text-xs font-medium text-gray-500">
+                    {memberCount} member{memberCount === 1 ? "" : "s"}
+                  </span>
+                </div>
+
+                {memberCount === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    No active members in this department.
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {members.map((member) => {
+                      const fullName =
+                        `${member?.firstName || ""} ${member?.lastName || ""}`.trim();
+                      const memberRole = getMemberRoleLabel(member, department?.name);
+
+                      return (
+                        <li
+                          key={member?._id || `${department?._id}-${fullName}`}
+                          className="text-sm text-gray-700 text-primary font-pregular hover:underline cursor-pointer"
+                          onClick={() => handleMemberClick(department, member)}
+                        >
+                          {fullName || member?.email || "Unknown member"}{" "}
+                          <span className="text-xs text-gray-400">{`- ${memberRole}`}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </WidgetSection>
+  );
 };
 
 export default PerformanceAssignKraKpa;

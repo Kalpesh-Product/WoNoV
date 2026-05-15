@@ -1266,9 +1266,14 @@ const getAssignees = async (req, res, next) => {
     }
 
     const transformAssignees = team.map((assignee) => {
+      const roleTitles = Array.isArray(assignee.role)
+        ? assignee.role.map((role) => role?.roleTitle).filter(Boolean)
+        : [];
+
       return {
         id: assignee._id,
         name: `${assignee.firstName} ${assignee.lastName}`,
+        roleTitles,
       };
     });
     return res.status(200).json(transformAssignees);

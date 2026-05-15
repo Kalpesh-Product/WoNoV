@@ -95,6 +95,50 @@ const PerformanceMemberWiseKraKpa = () => {
         userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) ||
         userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value);
     const isEmployeeLevel = !canManageTeam;
+    const { data: selectedDepartments = [] } = useQuery({
+        queryKey: ["performance-selectedDepartments-kpa"],
+        queryFn: async () => {
+            const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+            return response.data?.selectedDepartments || [];
+        },
+    });
+
+    const selectedDepartmentManagerName = useMemo(() => {
+        const normalize = (value) =>
+            (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+        const activeDepartmentName = selectedDepartmentName || department || currentDepartmentName;
+        const activeDepartmentId = selectedDepartment?.toString?.() || currentDepartmentId?.toString?.();
+
+        const matchedDepartment = selectedDepartments.find((item) => {
+            const itemDepartmentId = item?.department?._id?.toString?.();
+            const itemDepartmentName = item?.department?.name;
+
+            return (
+                (activeDepartmentId && itemDepartmentId && activeDepartmentId === itemDepartmentId) ||
+                (activeDepartmentName &&
+                    itemDepartmentName &&
+                    normalize(activeDepartmentName) === normalize(itemDepartmentName))
+            );
+        });
+
+        return matchedDepartment?.admin || "";
+    }, [
+        currentDepartmentId,
+        currentDepartmentName,
+        department,
+        selectedDepartment,
+        selectedDepartmentName,
+        selectedDepartments,
+    ]);
+
+    const isTopManagementDepartment = useMemo(() => {
+        const normalize = (value) =>
+            (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+        const activeDepartmentName = selectedDepartmentName || department || currentDepartmentName;
+        return normalize(activeDepartmentName) === "top management";
+    }, [currentDepartmentName, department, selectedDepartmentName]);
     const { isTop } = useTopDepartment({
         additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
     });
@@ -159,8 +203,30 @@ const PerformanceMemberWiseKraKpa = () => {
             const getResponseData = (response) =>
                 response?.status === "fulfilled" ? response.value?.data || [] : [];
             
-              const normalizeName = (value) =>
+            const normalizeName = (value) =>
                 (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+            const getRoleTitleLabel = (member) => {
+                const roleTitles = Array.isArray(member?.roleTitles)
+                    ? member.roleTitles.filter(Boolean)
+                    : [];
+
+                if (roleTitles.length > 0) {
+                    return [...new Set(roleTitles)].join(", ");
+                }
+
+                return "Employee";
+            };
+
+            const getMemberRole = (memberName, member) => {
+                if (isTopManagementDepartment) {
+                    return getRoleTitleLabel(member);
+                }
+
+                return normalizeName(memberName) === normalizeName(selectedDepartmentManagerName)
+                    ? "Manager"
+                    : "Employee";
+            };
 
             const map = new Map();
 
@@ -175,10 +241,12 @@ const PerformanceMemberWiseKraKpa = () => {
                 map.set(memberId, {
                     memberId,
                      member: memberName,
+                    memberRole: getMemberRole(memberName, member),
                     ...DEFAULT_COUNTS,
                 });
                  memberIdByName.set(normalizeName(memberName), memberId);
             });
+
             const upsert = (task, field) => {
                 const userId = task.assignToId || task.assignedTo || "unassigned";
                // const userName = task.assignedTo || "Unassigned";
@@ -187,6 +255,7 @@ const PerformanceMemberWiseKraKpa = () => {
                     map.set(userId, {
                         memberId: userId,
                         member: userName,
+                        memberRole: getMemberRole(userName, {}),
                         ...DEFAULT_COUNTS,
                     });
                 }
@@ -201,6 +270,7 @@ const PerformanceMemberWiseKraKpa = () => {
                     map.set(managerId, {
                         memberId: managerId,
                         member: managerName,
+                        memberRole: getMemberRole(managerName, {}),
                         ...DEFAULT_COUNTS,
                     });
                 }
@@ -238,6 +308,7 @@ const PerformanceMemberWiseKraKpa = () => {
                     map.set(userId, {
                         memberId: userId,
                         member: userName,
+                        memberRole: getMemberRole(userName, {}),
                         ...DEFAULT_COUNTS,
                     });
                 }
@@ -315,6 +386,7 @@ const PerformanceMemberWiseKraKpa = () => {
                     map.set(matchedMemberId, {
                         memberId: matchedMemberId,
                         member: completedByName,
+                        memberRole: getMemberRole(completedByName, {}),
                         ...DEFAULT_COUNTS,
                     });
                 }
@@ -389,10 +461,18 @@ const PerformanceMemberWiseKraKpa = () => {
                 srNo: 1,
                 memberId: loggedInUserId,
                 member: loggedInUserName || "You",
+                memberRole: "Employee",
                 ...DEFAULT_COUNTS,
             },
         ];
-    }, [canManageTeam, isEmployeeLevel, isTop, loggedInUserId, loggedInUserName, rowData]);
+    }, [
+        canManageTeam,
+        isEmployeeLevel,
+        isTop,
+        loggedInUserId,
+        loggedInUserName,
+        rowData,
+    ]);
 
     const columns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -402,6 +482,7 @@ const PerformanceMemberWiseKraKpa = () => {
                 const memberId = params?.data?.memberId?.toString();
                 const isOwnRow = memberId && loggedInUserId === memberId;
                 const isClickable = canManageTeam || isOwnRow;
+                const roleLabel = params?.data?.memberRole || "Employee";
 
                 const handleMemberNavigation = () => {
                     if (!isClickable) return;
@@ -429,7 +510,8 @@ const PerformanceMemberWiseKraKpa = () => {
                             : "text-gray-500 cursor-not-allowed"
                             }`}
                     >
-                        {params.value}
+                        {params.value}{" "}
+                        <span className="text-xs text-gray-400">{`- ${roleLabel}`}</span>
                     </span>
                 );
             },
