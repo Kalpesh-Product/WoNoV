@@ -237,9 +237,7 @@ const DepartmentReportCommon = () => {
         }));
 
         if (downloadStarted) {
-          toast.success(
-            "Report Generated. Your download should begin shortly.",
-          );
+          toast.success("Report Generated.");
         } else {
           toast.error("Report generated, but no  file payload was returned");
         }
