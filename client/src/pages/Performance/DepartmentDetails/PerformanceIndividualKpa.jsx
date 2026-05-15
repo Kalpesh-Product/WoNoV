@@ -146,7 +146,7 @@ const PerformanceIndividualKpa = () => {
         },
         onSuccess: (data) => {
             queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
-            queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntriesIndividualKPA", deptId] });
             toast.success(data.message || "KPA recurrence removed");
         },
         onError: () => {
@@ -245,9 +245,9 @@ const PerformanceIndividualKpa = () => {
         },
         onSuccess: (data) => {
             queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
-            queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+            queryClient.refetchQueries({ queryKey: ["completedEntriesIndividualKPA", deptId] });
             queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
-            queryClient.invalidateQueries({ queryKey: ["completedEntriesKPA"] });
+            queryClient.invalidateQueries({ queryKey: ["completedEntriesIndividualKPA", deptId] });
             toast.success(data.message || "KPA updated");
         },
         onError: (error) => {
@@ -298,7 +298,7 @@ const PerformanceIndividualKpa = () => {
     //     enabled: !!deptId,
     // });
     const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({
-        queryKey: ["completedEntriesKPA"],
+        queryKey: ["completedEntriesIndividualKPA", deptId],
         queryFn: async () => {
             try {
                 const response = await axios.get(
@@ -544,8 +544,11 @@ const PerformanceIndividualKpa = () => {
 
     const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
         if (!selectedMemberName && !selectedMemberId) return true;
-        const completedBy = (item?.completedBy || "").toString().trim();
-        return completedBy === selectedMemberName || completedBy === selectedMemberId;
+        const completedBy = normalizeValue(item?.completedBy);
+        return (
+            completedBy === normalizeValue(selectedMemberName) ||
+            completedBy === normalizeValue(selectedMemberId)
+        );
     });
     return (
         <>
@@ -614,7 +617,7 @@ const PerformanceIndividualKpa = () => {
                                 // data={[
                                 //     ...completedEntries.map((item, index) => ({
                                        tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
-                                key={completedEntries.length}
+                                key={filteredCompletedEntries.length}
                                 data={[
                                     ...filteredCompletedEntries.map((item, index) => ({
                                         taskName: item.taskName,

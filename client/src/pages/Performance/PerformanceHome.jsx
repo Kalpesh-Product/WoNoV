@@ -60,6 +60,11 @@ const PerformanceHome = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const roleTitles =
+    auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+  const hasOverallPerformanceAccess = roleTitles.some((roleTitle) =>
+    ["master admin", "super admin"].includes(roleTitle),
+  );
   const [currentDateInfo, setCurrentDateInfo] = useState(getCurrentDateInfo);
    const [selectedFiscalYear, setSelectedFiscalYear] = useState(() => {
     const now = new Date();
@@ -110,6 +115,25 @@ const PerformanceHome = () => {
       return response.data || [];
     },
   });
+
+  const normalizeName = (value) =>
+    (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+  const visibleKpaTasksRaw = useMemo(() => {
+    if (hasOverallPerformanceAccess) return kpaTasksRaw;
+
+    const allowedDepartmentNames = new Set(
+      (auth?.user?.departments || [])
+        .map((dept) => normalizeName(dept?.name))
+        .filter(Boolean),
+    );
+
+    if (allowedDepartmentNames.size === 0) return [];
+
+    return (kpaTasksRaw || []).filter((departmentTasks) =>
+      allowedDepartmentNames.has(normalizeName(departmentTasks?.department)),
+    );
+  }, [auth?.user?.departments, hasOverallPerformanceAccess, kpaTasksRaw]);
 
 
   const { data: departmentDailyKraStats = [] } = useQuery({
@@ -169,7 +193,7 @@ const PerformanceHome = () => {
     const currentFyStartYear =
       today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
 
-    kpaTasksRaw.forEach((departmentTasks) => {
+    visibleKpaTasksRaw.forEach((departmentTasks) => {
       departmentTasks?.tasks?.forEach((task) => {
         if (!task?.assignedDate) return;
 
@@ -230,7 +254,7 @@ const PerformanceHome = () => {
         },
       ];
     });
-  }, [kpaTasksRaw]);
+  }, [visibleKpaTasksRaw]);
 
   const annualKpaChartOptions = {
     chart: {
@@ -352,7 +376,7 @@ const PerformanceHome = () => {
       );
     };
 
-    const completed = kpaTasksRaw.reduce(
+    const completed = visibleKpaTasksRaw.reduce(
       (acc, dept) =>
         acc +
         (dept?.tasks || []).filter(
@@ -363,7 +387,7 @@ const PerformanceHome = () => {
       0,
     );
 
-    const total = kpaTasksRaw.reduce(
+    const total = visibleKpaTasksRaw.reduce(
       (acc, dept) =>
         acc +
         (dept?.tasks || []).filter((task) =>
@@ -377,7 +401,7 @@ const PerformanceHome = () => {
       { label: "Completed KPA", value: completed },
       { label: "Pending KPA", value: pending },
     ];
-  }, [kpaTasksRaw, currentDateInfo]);
+  }, [visibleKpaTasksRaw, currentDateInfo]);
 
   const kraPieData = useMemo(() => {
     const completed = departmentDailyKraStats.reduce(

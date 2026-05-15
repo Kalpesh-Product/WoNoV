@@ -3395,6 +3395,7 @@ export const routes = createBrowserRouter([
                         element: (
                           <ProtectedDepartmentRoute
                             allowHrForPerformance={true}
+                            allowAdminForPerformance={true}
                             element={<DepartmentPerformanceLayout />}
                           />
                         ),

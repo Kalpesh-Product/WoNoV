@@ -186,8 +186,8 @@ const PerformanceDepartmentWiseKraKpa = () => {
             monthlyAssignedCount,
             monthlyCompletedCount,
             monthlyPendingCount,
-               individualMonthlyPendingCount:
-              individualMonthlyPendingCount + teamMonthlyPendingCount,
+            individualMonthlyPendingCount,
+            teamMonthlyPendingCount,
           };
         }),
       );
@@ -448,10 +448,14 @@ tooltip: {
                 departmentMonthlyStatsById[item.department?._id?.toString()]
                   ?.monthlyPendingCount || 0,
               individualMonthlyKpa:
-                departmentMonthlyStatsById[item.department?._id?.toString()]
-                  ?.individualMonthlyPendingCount || 0,
+                (departmentMonthlyStatsById[item.department?._id?.toString()]
+                  ?.individualMonthlyPendingCount || 0) +
+                (departmentMonthlyStatsById[item.department?._id?.toString()]
+                  ?.teamMonthlyPendingCount || 0),
               
-              teamMonthlyKpa: item.teamMonthlyKPA,
+              teamMonthlyKpa:
+                departmentMonthlyStatsById[item.department?._id?.toString()]
+                  ?.teamMonthlyPendingCount || 0,
               //annualKpa: item.annualKPA,
             }))}
             columns={departmentColumns}
