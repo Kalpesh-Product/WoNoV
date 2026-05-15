@@ -50,7 +50,7 @@ const worker = new Worker(
       );
       switch (reportJob.report.reportName) {
         case "Expense And Budget":
-          // throw new Error("Testing retry flow");
+          throw new Error("Testing retry flow");
           data = await fetchBudgetService({
             dateFilter: {
               ...buildDateFilter({

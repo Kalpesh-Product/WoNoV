@@ -5,7 +5,8 @@ const { default: mongoose } = require("mongoose");
 const Report = require("../../models/reports/Report");
 
 const MAX_RETRIES = 3;
-const RETRY_COOLDOWN_MS = 15 * 60 * 1000;
+// const RETRY_COOLDOWN_MS = 15 * 60 * 1000;
+const RETRY_COOLDOWN_MS = 5 * 1000;
 
 async function queueReportJob({
   userId,
@@ -88,6 +89,15 @@ async function generateReport(req, res) {
     filters,
     requestKey,
   });
+
+  const latestDatefilter = {
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+  };
+
+  foundReport.latestDatefilter = latestDatefilter;
+  foundReport.lastGeneratedAt = new Date();
+  await foundReport.save();
 
   return res.status(202).json({
     jobId: reportJob._id,

@@ -13,7 +13,13 @@ const ReportSchema = new mongoose.Schema(
       ref: "Department",
     },
     // description: String,
+    // when report was last generated
     lastGeneratedAt: Date,
+    // to track the latest date range for which report was generated
+    latestDatefilter: {
+      startDate: Date,
+      endDate: Date,
+    },
     status: {
       type: Boolean,
       default: true,

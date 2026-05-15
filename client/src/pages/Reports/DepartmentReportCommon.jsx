@@ -20,6 +20,8 @@ const REPORT_MODULE_MAP = {
   visitor: { title: "Visitor Report", module: "Visitor" },
 };
 
+const RETRY_COOLDOWN_STORAGE_KEY = "department-report-retry-cooldown";
+
 const DepartmentReportCommon = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -413,6 +415,48 @@ const DepartmentReportCommon = () => {
     },
   });
 
+  useEffect(() => {
+    const storedCooldownRaw = localStorage.getItem(RETRY_COOLDOWN_STORAGE_KEY);
+    if (!storedCooldownRaw || !reports.length) return;
+
+    let storedCooldownByReportId = {};
+    try {
+      storedCooldownByReportId = JSON.parse(storedCooldownRaw);
+    } catch {
+      localStorage.removeItem(RETRY_COOLDOWN_STORAGE_KEY);
+      return;
+    }
+
+    const activeReportIds = new Set(
+      reports.map((report) => String(report?._id)),
+    );
+    const validCooldownByReportId = {};
+
+    Object.entries(storedCooldownByReportId).forEach(([reportId, retryAt]) => {
+      if (!activeReportIds.has(String(reportId))) return;
+      if (!retryAt || !dayjs(retryAt).isAfter(dayjs())) return;
+      validCooldownByReportId[reportId] = retryAt;
+    });
+
+    setRetryCooldownByReportId(validCooldownByReportId);
+  }, [reports]);
+
+  useEffect(() => {
+    const activeCooldownEntries = Object.entries(
+      retryCooldownByReportId,
+    ).filter(([, retryAt]) => retryAt && dayjs(retryAt).isAfter(dayjs()));
+
+    if (!activeCooldownEntries.length) {
+      localStorage.removeItem(RETRY_COOLDOWN_STORAGE_KEY);
+      return;
+    }
+
+    localStorage.setItem(
+      RETRY_COOLDOWN_STORAGE_KEY,
+      JSON.stringify(Object.fromEntries(activeCooldownEntries)),
+    );
+  }, [retryCooldownByReportId]);
+
   const columns = [
     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
     { field: "reportName", headerName: "Report Name", flex: 1 },
@@ -546,17 +590,21 @@ const DepartmentReportCommon = () => {
 
   const tableData = useMemo(
     () =>
-      reports.map((report, index) => ({
-        ...report,
-        srNo: index + 1,
-        startDate: humanDate(report?.filters?.startDate) || "-",
-        endDate: humanDate(report?.filters?.endDate) || "-",
-        dateRange:
-          report?.filters?.startDate && report?.filters?.endDate
-            ? `${humanDate(report.filters.startDate)} → ${humanDate(report.filters.endDate)}`
+      reports.map((report, index) => {
+        console.log("Report data:", report);
+
+        return {
+          ...report,
+          srNo: index + 1,
+          startDate: report?.latestDatefilter?.startDate
+            ? dayjs(report.latestDatefilter.startDate).format("DD-MM-YYYY")
             : "-",
-        download: "Generate",
-      })),
+          endDate: report?.latestDatefilter?.endDate
+            ? dayjs(report.latestDatefilter.endDate).format("DD-MM-YYYY")
+            : "-",
+          download: "Generate",
+        };
+      }),
     [reports],
   );
 
