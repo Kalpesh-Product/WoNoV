@@ -3,10 +3,10 @@ const mongoose = require("mongoose");
 const ReportSchema = new mongoose.Schema(
   {
     module: String,
-    // reportKey: {
-    //   type: String,
-    //   unique: true,
-    // },
+    reportKey: {
+      type: String,
+      unique: true,
+    },
     reportName: String,
     departmentId: {
       type: mongoose.Schema.Types.ObjectId,

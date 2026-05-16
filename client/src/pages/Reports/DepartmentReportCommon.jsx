@@ -369,7 +369,17 @@ const DepartmentReportCommon = () => {
         queryKey: ["department-reports", selectedModule?.module],
       });
     },
-    onError: (error) => {
+    onError: (error, reportRow) => {
+      if (reportRow?._id) {
+        setJobStatusByReportId((prev) => ({
+          ...prev,
+          [reportRow._id]: "failed",
+        }));
+        setDownloadedByReportId((prev) => ({
+          ...prev,
+          [reportRow._id]: false,
+        }));
+      }
       toast.error(
         error?.response?.data?.message || "Failed to generate report",
       );

@@ -4,8 +4,7 @@ const { connection } = require("../config/redis");
 require("../models/registerModels"); // ensure all models are registered
 require("../models/reports/Report");
 const ReportJob = require("../models/reports/ReportJob");
-const { fetchBudgetService } = require("../services/reports/finance");
-const buildDateFilter = require("../utils/dateFilter");
+const { resolveReportService } = require("../services/reports");
 
 const worker = new Worker(
   "report-generation",
@@ -14,7 +13,7 @@ const worker = new Worker(
 
     const reportJob = await ReportJob.findById(reportJobId).populate(
       "report",
-      "reportName",
+      "reportName reportKey",
     );
     if (!reportJob) throw new Error("ReportJob not found");
 
@@ -43,27 +42,17 @@ const worker = new Worker(
       console.log(
         `Processing report job ${reportJobId} for template: ${reportJob.report.reportName}`,
       );
-      switch (reportJob.report.reportName) {
-        case "Expense And Budget":
-          // throw new Error("Testing retry flow");
-          data = await fetchBudgetService({
-            dateFilter: {
-              ...buildDateFilter({
-                startDate: reportJob.filters?.startDate,
-                endDate: reportJob.filters?.endDate,
-                field: "dueDate",
-              }),
-            },
-          });
-          break;
-        case "sales":
-          data = await getSalesReport(reportJob.filters);
-          break;
-        default:
-          throw new Error(
-            `Unsupported template: ${reportJob.report.reportName}`,
-          );
+      console.log("ReportJob report:", reportJob.report);
+      const reportService = resolveReportService(reportJob.report);
+
+      if (!reportService) {
+        throw new Error(`Unsupported report: ${reportJob.report.reportName}`);
       }
+
+      data = await reportService({
+        filters: reportJob.filters,
+        departmentId: reportJob.department,
+      });
 
       const latestState =
         await ReportJob.findById(reportJobId).select("status");

@@ -18,7 +18,7 @@ async function queueReportJob({
   const reportJob = await ReportJob.create({
     userId,
     report,
-    department,
+    department: department || undefined,
     filters,
     requestKey,
     status: "pending",
@@ -48,11 +48,12 @@ async function generateReport(req, res) {
     return res.status(400).json({ message: "report id is required" });
   }
 
-  if (
-    !mongoose.Types.ObjectId.isValid(report) ||
-    !mongoose.Types.ObjectId.isValid(department)
-  ) {
-    return res.status(400).json({ message: "Invalid report or department id" });
+  if (!mongoose.Types.ObjectId.isValid(report)) {
+    return res.status(400).json({ message: "Invalid report id" });
+  }
+
+  if (department && !mongoose.Types.ObjectId.isValid(department)) {
+    return res.status(400).json({ message: "Invalid department id" });
   }
 
   const foundReport = await Report.findById(report);
@@ -74,7 +75,8 @@ async function generateReport(req, res) {
 
   //Avoid multiple duplicate report jobs
   // new request supersedes older ones with same parameters that are still pending/processing/retrying
-  const requestKey = `${userId.toString()}:${report}:${department}`;
+  const normalizedDepartment = department ? department.toString() : "all";
+  const requestKey = `${userId.toString()}:${report}:${normalizedDepartment}`;
 
   await ReportJob.updateMany(
     {
