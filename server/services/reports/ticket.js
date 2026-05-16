@@ -37,10 +37,20 @@ const fetchTicketReportService = async ({
         : { raisedToDepartment: { $in: selectedDepartments } }),
     };
 
-    if (dateFilter) {
+    if (dateFilter?.createdAt) {
+      const { $gte, $lte } = dateFilter.createdAt;
+
+      if ($gte && Number.isNaN(new Date($gte).getTime())) {
+        throw new Error("Invalid start date provided");
+      }
+
+      if ($lte && Number.isNaN(new Date($lte).getTime())) {
+        throw new Error("Invalid end date provided");
+      }
+
       query.createdAt = {
-        $gte: new Date(dateFilter.startDate),
-        $lte: new Date(dateFilter.endDate),
+        ...(dateFilter.createdAt.$gte ? { $gte: new Date($gte) } : {}),
+        ...(dateFilter.createdAt.$lte ? { $lte: new Date($lte) } : {}),
       };
     }
 

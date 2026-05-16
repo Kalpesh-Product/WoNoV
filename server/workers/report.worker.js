@@ -5,6 +5,7 @@ require("../models/registerModels"); // ensure all models are registered
 require("../models/reports/Report");
 const ReportJob = require("../models/reports/ReportJob");
 const { resolveReportService } = require("../services/reports");
+const UserData = require("../models/hr/UserData");
 
 const worker = new Worker(
   "report-generation",
@@ -50,9 +51,17 @@ const worker = new Worker(
         throw new Error(`Unsupported report: ${reportJob.report.reportName}`);
       }
 
+      const foundUser = await UserData.findById(reportJob.userId)
+        .populate("role", "name")
+        .select("role")
+        .lean();
+      const roles = (foundUser?.role || []).map((role) => role.name);
+
       data = await reportService({
         filters: reportJob.filters,
         departmentId: reportJob.department,
+        departments: reportJob.departments || [],
+        roles,
       });
 
       const latestState =

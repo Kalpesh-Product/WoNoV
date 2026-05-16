@@ -3,6 +3,7 @@ const { reportQueue } = require("../../queues/report.queue");
 const ReportJob = require("../../models/reports/ReportJob");
 const { default: mongoose } = require("mongoose");
 const Report = require("../../models/reports/Report");
+const UserData = require("../../models/hr/UserData");
 
 const normalizeReportKey = (value = "") =>
   value
@@ -19,6 +20,7 @@ async function queueReportJob({
   userId,
   report,
   department,
+  departments = [],
   filters,
   requestKey,
   isManualRetry = false,
@@ -27,6 +29,7 @@ async function queueReportJob({
     userId,
     report,
     department: department || undefined,
+    departments,
     filters,
     requestKey,
     status: "pending",
@@ -73,6 +76,13 @@ async function generateReport(req, res) {
     foundReport.reportKey = normalizeReportKey(foundReport.reportName || "");
   }
 
+  const foundUser = await UserData.findById(userId)
+    .select("departments")
+    .lean();
+  const userDepartments = Array.isArray(foundUser?.departments)
+    ? foundUser.departments
+    : [];
+
   // Check for existing active jobs for the user and enforce limits
   const activeJobsCount = await ReportJob.countDocuments({
     userId,
@@ -109,6 +119,7 @@ async function generateReport(req, res) {
     userId,
     report,
     department,
+    departments: userDepartments,
     filters,
     requestKey,
   });
@@ -178,6 +189,7 @@ async function retryReport(req, res) {
     userId,
     report: failedJob.report,
     department: failedJob.department,
+    departments: failedJob.departments || [],
     filters: failedJob.filters,
     requestKey: failedJob.requestKey,
     isManualRetry: true,

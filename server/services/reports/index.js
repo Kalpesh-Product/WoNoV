@@ -39,16 +39,16 @@ const reportServiceRegistry = {
       },
     }),
 
-  ticket: async ({ filters, departmentId }) =>
+  ticket: async ({ filters, departmentId, departments, roles }) =>
     fetchTicketReportService({
       departmentId,
-      dateFilter: {
-        ...buildDateFilter({
-          startDate: filters?.startDate,
-          endDate: filters?.endDate,
-          field: "createdAt",
-        }),
-      },
+      roles,
+      departments,
+      dateFilter: buildDateFilter({
+        startDate: filters?.startDate,
+        endDate: filters?.endDate,
+        field: "createdAt",
+      }),
     }),
 };
 

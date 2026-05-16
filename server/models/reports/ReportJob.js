@@ -14,6 +14,12 @@ const ReportJobSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
     },
+    departments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Department",
+      },
+    ],
     filters: {
       startDate: Date,
       endDate: Date,
