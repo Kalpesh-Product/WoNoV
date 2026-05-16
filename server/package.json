@@ -10,7 +10,8 @@
     "migrate:externalvisits": "node scripts/migrateExternalVisits.js",
     "start:worker": "node workers/index.js",
     "dev:api": "nodemon server.js",
-    "dev:worker": "nodemon workers/index.js"
+    "dev:worker": "nodemon workers/index.js",
+    "scaffold:report": "node scripts/scaffoldReportAutomation.js"
   },
   "keywords": [],
   "author": "",
