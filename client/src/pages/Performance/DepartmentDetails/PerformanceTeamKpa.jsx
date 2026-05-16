@@ -44,17 +44,44 @@ const PerformanceTeamKpa = () => {
     department ||
     auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
     "Department";
-    const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+  const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
     .filter(Boolean)
     .join(" ")
     .trim();
   const selectedMemberFromRoute = location.state?.selectedMember;
   const activeMember = selectedMemberFromRoute || selectedMember;
-  const isActiveMemberManager = (activeMember?.memberRole || "").toLowerCase().includes("manager");
   const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
   const userId = auth.user._id;
   const normalizeValue = (value) =>
     (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["performance-selectedDepartments-team"],
+    queryFn: async () => {
+      const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+      return response.data?.selectedDepartments || [];
+    },
+  });
+  const selectedDepartmentManagerName = useMemo(() => {
+    const normalize = (value) =>
+      (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+    const matchedDepartment = selectedDepartments.find((item) => {
+      const itemDepartmentId = item?.department?._id?.toString?.();
+      const itemDepartmentName = item?.department?.name;
+
+      return (
+        (deptId && itemDepartmentId && deptId.toString() === itemDepartmentId) ||
+        (departmentName &&
+          itemDepartmentName &&
+          normalize(departmentName) === normalize(itemDepartmentName))
+      );
+    });
+
+    return matchedDepartment?.admin || "";
+  }, [departmentName, deptId, selectedDepartments]);
+  const isSelectedMemberManager =
+    normalizeValue(activeMember?.memberRole).includes("manager") ||
+    normalizeValue(activeMember?.memberName) === normalizeValue(selectedDepartmentManagerName);
   const isViewingOwnMember =
     normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
     normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
@@ -117,8 +144,8 @@ const PerformanceTeamKpa = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.refetchQueries({ queryKey: ["fetchedTeamKPA"] });
-      queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+      queryClient.refetchQueries({ queryKey: ["fetchedTeamKPA", deptId] });
+      queryClient.refetchQueries({ queryKey: ["completedEntriesKPA", deptId] });
       toast.success(data.message || "KPA recurrence removed");
     },
     onError: () => {
@@ -141,7 +168,7 @@ const PerformanceTeamKpa = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedTeamKPA"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedTeamKPA", deptId] });
       toast.success(data.message || "Team KPA Added");
       reset();
       setOpenModal(false);
@@ -153,7 +180,7 @@ const PerformanceTeamKpa = () => {
     },
   });
   const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({
-    queryKey: ["completedEntriesKPA"],
+    queryKey: ["completedEntriesKPA", deptId],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -191,7 +218,7 @@ const PerformanceTeamKpa = () => {
         kpaDuration: "Monthly",
       });
       toast.success("Team KPA updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["fetchedTeamKPA"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedTeamKPA", deptId] });
       setOpenModal(false);
       setIsEditMode(false);
       setEditingTaskId(null);
@@ -225,8 +252,9 @@ const PerformanceTeamKpa = () => {
   };
 
   const { data: teamKpa = [], isPending: teamLoading } = useQuery({
-    queryKey: ["fetchedTeamKPA"],
+    queryKey: ["fetchedTeamKPA", deptId],
     queryFn: fetchTasks,
+    enabled: !!deptId,
   });
 
   const { data: assignees = [] } = useQuery({
@@ -243,8 +271,9 @@ const PerformanceTeamKpa = () => {
   });
 
   const filteredTeamKpa = useMemo(() => {
-    //if (!activeMember?.memberId || isViewingOwnMember) return teamKpa || [];
-     if (!activeMember?.memberId || isViewingOwnMember || isActiveMemberManager) return teamKpa || [];
+     if (!activeMember?.memberId) return teamKpa || [];
+
+     if (isSelectedMemberManager) return teamKpa || [];
 
     return (teamKpa || []).filter((item) => {
       const assignedToList = Array.isArray(item?.assignedTo)
@@ -265,20 +294,19 @@ const PerformanceTeamKpa = () => {
         })
       );
     });
-      }, [activeMember?.memberId, activeMember?.memberName, isActiveMemberManager, isViewingOwnMember, teamKpa]);
-  // }, [activeMember?.memberId, activeMember?.memberName, isViewingOwnMember, teamKpa]);
+      }, [activeMember?.memberId, activeMember?.memberName, isSelectedMemberManager, teamKpa]);
 
   const filteredCompletedEntries = useMemo(() => {
-   // if (!activeMember?.memberId || isViewingOwnMember) return completedEntries || [];
-       if (!activeMember?.memberId || isViewingOwnMember || isActiveMemberManager) return completedEntries || [];
+       if (!activeMember?.memberId) return completedEntries || [];
+
+       if (isSelectedMemberManager) return completedEntries || [];
 
     return (completedEntries || []).filter(
       (item) =>
         normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
         normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
     );
-  // }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isViewingOwnMember]);
- }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isActiveMemberManager, isViewingOwnMember]);
+ }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isSelectedMemberManager]);
   const formatDateTime = (value) =>
     value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 

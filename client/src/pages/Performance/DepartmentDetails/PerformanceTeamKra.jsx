@@ -55,8 +55,34 @@ const PerformanceTeamKra = () => {
     const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
     const normalizeValue = (value) =>
         (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
-    const selectedMemberRole = normalizeValue(activeMember?.memberRole);
-    const isActiveMemberManager = selectedMemberRole.includes("manager");
+    const { data: selectedDepartments = [] } = useQuery({
+        queryKey: ["performance-selectedDepartments-team"],
+        queryFn: async () => {
+            const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+            return response.data?.selectedDepartments || [];
+        },
+    });
+    const selectedDepartmentManagerName = useMemo(() => {
+        const normalize = (value) =>
+            (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+        const matchedDepartment = selectedDepartments.find((item) => {
+            const itemDepartmentId = item?.department?._id?.toString?.();
+            const itemDepartmentName = item?.department?.name;
+
+            return (
+                (deptId && itemDepartmentId && deptId.toString() === itemDepartmentId) ||
+                (departmentName &&
+                    itemDepartmentName &&
+                    normalize(departmentName) === normalize(itemDepartmentName))
+            );
+        });
+
+        return matchedDepartment?.admin || "";
+    }, [departmentName, deptId, selectedDepartments]);
+    const isSelectedMemberManager =
+        normalizeValue(activeMember?.memberRole).includes("manager") ||
+        normalizeValue(activeMember?.memberName) === normalizeValue(selectedDepartmentManagerName);
     const roleTitles =
         auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
     const isSuperOrMasterAdmin =
@@ -94,8 +120,8 @@ const PerformanceTeamKra = () => {
     const canDeleteRecurrence = !isAddKraDisabled;
 
     useEffect(() => {
-        queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA"] });
-    }, [department]);
+        queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA", deptId] });
+    }, [deptId]);
 
     const {
         handleSubmit: submitDailyKra,
@@ -128,8 +154,8 @@ const PerformanceTeamKra = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            queryClient.refetchQueries({ queryKey: ["fetchedTeamKRA"] });
-            queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+            queryClient.refetchQueries({ queryKey: ["fetchedTeamKRA", deptId] });
+            queryClient.refetchQueries({ queryKey: ["completedEntriesKPA", deptId] });
             toast.success(data.message || "KRA recurrence removed");
         },
         onError: () => {
@@ -150,7 +176,7 @@ const PerformanceTeamKra = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA"] });
+            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA", deptId] });
             toast.success(data.message || "Team KPA Added");
             reset();
             setOpenModal(false);
@@ -162,7 +188,7 @@ const PerformanceTeamKra = () => {
         },
     });
     const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({
-        queryKey: ["completedEntriesKPA"],
+        queryKey: ["completedEntriesKPA", deptId],
         queryFn: async () => {
             try {
                 const response = await axios.get(
@@ -230,8 +256,9 @@ const PerformanceTeamKra = () => {
     };
 
     const { data: teamKra = [], isPending: teamLoading } = useQuery({
-        queryKey: ["fetchedTeamKRA"],
+        queryKey: ["fetchedTeamKRA", deptId],
         queryFn: fetchTasks,
+        enabled: !!deptId,
     });
 
     const { data: assignees = [] } = useQuery({
@@ -244,11 +271,11 @@ const PerformanceTeamKra = () => {
     });
 
     const filteredTeamKra = useMemo(() => {
-        if (
-            !activeMember?.memberId ||
-            isActiveMemberManager ||
-            (isViewingOwnMember && canManageSelectedMemberView)
-        ) {
+        if (!activeMember?.memberId) {
+            return teamKra || [];
+        }
+
+        if (isSelectedMemberManager) {
             return teamKra || [];
         }
 
@@ -275,18 +302,16 @@ const PerformanceTeamKra = () => {
     }, [
         activeMember?.memberId,
         activeMember?.memberName,
-        canManageSelectedMemberView,
-        isActiveMemberManager,
-        isViewingOwnMember,
+        isSelectedMemberManager,
         teamKra,
     ]);
 
     const filteredCompletedEntries = useMemo(() => {
-        if (
-            !activeMember?.memberId ||
-            isActiveMemberManager ||
-            (isViewingOwnMember && canManageSelectedMemberView)
-        ) {
+        if (!activeMember?.memberId) {
+            return completedEntries || [];
+        }
+
+        if (isSelectedMemberManager) {
             return completedEntries || [];
         }
 
@@ -298,10 +323,8 @@ const PerformanceTeamKra = () => {
     }, [
         activeMember?.memberId,
         activeMember?.memberName,
-        canManageSelectedMemberView,
+        isSelectedMemberManager,
         completedEntries,
-        isActiveMemberManager,
-        isViewingOwnMember,
     ]);
 
     const teamColumns = [
