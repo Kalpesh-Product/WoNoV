@@ -41,6 +41,10 @@ const YearWiseTable = ({
   onMonthChange,
   onDateFilterChange,
   totalKey = "actualAmount",
+  showDateNavigator = false,
+  selectedDateLabel = "",
+  onPreviousDay,
+  onNextDay,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -330,7 +334,8 @@ const YearWiseTable = ({
           )}
         </div>
       </div>
-      {dateRange.length > 0 && dateRange[0] && (
+      {/* {dateRange.length > 0 && dateRange[0] && ( */}
+       {!showDateNavigator && dateRange.length > 0 && dateRange[0] && (
         <div className="flex justify-center items-center gap-2">
           {/* Date information here */}
 
@@ -358,6 +363,41 @@ const YearWiseTable = ({
             <MdCalendarToday size={19} />
           </div>
         </div>
+      )}
+       {showDateNavigator && (
+        // <div className="flex justify-center items-center gap-2">
+        //   <PrimaryButton title="<" handleSubmit={onPreviousDay} />
+        //   <div className="px-6 py-1 rounded-md border-primary border-[1px] min-w-[170px] text-center">
+        //     <span className="text-gray-600 text-content font-pregular">
+        //       {selectedDateLabel}
+        //     </span>
+        //   </div>
+        //   <PrimaryButton title=">" handleSubmit={onNextDay} />
+        // </div>
+        <div className="flex justify-center items-center gap-3">
+  {/* Previous Button */}
+  <button
+    onClick={onPreviousDay}
+    className="w-12 h-10 flex items-center justify-center rounded-xl bg-primary text-white text-2xl font-semibold hover:opacity-90 transition-all"
+  >
+    ‹
+  </button>
+
+  {/* Date Box */}
+  <div className="px-4 py-1.5 rounded-lg border border-primary min-w-[140px] text-center bg-white">
+    <span className="text-gray-600 text-sm font-pregular">
+      {selectedDateLabel}
+    </span>
+  </div>
+
+  {/* Next Button */}
+  <button
+    onClick={onNextDay}
+    className="w-12 h-10 flex items-center justify-center rounded-xl bg-primary text-white text-2xl font-semibold hover:opacity-90 transition-all"
+  >
+    ›
+  </button>
+</div>
       )}
       {/* 
       <div className="px-6 py-1 rounded-md border-green-600 border-[1px] bg-green-50 text-green-800 font-semibold">

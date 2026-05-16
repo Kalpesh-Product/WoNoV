@@ -131,6 +131,11 @@ const PerformanceMemberWiseKraKpa = () => {
         selectedDepartmentName,
         selectedDepartments,
     ]);
+    const selectedDepartmentManagerKey = selectedDepartmentManagerName
+        .toString()
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
 
     const isTopManagementDepartment = useMemo(() => {
         const normalize = (value) =>
@@ -149,7 +154,13 @@ const PerformanceMemberWiseKraKpa = () => {
 
     const { data: memberWiseData = [] } = useQuery({
         // Added selectedMonth in queryKey so data refetches on month change
-         queryKey: ["performanceMemberWiseKraKpa", selectedDepartment, department, selectedMonth],
+         queryKey: [
+            "performanceMemberWiseKraKpa",
+            selectedDepartment,
+            department,
+            selectedMonth,
+            selectedDepartmentManagerKey,
+        ],
         queryFn: async () => {
             let departmentId = selectedDepartment;
 

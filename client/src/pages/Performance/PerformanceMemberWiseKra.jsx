@@ -134,6 +134,11 @@ const PerformanceMemberWiseKra = () => {
     selectedDepartmentName,
     selectedDepartments,
   ]);
+  const selectedDepartmentManagerKey = selectedDepartmentManagerName
+    .toString()
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 
   const isTopManagementDepartment = useMemo(() => {
     const normalize = (value) =>
@@ -150,7 +155,13 @@ const PerformanceMemberWiseKra = () => {
   
 
   const { data: memberWiseData = [] } = useQuery({
-    queryKey: ["performanceMemberWiseKra", selectedDepartment, department, selectedDateKey],
+    queryKey: [
+      "performanceMemberWiseKra",
+      selectedDepartment,
+      department,
+      selectedDateKey,
+      selectedDepartmentManagerKey,
+    ],
     queryFn: async () => {
       let departmentId = selectedDepartment;
 
