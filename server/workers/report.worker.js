@@ -48,7 +48,9 @@ const worker = new Worker(
       const reportService = resolveReportService(reportJob.report);
 
       if (!reportService) {
-        throw new Error(`Unsupported report: ${reportJob.report.reportName}`);
+        throw new Error(
+          `Unsupported report: ${reportJob.report.reportName}, ensure the reportKey is registered in reportServiceRegistry`,
+        );
       }
 
       const foundUser = await UserData.findById(reportJob.userId)

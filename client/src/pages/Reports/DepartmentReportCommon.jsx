@@ -247,6 +247,13 @@ const DepartmentReportCommon = () => {
     });
   };
 
+  const hasReportData = (reportData) => {
+    if (Array.isArray(reportData)) return reportData.length > 0;
+    if (reportData && typeof reportData === "object")
+      return Object.keys(reportData).length > 0;
+    return Boolean(reportData);
+  };
+
   const getRetryCountdownLabel = (retryAt) => {
     if (!retryAt) return "Retry";
     const remainingMs = Math.max(0, dayjs(retryAt).diff(dayjs()));
@@ -284,9 +291,11 @@ const DepartmentReportCommon = () => {
 
         const reportData = response?.data?.data || null;
         const reportRow = reports.find((r) => r?._id === reportId);
+        const hasDataPayload = hasReportData(reportData);
 
         const downloadStarted =
-          triggerDataDownload(reportData, reportRow?.reportName) ||
+          (hasDataPayload &&
+            triggerDataDownload(reportData, reportRow?.reportName)) ||
           triggerReportDownload(downloadUrl);
 
         setDownloadedByReportId((prev) => ({
@@ -296,8 +305,10 @@ const DepartmentReportCommon = () => {
 
         if (downloadStarted) {
           toast.success("Report Generated.");
+        } else if (!hasDataPayload && !downloadUrl) {
+          toast.info("No data found for the selected filters.");
         } else {
-          toast.error("Report generated, but no  file payload was returned");
+          toast.error("Report generated, but no file payload was returned");
         }
         return;
       }
