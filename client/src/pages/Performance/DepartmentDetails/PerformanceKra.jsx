@@ -57,6 +57,7 @@ const PerformanceKra = () => {
     .join(" ")
     .trim();
   const [selectedKra, setSelectedKra] = useState(null);
+   const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
 
   const restrictedRoles = [
     "IT Employee",
@@ -131,6 +132,8 @@ const PerformanceKra = () => {
   const canUseCheckbox =
     shouldForceOwnControlsInEmployeeRoute ||
     (!isSelectedMemberEmployee && (showCheckBox || canManageSelectedMemberView));
+     const isCurrentDateView = selectedDate.isSame(dayjs(), "day");
+  const canEditForSelectedDate = isManager || isCurrentDateView;
     // isManager && targetMemberId && !isViewingOwnMember;
   //const isViewingOwnMember =
   //   normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
@@ -324,6 +327,7 @@ const PerformanceKra = () => {
                   onClick={() => {
                     if (
                       !params.node.selected ||
+                      !canEditForSelectedDate ||
                       isUpdatePending ||
                       isDeletePending
                     )
@@ -350,7 +354,8 @@ const PerformanceKra = () => {
                     <button
                       type="button"
                       title="Edit"
-                      disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                      //disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                         disabled={!params.node.selected || !canEditForSelectedDate || isUpdatePending || isDeletePending}
                       onClick={() => handleOpenEditModal(params.data)}
                       className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                     >
@@ -375,6 +380,7 @@ const PerformanceKra = () => {
                     title="Delete Recurrence"
                     disabled={
                       !params.node.selected ||
+                       !canEditForSelectedDate ||
                       isDeletePending ||
                       isUpdatePending
                     }
@@ -459,6 +465,15 @@ const PerformanceKra = () => {
   const filteredCompletedEntries = isEmployeeKraKpaRoute
     ? completedEntries || []
     : completedEntries || [];
+ const selectedDateLabel = selectedDate.format("DD MMM YYYY");
+  const dateWiseDepartmentKra = filteredDepartmentKra.filter((item) =>
+    dayjs(item.assignedDate).isValid() &&
+    dayjs(item.assignedDate).isSame(selectedDate, "day")
+  );
+  const dateWiseCompletedEntries = filteredCompletedEntries.filter((item) => {
+    const completionDate = item.completedDate || item.completionDate || item.dueDate;
+    return dayjs(completionDate).isValid() && dayjs(completionDate).isSame(selectedDate, "day");
+  });    
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -469,19 +484,26 @@ const PerformanceKra = () => {
                 formatTime
                 checkbox={canUseCheckbox && canShowControls}
                 buttonTitle={
-                  !canShowControls
+                  // !canShowControls
+                  !canShowControls || !canEditForSelectedDate
                     ? undefined
                     : "Add Daily KRA"
                 }
                 buttonDisabled={
-                  isAddKraDisabled || !canShowControls
+                 // isAddKraDisabled || !canShowControls
+                  isAddKraDisabled || !canShowControls || !canEditForSelectedDate
                 }
                 handleSubmit={() => setOpenModal(true)}
+                  showDateNavigator
+                selectedDateLabel={selectedDateLabel}
+                onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}
+                onNextDay={() => setSelectedDate((prev) => prev.add(1, "day"))}
                  tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}
                 //tableTitle={`${department} DEPARTMENT - DAILY KRA`}
                  //tableTitle={`${departmentName} DEPARTMENT - DAILY KRA`}
                  // tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}
-                data={filteredDepartmentKra
+                // data={filteredDepartmentKra
+                 data={dateWiseDepartmentKra
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
                     srno: index + 1,
@@ -493,7 +515,9 @@ const PerformanceKra = () => {
                     status: item.status,
                   }))}
                 dateColumn={"assignedDate"}
-                columns={departmentColumns}
+                //columns={departmentColumns}
+                  columns={departmentColumns}
+                  isRowSelectable={() => canEditForSelectedDate}
               />
             </WidgetSection>
           ) : (
@@ -511,8 +535,10 @@ const PerformanceKra = () => {
                    tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName}`}
                   exportData={true}
                   checkAll={false}
-                  key={filteredCompletedEntries.length}
-                  data={filteredCompletedEntries.map((item, index) => ({
+                  // key={filteredCompletedEntries.length}
+                  // data={filteredCompletedEntries.map((item, index) => ({
+                      key={dateWiseCompletedEntries.length}
+                  data={dateWiseCompletedEntries.map((item, index) => ({
                     srno: index + 1,
                     id: item.id,
                     taskName: item.taskName,
