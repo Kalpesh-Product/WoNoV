@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, TextField } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -29,6 +29,7 @@ const PerformanceKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { department } = useParams();
+  const location = useLocation();
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
@@ -37,16 +38,26 @@ const PerformanceKra = () => {
   const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName
   );
+
+   const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+  const primaryUserDepartment = auth?.user?.departments?.[0];
+  const effectiveDeptId = isEmployeeKraKpaRoute
+    ? primaryUserDepartment?._id
+    : deptId;
+  const effectiveDepartmentName = isEmployeeKraKpaRoute
+    ? primaryUserDepartment?.name
+    : selectedDepartmentName;
   const departmentName =
-    selectedDepartmentName ||
+    effectiveDepartmentName ||
     department ||
-    auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+    auth?.user?.departments?.find((dept) => dept._id === effectiveDeptId)?.name ||
     "Department";
      const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
     .filter(Boolean)
     .join(" ")
     .trim();
   const [selectedKra, setSelectedKra] = useState(null);
+   const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
 
   const restrictedRoles = [
     "IT Employee",
@@ -81,6 +92,8 @@ const PerformanceKra = () => {
   const showCheckBox = allowedDept;
    const userId = auth.user._id;
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const roleTitles =
+    auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
   const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_DAILY_KRA.value);
   const isHr = department === "HR";
 
@@ -89,10 +102,11 @@ const PerformanceKra = () => {
   );
    const selectedMemberFromRoute = location.state?.selectedMember;
   const activeMember = selectedMemberFromRoute || selectedMember;
-  const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+  //const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
   const activeMemberName = isEmployeeKraKpaRoute
     ? loggedInUserName || "User Name"
     : activeMember?.memberName || loggedInUserName || "User Name";
+    const loggedInUserId = auth?.user?._id;
   //  const selectedMemberFromRoute = location.state?.selectedMember;
   // const activeMember = selectedMemberFromRoute || selectedMember;
   // const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
@@ -100,14 +114,26 @@ const PerformanceKra = () => {
     (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
      const targetMemberId = activeMember?.memberId;
   const targetMemberName = activeMember?.memberName;
+  const selectedMemberRole = normalizeValue(activeMember?.memberRole);
+  const isSelectedMemberManager = selectedMemberRole.includes("manager");
+  const isSelectedMemberEmployee = !!targetMemberId && !isSelectedMemberManager;
+  const isSuperOrMasterAdmin =
+    roleTitles.some((roleTitle) => roleTitle?.includes("super admin")) ||
+    roleTitles.some((roleTitle) => roleTitle?.includes("master admin"));
   const isViewingOwnMember =
     normalizeValue(targetMemberId) === normalizeValue(userId) ||
     normalizeValue(targetMemberName) === normalizeValue(loggedInUserName);
-  const shouldHideControlsForSelectedMemberView =
-    isManager && targetMemberId && !isViewingOwnMember;
-  const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
-  const canShowControls = shouldShowManagerControlsInEmployeeRoute || !shouldHideControlsForSelectedMemberView;
-  const canUseCheckbox = showCheckBox || shouldShowManagerControlsInEmployeeRoute;
+  const canManageSelectedMemberView = isManager || isSuperOrMasterAdmin;
+  const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+  const canShowControls =
+   shouldForceOwnControlsInEmployeeRoute ||
+    (!isSelectedMemberEmployee &&
+      (canManageSelectedMemberView || !targetMemberId || isViewingOwnMember));
+  const canUseCheckbox =
+    shouldForceOwnControlsInEmployeeRoute ||
+    (!isSelectedMemberEmployee && (showCheckBox || canManageSelectedMemberView));
+     const isCurrentDateView = selectedDate.isSame(dayjs(), "day");
+  const canEditForSelectedDate = isManager || isCurrentDateView;
     // isManager && targetMemberId && !isViewingOwnMember;
   //const isViewingOwnMember =
   //   normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
@@ -232,7 +258,7 @@ const PerformanceKra = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `/api/performance/get-tasks?dept=${deptId}&type=KRA`
+         `/api/performance/get-tasks?dept=${effectiveDeptId}&type=KRA`
       );
       return response.data;
     } catch (error) {
@@ -240,16 +266,17 @@ const PerformanceKra = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedDepartmentsKRA"],
+     queryKey: ["fetchedDepartmentsKRA", effectiveDeptId],
     queryFn: fetchDepartments,
   });
   const { data: completedEntries = [], isLoading: isCompletedLoading } =
     useQuery({
-      queryKey: ["completedEntries"],
+       // scoped query key to avoid stale cross-department cache in employee route
+      queryKey: ["completedEntries", effectiveDeptId],
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/performance/get-completed-tasks?dept=${deptId}&type=KRA`
+            `/api/performance/get-completed-tasks?dept=${effectiveDeptId}&type=KRA`
           );
           return response.data;
         } catch (error) {
@@ -283,7 +310,7 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-      ...(matchingDepartment && canShowControls
+      ...((matchingDepartment || canManageSelectedMemberView) && canShowControls
    // ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
       ? [
         {
@@ -300,6 +327,7 @@ const PerformanceKra = () => {
                   onClick={() => {
                     if (
                       !params.node.selected ||
+                      !canEditForSelectedDate ||
                       isUpdatePending ||
                       isDeletePending
                     )
@@ -326,7 +354,8 @@ const PerformanceKra = () => {
                     <button
                       type="button"
                       title="Edit"
-                      disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                      //disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                         disabled={!params.node.selected || !canEditForSelectedDate || isUpdatePending || isDeletePending}
                       onClick={() => handleOpenEditModal(params.data)}
                       className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                     >
@@ -351,6 +380,7 @@ const PerformanceKra = () => {
                     title="Delete Recurrence"
                     disabled={
                       !params.node.selected ||
+                       !canEditForSelectedDate ||
                       isDeletePending ||
                       isUpdatePending
                     }
@@ -428,6 +458,22 @@ const PerformanceKra = () => {
       },
     },
   ];
+
+  const filteredDepartmentKra = isEmployeeKraKpaRoute
+    ? departmentKra || []
+    : departmentKra || [];
+  const filteredCompletedEntries = isEmployeeKraKpaRoute
+    ? completedEntries || []
+    : completedEntries || [];
+ const selectedDateLabel = selectedDate.format("DD MMM YYYY");
+  const dateWiseDepartmentKra = filteredDepartmentKra.filter((item) =>
+    dayjs(item.assignedDate).isValid() &&
+    dayjs(item.assignedDate).isSame(selectedDate, "day")
+  );
+  const dateWiseCompletedEntries = filteredCompletedEntries.filter((item) => {
+    const completionDate = item.completedDate || item.completionDate || item.dueDate;
+    return dayjs(completionDate).isValid() && dayjs(completionDate).isSame(selectedDate, "day");
+  });    
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -436,40 +482,42 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 formatTime
-                // checkbox={showCheckBox && !shouldHideControlsForSelectedMemberView}
-                // buttonTitle={
-                //   shouldHideControlsForSelectedMemberView
-                //     ? undefined
-                //     : "Add Daily KRA"
-                // }
-                // buttonDisabled={
-                //   isAddKraDisabled || shouldHideControlsForSelectedMemberView
-                  checkbox={canUseCheckbox && canShowControls}
+                checkbox={canUseCheckbox && canShowControls}
                 buttonTitle={
-                  !canShowControls
+                  // !canShowControls
+                  !canShowControls || !canEditForSelectedDate
                     ? undefined
                     : "Add Daily KRA"
                 }
                 buttonDisabled={
-                  isAddKraDisabled || !canShowControls
+                 // isAddKraDisabled || !canShowControls
+                  isAddKraDisabled || !canShowControls || !canEditForSelectedDate
                 }
                 handleSubmit={() => setOpenModal(true)}
+                  showDateNavigator
+                selectedDateLabel={selectedDateLabel}
+                onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}
+                onNextDay={() => setSelectedDate((prev) => prev.add(1, "day"))}
                  tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}
                 //tableTitle={`${department} DEPARTMENT - DAILY KRA`}
                  //tableTitle={`${departmentName} DEPARTMENT - DAILY KRA`}
                  // tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}
-                data={(departmentKra || [])
+                // data={filteredDepartmentKra
+                 data={dateWiseDepartmentKra
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
                     srno: index + 1,
                     id: item.id,
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
+                    dueDate: item.dueDate || item.assignedDate,
                     dueTime: item.dueTime,
                     status: item.status,
                   }))}
-                dateColumn={"dueDate"}
-                columns={departmentColumns}
+                dateColumn={"assignedDate"}
+                //columns={departmentColumns}
+                  columns={departmentColumns}
+                  isRowSelectable={() => canEditForSelectedDate}
               />
             </WidgetSection>
           ) : (
@@ -485,22 +533,22 @@ const PerformanceKra = () => {
                 <YearWiseTable
                   formatTime
                    tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName}`}
-                 // tableTitle={`COMPLETED - DAILY KRA - ${loggedInUserName || "User Name"}`}
                   exportData={true}
                   checkAll={false}
-                  key={completedEntries.length}
-                  data={completedEntries.map((item, index) => ({
+                  // key={filteredCompletedEntries.length}
+                  // data={filteredCompletedEntries.map((item, index) => ({
+                      key={dateWiseCompletedEntries.length}
+                  data={dateWiseCompletedEntries.map((item, index) => ({
                     srno: index + 1,
                     id: item.id,
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                    dueDate: item.dueDate,
+                    completionDate: item.completedDate || item.completionDate || item.dueDate,
+                    completionTime: item.completedDate || item.completionTime || item.dueDate,
                     status: item.status,
                     completedBy: item.completedBy,
-                    completedDate: humanDate(item.completedDate),
-                    completedTime: humanTime(item.completedDate),
                   }))}
-                  dateColumn={"dueDate"}
+                  dateColumn={"completionDate"}
                   columns={completedColumns}
                 />
               </WidgetSection>

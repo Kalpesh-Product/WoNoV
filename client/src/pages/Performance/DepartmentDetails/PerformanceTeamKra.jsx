@@ -33,8 +33,10 @@ const PerformanceTeamKra = () => {
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
     const deptId = useSelector((state) => state.performance.selectedDepartment);
     const selectedMember = useSelector((state) => state.performance.selectedMember);
+    const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
      const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
     );
@@ -53,10 +55,52 @@ const PerformanceTeamKra = () => {
     const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
     const normalizeValue = (value) =>
         (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+    const { data: selectedDepartments = [] } = useQuery({
+        queryKey: ["performance-selectedDepartments-team"],
+        queryFn: async () => {
+            const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+            return response.data?.selectedDepartments || [];
+        },
+    });
+    const selectedDepartmentManagerName = useMemo(() => {
+        const normalize = (value) =>
+            (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+        const matchedDepartment = selectedDepartments.find((item) => {
+            const itemDepartmentId = item?.department?._id?.toString?.();
+            const itemDepartmentName = item?.department?.name;
+
+            return (
+                (deptId && itemDepartmentId && deptId.toString() === itemDepartmentId) ||
+                (departmentName &&
+                    itemDepartmentName &&
+                    normalize(departmentName) === normalize(itemDepartmentName))
+            );
+        });
+
+        return matchedDepartment?.admin || "";
+    }, [departmentName, deptId, selectedDepartments]);
+    const isSelectedMemberManager =
+        normalizeValue(activeMember?.memberRole).includes("manager") ||
+        normalizeValue(activeMember?.memberName) === normalizeValue(selectedDepartmentManagerName);
+    const roleTitles =
+        auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+    const isSuperOrMasterAdmin =
+        roleTitles.some((roleTitle) => roleTitle?.includes("super admin")) ||
+        roleTitles.some((roleTitle) => roleTitle?.includes("master admin"));
+    const userPermissions = auth?.user?.permissions?.permissions || [];
+    const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value);
     const isViewingOwnMember =
         normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
     const shouldPrefillAssignTo = !!activeMember?.memberId && !isViewingOwnMember;
+    const canManageSelectedMemberView = isSuperOrMasterAdmin || isManager;
+    const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+    const canShowControls =
+     shouldForceOwnControlsInEmployeeRoute ||
+        canManageSelectedMemberView || !activeMember?.memberId || isViewingOwnMember;
+    const isCurrentDateView = selectedDate.isSame(dayjs(), "day");
+    const canEditForSelectedDate = isManager || isCurrentDateView;
 
     const restrictedRoles = [
         "IT Employee",
@@ -75,12 +119,9 @@ const PerformanceTeamKra = () => {
 
     const canDeleteRecurrence = !isAddKraDisabled;
 
-    const userPermissions = auth?.user?.permissions?.permissions || [];
-    const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value);
-
     useEffect(() => {
-        queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA"] });
-    }, [department]);
+        queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA", deptId] });
+    }, [deptId]);
 
     const {
         handleSubmit: submitDailyKra,
@@ -113,8 +154,8 @@ const PerformanceTeamKra = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            queryClient.refetchQueries({ queryKey: ["fetchedTeamKRA"] });
-            queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+            queryClient.refetchQueries({ queryKey: ["fetchedTeamKRA", deptId] });
+            queryClient.refetchQueries({ queryKey: ["completedEntriesKPA", deptId] });
             toast.success(data.message || "KRA recurrence removed");
         },
         onError: () => {
@@ -135,7 +176,7 @@ const PerformanceTeamKra = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA"] });
+            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA", deptId] });
             toast.success(data.message || "Team KPA Added");
             reset();
             setOpenModal(false);
@@ -147,7 +188,7 @@ const PerformanceTeamKra = () => {
         },
     });
     const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({
-        queryKey: ["completedEntriesKPA"],
+        queryKey: ["completedEntriesKPA", deptId],
         queryFn: async () => {
             try {
                 const response = await axios.get(
@@ -215,8 +256,9 @@ const PerformanceTeamKra = () => {
     };
 
     const { data: teamKra = [], isPending: teamLoading } = useQuery({
-        queryKey: ["fetchedTeamKRA"],
+        queryKey: ["fetchedTeamKRA", deptId],
         queryFn: fetchTasks,
+        enabled: !!deptId,
     });
 
     const { data: assignees = [] } = useQuery({
@@ -229,7 +271,13 @@ const PerformanceTeamKra = () => {
     });
 
     const filteredTeamKra = useMemo(() => {
-        if (!activeMember?.memberId || isViewingOwnMember) return teamKra || [];
+        if (!activeMember?.memberId) {
+            return teamKra || [];
+        }
+
+        if (isSelectedMemberManager) {
+            return teamKra || [];
+        }
 
         return (teamKra || []).filter((item) => {
             const assignedToList = Array.isArray(item?.assignedTo)
@@ -241,6 +289,7 @@ const PerformanceTeamKra = () => {
 
             return (
                 normalizeValue(assignedToId) === normalizeValue(activeMember.memberId) ||
+                normalizeValue(item?.assignToId) === normalizeValue(activeMember.memberId) ||
                 assignedToList.some((name) => {
                     const normalizedName = normalizeValue(name);
                     return (
@@ -250,17 +299,33 @@ const PerformanceTeamKra = () => {
                 })
             );
         });
-    }, [activeMember?.memberId, activeMember?.memberName, isViewingOwnMember, teamKra]);
+    }, [
+        activeMember?.memberId,
+        activeMember?.memberName,
+        isSelectedMemberManager,
+        teamKra,
+    ]);
 
     const filteredCompletedEntries = useMemo(() => {
-        if (!activeMember?.memberId || isViewingOwnMember) return completedEntries || [];
+        if (!activeMember?.memberId) {
+            return completedEntries || [];
+        }
+
+        if (isSelectedMemberManager) {
+            return completedEntries || [];
+        }
 
         return (completedEntries || []).filter(
             (item) =>
                 normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
                 normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
         );
-    }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isViewingOwnMember]);
+    }, [
+        activeMember?.memberId,
+        activeMember?.memberName,
+        isSelectedMemberManager,
+        completedEntries,
+    ]);
 
     const teamColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -283,7 +348,8 @@ const PerformanceTeamKra = () => {
                 return <Chip label={params.value} style={{ backgroundColor, color }} />;
             },
         },
-        ...(!isAddKraDisabled
+        // ...(canShowControls && !isAddKraDisabled
+         ...(canShowControls
             ? [
                 {
                     headerName: "Actions",
@@ -295,6 +361,7 @@ const PerformanceTeamKra = () => {
                                     type="button"
                                     title="Edit"
                                     onClick={() => handleOpenEditModal(params.data)}
+                                     disabled={!params.node.selected || !canEditForSelectedDate || isDeletePending}
                                     className="ml-2"
                                 >
                                     <HiPencilSquare size={24} color="#111827" />
@@ -303,7 +370,7 @@ const PerformanceTeamKra = () => {
                                 <button
                                     type="button"
                                     title="Delete Recurrence"
-                                    // disabled={!params.node.selected || isDeletePending}
+                                       disabled={!params.node.selected || !canEditForSelectedDate || isDeletePending}
                                     onClick={() => deleteDailyKraRecurrence(params.data.id)}
                                     className="ml-2 disabled:cursor-not-allowed"
                                 >
@@ -363,7 +430,21 @@ const PerformanceTeamKra = () => {
             },
         },
     ];
-
+    const selectedDateLabel = selectedDate.format("DD MMM YYYY");
+    const selectedDateKey = selectedDate.format("YYYY-MM-DD");
+    const toDateKey = (value) => {
+      if (!value) return null;
+      if (typeof value === "string" && value.includes("T")) return value.split("T")[0];
+      const parsed = dayjs(value);
+      return parsed.isValid() ? parsed.format("YYYY-MM-DD") : null;
+    };
+    const dateWiseTeamKra = filteredTeamKra.filter(
+      (item) => toDateKey(item.assignedDate || item.dueDate) === selectedDateKey
+    );
+    const dateWiseCompletedEntries = (filteredCompletedEntries || []).filter((item) => {
+      const completionDate = item.completedDate || item.completionDate || item.dueDate;
+      return toDateKey(completionDate) === selectedDateKey;
+    });
     return (
         <>
             <div className="flex flex-col gap-4">
@@ -372,23 +453,37 @@ const PerformanceTeamKra = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 formatTime
-                                buttonTitle={"Add Team KRA"}
-                                buttonDisabled={isAddKraDisabled}
+                                checkbox={false}
+                                buttonTitle={
+                                    // !canShowControls
+                                      !canShowControls || !canEditForSelectedDate
+                                        ? undefined
+                                        : "Add Team Daily KRA"
+                                }
+                               // buttonDisabled={isAddKraDisabled || !canShowControls}
+                                buttonDisabled={isAddKraDisabled || !canShowControls || !canEditForSelectedDate}
                                 handleSubmit={() => setOpenModal(true)}
+                                 showDateNavigator
+                                selectedDateLabel={selectedDateLabel}
+                                onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}
+                                onNextDay={() => setSelectedDate((prev) => prev.add(1, "day"))}
                                 tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}
-                                data={filteredTeamKra
+                               // data={filteredTeamKra
+                                data={dateWiseTeamKra
                                     .filter((item) => item.status !== "Completed")
                                     .map((item, index) => ({
                                         srno: index + 1,
                                         id: item.id,
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
+                                        dueDate: item.dueDate || item.assignedDate,
                                         dueTime: item.dueTime,
                                         status: item.status,
                                         assignedTo: item.assignedTo,
                                     }))}
-                                dateColumn={"dueDate"}
+                                dateColumn={"assignedDate"}
                                 columns={teamColumns}
+                                isRowSelectable={() => canEditForSelectedDate}
                             />
                         </WidgetSection>
                     ) : (
@@ -406,19 +501,20 @@ const PerformanceTeamKra = () => {
                                     tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName}`}
                                     exportData={true}
                                     checkAll={false}
-                                    key={filteredCompletedEntries.length}
-                                    data={filteredCompletedEntries.map((item, index) => ({
+                                    // key={filteredCompletedEntries.length}
+                                    // data={filteredCompletedEntries.map((item, index) => ({
+                                     key={dateWiseCompletedEntries.length}
+                                    data={dateWiseCompletedEntries.map((item, index) => ({    
                                         srno: index + 1,
                                         id: item.id,
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
-                                        dueDate: item.dueDate,
+                                        completionDate: item.completedDate || item.dueDate,
+                                        completionTime: item.completedDate || item.dueDate,
                                         status: item.status,
                                         completedBy: item.completedBy,
-                                        completionDate: humanDate(item.completionDate),
-                                        completionTime: humanTime(item.completionDate),
                                     }))}
-                                    dateColumn={"dueDate"}
+                                    dateColumn={"completionDate"}
                                     columns={completedColumns}
                                 />
                             </WidgetSection>

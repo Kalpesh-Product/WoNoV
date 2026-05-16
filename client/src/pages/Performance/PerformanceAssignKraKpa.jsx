@@ -74,6 +74,7 @@ const PerformanceAssignKraKpa = () => {
       setSelectedMember({
         memberId: member?._id?.toString?.() || "",
         memberName,
+        memberRole: getMemberRoleLabel(member, department?.name),
       }),
     );
 
@@ -82,6 +83,7 @@ const PerformanceAssignKraKpa = () => {
         selectedMember: {
           memberId: member?._id?.toString?.() || "",
           memberName,
+          memberRole: getMemberRoleLabel(member, department?.name),
         },
       },
     });

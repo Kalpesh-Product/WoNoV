@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -13,7 +13,7 @@ import MuiModal from "../../../components/MuiModal";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 // import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
@@ -28,10 +28,12 @@ import {
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
+import { PERMISSIONS } from "../../../constants/permissions";
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const { auth } = useAuth();
+  const location = useLocation();
   const { department } = useParams();
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -41,20 +43,63 @@ const PerformanceMonthly = () => {
     (state) => state.performance.selectedDepartmentName
   );
     const selectedMember = useSelector((state) => state.performance.selectedMember);
+   const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+  const primaryUserDepartment = auth?.user?.departments?.[0];
+  const effectiveDeptId = isEmployeeKraKpaRoute
+    ? primaryUserDepartment?._id
+    : deptId;
+  const effectiveDepartmentName = isEmployeeKraKpaRoute
+    ? primaryUserDepartment?.name
+    : selectedDepartmentName;
   const departmentName =
-    selectedDepartmentName ||
+    effectiveDepartmentName ||
     department ||
-    auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+    auth?.user?.departments?.find((dept) => dept._id === effectiveDeptId)?.name ||
     "Department";
 
   const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
     .filter(Boolean)
     .join(" ")
     .trim();
-    const activeMemberName = loggedInUserName || "User Name"; 
+   // const activeMemberName = loggedInUserName || "User Name"; 
   //  const selectedMemberFromRoute = location.state?.selectedMember;
   // const activeMember = selectedMemberFromRoute || selectedMember;
   // const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";  
+
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["performance-selectedDepartments-monthly"],
+    queryFn: async () => {
+      const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+      return response.data?.selectedDepartments || [];
+    },
+  });
+
+  const selectedDepartmentManagerName = useMemo(() => {
+    const normalize = (value) =>
+      (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+     const activeDepartmentName = effectiveDepartmentName || departmentName;
+    const activeDepartmentId = effectiveDeptId?.toString?.();
+
+    const matchedDepartment = selectedDepartments.find((item) => {
+      const itemDepartmentId = item?.department?._id?.toString?.();
+      const itemDepartmentName = item?.department?.name;
+
+      return (
+        (activeDepartmentId && itemDepartmentId && activeDepartmentId === itemDepartmentId) ||
+        (activeDepartmentName &&
+          itemDepartmentName &&
+          normalize(activeDepartmentName) === normalize(itemDepartmentName))
+      );
+    });
+
+    return matchedDepartment?.admin || "";
+ }, [departmentName, effectiveDepartmentName, effectiveDeptId, selectedDepartments]);
+
+  const activeMemberName = isEmployeeKraKpaRoute
+    ? loggedInUserName || "User Name"
+    : selectedDepartmentManagerName || loggedInUserName || "User Name";
+  const loggedInUserId = auth?.user?._id;
 
   const restrictedRoles = [
     "IT Employee",
@@ -71,7 +116,8 @@ const PerformanceMonthly = () => {
   const isAddKpaDisabled = auth?.user?.role?.some((role) =>
     restrictedRoles.includes(role.roleTitle)
   );
-
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_MONTHLY_KPA.value);
   const canDeleteRecurrence = !isAddKpaDisabled;
 
   const departmentAccess = [
@@ -89,7 +135,8 @@ const PerformanceMonthly = () => {
 
   const isHr = department === "HR";
   // const showCheckBox = !isTop || isHr
-  const showCheckBox = allowedDept;
+  //const showCheckBox = allowedDept;
+  const showCheckBox = allowedDept || isManager;
 
   const matchingDepartment = auth.user?.departments?.some(
     (dept) => dept._id === deptId
@@ -234,7 +281,7 @@ const PerformanceMonthly = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `/api/performance/get-tasks?dept=${deptId}&type=KPA`
+       `/api/performance/get-tasks?dept=${effectiveDeptId}&type=KPA`
       );
       return response.data;
     } catch (error) {
@@ -242,15 +289,15 @@ const PerformanceMonthly = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedMonthlyKPA"],
+     queryKey: ["fetchedMonthlyKPA", effectiveDeptId],
     queryFn: fetchDepartments,
   });
   const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({
-    queryKey: ["completedEntriesKPA"],
+    queryKey: ["completedEntriesKPA", effectiveDeptId],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/performance/get-completed-tasks?dept=${deptId}&type=KPA`
+            `/api/performance/get-completed-tasks?dept=${effectiveDeptId}&type=KPA`
         );
         return response.data;
       } catch (error) {
@@ -307,7 +354,8 @@ const PerformanceMonthly = () => {
         );
       },
     },
-    ...(matchingDepartment
+        ...(matchingDepartment || isManager
+   // ...(matchingDepartment
       ? [
         {
           headerName: "Actions",
@@ -444,8 +492,31 @@ const PerformanceMonthly = () => {
       },
     },
   ];
-   const filteredDepartmentKpa = departmentKra || [];
-  const filteredCompletedEntries = completedEntries || [];
+    const normalizeValue = (value) =>
+    (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+  const doesTaskBelongToLoggedInUser = (item) => {
+    if (!isEmployeeKraKpaRoute) return true;
+    const matchCandidates = [
+      item?.assignToId,
+      item?.assignedToId,
+      item?.createdById,
+      item?.completedById,
+      item?.assignTo,
+      item?.assignedTo,
+      item?.createdBy,
+      item?.completedBy,
+    ].flatMap((candidate) => (Array.isArray(candidate) ? candidate : [candidate]));
+    return matchCandidates.some((candidate) => {
+      const normalizedCandidate = normalizeValue(candidate);
+      if (!normalizedCandidate) return false;
+      return (
+        normalizedCandidate === normalizeValue(loggedInUserId) ||
+        normalizedCandidate === normalizeValue(loggedInUserName)
+      );
+    });
+  };
+  const filteredDepartmentKpa = (departmentKra || []).filter(doesTaskBelongToLoggedInUser);
+  const filteredCompletedEntries = (completedEntries || []).filter(doesTaskBelongToLoggedInUser);
   // const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
   //   if (!activeMember?.memberName) return true;
   //   return (item?.assignedTo || "").toString().trim() === activeMember.memberName;
