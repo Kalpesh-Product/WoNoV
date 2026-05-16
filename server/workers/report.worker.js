@@ -30,6 +30,7 @@ const worker = new Worker(
     reportJob.status = "processing";
     reportJob.startedAt = new Date();
 
+    console.log("report job", reportJob);
     await reportJob.save();
 
     //delay added to simulate long processing time and test retry/cancellation flows. Remove in production.

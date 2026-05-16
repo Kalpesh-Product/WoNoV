@@ -307,6 +307,9 @@ const DepartmentReportCommon = () => {
           ...prev,
           [reportId]: false,
         }));
+        toast.error(
+          response?.data?.error?.message || "Report generation failed",
+        );
         return;
       }
 

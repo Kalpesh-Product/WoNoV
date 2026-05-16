@@ -1,9 +1,10 @@
 const mongoose = require("mongoose");
+const Ticket = require("../../models/tickets/Tickets");
+const Company = require("../../models/hr/Company");
 
 const fetchTicketReportService = async ({
   dateFilter,
   departmentId,
-  company,
   roles,
   departments,
 }) => {
@@ -18,7 +19,9 @@ const fetchTicketReportService = async ({
     const isMasterAdmin =
       roles?.includes("Master Admin") || roles?.includes("Super Admin");
 
-    const departmentIds = departments.map(
+    const safeDepartments = Array.isArray(departments) ? departments : [];
+
+    const departmentIds = safeDepartments.map(
       (dept) => new mongoose.Types.ObjectId(dept._id),
     );
 
@@ -29,19 +32,20 @@ const fetchTicketReportService = async ({
         : [];
 
     query = {
-      company,
       ...(isMasterAdmin
         ? {}
         : { raisedToDepartment: { $in: selectedDepartments } }),
     };
 
-    if (dateFilter?.startDate && dateFilter?.endDate) {
+    if (dateFilter) {
       query.createdAt = {
         $gte: new Date(dateFilter.startDate),
         $lte: new Date(dateFilter.endDate),
       };
     }
 
+    console.log("date filter:", dateFilter);
+    console.log("Constructed query:", query);
     const tickets = await Ticket.find(query)
       .populate([
         {
@@ -72,7 +76,7 @@ const fetchTicketReportService = async ({
       .lean()
       .exec();
 
-    const foundCompany = await Company.findOne({ _id: company })
+    const foundCompany = await Company.findOne()
       .select("selectedDepartments")
       .lean()
       .exec();
@@ -83,7 +87,7 @@ const fetchTicketReportService = async ({
     const updatedTickets = tickets.map((ticket) => {
       let updatedTicket = { ...ticket };
 
-      foundCompany.selectedDepartments.forEach((dept) => {
+      (foundCompany.selectedDepartments || []).forEach((dept) => {
         dept?.ticketIssues?.forEach((issue) => {
           if (issue.title.toLowerCase() === ticket.ticket.toLowerCase()) {
             updatedTicket.priority = issue.priority;
