@@ -2,11 +2,29 @@ const Department = require("../../models/Departments");
 const Report = require("../../models/reports/Report");
 const mongoose = require("mongoose");
 
+const normalizeReportKey = (value = "") =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-report$/, "");
+
 const addReport = async (req, res, next) => {
   try {
     const { module, reportName } = req.body;
 
-    const existingReport = await Report.findOne({ module, reportName });
+    const normalizedReportKey = normalizeReportKey(reportName || "");
+
+    if (!reportName || !normalizedReportKey) {
+      return res.status(400).json({
+        message: "reportName is required",
+      });
+    }
+
+    const existingReport = await Report.findOne({
+      $or: [{ module, reportName }, { reportKey: normalizedReportKey }],
+    });
 
     if (existingReport) {
       return res.status(400).json({
@@ -17,6 +35,7 @@ const addReport = async (req, res, next) => {
     const report = await Report.create({
       module,
       reportName,
+      reportKey: normalizedReportKey,
     });
 
     return res.status(201).json({

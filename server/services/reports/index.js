@@ -2,6 +2,14 @@ const buildDateFilter = require("../../utils/dateFilter");
 const { fetchBudgetService } = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
 
+const normalizeReportIdentifier = (value = "") =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-report$/, "");
+
 /**
  * Stable keys should come from Report.reportKey in DB where possible.
  * Keeping reportName aliases for backward compatibility.
@@ -46,8 +54,8 @@ const reportServiceRegistry = {
 
 const resolveReportService = (reportMeta = {}) => {
   console.log("Resolving report service for reportMeta:", reportMeta);
-  const key = (reportMeta.reportKey || "").trim().toLowerCase();
-  const name = (reportMeta.reportName || "").trim().toLowerCase();
+  const key = normalizeReportIdentifier(reportMeta.reportKey || "");
+  const name = normalizeReportIdentifier(reportMeta.reportName || "");
 
   console.log(
     `Looking for report service with key: "${key}" or name: "${name}"`,
