@@ -453,37 +453,12 @@ const PerformanceKra = () => {
     },
   ];
 
- const doesTaskBelongToLoggedInUser = (item) => {
-    if (!isEmployeeKraKpaRoute) return true;
-    const matchCandidates = [
-      item?.assignToId,
-      item?.assignedToId,
-      item?.createdById,
-      item?.completedById,
-      item?.assignTo,
-      item?.assignedTo,
-      item?.createdBy,
-      item?.completedBy,
-    ].flatMap((candidate) => (Array.isArray(candidate) ? candidate : [candidate]));
-    const hasOwnershipMetadata = matchCandidates.some((candidate) =>
-      normalizeValue(candidate)
-    );
-    if (!hasOwnershipMetadata) {
-      // Department-level KRA items may not carry assignee metadata.
-      // Keep them visible in employee route so logged-in users can work on their KRA list.
-      return true;
-    }
-    return matchCandidates.some((candidate) => {
-      const normalizedCandidate = normalizeValue(candidate);
-      if (!normalizedCandidate) return false;
-      return (
-        normalizedCandidate === normalizeValue(loggedInUserId) ||
-        normalizedCandidate === normalizeValue(loggedInUserName)
-      );
-    });
-  };
-  const filteredDepartmentKra = (departmentKra || []).filter(doesTaskBelongToLoggedInUser);
-  const filteredCompletedEntries = (completedEntries || []).filter(doesTaskBelongToLoggedInUser);
+  const filteredDepartmentKra = isEmployeeKraKpaRoute
+    ? departmentKra || []
+    : departmentKra || [];
+  const filteredCompletedEntries = isEmployeeKraKpaRoute
+    ? completedEntries || []
+    : completedEntries || [];
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -506,17 +481,18 @@ const PerformanceKra = () => {
                 //tableTitle={`${department} DEPARTMENT - DAILY KRA`}
                  //tableTitle={`${departmentName} DEPARTMENT - DAILY KRA`}
                  // tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}
-                 data={filteredDepartmentKra
+                data={filteredDepartmentKra
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
                     srno: index + 1,
                     id: item.id,
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
+                    dueDate: item.dueDate || item.assignedDate,
                     dueTime: item.dueTime,
                     status: item.status,
                   }))}
-                dateColumn={"dueDate"}
+                dateColumn={"assignedDate"}
                 columns={departmentColumns}
               />
             </WidgetSection>
@@ -541,13 +517,12 @@ const PerformanceKra = () => {
                     id: item.id,
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                    dueDate: item.dueDate,
+                    completionDate: item.completedDate || item.completionDate || item.dueDate,
+                    completionTime: item.completedDate || item.completionTime || item.dueDate,
                     status: item.status,
                     completedBy: item.completedBy,
-                    completedDate: humanDate(item.completedDate),
-                    completedTime: humanTime(item.completedDate),
                   }))}
-                  dateColumn={"dueDate"}
+                  dateColumn={"completionDate"}
                   columns={completedColumns}
                 />
               </WidgetSection>

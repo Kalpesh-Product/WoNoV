@@ -55,7 +55,6 @@ const PerformanceTeamKra = () => {
         (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
     const selectedMemberRole = normalizeValue(activeMember?.memberRole);
     const isActiveMemberManager = selectedMemberRole.includes("manager");
-    const isActiveMemberEmployee = !!activeMember?.memberId && !isActiveMemberManager;
     const roleTitles =
         auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
     const isSuperOrMasterAdmin =
@@ -69,10 +68,7 @@ const PerformanceTeamKra = () => {
     const shouldPrefillAssignTo = !!activeMember?.memberId && !isViewingOwnMember;
     const canManageSelectedMemberView = isSuperOrMasterAdmin || isManager;
     const canShowControls =
-        !isActiveMemberEmployee &&
-        (canManageSelectedMemberView || !activeMember?.memberId || isViewingOwnMember);
-    const canUseCheckbox =
-        !isActiveMemberEmployee && (canManageSelectedMemberView || isViewingOwnMember);
+        canManageSelectedMemberView || !activeMember?.memberId || isViewingOwnMember;
 
     const restrictedRoles = [
         "IT Employee",
@@ -242,7 +238,13 @@ const PerformanceTeamKra = () => {
     });
 
     const filteredTeamKra = useMemo(() => {
-        if (!activeMember?.memberId || isActiveMemberManager) return teamKra || [];
+        if (
+            !activeMember?.memberId ||
+            isActiveMemberManager ||
+            (isViewingOwnMember && canManageSelectedMemberView)
+        ) {
+            return teamKra || [];
+        }
 
         return (teamKra || []).filter((item) => {
             const assignedToList = Array.isArray(item?.assignedTo)
@@ -254,6 +256,7 @@ const PerformanceTeamKra = () => {
 
             return (
                 normalizeValue(assignedToId) === normalizeValue(activeMember.memberId) ||
+                normalizeValue(item?.assignToId) === normalizeValue(activeMember.memberId) ||
                 assignedToList.some((name) => {
                     const normalizedName = normalizeValue(name);
                     return (
@@ -263,17 +266,37 @@ const PerformanceTeamKra = () => {
                 })
             );
         });
-    }, [activeMember?.memberId, activeMember?.memberName, isActiveMemberManager, teamKra]);
+    }, [
+        activeMember?.memberId,
+        activeMember?.memberName,
+        canManageSelectedMemberView,
+        isActiveMemberManager,
+        isViewingOwnMember,
+        teamKra,
+    ]);
 
     const filteredCompletedEntries = useMemo(() => {
-        if (!activeMember?.memberId || isActiveMemberManager) return completedEntries || [];
+        if (
+            !activeMember?.memberId ||
+            isActiveMemberManager ||
+            (isViewingOwnMember && canManageSelectedMemberView)
+        ) {
+            return completedEntries || [];
+        }
 
         return (completedEntries || []).filter(
             (item) =>
                 normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
                 normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
         );
-    }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isActiveMemberManager]);
+    }, [
+        activeMember?.memberId,
+        activeMember?.memberName,
+        canManageSelectedMemberView,
+        completedEntries,
+        isActiveMemberManager,
+        isViewingOwnMember,
+    ]);
 
     const teamColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -385,11 +408,11 @@ const PerformanceTeamKra = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 formatTime
-                                checkbox={!isActiveMemberManager && canUseCheckbox && canShowControls}
+                                checkbox={false}
                                 buttonTitle={
                                     !canShowControls
                                         ? undefined
-                                        : "Add Team KRA"
+                                        : "Add Team Daily KRA"
                                 }
                                 buttonDisabled={isAddKraDisabled || !canShowControls}
                                 handleSubmit={() => setOpenModal(true)}
@@ -401,11 +424,12 @@ const PerformanceTeamKra = () => {
                                         id: item.id,
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
+                                        dueDate: item.dueDate || item.assignedDate,
                                         dueTime: item.dueTime,
                                         status: item.status,
                                         assignedTo: item.assignedTo,
                                     }))}
-                                dateColumn={"dueDate"}
+                                dateColumn={"assignedDate"}
                                 columns={teamColumns}
                             />
                         </WidgetSection>
@@ -430,13 +454,12 @@ const PerformanceTeamKra = () => {
                                         id: item.id,
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
-                                        dueDate: item.dueDate,
+                                        completionDate: item.completedDate || item.dueDate,
+                                        completionTime: item.completedDate || item.dueDate,
                                         status: item.status,
                                         completedBy: item.completedBy,
-                                        completionDate: humanDate(item.completionDate),
-                                        completionTime: humanTime(item.completionDate),
                                     }))}
-                                    dateColumn={"dueDate"}
+                                    dateColumn={"completionDate"}
                                     columns={completedColumns}
                                 />
                             </WidgetSection>
