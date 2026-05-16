@@ -44,10 +44,8 @@ async function generateReport(req, res) {
   const { report, department, filters } = req.body;
   const userId = req.user;
 
-  if (!report || !department) {
-    return res
-      .status(400)
-      .json({ message: "report and department are required" });
+  if (!report) {
+    return res.status(400).json({ message: "report id is required" });
   }
 
   if (

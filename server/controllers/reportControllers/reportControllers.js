@@ -4,9 +4,9 @@ const mongoose = require("mongoose");
 
 const addReport = async (req, res, next) => {
   try {
-    const { module, reportName, departmentId } = req.body;
+    const { module, reportName } = req.body;
 
-    const existingReport = await Report.findOne({ reportName, departmentId });
+    const existingReport = await Report.findOne({ module, reportName });
 
     if (existingReport) {
       return res.status(400).json({
@@ -17,7 +17,6 @@ const addReport = async (req, res, next) => {
     const report = await Report.create({
       module,
       reportName,
-      departmentId,
     });
 
     return res.status(201).json({
@@ -87,66 +86,30 @@ const getSingleReport = async (req, res, next) => {
 
 const seedReports = async (req, res, next) => {
   try {
-    // Find Finance Department
-    const financeDepartment = await Department.findOne({
-      name: "Finance",
-    });
-
-    if (!financeDepartment) {
-      return res.status(404).json({
-        message: "Finance department not found",
-      });
-    }
-
     const reports = [
       {
-        module: "Finance",
-        reportKey: "alternate-revenue",
-        reportName: "Alternate Revenue",
-        description: "Finance alternate revenue report",
+        module: "Ticket",
+        reportKey: "ticket",
+        reportName: "Ticket Report",
+        description: "Ticket report",
       },
       {
-        module: "Finance",
-        reportKey: "coworking-revenue",
-        reportName: "Coworking Revenue",
-        description: "Coworking revenue report",
+        module: "Visitor",
+        reportKey: "visitor",
+        reportName: "Visitor Report",
+        description: "Visitor report",
       },
       {
-        module: "Finance",
-        reportKey: "kra-kpa",
-        reportName: "KRA And KPA",
-        description: "KRA and KPA report",
-      },
-      {
-        module: "Finance",
-        reportKey: "virtual-office-revenue",
-        reportName: "Virtual Office Revenue",
-        description: "Virtual office revenue report",
-      },
-      {
-        module: "Finance",
-        reportKey: "workation-revenues",
-        reportName: "Workation Revenues",
-        description: "Workation revenue report",
-      },
-      {
-        module: "Finance",
-        reportKey: "vendors",
-        reportName: "Vendors",
-        description: "Vendor report",
-      },
-      {
-        module: "Finance",
-        reportKey: "expense-and-budget",
-        reportName: "Expense And Budget",
-        description: "Expense and budget report",
+        module: "Meeting",
+        reportKey: "meeting",
+        reportName: "Meeting Report",
+        description: "Meeting report",
       },
     ];
 
     // Attach departmentId
     const formattedReports = reports.map((report) => ({
       ...report,
-      departmentId: financeDepartment._id,
       status: true,
     }));
 
@@ -165,14 +128,14 @@ const seedReports = async (req, res, next) => {
 
     if (!newReports.length) {
       return res.status(400).json({
-        message: "All finance reports already exist",
+        message: "All reports already exist",
       });
     }
 
     const createdReports = await Report.insertMany(newReports);
 
     return res.status(201).json({
-      message: "Finance reports created successfully",
+      message: "Reports created successfully",
       count: createdReports.length,
       reports: createdReports,
     });

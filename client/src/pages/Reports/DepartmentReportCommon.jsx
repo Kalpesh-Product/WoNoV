@@ -117,18 +117,18 @@ const DepartmentReportCommon = () => {
     return true;
   };
 
-  const toReadableHeader = (keyPath) =>
-    String(keyPath)
-      .split(".")
-      .map((segment) =>
-        segment
-          .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-          .replace(/[_-]+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim()
-          .replace(/^./, (char) => char.toUpperCase()),
-      )
-      .join(" - ");
+  // const toReadableHeader = (keyPath) =>
+  //   String(keyPath)
+  //     .split(".")
+  //     .map((segment) =>
+  //       segment
+  //         .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+  //         .replace(/[_-]+/g, " ")
+  //         .replace(/\s+/g, " ")
+  //         .trim()
+  //         .replace(/^./, (char) => char.toUpperCase()),
+  //     )
+  //     .join(" - ");
 
   const flattenRow = (value, prefix = "") => {
     if (value === null || value === undefined) {
@@ -330,7 +330,7 @@ const DepartmentReportCommon = () => {
     mutationFn: async (reportRow) => {
       const payload = {
         report: reportRow?._id,
-        department: reportRow?.departmentId?._id,
+        department: reportRow?.departmentId?._id || null,
         filters: {
           startDate: dateRange?.[0]?.startDate
             ? dayjs(dateRange[0].startDate).startOf("day").toISOString()
@@ -585,12 +585,7 @@ const DepartmentReportCommon = () => {
                 generateReportMutation.mutate(row);
               }}
               className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-300"
-              disabled={
-                isGenerating ||
-                status === "failed" ||
-                !row?._id ||
-                !row?.departmentId?._id
-              }
+              disabled={isGenerating || status === "failed" || !row?._id}
             >
               {primaryButtonLabel}
             </button>
