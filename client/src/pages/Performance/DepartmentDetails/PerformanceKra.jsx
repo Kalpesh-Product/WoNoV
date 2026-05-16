@@ -38,10 +38,19 @@ const PerformanceKra = () => {
   const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName
   );
+
+   const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+  const primaryUserDepartment = auth?.user?.departments?.[0];
+  const effectiveDeptId = isEmployeeKraKpaRoute
+    ? primaryUserDepartment?._id
+    : deptId;
+  const effectiveDepartmentName = isEmployeeKraKpaRoute
+    ? primaryUserDepartment?.name
+    : selectedDepartmentName;
   const departmentName =
-    selectedDepartmentName ||
+    effectiveDepartmentName ||
     department ||
-    auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+    auth?.user?.departments?.find((dept) => dept._id === effectiveDeptId)?.name ||
     "Department";
      const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
     .filter(Boolean)
@@ -92,10 +101,11 @@ const PerformanceKra = () => {
   );
    const selectedMemberFromRoute = location.state?.selectedMember;
   const activeMember = selectedMemberFromRoute || selectedMember;
-  const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+  //const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
   const activeMemberName = isEmployeeKraKpaRoute
     ? loggedInUserName || "User Name"
     : activeMember?.memberName || loggedInUserName || "User Name";
+    const loggedInUserId = auth?.user?._id;
   //  const selectedMemberFromRoute = location.state?.selectedMember;
   // const activeMember = selectedMemberFromRoute || selectedMember;
   // const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
@@ -113,11 +123,14 @@ const PerformanceKra = () => {
     normalizeValue(targetMemberId) === normalizeValue(userId) ||
     normalizeValue(targetMemberName) === normalizeValue(loggedInUserName);
   const canManageSelectedMemberView = isManager || isSuperOrMasterAdmin;
+  const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
   const canShowControls =
-    !isSelectedMemberEmployee &&
-    (canManageSelectedMemberView || !targetMemberId || isViewingOwnMember);
+   shouldForceOwnControlsInEmployeeRoute ||
+    (!isSelectedMemberEmployee &&
+      (canManageSelectedMemberView || !targetMemberId || isViewingOwnMember));
   const canUseCheckbox =
-    !isSelectedMemberEmployee && (showCheckBox || canManageSelectedMemberView);
+    shouldForceOwnControlsInEmployeeRoute ||
+    (!isSelectedMemberEmployee && (showCheckBox || canManageSelectedMemberView));
     // isManager && targetMemberId && !isViewingOwnMember;
   //const isViewingOwnMember =
   //   normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
@@ -242,7 +255,7 @@ const PerformanceKra = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        `/api/performance/get-tasks?dept=${deptId}&type=KRA`
+         `/api/performance/get-tasks?dept=${effectiveDeptId}&type=KRA`
       );
       return response.data;
     } catch (error) {
@@ -250,16 +263,17 @@ const PerformanceKra = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedDepartmentsKRA"],
+     queryKey: ["fetchedDepartmentsKRA", effectiveDeptId],
     queryFn: fetchDepartments,
   });
   const { data: completedEntries = [], isLoading: isCompletedLoading } =
     useQuery({
-      queryKey: ["completedEntries"],
+       // scoped query key to avoid stale cross-department cache in employee route
+      queryKey: ["completedEntries", effectiveDeptId],
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/performance/get-completed-tasks?dept=${deptId}&type=KRA`
+            `/api/performance/get-completed-tasks?dept=${effectiveDeptId}&type=KRA`
           );
           return response.data;
         } catch (error) {
@@ -438,6 +452,38 @@ const PerformanceKra = () => {
       },
     },
   ];
+
+ const doesTaskBelongToLoggedInUser = (item) => {
+    if (!isEmployeeKraKpaRoute) return true;
+    const matchCandidates = [
+      item?.assignToId,
+      item?.assignedToId,
+      item?.createdById,
+      item?.completedById,
+      item?.assignTo,
+      item?.assignedTo,
+      item?.createdBy,
+      item?.completedBy,
+    ].flatMap((candidate) => (Array.isArray(candidate) ? candidate : [candidate]));
+    const hasOwnershipMetadata = matchCandidates.some((candidate) =>
+      normalizeValue(candidate)
+    );
+    if (!hasOwnershipMetadata) {
+      // Department-level KRA items may not carry assignee metadata.
+      // Keep them visible in employee route so logged-in users can work on their KRA list.
+      return true;
+    }
+    return matchCandidates.some((candidate) => {
+      const normalizedCandidate = normalizeValue(candidate);
+      if (!normalizedCandidate) return false;
+      return (
+        normalizedCandidate === normalizeValue(loggedInUserId) ||
+        normalizedCandidate === normalizeValue(loggedInUserName)
+      );
+    });
+  };
+  const filteredDepartmentKra = (departmentKra || []).filter(doesTaskBelongToLoggedInUser);
+  const filteredCompletedEntries = (completedEntries || []).filter(doesTaskBelongToLoggedInUser);
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -460,7 +506,7 @@ const PerformanceKra = () => {
                 //tableTitle={`${department} DEPARTMENT - DAILY KRA`}
                  //tableTitle={`${departmentName} DEPARTMENT - DAILY KRA`}
                  // tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}
-                data={(departmentKra || [])
+                 data={filteredDepartmentKra
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
                     srno: index + 1,
@@ -489,8 +535,8 @@ const PerformanceKra = () => {
                    tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName}`}
                   exportData={true}
                   checkAll={false}
-                  key={completedEntries.length}
-                  data={completedEntries.map((item, index) => ({
+                  key={filteredCompletedEntries.length}
+                  data={filteredCompletedEntries.map((item, index) => ({
                     srno: index + 1,
                     id: item.id,
                     taskName: item.taskName,

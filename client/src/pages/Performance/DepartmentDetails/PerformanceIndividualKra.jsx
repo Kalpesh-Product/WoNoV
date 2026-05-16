@@ -39,10 +39,18 @@ const PerformanceIndividualKra = () => {
  const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
     );
+ const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+    const primaryUserDepartment = auth?.user?.departments?.[0];
+    const effectiveDeptId = isEmployeeKraKpaRoute
+        ? primaryUserDepartment?._id
+        : deptId;
+    const effectiveDepartmentName = isEmployeeKraKpaRoute
+        ? primaryUserDepartment?.name
+        : selectedDepartmentName;
     const departmentName =
-        selectedDepartmentName ||
+        effectiveDepartmentName ||
         department ||
-        auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+        auth?.user?.departments?.find((dept) => dept._id === effectiveDeptId)?.name ||
         "Department";
          const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
     .filter(Boolean)
@@ -51,7 +59,7 @@ const PerformanceIndividualKra = () => {
     const userId = auth.user._id;
      const selectedMemberFromRoute = location.state?.selectedMember;
     const activeMember = selectedMemberFromRoute || selectedMember;
-    const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+   // const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
     const activeMemberName = isEmployeeKraKpaRoute
         ? loggedInUserName || "User Name"
         : activeMember?.memberName || loggedInUserName || "User Name";
@@ -84,7 +92,7 @@ const PerformanceIndividualKra = () => {
     });
 
     const allowedDept = auth.user.departments.some((item) => {
-        return item._id.toString() === deptId.toString();
+        return item._id.toString() === effectiveDeptId?.toString();
     });
 
     const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -97,7 +105,7 @@ const PerformanceIndividualKra = () => {
     const isHr = department === "HR";
 
     const matchingDepartment = auth.user?.departments?.some(
-        (dept) => dept._id === deptId
+        (dept) => dept._id === effectiveDeptId
     );
 
      const normalizeValue = (value) =>
@@ -110,13 +118,17 @@ const PerformanceIndividualKra = () => {
     const isSelectedMemberManager = selectedMemberRole.includes("manager");
     const isSelectedMemberEmployee =
         !!activeMember?.memberId && !isSelectedMemberManager;
+        const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
     const showCheckBox = allowedDept || selectedMemberCanManageView;
     const shouldHideControlsForSelectedMemberView =
         isSelectedMemberEmployee && activeMember?.memberId;
     const canShowControls =
-        !isSelectedMemberEmployee &&
-        (selectedMemberCanManageView || !activeMember?.memberId || isViewingOwnMember);
-    const canUseCheckbox = showCheckBox && !isSelectedMemberEmployee;
+          shouldForceOwnControlsInEmployeeRoute ||
+        (!isSelectedMemberEmployee &&
+        (selectedMemberCanManageView || !activeMember?.memberId || isViewingOwnMember));
+    const canUseCheckbox =
+        shouldForceOwnControlsInEmployeeRoute ||
+        (showCheckBox && !isSelectedMemberEmployee);
 
     useEffect(() => {
         queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
@@ -161,7 +173,7 @@ const PerformanceIndividualKra = () => {
                 task: data.individualDailyKra, // Fixed field name
                 taskType: "INDIVIDUALKRA",
                 // description: data.description,
-                department: deptId,
+                 department: effectiveDeptId,
                 assignedDate: data.assignedDate,
                 assignTo: data.assignTo,
             });
@@ -240,7 +252,7 @@ const PerformanceIndividualKra = () => {
     const fetchTasks = async () => {
         try {
             const response = await axios.get(
-                `/api/performance/get-tasks?dept=${deptId}&type=INDIVIDUALKRA`
+                 `/api/performance/get-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA`
             );
             return response.data;
         } catch (error) {
@@ -249,16 +261,16 @@ const PerformanceIndividualKra = () => {
         }
     };
     const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-        queryKey: ["fetchedIndividualKRA"],
+        queryKey: ["fetchedIndividualKRA", effectiveDeptId],
         queryFn: fetchTasks,
     });
 
     const { data: teamKraForIndividual = [] } = useQuery({
-        queryKey: ["fetchedTeamKRAForIndividual", deptId],
+        queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId],
         queryFn: async () => {
             try {
                 const response = await axios.get(
-                    `/api/performance/get-tasks?dept=${deptId}&type=TEAMKRA`
+                     `/api/performance/get-tasks?dept=${effectiveDeptId}&type=TEAMKRA`
                 );
                 return response.data;
             } catch (error) {
@@ -266,7 +278,7 @@ const PerformanceIndividualKra = () => {
                 return [];
             }
         },
-        enabled: !!deptId,
+        enabled: !!effectiveDeptId,
     });
 
     // const { data: assignees = [] } = useQuery({
@@ -279,11 +291,11 @@ const PerformanceIndividualKra = () => {
     // });
     const { data: completedEntries = [], isLoading: isCompletedLoading } =
         useQuery({
-            queryKey: ["completedEntries"],
+             queryKey: ["completedEntries", effectiveDeptId],
             queryFn: async () => {
                 try {
                     const response = await axios.get(
-                        `/api/performance/get-completed-tasks?dept=${deptId}&type=INDIVIDUALKRA`
+                        `/api/performance/get-completed-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA`
                     );
                     return response.data;
                 } catch (error) {
@@ -293,11 +305,11 @@ const PerformanceIndividualKra = () => {
             },
         });
     const { data: completedTeamEntries = [] } = useQuery({
-        queryKey: ["completedTeamEntriesKRA", deptId],
+        queryKey: ["completedTeamEntriesKRA", effectiveDeptId],
         queryFn: async () => {
             try {
                 const response = await axios.get(
-                    `/api/performance/get-completed-tasks?dept=${deptId}&type=TEAMKRA`
+                    `/api/performance/get-completed-tasks?dept=${effectiveDeptId}&type=TEAMKRA`
                 );
                 return response.data;
             } catch (error) {
@@ -305,7 +317,7 @@ const PerformanceIndividualKra = () => {
                 return [];
             }
         },
-        enabled: !!deptId,
+        enabled: !!effectiveDeptId,
     });    
 
     const departmentColumns = [
