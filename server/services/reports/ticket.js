@@ -1,4 +1,4 @@
-const Ticket = require("../../models/tickets/Tickets");
+const mongoose = require("mongoose");
 
 const fetchTicketReportService = async ({
   dateFilter,
@@ -11,9 +11,7 @@ const fetchTicketReportService = async ({
 
   try {
     if (departmentId && !mongoose.Types.ObjectId.isValid(departmentId)) {
-      return res
-        .status(400)
-        .json({ message: "Invalid department ID provided" });
+      throw new Error("Invalid department ID provided");
     }
 
     // Check if user has Master Admin role
@@ -24,8 +22,11 @@ const fetchTicketReportService = async ({
       (dept) => new mongoose.Types.ObjectId(dept._id),
     );
 
-    const selectedDepartments =
-      departmentIds.length > 1 ? departmentIds : departmentId;
+    const selectedDepartments = departmentIds.length
+      ? departmentIds
+      : departmentId
+        ? [new mongoose.Types.ObjectId(departmentId)]
+        : [];
 
     query = {
       company,
@@ -76,9 +77,7 @@ const fetchTicketReportService = async ({
       .lean()
       .exec();
 
-    if (!foundCompany) {
-      return res.status(400).json({ message: "Company not found" }); // fixed typo "josn" -> "json"
-    }
+    if (!foundCompany) throw new Error("Company not found");
 
     // Extract the ticket priority from the company's selected departments
     const updatedTickets = tickets.map((ticket) => {
@@ -98,7 +97,7 @@ const fetchTicketReportService = async ({
     console.log("Fetched tickets:", updatedTickets.length);
     return updatedTickets || [];
   } catch (error) {
-    next(error);
+    throw error;
   }
 };
 
