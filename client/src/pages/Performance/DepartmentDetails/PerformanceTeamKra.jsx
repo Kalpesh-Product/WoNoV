@@ -557,8 +557,8 @@ const PerformanceTeamKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                    tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName}`}
-                                    exportData={true}
+                                    tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
+                                    exportData={!isFutureDateView}
                                     checkAll={false}
                                     // key={filteredCompletedEntries.length}
                                     // data={filteredCompletedEntries.map((item, index) => ({
@@ -575,6 +575,7 @@ const PerformanceTeamKra = () => {
                                     }))}
                                     dateColumn={"completionDate"}
                                     columns={completedColumns}
+                                    hideDateControls
                                 />
                             </WidgetSection>
                         ) : (

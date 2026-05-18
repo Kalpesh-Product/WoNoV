@@ -434,13 +434,13 @@ const PerformanceKra = () => {
     { headerName: "Completed By", field: "completedBy",flex: 1 },
     {
       headerName: "Completed Date",
-      field: "dueDate",
+      field: "completionDate",
       flex: 1,
       cellRenderer: (params) => humanDate(params.value),
     },
     {
       headerName: "Completed Time",
-      field: "dueDate",
+      field: "completionTime",
       flex: 1,
       cellRenderer: (params) => humanTime(params.value),
     },
@@ -520,7 +520,7 @@ const PerformanceKra = () => {
   });
   const dateWiseCompletedEntries = filteredCompletedEntries.filter((item) => {
     const completionDate = item.completedDate || item.completionDate || item.dueDate;
-    return dayjs(completionDate).isValid() && dayjs(completionDate).format("YYYY-MM-DD") <= selectedDateKey;
+    return toDateKey(completionDate) === selectedDateKey;
   });    
   const getDepartmentRowStyle = (params) => {
     if (params?.data?.canMarkDoneRow || params?.data?.canEditDeleteRow) return {};
@@ -593,8 +593,8 @@ const PerformanceKra = () => {
               <WidgetSection padding>
                 <YearWiseTable
                   formatTime
-                   tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName}`}
-                  exportData={true}
+                   tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
+                  exportData={!isFutureDateView}
                   checkAll={false}
                   // key={filteredCompletedEntries.length}
                   // data={filteredCompletedEntries.map((item, index) => ({
@@ -605,12 +605,13 @@ const PerformanceKra = () => {
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
                     completionDate: item.completedDate || item.completionDate || item.dueDate,
-                    completionTime: item.completedDate || item.completionTime || item.dueDate,
+                    completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
                     status: item.status,
                     completedBy: item.completedBy,
                   }))}
                   dateColumn={"completionDate"}
                   columns={completedColumns}
+                  hideDateControls
                 />
               </WidgetSection>
             ) : (
