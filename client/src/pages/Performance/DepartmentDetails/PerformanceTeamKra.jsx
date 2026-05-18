@@ -37,13 +37,20 @@ const PerformanceTeamKra = () => {
     const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
     const today = useCurrentDay();
     const selectedMember = useSelector((state) => state.performance.selectedMember);
+    const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
+    const selectedDepartmentName = useSelector(
+        (state) => state.performance.selectedDepartmentName
+    );
     const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
     const primaryUserDepartment = auth?.user?.departments?.[0];
-    const deptId = primaryUserDepartment?._id;
+    const deptId = isEmployeeKraKpaRoute
+        ? primaryUserDepartment?._id
+        : selectedDepartment?.toString?.() || primaryUserDepartment?._id;
     const departmentName =
+        (isEmployeeKraKpaRoute ? primaryUserDepartment?.name : selectedDepartmentName) ||
         primaryUserDepartment?.name ||
         department ||
-        auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+        auth?.user?.departments?.find((dept) => dept._id?.toString() === deptId?.toString())?.name ||
         "Department";
     const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
         .filter(Boolean)

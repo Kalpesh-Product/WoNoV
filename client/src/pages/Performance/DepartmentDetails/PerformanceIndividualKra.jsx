@@ -38,14 +38,22 @@ const PerformanceIndividualKra = () => {
     const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
     const today = useCurrentDay();
     const selectedMember = useSelector((state) => state.performance.selectedMember);
+    const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
+    const selectedDepartmentName = useSelector(
+        (state) => state.performance.selectedDepartmentName
+    );
     const primaryUserDepartment = auth?.user?.departments?.[0];
  const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
-    const effectiveDeptId = primaryUserDepartment?._id;
-    const effectiveDepartmentName = primaryUserDepartment?.name;
+    const effectiveDeptId = isEmployeeKraKpaRoute
+        ? primaryUserDepartment?._id
+        : selectedDepartment?.toString?.() || primaryUserDepartment?._id;
+    const effectiveDepartmentName = isEmployeeKraKpaRoute
+        ? primaryUserDepartment?.name
+        : selectedDepartmentName || primaryUserDepartment?.name;
     const departmentName =
         effectiveDepartmentName ||
         department ||
-        auth?.user?.departments?.find((dept) => dept._id === effectiveDeptId)?.name ||
+        auth?.user?.departments?.find((dept) => dept._id?.toString() === effectiveDeptId?.toString())?.name ||
         "Department";
          const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
     .filter(Boolean)
@@ -100,7 +108,7 @@ const PerformanceIndividualKra = () => {
     const isHr = department === "HR";
 
     const matchingDepartment = auth.user?.departments?.some(
-        (dept) => dept._id === effectiveDeptId
+        (dept) => dept._id?.toString() === effectiveDeptId?.toString()
     );
 
      const normalizeValue = (value) =>
