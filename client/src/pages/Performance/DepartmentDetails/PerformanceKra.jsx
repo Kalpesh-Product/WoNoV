@@ -25,6 +25,7 @@ import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import { PERMISSIONS } from "../../../constants/permissions";
+import useCurrentDay from "../../../hooks/useCurrentDay";
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -33,20 +34,12 @@ const PerformanceKra = () => {
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
-  const deptId = useSelector((state) => state.performance.selectedDepartment);
    const selectedMember = useSelector((state) => state.performance.selectedMember);
-  const selectedDepartmentName = useSelector(
-    (state) => state.performance.selectedDepartmentName
-  );
 
-   const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
   const primaryUserDepartment = auth?.user?.departments?.[0];
-  const effectiveDeptId = isEmployeeKraKpaRoute
-    ? primaryUserDepartment?._id
-    : deptId;
-  const effectiveDepartmentName = isEmployeeKraKpaRoute
-    ? primaryUserDepartment?.name
-    : selectedDepartmentName;
+   const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+  const effectiveDeptId = primaryUserDepartment?._id;
+  const effectiveDepartmentName = primaryUserDepartment?.name;
   const departmentName =
     effectiveDepartmentName ||
     department ||
@@ -58,6 +51,7 @@ const PerformanceKra = () => {
     .trim();
   const [selectedKra, setSelectedKra] = useState(null);
    const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
+  const today = useCurrentDay();
 
   const restrictedRoles = [
     "IT Employee",
@@ -86,7 +80,7 @@ const PerformanceKra = () => {
   });
 
   const allowedDept = auth.user.departments.some((item) => {
-    return item._id.toString() === deptId.toString();
+    return item._id.toString() === effectiveDeptId?.toString();
   });
 
   const showCheckBox = allowedDept;
@@ -98,7 +92,7 @@ const PerformanceKra = () => {
   const isHr = department === "HR";
 
   const matchingDepartment = auth.user?.departments?.some(
-    (dept) => dept._id === deptId
+    (dept) => dept._id === effectiveDeptId
   );
    const selectedMemberFromRoute = location.state?.selectedMember;
   const activeMember = selectedMemberFromRoute || selectedMember;
@@ -125,15 +119,19 @@ const PerformanceKra = () => {
     normalizeValue(targetMemberName) === normalizeValue(loggedInUserName);
   const canManageSelectedMemberView = isManager || isSuperOrMasterAdmin;
   const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
-  const canShowControls =
-   shouldForceOwnControlsInEmployeeRoute ||
-    (!isSelectedMemberEmployee &&
-      (canManageSelectedMemberView || !targetMemberId || isViewingOwnMember));
+  const selectedDateKey = selectedDate.format("YYYY-MM-DD");
+  const todayKey = today.format("YYYY-MM-DD");
+  const isCurrentDateView = selectedDateKey === todayKey;
+  const isPastDateView = selectedDateKey < todayKey;
+  const isFutureDateView = selectedDateKey > todayKey;
+  const canShowControls = true;
   const canUseCheckbox =
-    shouldForceOwnControlsInEmployeeRoute ||
-    (!isSelectedMemberEmployee && (showCheckBox || canManageSelectedMemberView));
-     const isCurrentDateView = selectedDate.isSame(dayjs(), "day");
-  const canEditForSelectedDate = isManager || isCurrentDateView;
+    isSuperOrMasterAdmin ||
+    isCurrentDateView ||
+    (isManager && isFutureDateView) ||
+    shouldForceOwnControlsInEmployeeRoute;
+  const isEmployeeLevel = !isSuperOrMasterAdmin && !isManager;
+  const shouldHideActionsForEmployeeFuture = isEmployeeLevel && isFutureDateView;
     // isManager && targetMemberId && !isViewingOwnMember;
   //const isViewingOwnMember =
   //   normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
@@ -142,8 +140,8 @@ const PerformanceKra = () => {
   //   isManager && activeMember?.memberId && !isViewingOwnMember;
 
   useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
-  }, [department]);
+    queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
+  }, [effectiveDeptId]);
 
   const {
     handleSubmit: submitDailyKra,
@@ -166,8 +164,8 @@ const PerformanceKra = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
-      queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
+      queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
       toast.success(data.message || "KRA recurrence removed");
     },
     onError: () => {
@@ -183,14 +181,14 @@ const PerformanceKra = () => {
         task: data.dailyKra,
         taskType: "KRA",
         // description: data.description,
-        department: deptId,
+        department: effectiveDeptId,
         assignedDate: data.assignedDate,
       });
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
-      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
+      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
       toast.success(data.message || "KRA Added");
       reset();
       setOpenModal(false);
@@ -221,7 +219,7 @@ const PerformanceKra = () => {
         description: data.description || "",
       });
       toast.success("KRA updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
       setOpenModal(false);
       setIsEditMode(false);
       setEditingTaskId(null);
@@ -240,10 +238,10 @@ const PerformanceKra = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA"] });
-      queryClient.refetchQueries({ queryKey: ["completedEntries"] });
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA"] });
-      queryClient.invalidateQueries({ queryKey: ["completedEntries"] });
+      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
+      queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
+      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
+      queryClient.invalidateQueries({ queryKey: ["completedEntries", effectiveDeptId] });
       toast.success(data.message || "KRA updated");
     },
     onError: (error) => {
@@ -266,7 +264,7 @@ const PerformanceKra = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-     queryKey: ["fetchedDepartmentsKRA", effectiveDeptId],
+    queryKey: ["fetchedDepartmentsKRA", effectiveDeptId],
     queryFn: fetchDepartments,
   });
   const { data: completedEntries = [], isLoading: isCompletedLoading } =
@@ -310,7 +308,7 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-      ...((matchingDepartment || canManageSelectedMemberView) && canShowControls
+      ...(((isSuperOrMasterAdmin || !isPastDateView) && canShowControls && !shouldHideActionsForEmployeeFuture)
    // ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
       ? [
         {
@@ -319,18 +317,22 @@ const PerformanceKra = () => {
           field: "actions",
           width:250,
           cellRenderer: (params) => {
+            const rowCanMarkDone = !!params?.data?.canMarkDoneRow;
+            const rowCanEditDelete = !!params?.data?.canEditDeleteRow;
+            const showMarkAsDone = rowCanMarkDone;
+            const isRowSelected = !!params?.node?.selected;
+            const markAsDoneClass = isRowSelected
+              ? "bg-[#1E3D73] text-white shadow-md ring-2 ring-[#8fb2ff]"
+              : "bg-gray-300 text-gray-700";
+
             return (
               <div className="flex items-center">
                 {/* Mark As Done */}
+                {showMarkAsDone && (
                 <div
                   role="button"
                   onClick={() => {
-                    if (
-                      !params.node.selected ||
-                      !canEditForSelectedDate ||
-                      isUpdatePending ||
-                      isDeletePending
-                    )
+                    if (!rowCanMarkDone || !isRowSelected || isUpdatePending || isDeletePending)
                       return;
                     updateDailyKra(params.data.id);
                   }}
@@ -339,24 +341,28 @@ const PerformanceKra = () => {
                   <PrimaryButton
                     title={isUpdatePending ? "⏳" : "Mark As Done"}
                     disabled={
-                      !params.node.selected ||
+                      !rowCanMarkDone ||
+                      !isRowSelected ||
                       isUpdatePending ||
                       isDeletePending
                     }
                     //className="px-2 py-1 text-sm w-28"
                     //className="px-2 py-1 text-xs w-28"
-                    className="px-2 py-1 text-xs w-28 h-7"
+                    className={`px-2 py-1 text-xs w-28 h-7 ${markAsDoneClass}`}
                   />
                 </div>
+                )} 
                   {/* Edit Recurrence */}
-                   {!isAddKraDisabled && (
+                  {!isAddKraDisabled && (
                   <>
                     <button
                       type="button"
                       title="Edit"
-                      //disabled={!params.node.selected || isUpdatePending || isDeletePending}
-                         disabled={!params.node.selected || !canEditForSelectedDate || isUpdatePending || isDeletePending}
-                      onClick={() => handleOpenEditModal(params.data)}
+                      disabled={!isRowSelected || !rowCanEditDelete || isUpdatePending || isDeletePending}
+                      onClick={() => {
+                        if (!isRowSelected || !rowCanEditDelete) return;
+                        handleOpenEditModal(params.data);
+                      }}
                       className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                     >
                       <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
@@ -379,12 +385,15 @@ const PerformanceKra = () => {
                     type="button"
                     title="Delete Recurrence"
                     disabled={
-                      !params.node.selected ||
-                       !canEditForSelectedDate ||
+                       !isRowSelected ||
+                       !rowCanEditDelete ||
                       isDeletePending ||
                       isUpdatePending
                     }
-                    onClick={() => deleteDailyKraRecurrence(params.data.id)}
+                    onClick={() => {
+                      if (!isRowSelected || !rowCanEditDelete) return;
+                      deleteDailyKraRecurrence(params.data.id);
+                    }}
                     // className="ml-2 disabled:cursor-not-allowed"
                     className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                   >
@@ -465,15 +474,55 @@ const PerformanceKra = () => {
   const filteredCompletedEntries = isEmployeeKraKpaRoute
     ? completedEntries || []
     : completedEntries || [];
- const selectedDateLabel = selectedDate.format("DD MMM YYYY");
-  const dateWiseDepartmentKra = filteredDepartmentKra.filter((item) =>
-    dayjs(item.assignedDate).isValid() &&
-    dayjs(item.assignedDate).isSame(selectedDate, "day")
-  );
+  const selectedDateLabel = selectedDate.format("DD MMM YYYY");
+  const toDateKey = (value) => {
+    if (!value) return null;
+    const parsed = dayjs(value);
+    return parsed.isValid() ? parsed.format("YYYY-MM-DD") : null;
+  };
+  const dateWiseDepartmentKra = filteredDepartmentKra
+    .filter((item) => {
+      const rowDateKey = toDateKey(item.assignedDate || item.dueDate || item.createdAt);
+      if (!rowDateKey) return false;
+
+      return rowDateKey <= selectedDateKey;
+    })
+    .sort((a, b) => {
+      const aKey = toDateKey(a.assignedDate || a.dueDate || a.createdAt) || "";
+      const bKey = toDateKey(b.assignedDate || b.dueDate || b.createdAt) || "";
+      return aKey.localeCompare(bKey);
+    })
+    .map((item) => {
+    const rowDateKey = toDateKey(item.assignedDate || item.dueDate || item.createdAt);
+    const isBackdatedRow = rowDateKey < selectedDateKey;
+    const isViewingFutureDate = selectedDateKey > todayKey;
+    const canMarkDoneRow =
+      isSuperOrMasterAdmin ||
+      (isCurrentDateView && rowDateKey <= todayKey);
+    const canEditDeleteRow =
+      isSuperOrMasterAdmin ||
+      (isManager && (isViewingFutureDate || (isCurrentDateView && rowDateKey <= todayKey)));
+
+    return {
+      ...item,
+      isCarryoverRow: isBackdatedRow,
+      canMarkDoneRow,
+      canEditDeleteRow,
+    };
+  });
   const dateWiseCompletedEntries = filteredCompletedEntries.filter((item) => {
     const completionDate = item.completedDate || item.completionDate || item.dueDate;
-    return dayjs(completionDate).isValid() && dayjs(completionDate).isSame(selectedDate, "day");
+    return dayjs(completionDate).isValid() && dayjs(completionDate).format("YYYY-MM-DD") <= selectedDateKey;
   });    
+  const getDepartmentRowStyle = (params) => {
+    if (params?.data?.canMarkDoneRow || params?.data?.canEditDeleteRow) return {};
+
+    return {
+      backgroundColor: params?.data?.isCarryoverRow ? "#f3f4f6" : "#fafafa",
+      color: "#6b7280",
+      opacity: 0.75,
+    };
+  };
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -482,16 +531,16 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 formatTime
-                checkbox={canUseCheckbox && canShowControls}
+                checkbox={canUseCheckbox && canShowControls && !shouldHideActionsForEmployeeFuture}
                 buttonTitle={
-                  // !canShowControls
-                  !canShowControls || !canEditForSelectedDate
-                    ? undefined
-                    : "Add Daily KRA"
+                  isSuperOrMasterAdmin || isCurrentDateView
+                    ? "Add Daily KRA"
+                    : undefined
                 }
                 buttonDisabled={
-                 // isAddKraDisabled || !canShowControls
-                  isAddKraDisabled || !canShowControls || !canEditForSelectedDate
+                  isAddKraDisabled ||
+                  !canShowControls ||
+                  (!isSuperOrMasterAdmin && (isEmployeeLevel || !isCurrentDateView))
                 }
                 handleSubmit={() => setOpenModal(true)}
                   showDateNavigator
@@ -503,7 +552,7 @@ const PerformanceKra = () => {
                  //tableTitle={`${departmentName} DEPARTMENT - DAILY KRA`}
                  // tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}
                 // data={filteredDepartmentKra
-                 data={dateWiseDepartmentKra
+                  data={dateWiseDepartmentKra
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
                     srno: index + 1,
@@ -513,11 +562,15 @@ const PerformanceKra = () => {
                     dueDate: item.dueDate || item.assignedDate,
                     dueTime: item.dueTime,
                     status: item.status,
+                    isCarryoverRow: item.isCarryoverRow,
+                    canMarkDoneRow: item.canMarkDoneRow,
+                    canEditDeleteRow: item.canEditDeleteRow,
                   }))}
                 dateColumn={"assignedDate"}
                 //columns={departmentColumns}
                   columns={departmentColumns}
-                  isRowSelectable={() => canEditForSelectedDate}
+                  isRowSelectable={(params) => !!params?.data?.canMarkDoneRow || !!params?.data?.canEditDeleteRow}
+                  getRowStyle={getDepartmentRowStyle}
               />
             </WidgetSection>
           ) : (

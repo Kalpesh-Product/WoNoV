@@ -24,6 +24,7 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
+import useCurrentDay from "../../../hooks/useCurrentDay";
 
 const PerformanceTeamKra = () => {
     const axios = useAxiosPrivate();
@@ -34,14 +35,13 @@ const PerformanceTeamKra = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
     const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
-    const deptId = useSelector((state) => state.performance.selectedDepartment);
+    const today = useCurrentDay();
     const selectedMember = useSelector((state) => state.performance.selectedMember);
     const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
-     const selectedDepartmentName = useSelector(
-        (state) => state.performance.selectedDepartmentName
-    );
+    const primaryUserDepartment = auth?.user?.departments?.[0];
+    const deptId = primaryUserDepartment?._id;
     const departmentName =
-        selectedDepartmentName ||
+        primaryUserDepartment?.name ||
         department ||
         auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
         "Department";
@@ -96,11 +96,16 @@ const PerformanceTeamKra = () => {
     const shouldPrefillAssignTo = !!activeMember?.memberId && !isViewingOwnMember;
     const canManageSelectedMemberView = isSuperOrMasterAdmin || isManager;
     const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+    const selectedDateKey = selectedDate.format("YYYY-MM-DD");
+    const todayKey = today.format("YYYY-MM-DD");
+    const isCurrentDateView = selectedDateKey === todayKey;
+    const isPastDateView = selectedDateKey < todayKey;
+    const isFutureDateView = selectedDateKey > todayKey;
     const canShowControls =
      shouldForceOwnControlsInEmployeeRoute ||
+        isCurrentDateView ||
         canManageSelectedMemberView || !activeMember?.memberId || isViewingOwnMember;
-    const isCurrentDateView = selectedDate.isSame(dayjs(), "day");
-    const canEditForSelectedDate = isManager || isCurrentDateView;
+    const isEmployeeLevel = !isSuperOrMasterAdmin && !isManager;
 
     const restrictedRoles = [
         "IT Employee",
@@ -222,7 +227,7 @@ const PerformanceTeamKra = () => {
                 assignedDate: data.assignedDate,
             });
             toast.success("Team KRA updated successfully");
-            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA"] });
+            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKRA", deptId] });
             setOpenModal(false);
             setIsEditMode(false);
             setEditingTaskId(null);
@@ -349,7 +354,7 @@ const PerformanceTeamKra = () => {
             },
         },
         // ...(canShowControls && !isAddKraDisabled
-         ...(canShowControls
+         ...((canShowControls && (!isPastDateView || isSuperOrMasterAdmin))
             ? [
                 {
                     headerName: "Actions",
@@ -360,8 +365,11 @@ const PerformanceTeamKra = () => {
                             <button
                                     type="button"
                                     title="Edit"
-                                    onClick={() => handleOpenEditModal(params.data)}
-                                     disabled={!params.node.selected || !canEditForSelectedDate || isDeletePending}
+                                    onClick={() => {
+                                        if (!params.data?.canEditDeleteRow) return;
+                                        handleOpenEditModal(params.data);
+                                    }}
+                                     disabled={!params.data?.canEditDeleteRow || isDeletePending}
                                     className="ml-2"
                                 >
                                     <HiPencilSquare size={24} color="#111827" />
@@ -370,8 +378,11 @@ const PerformanceTeamKra = () => {
                                 <button
                                     type="button"
                                     title="Delete Recurrence"
-                                       disabled={!params.node.selected || !canEditForSelectedDate || isDeletePending}
-                                    onClick={() => deleteDailyKraRecurrence(params.data.id)}
+                                       disabled={!params.data?.canEditDeleteRow || isDeletePending}
+                                    onClick={() => {
+                                        if (!params.data?.canEditDeleteRow) return;
+                                        deleteDailyKraRecurrence(params.data.id);
+                                    }}
                                     className="ml-2 disabled:cursor-not-allowed"
                                 >
                                     {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
@@ -431,37 +442,74 @@ const PerformanceTeamKra = () => {
         },
     ];
     const selectedDateLabel = selectedDate.format("DD MMM YYYY");
-    const selectedDateKey = selectedDate.format("YYYY-MM-DD");
     const toDateKey = (value) => {
       if (!value) return null;
-      if (typeof value === "string" && value.includes("T")) return value.split("T")[0];
       const parsed = dayjs(value);
       return parsed.isValid() ? parsed.format("YYYY-MM-DD") : null;
     };
-    const dateWiseTeamKra = filteredTeamKra.filter(
-      (item) => toDateKey(item.assignedDate || item.dueDate) === selectedDateKey
-    );
+    const dateWiseTeamKra = filteredTeamKra
+      .filter((item) => {
+        const rowDateKey = toDateKey(item.assignedDate || item.dueDate || item.createdAt);
+        if (!rowDateKey) return false;
+
+        return rowDateKey <= selectedDateKey;
+      })
+      .sort((a, b) => {
+        const aKey = toDateKey(a.assignedDate || a.dueDate || a.createdAt) || "";
+        const bKey = toDateKey(b.assignedDate || b.dueDate || b.createdAt) || "";
+        return aKey.localeCompare(bKey);
+      })
+      .map((item) => {
+      const rowDateKey = toDateKey(item.assignedDate || item.dueDate || item.createdAt);
+      const isBackdatedRow = rowDateKey < selectedDateKey;
+      const canMarkDoneRow =
+        isSuperOrMasterAdmin ||
+        (isCurrentDateView && rowDateKey <= todayKey);
+      const canEditDeleteRow =
+        isSuperOrMasterAdmin ||
+        isManager ||
+        (isCurrentDateView && rowDateKey <= todayKey);
+
+      return {
+        ...item,
+        isCarryoverRow: isBackdatedRow,
+        canMarkDoneRow,
+        canEditDeleteRow,
+      };
+    });
     const dateWiseCompletedEntries = (filteredCompletedEntries || []).filter((item) => {
       const completionDate = item.completedDate || item.completionDate || item.dueDate;
       return toDateKey(completionDate) === selectedDateKey;
     });
+    const getTeamRowStyle = (params) => {
+      if (params?.data?.canEditDeleteRow || params?.data?.canMarkDoneRow) return {};
+
+      return {
+        backgroundColor: params?.data?.isCarryoverRow ? "#f3f4f6" : "#fafafa",
+        color: "#6b7280",
+        opacity: 0.75,
+      };
+    };
     return (
         <>
             <div className="flex flex-col gap-4">
                 <PageFrame>
                     {!teamLoading ? (
                         <WidgetSection padding layout={1}>
-                            <YearWiseTable
+                                <YearWiseTable
                                 formatTime
                                 checkbox={false}
                                 buttonTitle={
-                                    // !canShowControls
-                                      !canShowControls || !canEditForSelectedDate
-                                        ? undefined
-                                        : "Add Team Daily KRA"
+                                      isSuperOrMasterAdmin || isCurrentDateView
+                                        ? "Add Team Daily KRA"
+                                        : undefined
                                 }
                                // buttonDisabled={isAddKraDisabled || !canShowControls}
-                                buttonDisabled={isAddKraDisabled || !canShowControls || !canEditForSelectedDate}
+                                buttonDisabled={
+                                    isAddKraDisabled ||
+                                    !canShowControls ||
+                                    (!isSuperOrMasterAdmin && (isEmployeeLevel || !isCurrentDateView))
+                                }
                                 handleSubmit={() => setOpenModal(true)}
                                  showDateNavigator
                                 selectedDateLabel={selectedDateLabel}
@@ -480,10 +528,14 @@ const PerformanceTeamKra = () => {
                                         dueTime: item.dueTime,
                                         status: item.status,
                                         assignedTo: item.assignedTo,
+                                        isCarryoverRow: item.isCarryoverRow,
+                                        canMarkDoneRow: item.canMarkDoneRow,
+                                        canEditDeleteRow: item.canEditDeleteRow,
                                     }))}
                                 dateColumn={"assignedDate"}
                                 columns={teamColumns}
-                                isRowSelectable={() => canEditForSelectedDate}
+                                isRowSelectable={(params) => !!params?.data?.canMarkDoneRow || !!params?.data?.canEditDeleteRow}
+                                getRowStyle={getTeamRowStyle}
                             />
                         </WidgetSection>
                     ) : (
@@ -509,8 +561,8 @@ const PerformanceTeamKra = () => {
                                         id: item.id,
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
-                                        completionDate: item.completedDate || item.dueDate,
-                                        completionTime: item.completedDate || item.dueDate,
+                                        completionDate: item.completedDate || item.completionDate || item.dueDate,
+                                        completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
                                         status: item.status,
                                         completedBy: item.completedBy,
                                     }))}
