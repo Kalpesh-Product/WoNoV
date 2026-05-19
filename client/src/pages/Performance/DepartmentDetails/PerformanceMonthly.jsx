@@ -38,6 +38,7 @@ const PerformanceMonthly = () => {
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName
@@ -118,7 +119,71 @@ const PerformanceMonthly = () => {
   );
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_MONTHLY_KPA.value);
+  const roleTitles = (auth?.user?.role || []).map((role) => role?.roleTitle?.toLowerCase?.() || "");
+  const isMasterOrSuperAdmin = roleTitles.some((title) =>
+    ["master admin", "super admin"].includes(title)
+  );
   const canDeleteRecurrence = !isAddKpaDisabled;
+    const getRowMonthBucket = (row) => {
+    const rowDate = dayjs(row?.dueDate || row?.assignedDate);
+    if (!rowDate.isValid()) return "current";
+
+    const now = dayjs();
+    const rowMonth = rowDate.startOf("month");
+    const currentMonth = now.startOf("month");
+
+    if (rowMonth.isBefore(currentMonth)) return "previous";
+    if (rowMonth.isAfter(currentMonth)) return "next";
+    return "current";
+  };
+
+  const getRowPermissions = (row) => {
+    if (isMasterOrSuperAdmin) {
+      return {
+        showActionColumn: true,
+        showMarkAsDone: true,
+        showEdit: true,
+        showDelete: true,
+        disableRowSelection: false,
+      };
+    }
+
+    const monthBucket = getRowMonthBucket(row);
+
+    if (monthBucket === "previous") {
+      return {
+        showActionColumn: false,
+        showMarkAsDone: false,
+        showEdit: false,
+        showDelete: false,
+        disableRowSelection: true,
+      };
+    }
+
+    if (monthBucket === "next") {
+      return {
+        showActionColumn: true,
+        showMarkAsDone: false,
+        showEdit: true,
+        showDelete: true,
+        disableRowSelection: false,
+      };
+    }
+
+    return {
+      showActionColumn: true,
+      showMarkAsDone: true,
+      showEdit: true,
+      showDelete: true,
+      disableRowSelection: false,
+    };
+  };
+
+
+  const shouldHideAddButtonForManager =
+    !isMasterOrSuperAdmin &&
+    isManager &&
+    ["previous", "next"].includes(activeViewMonthBucket);
 
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -168,7 +233,8 @@ const PerformanceMonthly = () => {
         task: data.kpaName,
         taskType: "KPA",
         // description: data.description,
-        department: deptId,
+       // department: deptId,
+         department: effectiveDeptId,
         assignedDate: data.startDate,
         dueDate: data.endDate,
         kpaDuration: "Monthly",
@@ -354,7 +420,8 @@ const PerformanceMonthly = () => {
         );
       },
     },
-        ...(matchingDepartment || isManager
+     ...(matchingDepartment || isManager || isMasterOrSuperAdmin
+        // ...(matchingDepartment || isManager
    // ...(matchingDepartment
       ? [
         {
@@ -363,15 +430,21 @@ const PerformanceMonthly = () => {
           field: "actions",
           width:250,
           cellRenderer: (params) => {
+                        const rowPermissions = getRowPermissions(params.data);
+            const isSelectionBlocked = rowPermissions.disableRowSelection;
+            const isRowSelected = params.node.selected && !isSelectionBlocked;
+
             return (
               <div className="flex items-center">
 
                 {/* Mark As Done */}
+                 {rowPermissions.showMarkAsDone && (
                 <div
                   role="button"
                   onClick={() => {
                     if (
-                      !params.node.selected ||
+                      // !params.node.selected ||
+                      !isRowSelected ||
                       isUpdatePending ||
                       isDeletePending
                     )
@@ -384,24 +457,29 @@ const PerformanceMonthly = () => {
                   <PrimaryButton
                     title={isUpdatePending ? "⏳" : "Mark As Done"}
                     disabled={
-                      !params.node.selected ||
+                       !isRowSelected ||
+                      // !params.node.selected ||
                       isUpdatePending ||
                       isDeletePending
                     }
                     className="px-2 py-1 text-xs w-28 h-7"
                   />
                 </div>
+                  )}
 
                 {/* Edit Recurrence */}
-                {!isAddKpaDisabled && (
+                {/* {!isAddKpaDisabled && ( */}
+                  {rowPermissions.showEdit && !isAddKpaDisabled && (
                   <button
                     type="button"
                     title="Edit"
-                    disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                     disabled={!isRowSelected || isUpdatePending || isDeletePending}
+                   // disabled={!params.node.selected || isUpdatePending || isDeletePending}
                     onClick={() => handleOpenEditModal(params.data)}
                     className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                   >
-                    <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
+                    {/* <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} /> */}
+                    <HiPencilSquare size={24} color={!isRowSelected ? "#9ca3af" : "#111827"} />
                   </button>
                 )}
                    {/* <button
@@ -414,12 +492,14 @@ const PerformanceMonthly = () => {
                   <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
                 </button> */}
                  {/* Delete Recurrence */}
-                {canDeleteRecurrence && (
+                {/* {canDeleteRecurrence && ( */}
+                 {rowPermissions.showDelete && canDeleteRecurrence && (
                   <button
                     type="button"
                     title="Delete Recurrence"
                     disabled={
-                      !params.node.selected ||
+                       !isRowSelected ||
+                      // !params.node.selected ||
                       isDeletePending ||
                       isUpdatePending
                     }
@@ -433,7 +513,8 @@ const PerformanceMonthly = () => {
                     ) : (
                       <MdDeleteForever
                         size={26}
-                        color={!params.node.selected ? "gray" : "red"}
+                        color={!isRowSelected ? "gray" : "red"}
+                       // color={!params.node.selected ? "gray" : "red"}
                       />
                     )}
                   </button>
@@ -517,6 +598,20 @@ const PerformanceMonthly = () => {
   };
   const filteredDepartmentKpa = (departmentKra || []).filter(doesTaskBelongToLoggedInUser);
   const filteredCompletedEntries = (completedEntries || []).filter(doesTaskBelongToLoggedInUser);
+   const handleDepartmentDateFilterChange = ({ filteredData = [] }) => {
+    if (!filteredData.length) {
+      setActiveViewMonthBucket("current");
+      return;
+    }
+
+    const buckets = new Set(filteredData.map((item) => getRowMonthBucket(item)));
+    if (buckets.size === 1) {
+      setActiveViewMonthBucket([...buckets][0]);
+      return;
+    }
+
+    setActiveViewMonthBucket("current");
+  };
   // const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
   //   if (!activeMember?.memberName) return true;
   //   return (item?.assignedTo || "").toString().trim() === activeMember.memberName;
@@ -536,8 +631,10 @@ const PerformanceMonthly = () => {
                   tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${activeMemberName}`}
                 //tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                 //tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
-                buttonTitle={"Add Monthly KPA"}
-                buttonDisabled={isAddKpaDisabled}
+                // buttonTitle={"Add Monthly KPA"}
+                // buttonDisabled={isAddKpaDisabled}
+                  buttonTitle={shouldHideAddButtonForManager ? "" : "Add Monthly KPA"}
+                buttonDisabled={shouldHideAddButtonForManager || isAddKpaDisabled}
                 handleSubmit={() => {
                   setIsEditMode(false);
                   setEditingTaskId(null);
@@ -558,6 +655,9 @@ const PerformanceMonthly = () => {
                 ]}
                 dateColumn={"dueDate"}
                 columns={departmentColumns}
+                isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
+                onDateFilterChange={handleDepartmentDateFilterChange}
+
               />
             </WidgetSection>
           ) : (
