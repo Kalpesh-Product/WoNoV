@@ -175,6 +175,27 @@ const DepartmentReportCommon = () => {
     return prefix ? { [prefix]: value } : {};
   };
 
+  // const flattenObject = (obj, prefix = "") => {
+  //   let result = {};
+
+  //   Object.entries(obj || {}).forEach(([key, value]) => {
+  //     const nextKey = prefix ? `${prefix}.${key}` : key;
+
+  //     if (value === null || value === undefined) {
+  //       result[nextKey] = "";
+  //     } else if (Array.isArray(value)) {
+  //       // skip arrays here
+  //       result[nextKey] = JSON.stringify(value);
+  //     } else if (typeof value === "object") {
+  //       Object.assign(result, flattenObject(value, nextKey));
+  //     } else {
+  //       result[nextKey] = value;
+  //     }
+  //   });
+
+  //   return result;
+  // };
+
   const flattenObject = (obj, prefix = "") => {
     let result = {};
 
@@ -183,12 +204,42 @@ const DepartmentReportCommon = () => {
 
       if (value === null || value === undefined) {
         result[nextKey] = "";
-      } else if (Array.isArray(value)) {
-        // skip arrays here
-        result[nextKey] = JSON.stringify(value);
-      } else if (typeof value === "object") {
+      }
+
+      // Arrays
+      else if (Array.isArray(value)) {
+        if (!value.length) {
+          result[nextKey] = "";
+        }
+
+        // array of objects
+        else if (typeof value[0] === "object") {
+          result[nextKey] = value
+            .map((item) => {
+              return (
+                item.employeeName ||
+                item.firstName ||
+                item.name ||
+                item.email ||
+                JSON.stringify(item)
+              );
+            })
+            .join(" | ");
+        }
+
+        // primitive arrays
+        else {
+          result[nextKey] = value.join(" | ");
+        }
+      }
+
+      // Objects
+      else if (typeof value === "object") {
         Object.assign(result, flattenObject(value, nextKey));
-      } else {
+      }
+
+      // Primitive
+      else {
         result[nextKey] = value;
       }
     });
@@ -293,8 +344,43 @@ const DepartmentReportCommon = () => {
           response?.data?.downloadUrl || response?.data?.fileUrl || null;
 
         const reportData = response?.data?.data || null;
+
+        const hasDataPayload = (() => {
+          if (!reportData) return false;
+
+          // direct array
+          if (Array.isArray(reportData)) {
+            return reportData.length > 0;
+          }
+
+          // object with nested arrays
+          if (typeof reportData === "object") {
+            return Object.values(reportData).some((value) => {
+              if (Array.isArray(value)) {
+                return value.length > 0;
+              }
+
+              if (value && typeof value === "object") {
+                return Object.keys(value).length > 0;
+              }
+
+              return Boolean(value);
+            });
+          }
+
+          return Boolean(reportData);
+        })();
         const reportRow = reports.find((r) => r?._id === reportId);
-        const hasDataPayload = hasReportData(reportData);
+
+        if (!hasDataPayload && !downloadUrl) {
+          setDownloadedByReportId((prev) => ({
+            ...prev,
+            [reportId]: false,
+          }));
+
+          toast.info("No data found for the selected filters.");
+          return;
+        }
 
         const downloadStarted =
           (hasDataPayload &&
@@ -303,13 +389,11 @@ const DepartmentReportCommon = () => {
 
         setDownloadedByReportId((prev) => ({
           ...prev,
-          [reportId]: downloadStarted,
+          [reportId]: Boolean(downloadStarted),
         }));
 
         if (downloadStarted) {
           toast.success("Report Generated.");
-        } else if (!hasDataPayload && !downloadUrl) {
-          toast.info("No data found for the selected filters.");
         } else {
           toast.error("Report generated, but no file payload was returned");
         }
@@ -538,34 +622,8 @@ const DepartmentReportCommon = () => {
   const columns = [
     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
     { field: "reportName", headerName: "Report Name", flex: 1 },
-    // {
-    //   field: "status",
-    //   headerName: "Status",
-    //   flex: 1,
-    //   cellRenderer: (params) => {
-    //     const isActive = Boolean(params?.value);
-    //     return (
-    //       <Chip
-    //         label={isActive ? "Active" : "Inactive"}
-    //         style={{
-    //           backgroundColor: isActive ? "#90EE90" : "#FFD6D6",
-    //           color: isActive ? "#006400" : "#B00020",
-    //         }}
-    //       />
-    //     );
-    //   },
-    // },
     { field: "startDate", headerName: "Start Date", flex: 1 },
     { field: "endDate", headerName: "End Date", flex: 1 },
-    // {
-    //   field: "dateRange",
-    //   headerName: "Date Range",
-    //   renderCell: ({ row }) => {
-    //     if (!row.startDate || !row.endDate) return "—";
-
-    //     return `${humanDate(row.dateRange)} → ${humanDate(row.dateRange)}`;
-    //   },
-    // },
     {
       field: "download",
       headerName: "Download",
@@ -749,40 +807,3 @@ const DepartmentReportCommon = () => {
 };
 
 export default DepartmentReportCommon;
-
-// import React from "react";
-// import AgTable from "../../components/AgTable";
-
-// const DepartmentReportCommon = ({ title }) => {
-// //   useEffect(() => {
-// //     document.title = title || "WoNoV";
-
-// //     return () => {
-// //       document.title = "WoNoV";
-// //     };
-// //   }, [title]);
-
-//   const DepartmentReportCommons = [
-//     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
-//     { field: "reportName", headerName: "Report Name", flex: 1 },
-//     { field: "status", headerName: "Status", maxWidth: 180 },
-//     { field: "date", headerName: "Date", maxWidth: 180 },
-//     { field: "lastModified", headerName: "Last Modified", flex: 1 },
-//     { field: "download", headerName: "Download", maxWidth: 140 },
-//   ];
-
-//   return (
-//     <div className="bg-white min-h-full p-4">
-//       <div className="rounded-xl border border-borderGray bg-white p-4 shadow-sm">
-//         <AgTable
-//           tableTitle={title}
-//           data={[]}
-//           columns={DepartmentReportCommons}
-//           search={true}
-//         />
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default DepartmentReportCommon;

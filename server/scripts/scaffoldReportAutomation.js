@@ -53,17 +53,19 @@ function createServiceFile({ key, serviceName, controllerFile, controllerFn }) {
     return filePath;
   }
 
-  const content = `const ${serviceName} = async ({ filters, departmentId, departments = [], roles = [] }) => {
+  const content = `const ${serviceName} = async ({ dateFilter, departmentId, departments = [], roles = [],company,user }) => {
   // TODO: Move business logic from controller here.
   // Source controller: ${controllerFile || "n/a"}${controllerFn ? `#${controllerFn}` : ""}
   return {
     rows: [],
     meta: {
       reportKey: '${key}',
-      filters,
+      dateFilter,
       departmentId,
       departmentsCount: departments.length,
       roles,
+      company,
+      user
     },
   };
 };
@@ -89,7 +91,7 @@ function updateRegistry({ key, serviceName }) {
     }
   }
 
-  const registryEntry = `  '${key}': async ({ filters, departmentId, departments, roles }) =>\n    ${serviceName}({ filters, departmentId, departments, roles }),`;
+  const registryEntry = `  '${key}': async ({ dateFilter, departmentId, departments, roles,company,user }) =>\n    ${serviceName}({ dateFilter, departmentId, departments, roles,company,user }),`;
 
   if (!content.includes(`'${key}':`) && !content.includes(`${key}:`)) {
     content = content.replace(
@@ -136,7 +138,7 @@ function updateController({ controllerFile, controllerFn, serviceName, key }) {
     );
   }
 
-  const replacement = `async function ${controllerFn}(req, res) {\n  const payload = await ${serviceName}({\n    filters: req.body?.filters || {},\n    departmentId: req.body?.department,\n    departments: req.body?.departments || [],\n    roles: req.body?.roles || [],\n  });\n\n  return res.status(200).json(payload);\n}`;
+  const replacement = `async function ${controllerFn}(req, res) {\n  const payload = await ${serviceName}({\n    dateFilter: req.body?.dateFilter || {},\n    departmentId: req.body?.department,\n    departments: req.body?.departments || || req?.departments || [],\n    roles: req?.roles || [],\n    company: req?.company || null,\n    user: req?.user || null  });\n\n  return res.status(200).json(payload);\n}`;
 
   content = content.replace(fnRegex, replacement);
   fs.writeFileSync(controllerPath, content, "utf8");

@@ -1,6 +1,11 @@
 const buildDateFilter = require("../../utils/dateFilter");
 const { fetchBudgetService } = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
+const {
+  fetchDeptTaskReportService,
+  fetchMyTasksReportService,
+} = require("./task");
+const { fetchAssetReportService } = require("./asset");
 const { fetchMeetingReportService } = require("./meeting");
 const { fetchVisitorReportService } = require("./visitor");
 
@@ -17,6 +22,78 @@ const normalizeReportIdentifier = (value = "") =>
  * Keeping reportName aliases for backward compatibility.
  */
 const reportServiceRegistry = {
+  "my-task": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchMyTasksReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "assignedDate",
+          user: user,
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+    }),
+  "department-task": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchDeptTaskReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "assignedDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+      isReport: true,
+    }),
+
+  asset: async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+    query,
+  }) =>
+    fetchAssetReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "createdAt",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+      query,
+    }),
+
   meeting: async ({ dateFilter, company, departmentId, departments, roles }) =>
     fetchMeetingReportService({
       dateFilter: {
@@ -45,18 +122,6 @@ const reportServiceRegistry = {
     }),
 
   budget: async ({ dateFilter, departmentId }) =>
-    fetchBudgetService({
-      departmentId,
-      dateFilter: {
-        ...buildDateFilter({
-          startDate: dateFilter?.startDate,
-          endDate: dateFilter?.endDate,
-          field: "dueDate",
-        }),
-      },
-    }),
-
-  "expense-and-budget": async ({ dateFilter, departmentId }) =>
     fetchBudgetService({
       departmentId,
       dateFilter: {

@@ -9,6 +9,12 @@ require("./roles/Roles");
 //Finance
 require("./budget/Budget");
 
+//Client
+require("./sales/ClientService");
+require("./sales/CoworkingClient");
+require("./sales/CoworkingMembers");
+require("./sales/MeetingRevenue");
+
 //Tickets
 require("./tickets/Tickets");
 require("./tickets/supportTickets");
@@ -23,8 +29,6 @@ require("./meetings/Meetings");
 require("./meetings/Reviews");
 require("./meetings/Rooms");
 
-//Client
-require("./sales/ClientService");
-require("./sales/CoworkingClient");
-require("./sales/CoworkingMembers");
-require("./sales/MeetingRevenue");
+//Assets
+require("./assets/Assets");
+require("./assets/AssignAsset");

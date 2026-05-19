@@ -59,13 +59,16 @@ const worker = new Worker(
         .lean();
       const roles = (foundUser?.role || []).map((role) => role.name);
       const company = foundUser.company;
+      const user = foundUser._id;
 
+      console.log("user worker", user);
       data = await reportService({
         dateFilter: reportJob.filters,
         departmentId: reportJob.department,
         departments: reportJob.departments || [],
         roles,
         company,
+        user,
       });
 
       const latestState =
