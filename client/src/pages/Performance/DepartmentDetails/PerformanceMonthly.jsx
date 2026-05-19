@@ -666,7 +666,7 @@ const PerformanceMonthly = () => {
                 //tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
                 // buttonTitle={"Add Monthly KPA"}
                 // buttonDisabled={isAddKpaDisabled}
-                  buttonTitle={shouldHideAddButtonForManager ? "" : "Add Monthly KPA"}
+                  buttonTitle={shouldHideAddButtonForManager ? "" : "Add Department Monthly KPA"}
                 buttonDisabled={shouldHideAddButtonForManager || isAddKpaDisabled}
                 handleSubmit={() => {
                   setIsEditMode(false);
@@ -710,7 +710,7 @@ const PerformanceMonthly = () => {
                 //   ...completedEntries.map((item, index) => ({
                 //     tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
                 // key={completedEntries.length}
-                tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName} - ${selectedMonthLabel}`}
+                tableTitle={`COMPLETED -Department Monthly KPA - ${activeMemberName} - ${selectedMonthLabel}`}
                 key={`${completedEntriesForSelectedMonth.length}-${selectedMonthLabel}`}
                 exportData={showCompletedExport}
                 hideDateControls
@@ -739,7 +739,7 @@ const PerformanceMonthly = () => {
       <MuiModal
         open={openModal}
         onClose={resetModalState}
-       title={isEditMode ? "Edit Task" : "Add Monthly KPA"}
+       title={isEditMode ? "Edit Task" : "Add Department Monthly KPA"}
       >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}

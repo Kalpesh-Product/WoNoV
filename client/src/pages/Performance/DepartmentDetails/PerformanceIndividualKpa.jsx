@@ -39,6 +39,7 @@ const PerformanceIndividualKpa = () => {
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
+      const [modalTaskType, setModalTaskType] = useState("INDIVIDUALKPA");
     const deptId = useSelector((state) => state.performance.selectedDepartment);
 
     const selectedDepartmentName = useSelector(
@@ -221,7 +222,8 @@ const PerformanceIndividualKpa = () => {
         mutationFn: async (data) => {
             const response = await axios.post("/api/performance/create-task", {
                 task: data.kpaName,
-                taskType: "INDIVIDUALKPA",
+                  taskType: modalTaskType,
+                //taskType: "INDIVIDUALKPA",
                 // description: data.description,
                  department: effectiveDeptId,
                 assignedDate: data.startDate,
@@ -232,8 +234,12 @@ const PerformanceIndividualKpa = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
-            queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
+            // queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
+            // queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
+              queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA", effectiveDeptId] });
+            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKPAForIndividual", effectiveDeptId] });
+            queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA", effectiveDeptId] });
+            queryClient.refetchQueries({ queryKey: ["fetchedTeamKPAForIndividual", effectiveDeptId] });
             toast.success(data.message || "KPA Added");
             reset();
             reset();
@@ -290,7 +296,14 @@ const PerformanceIndividualKpa = () => {
         }
         const payload = {
             ...data,
-            assignTo: userId,
+  assignTo:
+                modalTaskType === "TEAMKPA"
+                    ? Array.isArray(data.assignTo)
+                        ? data.assignTo
+                        : data.assignTo
+                          ? [data.assignTo]
+                          : []
+                    : userId,
         };
         addMonthlyKpa(payload);
     };
@@ -348,6 +361,15 @@ const PerformanceIndividualKpa = () => {
             }
         },
           enabled: !!effectiveDeptId,
+    });
+
+    const { data: assignees = [] } = useQuery({
+        queryKey: ["fetchAssignees", effectiveDeptId],
+        queryFn: async () => {
+            const response = await axios.get(`/api/users/assignees?deptId=${effectiveDeptId}`);
+            return response.data;
+        },
+        enabled: !!effectiveDeptId,
     });
 
     // const { data: assignees = [] } = useQuery({
@@ -609,6 +631,28 @@ const PerformanceIndividualKpa = () => {
     const selectedMemberName = isEmployeeKraKpaRoute
         ? loggedInUserName?.toString()?.trim()
         : activeMember?.memberName?.toString()?.trim();
+     const openAddIndividualModal = () => {
+        setModalTaskType("INDIVIDUALKPA");
+        setIsEditMode(false);
+        setEditingTaskId(null);
+        reset({ kpaName: "", startDate: null, endDate: null, description: "", assignTo: "" });
+        setOpenModal(true);
+    };
+
+    const openAddTeamModal = () => {
+        setModalTaskType("TEAMKPA");
+        setIsEditMode(false);
+        setEditingTaskId(null);
+        reset({
+            kpaName: "",
+            startDate: null,
+            endDate: null,
+            description: "",
+            assignTo: selectedMemberId ? [selectedMemberId] : [],
+        });
+        setOpenModal(true);
+    };
+    
     const matchesSelectedMember = (assigneeValue) => {
         const assignees = Array.isArray(assigneeValue) ? assigneeValue : [assigneeValue];
         return assignees.some((assignee) => {
@@ -690,19 +734,35 @@ const PerformanceIndividualKpa = () => {
                                 // }
                                 // buttonDisabled={
                                 //     isAddKpaDisabled || shouldHideAddButtonForSelectedMemberView
-                                 buttonTitle={
-                                                                      hideMemberLevelControls || !canShowControls || isRestrictedRoleInNonCurrentMonth
+                                //  buttonTitle={
+                                //                                       hideMemberLevelControls || !canShowControls || isRestrictedRoleInNonCurrentMonth
+                                //         ? undefined
+                                //         : "Add Monthly KPA"
+                                                                 buttonTitle={
+                                    hideMemberLevelControls || !canShowControls || isRestrictedRoleInNonCurrentMonth
                                         ? undefined
-                                        : "Add Monthly KPA"
+                                        : isEmployeeKraKpaRoute
+                                          ? "Add Monthly KPA"
+                                          : undefined
                                 }
                                 buttonDisabled={
                                      hideMemberLevelControls || isAddKpaDisabled || !canShowControls || isRestrictedRoleInNonCurrentMonth
                                 }
-                                handleSubmit={() => {    
-                                    setIsEditMode(false);
-                                    setEditingTaskId(null);
-                                    setOpenModal(true);
-                                }}
+                                // handleSubmit={() => {    
+                                //     setIsEditMode(false);
+                                //     setEditingTaskId(null);
+                                //     setOpenModal(true);
+                                // }}
+                                  handleSubmit={openAddIndividualModal}
+                                middleButtonTitle={
+                                    hideMemberLevelControls || !canShowControls || isRestrictedRoleInNonCurrentMonth || isEmployeeKraKpaRoute
+                                        ? undefined
+                                        : "Add Team Monthly KPA"
+                                }
+                                middleButtonDisabled={
+                                    hideMemberLevelControls || isAddKpaDisabled || !canShowControls || isRestrictedRoleInNonCurrentMonth
+                                }
+                                handleMiddleSubmit={openAddTeamModal}
                                 key={departmentKra.length}
                                 data={[
                                       ...filteredDepartmentKpa
@@ -750,7 +810,7 @@ const PerformanceIndividualKpa = () => {
                                 //     ...completedEntries.map((item, index) => ({
                                 //        tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
                                 // key={filteredCompletedEntries.length}
-                               tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName} - ${getMonthHeaderLabel()}`}
+                               tableTitle={`COMPLETED - INDIVIDUAL MONTHLY KPA - ${activeMemberName} - ${getMonthHeaderLabel()}`}
                                 key={completedEntriesForSelectedMonth.length}
                                 hideDateControls={true}
                                 exportData={selectedMonthContext !== "next"}
@@ -780,7 +840,8 @@ const PerformanceIndividualKpa = () => {
             <MuiModal
                 open={openModal}
                 onClose={resetModalState}
-              title={isEditMode ? "Edit Task" : "Add Monthly KPA"}
+             // title={isEditMode ? "Edit Task" : "Add Monthly KPA"}
+                           title={isEditMode ? "Edit Task" : modalTaskType === "TEAMKPA" ? "Add Team Monthly KPA" : "Add Individual Monthly KPA"}
             >
                 <form
                     onSubmit={submitDailyKra(handleFormSubmit)}
@@ -904,6 +965,58 @@ const PerformanceIndividualKpa = () => {
                     />
 
                     {/* removed assignTo dropdown */}
+                     {modalTaskType === "TEAMKPA" && (
+                        <Controller
+                            name="assignTo"
+                            control={control}
+                            rules={{ required: "Assign To is required" }}
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    select
+                                    size="small"
+                                    label="Assign To"
+                                    fullWidth
+                                    value={field.value || []}
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        field.onChange(
+                                            Array.isArray(value)
+                                                ? value
+                                                : typeof value === "string"
+                                                  ? value
+                                                        .split(",")
+                                                        .map((id) => id.trim())
+                                                        .filter(Boolean)
+                                                  : []
+                                        );
+                                    }}
+                                    error={!!errors?.assignTo?.message}
+                                    helperText={errors?.assignTo?.message}
+                                    SelectProps={{
+                                        multiple: true,
+                                        renderValue: (selected) => (
+                                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                                                {selected.map((value) => (
+                                                    <Chip
+                                                        key={value}
+                                                        label={assignees.find((a) => a.id === value)?.name || value}
+                                                        size="small"
+                                                    />
+                                                ))}
+                                            </div>
+                                        ),
+                                    }}
+                                >
+                                    {assignees?.map((member) => (
+                                        <MenuItem key={member.id} value={member.id}>
+                                            {member.name}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            )}
+                        />
+                    )}  
 
                     <PrimaryButton
                         type="submit"

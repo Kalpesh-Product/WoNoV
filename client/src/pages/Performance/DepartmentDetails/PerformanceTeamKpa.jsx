@@ -552,7 +552,7 @@ const PerformanceTeamKpa = () => {
                   buttonTitle={shouldHideAddButtonForManager ? "" : "Add Team Monthly KPA"}
                 buttonDisabled={shouldHideAddButtonForManager || isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
-                tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${activeMemberName}`}
+                tableTitle={`${departmentName} TEAM - MONTHLY KPA - ${activeMemberName}`}
                 data={filteredTeamKpa
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
@@ -584,7 +584,7 @@ const PerformanceTeamKpa = () => {
                   formatTime
                   // tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
                   // exportData={true}
-                  tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName} - ${selectedMonthLabel}`}
+                  tableTitle={`COMPLETED - TEAM MONTHLY KPA - ${activeMemberName} - ${selectedMonthLabel}`}
                   exportData={showCompletedExport}
                   hideDateControls
                   checkAll={false}
