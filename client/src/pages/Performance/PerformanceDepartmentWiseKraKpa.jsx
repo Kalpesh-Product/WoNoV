@@ -285,7 +285,13 @@ const PerformanceDepartmentWiseKraKpa = () => {
  `/app/performance/department-KPA/member-wise-KPA`,
              //  `/app/performance/department-wise/overall-department-KPA/member-wise-KPA`,
               // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${departmentData.department?.name}`,
-              { state: { month: selectedMonth } },
+              {
+                state: {
+                  month: selectedMonth,
+                  selectedDepartment: departmentData.department?._id,
+                  selectedDepartmentName: departmentData.department?.name,
+                },
+              },
             );
           }
         },
@@ -350,7 +356,13 @@ tooltip: {
                             `/app/performance/department-KPA/member-wise-KPA`,
                 // `/app/performance/department-wise/overall-department-KPA/member-wise-KPA`,
               // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${params.value}`,
-              { state: { month: selectedMonth } },
+              {
+                state: {
+                  month: selectedMonth,
+                  selectedDepartment: params.data.mongoId,
+                  selectedDepartmentName: params.data.department,
+                },
+              },
             );
           }}
           className="text-primary font-pregular hover:underline cursor-pointer"

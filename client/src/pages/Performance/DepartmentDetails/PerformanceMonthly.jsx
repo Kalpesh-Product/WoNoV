@@ -184,6 +184,10 @@ const PerformanceMonthly = () => {
     !isMasterOrSuperAdmin &&
     isManager &&
     ["previous", "next"].includes(activeViewMonthBucket);
+  const shouldHideActionsColumnForManager =
+    !isMasterOrSuperAdmin &&
+    isManager &&
+    activeViewMonthBucket === "previous";
 
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -206,6 +210,9 @@ const PerformanceMonthly = () => {
   const matchingDepartment = auth.user?.departments?.some(
     (dept) => dept._id === deptId
   );
+  const showActionsColumn =
+    (matchingDepartment || isManager || isMasterOrSuperAdmin) &&
+    !shouldHideActionsColumnForManager;
 
   const {
     handleSubmit: submitDailyKra,
@@ -420,9 +427,7 @@ const PerformanceMonthly = () => {
         );
       },
     },
-     ...(matchingDepartment || isManager || isMasterOrSuperAdmin
-        // ...(matchingDepartment || isManager
-   // ...(matchingDepartment
+     ...(showActionsColumn
       ? [
         {
           headerName: "Actions",
@@ -430,7 +435,7 @@ const PerformanceMonthly = () => {
           field: "actions",
           width:250,
           cellRenderer: (params) => {
-                        const rowPermissions = getRowPermissions(params.data);
+            const rowPermissions = getRowPermissions(params.data);
             const isSelectionBlocked = rowPermissions.disableRowSelection;
             const isRowSelected = params.node.selected && !isSelectionBlocked;
 
