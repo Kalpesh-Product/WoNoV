@@ -120,6 +120,7 @@ const PerformanceIndividualKpa = () => {
     const isEmployeeOnly = isRoleEmployee && !isManager && !isMasterOrSuperAdmin;
 
     const [selectedMonthContext, setSelectedMonthContext] = useState("current");
+     const [selectedMonthRange, setSelectedMonthRange] = useState(null);
 
     const getMonthContext = (dateValue) => {
         if (!dateValue) return "current";
@@ -130,6 +131,16 @@ const PerformanceIndividualKpa = () => {
         if (selectedMonth.isBefore(currentMonth)) return "previous";
         if (selectedMonth.isAfter(currentMonth)) return "next";
         return "current";
+    };
+
+     const isSameRange = (prevRange, nextRange) => {
+        if (!prevRange && !nextRange) return true;
+        if (!prevRange || !nextRange) return false;
+        const prevStart = prevRange?.startDate ? dayjs(prevRange.startDate).format("YYYY-MM-DD") : "";
+        const prevEnd = prevRange?.endDate ? dayjs(prevRange.endDate).format("YYYY-MM-DD") : "";
+        const nextStart = nextRange?.startDate ? dayjs(nextRange.startDate).format("YYYY-MM-DD") : "";
+        const nextEnd = nextRange?.endDate ? dayjs(nextRange.endDate).format("YYYY-MM-DD") : "";
+        return prevStart === nextStart && prevEnd === nextEnd;
     };
     // const showCheckBox = !isTop || isHr
     // const showCheckBox = allowedDept;
@@ -145,7 +156,9 @@ const PerformanceIndividualKpa = () => {
     const isSelectedMemberManager = selectedMemberRole.includes("manager");
     const isSelectedMemberEmployee = !!activeMember?.memberId && !isSelectedMemberManager;
       const hideMemberLevelControls =
-        isEmployeeKraKpaRoute ? false : isSelectedMemberEmployee && !isMasterOrSuperAdmin;
+   isEmployeeKraKpaRoute
+            ? false
+            : isSelectedMemberEmployee && !isMasterOrSuperAdmin && !isManager;
     const isViewingOwnMember =
         normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
@@ -381,6 +394,9 @@ const PerformanceIndividualKpa = () => {
 
     const isRestrictedRoleInNonCurrentMonth =
         (isManagerAdmin || isEmployeeOnly) && selectedMonthContext !== "current";
+    const canSelectRowsForMonthContext =
+        !isRestrictedRoleInNonCurrentMonth ||
+        (isManagerAdmin && selectedMonthContext === "next");    
 
     const actionVisibility = useMemo(() => {
         if (isMasterOrSuperAdmin) {
@@ -623,11 +639,32 @@ const PerformanceIndividualKpa = () => {
     });
 
     const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
+                if (isManager || isMasterOrSuperAdmin) return true;
         if (!selectedMemberName && !selectedMemberId) return true;
         const completedBy = normalizeValue(item?.completedBy);
         return (
             completedBy === normalizeValue(selectedMemberName) ||
             completedBy === normalizeValue(selectedMemberId)
+        );
+    });
+     const getMonthHeaderLabel = () => {
+        const startDate = selectedMonthRange?.startDate;
+        if (!startDate) return "Current Month";
+        const monthText = dayjs(startDate).format("MMMM YYYY");
+        if (selectedMonthContext === "current") return `${monthText}`;
+        if (selectedMonthContext === "previous") return `${monthText}`;
+        return `${monthText}`;
+    };
+
+    const completedEntriesForSelectedMonth = filteredCompletedEntries.filter((item) => {
+        if (!selectedMonthRange?.startDate || !selectedMonthRange?.endDate) return true;
+        const completedDate = dayjs(item?.completionDate);
+        if (!completedDate.isValid()) return false;
+        const start = dayjs(selectedMonthRange.startDate).startOf("day");
+        const end = dayjs(selectedMonthRange.endDate).endOf("day");
+        return (
+            (completedDate.isAfter(start) || completedDate.isSame(start)) &&
+            (completedDate.isBefore(end) || completedDate.isSame(end))
         );
     });
     return (
@@ -637,7 +674,8 @@ const PerformanceIndividualKpa = () => {
                     {!isCompletedLoading && !isUpdatePending ? (
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
-                                                             checkbox={showCheckBoxForCurrentView && !isRestrictedRoleInNonCurrentMonth}
+                            // checkbox={showCheckBoxForCurrentView && !isRestrictedRoleInNonCurrentMonth}
+                             checkbox={showCheckBoxForCurrentView && canSelectRowsForMonthContext}
                                 // checkbox={showCheckBoxForCurrentView}
                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
                                 // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
@@ -680,9 +718,18 @@ const PerformanceIndividualKpa = () => {
                                 ]}
                                 dateColumn={"dueDate"}
                                 columns={departmentColumns}
-                                  onDateFilterChange={({ selectedRange }) => {
+                                 onDateFilterChange={({ selectedRange }) => {
                                     const monthSource = selectedRange?.startDate || selectedRange?.endDate;
                                     setSelectedMonthContext(getMonthContext(monthSource));
+                                      const nextContext = getMonthContext(monthSource);
+                                    setSelectedMonthContext((prev) =>
+                                        prev === nextContext ? prev : nextContext
+                                    );
+                                    setSelectedMonthRange((prev) =>
+                                        isSameRange(prev, selectedRange || null)
+                                            ? prev
+                                            : (selectedRange || null)
+                                    );
                                 }}
                             />
                         </WidgetSection>
@@ -696,15 +743,20 @@ const PerformanceIndividualKpa = () => {
                     {!isCompletedLoading ? (
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
-                                exportData={true}
+                                // exportData={true}
                                 // tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                                 // key={completedEntries.length}
                                 // data={[
                                 //     ...completedEntries.map((item, index) => ({
-                                       tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
-                                key={filteredCompletedEntries.length}
+                                //        tableTitle={`COMPLETED INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
+                                // key={filteredCompletedEntries.length}
+                               tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName} - ${getMonthHeaderLabel()}`}
+                                key={completedEntriesForSelectedMonth.length}
+                                hideDateControls={true}
+                                exportData={selectedMonthContext !== "next"}
                                 data={[
-                                    ...filteredCompletedEntries.map((item, index) => ({
+                                     ...completedEntriesForSelectedMonth.map((item, index) => ({    
+                                    // ...filteredCompletedEntries.map((item, index) => ({
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
                                         completionDate: humanDate(item.completionDate),
