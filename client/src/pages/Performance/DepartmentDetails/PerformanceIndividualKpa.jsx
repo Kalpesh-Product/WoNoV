@@ -181,6 +181,16 @@ const PerformanceIndividualKpa = () => {
         (!hideMemberLevelControls &&
         (showCheckBox || shouldShowManagerControlsInEmployeeRoute) &&
         canShowControls);
+    const isRestrictedRoleInNonCurrentMonth =
+        (isManagerAdmin || isEmployeeOnly) && selectedMonthContext !== "current";
+    const showAddMonthlyKpaButton =
+        isEmployeeKraKpaRoute &&
+        !(
+            hideMemberLevelControls ||
+            isAddKpaDisabled ||
+            !canShowControls ||
+            isRestrictedRoleInNonCurrentMonth
+        );
 
     const {
         handleSubmit: submitDailyKra,
@@ -414,8 +424,6 @@ const PerformanceIndividualKpa = () => {
     const formatDateTime = (value) =>
         value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
-    const isRestrictedRoleInNonCurrentMonth =
-        (isManagerAdmin || isEmployeeOnly) && selectedMonthContext !== "current";
     const canSelectRowsForMonthContext =
         !isRestrictedRoleInNonCurrentMonth ||
         (isManagerAdmin && selectedMonthContext === "next");    
@@ -580,16 +588,12 @@ const PerformanceIndividualKpa = () => {
     const completedColumns = [
         { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
         { headerName: "KPA List", field: "taskName", flex: 1 },
-
+        { headerName: "Start Date", field: "startDate", flex: 1, includeTime: true },
+        { headerName: "End Date", field: "endDate", flex: 1, includeTime: true },
         { headerName: "Completed By", field: "completedBy",flex: 1},
         {
-            headerName: "Completed Date",
-            field: "completionDate",
-            flex: 1
-        },
-        {
-            headerName: "Completed Time",
-            field: "completionTime",
+            headerName: "Completed At",
+            field: "completedAt",
             flex: 1
         },
         {
@@ -738,13 +742,7 @@ const PerformanceIndividualKpa = () => {
                                 //                                       hideMemberLevelControls || !canShowControls || isRestrictedRoleInNonCurrentMonth
                                 //         ? undefined
                                 //         : "Add Monthly KPA"
-                                                                 buttonTitle={
-                                    hideMemberLevelControls || !canShowControls || isRestrictedRoleInNonCurrentMonth
-                                        ? undefined
-                                        : isEmployeeKraKpaRoute
-                                          ? "Add Monthly KPA"
-                                          : undefined
-                                }
+                                buttonTitle={showAddMonthlyKpaButton ? "Add Monthly KPA" : undefined}
                                 buttonDisabled={
                                      hideMemberLevelControls || isAddKpaDisabled || !canShowControls || isRestrictedRoleInNonCurrentMonth
                                 }
@@ -818,9 +816,9 @@ const PerformanceIndividualKpa = () => {
                                      ...completedEntriesForSelectedMonth.map((item, index) => ({    
                                     // ...filteredCompletedEntries.map((item, index) => ({
                                         taskName: item.taskName,
-                                        assignedDate: item.assignedDate,
-                                        completionDate: humanDate(item.completionDate),
-                                        completionTime: humanTime(item.completionDate),
+                                        startDate: `${humanDate(item.assignedDate)} ${humanTime(item.assignedDate)}`,
+                                        endDate: `${humanDate(item.dueDate)} ${humanTime(item.dueDate)}`,
+                                        completedAt: `${humanDate(item.completionDate)} ${humanTime(item.completionDate)}`,
                                         completedBy: item.completedBy,
                                         status: item.status,
                                     })),

@@ -536,19 +536,13 @@ const PerformanceMonthly = () => {
   const completedColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     { headerName: "KPA List", field: "taskName", flex: 1},
-
+    { headerName: "Start Date", field: "startDateTime", flex: 1, includeTime: true },
+    { headerName: "End Date", field: "endDateTime", flex: 1, includeTime: true },
     { headerName: "Completed By", field: "completedBy" ,flex: 1},
     {
-      headerName: "Completed Date",
-      field: "completionDate",
-           flex: 1,
-      cellRenderer: (params) => humanDate(params.value),
-    },
-    {
-      headerName: "Completed Time",
-      field: "completionTime",
-       flex: 1,
-      cellRenderer: (params) => humanTime(params.value),
+      headerName: "Completed At",
+      field: "completedAt",
+      flex: 1,
     },
     {
       field: "status",
@@ -718,10 +712,14 @@ const PerformanceMonthly = () => {
                    ...completedEntriesForSelectedMonth.map((item, index) => ({
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
+                    dueDate: item.dueDate,
                     completionDate: item.completionDate,
                     completionTime: item.completionDate,
                     completedBy: item.completedBy,
                     status: item.status,
+                    startDateTime: `${humanDate(item.assignedDate)} ${humanTime(item.assignedDate)}`,
+                    endDateTime: `${humanDate(item.dueDate)} ${humanTime(item.dueDate)}`,
+                    completedAt: `${humanDate(item.completionDate)} ${humanTime(item.completionDate)}`,
                   })),
                 ]}
                  dateColumn={"completionDate"}

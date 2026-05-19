@@ -238,6 +238,25 @@ const YearWiseTable = ({
       agGridRef.current.api.exportDataAsCsv({
         fileName: `${tableTitle || "data"}.csv`,
         allColumns: exportAllColumns,
+        processCellCallback: (params) => {
+          const field = params?.column?.getColDef?.()?.field || "";
+          const value = params?.value;
+
+          if (value === null || value === undefined) return "";
+
+          const normalizedField = field.toLowerCase();
+          const shouldPreserveAsText =
+            normalizedField.includes("date") ||
+            normalizedField.includes("time") ||
+            /(at)$/i.test(field);
+
+          const stringValue = String(value);
+
+          if (!shouldPreserveAsText) return stringValue;
+
+          // Keep date/time cells as literal text so Excel does not auto-convert them.
+          return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
+        },
         columnKeys: formattedColumns
           .filter((col) => !col.field?.toLowerCase().includes("action"))
           .map((col) => col.field)
