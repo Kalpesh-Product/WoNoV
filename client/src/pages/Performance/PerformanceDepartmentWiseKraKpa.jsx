@@ -240,6 +240,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
     (sum, count) => sum + count,
     0,
   );
+  const totalKpaCount = totalCompletedKpa + totalPendingKpa;
 
   const graphData = [
     {
@@ -404,6 +405,8 @@ tooltip: {
         title={`KPA overview - ${selectedMonth}`}
         border
         padding
+        TitleAmountTotal={totalKpaCount}
+        totalTitle="Total"
         greenTitle="KPA "
         TitleAmountGreen={totalCompletedKpa}
         redTitle="KPA "

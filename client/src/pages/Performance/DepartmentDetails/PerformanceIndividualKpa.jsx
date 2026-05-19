@@ -156,6 +156,12 @@ const PerformanceIndividualKpa = () => {
     const selectedMemberRole = normalizeValue(activeMember?.memberRole);
     const isSelectedMemberManager = selectedMemberRole.includes("manager");
     const isSelectedMemberEmployee = !!activeMember?.memberId && !isSelectedMemberManager;
+    const targetMemberId = isEmployeeKraKpaRoute
+        ? userId?.toString?.()?.trim()
+        : activeMember?.memberId?.toString?.()?.trim() || userId?.toString?.()?.trim();
+    const targetMemberName = isEmployeeKraKpaRoute
+        ? loggedInUserName?.toString?.()?.trim()
+        : activeMember?.memberName?.toString?.()?.trim() || loggedInUserName?.toString?.()?.trim();
       const hideMemberLevelControls =
    isEmployeeKraKpaRoute
             ? false
@@ -169,7 +175,7 @@ const PerformanceIndividualKpa = () => {
     const shouldHideRowActionsForSelectedMemberView = shouldHideAddButtonForSelectedMemberView;
     // const showCheckBoxForCurrentView =
     //     showCheckBox && !shouldHideRowActionsForSelectedMemberView;
-      const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
+    const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
     const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
         const canShowControls =
             shouldForceOwnControlsInEmployeeRoute ||
@@ -184,13 +190,20 @@ const PerformanceIndividualKpa = () => {
     const isRestrictedRoleInNonCurrentMonth =
         (isManagerAdmin || isEmployeeOnly) && selectedMonthContext !== "current";
     const showAddMonthlyKpaButton =
-        isEmployeeKraKpaRoute &&
+        (isEmployeeKraKpaRoute || isSelectedMemberManager) &&
         !(
             hideMemberLevelControls ||
             isAddKpaDisabled ||
             !canShowControls ||
             isRestrictedRoleInNonCurrentMonth
         );
+    const showAddTeamMonthlyKpaButton =
+        !isEmployeeKraKpaRoute &&
+        !isSelectedMemberManager &&
+        !hideMemberLevelControls &&
+        !isAddKpaDisabled &&
+        canShowControls &&
+        !isRestrictedRoleInNonCurrentMonth;
 
     const {
         handleSubmit: submitDailyKra,
@@ -294,7 +307,7 @@ const PerformanceIndividualKpa = () => {
                     assignedDate: data.startDate,
                     dueDate: data.endDate,
                     kpaDuration: "Monthly",
-                    assignTo: userId,
+                    assignTo: targetMemberId,
                 });
                 toast.success("KPA updated successfully");
                 queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
@@ -313,7 +326,7 @@ const PerformanceIndividualKpa = () => {
                         : data.assignTo
                           ? [data.assignTo]
                           : []
-                    : userId,
+                    : targetMemberId,
         };
         addMonthlyKpa(payload);
     };
@@ -629,17 +642,11 @@ const PerformanceIndividualKpa = () => {
     ];
 //   const selectedMemberId = activeMember?.memberId?.toString()?.trim();
 //     const selectedMemberName = activeMember?.memberName?.toString()?.trim();
- const selectedMemberId = isEmployeeKraKpaRoute
-    ? userId?.toString()?.trim()
-    : activeMember?.memberId?.toString()?.trim();
-    const selectedMemberName = isEmployeeKraKpaRoute
-        ? loggedInUserName?.toString()?.trim()
-        : activeMember?.memberName?.toString()?.trim();
      const openAddIndividualModal = () => {
         setModalTaskType("INDIVIDUALKPA");
         setIsEditMode(false);
         setEditingTaskId(null);
-        reset({ kpaName: "", startDate: null, endDate: null, description: "", assignTo: "" });
+        reset({ kpaName: "", startDate: null, endDate: null, description: "", assignTo: targetMemberId || "" });
         setOpenModal(true);
     };
 
@@ -652,17 +659,17 @@ const PerformanceIndividualKpa = () => {
             startDate: null,
             endDate: null,
             description: "",
-            assignTo: selectedMemberId ? [selectedMemberId] : [],
+            assignTo: targetMemberId ? [targetMemberId] : [],
         });
         setOpenModal(true);
     };
     
-    const matchesSelectedMember = (assigneeValue) => {
+    const matchesAssignedMember = (assigneeValue) => {
         const assignees = Array.isArray(assigneeValue) ? assigneeValue : [assigneeValue];
         return assignees.some((assignee) => {
             const normalized = (assignee || "").toString().trim();
             if (!normalized) return false;
-            return normalized === selectedMemberId || normalized === selectedMemberName;
+            return normalized === targetMemberId || normalized === targetMemberName;
         });
     };
 
@@ -675,8 +682,8 @@ const PerformanceIndividualKpa = () => {
 
     const filteredDepartmentKpa = Array.from(uniqueTaskMap.values()).filter(
         (item) => {
-            if (!selectedMemberId && !selectedMemberName) return true;
-            return matchesSelectedMember(item?.assignedTo);
+            if (!targetMemberId && !targetMemberName) return true;
+            return matchesAssignedMember(item?.assignedTo);
         }
     );
     const uniqueCompletedMap = new Map();
@@ -686,14 +693,27 @@ const PerformanceIndividualKpa = () => {
         uniqueCompletedMap.set(completedId, item);
     });
 
-    const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
-                if (isManager || isMasterOrSuperAdmin) return true;
-        if (!selectedMemberName && !selectedMemberId) return true;
-        const completedBy = normalizeValue(item?.completedBy);
+    const hasSelectedMember = !!targetMemberId || !!targetMemberName;
+    const matchesCompletedMember = (value) => {
+        const normalizedValue = normalizeValue(value);
+        if (!normalizedValue || !hasSelectedMember) return false;
+
         return (
-            completedBy === normalizeValue(selectedMemberName) ||
-            completedBy === normalizeValue(selectedMemberId)
+            normalizedValue === normalizeValue(targetMemberId) ||
+            normalizedValue === normalizeValue(targetMemberName)
         );
+    };
+
+    const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
+        if (!hasSelectedMember) return true;
+
+        const completedByCandidates = [
+            item?.completedBy,
+            item?.completedById,
+            item?.completedByName,
+        ];
+
+        return completedByCandidates.some(matchesCompletedMember);
     });
      const getMonthHeaderLabel = () => {
         const startDate = selectedMonthRange?.startDate;
@@ -742,7 +762,7 @@ const PerformanceIndividualKpa = () => {
                                 //                                       hideMemberLevelControls || !canShowControls || isRestrictedRoleInNonCurrentMonth
                                 //         ? undefined
                                 //         : "Add Monthly KPA"
-                                buttonTitle={showAddMonthlyKpaButton ? "Add Monthly KPA" : undefined}
+                                buttonTitle={showAddMonthlyKpaButton ? "Add Individual Monthly KPA" : undefined}
                                 buttonDisabled={
                                      hideMemberLevelControls || isAddKpaDisabled || !canShowControls || isRestrictedRoleInNonCurrentMonth
                                 }
@@ -753,12 +773,12 @@ const PerformanceIndividualKpa = () => {
                                 // }}
                                   handleSubmit={openAddIndividualModal}
                                 middleButtonTitle={
-                                    hideMemberLevelControls || !canShowControls || isRestrictedRoleInNonCurrentMonth || isEmployeeKraKpaRoute
+                                    !showAddTeamMonthlyKpaButton
                                         ? undefined
                                         : "Add Team Monthly KPA"
                                 }
                                 middleButtonDisabled={
-                                    hideMemberLevelControls || isAddKpaDisabled || !canShowControls || isRestrictedRoleInNonCurrentMonth
+                                    !showAddTeamMonthlyKpaButton
                                 }
                                 handleMiddleSubmit={openAddTeamModal}
                                 key={departmentKra.length}

@@ -691,6 +691,7 @@ const PerformanceMemberWiseKraKpa = () => {
         (sum, item) => sum + (item.pendingKpa || 0),
         0
     );
+    const totalKpaCount = totalCompletedKpa + totalPendingKpa;
 
 
     const graphOptions = {
@@ -747,6 +748,8 @@ tooltip: {
                  title={`${activeDepartmentDisplayName} KPA overview - ${selectedMonth}`}
                 border
                 padding
+                TitleAmountTotal={totalKpaCount}
+                totalTitle="Total"
                 greenTitle="KPA"
                 TitleAmountGreen={totalCompletedKpa}
                 redTitle="KPA"

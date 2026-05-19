@@ -188,7 +188,9 @@ const PerformanceDepartmentKPA = () => {
             <WidgetSection
                 title={`${department} department KPA overview`}
                 border
-                TitleAmount={`TOTAL KPA : ${tasksData.length || 0}`}
+                TitleAmount=""
+                TitleAmountTotal={tasksData.length || 0}
+                totalTitle="Total"
             >
                 <NormalBarGraph data={graphData} options={graphOptions} year={false} height={350} />
             </WidgetSection>
