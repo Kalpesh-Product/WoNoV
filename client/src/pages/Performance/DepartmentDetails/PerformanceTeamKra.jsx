@@ -259,7 +259,7 @@ const PerformanceTeamKra = () => {
     const fetchTasks = async () => {
         try {
             const response = await axios.get(
-                `/api/performance/get-tasks?dept=${deptId}&type=TEAMKRA`
+                `/api/performance/get-tasks?dept=${deptId}&type=TEAMKRA&date=${selectedDateKey}`
             );
             return response.data;
         } catch (error) {
@@ -268,10 +268,20 @@ const PerformanceTeamKra = () => {
     };
 
     const { data: teamKra = [], isPending: teamLoading } = useQuery({
-        queryKey: ["fetchedTeamKRA", deptId],
+        queryKey: ["fetchedTeamKRA", deptId, selectedDateKey],
         queryFn: fetchTasks,
         enabled: !!deptId,
     });
+    const uniqueTeamKra = useMemo(() => {
+        const uniqueMap = new Map();
+        (teamKra || []).forEach((item) => {
+            const key = item?.id?.toString?.() || item?._id?.toString?.() || `${item?.taskName}-${item?.assignedDate}`;
+            if (!uniqueMap.has(key)) {
+                uniqueMap.set(key, item);
+            }
+        });
+        return Array.from(uniqueMap.values());
+    }, [teamKra]);
 
     const { data: assignees = [] } = useQuery({
         queryKey: ["fetchAssignees", deptId],
@@ -284,14 +294,14 @@ const PerformanceTeamKra = () => {
 
     const filteredTeamKra = useMemo(() => {
         if (!activeMember?.memberId) {
-            return teamKra || [];
+            return uniqueTeamKra || [];
         }
 
         if (isSelectedMemberManager) {
-            return teamKra || [];
+            return uniqueTeamKra || [];
         }
 
-        return (teamKra || []).filter((item) => {
+        return (uniqueTeamKra || []).filter((item) => {
             const assignedToList = Array.isArray(item?.assignedTo)
                 ? item.assignedTo
                 : item?.assignedTo
@@ -315,7 +325,7 @@ const PerformanceTeamKra = () => {
         activeMember?.memberId,
         activeMember?.memberName,
         isSelectedMemberManager,
-        teamKra,
+        uniqueTeamKra,
     ]);
 
     const filteredCompletedEntries = useMemo(() => {
@@ -338,6 +348,23 @@ const PerformanceTeamKra = () => {
         isSelectedMemberManager,
         completedEntries,
     ]);
+    const uniqueCompletedEntries = useMemo(() => {
+        const uniqueMap = new Map();
+        (filteredCompletedEntries || []).forEach((item) => {
+            const completedDay = item?.completionDate
+                ? dayjs(item.completionDate).isValid()
+                    ? dayjs(item.completionDate).format("YYYY-MM-DD")
+                    : String(item.completionDate)
+                : "no-date";
+            const key =
+                item?.id?.toString?.() ||
+                `${item?.taskName}-${completedDay}-${item?.completedBy || "unknown"}`;
+            if (!uniqueMap.has(key)) {
+                uniqueMap.set(key, item);
+            }
+        });
+        return Array.from(uniqueMap.values());
+    }, [filteredCompletedEntries]);
 
     const teamColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -484,7 +511,7 @@ const PerformanceTeamKra = () => {
         canEditDeleteRow,
       };
     });
-    const dateWiseCompletedEntries = (filteredCompletedEntries || []).filter((item) => {
+    const dateWiseCompletedEntries = (uniqueCompletedEntries || []).filter((item) => {
       const completionDate = item.completedDate || item.completionDate || item.dueDate;
       return toDateKey(completionDate) === selectedDateKey;
     });

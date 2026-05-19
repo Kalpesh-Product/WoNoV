@@ -265,7 +265,7 @@ const PerformanceIndividualKra = () => {
     const fetchTasks = async () => {
         try {
             const response = await axios.get(
-                 `/api/performance/get-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA`
+                 `/api/performance/get-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA&date=${selectedDateKey}`
             );
             return response.data;
         } catch (error) {
@@ -274,16 +274,16 @@ const PerformanceIndividualKra = () => {
         }
     };
     const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-        queryKey: ["fetchedIndividualKRA", effectiveDeptId],
+        queryKey: ["fetchedIndividualKRA", effectiveDeptId, selectedDateKey],
         queryFn: fetchTasks,
     });
 
     const { data: teamKraForIndividual = [] } = useQuery({
-        queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId],
+        queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
         queryFn: async () => {
             try {
                 const response = await axios.get(
-                     `/api/performance/get-tasks?dept=${effectiveDeptId}&type=TEAMKRA`
+                     `/api/performance/get-tasks?dept=${effectiveDeptId}&type=TEAMKRA&date=${selectedDateKey}`
                 );
                 return response.data;
             } catch (error) {
@@ -532,7 +532,14 @@ const PerformanceIndividualKra = () => {
     });
     const uniqueCompletedMap = new Map();
     [...(completedEntries || []), ...(completedTeamEntries || [])].forEach((item) => {
-        const completedId = item?.id?.toString?.() || `${item?.taskName}-${item?.completionDate}`;
+        const completedDay = item?.completionDate
+            ? dayjs(item.completionDate).isValid()
+                ? dayjs(item.completionDate).format("YYYY-MM-DD")
+                : String(item.completionDate)
+            : "no-date";
+        const completedId =
+            item?.id?.toString?.() ||
+            `${item?.taskName}-${completedDay}-${item?.completedBy || "unknown"}`;
         if (uniqueCompletedMap.has(completedId)) return;
         uniqueCompletedMap.set(completedId, item);
     });

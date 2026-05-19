@@ -264,7 +264,7 @@ const PerformanceKra = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-         `/api/performance/get-tasks?dept=${effectiveDeptId}&type=KRA`
+         `/api/performance/get-tasks?dept=${effectiveDeptId}&type=KRA&date=${selectedDateKey}`
       );
       return response.data;
     } catch (error) {
@@ -272,9 +272,28 @@ const PerformanceKra = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedDepartmentsKRA", effectiveDeptId],
+    queryKey: ["fetchedDepartmentsKRA", effectiveDeptId, selectedDateKey],
     queryFn: fetchDepartments,
   });
+  const uniqueDepartmentKra = useMemo(() => {
+    const uniqueMap = new Map();
+    (departmentKra || []).forEach((item) => {
+      const taskNameKey = (item?.taskName || "").toString().trim().toLowerCase();
+      const key = taskNameKey || item?.id?.toString?.() || item?._id?.toString?.();
+      const previous = uniqueMap.get(key);
+      if (!previous) {
+        uniqueMap.set(key, item);
+        return;
+      }
+
+      const previousDate = dayjs(previous?.assignedDate || previous?.dueDate || previous?.createdAt);
+      const currentDate = dayjs(item?.assignedDate || item?.dueDate || item?.createdAt);
+      if (currentDate.isValid() && (!previousDate.isValid() || currentDate.isAfter(previousDate))) {
+        uniqueMap.set(key, item);
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }, [departmentKra]);
   const { data: completedEntries = [], isLoading: isCompletedLoading } =
     useQuery({
        // scoped query key to avoid stale cross-department cache in employee route
@@ -477,11 +496,24 @@ const PerformanceKra = () => {
   ];
 
   const filteredDepartmentKra = isEmployeeKraKpaRoute
-    ? departmentKra || []
-    : departmentKra || [];
+    ? uniqueDepartmentKra || []
+    : uniqueDepartmentKra || [];
+  const uniqueCompletedMap = new Map();
+  (completedEntries || []).forEach((item) => {
+    const completedDay = item?.completionDate
+      ? dayjs(item.completionDate).isValid()
+        ? dayjs(item.completionDate).format("YYYY-MM-DD")
+        : String(item.completionDate)
+      : "no-date";
+    const key =
+      `${(item?.taskName || "").toString().trim().toLowerCase()}-${completedDay}-${(item?.completedBy || "unknown").toString().trim().toLowerCase()}`;
+    if (!uniqueCompletedMap.has(key)) {
+      uniqueCompletedMap.set(key, item);
+    }
+  });
   const filteredCompletedEntries = isEmployeeKraKpaRoute
-    ? completedEntries || []
-    : completedEntries || [];
+    ? Array.from(uniqueCompletedMap.values())
+    : Array.from(uniqueCompletedMap.values());
   const selectedDateLabel = selectedDate.format("DD MMM YYYY");
   const toDateKey = (value) => {
     if (!value) return null;
