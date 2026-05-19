@@ -286,6 +286,12 @@ const PerformanceMemberWiseKraKpa = () => {
 
             const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
             const normalizedLoggedInName = normalizeName(loggedInUserName);
+            const managerRowId =
+                normalizedManagerName === normalizedLoggedInName && loggedInUserId
+                    ? loggedInUserId
+                    : normalizedManagerName
+                        ? `manager-${normalizedManagerName}`
+                        : null;
             selectedDepartmentManagerId =
                 normalizedManagerName && memberIdByName.has(normalizedManagerName)
                     ? memberIdByName.get(normalizedManagerName)
@@ -297,11 +303,6 @@ const PerformanceMemberWiseKraKpa = () => {
                 });
             }
             if (normalizedManagerName && !memberIdByName.has(normalizedManagerName)) {
-                const managerRowId =
-                    normalizedManagerName === normalizedLoggedInName && loggedInUserId
-                        ? loggedInUserId
-                        : `manager-${normalizedManagerName}`;
-
                 map.set(managerRowId, {
                     memberId: managerRowId,
                     member: selectedDepartmentManagerName,
@@ -310,16 +311,27 @@ const PerformanceMemberWiseKraKpa = () => {
                 });
             }
 
-            const resolveMemberIdFromTask = (task) => {
+            const resolveManagerAwareMemberId = (task) => {
                 const directId = task?.assignToId?.toString?.() || task?.assignedToId?.toString?.();
                 if (directId && allowedMemberIds.has(directId)) return directId;
 
                 const taskName = (task?.assignedTo || task?.assignTo || "")
-                  .toString()
-                  .replace(/\s+/g, " ")
-                  .trim();
-                const matchedId = memberIdByName.get(normalizeName(taskName));
-                return matchedId && allowedMemberIds.has(matchedId) ? matchedId : null;
+                    .toString()
+                    .replace(/\s+/g, " ")
+                    .trim();
+                const normalizedTaskName = normalizeName(taskName);
+                const matchedId = memberIdByName.get(normalizedTaskName);
+                if (matchedId && allowedMemberIds.has(matchedId)) return matchedId;
+
+                if (
+                    managerRowId &&
+                    normalizedManagerName &&
+                    normalizedTaskName === normalizedManagerName
+                ) {
+                    return managerRowId;
+                }
+
+                return null;
             };
 
             const resolveCompletedMemberId = (task) => {
@@ -327,12 +339,23 @@ const PerformanceMemberWiseKraKpa = () => {
                   .toString()
                   .replace(/\s+/g, " ")
                   .trim();
-                const matchedId = memberIdByName.get(normalizeName(completedByName));
-                return matchedId && allowedMemberIds.has(matchedId) ? matchedId : null;
+                const normalizedCompletedBy = normalizeName(completedByName);
+                const matchedId = memberIdByName.get(normalizedCompletedBy);
+                if (matchedId && allowedMemberIds.has(matchedId)) return matchedId;
+
+                if (
+                    managerRowId &&
+                    normalizedManagerName &&
+                    normalizedCompletedBy === normalizedManagerName
+                ) {
+                    return managerRowId;
+                }
+
+                return null;
             };
 
             const upsert = (task, field) => {
-                const userId = resolveMemberIdFromTask(task);
+                const userId = resolveManagerAwareMemberId(task);
                 if (!userId) return;
                 const userName = (task.assignedTo || task.assignTo || "Unassigned")
                   .toString()
@@ -352,11 +375,10 @@ const PerformanceMemberWiseKraKpa = () => {
                const upsertManagerTeamKpaCount = (task, field) => {
                // const managerId = loggedInUserId || "unassigned";
                 //const managerName = loggedInUserName || "Manager";
-                 const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
-                const existingManagerId = normalizedManagerName
-                    ? memberIdByName.get(normalizedManagerName)
-                    : null;
-                const managerId = existingManagerId || `manager-${normalizedManagerName || "unknown"}`;
+                const managerId =
+                    managerRowId ||
+                    memberIdByName.get(normalizedManagerName) ||
+                    `manager-${normalizedManagerName || "unknown"}`;
                 const managerName = selectedDepartmentManagerName || "Manager";
 
                 if (!map.has(managerId)) {
@@ -371,7 +393,7 @@ const PerformanceMemberWiseKraKpa = () => {
                 map.get(managerId)[field] += 1;
             };
 
-             const incrementPendingKpa = (task) => {
+            const incrementPendingKpa = (task) => {
                 const taskDate = new Date(task?.assignedDate);
                 if (Number.isNaN(taskDate.getTime())) return;
                 const fiscalMonth = [
@@ -394,7 +416,7 @@ const PerformanceMemberWiseKraKpa = () => {
 
                 if (task?.status === "Completed") return;
 
-                const userId = resolveMemberIdFromTask(task);
+                const userId = resolveManagerAwareMemberId(task);
                 if (!userId) return;
                 const userName = (task.assignedTo || task.assignTo || "Unassigned")
                   .toString()
