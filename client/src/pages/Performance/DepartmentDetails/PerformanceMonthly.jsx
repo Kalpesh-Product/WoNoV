@@ -39,6 +39,7 @@ const PerformanceMonthly = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
+  const [selectedMonthRange, setSelectedMonthRange] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName
@@ -540,12 +541,14 @@ const PerformanceMonthly = () => {
     {
       headerName: "Completed Date",
       field: "completionDate",
-      flex: 1
+           flex: 1,
+      cellRenderer: (params) => humanDate(params.value),
     },
     {
       headerName: "Completed Time",
       field: "completionTime",
-      flex: 1
+       flex: 1,
+      cellRenderer: (params) => humanTime(params.value),
     },
     {
       field: "status",
@@ -581,7 +584,7 @@ const PerformanceMonthly = () => {
     const normalizeValue = (value) =>
     (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
   const doesTaskBelongToLoggedInUser = (item) => {
-    if (!isEmployeeKraKpaRoute) return true;
+   if (!isEmployeeKraKpaRoute || isManager || isMasterOrSuperAdmin) return true;
     const matchCandidates = [
       item?.assignToId,
       item?.assignedToId,
@@ -603,19 +606,44 @@ const PerformanceMonthly = () => {
   };
   const filteredDepartmentKpa = (departmentKra || []).filter(doesTaskBelongToLoggedInUser);
   const filteredCompletedEntries = (completedEntries || []).filter(doesTaskBelongToLoggedInUser);
-   const handleDepartmentDateFilterChange = ({ filteredData = [] }) => {
+   const selectedMonthLabel = selectedMonthRange?.startDate
+    ? dayjs(selectedMonthRange.startDate).format("MMMM YYYY")
+    : dayjs().format("MMMM YYYY");
+  const completedEntriesForSelectedMonth = selectedMonthRange
+    ? filteredCompletedEntries.filter((item) => {
+        const completion = dayjs(item?.completionDate);
+        if (!completion.isValid()) return false;
+
+        const start = dayjs(selectedMonthRange.startDate).startOf("day");
+        const end = dayjs(selectedMonthRange.endDate).endOf("day");
+        return completion.isAfter(start.subtract(1, "millisecond")) && completion.isBefore(end.add(1, "millisecond"));
+      })
+    : filteredCompletedEntries;
+  const showCompletedExport = activeViewMonthBucket !== "next";
+
+   const handleDepartmentDateFilterChange = ({ filteredData = [], selectedRange = null }) => {
+    setSelectedMonthRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate ? dayjs(selectedRange.startDate).valueOf() : null;
+      const nextEnd = selectedRange?.endDate ? dayjs(selectedRange.endDate).valueOf() : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) return prev;
+      return selectedRange;
+    });
     if (!filteredData.length) {
       setActiveViewMonthBucket("current");
       return;
     }
 
-    const buckets = new Set(filteredData.map((item) => getRowMonthBucket(item)));
-    if (buckets.size === 1) {
-      setActiveViewMonthBucket([...buckets][0]);
-      return;
-    }
+     const nextBucket = (() => {
+      if (!filteredData.length) return "current";
+      const buckets = new Set(filteredData.map((item) => getRowMonthBucket(item)));
+      if (buckets.size === 1) return [...buckets][0];
+      return "current";
+    })();
 
-    setActiveViewMonthBucket("current");
+    setActiveViewMonthBucket((prev) => (prev === nextBucket ? prev : nextBucket));
   };
   // const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
   //   if (!activeMember?.memberName) return true;
@@ -675,24 +703,28 @@ const PerformanceMonthly = () => {
           {!isCompletedLoading ? (
             <WidgetSection padding layout={1}>
               <YearWiseTable
-                exportData={true}
+               // exportData={true}
                 // tableTitle={`COMPLETED - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                 // key={completedEntries.length}
                 // data={[
                 //   ...completedEntries.map((item, index) => ({
-                    tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
-                key={completedEntries.length}
+                //     tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
+                // key={completedEntries.length}
+                tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName} - ${selectedMonthLabel}`}
+                key={`${completedEntriesForSelectedMonth.length}-${selectedMonthLabel}`}
+                exportData={showCompletedExport}
+                hideDateControls
                 data={[
-                  ...filteredCompletedEntries.map((item, index) => ({
+                   ...completedEntriesForSelectedMonth.map((item, index) => ({
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                    completionDate: humanDate(item.completionDate),
-                    completionTime: humanTime(item.completionDate),
+                    completionDate: item.completionDate,
+                    completionTime: item.completionDate,
                     completedBy: item.completedBy,
                     status: item.status,
                   })),
                 ]}
-                dateColumn={"dueDate"}
+                 dateColumn={"completionDate"}
                 columns={completedColumns}
               />
             </WidgetSection>

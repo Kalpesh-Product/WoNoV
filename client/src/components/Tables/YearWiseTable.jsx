@@ -146,8 +146,9 @@ const YearWiseTable = ({
     onDateFilterChange({
       isDateFilterActive: isUserChangedRange,
       filteredData,
-    });
-  }, [filteredData, isUserChangedRange, onDateFilterChange]);
+     selectedRange: dateRange[0] || null,
+      });
+  }, [dateRange, filteredData, isUserChangedRange, onDateFilterChange]);
 
   const rangeTotal = useMemo(() => {
     if (!filteredData.length || !totalKey) return 0;
