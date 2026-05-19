@@ -6,13 +6,17 @@ require("./locations/Building");
 require("./hr/UserData");
 require("./roles/Roles");
 
+//Finance
+require("./budget/Budget");
+
 //Tickets
 require("./tickets/Tickets");
 require("./tickets/supportTickets");
 require("./tickets/NewTicketIssue");
 
-//Finance
-require("./budget/Budget");
+//Visitors
+require("./visitor/Visitor");
+require("./visitor/ExternalVisits");
 
 //Meetings
 require("./meetings/Meetings");

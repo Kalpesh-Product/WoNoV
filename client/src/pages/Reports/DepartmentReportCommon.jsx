@@ -19,6 +19,9 @@ const REPORT_MODULE_MAP = {
   ticket: { title: "Ticket Report", module: "Ticket" },
   meeting: { title: "Meeting Report", module: "Meeting" },
   visitor: { title: "Visitor Report", module: "Visitor" },
+  asset: { title: "Asset Report", module: "Asset" },
+  task: { title: "Task Report", module: "Task" },
+  performance: { title: "Performance Report", module: "Performance" },
 };
 
 const RETRY_COOLDOWN_STORAGE_KEY = "department-report-retry-cooldown";

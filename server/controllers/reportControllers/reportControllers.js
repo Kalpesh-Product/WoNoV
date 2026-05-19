@@ -107,22 +107,22 @@ const seedReports = async (req, res, next) => {
   try {
     const reports = [
       {
-        module: "Ticket",
-        reportKey: "ticket",
-        reportName: "Ticket Report",
-        description: "Ticket report",
+        module: "Asset",
+        reportKey: "asset",
+        reportName: "Asset Report",
+        description: "Asset report",
       },
       {
-        module: "Visitor",
-        reportKey: "visitor",
-        reportName: "Visitor Report",
-        description: "Visitor report",
+        module: "Task",
+        reportKey: "task",
+        reportName: "Task Report",
+        description: "Task report",
       },
       {
-        module: "Meeting",
-        reportKey: "meeting",
-        reportName: "Meeting Report",
-        description: "Meeting report",
+        module: "Performance",
+        reportKey: "performance",
+        reportName: "Performance Report",
+        description: "Performance report",
       },
     ];
 

@@ -1,6 +1,8 @@
 const buildDateFilter = require("../../utils/dateFilter");
 const { fetchBudgetService } = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
+const { fetchMeetingReportService } = require("./meeting");
+const { fetchVisitorReportService } = require("./visitor");
 
 const normalizeReportIdentifier = (value = "") =>
   value
@@ -15,38 +17,65 @@ const normalizeReportIdentifier = (value = "") =>
  * Keeping reportName aliases for backward compatibility.
  */
 const reportServiceRegistry = {
-  budget: async ({ filters, departmentId }) =>
+  meeting: async ({ dateFilter, company, departmentId, departments, roles }) =>
+    fetchMeetingReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "startDate",
+        }),
+      },
+      company,
+      departmentId,
+      departments,
+      roles,
+    }),
+
+  visitor: async ({ dateFilter, company }) =>
+    fetchVisitorReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "checkIn",
+        }),
+      },
+      company,
+    }),
+
+  budget: async ({ dateFilter, departmentId }) =>
     fetchBudgetService({
       departmentId,
       dateFilter: {
         ...buildDateFilter({
-          startDate: filters?.startDate,
-          endDate: filters?.endDate,
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
           field: "dueDate",
         }),
       },
     }),
 
-  "expense-and-budget": async ({ filters, departmentId }) =>
+  "expense-and-budget": async ({ dateFilter, departmentId }) =>
     fetchBudgetService({
       departmentId,
       dateFilter: {
         ...buildDateFilter({
-          startDate: filters?.startDate,
-          endDate: filters?.endDate,
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
           field: "dueDate",
         }),
       },
     }),
 
-  ticket: async ({ filters, departmentId, departments, roles }) =>
+  ticket: async ({ dateFilter, departmentId, departments, roles }) =>
     fetchTicketReportService({
       departmentId,
       roles,
       departments,
       dateFilter: buildDateFilter({
-        startDate: filters?.startDate,
-        endDate: filters?.endDate,
+        startDate: dateFilter?.startDate,
+        endDate: dateFilter?.endDate,
         field: "createdAt",
       }),
     }),

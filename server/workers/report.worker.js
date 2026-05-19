@@ -55,15 +55,17 @@ const worker = new Worker(
 
       const foundUser = await UserData.findById(reportJob.userId)
         .populate("role", "name")
-        .select("role")
+        .select("role company")
         .lean();
       const roles = (foundUser?.role || []).map((role) => role.name);
+      const company = foundUser.company;
 
       data = await reportService({
-        filters: reportJob.filters,
+        dateFilter: reportJob.filters,
         departmentId: reportJob.department,
         departments: reportJob.departments || [],
         roles,
+        company,
       });
 
       const latestState =

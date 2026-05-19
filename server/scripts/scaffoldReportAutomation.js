@@ -127,7 +127,7 @@ function updateController({ controllerFile, controllerFn, serviceName, key }) {
   }
 
   const fnRegex = new RegExp(
-    `async function\\s+${controllerFn}\\s*\\(([^)]*)\\)\\s*\\{[\\s\\S]*?\\n\\}`,
+    `(const\\s+${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*\\{[\\s\\S]*?\\n\\}|async function\\s+${controllerFn}\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\})`,
     "m",
   );
   if (!fnRegex.test(content)) {
