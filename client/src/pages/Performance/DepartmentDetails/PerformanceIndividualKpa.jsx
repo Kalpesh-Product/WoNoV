@@ -13,7 +13,7 @@ import MuiModal from "../../../components/MuiModal";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FaCheck } from "react-icons/fa6";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { queryClient } from "../../../main";
@@ -112,9 +112,28 @@ const PerformanceIndividualKpa = () => {
         userPermissions.includes(PERMISSIONS.PERFORMANCE_INDIVIDUAL_KPA.value) ||
         userPermissions.includes(PERMISSIONS.PERFORMANCE_MONTHLY_KPA.value);
     const isHr = department === "HR";
+     const isMasterOrSuperAdmin = roleTitles.some(
+        (roleTitle) =>
+            roleTitle?.includes("master admin") || roleTitle?.includes("super admin")
+    );
+    const isManagerAdmin = isManager && !isMasterOrSuperAdmin;
+    const isEmployeeOnly = isRoleEmployee && !isManager && !isMasterOrSuperAdmin;
+
+    const [selectedMonthContext, setSelectedMonthContext] = useState("current");
+
+    const getMonthContext = (dateValue) => {
+        if (!dateValue) return "current";
+        const selected = dayjs(dateValue);
+        if (!selected.isValid()) return "current";
+        const selectedMonth = selected.startOf("month");
+        const currentMonth = dayjs().startOf("month");
+        if (selectedMonth.isBefore(currentMonth)) return "previous";
+        if (selectedMonth.isAfter(currentMonth)) return "next";
+        return "current";
+    };
     // const showCheckBox = !isTop || isHr
     // const showCheckBox = allowedDept;
-    const showCheckBox = allowedDept || isManager;
+     const showCheckBox = allowedDept || isManager || isMasterOrSuperAdmin;
 
     const matchingDepartment = auth.user?.departments?.some(
           (dept) => dept._id === effectiveDeptId
@@ -125,13 +144,14 @@ const PerformanceIndividualKpa = () => {
     const selectedMemberRole = normalizeValue(activeMember?.memberRole);
     const isSelectedMemberManager = selectedMemberRole.includes("manager");
     const isSelectedMemberEmployee = !!activeMember?.memberId && !isSelectedMemberManager;
-     const hideMemberLevelControls = isEmployeeKraKpaRoute ? false : isSelectedMemberEmployee;
+      const hideMemberLevelControls =
+        isEmployeeKraKpaRoute ? false : isSelectedMemberEmployee && !isMasterOrSuperAdmin;
     const isViewingOwnMember =
         normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
     const shouldHideAddButtonForSelectedMemberView =
         //isManager && activeMember?.memberId && !isViewingOwnMember;
-          !isManager && activeMember?.memberId && !isViewingOwnMember;
+                    !isManager && !isMasterOrSuperAdmin && activeMember?.memberId && !isViewingOwnMember;
     const shouldHideRowActionsForSelectedMemberView = shouldHideAddButtonForSelectedMemberView;
     // const showCheckBoxForCurrentView =
     //     showCheckBox && !shouldHideRowActionsForSelectedMemberView;
@@ -141,7 +161,7 @@ const PerformanceIndividualKpa = () => {
             shouldForceOwnControlsInEmployeeRoute ||
             (!hideMemberLevelControls &&
             !isRoleEmployee &&
-            (isManager || shouldShowManagerControlsInEmployeeRoute || !shouldHideAddButtonForSelectedMemberView));
+                    (isManager || isMasterOrSuperAdmin || shouldShowManagerControlsInEmployeeRoute || !shouldHideAddButtonForSelectedMemberView));
     const showCheckBoxForCurrentView =
         shouldForceOwnControlsInEmployeeRoute ||
         (!hideMemberLevelControls &&
@@ -359,6 +379,34 @@ const PerformanceIndividualKpa = () => {
     const formatDateTime = (value) =>
         value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
+    const isRestrictedRoleInNonCurrentMonth =
+        (isManagerAdmin || isEmployeeOnly) && selectedMonthContext !== "current";
+
+    const actionVisibility = useMemo(() => {
+        if (isMasterOrSuperAdmin) {
+            return { showActionColumn: true, showMarkDone: true, showEdit: true, showDelete: true, disableAll: false };
+        }
+
+        if (isManagerAdmin) {
+            if (selectedMonthContext === "previous") {
+                return { showActionColumn: false, showMarkDone: false, showEdit: false, showDelete: false, disableAll: true };
+            }
+            if (selectedMonthContext === "next") {
+                return { showActionColumn: true, showMarkDone: false, showEdit: true, showDelete: true, disableAll: false };
+            }
+            return { showActionColumn: true, showMarkDone: true, showEdit: true, showDelete: true, disableAll: false };
+        }
+
+        if (isEmployeeOnly) {
+            if (selectedMonthContext !== "current") {
+                return { showActionColumn: false, showMarkDone: false, showEdit: false, showDelete: false, disableAll: true };
+            }
+            return { showActionColumn: true, showMarkDone: true, showEdit: true, showDelete: true, disableAll: false };
+        }
+
+        return { showActionColumn: true, showMarkDone: true, showEdit: true, showDelete: true, disableAll: false };
+    }, [isMasterOrSuperAdmin, isManagerAdmin, isEmployeeOnly, selectedMonthContext]);
+
     const departmentColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
         { headerName: "KPA List", field: "taskName", flex: 1 },
@@ -404,7 +452,7 @@ const PerformanceIndividualKpa = () => {
                 );
             },
         },
-        ...((matchingDepartment || isManager) && canShowControls
+        ...((matchingDepartment || isManager) && canShowControls && actionVisibility.showActionColumn   
         // ...(matchingDepartment && canShowControls
     //    ...(matchingDepartment && !shouldHideRowActionsForSelectedMemberView
             ? [
@@ -418,6 +466,7 @@ const PerformanceIndividualKpa = () => {
                             <div className="flex items-center">
 
                                 {/* Mark As Done */}
+                                 {actionVisibility.showMarkDone && (
                                 <div
                                     role="button"
                                     onClick={() => {
@@ -443,7 +492,9 @@ const PerformanceIndividualKpa = () => {
                                     />
                                 </div>
 
-                 {!isAddKpaDisabled && (
+                )}
+
+                 {!isAddKpaDisabled && actionVisibility.showEdit && (
                                     <button
                                         type="button"
                                         title="Edit"
@@ -456,7 +507,7 @@ const PerformanceIndividualKpa = () => {
                                 )}
 
                 {/* Delete Recurrence */}
-                                {canDeleteRecurrence && (
+                                {canDeleteRecurrence && actionVisibility.showDelete && (
                                     <button
                                         type="button"
                                         title="Delete Recurrence"
@@ -586,7 +637,8 @@ const PerformanceIndividualKpa = () => {
                     {!isCompletedLoading && !isUpdatePending ? (
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
-                                 checkbox={showCheckBoxForCurrentView}
+                                                             checkbox={showCheckBoxForCurrentView && !isRestrictedRoleInNonCurrentMonth}
+                                // checkbox={showCheckBoxForCurrentView}
                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
                                 // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                                 tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
@@ -601,12 +653,12 @@ const PerformanceIndividualKpa = () => {
                                 // buttonDisabled={
                                 //     isAddKpaDisabled || shouldHideAddButtonForSelectedMemberView
                                  buttonTitle={
-                                    hideMemberLevelControls || !canShowControls
+                                                                      hideMemberLevelControls || !canShowControls || isRestrictedRoleInNonCurrentMonth
                                         ? undefined
                                         : "Add Monthly KPA"
                                 }
                                 buttonDisabled={
-                                    hideMemberLevelControls || isAddKpaDisabled || !canShowControls
+                                     hideMemberLevelControls || isAddKpaDisabled || !canShowControls || isRestrictedRoleInNonCurrentMonth
                                 }
                                 handleSubmit={() => {    
                                     setIsEditMode(false);
@@ -628,6 +680,10 @@ const PerformanceIndividualKpa = () => {
                                 ]}
                                 dateColumn={"dueDate"}
                                 columns={departmentColumns}
+                                  onDateFilterChange={({ selectedRange }) => {
+                                    const monthSource = selectedRange?.startDate || selectedRange?.endDate;
+                                    setSelectedMonthContext(getMonthContext(monthSource));
+                                }}
                             />
                         </WidgetSection>
                     ) : (
