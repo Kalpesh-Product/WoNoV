@@ -32,19 +32,19 @@ const reportModules = [
     title: "ASSETS",
     subtitle: "Asset Reports",
     route: "../reports-section/asset",
-    permissions: PERMISSIONS.REPORTS_ASSETS?.value,
+    permission: PERMISSIONS.REPORTS_ASSETS?.value,
   },
   {
     title: "TASKS",
     subtitle: "Task Reports",
     route: "../reports-section/task",
-    permissions: PERMISSIONS.REPORTS_TASKS?.value,
+    permission: PERMISSIONS.REPORTS_TASKS?.value,
   },
   {
     title: "PERFORMANCE",
     subtitle: "Performance Reports",
     route: "../reports-section/performance",
-    permissions: PERMISSIONS.REPORTS_PERFORMANCE?.value,
+    permission: PERMISSIONS.REPORTS_PERFORMANCE?.value,
   },
 ];
 
