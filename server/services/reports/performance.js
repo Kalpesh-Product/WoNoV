@@ -1,149 +1,127 @@
+const kraKpaRole = require("../../models/performances/kraKpaRole");
 const kraKpaTask = require("../../models/performances/kraKpaTask");
+
+const REPORT_TYPE_CONFIG = {
+  KPA: ["KPA"],
+  KRA: ["KRA"],
+  INDIVIDUALKPA: ["INDIVIDUALKPA", "TEAMKPA"],
+  INDIVIDUALKRA: ["INDIVIDUALKRA", "TEAMKRA"],
+};
+
+const formatName = (user = {}) =>
+  [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ");
+
+const normalizeTask = ({
+  roleTask,
+  completion = null,
+  status = "Pending",
+}) => ({
+  id: completion?._id || roleTask._id,
+  roleTaskId: roleTask._id,
+  taskName: roleTask.task,
+  taskType: roleTask.taskType,
+  kpaDuration: roleTask.kpaDuration || null,
+  department: roleTask.department?.name || null,
+  assignedTo: formatName(roleTask.assignTo || {}),
+  assignedDate: roleTask.assignedDate,
+  dueDate: roleTask.dueDate,
+  status,
+  completionDate: completion?.completionDate || null,
+  completedBy: completion?.completedBy
+    ? formatName(completion.completedBy)
+    : "",
+});
 
 const fetchPerformanceReportService = async ({
   dateFilter,
   departmentId,
-  departments: userDepts = [],
-  roles = [],
+  departments = [],
   company,
-  user,
   type,
 }) => {
   try {
-    const dept = userDepts;
-    let query = { duration: "Annually", empId: user };
-    const { duration, empId } = query;
+    const dept = departmentId || departments?.[0];
 
     if (!dept) {
-      throw Error({ message: "Missing department ID" });
-    }
-    if (!type) {
-      throw Error({ message: "Missing task type" });
+      throw new Error("Missing department ID");
     }
 
-    const completedTasks = await kraKpaTask
-      .find({ company, status: "Completed", completionDate: dateFilter })
-      .populate([
-        {
-          path: "task",
-          select: "",
-          populate: [
-            { path: "department", select: "name" },
-            { path: "assignTo", select: "firstName lastName" },
-          ],
-        },
-        {
-          path: "completedBy",
-          select: "firstName middleName lastName empId",
-        },
-      ])
-      .select("-company");
-    const isHrOrSuperAdmin =
-      roles.includes("Master Admin") ||
-      roles.includes("Super Admin") ||
-      roles.includes("HR Admin") ||
-      roles.includes("HR Employee");
+    const reportTaskTypes = REPORT_TYPE_CONFIG[type];
 
-    const isManager = isHrOrSuperAdmin || userDepts.includes(dept);
+    if (!reportTaskTypes) {
+      throw new Error("Missing or invalid report type");
+    }
 
-    const uniqueCompletedTasks = Array.from(
-      new Map(
-        completedTasks.map((task) => {
-          const taskId =
-            task?.task?._id?.toString?.() || task?._id?.toString?.();
-          const completionKey = `${taskId || "unknown"}-${new Date(task.completionDate).toISOString().slice(0, 10)}`;
-          return [completionKey, task];
-        }),
-      ).values(),
-    );
+    const baseRoleQuery = {
+      company,
+      department: dept,
+      taskType: { $in: reportTaskTypes },
+      isDeleted: { $ne: true },
+    };
 
-    const transformedCompletedTasks = !uniqueCompletedTasks.length
-      ? []
-      : uniqueCompletedTasks
-          .filter((task) => {
-            if (!task.task || task.task.isDeleted) return false;
-            if (duration && duration !== task.task.kpaDuration) return;
-            if (empId && task.completedBy.empId !== empId) return;
-            if (task.task.department._id.toString() !== dept) return false;
-            if (month) {
-              const monthIndex = [
-                "january",
-                "february",
-                "march",
-                "april",
-                "may",
-                "june",
-                "july",
-                "august",
-                "september",
-                "october",
-                "november",
-                "december",
-              ].indexOf(String(month).trim().toLowerCase());
+    const [roleTasks, completedTasksRaw] = await Promise.all([
+      kraKpaRole
+        .find(baseRoleQuery)
+        .populate([
+          { path: "department", select: "name" },
+          { path: "assignTo", select: "firstName middleName lastName" },
+        ])
+        .select("-company")
+        .lean(),
+      kraKpaTask
+        .find({
+          company,
+          status: "Completed",
+          ...(dateFilter?.completionDate && {
+            completionDate: dateFilter.completionDate,
+          }),
+        })
+        .populate([
+          {
+            path: "task",
+            populate: [
+              { path: "department", select: "name" },
+              { path: "assignTo", select: "firstName middleName lastName" },
+            ],
+          },
+          {
+            path: "completedBy",
+            select: "firstName middleName lastName empId",
+          },
+        ])
+        .select("-company")
+        .lean(),
+    ]);
 
-              if (monthIndex === -1) return false;
+    const completedByRoleTaskId = new Map();
 
-              const completionDate = new Date(task.completionDate);
-              if (Number.isNaN(completionDate.getTime())) return false;
+    completedTasksRaw.forEach((completion) => {
+      const roleTaskId = completion?.task?._id?.toString();
+      if (!roleTaskId) return;
+      if (completion?.task?.department?._id?.toString() !== dept.toString())
+        return;
 
-              if (completionDate.getMonth() !== monthIndex) return false;
-            }
+      completedByRoleTaskId.set(roleTaskId, completion);
+    });
 
-            if (year) {
-              const completionDate = new Date(task.completionDate);
-              if (Number.isNaN(completionDate.getTime())) return false;
+    const response = {
+      pending: [],
+      completed: [],
+    };
 
-              if (completionDate.getFullYear() !== Number(year)) return false;
-            }
+    roleTasks.forEach((roleTask) => {
+      const completion = completedByRoleTaskId.get(roleTask._id.toString());
 
-            // Department KRA/KPA
-            if (type === "KRA" || type === "KPA") {
-              return task.task.taskType === type;
-            }
+      if (completion) {
+        response.completed.push(
+          normalizeTask({ roleTask, completion, status: "Completed" }),
+        );
+      } else {
+        response.pending.push(normalizeTask({ roleTask, status: "Pending" }));
+      }
+    });
 
-            // Team KRA/KPA
-            if (type === "TEAMKRA" || type === "TEAMKPA") {
-              return task.task.taskType === type;
-            }
-
-            // Individual KRA/KPA also includes own Team assignments
-            if (type === "INDIVIDUALKRA" || type === "INDIVIDUALKPA") {
-              const isOwnTask =
-                task.task.assignTo?._id.toString() === req.user.toString();
-
-              if (task.task.taskType === type) {
-                if (isManager) return true;
-                return isOwnTask;
-              }
-
-              const mappedType =
-                type === "INDIVIDUALKRA" ? "TEAMKRA" : "TEAMKPA";
-              if (task.task.taskType === mappedType) {
-                return isOwnTask;
-              }
-            }
-
-            return false;
-          })
-          .map((task) => {
-            const completedBy = `${task.completedBy.firstName} ${
-              task.completedBy.middleName || ""
-            } ${task.completedBy.lastName}`;
-
-            return {
-              id: task._id,
-              taskName: task.task.task,
-              department: task.task.department.name,
-              completedBy: completedBy,
-              assignedDate: task.task.assignedDate,
-              dueDate: task.task.dueDate,
-              dueTime: "6:30 PM",
-              completionDate: task.completionDate ? task.completionDate : "N/A",
-              status: task.status,
-            };
-          });
-
-    return transformedCompletedTasks;
+    return response;
   } catch (error) {
     throw error;
   }
