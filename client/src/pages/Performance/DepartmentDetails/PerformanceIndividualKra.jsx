@@ -248,7 +248,12 @@ const PerformanceIndividualKra = () => {
             );
             return response.data;
         },
-        onSuccess: (data) => {
+        onSuccess: (data, taskId) => {
+            queryClient.setQueriesData(
+                { queryKey: ["fetchedIndividualKRA", effectiveDeptId] },
+                (oldData = []) =>
+                    (oldData || []).filter((item) => item?.id?.toString?.() !== taskId?.toString?.())
+            );
             queryClient.refetchQueries({ queryKey: ["fetchedIndividualKRA", effectiveDeptId] });
             queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
             queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA", effectiveDeptId] });
@@ -538,18 +543,36 @@ const PerformanceIndividualKra = () => {
                 ? dayjs(item.completionDate).format("YYYY-MM-DD")
                 : String(item.completionDate)
             : "no-date";
+        const completedByKey =
+            item?.completedById || item?.completedByName || item?.completedBy || "unknown";
         const completedId =
             item?.id?.toString?.() ||
-            `${item?.taskName}-${completedDay}-${item?.completedBy || "unknown"}`;
+            `${item?.taskName}-${completedDay}-${completedByKey}`;
         if (uniqueCompletedMap.has(completedId)) return;
         uniqueCompletedMap.set(completedId, item);
     });
-    const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
-        if (!targetMemberName && !targetMemberId) return true;
+
+    const hasSelectedMember = !!targetMemberName || !!targetMemberId;
+    const matchesCompletedMember = (value) => {
+        const normalizedValue = normalizeValue(value);
+        if (!normalizedValue || !hasSelectedMember) return false;
+
         return (
-            normalizeValue(item?.completedBy) === normalizeValue(targetMemberName) ||
-            normalizeValue(item?.completedBy) === normalizeValue(targetMemberId)
+            normalizedValue === normalizeValue(targetMemberId) ||
+            normalizedValue === normalizeValue(targetMemberName)
         );
+    };
+
+    const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
+        if (!hasSelectedMember) return true;
+
+        const completedByCandidates = [
+            item?.completedBy,
+            item?.completedById,
+            item?.completedByName,
+        ];
+
+        return completedByCandidates.some(matchesCompletedMember);
     });
     const selectedDateLabel = selectedDate.format("DD MMM YYYY");
     const toDateKey = (value) => {

@@ -245,7 +245,12 @@ const PerformanceKra = () => {
       );
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, taskId) => {
+      queryClient.setQueriesData(
+        { queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] },
+        (oldData = []) =>
+          (oldData || []).filter((item) => item?.id?.toString?.() !== taskId?.toString?.())
+      );
       queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
       queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
@@ -506,15 +511,38 @@ const PerformanceKra = () => {
         ? dayjs(item.completionDate).format("YYYY-MM-DD")
         : String(item.completionDate)
       : "no-date";
+    const completedByKey =
+      item?.completedById || item?.completedByName || item?.completedBy || "unknown";
     const key =
-      `${(item?.taskName || "").toString().trim().toLowerCase()}-${completedDay}-${(item?.completedBy || "unknown").toString().trim().toLowerCase()}`;
+      `${(item?.taskName || "").toString().trim().toLowerCase()}-${completedDay}-${completedByKey
+        .toString()
+        .trim()
+        .toLowerCase()}`;
     if (!uniqueCompletedMap.has(key)) {
       uniqueCompletedMap.set(key, item);
     }
   });
-  const filteredCompletedEntries = isEmployeeKraKpaRoute
-    ? Array.from(uniqueCompletedMap.values())
-    : Array.from(uniqueCompletedMap.values());
+  const hasSelectedMember = !!targetMemberId || !!targetMemberName;
+  const matchesCompletedMember = (value) => {
+    const normalizedValue = normalizeValue(value);
+    if (!normalizedValue || !hasSelectedMember) return false;
+
+    return (
+      normalizedValue === normalizeValue(targetMemberId) ||
+      normalizedValue === normalizeValue(targetMemberName)
+    );
+  };
+  const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
+    if (!hasSelectedMember) return true;
+
+    const completedByCandidates = [
+      item?.completedBy,
+      item?.completedById,
+      item?.completedByName,
+    ];
+
+    return completedByCandidates.some(matchesCompletedMember);
+  });
   const selectedDateLabel = selectedDate.format("DD MMM YYYY");
   const toDateKey = (value) => {
     if (!value) return null;

@@ -723,13 +723,15 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
           })
           .map((task) => {
             const completedBy = `${task.completedBy.firstName} ${task.completedBy.middleName || ""
-              } ${task.completedBy.lastName}`;
+              } ${task.completedBy.lastName}`.replace(/\s+/g, " ").trim();
 
             return {
               id: task._id,
               taskName: task.task.task,
               department: task.task.department.name,
               completedBy: completedBy,
+              completedById: task.completedBy?._id?.toString?.() || "",
+              completedByName: completedBy,
               assignedDate: task.task.assignedDate,
               dueDate: task.task.dueDate,
               dueTime: "6:30 PM",
