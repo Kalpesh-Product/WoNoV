@@ -217,6 +217,7 @@ const PerformanceDepartmentWiseKra = () => {
     (sum, count) => sum + count,
     0,
   );
+  const totalKraCount = totalCompletedKra + totalPendingKra;
 
   const graphData = [
     {
@@ -356,6 +357,8 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
         title={`KRA overview - ${formatReadableDate(selectedDate)}`}
         border
         padding
+        TitleAmountTotal={totalKraCount}
+        totalTitle="Total KRA"
         greenTitle="KRA "
         TitleAmountGreen={totalCompletedKra}
         redTitle="KRA "
