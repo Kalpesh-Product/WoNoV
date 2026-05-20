@@ -546,6 +546,7 @@ const PerformanceMemberWiseKra = () => {
     (sum, item) => sum + (item.pendingKra || 0),
     0,
   );
+  const totalKraCount = totalCompleted + totalPending;
 
   const graphOptions = {
     chart: {
@@ -599,6 +600,8 @@ const PerformanceMemberWiseKra = () => {
          title={`${selectedDepartmentName || department || "Department"} KRA overview - ${selectedDateLabel}`}
         border
         padding
+        TitleAmountTotal={totalKraCount}
+        totalTitle="Total"
         greenTitle="KRA"
         TitleAmountGreen={totalCompleted}
         redTitle="KRA"

@@ -13,8 +13,10 @@ const YearlyGraph2 = ({
   chartId,
   TitleAmountGreen,
   TitleAmountRed,
+  TitleAmountTotal,
    greenTitle,
   redTitle,
+  totalTitle,
   responsiveResize = false,
   secondParam = false,
   chartHeight,
@@ -128,8 +130,10 @@ const YearlyGraph2 = ({
         border
         title={title || "Title not given"}
         TitleAmount={titleAmount || ""}
+        TitleAmountTotal={TitleAmountTotal}
         TitleAmountGreen={TitleAmountGreen}
         TitleAmountRed={TitleAmountRed}
+        totalTitle={totalTitle}
          greenTitle={greenTitle}
         redTitle={redTitle}
       >

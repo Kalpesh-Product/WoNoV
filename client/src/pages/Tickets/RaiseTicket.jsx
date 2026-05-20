@@ -326,7 +326,7 @@ const RaiseTicket = () => {
                               ?.filter(
                                 (dept) =>
                                   //dept?.department?.name !== "Sales" &&
-                                  dept?.department?.name !== "HR" &&
+                                  // dept?.department?.name !== "HR" &&
                                   dept?.department?.name !== "Tik Department" &&
                                   //dept?.department?.name !== "Finance" &&
                                   // dept.department.name !== "IT" &&
@@ -351,9 +351,9 @@ const RaiseTicket = () => {
                           {/* <MenuItem value="Sales">
                             Sales
                           </MenuItem> */}
-                          <MenuItem value="HR" disabled>
+                          {/* <MenuItem value="HR" disabled>
                             HR
-                          </MenuItem>
+                          </MenuItem> */}
                           {/* <MenuItem value="Finance" disabled>
                             Finance
                           </MenuItem> */}
