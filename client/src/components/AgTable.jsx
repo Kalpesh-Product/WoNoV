@@ -50,9 +50,7 @@ const AgTableComponent = React.memo(
     const gridRef = useRef(null);
 
     useEffect(() => {
-      if (data && data.length > 0) {
-        setFilteredData(data);
-      }
+      setFilteredData(data || []);
     }, [data]);
 
     useEffect(() => {

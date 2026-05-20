@@ -545,7 +545,7 @@ const PerformanceTeamKpa = () => {
                   buttonTitle={shouldHideAddButtonForManager ? "" : "Add Team Monthly KPA"}
                 buttonDisabled={shouldHideAddButtonForManager || isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
-                tableTitle={`${departmentName} TEAM - MONTHLY KPA - ${activeMemberName}`}
+                tableTitle={`${departmentName} - TEAM MONTHLY KPA - ${activeMemberName}`}
                 data={filteredTeamKpa
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({

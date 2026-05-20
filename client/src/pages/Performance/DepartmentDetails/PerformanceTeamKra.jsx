@@ -38,9 +38,9 @@ const PerformanceTeamKra = () => {
     const today = useCurrentDay();
     const selectedMember = useSelector((state) => state.performance.selectedMember);
     const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
-    const selectedDepartmentName = useSelector(
-        (state) => state.performance.selectedDepartmentName
-    );
+  const selectedDepartmentName = useSelector(
+    (state) => state.performance.selectedDepartmentName
+  );
     const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
     const primaryUserDepartment = auth?.user?.departments?.[0];
     const deptId = isEmployeeKraKpaRoute
@@ -57,49 +57,61 @@ const PerformanceTeamKra = () => {
         .join(" ")
         .trim();
     const userId = auth.user._id;
-    const selectedMemberFromRoute = location.state?.selectedMember;
-    const activeMember = selectedMemberFromRoute || selectedMember;
-    const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
-    const normalizeValue = (value) =>
-        (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
-    const { data: selectedDepartments = [] } = useQuery({
-        queryKey: ["performance-selectedDepartments-team"],
-        queryFn: async () => {
-            const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
-            return response.data?.selectedDepartments || [];
-        },
+  const selectedMemberFromRoute = location.state?.selectedMember;
+  const activeMember = selectedMemberFromRoute || selectedMember;
+  const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
+  const normalizeValue = (value) =>
+    (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["performance-selectedDepartments-team-kra"],
+    queryFn: async () => {
+      const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+      return response.data?.selectedDepartments || [];
+    },
+  });
+  const selectedDepartmentManagerName = useMemo(() => {
+    const normalize = (value) =>
+      (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+    const activeDepartmentName =
+      selectedDepartmentName || department || primaryUserDepartment?.name;
+    const activeDepartmentId =
+      selectedDepartment?.toString?.() || primaryUserDepartment?._id?.toString?.();
+
+    const matchedDepartment = selectedDepartments.find((item) => {
+      const itemDepartmentId = item?.department?._id?.toString?.();
+      const itemDepartmentName = item?.department?.name;
+
+      return (
+        (activeDepartmentId && itemDepartmentId && activeDepartmentId === itemDepartmentId) ||
+        (activeDepartmentName &&
+          itemDepartmentName &&
+          normalize(activeDepartmentName) === normalize(itemDepartmentName))
+      );
     });
-    const selectedDepartmentManagerName = useMemo(() => {
-        const normalize = (value) =>
-            (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
 
-        const matchedDepartment = selectedDepartments.find((item) => {
-            const itemDepartmentId = item?.department?._id?.toString?.();
-            const itemDepartmentName = item?.department?.name;
-
-            return (
-                (deptId && itemDepartmentId && deptId.toString() === itemDepartmentId) ||
-                (departmentName &&
-                    itemDepartmentName &&
-                    normalize(departmentName) === normalize(itemDepartmentName))
-            );
-        });
-
-        return matchedDepartment?.admin || "";
-    }, [departmentName, deptId, selectedDepartments]);
-    const isSelectedMemberManager =
-        normalizeValue(activeMember?.memberRole).includes("manager") ||
-        normalizeValue(activeMember?.memberName) === normalizeValue(selectedDepartmentManagerName);
-    const roleTitles =
+    return matchedDepartment?.admin || "";
+  }, [
+    department,
+    primaryUserDepartment?._id,
+    primaryUserDepartment?.name,
+    selectedDepartment,
+    selectedDepartmentName,
+    selectedDepartments,
+  ]);
+  const roleTitles =
         auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
-    const isSuperOrMasterAdmin =
+  const isSuperOrMasterAdmin =
         roleTitles.some((roleTitle) => roleTitle?.includes("super admin")) ||
         roleTitles.some((roleTitle) => roleTitle?.includes("master admin"));
     const userPermissions = auth?.user?.permissions?.permissions || [];
     const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value);
-    const isViewingOwnMember =
+  const isViewingOwnMember =
         normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    const isSelectedMemberManager =
+      normalizeValue(activeMember?.memberRole).includes("manager") ||
+      normalizeValue(activeMember?.memberName) === normalizeValue(selectedDepartmentManagerName);
     const shouldPrefillAssignTo = !!activeMember?.memberId && !isViewingOwnMember;
     const canManageSelectedMemberView = isSuperOrMasterAdmin || isManager;
     const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
@@ -113,6 +125,34 @@ const PerformanceTeamKra = () => {
         isCurrentDateView ||
         canManageSelectedMemberView || !activeMember?.memberId || isViewingOwnMember;
     const isEmployeeLevel = !isSuperOrMasterAdmin && !isManager;
+    const hasSelectedMember = !!activeMember?.memberId || !!activeMember?.memberName;
+    const shouldShowAllTeamData =
+      !hasSelectedMember || isViewingOwnMember || isSelectedMemberManager;
+    const matchesSelectedMember = (value) => {
+        const normalizedValue = normalizeValue(value);
+        if (!normalizedValue || !hasSelectedMember) return false;
+
+        return (
+            normalizedValue === normalizeValue(activeMember?.memberId) ||
+            normalizedValue === normalizeValue(activeMember?.memberName)
+        );
+    };
+    const getMemberMatchCandidates = (item) => [
+        item?.assignToId,
+        item?.assignedToId,
+        item?.createdById,
+        item?.managerId,
+        item?.ownerId,
+        item?.assignedTo,
+        item?.assignTo,
+        item?.createdBy,
+        item?.createdByName,
+        item?.managerName,
+        item?.ownerName,
+        item?.completedById,
+        item?.completedByName,
+        item?.completedBy,
+    ];
 
     const restrictedRoles = [
         "IT Employee",
@@ -293,59 +333,58 @@ const PerformanceTeamKra = () => {
     });
 
     const filteredTeamKra = useMemo(() => {
-        if (!activeMember?.memberId) {
-            return uniqueTeamKra || [];
-        }
-
-        if (isSelectedMemberManager) {
+        if (shouldShowAllTeamData) {
             return uniqueTeamKra || [];
         }
 
         return (uniqueTeamKra || []).filter((item) => {
-            const assignedToList = Array.isArray(item?.assignedTo)
-                ? item.assignedTo
-                : item?.assignedTo
-                    ? [item.assignedTo]
-                    : [];
-            const assignedToId = item?.assignToId?.toString?.() || item?.assignedToId?.toString?.();
+            const assignedCandidates = [
+                item?.assignToId,
+                item?.assignedToId,
+                item?.createdById,
+                item?.managerId,
+                item?.ownerId,
+                ...(Array.isArray(item?.assignedTo)
+                    ? item.assignedTo
+                    : item?.assignedTo
+                        ? [item.assignedTo]
+                        : []),
+                ...(Array.isArray(item?.assignTo)
+                    ? item.assignTo
+                    : item?.assignTo
+                        ? [item.assignTo]
+                        : []),
+                ...(Array.isArray(item?.createdBy)
+                    ? item.createdBy
+                    : item?.createdBy
+                        ? [item.createdBy]
+                        : []),
+            ];
 
-            return (
-                normalizeValue(assignedToId) === normalizeValue(activeMember.memberId) ||
-                normalizeValue(item?.assignToId) === normalizeValue(activeMember.memberId) ||
-                assignedToList.some((name) => {
-                    const normalizedName = normalizeValue(name);
-                    return (
-                        normalizedName === normalizeValue(activeMember.memberName) ||
-                        normalizedName === normalizeValue(activeMember.memberId)
-                    );
-                })
-            );
+            return assignedCandidates.some(matchesSelectedMember);
         });
     }, [
         activeMember?.memberId,
         activeMember?.memberName,
-        isSelectedMemberManager,
+        hasSelectedMember,
+        shouldShowAllTeamData,
         uniqueTeamKra,
     ]);
 
     const filteredCompletedEntries = useMemo(() => {
-        if (!activeMember?.memberId) {
+        if (shouldShowAllTeamData) {
             return completedEntries || [];
         }
 
-        if (isSelectedMemberManager) {
-            return completedEntries || [];
-        }
-
-        return (completedEntries || []).filter(
-            (item) =>
-                normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
-                normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
-        );
+        return (completedEntries || []).filter((item) => {
+            const completedCandidates = getMemberMatchCandidates(item);
+            return completedCandidates.some(matchesSelectedMember);
+        });
     }, [
         activeMember?.memberId,
         activeMember?.memberName,
-        isSelectedMemberManager,
+        hasSelectedMember,
+        shouldShowAllTeamData,
         completedEntries,
     ]);
     const uniqueCompletedEntries = useMemo(() => {
@@ -550,7 +589,7 @@ const PerformanceTeamKra = () => {
                                 selectedDateLabel={selectedDateLabel}
                                 onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}
                                 onNextDay={() => setSelectedDate((prev) => prev.add(1, "day"))}
-                                tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}
+                                tableTitle={`${departmentName} - TEAM DAILY KRA - ${activeMemberName}`}
                                // data={filteredTeamKra
                                 data={dateWiseTeamKra
                                     .filter((item) => item.status !== "Completed")
@@ -585,7 +624,7 @@ const PerformanceTeamKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                    tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
+                                    tableTitle={`COMPLETED - TEAM DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
                                     exportData={!isFutureDateView}
                                     checkAll={false}
                                     // key={filteredCompletedEntries.length}
@@ -596,12 +635,16 @@ const PerformanceTeamKra = () => {
                                         id: item.id,
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
-                                        completionDate: item.completedDate || item.completionDate || item.dueDate,
-                                        completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
+                                        completionDateRaw: item.completedDate || item.completionDate || item.dueDate,
+                                        completionDate: humanDate(item.completedDate || item.completionDate || item.dueDate),
+                                        completionTime: humanTime(item.completedDate || item.completionTime || item.completionDate || item.dueDate),
+                                      //  completionDate: item.completedDate || item.completionDate || item.dueDate,
+                                      //  completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
                                         status: item.status,
                                         completedBy: item.completedBy,
                                     }))}
-                                    dateColumn={"completionDate"}
+                                   // dateColumn={"completionDate"}
+                                    dateColumn={"completionDateRaw"}
                                     columns={completedColumns}
                                     hideDateControls
                                 />

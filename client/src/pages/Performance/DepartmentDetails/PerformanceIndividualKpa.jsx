@@ -747,7 +747,7 @@ const PerformanceIndividualKpa = () => {
                                 // checkbox={showCheckBoxForCurrentView}
                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
                                 // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
-                                tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${activeMemberName}`}
+                                tableTitle={`${departmentName} - INDIVIDUAL MONTHLY KPA - ${activeMemberName}`}
                                 // buttonTitle={"Add Monthly KPA"}
                                 // buttonDisabled={isAddKpaDisabled}
                                 //    handleSubmit={() => {

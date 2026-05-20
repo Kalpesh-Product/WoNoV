@@ -50,7 +50,7 @@ const YearWiseTable = ({
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
-  const today = dayjs();
+  const today = useMemo(() => dayjs(), []);
 
   const [dateRange, setDateRange] = useState([]);
   const [isUserChangedRange, setIsUserChangedRange] = useState(false);
@@ -61,7 +61,12 @@ const YearWiseTable = ({
   };
 
   useEffect(() => {
-    if (!data.length || !dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
+    if (!dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
+
+    if (!data.length) {
+      setDateRange([]);
+      return;
+    }
 
     const currentMonthStart = today.startOf("month");
     const currentMonthEnd = today.endOf("month");
@@ -110,7 +115,7 @@ const YearWiseTable = ({
         key: "selection",
       },
     ]);
-  }, [data, dateColumn, isUserChangedRange]);
+  }, [data, dateColumn, isUserChangedRange, today]);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);

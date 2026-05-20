@@ -245,7 +245,12 @@ const PerformanceKra = () => {
       );
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, taskId) => {
+      queryClient.setQueriesData(
+        { queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] },
+        (oldData = []) =>
+          (oldData || []).filter((item) => item?.id?.toString?.() !== taskId?.toString?.())
+      );
       queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
       queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
@@ -456,13 +461,13 @@ const PerformanceKra = () => {
       field: "completionDate",
       flex: 1,
       hide: true,
-      cellRenderer: (params) => humanDate(params.value),
+     // cellRenderer: (params) => humanDate(params.value),
     },
     {
       headerName: "Completed Time",
       field: "completionTime",
       flex: 1,
-      cellRenderer: (params) => humanTime(params.value),
+     // cellRenderer: (params) => humanTime(params.value),
     },
     {
       field: "status",
@@ -506,15 +511,18 @@ const PerformanceKra = () => {
         ? dayjs(item.completionDate).format("YYYY-MM-DD")
         : String(item.completionDate)
       : "no-date";
+    const completedByKey =
+      item?.completedById || item?.completedByName || item?.completedBy || "unknown";
     const key =
-      `${(item?.taskName || "").toString().trim().toLowerCase()}-${completedDay}-${(item?.completedBy || "unknown").toString().trim().toLowerCase()}`;
+      `${(item?.taskName || "").toString().trim().toLowerCase()}-${completedDay}-${completedByKey
+        .toString()
+        .trim()
+        .toLowerCase()}`;
     if (!uniqueCompletedMap.has(key)) {
       uniqueCompletedMap.set(key, item);
     }
   });
-  const filteredCompletedEntries = isEmployeeKraKpaRoute
-    ? Array.from(uniqueCompletedMap.values())
-    : Array.from(uniqueCompletedMap.values());
+  const filteredCompletedEntries = Array.from(uniqueCompletedMap.values());
   const selectedDateLabel = selectedDate.format("DD MMM YYYY");
   const toDateKey = (value) => {
     if (!value) return null;
@@ -555,6 +563,9 @@ const PerformanceKra = () => {
     const completionDate = item.completedDate || item.completionDate || item.dueDate;
     return toDateKey(completionDate) === selectedDateKey;
   });    
+  const canShowAddDepartmentKraButton = isEmployeeKraKpaRoute
+    ? isSuperOrMasterAdmin || isManager
+    : isSuperOrMasterAdmin || isCurrentDateView;
   const getDepartmentRowStyle = (params) => {
     if (params?.data?.canMarkDoneRow || params?.data?.canEditDeleteRow) return {};
 
@@ -574,21 +585,21 @@ const PerformanceKra = () => {
                 formatTime
                 checkbox={canUseCheckbox && canShowControls && !shouldHideActionsForEmployeeFuture}
                 buttonTitle={
-                  isSuperOrMasterAdmin || isCurrentDateView
-                    ? "Add Daily KRA"
+                  canShowAddDepartmentKraButton
+                    ? "Add Department Daily KRA"
                     : undefined
                 }
                 buttonDisabled={
                   isAddKraDisabled ||
                   !canShowControls ||
-                  (!isSuperOrMasterAdmin && (isEmployeeLevel || !isCurrentDateView))
+                  !canShowAddDepartmentKraButton
                 }
                 handleSubmit={() => setOpenModal(true)}
                   showDateNavigator
                 selectedDateLabel={selectedDateLabel}
                 onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}
                 onNextDay={() => setSelectedDate((prev) => prev.add(1, "day"))}
-                 tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}
+                 tableTitle={`${departmentName} - DEPARTMENT DAILY KRA - ${activeMemberName}`}
                 //tableTitle={`${department} DEPARTMENT - DAILY KRA`}
                  //tableTitle={`${departmentName} DEPARTMENT - DAILY KRA`}
                  // tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}
@@ -626,7 +637,7 @@ const PerformanceKra = () => {
               <WidgetSection padding>
                 <YearWiseTable
                   formatTime
-                   tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
+                   tableTitle={`COMPLETED - DEPARTMENT DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
                   exportData={!isFutureDateView}
                   checkAll={false}
                   // key={filteredCompletedEntries.length}
@@ -637,12 +648,22 @@ const PerformanceKra = () => {
                     id: item.id,
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                    completionDate: item.completedDate || item.completionDate || item.dueDate,
-                    completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
+                    completionDateRaw:
+                      item.completedDate || item.completionDate || item.dueDate,
+                    completionDate:
+                      item.completedDate || item.completionDate || item.dueDate,
+                    completionTime:
+                      item.completedDate ||
+                      item.completionTime ||
+                      item.completionDate ||
+                      item.dueDate,
+                 //   completionDate: item.completedDate || item.completionDate || item.dueDate,
+                 //   completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
                     status: item.status,
                     completedBy: item.completedBy,
                   }))}
-                  dateColumn={"completionDate"}
+                    dateColumn={"completionDateRaw"}
+                 // dateColumn={"completionDate"}
                   columns={completedColumns}
                   hideDateControls
                 />
@@ -659,7 +680,7 @@ const PerformanceKra = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-         title={isEditMode ? "Edit Task" : "Add Daily KRA"}
+         title={isEditMode ? "Edit Task" : "Add Department Daily KRA"}
       >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}

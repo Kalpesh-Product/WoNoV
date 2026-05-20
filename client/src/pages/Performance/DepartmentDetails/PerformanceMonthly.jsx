@@ -655,7 +655,7 @@ const PerformanceMonthly = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 checkbox={showCheckBox}
-                  tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${activeMemberName}`}
+                  tableTitle={`${departmentName} - DEPARTMENT MONTHLY KPA - ${activeMemberName}`}
                 //tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                 //tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
                 // buttonTitle={"Add Monthly KPA"}
@@ -704,7 +704,7 @@ const PerformanceMonthly = () => {
                 //   ...completedEntries.map((item, index) => ({
                 //     tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
                 // key={completedEntries.length}
-                tableTitle={`COMPLETED -Department Monthly KPA - ${activeMemberName} - ${selectedMonthLabel}`}
+                tableTitle={`COMPLETED - Department Monthly KPA - ${activeMemberName} - ${selectedMonthLabel}`}
                 key={`${completedEntriesForSelectedMonth.length}-${selectedMonthLabel}`}
                 exportData={showCompletedExport}
                 hideDateControls
