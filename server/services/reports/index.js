@@ -92,6 +92,7 @@ const reportServiceRegistry = {
       company,
       user,
       query,
+      isReport: true,
     }),
 
   meeting: async ({ dateFilter, company, departmentId, departments, roles }) =>
@@ -107,6 +108,7 @@ const reportServiceRegistry = {
       departmentId,
       departments,
       roles,
+      isReport: true,
     }),
 
   visitor: async ({ dateFilter, company }) =>

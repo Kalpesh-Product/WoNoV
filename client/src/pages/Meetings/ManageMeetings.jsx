@@ -248,6 +248,7 @@ const ManageMeetings = () => {
 
   const transformedMeetings = filteredMeetings.map((meeting, index) => ({
     ...(() => {
+      console.log("meeting booked", meeting.booked);
       const client = clientDetails.find((c) => c.clientName === meeting.client);
       const meetingMonth = dayjs(meeting.date);
       const monthHistory = client?.meetingCreditBalanceHistory?.find(
@@ -284,9 +285,12 @@ const ManageMeetings = () => {
     company: meeting.client || "",
     clientBookedBy: meeting.clientBookedBy || "",
     building: meeting.location?.building?.buildingName || "",
-    department:
-      meeting.bookedBy &&
-      [...meeting.departments.map((dept) => dept.name)].join(","),
+    department: Array.isArray(meeting.department)
+      ? meeting.department
+          .map((dept) => dept?.name)
+          .filter(Boolean)
+          .join(", ")
+      : "Unknown",
     // meetingCreditBalance: clientDetails.find((c) => c.clientName === meeting.client)?.meetingCreditBalance.toFixed(2) || "0.00",
   }));
 
@@ -737,7 +741,7 @@ const ManageMeetings = () => {
               Default Tasks
             </span>
             <List>
-              {checklists[selectedMeetingId]?.defaultItems.map(
+              {checklists[selectedMeetingId]?.defaultItems?.map(
                 (item, index) => (
                   <ListItem key={index}>
                     <Checkbox

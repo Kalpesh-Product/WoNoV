@@ -633,107 +633,107 @@ async function getMeetings(req, res) {
 //       meeting.clientParticipants.map((participant) => participant),
 //     );
 
-//     const transformedMeetings = filteredMeetings.map((meeting, index) => {
-//       // let totalParticipants = [];
-//       // if (
-//       //   internalParticipants[index].length &&
-//       //   clientParticipants[index].length &&
-//       //   meeting.externalParticipants.length
-//       // ) {
-//       //   totalParticipants = [
-//       //     ...internalParticipants[index],
-//       //     ...meeting.externalParticipants,
-//       //   ];
-//       // }
-//       const totalParticipants = [
-//         ...(internalParticipants[index] || []),
-//         ...(clientParticipants[index] || []),
-//         ...(meeting.externalParticipants || []),
-//       ];
+// const transformedMeetings = filteredMeetings.map((meeting, index) => {
+//   // let totalParticipants = [];
+//   // if (
+//   //   internalParticipants[index].length &&
+//   //   clientParticipants[index].length &&
+//   //   meeting.externalParticipants.length
+//   // ) {
+//   //   totalParticipants = [
+//   //     ...internalParticipants[index],
+//   //     ...meeting.externalParticipants,
+//   //   ];
+//   // }
+//   const totalParticipants = [
+//     ...(internalParticipants[index] || []),
+//     ...(clientParticipants[index] || []),
+//     ...(meeting.externalParticipants || []),
+//   ];
 
-//       const meetingReviews = reviews.find(
-//         (review) => review.meeting.toString() === meeting._id.toString(),
-//       );
+//   const meetingReviews = reviews.find(
+//     (review) => review.meeting.toString() === meeting._id.toString(),
+//   );
 
-//       const isClient = meeting.client ? true : false;
+//   const isClient = meeting.client ? true : false;
 
-//       const isReceptionist = meeting.receptionist.departments.some(
-//         (dept) => dept.name === "Administration",
-//       );
+//   const isReceptionist = meeting.receptionist.departments.some(
+//     (dept) => dept.name === "Administration",
+//   );
 
-//       let receptionist;
-//       if (isReceptionist) {
-//         receptionist = meeting.receptionist
-//           ? [
-//               meeting.receptionist.firstName,
-//               meeting.receptionist.middleName,
-//               meeting.receptionist.lastName,
-//             ]
-//               .filter(Boolean)
-//               .join(" ")
-//           : "";
-//       }
+//   let receptionist;
+//   if (isReceptionist) {
+//     receptionist = meeting.receptionist
+//       ? [
+//           meeting.receptionist.firstName,
+//           meeting.receptionist.middleName,
+//           meeting.receptionist.lastName,
+//         ]
+//           .filter(Boolean)
+//           .join(" ")
+//       : "";
+//   }
 
-//       return {
-//         _id: meeting._id,
-//         name: meeting.bookedBy?.name,
-//         receptionist: isReceptionist ? receptionist : "N/A",
-//         // bookedBy: { ...meeting.bookedBy },
-//         clientBookedBy: meeting.clientBookedBy,
-//         department: meeting?.bookedBy?.departments,
-//         roomName: meeting.bookedRoom.name,
-//         bookedBy:
-//           meeting.bookedBy ||
-//           (meeting.externalBookedBy
-//             ? {
-//                 _id: meeting.externalBookedBy._id,
-//                 firstName: meeting.externalBookedBy.firstName,
-//                 middleName: meeting.externalBookedBy.middleName,
-//                 lastName: meeting.externalBookedBy.lastName,
-//               }
-//             : null),
-//         location: meeting.bookedRoom.location,
-//         client: isClient
-//           ? meeting.client.clientName
-//           : meeting.externalClient
-//             ? null
-//             : "BIZNest",
-//         externalClient: meeting.externalClient
-//           ? meeting.externalClient.registeredClientCompany
-//           : null,
-//         paymentAmount: meeting.paymentAmount ? meeting.paymentAmount : null,
-//         paymentMode: meeting.paymentMode ? meeting.paymentMode : null,
-//         paymentStatus: meeting?.paymentStatus ? "Paid" : "Unpaid",
-//         paymentProof: meeting.paymentProof ? meeting.paymentProof.link : null,
-//         meetingType: meeting.meetingType,
-//         housekeepingStatus: meeting.houeskeepingStatus,
-//         date: meeting.startDate,
-//         endDate: meeting.endDate,
-//         startTime: meeting.startTime,
-//         endTime: meeting.endTime,
-//         extendTime: meeting.extendTime,
-//         credits: meeting.credits,
-//         duration: formatDuration(meeting.startTime, meeting.endTime),
-//         meetingStatus: meeting.status,
-//         action: meeting.extend,
-//         agenda: meeting.agenda,
-//         subject: meeting.subject,
-//         housekeepingChecklist: [...(meeting.housekeepingChecklist ?? [])],
-//         // participants:
-//         //   totalParticipants.length > 0
-//         //     ? totalParticipants
-//         //     : internalParticipants[index].length > 0
-//         //     ? internalParticipants[index]
-//         //     : clientParticipants[index].length > 0
-//         //     ? clientParticipants[index]
-//         //     : meeting.externalParticipants,
-//         participants: totalParticipants,
-//         reviews: meetingReviews ? meetingReviews : [],
-//         discountAmount: meeting.discountAmount,
-//         paymentVerification: meeting.paymentVerification,
-//         company: meeting.company,
-//       };
-//     });
+//   return {
+//     _id: meeting._id,
+//     name: meeting.bookedBy?.name,
+//     receptionist: isReceptionist ? receptionist : "N/A",
+//     // bookedBy: { ...meeting.bookedBy },
+//     clientBookedBy: meeting.clientBookedBy,
+//     department: meeting?.bookedBy?.departments,
+//     roomName: meeting.bookedRoom.name,
+//     bookedBy:
+//       meeting.bookedBy ||
+//       (meeting.externalBookedBy
+//         ? {
+//             _id: meeting.externalBookedBy._id,
+//             firstName: meeting.externalBookedBy.firstName,
+//             middleName: meeting.externalBookedBy.middleName,
+//             lastName: meeting.externalBookedBy.lastName,
+//           }
+//         : null),
+//     location: meeting.bookedRoom.location,
+//     client: isClient
+//       ? meeting.client.clientName
+//       : meeting.externalClient
+//         ? null
+//         : "BIZNest",
+//     externalClient: meeting.externalClient
+//       ? meeting.externalClient.registeredClientCompany
+//       : null,
+//     paymentAmount: meeting.paymentAmount ? meeting.paymentAmount : null,
+//     paymentMode: meeting.paymentMode ? meeting.paymentMode : null,
+//     paymentStatus: meeting?.paymentStatus ? "Paid" : "Unpaid",
+//     paymentProof: meeting.paymentProof ? meeting.paymentProof.link : null,
+//     meetingType: meeting.meetingType,
+//     housekeepingStatus: meeting.houeskeepingStatus,
+//     date: meeting.startDate,
+//     endDate: meeting.endDate,
+//     startTime: meeting.startTime,
+//     endTime: meeting.endTime,
+//     extendTime: meeting.extendTime,
+//     credits: meeting.credits,
+//     duration: formatDuration(meeting.startTime, meeting.endTime),
+//     meetingStatus: meeting.status,
+//     action: meeting.extend,
+//     agenda: meeting.agenda,
+//     subject: meeting.subject,
+//     housekeepingChecklist: [...(meeting.housekeepingChecklist ?? [])],
+//     // participants:
+//     //   totalParticipants.length > 0
+//     //     ? totalParticipants
+//     //     : internalParticipants[index].length > 0
+//     //     ? internalParticipants[index]
+//     //     : clientParticipants[index].length > 0
+//     //     ? clientParticipants[index]
+//     //     : meeting.externalParticipants,
+//     participants: totalParticipants,
+//     reviews: meetingReviews ? meetingReviews : [],
+//     discountAmount: meeting.discountAmount,
+//     paymentVerification: meeting.paymentVerification,
+//     company: meeting.company,
+//   };
+// });
 
 //     return res.status(200).json(transformedMeetings);
 //   } catch (error) {

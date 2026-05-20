@@ -623,7 +623,7 @@ const DepartmentReportCommon = () => {
     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
     { field: "reportName", headerName: "Report Name", flex: 1 },
     { field: "startDate", headerName: "Start Date", flex: 1 },
-    { field: "endDate", headerName: "End Date", flex: 1 },
+    { field: "endDate",a headerName: "End Date", flex: 1 },
     {
       field: "download",
       headerName: "Download",

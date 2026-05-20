@@ -29,6 +29,13 @@ require("./meetings/Meetings");
 require("./meetings/Reviews");
 require("./meetings/Rooms");
 
+//Category
+require("./category/Category");
+require("./category/SubCategories");
+
 //Assets
 require("./assets/Assets");
 require("./assets/AssignAsset");
+
+//Vendor
+require("./hr/Vendor");
