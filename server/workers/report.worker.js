@@ -61,6 +61,7 @@ const worker = new Worker(
       const company = foundUser.company;
       const user = foundUser._id;
 
+      throw new Error("Retry Error For Test");
       console.log("user worker", user);
       data = await reportService({
         dateFilter: reportJob.filters,

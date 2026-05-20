@@ -36,15 +36,15 @@ const DepartmentReportCommon = () => {
   const [downloadedByReportId, setDownloadedByReportId] = useState({});
   // Replace the useState initialization
   const [retryCooldownByReportId, setRetryCooldownByReportId] = useState(() => {
-    // Lazy initializer runs once — reads storage before any effect can clear it
     try {
       const stored = localStorage.getItem(RETRY_COOLDOWN_STORAGE_KEY);
       if (!stored) return {};
       const parsed = JSON.parse(stored);
       const now = Date.now();
+      const scoped = parsed?.[selectedModule?.module] || {};
 
       return Object.fromEntries(
-        Object.entries(parsed).filter(
+        Object.entries(scoped).filter(
           ([, retryAt]) => retryAt && new Date(retryAt).getTime() > now,
         ),
       );
@@ -65,22 +65,9 @@ const DepartmentReportCommon = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const isCalendarOpen = Boolean(anchorEl);
 
-  // For storage — writes when cooldowns change
   useEffect(() => {
-    const activeCooldownEntries = Object.entries(
-      retryCooldownByReportId,
-    ).filter(([, retryAt]) => retryAt && dayjs(retryAt).isAfter(dayjs()));
-
-    if (!activeCooldownEntries.length) {
-      localStorage.removeItem(RETRY_COOLDOWN_STORAGE_KEY);
-      return;
-    }
-
-    localStorage.setItem(
-      RETRY_COOLDOWN_STORAGE_KEY,
-      JSON.stringify(Object.fromEntries(activeCooldownEntries)),
-    );
-  }, [retryCooldownByReportId]);
+    setRetryCooldownByReportId({});
+  }, [selectedModule?.module]);
 
   const handleDateRangeChange = (item) => {
     setDateRange([item.selection]);
@@ -569,12 +556,15 @@ const DepartmentReportCommon = () => {
   });
 
   useEffect(() => {
+    if (!selectedModule?.module || !reports.length) return;
+
     const storedCooldownRaw = localStorage.getItem(RETRY_COOLDOWN_STORAGE_KEY);
-    if (!storedCooldownRaw || !reports.length) return;
+    if (!storedCooldownRaw) return;
 
     let storedCooldownByReportId = {};
     try {
-      storedCooldownByReportId = JSON.parse(storedCooldownRaw);
+      const parsedStorage = JSON.parse(storedCooldownRaw);
+      storedCooldownByReportId = parsedStorage?.[selectedModule.module] || {};
     } catch {
       localStorage.removeItem(RETRY_COOLDOWN_STORAGE_KEY);
       return;
@@ -601,23 +591,46 @@ const DepartmentReportCommon = () => {
         ]),
       ),
     }));
-  }, [reports]);
+  }, [reports, selectedModule?.module]);
 
   useEffect(() => {
+    if (!selectedModule?.module) return;
+
     const activeCooldownEntries = Object.entries(
       retryCooldownByReportId,
     ).filter(([, retryAt]) => retryAt && dayjs(retryAt).isAfter(dayjs()));
 
+    let existingStorage = {};
+    try {
+      existingStorage = JSON.parse(
+        localStorage.getItem(RETRY_COOLDOWN_STORAGE_KEY) || "{}",
+      );
+    } catch {
+      existingStorage = {};
+    }
+
     if (!activeCooldownEntries.length) {
-      localStorage.removeItem(RETRY_COOLDOWN_STORAGE_KEY);
+      delete existingStorage[selectedModule.module];
+      if (!Object.keys(existingStorage).length) {
+        localStorage.removeItem(RETRY_COOLDOWN_STORAGE_KEY);
+        return;
+      }
+      localStorage.setItem(
+        RETRY_COOLDOWN_STORAGE_KEY,
+        JSON.stringify(existingStorage),
+      );
       return;
     }
 
+    existingStorage[selectedModule.module] = Object.fromEntries(
+      activeCooldownEntries,
+    );
+
     localStorage.setItem(
       RETRY_COOLDOWN_STORAGE_KEY,
-      JSON.stringify(Object.fromEntries(activeCooldownEntries)),
+      JSON.stringify(existingStorage),
     );
-  }, [retryCooldownByReportId]);
+  }, [retryCooldownByReportId, selectedModule?.module]);
 
   const columns = [
     { field: "srNo", headerName: "S.No.", maxWidth: 90 },
