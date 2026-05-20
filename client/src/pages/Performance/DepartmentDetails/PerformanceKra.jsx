@@ -455,6 +455,7 @@ const PerformanceKra = () => {
       headerName: "Completed Date",
       field: "completionDate",
       flex: 1,
+      hide: true,
       cellRenderer: (params) => humanDate(params.value),
     },
     {

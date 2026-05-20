@@ -601,7 +601,7 @@ const PerformanceMemberWiseKra = () => {
         border
         padding
         TitleAmountTotal={totalKraCount}
-        totalTitle="Total KRA"
+        totalTitle="Total"
         greenTitle="KRA"
         TitleAmountGreen={totalCompleted}
         redTitle="KRA"

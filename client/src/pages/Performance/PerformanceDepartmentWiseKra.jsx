@@ -358,7 +358,7 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
         border
         padding
         TitleAmountTotal={totalKraCount}
-        totalTitle="Total KRA"
+        totalTitle="Total"
         greenTitle="KRA "
         TitleAmountGreen={totalCompletedKra}
         redTitle="KRA "

@@ -437,7 +437,8 @@ const PerformanceTeamKra = () => {
         {
             headerName: "Completed Date",
             field: "completionDate",
-            flex: 1 
+            flex: 1,
+            hide: true,
         },
         {
             headerName: "Completed Time",
