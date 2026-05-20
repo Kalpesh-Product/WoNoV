@@ -38,9 +38,9 @@ const PerformanceTeamKra = () => {
     const today = useCurrentDay();
     const selectedMember = useSelector((state) => state.performance.selectedMember);
     const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
-    const selectedDepartmentName = useSelector(
-        (state) => state.performance.selectedDepartmentName
-    );
+  const selectedDepartmentName = useSelector(
+    (state) => state.performance.selectedDepartmentName
+  );
     const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
     const primaryUserDepartment = auth?.user?.departments?.[0];
     const deptId = isEmployeeKraKpaRoute
@@ -57,21 +57,61 @@ const PerformanceTeamKra = () => {
         .join(" ")
         .trim();
     const userId = auth.user._id;
-    const selectedMemberFromRoute = location.state?.selectedMember;
-    const activeMember = selectedMemberFromRoute || selectedMember;
-    const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
-    const normalizeValue = (value) =>
-        (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
-    const roleTitles =
+  const selectedMemberFromRoute = location.state?.selectedMember;
+  const activeMember = selectedMemberFromRoute || selectedMember;
+  const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
+  const normalizeValue = (value) =>
+    (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["performance-selectedDepartments-team-kra"],
+    queryFn: async () => {
+      const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+      return response.data?.selectedDepartments || [];
+    },
+  });
+  const selectedDepartmentManagerName = useMemo(() => {
+    const normalize = (value) =>
+      (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+    const activeDepartmentName =
+      selectedDepartmentName || department || primaryUserDepartment?.name;
+    const activeDepartmentId =
+      selectedDepartment?.toString?.() || primaryUserDepartment?._id?.toString?.();
+
+    const matchedDepartment = selectedDepartments.find((item) => {
+      const itemDepartmentId = item?.department?._id?.toString?.();
+      const itemDepartmentName = item?.department?.name;
+
+      return (
+        (activeDepartmentId && itemDepartmentId && activeDepartmentId === itemDepartmentId) ||
+        (activeDepartmentName &&
+          itemDepartmentName &&
+          normalize(activeDepartmentName) === normalize(itemDepartmentName))
+      );
+    });
+
+    return matchedDepartment?.admin || "";
+  }, [
+    department,
+    primaryUserDepartment?._id,
+    primaryUserDepartment?.name,
+    selectedDepartment,
+    selectedDepartmentName,
+    selectedDepartments,
+  ]);
+  const roleTitles =
         auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
-    const isSuperOrMasterAdmin =
+  const isSuperOrMasterAdmin =
         roleTitles.some((roleTitle) => roleTitle?.includes("super admin")) ||
         roleTitles.some((roleTitle) => roleTitle?.includes("master admin"));
     const userPermissions = auth?.user?.permissions?.permissions || [];
     const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value);
-    const isViewingOwnMember =
+  const isViewingOwnMember =
         normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
         normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    const isSelectedMemberManager =
+      normalizeValue(activeMember?.memberRole).includes("manager") ||
+      normalizeValue(activeMember?.memberName) === normalizeValue(selectedDepartmentManagerName);
     const shouldPrefillAssignTo = !!activeMember?.memberId && !isViewingOwnMember;
     const canManageSelectedMemberView = isSuperOrMasterAdmin || isManager;
     const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
@@ -86,7 +126,8 @@ const PerformanceTeamKra = () => {
         canManageSelectedMemberView || !activeMember?.memberId || isViewingOwnMember;
     const isEmployeeLevel = !isSuperOrMasterAdmin && !isManager;
     const hasSelectedMember = !!activeMember?.memberId || !!activeMember?.memberName;
-    const shouldShowAllTeamData = !hasSelectedMember || isViewingOwnMember;
+    const shouldShowAllTeamData =
+      !hasSelectedMember || isViewingOwnMember || isSelectedMemberManager;
     const matchesSelectedMember = (value) => {
         const normalizedValue = normalizeValue(value);
         if (!normalizedValue || !hasSelectedMember) return false;
