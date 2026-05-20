@@ -1,6 +1,7 @@
 const buildDateFilter = require("../../utils/dateFilter");
 const { fetchBudgetService } = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
+const { fetchPerformanceReportService } = require("./performance");
 const {
   fetchDeptTaskReportService,
   fetchMyTasksReportService,
@@ -22,6 +23,55 @@ const normalizeReportIdentifier = (value = "") =>
  * Keeping reportName aliases for backward compatibility.
  */
 const reportServiceRegistry = {
+  "dept-kpa": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchPerformanceReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "completionDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+      type: "KPA",
+      isReport: true,
+    }),
+  "dept-kra": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchPerformanceReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "completionDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+      type: "KRA",
+      isReport: true,
+    }),
+
   "my-task": async ({
     dateFilter,
     departmentId,
@@ -36,7 +86,6 @@ const reportServiceRegistry = {
           startDate: dateFilter?.startDate,
           endDate: dateFilter?.endDate,
           field: "assignedDate",
-          user: user,
         }),
       },
       departmentId,

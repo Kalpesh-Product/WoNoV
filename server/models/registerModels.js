@@ -39,3 +39,7 @@ require("./assets/AssignAsset");
 
 //Vendor
 require("./hr/Vendor");
+
+//Performance
+require("./performances/kraKpaRole");
+require("./performances/kraKpaTask");
