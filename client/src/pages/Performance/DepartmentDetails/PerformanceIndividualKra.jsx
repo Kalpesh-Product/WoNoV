@@ -336,7 +336,7 @@ const PerformanceIndividualKra = () => {
             }
         },
         enabled: !!effectiveDeptId,
-    });    
+    });
 
     const departmentColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -613,6 +613,9 @@ const PerformanceIndividualKra = () => {
       const completionDate = item.completedDate || item.completionDate || item.dueDate;
       return toDateKey(completionDate) === selectedDateKey;
     });
+    const canShowAddIndividualKraButton = isEmployeeKraKpaRoute
+        ? isSuperOrMasterAdmin || isManager
+        : isSuperOrMasterAdmin || isCurrentDateView;
     const getIndividualRowStyle = (params) => {
       if (params?.data?.canMarkDoneRow || params?.data?.canEditDeleteRow) return {};
 
@@ -641,14 +644,14 @@ const PerformanceIndividualKra = () => {
                                 //     isAddKraDisabled || shouldHideControlsForSelectedMemberView
                                 checkbox={canUseCheckbox && canShowControls && !(isEmployeeLevel && isFutureDateView)}
                                 buttonTitle={
-                                     isSuperOrMasterAdmin || isCurrentDateView
+                                     canShowAddIndividualKraButton
                                         ? "Add Individual Daily KRA"
                                         : undefined
                                 }
                                 buttonDisabled={
                                     isAddKraDisabled ||
                                     !canShowControls ||
-                                    (!isSuperOrMasterAdmin && (isEmployeeLevel || !isCurrentDateView))
+                                    !canShowAddIndividualKraButton
                                    // isAddKraDisabled || !canShowControls
                                 }
                                 handleSubmit={() => setOpenModal(true)}
@@ -813,3 +816,4 @@ const PerformanceIndividualKra = () => {
 };
 
 export default PerformanceIndividualKra;
+

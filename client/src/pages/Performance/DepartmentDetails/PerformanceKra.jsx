@@ -563,6 +563,9 @@ const PerformanceKra = () => {
     const completionDate = item.completedDate || item.completionDate || item.dueDate;
     return toDateKey(completionDate) === selectedDateKey;
   });    
+  const canShowAddDepartmentKraButton = isEmployeeKraKpaRoute
+    ? isSuperOrMasterAdmin || isManager
+    : isSuperOrMasterAdmin || isCurrentDateView;
   const getDepartmentRowStyle = (params) => {
     if (params?.data?.canMarkDoneRow || params?.data?.canEditDeleteRow) return {};
 
@@ -582,14 +585,14 @@ const PerformanceKra = () => {
                 formatTime
                 checkbox={canUseCheckbox && canShowControls && !shouldHideActionsForEmployeeFuture}
                 buttonTitle={
-                  isSuperOrMasterAdmin || isCurrentDateView
+                  canShowAddDepartmentKraButton
                     ? "Add Department Daily KRA"
                     : undefined
                 }
                 buttonDisabled={
                   isAddKraDisabled ||
                   !canShowControls ||
-                  (!isSuperOrMasterAdmin && (isEmployeeLevel || !isCurrentDateView))
+                  !canShowAddDepartmentKraButton
                 }
                 handleSubmit={() => setOpenModal(true)}
                   showDateNavigator
