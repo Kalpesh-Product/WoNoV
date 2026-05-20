@@ -710,12 +710,13 @@ const PerformanceIndividualKra = () => {
                                         id: item.id,
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
-                                        completionDate: item.completedDate || item.completionDate || item.dueDate,
-                                        completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
+                                        completionDateRaw: item.completedDate || item.completionDate || item.dueDate,
+                                        completionDate: humanDate(item.completedDate || item.completionDate || item.dueDate),
+                                        completionTime: humanTime(item.completedDate || item.completionTime || item.completionDate || item.dueDate),
                                         status: item.status,
                                         completedBy: item.completedBy,
                                     }))}
-                                    dateColumn={"completionDate"}
+                                    dateColumn={"completionDateRaw"}
                                     columns={completedColumns}
                                     hideDateControls
                                 />
