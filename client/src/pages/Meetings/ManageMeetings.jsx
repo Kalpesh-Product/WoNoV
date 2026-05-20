@@ -43,7 +43,7 @@ const ManageMeetings = () => {
   const department = usePageDepartment();
   const isFinance = department?.name === "Finance";
   const isTechDepartment = auth?.user?.departments?.some(
-    (dept) => dept._id === "6798ba9de469e809084e2494"
+    (dept) => dept._id === "6798ba9de469e809084e2494",
   );
   const [newItem, setNewItem] = useState("");
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
@@ -89,13 +89,14 @@ const ManageMeetings = () => {
         .filter((u) => u.isActive === true);
     },
   });
-  const { data: clientDetails = [], isLoading: isClientDetailsLoading } = useQuery({
-    queryKey: ["clientsData"],
-    queryFn: async () => {
-      const response = await axios.get("/api/sales/co-working-clients");
-      return response.data;
-    },
-  });
+  const { data: clientDetails = [], isLoading: isClientDetailsLoading } =
+    useQuery({
+      queryKey: ["clientsData"],
+      queryFn: async () => {
+        const response = await axios.get("/api/sales/co-working-clients");
+        return response.data;
+      },
+    });
   // console.log("clientDetails", clientDetails);
   const { data: clientEmployees = [], isLoading: isClientEmployeesLoading } =
     useQuery({
@@ -167,7 +168,7 @@ const ManageMeetings = () => {
   });
 
   const onEditSubmit = (data) => {
-     const mapParticipantIds = (participants = []) =>
+    const mapParticipantIds = (participants = []) =>
       participants
         .map((participant) =>
           typeof participant === "string" ? participant : participant?._id,
@@ -191,7 +192,7 @@ const ManageMeetings = () => {
       setEditValue("endTime", dayjs(new Date(selectedMeeting.endTime)));
 
       const formattedInternal =
-       selectedMeeting.participants
+        selectedMeeting.participants
           ?.filter((p) => p?.firstName)
           .map((p) => ({
             _id: p._id,
@@ -240,7 +241,7 @@ const ManageMeetings = () => {
   const filteredMeetings = meetings.filter(
     (item) =>
       // item.meetingStatus !== "Completed" && item.meetingType === "Internal",
-     item.meetingStatus !== "Completed" &&
+      item.meetingStatus !== "Completed" &&
       item.meetingStatus !== "Cancelled" &&
       item.meetingType === "Internal",
   );
@@ -249,8 +250,9 @@ const ManageMeetings = () => {
     ...(() => {
       const client = clientDetails.find((c) => c.clientName === meeting.client);
       const meetingMonth = dayjs(meeting.date);
-      const monthHistory = client?.meetingCreditBalanceHistory?.find((history) =>
-        dayjs(history.monthStartDate).isSame(meetingMonth, "month"),
+      const monthHistory = client?.meetingCreditBalanceHistory?.find(
+        (history) =>
+          dayjs(history.monthStartDate).isSame(meetingMonth, "month"),
       );
       const totalMonthlyCredit = Number(client?.totalMeetingCredits || 0);
 
@@ -284,7 +286,7 @@ const ManageMeetings = () => {
     building: meeting.location?.building?.buildingName || "",
     department:
       meeting.bookedBy &&
-      [...meeting.bookedBy.departments.map((dept) => dept.name)].join(","),
+      [...meeting.departments.map((dept) => dept.name)].join(","),
     // meetingCreditBalance: clientDetails.find((c) => c.clientName === meeting.client)?.meetingCreditBalance.toFixed(2) || "0.00",
   }));
 
@@ -648,20 +650,20 @@ const ManageMeetings = () => {
 
         const menuItems = [
           !isOngoing &&
-          !isHousekeepingCompleted && {
-            label: "Update Checklist",
-            onClick: () =>
-              handleOpenChecklistModal("update", params.data._id),
-          },
+            !isHousekeepingCompleted && {
+              label: "Update Checklist",
+              onClick: () =>
+                handleOpenChecklistModal("update", params.data._id),
+            },
           isUpcoming && {
             label: "Edit",
             onClick: () => handleEditMeeting("edit", params.data),
           },
           !isOngoing &&
-          !isHousekeepingPending && {
-            label: "Mark As Ongoing",
-            onClick: () => handleOngoing("ongoing", params.data._id),
-          },
+            !isHousekeepingPending && {
+              label: "Mark As Ongoing",
+              onClick: () => handleOngoing("ongoing", params.data._id),
+            },
           !isUpcoming && {
             label: "Mark As Completed",
             onClick: () => handleCompleted("complete", params.data._id),
@@ -671,7 +673,7 @@ const ManageMeetings = () => {
             onClick: () => handleExtendMeetingModal("extend", params.data),
           },
           // !isCancelled && {
-            isUpcoming && {
+          isUpcoming && {
             label: "Cancel",
             onClick: () => handleSelectedMeeting("cancel", params.data),
           },
@@ -899,7 +901,7 @@ const ManageMeetings = () => {
             <DetalisFormatted
               title="Receptionist"
               detail={selectedMeeting.receptionist}
-            // detail={`N/A`}
+              // detail={`N/A`}
             />
             <DetalisFormatted
               title="Department"

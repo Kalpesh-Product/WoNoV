@@ -133,9 +133,10 @@ const fetchMeetingReportService = async ({
 
       const isClient = meeting.client ? true : false;
 
-      const isReceptionist = meeting.receptionist.departments.some(
-        (dept) => dept.name === "Administration",
-      );
+      const isReceptionist =
+        meeting.receptionist?.departments?.some(
+          (dept) => dept.name === "Administration",
+        ) ?? false;
 
       let receptionist;
       if (isReceptionist) {
@@ -155,27 +156,53 @@ const fetchMeetingReportService = async ({
         name: meeting.bookedBy?.name,
         receptionist: isReceptionist ? receptionist : "N/A",
         // bookedBy: { ...meeting.bookedBy },
-        clientBookedBy: meeting.clientBookedBy,
-        department: meeting?.bookedBy?.departments,
+        clientBookedBy: meeting.clientBookedBy
+          ? meeting.clientBookedBy.employeeName || meeting.clientBookedBy.email
+          : null,
+        department: Array.isArray(meeting?.bookedBy?.departments)
+          ? meeting.bookedBy.departments
+          : [],
         roomName: meeting.bookedRoom.name,
-        bookedBy:
-          meeting.bookedBy ||
-          (meeting.externalBookedBy
-            ? {
-                _id: meeting.externalBookedBy._id,
-                firstName: meeting.externalBookedBy.firstName,
-                middleName: meeting.externalBookedBy.middleName,
-                lastName: meeting.externalBookedBy.lastName,
-              }
-            : null),
-        location: meeting.bookedRoom.location,
+        bookedBy: meeting.bookedBy
+          ? [meeting.bookedBy.firstName, meeting.bookedBy.lastName]
+              .filter(Boolean)
+              .join(" ") || meeting.bookedBy.email
+          : meeting.externalBookedBy
+            ? [
+                meeting.externalBookedBy.firstName,
+                meeting.externalBookedBy.middleName,
+                meeting.externalBookedBy.lastName,
+              ]
+                .filter(Boolean)
+                .join(" ")
+            : null,
+        location: meeting.bookedRoom?.location
+          ? [
+              meeting.bookedRoom.location.unitNo,
+              meeting.bookedRoom.location.unitName,
+              meeting.bookedRoom.location.building?.buildingName,
+            ]
+              .filter(Boolean)
+              .join(" - ")
+          : null,
         client: isClient
           ? meeting.client.clientName
           : meeting.externalClient
             ? null
             : "BIZNest",
         externalClient: meeting.externalClient
-          ? meeting.externalClient.registeredClientCompany
+          ? meeting.externalClient.registeredClientCompany ||
+            meeting.externalClient.companyName ||
+            [
+              meeting.externalClient.firstName,
+              meeting.externalClient.middleName,
+              meeting.externalClient.lastName,
+            ]
+              .filter(Boolean)
+              .join(" ") ||
+            meeting.externalClient.email ||
+            meeting.externalClient.mobileNumber ||
+            null
           : null,
         paymentAmount: meeting.paymentAmount ? meeting.paymentAmount : null,
         paymentMode: meeting.paymentMode ? meeting.paymentMode : null,
@@ -203,7 +230,23 @@ const fetchMeetingReportService = async ({
         //     : clientParticipants[index].length > 0
         //     ? clientParticipants[index]
         //     : meeting.externalParticipants,
-        participants: totalParticipants,
+        participants: totalParticipants
+          .map((participant) => {
+            if (!participant) return null;
+
+            if (typeof participant === "string") return participant;
+
+            return (
+              participant.employeeName ||
+              [participant.firstName, participant.lastName]
+                .filter(Boolean)
+                .join(" ") ||
+              participant.email ||
+              participant.name ||
+              null
+            );
+          })
+          .filter(Boolean),
         reviews: meetingReviews ? meetingReviews : [],
         discountAmount: meeting.discountAmount,
         paymentVerification: meeting.paymentVerification,

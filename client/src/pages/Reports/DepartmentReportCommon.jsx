@@ -627,6 +627,7 @@ const DepartmentReportCommon = () => {
     {
       field: "download",
       headerName: "Download",
+      cellStyle: { display: "flex", alignItems: "center" },
       flex: 1,
       cellRenderer: (params) => {
         const row = params?.data;
@@ -669,7 +670,7 @@ const DepartmentReportCommon = () => {
                 setActiveReportId(row?._id || null);
                 generateReportMutation.mutate(row);
               }}
-              className="rounded bg-blue-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-blue-300"
+              className="rounded bg-primary px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-gray-400"
               disabled={isGenerating || status === "failed" || !row?._id}
             >
               {primaryButtonLabel}
