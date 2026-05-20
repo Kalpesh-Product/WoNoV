@@ -619,7 +619,7 @@ const PerformanceIndividualKra = () => {
                                 checkbox={canUseCheckbox && canShowControls && !(isEmployeeLevel && isFutureDateView)}
                                 buttonTitle={
                                      isSuperOrMasterAdmin || isCurrentDateView
-                                        ? "Add Daily KRA"
+                                        ? "Add Individual Daily KRA"
                                         : undefined
                                 }
                                 buttonDisabled={
@@ -633,7 +633,7 @@ const PerformanceIndividualKra = () => {
                                 selectedDateLabel={selectedDateLabel}
                                 onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}
                                 onNextDay={() => setSelectedDate((prev) => prev.add(1, "day"))}
-                                tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${activeMemberName}`}
+                                tableTitle={`${departmentName} - INDIVIDUAL DAILY KRA - ${activeMemberName}`}
                                // tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
                                  // tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA`}
                                 //tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
@@ -672,7 +672,7 @@ const PerformanceIndividualKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                       tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
+                                       tableTitle={`COMPLETED - INDIVIDUAL DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
                                     //tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
                                     exportData={!isFutureDateView}
                                     checkAll={false}
@@ -706,7 +706,7 @@ const PerformanceIndividualKra = () => {
             <MuiModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                title={isEditMode ? "Edit Task" : "Add Daily KRA"}
+                title={isEditMode ? "Edit Task" : "Add Individual Daily KRA"}
             >
                 <form
                     onSubmit={submitDailyKra(handleFormSubmit)}

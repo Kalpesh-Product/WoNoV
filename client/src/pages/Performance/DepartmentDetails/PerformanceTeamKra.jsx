@@ -550,7 +550,7 @@ const PerformanceTeamKra = () => {
                                 selectedDateLabel={selectedDateLabel}
                                 onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}
                                 onNextDay={() => setSelectedDate((prev) => prev.add(1, "day"))}
-                                tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${activeMemberName}`}
+                                tableTitle={`${departmentName} - TEAM DAILY KRA - ${activeMemberName}`}
                                // data={filteredTeamKra
                                 data={dateWiseTeamKra
                                     .filter((item) => item.status !== "Completed")
@@ -585,7 +585,7 @@ const PerformanceTeamKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                    tableTitle={`COMPLETED - DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
+                                    tableTitle={`COMPLETED - TEAM DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
                                     exportData={!isFutureDateView}
                                     checkAll={false}
                                     // key={filteredCompletedEntries.length}
@@ -596,12 +596,16 @@ const PerformanceTeamKra = () => {
                                         id: item.id,
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
-                                        completionDate: item.completedDate || item.completionDate || item.dueDate,
-                                        completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
+                                        completionDateRaw: item.completedDate || item.completionDate || item.dueDate,
+                                        completionDate: humanDate(item.completedDate || item.completionDate || item.dueDate),
+                                        completionTime: humanTime(item.completedDate || item.completionTime || item.completionDate || item.dueDate),
+                                      //  completionDate: item.completedDate || item.completionDate || item.dueDate,
+                                      //  completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
                                         status: item.status,
                                         completedBy: item.completedBy,
                                     }))}
-                                    dateColumn={"completionDate"}
+                                   // dateColumn={"completionDate"}
+                                    dateColumn={"completionDateRaw"}
                                     columns={completedColumns}
                                     hideDateControls
                                 />
