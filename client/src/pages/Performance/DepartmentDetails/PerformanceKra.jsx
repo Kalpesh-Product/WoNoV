@@ -522,27 +522,7 @@ const PerformanceKra = () => {
       uniqueCompletedMap.set(key, item);
     }
   });
-  const hasSelectedMember = !!targetMemberId || !!targetMemberName;
-  const matchesCompletedMember = (value) => {
-    const normalizedValue = normalizeValue(value);
-    if (!normalizedValue || !hasSelectedMember) return false;
-
-    return (
-      normalizedValue === normalizeValue(targetMemberId) ||
-      normalizedValue === normalizeValue(targetMemberName)
-    );
-  };
-  const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
-    if (!hasSelectedMember) return true;
-
-    const completedByCandidates = [
-      item?.completedBy,
-      item?.completedById,
-      item?.completedByName,
-    ];
-
-    return completedByCandidates.some(matchesCompletedMember);
-  });
+  const filteredCompletedEntries = Array.from(uniqueCompletedMap.values());
   const selectedDateLabel = selectedDate.format("DD MMM YYYY");
   const toDateKey = (value) => {
     if (!value) return null;
@@ -665,8 +645,15 @@ const PerformanceKra = () => {
                     id: item.id,
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                       completionDate: humanDate(item.completedDate || item.completionDate || item.dueDate),
-                    completionTime: humanTime(item.completedDate || item.completionTime || item.completionDate || item.dueDate),
+                    completionDateRaw:
+                      item.completedDate || item.completionDate || item.dueDate,
+                    completionDate:
+                      item.completedDate || item.completionDate || item.dueDate,
+                    completionTime:
+                      item.completedDate ||
+                      item.completionTime ||
+                      item.completionDate ||
+                      item.dueDate,
                  //   completionDate: item.completedDate || item.completionDate || item.dueDate,
                  //   completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
                     status: item.status,
