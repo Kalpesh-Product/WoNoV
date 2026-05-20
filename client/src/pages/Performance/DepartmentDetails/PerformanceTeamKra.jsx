@@ -62,34 +62,6 @@ const PerformanceTeamKra = () => {
     const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
     const normalizeValue = (value) =>
         (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
-    const { data: selectedDepartments = [] } = useQuery({
-        queryKey: ["performance-selectedDepartments-team"],
-        queryFn: async () => {
-            const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
-            return response.data?.selectedDepartments || [];
-        },
-    });
-    const selectedDepartmentManagerName = useMemo(() => {
-        const normalize = (value) =>
-            (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
-
-        const matchedDepartment = selectedDepartments.find((item) => {
-            const itemDepartmentId = item?.department?._id?.toString?.();
-            const itemDepartmentName = item?.department?.name;
-
-            return (
-                (deptId && itemDepartmentId && deptId.toString() === itemDepartmentId) ||
-                (departmentName &&
-                    itemDepartmentName &&
-                    normalize(departmentName) === normalize(itemDepartmentName))
-            );
-        });
-
-        return matchedDepartment?.admin || "";
-    }, [departmentName, deptId, selectedDepartments]);
-    const isSelectedMemberManager =
-        normalizeValue(activeMember?.memberRole).includes("manager") ||
-        normalizeValue(activeMember?.memberName) === normalizeValue(selectedDepartmentManagerName);
     const roleTitles =
         auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
     const isSuperOrMasterAdmin =
@@ -113,6 +85,33 @@ const PerformanceTeamKra = () => {
         isCurrentDateView ||
         canManageSelectedMemberView || !activeMember?.memberId || isViewingOwnMember;
     const isEmployeeLevel = !isSuperOrMasterAdmin && !isManager;
+    const hasSelectedMember = !!activeMember?.memberId || !!activeMember?.memberName;
+    const shouldShowAllTeamData = !hasSelectedMember || isViewingOwnMember;
+    const matchesSelectedMember = (value) => {
+        const normalizedValue = normalizeValue(value);
+        if (!normalizedValue || !hasSelectedMember) return false;
+
+        return (
+            normalizedValue === normalizeValue(activeMember?.memberId) ||
+            normalizedValue === normalizeValue(activeMember?.memberName)
+        );
+    };
+    const getMemberMatchCandidates = (item) => [
+        item?.assignToId,
+        item?.assignedToId,
+        item?.createdById,
+        item?.managerId,
+        item?.ownerId,
+        item?.assignedTo,
+        item?.assignTo,
+        item?.createdBy,
+        item?.createdByName,
+        item?.managerName,
+        item?.ownerName,
+        item?.completedById,
+        item?.completedByName,
+        item?.completedBy,
+    ];
 
     const restrictedRoles = [
         "IT Employee",
@@ -293,59 +292,58 @@ const PerformanceTeamKra = () => {
     });
 
     const filteredTeamKra = useMemo(() => {
-        if (!activeMember?.memberId) {
-            return uniqueTeamKra || [];
-        }
-
-        if (isSelectedMemberManager) {
+        if (shouldShowAllTeamData) {
             return uniqueTeamKra || [];
         }
 
         return (uniqueTeamKra || []).filter((item) => {
-            const assignedToList = Array.isArray(item?.assignedTo)
-                ? item.assignedTo
-                : item?.assignedTo
-                    ? [item.assignedTo]
-                    : [];
-            const assignedToId = item?.assignToId?.toString?.() || item?.assignedToId?.toString?.();
+            const assignedCandidates = [
+                item?.assignToId,
+                item?.assignedToId,
+                item?.createdById,
+                item?.managerId,
+                item?.ownerId,
+                ...(Array.isArray(item?.assignedTo)
+                    ? item.assignedTo
+                    : item?.assignedTo
+                        ? [item.assignedTo]
+                        : []),
+                ...(Array.isArray(item?.assignTo)
+                    ? item.assignTo
+                    : item?.assignTo
+                        ? [item.assignTo]
+                        : []),
+                ...(Array.isArray(item?.createdBy)
+                    ? item.createdBy
+                    : item?.createdBy
+                        ? [item.createdBy]
+                        : []),
+            ];
 
-            return (
-                normalizeValue(assignedToId) === normalizeValue(activeMember.memberId) ||
-                normalizeValue(item?.assignToId) === normalizeValue(activeMember.memberId) ||
-                assignedToList.some((name) => {
-                    const normalizedName = normalizeValue(name);
-                    return (
-                        normalizedName === normalizeValue(activeMember.memberName) ||
-                        normalizedName === normalizeValue(activeMember.memberId)
-                    );
-                })
-            );
+            return assignedCandidates.some(matchesSelectedMember);
         });
     }, [
         activeMember?.memberId,
         activeMember?.memberName,
-        isSelectedMemberManager,
+        hasSelectedMember,
+        shouldShowAllTeamData,
         uniqueTeamKra,
     ]);
 
     const filteredCompletedEntries = useMemo(() => {
-        if (!activeMember?.memberId) {
+        if (shouldShowAllTeamData) {
             return completedEntries || [];
         }
 
-        if (isSelectedMemberManager) {
-            return completedEntries || [];
-        }
-
-        return (completedEntries || []).filter(
-            (item) =>
-                normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
-                normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
-        );
+        return (completedEntries || []).filter((item) => {
+            const completedCandidates = getMemberMatchCandidates(item);
+            return completedCandidates.some(matchesSelectedMember);
+        });
     }, [
         activeMember?.memberId,
         activeMember?.memberName,
-        isSelectedMemberManager,
+        hasSelectedMember,
+        shouldShowAllTeamData,
         completedEntries,
     ]);
     const uniqueCompletedEntries = useMemo(() => {
