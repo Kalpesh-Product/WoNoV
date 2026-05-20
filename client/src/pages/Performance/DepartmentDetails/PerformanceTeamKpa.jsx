@@ -34,6 +34,8 @@ const PerformanceTeamKpa = () => {
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+    const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
+     const [selectedMonthRange, setSelectedMonthRange] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName
@@ -108,6 +110,69 @@ const PerformanceTeamKpa = () => {
   const isManager = userPermissions.includes(
     PERMISSIONS.PERFORMANCE_TEAM_KPA.value,
   );
+
+  const roleTitles = (auth?.user?.role || []).map((role) => role?.roleTitle?.toLowerCase?.() || "");
+  const isMasterOrSuperAdmin = roleTitles.some((title) =>
+    ["master admin", "super admin"].includes(title)
+  );
+
+  const getRowMonthBucket = (row) => {
+    const rowDate = dayjs(row?.dueDate || row?.assignedDate);
+    if (!rowDate.isValid()) return "current";
+
+    const rowMonth = rowDate.startOf("month");
+    const currentMonth = dayjs().startOf("month");
+
+    if (rowMonth.isBefore(currentMonth)) return "previous";
+    if (rowMonth.isAfter(currentMonth)) return "next";
+    return "current";
+  };
+
+  const getRowPermissions = (row) => {
+    if (isMasterOrSuperAdmin) {
+      return {
+        showActionColumn: true,
+        showEdit: true,
+        showDelete: true,
+        disableRowSelection: false,
+      };
+    }
+
+    const monthBucket = getRowMonthBucket(row);
+
+    if (monthBucket === "previous") {
+      return {
+        showActionColumn: false,
+        showEdit: false,
+        showDelete: false,
+        disableRowSelection: true,
+      };
+    }
+
+    if (monthBucket === "next") {
+      return {
+        showActionColumn: true,
+        showEdit: true,
+        showDelete: true,
+        disableRowSelection: false,
+      };
+    }
+
+    return {
+      showActionColumn: true,
+      showEdit: true,
+      showDelete: true,
+      disableRowSelection: false,
+    };
+  };
+
+  const shouldHideActionsColumnForManager =
+    !isMasterOrSuperAdmin && isManager && activeViewMonthBucket === "previous";
+  const shouldHideAddButtonForManager =
+    !isMasterOrSuperAdmin &&
+    isManager &&
+    ["previous", "next"].includes(activeViewMonthBucket);
+  const showActionsColumn = !isAddKpaDisabled && !shouldHideActionsColumnForManager;
 
   const {
     handleSubmit: submitMonthlyKpa,
@@ -307,6 +372,21 @@ const PerformanceTeamKpa = () => {
         normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
     );
  }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isSelectedMemberManager]);
+  const selectedMonthLabel = selectedMonthRange?.startDate
+    ? dayjs(selectedMonthRange.startDate).format("MMMM YYYY")
+    : dayjs().format("MMMM YYYY");
+  const completedEntriesForSelectedMonth = selectedMonthRange
+    ? filteredCompletedEntries.filter((item) => {
+      const completionDate = dayjs(item?.completionDate);
+      if (!completionDate.isValid()) return false;
+
+      const start = dayjs(selectedMonthRange.startDate).startOf("day");
+      const end = dayjs(selectedMonthRange.endDate).endOf("day");
+      return completionDate.isAfter(start.subtract(1, "millisecond")) &&
+        completionDate.isBefore(end.add(1, "millisecond"));
+    })
+    : filteredCompletedEntries;
+  const showCompletedExport = activeViewMonthBucket !== "next";
   const formatDateTime = (value) =>
     value ? `${humanDate(value)}, ${humanTime(value)}` : "N/A";
 
@@ -342,7 +422,7 @@ const PerformanceTeamKpa = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-    ...(!isAddKpaDisabled
+  ...(showActionsColumn
       ? [
         {
           headerName: "Actions",
@@ -350,6 +430,7 @@ const PerformanceTeamKpa = () => {
           pinned:"right",
           cellRenderer: (params) => (
             <div className="p-2 flex gap-2 items-center">
+                            {getRowPermissions(params.data).showEdit && (
 
               <button
                                     type="button"
@@ -359,8 +440,9 @@ const PerformanceTeamKpa = () => {
                                 >
                                     <HiPencilSquare size={24} color="#111827" />
                                 </button>
+                                  )}
 
-                            {canDeleteRecurrence && (
+                            {canDeleteRecurrence && getRowPermissions(params.data).showDelete && (
                 <button
                   type="button"
                   title="Delete Recurrence"
@@ -381,18 +463,13 @@ const PerformanceTeamKpa = () => {
   const completedColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
-    // { headerName: "Assigned Time", field: "assignedDate" },
-
+    { headerName: "Start Date", field: "startDateTime", flex: 1, includeTime: true },
+    { headerName: "End Date", field: "endDateTime", flex: 1, includeTime: true },
     { headerName: "Completed By", field: "completedBy" ,flex: 1 },
     {
-      headerName: "Completed Date",
-      field: "completionDate",
-      flex: 1 
-    },
-    {
-      headerName: "Completed Time",
-      field: "completionTime",
-      flex: 1 
+      headerName: "Completed At",
+      field: "completedAt",
+      flex: 1,
     },
     {
       field: "status",
@@ -425,6 +502,37 @@ const PerformanceTeamKpa = () => {
       },
     },
   ];
+  // const handleTeamDateFilterChange = ({ filteredData = [] }) => {
+  //   if (!filteredData.length) {
+  //     setActiveViewMonthBucket("current");
+  //     return;
+  //   }
+
+  //   const buckets = new Set(filteredData.map((item) => getRowMonthBucket(item)));
+  //   const nextBucket = buckets.size === 1 ? [...buckets][0] : "current";
+  //   setActiveViewMonthBucket((prev) => (prev === nextBucket ? prev : nextBucket));
+  // };
+   const handleTeamDateFilterChange = ({ filteredData = [], selectedRange = null }) => {
+    setSelectedMonthRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate ? dayjs(selectedRange.startDate).valueOf() : null;
+      const nextEnd = selectedRange?.endDate ? dayjs(selectedRange.endDate).valueOf() : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) return prev;
+      return selectedRange;
+    });
+
+    if (!filteredData.length) {
+      setActiveViewMonthBucket("current");
+      return;
+    }
+
+    const buckets = new Set(filteredData.map((item) => getRowMonthBucket(item)));
+    const nextBucket = buckets.size === 1 ? [...buckets][0] : "current";
+    setActiveViewMonthBucket((prev) => (prev === nextBucket ? prev : nextBucket));
+  };
+
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -432,10 +540,12 @@ const PerformanceTeamKpa = () => {
           {!teamLoading ? (
             <WidgetSection padding layout={1}>
               <YearWiseTable
-                buttonTitle={"Add Team Monthly KPA"}
-                buttonDisabled={isAddKpaDisabled}
+                // buttonTitle={"Add Team Monthly KPA"}
+                // buttonDisabled={isAddKpaDisabled}
+                  buttonTitle={shouldHideAddButtonForManager ? "" : "Add Team Monthly KPA"}
+                buttonDisabled={shouldHideAddButtonForManager || isAddKpaDisabled}
                 handleSubmit={() => setOpenModal(true)}
-                tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${activeMemberName}`}
+                tableTitle={`${departmentName} - TEAM MONTHLY KPA - ${activeMemberName}`}
                 data={filteredTeamKpa
                   .filter((item) => item.status !== "Completed")
                   .map((item, index) => ({
@@ -449,6 +559,8 @@ const PerformanceTeamKpa = () => {
                   }))}
                 dateColumn={"dueDate"}
                 columns={teamColumns}
+                  isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
+                onDateFilterChange={handleTeamDateFilterChange}
               />
             </WidgetSection>
           ) : (
@@ -463,11 +575,16 @@ const PerformanceTeamKpa = () => {
               <WidgetSection padding>
                 <YearWiseTable
                   formatTime
-                  tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
-                  exportData={true}
+                  // tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
+                  // exportData={true}
+                  tableTitle={`COMPLETED - TEAM MONTHLY KPA - ${activeMemberName} - ${selectedMonthLabel}`}
+                  exportData={showCompletedExport}
+                  hideDateControls
                   checkAll={false}
-                  key={filteredCompletedEntries.length}
-                  data={filteredCompletedEntries.map((item, index) => ({
+                  // key={filteredCompletedEntries.length}
+                  // data={filteredCompletedEntries.map((item, index) => ({
+                      key={`${completedEntriesForSelectedMonth.length}-${selectedMonthLabel}`}
+                  data={completedEntriesForSelectedMonth.map((item, index) => ({
                     srno: index + 1,
                     id: item.id,
                     taskName: item.taskName,
@@ -475,10 +592,13 @@ const PerformanceTeamKpa = () => {
                     dueDate: item.dueDate,
                     status: item.status,
                     completedBy: item.completedBy,
-                    completionDate: humanDate(item.completionDate),
-                    completionTime: humanTime(item.completionDate),
+                    completionDate: item.completionDate,
+                    completionTime: item.completionDate,
+                    startDateTime: `${humanDate(item.assignedDate)} ${humanTime(item.assignedDate)}`,
+                    endDateTime: `${humanDate(item.dueDate)} ${humanTime(item.dueDate)}`,
+                    completedAt: `${humanDate(item.completionDate)} ${humanTime(item.completionDate)}`,
                   }))}
-                  dateColumn={"dueDate"}
+                  dateColumn={"completionDate"}
                   columns={completedColumns}
                 />
               </WidgetSection>

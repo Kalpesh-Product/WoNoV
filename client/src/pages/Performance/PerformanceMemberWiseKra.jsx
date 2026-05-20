@@ -225,6 +225,7 @@ const PerformanceMemberWiseKra = () => {
 
       const map = new Map();
       const memberIdByName = new Map();
+      const allowedMemberIds = new Set();
 
       const assignees = getResponseData(assigneesResponse);
       assignees.forEach((member) => {
@@ -232,6 +233,7 @@ const PerformanceMemberWiseKra = () => {
         if (!memberId) return;
 
         const memberName = member?.name || "Unknown";
+        allowedMemberIds.add(memberId);
         map.set(memberId, {
           memberId,
           member: memberName,
@@ -241,25 +243,25 @@ const PerformanceMemberWiseKra = () => {
         memberIdByName.set(normalizeName(memberName), memberId);
       });
 
-      //       const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
-      // if (normalizedManagerName && !memberIdByName.has(normalizedManagerName)) {
-      //   map.set(`manager-${normalizedManagerName}`, {
-      //     memberId: `manager-${normalizedManagerName}`,
-      //     member: selectedDepartmentManagerName,
-      //     memberRole: "Manager",
-      //     ...DEFAULT_COUNTS,
-      //   });
-      // }
-
-
-        const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
+      const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
       const normalizedLoggedInName = normalizeName(loggedInUserName);
-      if (normalizedManagerName && !memberIdByName.has(normalizedManagerName)) {
-        const managerRowId =
-          normalizedManagerName === normalizedLoggedInName && loggedInUserId
-            ? loggedInUserId
-            : `manager-${normalizedManagerName}`;
+      const selectedDepartmentManagerId = normalizedManagerName
+        ? memberIdByName.get(normalizedManagerName) || null
+        : null;
+      const managerRowId = selectedDepartmentManagerId
+        ? selectedDepartmentManagerId
+        : normalizedManagerName === normalizedLoggedInName && loggedInUserId
+          ? loggedInUserId
+          : normalizedManagerName
+            ? `manager-${normalizedManagerName}`
+            : null;
 
+      if (selectedDepartmentManagerId && map.has(selectedDepartmentManagerId)) {
+        map.set(selectedDepartmentManagerId, {
+          ...map.get(selectedDepartmentManagerId),
+          memberRole: "Manager",
+        });
+      } else if (managerRowId && !map.has(managerRowId)) {
         map.set(managerRowId, {
           memberId: managerRowId,
           member: selectedDepartmentManagerName,
@@ -268,9 +270,40 @@ const PerformanceMemberWiseKra = () => {
         });
       }
 
+      const resolveMemberId = (task) => {
+        const directId = task?.assignToId?.toString?.() || task?.assignedToId?.toString?.();
+        if (directId) {
+          if (allowedMemberIds.has(directId)) return directId;
+          if (managerRowId && directId === managerRowId.toString()) return managerRowId;
+        }
+
+        const taskName = (task?.assignedTo || task?.assignTo || "")
+          .toString()
+          .replace(/\s+/g, " ")
+          .trim();
+        const normalizedTaskName = normalizeName(taskName);
+        const matchedId = memberIdByName.get(normalizedTaskName);
+        if (matchedId && allowedMemberIds.has(matchedId)) return matchedId;
+
+        if (
+          managerRowId &&
+          normalizedManagerName &&
+          normalizedTaskName === normalizedManagerName
+        ) {
+          return managerRowId;
+        }
+
+        return null;
+      };
+
       const upsert = (task, field) => {
-        const userId = task.assignToId || task.assignedTo || "unassigned";
-        const userName = (task.assignedTo || "Unassigned").replace(/\s+/g, " ").trim();
+        const userId = resolveMemberId(task);
+        if (!userId) return;
+
+        const userName = (task.assignedTo || task.assignTo || "Unassigned")
+          .toString()
+          .replace(/\s+/g, " ")
+          .trim();
 
         if (!map.has(userId)) {
           map.set(userId, {
@@ -285,13 +318,8 @@ const PerformanceMemberWiseKra = () => {
       };
 
       const upsertManagerTeamKraCount = (field) => {
-        // const managerId = loggedInUserId || "unassigned";
-        // const managerName = loggedInUserName || "Manager";
-           const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
-        const existingManagerId = normalizedManagerName
-          ? memberIdByName.get(normalizedManagerName)
-          : null;
-        const managerId = existingManagerId || `manager-${normalizedManagerName || "unknown"}`;
+        const managerId = selectedDepartmentManagerId || managerRowId;
+        if (!managerId) return;
         const managerName = selectedDepartmentManagerName || "Manager";
 
         if (!map.has(managerId)) {
@@ -307,13 +335,17 @@ const PerformanceMemberWiseKra = () => {
       };
 
       const incrementPendingKra = (task) => {
-         const assignedDateKey = getDateKey(task?.assignedDate);
+        const assignedDateKey = getDateKey(task?.assignedDate);
         if (!assignedDateKey || assignedDateKey !== selectedDateKey) return;
 
         if (task?.status === "Completed") return;
 
-        const userId = task.assignToId || task.assignedTo || "unassigned";
-        const userName = (task.assignedTo || "Unassigned").replace(/\s+/g, " ").trim();
+        const userId = resolveMemberId(task);
+        if (!userId) return;
+        const userName = (task.assignedTo || task.assignTo || "Unassigned")
+          .toString()
+          .replace(/\s+/g, " ")
+          .trim();
 
         if (!map.has(userId)) {
           map.set(userId, {
@@ -328,14 +360,23 @@ const PerformanceMemberWiseKra = () => {
       };
 
       const incrementCompletedKra = (task) => {
-         const completionDateKey = getDateKey(task?.completionDate);
+        const completionDateKey = getDateKey(task?.completionDate);
         if (!completionDateKey || completionDateKey !== selectedDateKey) return;
 
-        const completedByName = task?.completedBy?.replace(/\s+/g, " ").trim();
+        const completedById = task?.completedById?.toString?.();
+        const completedByName = (task?.completedBy || "")
+          .toString()
+          .replace(/\s+/g, " ")
+          .trim();
         if (!completedByName) return;
 
         const matchedMemberId =
-          memberIdByName.get(normalizeName(completedByName)) || completedByName;
+          (completedById && (allowedMemberIds.has(completedById) || completedById === managerRowId?.toString())
+            ? completedById
+            : null) ||
+          memberIdByName.get(normalizeName(completedByName)) ||
+          (normalizedManagerName === normalizeName(completedByName) ? managerRowId : null) ||
+          completedByName;
 
         if (!map.has(matchedMemberId)) {
           map.set(matchedMemberId, {
@@ -384,26 +425,7 @@ const PerformanceMemberWiseKra = () => {
       getResponseData(completedIndividualKraResponse).forEach(incrementCompletedKra);
       getResponseData(completedTeamKraResponse).forEach(incrementCompletedKra);
 
-      const mergedByMemberName = Array.from(map.values()).reduce((acc, item) => {
-        const nameKey = normalizeName(item.member);
-        if (!acc[nameKey]) {
-          acc[nameKey] = { ...item };
-          return acc;
-        }
-
-        acc[nameKey] = {
-          ...acc[nameKey],
-          dailyKra: (acc[nameKey].dailyKra || 0) + (item.dailyKra || 0),
-          individualDailyKra:
-            (acc[nameKey].individualDailyKra || 0) + (item.individualDailyKra || 0),
-          teamDailyKra: (acc[nameKey].teamDailyKra || 0) + (item.teamDailyKra || 0),
-          completedKra: (acc[nameKey].completedKra || 0) + (item.completedKra || 0),
-          pendingKra: (acc[nameKey].pendingKra || 0) + (item.pendingKra || 0),
-        };
-        return acc;
-      }, {});
-
-      return Object.values(mergedByMemberName);
+      return Array.from(map.values());
     },
   });
 
@@ -546,6 +568,7 @@ const PerformanceMemberWiseKra = () => {
     (sum, item) => sum + (item.pendingKra || 0),
     0,
   );
+  const totalKraCount = totalCompleted + totalPending;
 
   const graphOptions = {
     chart: {
@@ -599,6 +622,8 @@ const PerformanceMemberWiseKra = () => {
          title={`${selectedDepartmentName || department || "Department"} KRA overview - ${selectedDateLabel}`}
         border
         padding
+        TitleAmountTotal={totalKraCount}
+        totalTitle="Total"
         greenTitle="KRA"
         TitleAmountGreen={totalCompleted}
         redTitle="KRA"

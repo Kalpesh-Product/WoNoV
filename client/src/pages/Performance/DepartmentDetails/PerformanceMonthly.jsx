@@ -38,6 +38,8 @@ const PerformanceMonthly = () => {
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
+  const [selectedMonthRange, setSelectedMonthRange] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName
@@ -118,7 +120,75 @@ const PerformanceMonthly = () => {
   );
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_MONTHLY_KPA.value);
+  const roleTitles = (auth?.user?.role || []).map((role) => role?.roleTitle?.toLowerCase?.() || "");
+  const isMasterOrSuperAdmin = roleTitles.some((title) =>
+    ["master admin", "super admin"].includes(title)
+  );
   const canDeleteRecurrence = !isAddKpaDisabled;
+    const getRowMonthBucket = (row) => {
+    const rowDate = dayjs(row?.dueDate || row?.assignedDate);
+    if (!rowDate.isValid()) return "current";
+
+    const now = dayjs();
+    const rowMonth = rowDate.startOf("month");
+    const currentMonth = now.startOf("month");
+
+    if (rowMonth.isBefore(currentMonth)) return "previous";
+    if (rowMonth.isAfter(currentMonth)) return "next";
+    return "current";
+  };
+
+  const getRowPermissions = (row) => {
+    if (isMasterOrSuperAdmin) {
+      return {
+        showActionColumn: true,
+        showMarkAsDone: true,
+        showEdit: true,
+        showDelete: true,
+        disableRowSelection: false,
+      };
+    }
+
+    const monthBucket = getRowMonthBucket(row);
+
+    if (monthBucket === "previous") {
+      return {
+        showActionColumn: false,
+        showMarkAsDone: false,
+        showEdit: false,
+        showDelete: false,
+        disableRowSelection: true,
+      };
+    }
+
+    if (monthBucket === "next") {
+      return {
+        showActionColumn: true,
+        showMarkAsDone: false,
+        showEdit: true,
+        showDelete: true,
+        disableRowSelection: false,
+      };
+    }
+
+    return {
+      showActionColumn: true,
+      showMarkAsDone: true,
+      showEdit: true,
+      showDelete: true,
+      disableRowSelection: false,
+    };
+  };
+
+
+  const shouldHideAddButtonForManager =
+    !isMasterOrSuperAdmin &&
+    isManager &&
+    ["previous", "next"].includes(activeViewMonthBucket);
+  const shouldHideActionsColumnForManager =
+    !isMasterOrSuperAdmin &&
+    isManager &&
+    activeViewMonthBucket === "previous";
 
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -141,6 +211,9 @@ const PerformanceMonthly = () => {
   const matchingDepartment = auth.user?.departments?.some(
     (dept) => dept._id === deptId
   );
+  const showActionsColumn =
+    (matchingDepartment || isManager || isMasterOrSuperAdmin) &&
+    !shouldHideActionsColumnForManager;
 
   const {
     handleSubmit: submitDailyKra,
@@ -168,7 +241,8 @@ const PerformanceMonthly = () => {
         task: data.kpaName,
         taskType: "KPA",
         // description: data.description,
-        department: deptId,
+       // department: deptId,
+         department: effectiveDeptId,
         assignedDate: data.startDate,
         dueDate: data.endDate,
         kpaDuration: "Monthly",
@@ -354,8 +428,7 @@ const PerformanceMonthly = () => {
         );
       },
     },
-        ...(matchingDepartment || isManager
-   // ...(matchingDepartment
+     ...(showActionsColumn
       ? [
         {
           headerName: "Actions",
@@ -363,15 +436,21 @@ const PerformanceMonthly = () => {
           field: "actions",
           width:250,
           cellRenderer: (params) => {
+            const rowPermissions = getRowPermissions(params.data);
+            const isSelectionBlocked = rowPermissions.disableRowSelection;
+            const isRowSelected = params.node.selected && !isSelectionBlocked;
+
             return (
               <div className="flex items-center">
 
                 {/* Mark As Done */}
+                 {rowPermissions.showMarkAsDone && (
                 <div
                   role="button"
                   onClick={() => {
                     if (
-                      !params.node.selected ||
+                      // !params.node.selected ||
+                      !isRowSelected ||
                       isUpdatePending ||
                       isDeletePending
                     )
@@ -384,24 +463,29 @@ const PerformanceMonthly = () => {
                   <PrimaryButton
                     title={isUpdatePending ? "⏳" : "Mark As Done"}
                     disabled={
-                      !params.node.selected ||
+                       !isRowSelected ||
+                      // !params.node.selected ||
                       isUpdatePending ||
                       isDeletePending
                     }
                     className="px-2 py-1 text-xs w-28 h-7"
                   />
                 </div>
+                  )}
 
                 {/* Edit Recurrence */}
-                {!isAddKpaDisabled && (
+                {/* {!isAddKpaDisabled && ( */}
+                  {rowPermissions.showEdit && !isAddKpaDisabled && (
                   <button
                     type="button"
                     title="Edit"
-                    disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                     disabled={!isRowSelected || isUpdatePending || isDeletePending}
+                   // disabled={!params.node.selected || isUpdatePending || isDeletePending}
                     onClick={() => handleOpenEditModal(params.data)}
                     className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                   >
-                    <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
+                    {/* <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} /> */}
+                    <HiPencilSquare size={24} color={!isRowSelected ? "#9ca3af" : "#111827"} />
                   </button>
                 )}
                    {/* <button
@@ -414,12 +498,14 @@ const PerformanceMonthly = () => {
                   <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
                 </button> */}
                  {/* Delete Recurrence */}
-                {canDeleteRecurrence && (
+                {/* {canDeleteRecurrence && ( */}
+                 {rowPermissions.showDelete && canDeleteRecurrence && (
                   <button
                     type="button"
                     title="Delete Recurrence"
                     disabled={
-                      !params.node.selected ||
+                       !isRowSelected ||
+                      // !params.node.selected ||
                       isDeletePending ||
                       isUpdatePending
                     }
@@ -433,7 +519,8 @@ const PerformanceMonthly = () => {
                     ) : (
                       <MdDeleteForever
                         size={26}
-                        color={!params.node.selected ? "gray" : "red"}
+                        color={!isRowSelected ? "gray" : "red"}
+                       // color={!params.node.selected ? "gray" : "red"}
                       />
                     )}
                   </button>
@@ -449,17 +536,13 @@ const PerformanceMonthly = () => {
   const completedColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     { headerName: "KPA List", field: "taskName", flex: 1},
-
+    { headerName: "Start Date", field: "startDateTime", flex: 1, includeTime: true },
+    { headerName: "End Date", field: "endDateTime", flex: 1, includeTime: true },
     { headerName: "Completed By", field: "completedBy" ,flex: 1},
     {
-      headerName: "Completed Date",
-      field: "completionDate",
-      flex: 1
-    },
-    {
-      headerName: "Completed Time",
-      field: "completionTime",
-      flex: 1
+      headerName: "Completed At",
+      field: "completedAt",
+      flex: 1,
     },
     {
       field: "status",
@@ -495,7 +578,7 @@ const PerformanceMonthly = () => {
     const normalizeValue = (value) =>
     (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
   const doesTaskBelongToLoggedInUser = (item) => {
-    if (!isEmployeeKraKpaRoute) return true;
+   if (!isEmployeeKraKpaRoute || isManager || isMasterOrSuperAdmin) return true;
     const matchCandidates = [
       item?.assignToId,
       item?.assignedToId,
@@ -517,6 +600,45 @@ const PerformanceMonthly = () => {
   };
   const filteredDepartmentKpa = (departmentKra || []).filter(doesTaskBelongToLoggedInUser);
   const filteredCompletedEntries = (completedEntries || []).filter(doesTaskBelongToLoggedInUser);
+   const selectedMonthLabel = selectedMonthRange?.startDate
+    ? dayjs(selectedMonthRange.startDate).format("MMMM YYYY")
+    : dayjs().format("MMMM YYYY");
+  const completedEntriesForSelectedMonth = selectedMonthRange
+    ? filteredCompletedEntries.filter((item) => {
+        const completion = dayjs(item?.completionDate);
+        if (!completion.isValid()) return false;
+
+        const start = dayjs(selectedMonthRange.startDate).startOf("day");
+        const end = dayjs(selectedMonthRange.endDate).endOf("day");
+        return completion.isAfter(start.subtract(1, "millisecond")) && completion.isBefore(end.add(1, "millisecond"));
+      })
+    : filteredCompletedEntries;
+  const showCompletedExport = activeViewMonthBucket !== "next";
+
+   const handleDepartmentDateFilterChange = ({ filteredData = [], selectedRange = null }) => {
+    setSelectedMonthRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate ? dayjs(selectedRange.startDate).valueOf() : null;
+      const nextEnd = selectedRange?.endDate ? dayjs(selectedRange.endDate).valueOf() : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) return prev;
+      return selectedRange;
+    });
+    if (!filteredData.length) {
+      setActiveViewMonthBucket("current");
+      return;
+    }
+
+     const nextBucket = (() => {
+      if (!filteredData.length) return "current";
+      const buckets = new Set(filteredData.map((item) => getRowMonthBucket(item)));
+      if (buckets.size === 1) return [...buckets][0];
+      return "current";
+    })();
+
+    setActiveViewMonthBucket((prev) => (prev === nextBucket ? prev : nextBucket));
+  };
   // const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
   //   if (!activeMember?.memberName) return true;
   //   return (item?.assignedTo || "").toString().trim() === activeMember.memberName;
@@ -533,11 +655,13 @@ const PerformanceMonthly = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 checkbox={showCheckBox}
-                  tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${activeMemberName}`}
+                  tableTitle={`${departmentName} - DEPARTMENT MONTHLY KPA - ${activeMemberName}`}
                 //tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                 //tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
-                buttonTitle={"Add Monthly KPA"}
-                buttonDisabled={isAddKpaDisabled}
+                // buttonTitle={"Add Monthly KPA"}
+                // buttonDisabled={isAddKpaDisabled}
+                  buttonTitle={shouldHideAddButtonForManager ? "" : "Add Department Monthly KPA"}
+                buttonDisabled={shouldHideAddButtonForManager || isAddKpaDisabled}
                 handleSubmit={() => {
                   setIsEditMode(false);
                   setEditingTaskId(null);
@@ -558,6 +682,9 @@ const PerformanceMonthly = () => {
                 ]}
                 dateColumn={"dueDate"}
                 columns={departmentColumns}
+                isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
+                onDateFilterChange={handleDepartmentDateFilterChange}
+
               />
             </WidgetSection>
           ) : (
@@ -570,24 +697,32 @@ const PerformanceMonthly = () => {
           {!isCompletedLoading ? (
             <WidgetSection padding layout={1}>
               <YearWiseTable
-                exportData={true}
+               // exportData={true}
                 // tableTitle={`COMPLETED - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                 // key={completedEntries.length}
                 // data={[
                 //   ...completedEntries.map((item, index) => ({
-                    tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
-                key={completedEntries.length}
+                //     tableTitle={`COMPLETED - MONTHLY KPA - ${activeMemberName}`}
+                // key={completedEntries.length}
+                tableTitle={`COMPLETED - Department Monthly KPA - ${activeMemberName} - ${selectedMonthLabel}`}
+                key={`${completedEntriesForSelectedMonth.length}-${selectedMonthLabel}`}
+                exportData={showCompletedExport}
+                hideDateControls
                 data={[
-                  ...filteredCompletedEntries.map((item, index) => ({
+                   ...completedEntriesForSelectedMonth.map((item, index) => ({
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
-                    completionDate: humanDate(item.completionDate),
-                    completionTime: humanTime(item.completionDate),
+                    dueDate: item.dueDate,
+                    completionDate: item.completionDate,
+                    completionTime: item.completionDate,
                     completedBy: item.completedBy,
                     status: item.status,
+                    startDateTime: `${humanDate(item.assignedDate)} ${humanTime(item.assignedDate)}`,
+                    endDateTime: `${humanDate(item.dueDate)} ${humanTime(item.dueDate)}`,
+                    completedAt: `${humanDate(item.completionDate)} ${humanTime(item.completionDate)}`,
                   })),
                 ]}
-                dateColumn={"dueDate"}
+                 dateColumn={"completionDate"}
                 columns={completedColumns}
               />
             </WidgetSection>
@@ -602,7 +737,7 @@ const PerformanceMonthly = () => {
       <MuiModal
         open={openModal}
         onClose={resetModalState}
-       title={isEditMode ? "Edit Task" : "Add Monthly KPA"}
+       title={isEditMode ? "Edit Task" : "Add Department Monthly KPA"}
       >
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}

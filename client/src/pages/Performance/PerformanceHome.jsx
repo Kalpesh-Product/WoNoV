@@ -361,6 +361,8 @@ const PerformanceHome = () => {
       pending: selectedYearTotals.monthlyPending.reduce((sum, value) => sum + toCount(value), 0),
     };
   }, [annualKpaGraphData, selectedFiscalYear]);
+  const annualKpaTotal =
+    toCount(annualKpaYearlyTotals.completed) + toCount(annualKpaYearlyTotals.pending);
 
   const kpaPieData = useMemo(() => {
      const hasMatchingAssignedMonth = (assignedDate) => {
@@ -504,8 +506,10 @@ const PerformanceHome = () => {
           options={annualKpaChartOptions}
           title="ANNUAL KPA VS ACHIEVEMENTS"
           titleAmount=""
+          TitleAmountTotal={annualKpaTotal}
           TitleAmountGreen={annualKpaYearlyTotals.completed}
           TitleAmountRed={annualKpaYearlyTotals.pending}
+          totalTitle="Total"
           greenTitle="KPA"
           redTitle="KPA"
           secondParam
