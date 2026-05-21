@@ -10,8 +10,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import UploadFileInput from "../../../../components/UploadFileInput";
+import { useNavigate } from "react-router-dom";
+import { LuImageUp } from "react-icons/lu";
 
 const EmployeeOnboard = () => {
+  const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const {
     control,
@@ -19,6 +22,8 @@ const EmployeeOnboard = () => {
     reset,
     watch,
     setValue,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -152,8 +157,30 @@ const EmployeeOnboard = () => {
     return undefined;
   };
 
-  const normalizePolicyValue = (value) =>
-    typeof value === "string" ? value : "";
+   const normalizePolicyValue = (value) => {
+    if (typeof value === "string") return value;
+    if (value instanceof File) return value.name;
+    return "";
+  };
+  const handlePolicyFileChange = (file, onChange, fieldName) => {
+    if (!file) {
+      onChange("");
+      clearErrors(fieldName);
+      return;
+    }
+    const isPdfFile =
+      file.type === "application/pdf" || file.name?.toLowerCase().endsWith(".pdf");
+    if (!isPdfFile) {
+      setError(fieldName, {
+        type: "manual",
+        message: "Invalid file format. Please upload a PDF file.",
+      });
+      onChange("");
+      return;
+    }
+    clearErrors(fieldName);
+    onChange(file);
+  };
 
   const stripEmpty = (obj) => {
     if (Array.isArray(obj)) return obj.length ? obj : undefined;
@@ -176,6 +203,9 @@ const EmployeeOnboard = () => {
     onSuccess: (response) => {
       toast.success(response?.message || "Employee onboarded successfully");
       reset();
+      navigate("/app/dashboard/HR-dashboard/employee/employee-list", {
+        replace: true,
+      });
     },
     onError: (error) => {
       toast.error(
@@ -980,30 +1010,100 @@ const EmployeeOnboard = () => {
                     name="leavePolicy"
                     control={control}
                     defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Leave Policy"
-                        fullWidth
-                        helperText={errors?.leavePolicy?.message}
-                        error={!!errors.leavePolicy}
-                      />
+                    // render={({ field }) => (
+                    //   <TextField
+                    //     {...field}
+                    //     size="small"
+                    //     label="Leave Policy"
+                    //     fullWidth
+                    //     helperText={errors?.leavePolicy?.message}
+                    //     error={!!errors.leavePolicy}
+                    //   />
+                     render={({ field: { value, onChange } }) => (
+                      <>
+                        <input
+                          id="leave-policy-upload"
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          hidden
+                          onChange={(e) =>
+                            handlePolicyFileChange(
+                              e.target.files?.[0],
+                              onChange,
+                              "leavePolicy",
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          label="Leave Policy"
+                          fullWidth
+                          value={value?.name || value || ""}
+                          helperText={errors?.leavePolicy?.message}
+                          error={!!errors.leavePolicy}
+                          InputProps={{
+                            readOnly: true,
+                            endAdornment: (
+                              <label
+                                htmlFor="leave-policy-upload"
+                                className="text-primary cursor-pointer"
+                              >
+                                <LuImageUp size={20} />
+                              </label>
+                            ),
+                          }}
+                        />
+                      </>
                     )}
                   />
                   <Controller
                     name="holidayPolicy"
                     control={control}
                     defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Holiday Policy"
-                        fullWidth
-                        helperText={errors?.holidayPolicy?.message}
-                        error={!!errors.holidayPolicy}
-                      />
+                    // render={({ field }) => (
+                    //   <TextField
+                    //     {...field}
+                    //     size="small"
+                    //     label="Holiday Policy"
+                    //     fullWidth
+                    //     helperText={errors?.holidayPolicy?.message}
+                    //     error={!!errors.holidayPolicy}
+                    //   />
+                     render={({ field: { value, onChange } }) => (
+                      <>
+                        <input
+                          id="holiday-policy-upload"
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          hidden
+                          onChange={(e) =>
+                            handlePolicyFileChange(
+                              e.target.files?.[0],
+                              onChange,
+                              "holidayPolicy",
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          label="Holiday Policy"
+                          fullWidth
+                          value={value?.name || value || ""}
+                          helperText={errors?.holidayPolicy?.message}
+                          error={!!errors.holidayPolicy}
+                          InputProps={{
+                            readOnly: true,
+                            endAdornment: (
+                              <label
+                                htmlFor="holiday-policy-upload"
+                                className="text-primary cursor-pointer"
+                              >
+                                <LuImageUp size={20} />
+                              </label>
+                            ),
+                          }}
+                        />
+                      </>
                     )}
                   />
                 </div>

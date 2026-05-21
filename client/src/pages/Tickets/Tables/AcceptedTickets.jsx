@@ -352,7 +352,10 @@ const AcceptedTickets = ({ title, departmentId }) => {
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
       <div className="pb-4">
-        <Typography variant="h6">{title}</Typography>
+        {/* <Typography variant="h6">{title}</Typography> */}
+        <span className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium uppercase">
+          {title}
+        </span>
       </div>
       <div className="w-full">
         {isLoading && (

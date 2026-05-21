@@ -16,10 +16,12 @@ import useAuth from "../../../../../hooks/useAuth";
 import { PERMISSIONS } from "../../../../../constants/permissions";
 import { Checkbox, ListItemText } from "@mui/material";
 import { City, State } from "country-state-city";
+import { LuImageUp } from "react-icons/lu";
 dayjs.extend(customParseFormat);
 
 const EditDetails = () => {
   const location = useLocation();
+  const { employeeName } = useParams();
   // const { employmentID } = location.state;
   const employmentID = useSelector((state) => state.hr.selectedEmployee);
   const axios = useAxiosPrivate();
@@ -75,7 +77,15 @@ const EditDetails = () => {
   //     includePF: "Yes",
   //     pfContributionRate: "12%",
   //     employeePF: "1500",
-  const { control, handleSubmit, reset, watch } = useForm({
+   const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm({
     defaultValues: {},
   });
   const selectedStateCode = watch("state");
@@ -116,6 +126,62 @@ const EditDetails = () => {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+  //  const isValidHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
+   const isValidHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
+  const resolvePolicyLink = (value) => {
+    const normalizedValue = String(value || "").trim();
+    if (!normalizedValue) return "";
+
+    if (isValidHttpUrl(normalizedValue) || normalizedValue.startsWith("/")) {
+      return normalizedValue;
+    }
+
+    const isPdfName = /\.pdf$/i.test(normalizedValue);
+    if (isPdfName) {
+      return `/uploads/${encodeURIComponent(normalizedValue)}`;
+    }
+
+    return "";
+  };
+  const getPolicyDisplayName = (value) => {
+    const normalizedValue = String(value || "").trim();
+    if (!normalizedValue) return "";
+
+    if (!isValidHttpUrl(normalizedValue)) return normalizedValue;
+
+    try {
+      const url = new URL(normalizedValue);
+      const decodedName = decodeURIComponent(url.pathname.split("/").pop() || "");
+      return decodedName || normalizedValue;
+    } catch {
+      return normalizedValue;
+    }
+  };
+  const normalizePolicyValue = (value) => {
+    if (typeof value === "string") return value;
+    if (value instanceof File) return value.name;
+    return "";
+  };
+  const handlePolicyFileChange = (file, onChange, fieldName) => {
+    if (!file) {
+      onChange("");
+      clearErrors(fieldName);
+      return;
+    }
+    const isPdfFile =
+      file.type === "application/pdf" || file.name?.toLowerCase().endsWith(".pdf");
+    if (!isPdfFile) {
+      setError(fieldName, {
+        type: "manual",
+        message: "Invalid file format. Please upload a PDF file.",
+      });
+      onChange("");
+      return;
+    }
+    clearErrors(fieldName);
+    onChange(file);
+  };
   const workLocations = useMemo(() => {
     const unitSet = new Set();
     return unitsData
@@ -345,6 +411,9 @@ const EditDetails = () => {
       status:
         employeeData?.status ||
         (employeeData?.isActive ? "Active" : "Inactive"),
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",  
     });
   }, [
     employeeData,
@@ -459,8 +528,10 @@ const EditDetails = () => {
         jobDescription: formData?.jobDescription || "",
         shift: formData?.shift || "",
         attendanceSource: formData?.attendanceSource || "",
-        leavePolicy: formData?.leavePolicy || "",
-        holidayPolicy: formData?.holidayPolicy || "",
+        // leavePolicy: formData?.leavePolicy || "",
+        // holidayPolicy: formData?.holidayPolicy || "",
+         leavePolicy: normalizePolicyValue(formData?.leavePolicy),
+        holidayPolicy: normalizePolicyValue(formData?.holidayPolicy),
         addressLine1: formData?.addressLine1 || "",
         addressLine2: formData?.addressLine2 || "",
         state: formData?.state || "",
@@ -486,8 +557,10 @@ const EditDetails = () => {
         policies: {
           workSchedulePolicy: formData?.workSchedulePolicy || "",
           attendanceSource: formData?.attendanceSource || "",
-          leavePolicy: formData?.leavePolicy || "",
-          holidayPolicy: formData?.holidayPolicy || "",
+          // leavePolicy: formData?.leavePolicy || "",
+          // holidayPolicy: formData?.holidayPolicy || "",
+           leavePolicy: normalizePolicyValue(formData?.leavePolicy),
+        holidayPolicy: normalizePolicyValue(formData?.holidayPolicy),
         },
         panAadhaarDetails: {
           aadhaarId: formData?.aadharID || "",
@@ -551,16 +624,74 @@ const EditDetails = () => {
     },
   });
 
+  const updateEmployeePassword = useMutation({
+    mutationFn: async (formData) => {
+      const response = await axios.post(`/api/users/update-password/${employmentID}`, {
+        currentPassword: formData?.currentPassword || "",
+        newPassword: formData?.newPassword || "",
+        confirmPassword: formData?.confirmPassword || "",
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Password updated successfully");
+      queryClient.setQueryData(["employeeData", employmentID], (previousData) => {
+        if (!previousData) return previousData;
+        return {
+          ...previousData,
+          plainPassword: data?.plainPassword || previousData?.plainPassword || "",
+        };
+      });
+      queryClient.invalidateQueries({ queryKey: ["employeeData", employmentID] });
+      setIsPasswordVerified(false);
+      reset((prev) => ({
+        ...prev,
+        plainPassword: data?.plainPassword || prev?.plainPassword || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update password");
+    },
+  });
+
+  const verifyCurrentPassword = async () => {
+    const currentPassword = watch("currentPassword");
+    if (!currentPassword) return toast.error("Please enter current password");
+    try {
+      await axios.post(`/api/users/update-password/${employmentID}`, {
+        currentPassword,
+        newPassword: "TempPass@123",
+        confirmPassword: "Mismatch@123",
+      });
+    } catch (error) {
+      if (error?.response?.data?.message === "New password and confirm password do not match") {
+        setIsPasswordVerified(true);
+        return toast.success("Current password verified");
+      }
+      return toast.error(error?.response?.data?.message || "Invalid current password");
+    }
+  };
+
   const onSubmit = (data) => {
     // setIsEditing(!isEditing);
     // toast.success("User details updated successfully");
     //updateEmployeeStatus.mutate(data.status);
     updateEmployeeStatus.mutate(data);
+     if (isPasswordVerified && data?.currentPassword && data?.newPassword && data?.confirmPassword) {
+      updateEmployeePassword.mutate(data);
+    }
   };
 
   const handleReset = () => {
     reset();
   };
+
+   const selectedEmployeeName =
+    `${employeeData?.firstName || ""} ${employeeData?.lastName || ""}`.trim() ||
+    decodeURIComponent(employeeName || "").replace(/-/g, " ");
 
   const transformEmployeeData = isLoading
     ? []
@@ -658,7 +789,9 @@ const EditDetails = () => {
       <div className="flex justify-between items-center">
         <div>
           <span className="text-subtitle font-pmedium text-primary">
-            Edit Employee
+             {`${selectedEmployeeName ? `${selectedEmployeeName} - ` : ""}Edit Employee`}
+            {/* Edit Employee */}
+            {/* {`Edit Employee${selectedEmployeeName ? ` - ${selectedEmployeeName}` : ""}`} */}
           </span>
         </div>
         {!isEditing ? (
@@ -1090,6 +1223,49 @@ const EditDetails = () => {
                                     <MenuItem value="web">Web</MenuItem>
                                     <MenuItem value="mobile">Mobile</MenuItem>
                                   </TextField>
+                                  ) : ["leavePolicy", "holidayPolicy"].includes(
+                                    fieldKey,
+                                  ) ? (
+                                  <>
+                                    <input
+                                      id={`${fieldKey}-upload`}
+                                      type="file"
+                                      accept=".pdf,application/pdf"
+                                      hidden
+                                      onChange={(e) =>
+                                        handlePolicyFileChange(
+                                          e.target.files?.[0],
+                                          field.onChange,
+                                          fieldKey,
+                                        )
+                                      }
+                                    />
+                                    <TextField
+                                      size="small"
+                                      label={fieldKey
+                                        .replace(/([A-Z])/g, " $1")
+                                        .replace(/^./, (str) =>
+                                          str.toUpperCase(),
+                                        )}
+                                      fullWidth
+                                      value={
+                                        field.value?.name || field.value || ""
+                                      }
+                                      helperText={errors?.[fieldKey]?.message}
+                                      error={Boolean(errors?.[fieldKey])}
+                                      InputProps={{
+                                        readOnly: true,
+                                        endAdornment: (
+                                          <label
+                                            htmlFor={`${fieldKey}-upload`}
+                                            className="text-primary cursor-pointer"
+                                          >
+                                            <LuImageUp size={20} />
+                                          </label>
+                                        ),
+                                      }}
+                                    />
+                                  </>
                                 ) : (
                                   <TextField
                                     {...field}
@@ -1119,18 +1295,19 @@ const EditDetails = () => {
                               <div className="w-full">
                                 {["leavePolicy", "holidayPolicy"].includes(
                                   fieldKey,
-                                ) && transformEmployeeData[fieldKey] ? (
+                                       ) &&
+                                resolvePolicyLink(transformEmployeeData[fieldKey]) ? (
+                                //      ) &&
+                                // transformEmployeeData[fieldKey] &&
+                                // isValidHttpUrl(transformEmployeeData[fieldKey]) ? (
+                                // // ) && transformEmployeeData[fieldKey] ? (
                                   <a
-                                    href={transformEmployeeData[fieldKey]}
+                                   href={resolvePolicyLink(transformEmployeeData[fieldKey])}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 underline"
                                   >
-                                    {fieldKey
-                                      .replace(/([A-Z])/g, " $1")
-                                      .replace(/^./, (str) =>
-                                        str.toUpperCase(),
-                                      )}
+                                   {getPolicyDisplayName(transformEmployeeData[fieldKey])}
                                   </a>
                                 ) : (
                                   <span className="text-gray-500">
@@ -1407,7 +1584,113 @@ const EditDetails = () => {
                       ))}
                 </div>
               </div>
-            </div>
+               <div>
+                <div className="py-4 border-b-default border-borderGray">
+                  <span className="text-subtitle font-pmedium">Password</span>
+                </div>
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                  {isEditing ? (
+                    <TextField
+                      size="small"
+                      label="Password"
+                      fullWidth
+                      value={
+                        watch("plainPassword") ||
+                        transformEmployeeData?.plainPassword ||
+                        ""
+                      }
+                      InputProps={{ readOnly: true }}
+                    />
+                  ) : (
+                    <div className="py-2 flex justify-between items-center gap-2">
+                      <div className="w-[35%] justify-start flex">
+                        <span className="font-pmedium text-gray-600 text-content">
+                          Password
+                        </span>
+                      </div>
+                      <div>
+                        <span>:</span>
+                      </div>
+                      <div className="w-full">
+                        <span className="text-gray-500">
+                          {transformEmployeeData?.plainPassword || ""}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* {isEditing && (
+                  <>
+                    <div className="py-4 border-b-default border-borderGray">
+                      <span className="text-subtitle font-pmedium uppercase">Change Password</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                      <Controller name="currentPassword" control={control} render={({ field }) => <TextField {...field} size="small" label="Current Password *" fullWidth type="password" />} />
+                      <PrimaryButton title="Verify" type="button" handleSubmit={verifyCurrentPassword} />
+                      <Controller name="newPassword" control={control} render={({ field }) => <TextField {...field} size="small" label="New Password *" fullWidth type="password" disabled={!isPasswordVerified} />} />
+                      <Controller name="confirmPassword" control={control} render={({ field }) => <TextField {...field} size="small" label="Confirm Password *" fullWidth type="password" disabled={!isPasswordVerified} />} />
+                    </div>
+                  </>
+                )} */}
+                 </div>
+              {isEditing && (
+                <div>
+                  <div className="py-4 border-b-default border-borderGray">
+                    <span className="text-subtitle font-pmedium">Change Password</span>
+                  </div>
+                   {/* <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4"> */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                    <Controller
+                      name="currentPassword"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Current Password *"
+                          fullWidth
+                          type="password"
+                        />
+                      )}
+                    />
+                    <PrimaryButton
+                      title="Verify"
+                      type="button"
+                      handleSubmit={verifyCurrentPassword}
+                    />
+                    <Controller
+                      name="newPassword"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="New Password *"
+                          fullWidth
+                          type="password"
+                          disabled={!isPasswordVerified}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="confirmPassword"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Confirm Password *"
+                          fullWidth
+                          type="password"
+                          disabled={!isPasswordVerified}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+              </div>
+          
             {isEditing && (
               <div className="flex items-center justify-center gap-2 py-4">
                 <PrimaryButton

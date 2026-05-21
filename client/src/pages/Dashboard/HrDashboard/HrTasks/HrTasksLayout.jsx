@@ -4,6 +4,9 @@ import { useLocation, useMatch } from "react-router-dom";
 
 const HrTasksLayout = () => {
  const { pathname } = useLocation();
+ const isOverallKpaRoute = pathname.includes("/overall-KPA");
+ const isOverallDepartmentTasksRoute =
+   pathname.includes("/overall-KPA/department-tasks");
  const isMixBagKpaKraRoute = pathname.includes("/mix-bag/department-kpa-kra");
   const isMixBagDepartmentTasksRoute = pathname.includes("/mix-bag/department-tasks");
   const isMixBagRoute = isMixBagKpaKraRoute || isMixBagDepartmentTasksRoute;
@@ -61,22 +64,35 @@ const HrTasksLayout = () => {
     !!matchTasksMixBagDepartmentTasks;
 
   const tabs = [
-    {
-      label: "Department KPA",
-      path: "department-KPA",
-      permission: kpaTabPermission,
-    },
-    //{ label: "Department Tasks", path: "department-tasks" },
-     {
-      label: "Department KRA",
-      path: "department-KRA",
-      permission: kraTabPermission,
-    },
-    {
-      label: "Department Tasks",
-      path: isMixBagRoute ? "department-task" : "department-tasks",
-      permission: taskTabPermission,
-    },
+    ...(isOverallDepartmentTasksRoute
+      ? [
+          {
+            label: "Department Tasks",
+            path: "department-tasks",
+            permission: taskTabPermission,
+          },
+        ]
+      : [
+          {
+            label: "Department KPA",
+            path: "department-KPA",
+            permission: kpaTabPermission,
+          },
+          {
+            label: "Department KRA",
+            path: "department-KRA",
+            permission: kraTabPermission,
+          },
+          ...(isOverallKpaRoute
+            ? []
+            : [
+                {
+                  label: "Department Tasks",
+                  path: isMixBagRoute ? "department-task" : "department-tasks",
+                  permission: taskTabPermission,
+                },
+              ]),
+        ]),
   ];
 
   return (
@@ -89,7 +105,9 @@ const HrTasksLayout = () => {
             ? "/app/dashboard/HR-dashboard/mix-bag/department-tasks"
             : "/app/dashboard/HR-dashboard/overall-KPA"
       }
-      defaultTabPath="department-KPA"
+      defaultTabPath={
+        isOverallDepartmentTasksRoute ? "department-tasks" : "department-KPA"
+      }
       tabs={tabs}
       hideTabsCondition={() => isDepartmentView}
     />
