@@ -10,8 +10,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import UploadFileInput from "../../../../components/UploadFileInput";
+import { useNavigate } from "react-router-dom";
 
 const EmployeeOnboard = () => {
+  const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const {
     control,
@@ -176,6 +178,9 @@ const EmployeeOnboard = () => {
     onSuccess: (response) => {
       toast.success(response?.message || "Employee onboarded successfully");
       reset();
+      navigate("/app/dashboard/HR-dashboard/employee/employee-list", {
+        replace: true,
+      });
     },
     onError: (error) => {
       toast.error(
