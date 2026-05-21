@@ -378,7 +378,8 @@ const createUser = async (req, res, next) => {
     }
 
     // Hash the default password
-    const defaultPassword = `${firstName.trim()}@0625`;
+    //const defaultPassword = `${firstName.trim()}@0625`;
+     const defaultPassword = "xyz@123";
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
     const resolvedAttendanceSource =
@@ -397,6 +398,7 @@ const createUser = async (req, res, next) => {
       role,
       company,
       password: hashedPassword,
+      plainPassword: defaultPassword,
       attendanceSource: resolvedAttendanceSource,
       departments,
       employeeType,
@@ -634,6 +636,7 @@ const fetchSingleUser = async (req, res) => {
       tdsCalculationBasedOn:
         user.payrollInformation?.tdsCalculationBasedOn || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
+         plainPassword: user.plainPassword || "",
     };
 
     res.status(200).json(formattedUser);
@@ -689,7 +692,8 @@ const updatePassword = async (req, res, next) => {
     // Find the user by ID and update the password
     const updatedUser = await User.findByIdAndUpdate(
       { _id: user },
-      { $set: { password: hashedPassword } }, // Update the password field
+       { $set: { password: hashedPassword, plainPassword: newPassword } }, // Update the password field
+      // { $set: { password: hashedPassword } }, // Update the password field
       { new: true, runValidators: true }, // Return the updated document and enforce validation
     )
       .lean()
@@ -1057,9 +1061,10 @@ const bulkInsertUsers = async (req, res, next) => {
                   ? roleMap.get(row["Reports To (Role ID)"].trim())
                   : null;
 
-                // console.log("reportsToId", reportsToId);
+                 // console.log("reportsToId", reportsToId);
+                const defaultPassword = "xyz@123";
                 const hashedPassword = await bcrypt.hash(
-                  `${row["First Name"].trim()}@0625`,
+                  defaultPassword,
                   10,
                 );
 
@@ -1074,7 +1079,7 @@ const bulkInsertUsers = async (req, res, next) => {
                   email: row["Company Email"].trim().toLowerCase(),
                   company: new mongoose.Types.ObjectId(companyId),
                   password: hashedPassword,
-
+                  plainPassword: defaultPassword,
                   departments: departmentObjectIds,
                   role: roleObjectIds,
                   reportsTo: reportsToId,
@@ -1334,6 +1339,37 @@ const getEmployeePoliciesByEmpId = async (req, res) => {
   }
 };
 
+const updateEmployeePasswordByEmpId = async (req, res, next) => {
+  try {
+    const { empid } = req.params;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    const user = await User.findOne({ empId: empid });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isCurrentValid = await bcrypt.compare(currentPassword || "", user.password || "");
+    if (!isCurrentValid) {
+      return res.status(400).json({ message: "Invalid current password" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "New password and confirm password do not match" });
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: "Password should be at least 8 characters long" });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.plainPassword = newPassword;
+    await user.save();
+
+    return res.status(200).json({ message: "Password updated successfully", plainPassword: user.plainPassword });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createUser,
   fetchUser,
@@ -1343,5 +1379,6 @@ module.exports = {
   getAssignees,
   checkPassword,
   updatePassword,
+  updateEmployeePasswordByEmpId,
   getEmployeePoliciesByEmpId,
 };

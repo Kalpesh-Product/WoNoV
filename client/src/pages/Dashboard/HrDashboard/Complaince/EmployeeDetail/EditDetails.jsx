@@ -126,6 +126,7 @@ const EditDetails = () => {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   //  const isValidHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
    const isValidHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
   const resolvePolicyLink = (value) => {
@@ -410,6 +411,9 @@ const EditDetails = () => {
       status:
         employeeData?.status ||
         (employeeData?.isActive ? "Active" : "Inactive"),
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",  
     });
   }, [
     employeeData,
@@ -620,11 +624,65 @@ const EditDetails = () => {
     },
   });
 
+  const updateEmployeePassword = useMutation({
+    mutationFn: async (formData) => {
+      const response = await axios.post(`/api/users/update-password/${employmentID}`, {
+        currentPassword: formData?.currentPassword || "",
+        newPassword: formData?.newPassword || "",
+        confirmPassword: formData?.confirmPassword || "",
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Password updated successfully");
+      queryClient.setQueryData(["employeeData", employmentID], (previousData) => {
+        if (!previousData) return previousData;
+        return {
+          ...previousData,
+          plainPassword: data?.plainPassword || previousData?.plainPassword || "",
+        };
+      });
+      queryClient.invalidateQueries({ queryKey: ["employeeData", employmentID] });
+      setIsPasswordVerified(false);
+      reset((prev) => ({
+        ...prev,
+        plainPassword: data?.plainPassword || prev?.plainPassword || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update password");
+    },
+  });
+
+  const verifyCurrentPassword = async () => {
+    const currentPassword = watch("currentPassword");
+    if (!currentPassword) return toast.error("Please enter current password");
+    try {
+      await axios.post(`/api/users/update-password/${employmentID}`, {
+        currentPassword,
+        newPassword: "TempPass@123",
+        confirmPassword: "Mismatch@123",
+      });
+    } catch (error) {
+      if (error?.response?.data?.message === "New password and confirm password do not match") {
+        setIsPasswordVerified(true);
+        return toast.success("Current password verified");
+      }
+      return toast.error(error?.response?.data?.message || "Invalid current password");
+    }
+  };
+
   const onSubmit = (data) => {
     // setIsEditing(!isEditing);
     // toast.success("User details updated successfully");
     //updateEmployeeStatus.mutate(data.status);
     updateEmployeeStatus.mutate(data);
+     if (isPasswordVerified && data?.currentPassword && data?.newPassword && data?.confirmPassword) {
+      updateEmployeePassword.mutate(data);
+    }
   };
 
   const handleReset = () => {
@@ -1525,6 +1583,55 @@ const EditDetails = () => {
                         </div>
                       ))}
                 </div>
+              </div>
+               <div>
+                <div className="py-4 border-b-default border-borderGray">
+                  <span className="text-subtitle font-pmedium">Password</span>
+                </div>
+                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                  {isEditing ? (
+                    <TextField
+                      size="small"
+                      label="Password"
+                      fullWidth
+                      value={
+                        watch("plainPassword") ||
+                        transformEmployeeData?.plainPassword ||
+                        ""
+                      }
+                      InputProps={{ readOnly: true }}
+                    />
+                  ) : (
+                    <div className="py-2 flex justify-between items-center gap-2">
+                      <div className="w-[35%] justify-start flex">
+                        <span className="font-pmedium text-gray-600 text-content">
+                          Password
+                        </span>
+                      </div>
+                      <div>
+                        <span>:</span>
+                      </div>
+                      <div className="w-full">
+                        <span className="text-gray-500">
+                          {transformEmployeeData?.plainPassword || ""}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {isEditing && (
+                  <>
+                    <div className="py-4 border-b-default border-borderGray">
+                      <span className="text-subtitle font-pmedium uppercase">Change Password</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                      <Controller name="currentPassword" control={control} render={({ field }) => <TextField {...field} size="small" label="Current Password *" fullWidth type="password" />} />
+                      <PrimaryButton title="Verify" type="button" handleSubmit={verifyCurrentPassword} />
+                      <Controller name="newPassword" control={control} render={({ field }) => <TextField {...field} size="small" label="New Password *" fullWidth type="password" disabled={!isPasswordVerified} />} />
+                      <Controller name="confirmPassword" control={control} render={({ field }) => <TextField {...field} size="small" label="Confirm Password *" fullWidth type="password" disabled={!isPasswordVerified} />} />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             {isEditing && (
