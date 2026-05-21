@@ -50,26 +50,27 @@ const buildPolicyAgreements = ({
       const stringValue = String(value).trim();
       const isHttpUrl = isValidHttpUrl(stringValue);
 
-      if (
-        (name === "Leave Policy" || name === "Holiday Policy") &&
-        !isHttpUrl
-      ) {
-        throw new CustomError(
-          `${name} link is invalid. Please provide a valid http/https URL`,
-          logPath,
-          logAction,
-          logSourceKey,
-        );
-      }
+      // if (
+      //   (name === "Leave Policy" || name === "Holiday Policy") &&
+      //   !isHttpUrl
+      // ) {
+      //   throw new CustomError(
+      //     `${name} link is invalid. Please provide a valid http/https URL`,
+      //     logPath,
+      //     logAction,
+      //     logSourceKey,
+      //   );
+      // }
 
       return {
         name,
         user: userId,
         url: isHttpUrl ? stringValue : undefined,
-        type:
-          name === "Work Schedule Policy" && !isHttpUrl
-            ? stringValue
-            : undefined,
+        type: !isHttpUrl ? stringValue : undefined,
+        // type:
+        //   name === "Work Schedule Policy" && !isHttpUrl
+        //     ? stringValue
+        //     : undefined,
         isActive: true,
         isDeleted: false,
       };
@@ -539,9 +540,14 @@ const fetchSingleUser = async (req, res) => {
         .lean();
     }
 
-    const policies = await Agreements.find({ user: user._id }).lean();
+    // const policies = await Agreements.find({ user: user._id }).lean();
+    // const policyMap = policies.reduce((acc, policy) => {
+    //   if (policy?.name) acc[policy.name] = policy;
+     const policies = await Agreements.find({ user: user._id })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
     const policyMap = policies.reduce((acc, policy) => {
-      if (policy?.name) acc[policy.name] = policy;
+      if (policy?.name && !acc[policy.name]) acc[policy.name] = policy;
       return acc;
     }, {});
 
@@ -578,8 +584,16 @@ const fetchSingleUser = async (req, res) => {
         policyMap?.["Work Schedule Policy"]?.url ||
         "",
       attendanceSource: user?.attendanceSource || "",
-      leavePolicy: policyMap?.["Leave Policy"]?.url || "",
-      holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
+      // leavePolicy: policyMap?.["Leave Policy"]?.url || "",
+      // holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
+       leavePolicy:
+        policyMap?.["Leave Policy"]?.url ||
+        policyMap?.["Leave Policy"]?.type ||
+        "",
+      holidayPolicy:
+        policyMap?.["Holiday Policy"]?.url ||
+        policyMap?.["Holiday Policy"]?.type ||
+        "",
       status: user.isActive ? "Active" : "Inactive",
       isActive: Boolean(user.isActive),
       aadhaarID: user.panAadhaarDetails?.aadhaarId || "",
@@ -900,9 +914,23 @@ const updateProfile = async (req, res, next) => {
     if (agreementsToUpsert.length) {
       await Promise.all(
         agreementsToUpsert.map(async (agreement) => {
+          const updateDoc = {
+            name: agreement.name,
+            user: agreement.user,
+            isActive: agreement.isActive,
+            isDeleted: agreement.isDeleted,
+          };
+
+          const updateQuery = agreement.url
+            ? { $set: { ...updateDoc, url: agreement.url }, $unset: { type: 1 } }
+            : {
+                $set: { ...updateDoc, type: agreement.type },
+                $unset: { url: 1 },
+              };
           await Agreements.findOneAndUpdate(
             { user: targetUser._id, name: agreement.name },
-            { $set: agreement },
+            // { $set: agreement },
+             updateQuery,
             { upsert: true, new: true, setDefaultsOnInsert: true },
           );
         }),
