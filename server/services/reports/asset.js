@@ -32,7 +32,7 @@ const fetchAssetReportService = async ({
       .exec();
 
     if (!user) {
-      throw Error({ message: "User not found" });
+      throw new Error({ message: "User not found" });
     }
 
     const userDepartments = departmentIds || user.departments || [];

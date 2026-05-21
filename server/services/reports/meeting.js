@@ -104,7 +104,7 @@ const fetchMeetingReportService = async ({
     );
 
     if (!reviews) {
-      throw Error({ message: "No reviews found" });
+      throw new Error({ message: "No reviews found" });
     }
 
     const internalParticipants = filteredMeetings.map((meeting) =>
