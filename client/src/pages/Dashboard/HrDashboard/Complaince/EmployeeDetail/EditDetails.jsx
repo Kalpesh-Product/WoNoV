@@ -126,7 +126,37 @@ const EditDetails = () => {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  //  const isValidHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
    const isValidHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
+  const resolvePolicyLink = (value) => {
+    const normalizedValue = String(value || "").trim();
+    if (!normalizedValue) return "";
+
+    if (isValidHttpUrl(normalizedValue) || normalizedValue.startsWith("/")) {
+      return normalizedValue;
+    }
+
+    const isPdfName = /\.pdf$/i.test(normalizedValue);
+    if (isPdfName) {
+      return `/uploads/${encodeURIComponent(normalizedValue)}`;
+    }
+
+    return "";
+  };
+  const getPolicyDisplayName = (value) => {
+    const normalizedValue = String(value || "").trim();
+    if (!normalizedValue) return "";
+
+    if (!isValidHttpUrl(normalizedValue)) return normalizedValue;
+
+    try {
+      const url = new URL(normalizedValue);
+      const decodedName = decodeURIComponent(url.pathname.split("/").pop() || "");
+      return decodedName || normalizedValue;
+    } catch {
+      return normalizedValue;
+    }
+  };
   const normalizePolicyValue = (value) => {
     if (typeof value === "string") return value;
     if (value instanceof File) return value.name;
@@ -1207,21 +1237,19 @@ const EditDetails = () => {
                               <div className="w-full">
                                 {["leavePolicy", "holidayPolicy"].includes(
                                   fieldKey,
-                                     ) &&
-                                transformEmployeeData[fieldKey] &&
-                                isValidHttpUrl(transformEmployeeData[fieldKey]) ? (
-                                // ) && transformEmployeeData[fieldKey] ? (
+                                       ) &&
+                                resolvePolicyLink(transformEmployeeData[fieldKey]) ? (
+                                //      ) &&
+                                // transformEmployeeData[fieldKey] &&
+                                // isValidHttpUrl(transformEmployeeData[fieldKey]) ? (
+                                // // ) && transformEmployeeData[fieldKey] ? (
                                   <a
-                                    href={transformEmployeeData[fieldKey]}
+                                   href={resolvePolicyLink(transformEmployeeData[fieldKey])}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 underline"
                                   >
-                                    {fieldKey
-                                      .replace(/([A-Z])/g, " $1")
-                                      .replace(/^./, (str) =>
-                                        str.toUpperCase(),
-                                      )}
+                                   {getPolicyDisplayName(transformEmployeeData[fieldKey])}
                                   </a>
                                 ) : (
                                   <span className="text-gray-500">
