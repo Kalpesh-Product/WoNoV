@@ -382,7 +382,7 @@ const DepartmentReportCommon = () => {
         if (downloadStarted) {
           toast.success("Report Generated.");
         } else {
-          toast.error("Report generated, but no file payload was returned");
+          toast.error("Report was generated, but the download failed.");
         }
         return;
       }
@@ -439,7 +439,7 @@ const DepartmentReportCommon = () => {
         [reportRow?._id]: false,
       }));
 
-      const response = await axios.post("/api/reports/generate", payload);
+      let response = await axios.post("/api/reports/generate", payload);
       const jobId = response?.data?.jobId;
 
       if (!jobId) {
@@ -650,6 +650,7 @@ const DepartmentReportCommon = () => {
         const isGenerating =
           status === "pending" || status === "processing" || isPending;
         const isDownloaded = downloadedByReportId[row?._id];
+        const hasDownloadFailed = status === "completed" && !isDownloaded;
         const isCancelling =
           cancelReportMutation.isPending &&
           cancelReportMutation.variables?.reportId === row?._id;
@@ -679,15 +680,33 @@ const DepartmentReportCommon = () => {
             <button
               type="button"
               onClick={() => {
-                if (status === "failed") return;
+                if (status === "failed" || hasDownloadFailed) return;
                 setActiveReportId(row?._id || null);
                 generateReportMutation.mutate(row);
               }}
               className="rounded bg-primary px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-gray-400"
-              disabled={isGenerating || status === "failed" || !row?._id}
+              disabled={
+                isGenerating ||
+                status === "failed" ||
+                hasDownloadFailed ||
+                !row?._id
+              }
             >
               {primaryButtonLabel}
             </button>
+            {hasDownloadFailed ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveReportId(row?._id || null);
+                  generateReportMutation.mutate(row);
+                }}
+                className="rounded bg-orange-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-orange-300"
+                disabled={isGenerating || !row?._id}
+              >
+                Regenerate
+              </button>
+            ) : null}
             {status === "failed" || hasCooldown ? (
               hasCooldown ? (
                 <span className="rounded bg-orange-100 px-3 py-1 text-sm text-orange-700">
