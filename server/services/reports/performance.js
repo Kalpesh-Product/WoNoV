@@ -38,6 +38,7 @@ const fetchPerformanceReportService = async ({
   departments = [],
   company,
   type,
+  user,
 }) => {
   try {
     const dept = departmentId || departments?.[0];
@@ -52,46 +53,56 @@ const fetchPerformanceReportService = async ({
       throw new Error("Missing or invalid report type");
     }
 
+    const isIndividualReport = [
+      "INDIVIDUALKPA",
+      "INDIVIDUALKRA",
+      "TEAMKRA",
+      "TEAMKPA",
+    ].includes(type);
+
     const baseRoleQuery = {
       company,
       department: dept,
       taskType: { $in: reportTaskTypes },
       isDeleted: { $ne: true },
+      ...(dateFilter || {}),
+      ...(isIndividualReport && user?._id ? { assignTo: user._id } : {}),
     };
 
-    const [roleTasks, completedTasksRaw] = await Promise.all([
-      kraKpaRole
-        .find(baseRoleQuery)
-        .populate([
-          { path: "department", select: "name" },
-          { path: "assignTo", select: "firstName middleName lastName" },
-        ])
-        .select("-company")
-        .lean(),
-      kraKpaTask
-        .find({
-          company,
-          status: "Completed",
-          ...(dateFilter?.completionDate && {
-            completionDate: dateFilter.completionDate,
-          }),
-        })
-        .populate([
-          {
-            path: "task",
-            populate: [
-              { path: "department", select: "name" },
-              { path: "assignTo", select: "firstName middleName lastName" },
-            ],
-          },
-          {
-            path: "completedBy",
-            select: "firstName middleName lastName empId",
-          },
-        ])
-        .select("-company")
-        .lean(),
-    ]);
+    const roleTasks = await kraKpaRole
+      .find(baseRoleQuery)
+      .populate([
+        { path: "department", select: "name" },
+        { path: "assignTo", select: "firstName middleName lastName" },
+      ])
+      .select("-company")
+      .lean();
+
+    const roleTaskIds = roleTasks.map((roleTask) => roleTask._id);
+
+    const completedTasksRaw = roleTaskIds.length
+      ? await kraKpaTask
+          .find({
+            company,
+            status: "Completed",
+            task: { $in: roleTaskIds },
+          })
+          .populate([
+            {
+              path: "task",
+              populate: [
+                { path: "department", select: "name" },
+                { path: "assignTo", select: "firstName middleName lastName" },
+              ],
+            },
+            {
+              path: "completedBy",
+              select: "firstName middleName lastName empId",
+            },
+          ])
+          .select("-company")
+          .lean()
+      : [];
 
     const completedByRoleTaskId = new Map();
 
