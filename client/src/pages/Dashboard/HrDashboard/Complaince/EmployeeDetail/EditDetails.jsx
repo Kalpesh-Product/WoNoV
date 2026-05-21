@@ -1619,7 +1619,7 @@ const EditDetails = () => {
                     </div>
                   )}
                 </div>
-                {isEditing && (
+                {/* {isEditing && (
                   <>
                     <div className="py-4 border-b-default border-borderGray">
                       <span className="text-subtitle font-pmedium uppercase">Change Password</span>
@@ -1631,9 +1631,66 @@ const EditDetails = () => {
                       <Controller name="confirmPassword" control={control} render={({ field }) => <TextField {...field} size="small" label="Confirm Password *" fullWidth type="password" disabled={!isPasswordVerified} />} />
                     </div>
                   </>
-                )}
+                )} */}
+                 </div>
+              {isEditing && (
+                <div>
+                  <div className="py-4 border-b-default border-borderGray">
+                    <span className="text-subtitle font-pmedium">Change Password</span>
+                  </div>
+                   {/* <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4"> */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                    <Controller
+                      name="currentPassword"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Current Password *"
+                          fullWidth
+                          type="password"
+                        />
+                      )}
+                    />
+                    <PrimaryButton
+                      title="Verify"
+                      type="button"
+                      handleSubmit={verifyCurrentPassword}
+                    />
+                    <Controller
+                      name="newPassword"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="New Password *"
+                          fullWidth
+                          type="password"
+                          disabled={!isPasswordVerified}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="confirmPassword"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Confirm Password *"
+                          fullWidth
+                          type="password"
+                          disabled={!isPasswordVerified}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
               </div>
-            </div>
+          
             {isEditing && (
               <div className="flex items-center justify-center gap-2 py-4">
                 <PrimaryButton
