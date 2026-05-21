@@ -12,7 +12,6 @@ const fetchAssetReportService = async ({
   query,
   isReport = false,
 }) => {
-  console.log("query", query);
   const defaultQuery = {
     assigned: null,
     departmentId: null,
@@ -24,7 +23,6 @@ const fetchAssetReportService = async ({
   query = query && Object.keys(query).length ? query : defaultQuery;
 
   try {
-    console.log("user id", loggedInUser);
     const userId = loggedInUser;
     const user = await UserData.findById(userId)
       .populate("departments")
