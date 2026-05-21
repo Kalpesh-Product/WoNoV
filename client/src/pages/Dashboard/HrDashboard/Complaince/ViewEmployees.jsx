@@ -49,7 +49,8 @@ const ViewEmployees = () => {
             localStorage.setItem("employeeName", params.data.employeeName);
 
             navigate(
-              `/app/dashboard/HR-dashboard/employee/employee-list/${params.data.employeeName}/edit-details`
+               `/app/dashboard/HR-dashboard/employee/employee-list/edit-details`
+             // `/app/dashboard/HR-dashboard/employee/employee-list/${params.data.employeeName}/edit-details`
             );
             dispatch(setSelectedEmployee(params.data.employmentID));
             dispatch(setSelectedEmployeeMongoId(params.data.id));

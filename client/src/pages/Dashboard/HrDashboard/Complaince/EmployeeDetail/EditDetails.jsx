@@ -20,6 +20,7 @@ dayjs.extend(customParseFormat);
 
 const EditDetails = () => {
   const location = useLocation();
+  const { employeeName } = useParams();
   // const { employmentID } = location.state;
   const employmentID = useSelector((state) => state.hr.selectedEmployee);
   const axios = useAxiosPrivate();
@@ -562,6 +563,10 @@ const EditDetails = () => {
     reset();
   };
 
+   const selectedEmployeeName =
+    `${employeeData?.firstName || ""} ${employeeData?.lastName || ""}`.trim() ||
+    decodeURIComponent(employeeName || "").replace(/-/g, " ");
+
   const transformEmployeeData = isLoading
     ? []
     : {
@@ -658,7 +663,9 @@ const EditDetails = () => {
       <div className="flex justify-between items-center">
         <div>
           <span className="text-subtitle font-pmedium text-primary">
-            Edit Employee
+             {`${selectedEmployeeName ? `${selectedEmployeeName} - ` : ""}Edit Employee`}
+            {/* Edit Employee */}
+            {/* {`Edit Employee${selectedEmployeeName ? ` - ${selectedEmployeeName}` : ""}`} */}
           </span>
         </div>
         {!isEditing ? (

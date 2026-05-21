@@ -2389,7 +2389,8 @@ export const routes = createBrowserRouter([
                           },
 
                           {
-                            path: "employee-list/:firstName/",
+                            // path: "employee-list/:firstName/",
+                             path: "employee-list/",
                             element: <EmployeeDetail />,
                             children: [
                               {
