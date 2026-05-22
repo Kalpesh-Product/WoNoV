@@ -230,6 +230,17 @@ const reportServiceRegistry = {
         }),
       },
     }),
+  voucher: async ({ dateFilter, departmentId }) =>
+    fetchBudgetService({
+      departmentId,
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "dueDate",
+        }),
+      },
+    }),
 
   ticket: async ({ dateFilter, departmentId, departments, roles }) =>
     fetchTicketReportService({

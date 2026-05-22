@@ -13,7 +13,6 @@ const fetchBudgetService = async ({ dateFilter, departmentId }) => {
     query.dueDate = dateFilter.dueDate;
   }
 
-  console.log("query", query);
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },
