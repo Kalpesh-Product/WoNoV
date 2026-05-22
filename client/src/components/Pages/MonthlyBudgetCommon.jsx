@@ -82,6 +82,7 @@ const MonthlyBudgetCommon = () => {
     { headerName: "Department", field: "department", flex: 1,hide:true },
     { headerName: "Expense Name", field: "expanseName", flex: 1 },
     { headerName: "Expense Type", field: "expanseType", flex: 1 },
+    { headerName: "Payment Type", field: "paymentType", flex: 1 ,hide:true},
     {
       headerName: "Projected Amount (INR)",
       field: "projectedAmount",
@@ -94,7 +95,12 @@ const MonthlyBudgetCommon = () => {
       flex: 1,
       valueFormatter: (params) => inrFormat(params.value),
     },
+    { headerName: "Unit", field: "unitName", hide: true },
+    { headerName: "Unit No", field: "unitNo", hide: true },
+    { headerName: "Building", field: "buildingName", hide: true },
     { headerName: "Due Date", field: "dueDate", flex: 1 },
+    { headerName: "Invoice Name", field: "invoiceName", flex: 1 ,hide:true},
+    { headerName: "Invoice Date", field: "invoiceDate", flex: 1,hide:true },
     {
       headerName: "Approval Status",
       field: "status",
@@ -142,6 +148,7 @@ const MonthlyBudgetCommon = () => {
         );
       },
     },
+    { headerName: "Invoice Link", field: "invoiceLink", hide: true },
     {
       field: "actions",
       headerName: "Actions",
@@ -176,6 +183,7 @@ const MonthlyBudgetCommon = () => {
           dateColumn="dueDate"
           formatDate
           tableHeight={480}
+          exportData
         />
         ) : (
           <div className="text-red-500 text-sm font-medium">

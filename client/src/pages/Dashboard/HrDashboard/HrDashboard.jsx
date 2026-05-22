@@ -722,15 +722,14 @@ const HrDashboard = () => {
             });
           });
 
-          // navigate(`overall-KPA`, {
-           navigate("/app/performance/department-wise/overall-department-kpa", {
-            state: {
-              month: clickedMonth,
-              tasks: selectedMonthTasks,
-            },
-          });
+            navigate("/app/dashboard/HR-dashboard/overall-KPA/department-KPA", {
+              state: {
+                month: clickedMonth,
+                tasks: selectedMonthTasks,
+              },
+            });
+          },
         },
-      },
       animations: { enabled: false },
       fontFamily: "Poppins-Regular",
       toolbar: { show: false },

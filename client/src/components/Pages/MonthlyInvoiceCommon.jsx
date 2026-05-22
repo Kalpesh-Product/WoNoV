@@ -57,18 +57,25 @@ const MonthlyInvoiceCommon = () => {
 
   const invoiceCreationColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asec" },
-    { headerName: "Department", field: "department", flex: 1,hide:true },
+    { headerName: "Voucher Sr.No", field: "voucherSrNo", hide: true },
     { headerName: "Expense Name", field: "expanseName", flex: 1 },
     { headerName: "Invoice Name", field: "invoiceName", flex: 1 },
+    //  { headerName: "Expense Name", field: "expanseName", flex: 1 },
+    { headerName: "Expense Type", field: "expanseType", hide: true },
+    { headerName: "Department", field: "department", flex: 1,hide:true },
+    { headerName: "Unit", field: "unitName", hide: true },
+    { headerName: "Unit No", field: "unitNo", hide: true },
+    { headerName: "Building", field: "buildingName", hide: true },
+    { headerName: "Particulars", field: "particularSummary", hide: true },
+    { headerName: "Total Amount", field: "projectedAmount", hide: true },
     { headerName: "GSTIN", field: "gstIn", flex: 1 },
     { headerName: "Invoice Date", field: "invoiceDate", flex: 1 },
-
-    {
+     {
       headerName: "Due Date",
       field: "dueDate",
       flex: 1,
       valueFormatter: (params) => formatDateTime(params.value),
-    },
+    }, 
     {
       headerName: "Approval Status",
       field: "status",
@@ -90,7 +97,7 @@ const MonthlyInvoiceCommon = () => {
         return <Chip label={status} size="small" sx={{ ...chipStyle }} />;
       },
     },
-    {
+     {
       headerName: "Paid Status",
       field: "isPaid",
       flex:1,
@@ -115,6 +122,30 @@ const MonthlyInvoiceCommon = () => {
         );
       },
     },
+    { headerName: "Extra Budget", field: "isExtraBudgetText", hide: true },
+    { headerName: "Pre-Approved", field: "preApprovedText", hide: true },
+    { headerName: "Emergency Approval", field: "emergencyApprovalText", hide: true },
+    { headerName: "Budget Approval", field: "budgetApprovalText", hide: true },
+    { headerName: "L1 Approval", field: "l1ApprovalText", hide: true },
+    { headerName: "Invoice Attached", field: "invoiceAttachedText", hide: true },
+    
+    { headerName: "Invoice Link", field: "invoiceLink", hide: true },
+    
+    { headerName: "Voucher Name", field: "voucherName", hide: true },
+    { headerName: "Voucher Link", field: "voucherLink", hide: true },
+    { headerName: "Reimbursement Date", field: "reimbursementDate", hide: true },
+    
+    { headerName: "Finance Sr No", field: "financeSrNo", hide: true },
+    { headerName: "Mode of Payment", field: "modeOfPayment", hide: true },
+    { headerName: "Cheque No", field: "chequeNo", hide: true },
+    { headerName: "Cheque Date", field: "chequeDate", hide: true },
+    { headerName: "Finance Particulars", field: "financeParticularSummary", hide: true },
+    { headerName: "Finance Total Amount", field: "financeParticularTotal", hide: true },
+    { headerName: "Advance Amount", field: "advanceAmount", hide: true },
+    { headerName: "Approved At", field: "approvedAt", hide: true },
+    { headerName: "Expected Invoice Date", field: "expectedDateInvoice", hide: true },
+    { headerName: "Finance Voucher File", field: "financeVoucherLink", hide: true },
+   
     {
       field: "actions",
       headerName: "Actions",
@@ -188,6 +219,9 @@ const MonthlyInvoiceCommon = () => {
         name: p?.particularName || "-",
         amount: Number(p?.particularAmount || 0),
       }));
+       const financeParticulars = Array.isArray(finance.particulars)
+      ? finance.particulars
+      : [];
 
       return {
         ...item,
@@ -201,14 +235,53 @@ const MonthlyInvoiceCommon = () => {
         unitNo: unit.unitNo || "-",
         buildingName: building.buildingName || "-",
         particularDetails,
+        particularSummary:
+        particularDetails.length > 0
+          ? particularDetails
+              .map((p) => `${p.label}: ${p.name} (INR ${inrFormat(p.amount)})`)
+              .join(" | ")
+          : "-",
         dueDate: item.dueDate || "-",
         gstIn: item.gstIn || "-",
         isPaid: item?.status === "Approved" ? "Paid" : "Unpaid",
+        isExtraBudget: Boolean(item.isExtraBudget),
+        isExtraBudgetText: item.isExtraBudget ? "Yes" : "No",
+        preApproved: Boolean(item.preApproved),
+        preApprovedText: item.preApproved ? "Yes" : "No",
+        emergencyApproval: Boolean(item.emergencyApproval),
+        emergencyApprovalText: item.emergencyApproval ? "Yes" : "No",
+        budgetApproval: Boolean(item.budgetApproval),
+        budgetApprovalText: item.budgetApproval ? "Yes" : "No",
+        l1Approval: Boolean(item.l1Approval),
+        l1ApprovalText: item.l1Approval ? "Yes" : "No",
+        invoiceAttached: Boolean(item.invoiceAttached),
+        invoiceAttachedText: item.invoiceAttached ? "Yes" : "No",
         invoiceName: invoice.name || "-",
         invoiceLink: invoice.link || "-",
         invoiceDate: invoice.date || null,
         voucherName: voucher.name || "-",
         voucherLink: voucher.link || "-",
+        financeSrNo: finance.fSrNo || "-",
+        modeOfPayment: finance.modeOfPayment || "-",
+        chequeNo: finance.chequeNo || "-",
+        chequeDate: finance.chequeDate || "-",
+        approvedAt: finance.approvedAt || "-",
+        expectedDateInvoice: finance.expectedDateInvoice || "-",
+        financeParticularSummary:
+          financeParticulars.length > 0
+            ? financeParticulars
+                .map(
+                  (p, idx) =>
+                    `Particular ${idx + 1}: ${p?.particularName || "-"} (INR ${inrFormat(p?.particularAmount || 0)})`,
+                )
+                .join(" | ")
+            : "-",
+        financeParticularTotal: financeParticulars.reduce(
+          (sum, p) => sum + Number(p?.particularAmount || 0),
+          0,
+        ),
+        advanceAmount: finance.advanceAmount || 0,
+        financeVoucherLink: finance.voucher?.link || "-",
         finance: {
           fSrNo: finance.fSrNo || "-",
           modeOfPayment: finance.modeOfPayment || "-",
@@ -245,6 +318,7 @@ const MonthlyInvoiceCommon = () => {
             dateColumn="dueDate"
             formatDate={true}
             tableHeight={450}
+            exportData
           />
         ) : (
           <div className="text-red-500 text-sm font-medium">

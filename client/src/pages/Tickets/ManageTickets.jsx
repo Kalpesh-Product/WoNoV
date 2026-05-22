@@ -241,7 +241,7 @@ const ManageTickets = () => {
       component: (
         <ClosedTickets
           departmentId={selectedDepartment}
-          title="Closed / Resolved Tickets"
+          title="Closed Tickets"
         />
       ),
     },

@@ -320,7 +320,7 @@ const expenseRawSeries = useMemo(() => {
         onYearChange={setSelectedFiscalYear}
       />
 
-      <AllocatedBudget financialData={financialData} noFilter hideTitle noInvoice/>
+      <AllocatedBudget financialData={financialData} noFilter hideTitle noInvoice exportData/>
     </div>
   );
 };
