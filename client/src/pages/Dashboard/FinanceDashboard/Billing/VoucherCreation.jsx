@@ -56,11 +56,14 @@ const VoucherCreation = () => {
     { field: "srNo", headerName: "Sr No", flex: 0.5},
     { field: "voucherName", headerName: "Voucher Name", flex: 1 },
     { field: "modeOfPayment", headerName: "Mode of Payment", flex: 1 },
-    { field: "totalAmount", headerName: "Total Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value), },
-    { field: "advanceAmount", headerName: "Advance Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value),hide: true },
     { field: "chequeNo", headerName: "Cheque No", flex: 1,hide: true },
     { field: "chequeDate", headerName: "Cheque Date", flex: 1,hide: true },
+    { field: "financeParticularSummary", headerName: "Finance Particulars", hide: true },
+    { field: "totalAmount", headerName: "Total Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value), },
+    { field: "advanceAmount", headerName: "Advance Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value),hide: true },
     { field: "approvedAt", headerName: "Approved Date", flex: 1, cellRenderer : (params)=>(humanDate(params.value)) },
+    { field: "expectedDateInvoice", headerName: "Expected Invoice Date", hide: true },
+    { field: "financeVoucherLink", headerName: "Finance Voucher File", hide: true },
     {
       field: "status",
       headerName: "Approval Status",
@@ -121,8 +124,15 @@ const VoucherCreation = () => {
           
             voucherName: item.finance?.voucher?.name || "-",
             voucherLink: item.finance?.voucher?.link || "-",
+            financeVoucherLink: item.finance?.voucher?.link || "-",
             modeOfPayment: item.finance?.modeOfPayment || "-",
             advanceAmount: item.finance?.advanceAmount ?? "-",
+             financeParticularSummary:
+              Array.isArray(item.finance?.particulars) && item.finance.particulars.length > 0
+                ? item.finance.particulars
+                    .map((p) => `${p.particularName || "-"}: INR ${inrFormat(p.particularAmount || 0)}`)  
+              .join(", ")
+                : "-",
              totalAmount: Array.isArray(item.finance?.particulars)
               ? item.finance.particulars.reduce(
                   (sum, entry) => sum + Number(entry?.particularAmount || 0),
@@ -148,6 +158,7 @@ const VoucherCreation = () => {
             setViewVoucherModal(true);
           }}
           isLoading={isVoucherPending}
+          exportData
         />
       </PageFrame>
 
