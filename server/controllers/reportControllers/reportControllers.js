@@ -12,7 +12,7 @@ const normalizeReportKey = (value = "") =>
 
 const addReport = async (req, res, next) => {
   try {
-    const { module, reportName } = req.body;
+    const { module, reportName, crossDepartment } = req.body;
 
     const normalizedReportKey = normalizeReportKey(reportName || "");
 
@@ -36,6 +36,7 @@ const addReport = async (req, res, next) => {
       module,
       reportName,
       reportKey: normalizedReportKey,
+      crossDepartment,
     });
 
     return res.status(201).json({
@@ -106,6 +107,17 @@ const getSingleReport = async (req, res, next) => {
 const seedReports = async (req, res, next) => {
   try {
     const reports = req.body;
+
+    /*
+    Payload : [
+  {
+    "module": "Task",
+    "reportKey": "task",
+    "reportName": "Task Report",
+    "description": "Task report",
+    "crossDepartment":true
+  },
+]*/
 
     // Attach departmentId
     const formattedReports = reports.map((report) => ({

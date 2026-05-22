@@ -28,6 +28,15 @@ const ReportSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    crossDepartment: {
+      type: Boolean,
+      default: false,
+    },
+    reportType: {
+      type: String,
+      enum: ["dashboard", "app"],
+      default: "app",
+    },
   },
   { timestamps: true },
 );

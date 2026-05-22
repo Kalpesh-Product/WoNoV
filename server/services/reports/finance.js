@@ -49,8 +49,12 @@ const mapBudgetBaseFields = (budget = {}) => {
     : budget.projectedAmount || 0;
 
   return {
-    ...budget,
     department: budget?.department?.name || "-",
+    expanseName: budget?.expanseName || "-",
+    expanseType: budget?.expanseType || "-",
+    paymentType: budget?.paymentType || "-",
+    projectedAmount,
+    actualAmount: budget?.actualAmount ?? "-",
     unit: budget?.unit?.unitName || "-",
     unitNo: budget?.unit?.unitNo || "-",
     building: budget?.unit?.building?.buildingName || "-",
@@ -67,11 +71,12 @@ const mapBudgetBaseFields = (budget = {}) => {
 };
 
 const fetchBudgetService = async ({ dateFilter, departmentId }) => {
-  const query = {};
+  const query = { expanseType: { $ne: "Reimbursement" } };
 
   if (departmentId) query.department = departmentId;
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
+  console.log("budget query", query);
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },
