@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import {
   Tabs,
@@ -47,8 +47,10 @@ const AllocatedBudget = ({
   newTitle,
   enableActionMenu = false,
   filterApprovedAndPendingOnly = false,
+  exportData = false,
 }) => {
  const axios = useAxiosPrivate();
+  const agGridRef = useRef(null);
   const [selectedTab, setSelectedTab] = useState(0);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -359,6 +361,35 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     );
   }, [filteredRows]);
 
+  const handleExportPass = () => {
+    if (!agGridRef.current) return;
+
+    agGridRef.current.api.exportDataAsCsv({
+      fileName: `${newTitle || "budget-details"}.csv`,
+      columnKeys: tableColumns
+        .map((column) => column.field)
+        .filter((field) => field && field !== "actions"),
+      processCellCallback: (params) => {
+        const field = params?.column?.getColDef?.()?.field || "";
+        const value = params?.value;
+
+        if (value === null || value === undefined) return "";
+
+        const normalizedField = field.toLowerCase();
+        const shouldPreserveAsText =
+          normalizedField.includes("date") ||
+          normalizedField.includes("time") ||
+          /(at)$/i.test(field);
+
+        const stringValue = String(value);
+
+        if (!shouldPreserveAsText) return stringValue;
+
+        return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
+      },
+    });
+  };
+
   if (isLoading) return <CircularProgress />;
 
   return (
@@ -373,6 +404,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         border
       >
         <div className="flex flex-col gap-4 rounded-md">
+          {exportData && (
+            <div className="flex justify-end">
+              <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+            </div>
+          )}
+
           <div className="flex justify-end">
             <Popover
               open={openCalendar}
@@ -448,11 +485,11 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
           </div>
 
           {filteredRows.length > 0 ? (
-            <AgTable
+          <AgTable
               search
               data={filteredRows}
               columns={tableColumns}
-              // exportData
+              tableRef={agGridRef}
               tableHeight={350}
             />
           ) : (

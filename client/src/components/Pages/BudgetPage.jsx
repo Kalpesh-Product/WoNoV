@@ -407,6 +407,7 @@ const BudgetPage = () => {
         enableActionMenu
         filterApprovedAndPendingOnly
         newTitle="BIZ Nest EXPENSE DETAILS"
+        exportData
       />
       <MuiModal
         title="Request Budget"

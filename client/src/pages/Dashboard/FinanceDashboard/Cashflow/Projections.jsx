@@ -1,6 +1,7 @@
+import AgTable from "../../../../components/AgTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import WidgetSection from "../../../../components/WidgetSection";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { inrFormat } from "../../../../utils/currencyFormat";
@@ -10,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import { CircularProgress } from "@mui/material";
+import PrimaryButton from "../../../../components/PrimaryButton";
 
 const yearCategories = {
   "FY 2024-25": [
@@ -70,6 +72,13 @@ const Projections = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
   const [selectedFY, setSelectedFY] = useState("FY 2025-26");
+  const [filteredMonthlyPnLData, setFilteredMonthlyPnLData] = useState(null);
+  const [selectedPnLRangeLabel, setSelectedPnLRangeLabel] = useState("");
+
+  useEffect(() => {
+    setFilteredMonthlyPnLData(null);
+    setSelectedPnLRangeLabel("");
+  }, [selectedFY]);
 
   const projectionData = useMemo(
     () =>
@@ -168,6 +177,7 @@ const Projections = () => {
 
   const monthlyProfitLossColumns = [
     { field: "srNo", headerName: "Sr No", flex: 1 },
+    { field: "month", headerName: "Month", flex: 1 ,hide : true},
     { field: "projectedAmount", headerName: "Projected (INR)", flex: 1 },
     { field: "actualAmount", headerName: "Actual (INR)", flex: 1 },
     { field: "pnl", headerName: "P&L (INR)", flex: 1 },
@@ -186,7 +196,6 @@ const Projections = () => {
       ),
     },
   ];
-
   const monthlyProfitLossData = useMemo(
     () =>
       budgetData
@@ -225,6 +234,47 @@ const Projections = () => {
     setViewModalOpen(true);
   };
 
+  const handleExportMonthlyPnL = () => {
+    const headers = [
+      "Sr No",
+      "Month",
+      "Projected (INR)",
+      "Actual (INR)",
+      "P&L (INR)",
+    ];
+    const exportRows =
+      filteredMonthlyPnLData === null
+        ? monthlyProfitLossData
+        : filteredMonthlyPnLData;
+
+    const rows = exportRows.map((item, index) => [
+      index + 1,
+      item.month || "-",
+      item.projectedAmount,
+      item.actualAmount,
+      item.pnl,
+    ]);
+
+    const csv = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row
+          .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+          .join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const monthLabel =
+      selectedPnLRangeLabel || exportRows[0]?.month || selectedFY;
+    link.download = `Total_Monthly_PnL_${monthLabel}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection padding>
@@ -245,11 +295,31 @@ const Projections = () => {
             titleLabel={selectedFY}
             TitleAmount={`INR ${inrFormat(totalPnL)}`}
           >
-            <YearWiseTable
-              dateColumn={"dueDate"}
-              data={monthlyProfitLossData}
-              columns={monthlyProfitLossColumns}
-            />
+            <div className="flex flex-col gap-3 w-full">
+              <div className="flex justify-end">
+                <PrimaryButton
+                  title="Export"
+                  handleSubmit={handleExportMonthlyPnL}
+                />
+              </div>
+              <YearWiseTable
+                dateColumn={"dueDate"}
+                data={monthlyProfitLossData}
+                columns={monthlyProfitLossColumns}
+                onDateFilterChange={({ filteredData, selectedRange }) => {
+                  setFilteredMonthlyPnLData(filteredData ?? []);
+                  if (selectedRange?.startDate && selectedRange?.endDate) {
+                    setSelectedPnLRangeLabel(
+                      `${dayjs(selectedRange.startDate).format("MMM YYYY")}_to_${dayjs(
+                        selectedRange.endDate
+                      ).format("MMM YYYY")}`
+                    );
+                  } else {
+                    setSelectedPnLRangeLabel("");
+                  }
+                }}
+              />
+            </div>
           </WidgetSection>
         </div>
       ) : (
