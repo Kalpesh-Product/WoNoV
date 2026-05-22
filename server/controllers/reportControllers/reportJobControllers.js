@@ -13,7 +13,7 @@ const normalizeReportKey = (value = "") =>
     .replace(/[^a-z0-9-]/g, "")
     .replace(/-report$/, "");
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 100;
 const RETRY_COOLDOWN_MS = 15 * 60 * 1000;
 
 async function queueReportJob({

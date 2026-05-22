@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Chip, Popover } from "@mui/material";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { downloadCsv } from "../../utils/downloadCsv";
 import { queryClient } from "../../main";
+import useAuth from "../../hooks/useAuth";
 
 const REPORT_MODULE_MAP = {
   finance: { title: "Finance Department Report", module: "Finance" },
@@ -28,9 +29,16 @@ const RETRY_COOLDOWN_STORAGE_KEY = "department-report-retry-cooldown";
 
 const DepartmentReportCommon = () => {
   const axios = useAxiosPrivate();
-  const navigate = useNavigate();
+  const { auth } = useAuth();
   const { moduleKey = "" } = useParams();
-  const selectedModule = REPORT_MODULE_MAP[String(moduleKey).toLowerCase()];
+  const normalizedModuleKey = String(moduleKey).toLowerCase();
+  const selectedModule = REPORT_MODULE_MAP[normalizedModuleKey] || {
+    title: `${String(moduleKey || "").toUpperCase()} Department Report`,
+    module:
+      String(moduleKey || "")
+        .trim()
+        .replace(/^./, (char) => char.toUpperCase()) || "",
+  };
   const [activeReportId, setActiveReportId] = useState(null);
   const [jobStatusByReportId, setJobStatusByReportId] = useState({});
   const [downloadedByReportId, setDownloadedByReportId] = useState({});
@@ -73,17 +81,17 @@ const DepartmentReportCommon = () => {
     setDateRange([item.selection]);
   };
 
-  useEffect(() => {
-    if (selectedModule) return;
-    toast.error("Invalid report module selected");
-    navigate("../reports-section", { replace: true });
-  }, [navigate, selectedModule]);
-
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ["department-reports", selectedModule?.module],
     queryFn: async () => {
       const response = await axios.get("/api/reports", {
-        params: { module: selectedModule?.module },
+        params: {
+          module: selectedModule?.module,
+          departments: (auth?.user?.departments || [])
+            .map((dept) => dept?.name)
+            .filter(Boolean)
+            .join(","),
+        },
       });
       return Array.isArray(response?.data?.reports)
         ? response.data.reports

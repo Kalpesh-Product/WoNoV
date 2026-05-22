@@ -54,15 +54,16 @@ const worker = new Worker(
       }
 
       const foundUser = await UserData.findById(reportJob.userId)
-        .populate("role", "name")
-        .select("role company")
+        .populate("role", "roleTitle")
+        .select("role company departments")
         .lean();
-      const roles = (foundUser?.role || []).map((role) => role.name);
+      const roles = (foundUser?.role || []).map((role) => role.roleTitle);
       const company = foundUser.company;
       const user = foundUser._id;
 
       // throw new Error("Retry Error For Test");
-      console.log("user worker", user);
+      console.log("foundUser worker", foundUser);
+      console.log("user worker", roles);
       data = await reportService({
         dateFilter: reportJob.filters,
         departmentId: reportJob.department,

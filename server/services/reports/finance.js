@@ -70,13 +70,24 @@ const mapBudgetBaseFields = (budget = {}) => {
   };
 };
 
-const fetchBudgetService = async ({ dateFilter, departmentId }) => {
+const fetchBudgetService = async ({ dateFilter, departments, roles }) => {
   const query = { expanseType: { $ne: "Reimbursement" } };
 
-  if (departmentId) query.department = departmentId;
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
+  if (
+    !roles.includes([
+      "Finance Admin",
+      "Finance Emloyee",
+      "Master Admin",
+      "Super Admin",
+    ])
+  ) {
+    query.department = { $in: departments };
+  }
+
   console.log("budget query", query);
+
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },
@@ -96,7 +107,7 @@ const fetchBudgetService = async ({ dateFilter, departmentId }) => {
   return { allBudgets: budgets.map(mapBudgetBaseFields) };
 };
 
-const fetchVoucherService = async ({ dateFilter, departmentId }) => {
+const fetchVoucherService = async ({ dateFilter, departments }) => {
   const query = {
     $or: [
       { "finance.voucher.link": { $exists: true, $ne: "" } },
@@ -104,7 +115,7 @@ const fetchVoucherService = async ({ dateFilter, departmentId }) => {
     ],
   };
 
-  if (departmentId) query.department = departmentId;
+  if (departments) query.department = { $in: departments };
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
   const budgets = await Budget.find(query)

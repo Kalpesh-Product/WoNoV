@@ -1,15 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../constants/permissions";
 import useUserPermissions from "../../hooks/useUserPermissions";
+import useAuth from "../../hooks/useAuth";
 
-const reportModules = [
-  {
-    title: "FINANCE",
-    subtitle: "Finance Reports",
-    route: "../reports-section/finance",
-    permission: PERMISSIONS.REPORTS_FINANCE.value,
-  },
+const staticReportModules = [
   {
     title: "TICKETS",
     subtitle: "Ticket Reports",
@@ -51,9 +46,31 @@ const reportModules = [
 const ReportsSection = () => {
   const navigate = useNavigate();
   const { permissions } = useUserPermissions();
+  const { auth } = useAuth();
 
-  const visibleReportModules = reportModules.filter((module) =>
-    permissions.includes(module.permission),
+  const userDepartments = useMemo(
+    () =>
+      Array.isArray(auth?.user?.departments)
+        ? auth.user.departments.filter((dept) => dept?.name)
+        : [],
+    [auth?.user?.departments],
+  );
+
+  const departmentCards = userDepartments.map((department) => {
+    const moduleKey = String(department.name).trim().toLowerCase();
+
+    return {
+      title: String(department.name).toUpperCase(),
+      subtitle: `${department.name} Reports`,
+      route: `../reports-section/${moduleKey}`,
+      permission: PERMISSIONS.REPORTS_FINANCE.value,
+    };
+  });
+
+  const allModules = [...departmentCards, ...staticReportModules];
+
+  const visibleReportModules = allModules.filter(
+    (module) => !module.permission || permissions.includes(module.permission),
   );
 
   return (
@@ -65,7 +82,7 @@ const ReportsSection = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {visibleReportModules.map((module) => (
           <button
-            key={module.title}
+            key={`${module.title}-${module.route}`}
             onClick={() => navigate(module.route)}
             className="text-left p-4 rounded-md shadow-md border border-gray-200 bg-white transition hover:bg-gray-50"
           >

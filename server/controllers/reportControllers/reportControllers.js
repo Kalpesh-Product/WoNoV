@@ -12,7 +12,7 @@ const normalizeReportKey = (value = "") =>
 
 const addReport = async (req, res, next) => {
   try {
-    const { module, reportName, crossDepartment } = req.body;
+    const { module, reportName, crossDepartment, reportType } = req.body;
 
     const normalizedReportKey = normalizeReportKey(reportName || "");
 
@@ -32,11 +32,18 @@ const addReport = async (req, res, next) => {
       });
     }
 
+    if (crossDepartment && reportType && reportType !== "dashboard") {
+      return res.status(400).json({
+        message: "crossDepartment can only be true for dashboard reportType",
+      });
+    }
+
     const report = await Report.create({
       module,
       reportName,
       reportKey: normalizedReportKey,
       crossDepartment,
+      reportType,
     });
 
     return res.status(201).json({
@@ -48,20 +55,81 @@ const addReport = async (req, res, next) => {
   }
 };
 
+// const getReports = async (req, res, next) => {
+//   try {
+//     const {
+//       module,
+//       departmentId,
+//       reportType,
+//       includeCrossDepartment,
+//       departments,
+//     } = req.query;
+
+//     const query = {
+//       status: true,
+//     };
+
+//     if (module) {
+//       query.module = module;
+//     }
+
+//     if (reportType) {
+//       query.reportType = reportType;
+//     }
+
+//     // if (includeCrossDepartment === "true") {
+//     //   query.$or = [
+//     //     { module },
+//     //     { crossDepartment: true, reportType: "dashboard" },
+//     //   ];
+//     // }
+
+//     // if (departments) {
+//     //   const departmentList = String(departments)
+//     //     .split(",")
+//     //     .map((item) => item.trim())
+//     //     .filter(Boolean);
+
+//     //   if (departmentList.length) {
+//     //     const moduleMatch = { module: { $in: departmentList } };
+//     //     const crossDepartmentMatch = {
+//     //       crossDepartment: true,
+//     //       reportType: "dashboard",
+//     //     };
+
+//     //     query.$or = query.$or
+//     //       ? [...query.$or, moduleMatch, crossDepartmentMatch]
+//     //       : [moduleMatch, crossDepartmentMatch];
+//     //   }
+//     // }
+
+//     const reports = await Report.find(query)
+//       .populate("departmentId", "name")
+//       .sort({ createdAt: -1 });
+
+//     return res.status(200).json({
+//       count: reports.length,
+//       reports,
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+
 const getReports = async (req, res, next) => {
   try {
-    const { module, departmentId } = req.query;
+    const { module, reportType } = req.query;
 
     const query = {
       status: true,
     };
 
-    if (module) {
-      query.module = module;
+    if (reportType) {
+      query.reportType = reportType;
     }
 
-    if (departmentId) {
-      query.departmentId = departmentId;
+    if (module) {
+      query.$or = [{ module }, { module: "cross-department" }];
     }
 
     const reports = await Report.find(query)
