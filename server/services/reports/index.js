@@ -1,5 +1,5 @@
 const buildDateFilter = require("../../utils/dateFilter");
-const { fetchBudgetService } = require("./finance");
+const { fetchBudgetService, fetchVoucherService } = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
 const { fetchPerformanceReportService } = require("./performance");
 const {
@@ -231,7 +231,7 @@ const reportServiceRegistry = {
       },
     }),
   voucher: async ({ dateFilter, departmentId }) =>
-    fetchBudgetService({
+    fetchVoucherService({
       departmentId,
       dateFilter: {
         ...buildDateFilter({

@@ -2,7 +2,7 @@
 const User = require("../../models/hr/UserData");
 const Budget = require("../../models/budget/Budget");
 
-const fetchBudgetService = async ({ dateFilter, departmentId }) => {
+const fetchBudgetVoucherService = async ({ dateFilter, departmentId }) => {
   const query = {};
 
   if (departmentId) {
@@ -40,6 +40,103 @@ const fetchBudgetService = async ({ dateFilter, departmentId }) => {
   return { allBudgets };
 };
 
+const mapBudgetBaseFields = (budget = {}) => {
+  const projectedAmount = budget?.particulars?.length
+    ? budget.particulars.reduce(
+        (acc, curr) => acc + (curr.particularAmount || 0),
+        0,
+      )
+    : budget.projectedAmount || 0;
+
+  return {
+    ...budget,
+    department: budget?.department?.name || "-",
+    unit: budget?.unit?.unitName || "-",
+    unitNo: budget?.unit?.unitNo || "-",
+    building: budget?.unit?.building?.buildingName || "-",
+    paymentType: budget?.paymentType || "-",
+    projectedAmount,
+    actualAmount: budget?.actualAmount ?? "-",
+    dueDate: budget?.dueDate || null,
+    invoiceName: budget?.invoice?.name || "-",
+    invoiceDate: budget?.invoice?.date || null,
+    approvalStatus: budget?.status || "-",
+    paidStatus: budget?.isPaid || "-",
+    invoiceFile: budget?.invoice?.link || "-",
+  };
+};
+
+const fetchBudgetService = async ({ dateFilter, departmentId }) => {
+  const query = {};
+
+  if (departmentId) query.department = departmentId;
+  if (dateFilter) query.dueDate = dateFilter.dueDate;
+
+  const budgets = await Budget.find(query)
+    .populate([
+      { path: "department", select: "name" },
+      {
+        path: "unit",
+        select: "unitName unitNo building",
+        populate: {
+          path: "building",
+          model: "Building",
+          select: "buildingName",
+        },
+      },
+    ])
+    .lean()
+    .exec();
+
+  return { allBudgets: budgets.map(mapBudgetBaseFields) };
+};
+
+const fetchVoucherService = async ({ dateFilter, departmentId }) => {
+  const query = {
+    $or: [
+      { "finance.voucher.link": { $exists: true, $ne: "" } },
+      { "voucher.link": { $exists: true, $ne: "" } },
+    ],
+  };
+
+  if (departmentId) query.department = departmentId;
+  if (dateFilter) query.dueDate = dateFilter.dueDate;
+
+  const budgets = await Budget.find(query)
+    .populate([
+      { path: "department", select: "name" },
+      {
+        path: "unit",
+        select: "unitName unitNo building",
+        populate: {
+          path: "building",
+          model: "Building",
+          select: "buildingName",
+        },
+      },
+    ])
+    .lean()
+    .exec();
+
+  const vouchers = budgets.map((budget) => {
+    const base = mapBudgetBaseFields(budget);
+    return {
+      ...base,
+      voucherName:
+        budget?.finance?.voucher?.name || budget?.voucher?.name || "-",
+      voucherDate:
+        budget?.finance?.voucher?.date || budget?.voucher?.date || null,
+      voucherFile:
+        budget?.finance?.voucher?.link || budget?.voucher?.link || "-",
+      voucherSrNo: budget?.finance?.fSrNo || budget?.srNo || "-",
+    };
+  });
+
+  return { allBudgets: vouchers };
+};
+
 module.exports = {
+  fetchBudgetVoucherService,
   fetchBudgetService,
+  fetchVoucherService,
 };

@@ -16,7 +16,7 @@ const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const emitter = require("../../utils/eventEmitter");
 const { parseAmount } = require("../../utils/parseAmount");
-const { fetchBudgetService } = require("../../services/reports/finance");
+const { fetchBudgetVoucherService } = require("../../services/reports/finance");
 
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
@@ -501,7 +501,7 @@ const fetchBudget = async (req, res, next) => {
     const { departmentId } = req.query;
     const { user } = req;
 
-    const result = await fetchBudgetService({
+    const result = await fetchBudgetVoucherService({
       userId: user,
       departmentId,
     });
