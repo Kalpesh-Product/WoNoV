@@ -231,7 +231,16 @@ const ExternalMeetingCLients = () => {
         paymentProofUrl: meeting?.paymentProof ?? "",
         paymentStatus: meeting.paymentStatus ?? false,
         paymentVerification: meeting.paymentVerification || "Under Review",
-        client: meeting.client || "",
+          client:
+            meeting.client ||
+            meeting.externalClient?.companyName ||
+            meeting.externalClient ||
+            "",
+          companyName:
+            meeting.client ||
+            meeting.externalClient?.companyName ||
+            meeting.externalClient ||
+            "",
         building: meeting.location?.building?.buildingName || "",
         duration: meeting.duration || "",
         receptionist: meeting.receptionist || "",
