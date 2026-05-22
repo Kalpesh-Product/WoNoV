@@ -105,26 +105,7 @@ const getSingleReport = async (req, res, next) => {
 
 const seedReports = async (req, res, next) => {
   try {
-    const reports = [
-      {
-        module: "Asset",
-        reportKey: "asset",
-        reportName: "Asset Report",
-        description: "Asset report",
-      },
-      {
-        module: "Task",
-        reportKey: "task",
-        reportName: "Task Report",
-        description: "Task report",
-      },
-      {
-        module: "Performance",
-        reportKey: "performance",
-        reportName: "Performance Report",
-        description: "Performance report",
-      },
-    ];
+    const reports = req.body;
 
     // Attach departmentId
     const formattedReports = reports.map((report) => ({
