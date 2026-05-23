@@ -1,6 +1,7 @@
 const buildDateFilter = require("../../utils/dateFilter");
 const { fetchBudgetService, fetchVoucherService } = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
+const { fetchVendorReportService } = require("./vendor");
 const { fetchPerformanceReportService } = require("./performance");
 const {
   fetchDeptTaskReportService,
@@ -23,6 +24,29 @@ const normalizeReportIdentifier = (value = "") =>
  * Keeping reportName aliases for backward compatibility.
  */
 const reportServiceRegistry = {
+  vendor: async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchVendorReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "onboardingDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+    }),
+
   "dept-kpa": async ({
     dateFilter,
     departmentId,
@@ -219,7 +243,7 @@ const reportServiceRegistry = {
       company,
     }),
 
-  budget: async ({ dateFilter, departments }) =>
+  budget: async ({ dateFilter, departments, roles }) =>
     fetchBudgetService({
       departments,
       dateFilter: {
@@ -232,7 +256,7 @@ const reportServiceRegistry = {
       roles,
       isReport: true,
     }),
-  voucher: async ({ dateFilter, departments }) =>
+  voucher: async ({ dateFilter, departments, roles }) =>
     fetchVoucherService({
       departments,
       dateFilter: {

@@ -57,11 +57,9 @@ const mapBudgetBaseFields = (budget = {}) => {
     actualAmount: budget?.actualAmount ?? "-",
     unit: budget?.unit?.unitName || "-",
     unitNo: budget?.unit?.unitNo || "-",
-    building: budget?.unit?.building?.buildingName || "-",
-    paymentType: budget?.paymentType || "-",
-    projectedAmount,
-    actualAmount: budget?.actualAmount ?? "-",
     dueDate: budget?.dueDate || null,
+    isExtraBudget: budget?.isExtraBudget ?? false,
+    invoiceAttached: budget?.invoiceAttached ?? false,
     invoiceName: budget?.invoice?.name || "-",
     invoiceDate: budget?.invoice?.date || null,
     approvalStatus: budget?.status || "-",
@@ -75,18 +73,16 @@ const fetchBudgetService = async ({ dateFilter, departments, roles }) => {
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
-  if (
-    !roles.includes([
-      "Finance Admin",
-      "Finance Emloyee",
-      "Master Admin",
-      "Super Admin",
-    ])
-  ) {
+  const hasFinanceAccess = [
+    "Finance Admin",
+    "Finance Emloyee",
+    "Master Admin",
+    "Super Admin",
+  ].some((role) => roles?.includes(role));
+
+  if (!hasFinanceAccess) {
     query.department = { $in: departments };
   }
-
-  console.log("budget query", query);
 
   const budgets = await Budget.find(query)
     .populate([
@@ -107,7 +103,7 @@ const fetchBudgetService = async ({ dateFilter, departments, roles }) => {
   return { allBudgets: budgets.map(mapBudgetBaseFields) };
 };
 
-const fetchVoucherService = async ({ dateFilter, departments }) => {
+const fetchVoucherService = async ({ dateFilter, departments, roles }) => {
   const query = {
     $or: [
       { "finance.voucher.link": { $exists: true, $ne: "" } },
@@ -115,7 +111,17 @@ const fetchVoucherService = async ({ dateFilter, departments }) => {
     ],
   };
 
-  if (departments) query.department = { $in: departments };
+  const hasFinanceAccess = [
+    "Finance Admin",
+    "Finance Emloyee",
+    "Master Admin",
+    "Super Admin",
+  ].some((role) => roles?.includes(role));
+
+  if (!hasFinanceAccess) {
+    query.department = { $in: departments };
+  }
+
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
   const budgets = await Budget.find(query)
@@ -138,13 +144,28 @@ const fetchVoucherService = async ({ dateFilter, departments }) => {
     const base = mapBudgetBaseFields(budget);
     return {
       ...base,
-      voucherName:
-        budget?.finance?.voucher?.name || budget?.voucher?.name || "-",
-      voucherDate:
-        budget?.finance?.voucher?.date || budget?.voucher?.date || null,
-      voucherFile:
-        budget?.finance?.voucher?.link || budget?.voucher?.link || "-",
-      voucherSrNo: budget?.finance?.fSrNo || budget?.srNo || "-",
+      gstin: budget?.gstIn || "-",
+      reimbursementDate: budget?.reimbursementDate || null,
+      preApproved: budget?.preApproved ?? false,
+      emergencyApproval: budget?.emergencyApproval ?? false,
+      budgetApproval: budget?.budgetApproval ?? false,
+      l1Approval: budget?.l1Approval ?? false,
+      financeSrNo: budget?.finance?.fSrNo || budget?.srNo || "-",
+      modeOfPayment: budget?.finance?.modeOfPayment || "-",
+      chequeNo: budget?.finance?.chequeNo || "-",
+      chequeDate: budget?.finance?.chequeDate || null,
+      advanceAmount: budget?.finance?.advanceAmount ?? "-",
+      approvedAt: budget?.finance?.approvedAt || null,
+      expectedDateInvoice: budget?.finance?.expectedDateInvoice || null,
+      financeParticulars: budget?.finance?.particulars || [],
+      voucherName: budget?.voucher?.name || "-",
+      voucherDate: budget?.voucher?.date || null,
+      voucherFile: budget?.voucher?.link || "-",
+      voucherSrNo: budget?.srNo || "-",
+      financeVoucherName: budget?.finance?.voucher?.name || "-",
+      financeVoucherDate: budget?.finance?.voucher?.date || null,
+      financeVoucherFile: budget?.finance?.voucher?.link || "-",
+      financeVoucherSrNo: budget?.finance?.fSrNo || "-",
     };
   });
 

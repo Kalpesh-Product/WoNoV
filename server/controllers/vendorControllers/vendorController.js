@@ -1,3 +1,4 @@
+const { fetchVendorReportService } = require("../../services/reports/vendor");
 const Vendor = require("../../models/hr/Vendor");
 const User = require("../../models/hr/UserData");
 const Company = require("../../models/hr/Company");
@@ -110,8 +111,8 @@ const onboardVendor = async (req, res, next) => {
 
     if (!companyDoc) {
       throw new CustomError(
-       // "You are not authorized to onboard a vendor for this department.",
-      "This department is not configured for your company.",
+        // "You are not authorized to onboard a vendor for this department.",
+        "This department is not configured for your company.",
         logPath,
         logAction,
         logSourceKey,
@@ -325,7 +326,7 @@ const onboardVendor = async (req, res, next) => {
 
 const updateVendor = async (req, res, next) => {
   //const { ip, company, user, departments, roles } = req;
-    const { ip, user } = req;
+  const { ip, user } = req;
 
   const allowedFields = [
     "name",
@@ -423,9 +424,7 @@ const updateVendor = async (req, res, next) => {
     }
 
     // Use req.departments directly (already validated by middleware)
-     let userDepartments = Array.isArray(req.departments)
-      ? req.departments
-      : [];
+    let userDepartments = Array.isArray(req.departments) ? req.departments : [];
 
     if (userDepartments.length === 0 && user) {
       const currentUser = await User.findById(user)
@@ -462,7 +461,7 @@ const updateVendor = async (req, res, next) => {
         message: "You are not authorized to update this vendor",
       });
     }
-     const companyDoc = await Company.findOne({
+    const companyDoc = await Company.findOne({
       _id: companyId,
       //_id: companyId,
       selectedDepartments: {
@@ -498,24 +497,37 @@ const updateVendor = async (req, res, next) => {
   }
 };
 
-const fetchVendors = async (req, res, next) => {
-  const company = req.company;
-  const { departmentId } = req.params;
-  let vendors;
-  if (departmentId) {
-    vendors = await Vendor.find({ company, departmentId }).lean().exec();
+async function fetchVendors(req, res) {
+  const payload = await fetchVendorReportService({
+    departmentId: req.body?.departmentId,
+    departments: req.body?.departments || req?.departments || [],
+    roles: req?.roles || [],
+    company: req?.company || null,
+    user: req?.user || null,
+    query: req.body?.departmentId ? { department: req.body?.departmentId } : {},
+  });
 
-    if (!vendors) {
-      return res.status(200).json([]);
-    }
-    return res.status(200).json(vendors);
-  }
-  vendors = await Vendor.find({ company })
-    .populate({ path: "departmentId" })
-    .lean()
-    .exec();
-  return res.status(200).json(vendors);
-};
+  return res.status(200).json(payload);
+}
+
+// const fetchVendors = async (req, res, next) => {
+//   const company = req.company;
+//   const { departmentId } = req.params;
+//   let vendors;
+//   if (departmentId) {
+//     vendors = await Vendor.find({ company, departmentId }).lean().exec();
+
+//     if (!vendors) {
+//       return res.status(200).json([]);
+//     }
+//     return res.status(200).json(vendors);
+//   }
+//   vendors = await Vendor.find({ company })
+//     .populate({ path: "departmentId" })
+//     .lean()
+//     .exec();
+//   return res.status(200).json(vendors);
+// };
 
 const bulkInsertVendors = async (req, res, next) => {
   try {
