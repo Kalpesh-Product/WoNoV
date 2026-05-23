@@ -363,12 +363,33 @@ const Collections = () => {
 
     if (!exportRows.length) return;
 
-    const headers = ["Sr No", "Client", "Revenue", "Status"];
+    const headers = [
+      "Sr No",
+      "Client Name",
+      "Channel",
+      "Total Term",
+      "Rent Status",
+      "No. of Desks",
+      "Desk Rate",
+      "Revenue",
+      "Rent Date",
+      "Past Due Date",
+      "Annual Increment",
+      "Next Increment Date",
+    ];
     const rows = exportRows.map((client, index) => [
       index + 1,
       client.clientName || "",
-      client.revenue != null ? inrFormat(client.revenue) : "",
+      client.channel || "",
+      client.totalTerm != null ? `${client.totalTerm} months` : "",
       client.rentStatus || "",
+      client.noOfDesks != null ? client.noOfDesks : "",
+      client.deskRate != null ? `INR ${inrFormat(client.deskRate)}` : "",
+      client.revenue != null ? `INR ${inrFormat(client.revenue)}` : "",
+      client.rentDate ? humanDate(client.rentDate) : "",
+      client.pastDueDate ? humanDate(client.pastDueDate) : "",
+      client.annualIncrement != null ? `${client.annualIncrement}%` : "0%",
+      client.nextIncrementDate ? humanDate(client.nextIncrementDate) : "",
     ]);
 
     const csvContent = [
