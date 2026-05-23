@@ -361,6 +361,7 @@ const UniqueLeads = () => {
               dateOfContact: item.dateOfContact,
               companyName: item.companyName,
               pocName: item.pocName,
+              designation: item.designation,
               contactNumber: item.contactNumber,
               emailAddress: item.emailAddress,
               leadStatus: item.leadStatus,
@@ -368,6 +369,7 @@ const UniqueLeads = () => {
               serviceName: item.serviceCategory?.serviceName || "—",
               clientBudget: item.clientBudget,
               startDate: item.startDate,
+              lastFollowUpDate: item.lastFollowUpDate,
               remarksComments: item.remarksComments,
             }))}
             columns={[
@@ -375,7 +377,9 @@ const UniqueLeads = () => {
               {
                 headerName: "Date of Contact",
                 field: "dateOfContact",
-                cellRenderer: (params) => humanDate(params.value),
+                flex: 1,
+                valueFormatter: (params) =>
+                  params.value ? humanDate(params.value) : "—",
               },
               {
                 headerName: "Company Name",
@@ -400,19 +404,35 @@ const UniqueLeads = () => {
                   );
                 },
               },
-              { headerName: "POC Name", field: "pocName" },
-              { headerName: "Contact Number", field: "contactNumber" },
-              // { headerName: "Email", field: "emailAddress" },
-              { headerName: "Lead Status", field: "leadStatus" },
-              // { headerName: "Sector", field: "sector" },
-              // { headerName: "Service", field: "serviceName" },
-              // { headerName: "Client Budget", field: "clientBudget" },
-              // { headerName: "Start Date", field: "startDate" },
-              // { headerName: "Remarks", field: "remarksComments" },
+              { headerName: "POC Name", field: "pocName",flex: 1 },
+              { headerName: "Designation", field: "designation",flex: 1,hide: true },
+              { headerName: "Contact Number", field: "contactNumber",flex: 1},
+              { headerName: "Email", field: "emailAddress", flex: 1 ,hide: true},
+              { headerName: "Lead Status", field: "leadStatus" ,flex: 1},
+              { headerName: "Sector", field: "sector",flex: 1,hide: true },
+              { headerName: "Service", field: "serviceName",flex: 1,hide: true },
+              {
+                headerName: "Client Budget",
+                field: "clientBudget",
+                hide: true,
+                flex: 1,
+                valueFormatter: (params) =>
+                  params.value ? `INR ${params.value}` : "—",
+              },
+              {
+                headerName: "Last Follow-up Date",
+                field: "lastFollowUpDate",
+                hide: true,
+                flex: 1,
+                valueFormatter: (params) =>
+                  params.value ? humanDate(params.value) : "—",
+              },
+              { headerName: "Remarks", field: "remarksComments", flex: 1,hide: true },
             ]}
             dateColumn="dateOfContact"
             initialMonth={selectedMonth}
             key="leads-table"
+            exportData
           />
         </div>
       </WidgetSection>
