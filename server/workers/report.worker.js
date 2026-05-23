@@ -39,12 +39,6 @@ const worker = new Worker(
     try {
       let data;
 
-      console.log(`Received job: ${job.data}`);
-      console.log("Report Data:", reportJob);
-      console.log(
-        `Processing report job ${reportJobId} for template: ${reportJob.report.reportName}`,
-      );
-      console.log("ReportJob report:", reportJob.report);
       const reportService = resolveReportService(reportJob.report);
 
       if (!reportService) {
@@ -54,7 +48,10 @@ const worker = new Worker(
       }
 
       const foundUser = await UserData.findById(reportJob.userId)
-        .populate("role", "roleTitle")
+        .populate(
+          { populate: "role", select: "roleTitle" },
+          { populate: "departments", select: "name" },
+        )
         .select("role company departments")
         .lean();
       const roles = (foundUser?.role || []).map((role) => role.roleTitle);
@@ -63,6 +60,7 @@ const worker = new Worker(
 
       // throw new Error("Retry Error For Test");
 
+      console.log("worker dept");
       data = await reportService({
         dateFilter: reportJob.filters,
         departmentId: reportJob.department,

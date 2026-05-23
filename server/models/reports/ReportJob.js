@@ -10,10 +10,12 @@ const ReportJobSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Report",
     },
+    //used for report filter
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
     },
+    //user departments
     departments: [
       {
         type: mongoose.Schema.Types.ObjectId,

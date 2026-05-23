@@ -41,8 +41,9 @@ const DepartmentReportCommon = () => {
         .replace(/^./, (char) => char.toUpperCase()) || "",
   };
 
+  const selectedDepartmentId = searchParams.get("departmentId");
+
   const selectedDepartmentNames = useMemo(() => {
-    const selectedDepartmentId = searchParams.get("departmentId");
     const userDepartments = Array.isArray(auth?.user?.departments)
       ? auth.user.departments
       : [];
@@ -58,7 +59,7 @@ const DepartmentReportCommon = () => {
     }
 
     return userDepartments.map((dept) => dept?.name).filter(Boolean);
-  }, [auth?.user?.departments, searchParams]);
+  }, [auth?.user?.departments, selectedDepartmentId]);
 
   const [activeReportId, setActiveReportId] = useState(null);
   const [jobStatusByReportId, setJobStatusByReportId] = useState({});
@@ -448,7 +449,8 @@ const DepartmentReportCommon = () => {
     mutationFn: async (reportRow) => {
       const payload = {
         report: reportRow?._id,
-        department: reportRow?.departmentId?._id || null,
+        department:
+          selectedDepartmentId || reportRow?.departmentId?._id || null,
         filters: {
           startDate: dateRange?.[0]?.startDate
             ? dayjs(dateRange[0].startDate).startOf("day").toISOString()

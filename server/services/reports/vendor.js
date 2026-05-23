@@ -19,6 +19,7 @@ const fetchVendorReportService = async ({
     queryObj.departmentId = { $in: departmentId };
   }
 
+  console.log("vendor query", queryObj);
   const vendors = await Vendor.find(queryObj)
     .populate({ path: "departmentId", select: "name" })
     .lean()

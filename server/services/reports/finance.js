@@ -68,7 +68,7 @@ const mapBudgetBaseFields = (budget = {}) => {
   };
 };
 
-const fetchBudgetService = async ({ dateFilter, departments, roles }) => {
+const fetchBudgetService = async ({ dateFilter, departmentId, roles }) => {
   const query = { expanseType: { $ne: "Reimbursement" } };
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
@@ -80,10 +80,12 @@ const fetchBudgetService = async ({ dateFilter, departments, roles }) => {
     "Super Admin",
   ].some((role) => roles?.includes(role));
 
-  if (!hasFinanceAccess) {
-    query.department = { $in: departments };
+  const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
+  if (!hasFinanceAccess && departmentId !== FINANCE_DEPT_ID) {
+    query.department = departmentId;
   }
 
+  console.log("Finance Query", query);
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },
@@ -103,7 +105,7 @@ const fetchBudgetService = async ({ dateFilter, departments, roles }) => {
   return { allBudgets: budgets.map(mapBudgetBaseFields) };
 };
 
-const fetchVoucherService = async ({ dateFilter, departments, roles }) => {
+const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
   const query = {
     $or: [
       { "finance.voucher.link": { $exists: true, $ne: "" } },
@@ -111,19 +113,21 @@ const fetchVoucherService = async ({ dateFilter, departments, roles }) => {
     ],
   };
 
-  const hasFinanceAccess = [
-    "Finance Admin",
-    "Finance Emloyee",
-    "Master Admin",
-    "Super Admin",
-  ].some((role) => roles?.includes(role));
+  // const hasFinanceAccess = [
+  //   "Finance Admin",
+  //   "Finance Emloyee",
+  //   "Master Admin",
+  //   "Super Admin",
+  // ].some((role) => roles?.includes(role));
 
-  if (!hasFinanceAccess) {
-    query.department = { $in: departments };
+  const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
+  if (!departmentId.equals(FINANCE_DEPT_ID)) {
+    query.department = departmentId;
   }
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
+  console.log("voucher query", query);
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },
