@@ -245,6 +245,7 @@ const AgTableComponent = React.memo(
                     if (gridRef.current) {
                       gridRef.current.api.exportDataAsCsv({
                         fileName: `${tableTitle || "table-data"}.csv`,
+                        allColumns: true,
                         processCellCallback: formatExportCell,
                       });
                     }
