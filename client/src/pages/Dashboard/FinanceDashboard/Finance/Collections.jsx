@@ -4,6 +4,7 @@ import BarGraph from "../../../../components/graphs/BarGraph";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import DataCard from "../../../../components/DataCard";
+import PrimaryButton from "../../../../components/PrimaryButton";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormat } from "../../../../utils/currencyFormat";
@@ -54,6 +55,7 @@ const Collections = () => {
   const [viewDetails, setViewDetails] = useState(null);
   const [selectedMonthData, setSelectedMonthData] = useState([]);
   const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
+  const [selectedExportRange, setSelectedExportRange] = useState(null);
   const [selectedYearIndex, setSelectedYearIndex] = useState(1);
   const axios = useAxiosPrivate();
 
@@ -292,27 +294,41 @@ const Collections = () => {
 
   const flatClientData = useMemo(() => {
     return coWorkingData.flatMap((monthObj) =>
-      monthObj.clients.map((client, index) => ({
+      (monthObj.clients || []).map((client, index) => ({
         srno: index + 1,
+        month: monthObj.month,
+        monthLabel: dayjs(`01-${monthObj.month}`, "DD-MMM-YY").format("MMM-YYYY"),
+        monthSortKey: dayjs(`01-${monthObj.month}`, "DD-MMM-YY").valueOf(),
         ...client,
         date: client.rentDate,
       }))
     );
   }, [coWorkingData]);
 
+  const monthWiseExportData = useMemo(() => {
+    return [...flatClientData].sort((a, b) => {
+      if (a.monthSortKey !== b.monthSortKey) {
+        return a.monthSortKey - b.monthSortKey;
+      }
+      return (a.srno || 0) - (b.srno || 0);
+    });
+  }, [flatClientData]);
+
   const grandTotal = flatClientData.reduce(
     (acc, client) => acc + (client.revenue || 0),
     0
   );
-  const handleMonthChange = (monthLabel) => {
-    setSelectedMonthLabel(monthLabel);
+  const handleMonthChange = (total, filteredRows = [], range = null) => {
+    if (range?.startDate) {
+      setSelectedMonthLabel(dayjs(range.startDate).format("MMM-YYYY"));
+    } else if (filteredRows.length > 0) {
+      setSelectedMonthLabel(dayjs(filteredRows[0].date).format("MMM-YYYY"));
+    } else {
+      setSelectedMonthLabel("");
+    }
 
-    const matchingData = flatClientData.filter((item) => {
-      const itemMonth = dayjs(item.date).format("MMM-YYYY");
-      return itemMonth === monthLabel;
-    });
-
-    setSelectedMonthData(matchingData);
+    setSelectedExportRange(range);
+    setSelectedMonthData(filteredRows);
   };
 
   const currentMonthTotal = useMemo(() => {
@@ -321,6 +337,59 @@ const Collections = () => {
       0
     );
   }, [selectedMonthData]);
+
+  const buildExportFileName = (range) => {
+    const start = range?.startDate ? dayjs(range.startDate) : null;
+    const end = range?.endDate ? dayjs(range.endDate) : null;
+
+    if (!start || !end || !start.isValid() || !end.isValid()) {
+      return `collections-${selectedMonthLabel || "selected-month"}.csv`;
+    }
+
+    const startLabel = start.format("MMM");
+    const endLabel = end.format("MMM");
+    const yearLabel = end.format("YYYY");
+
+    if (start.format("MMM-YYYY") === end.format("MMM-YYYY")) {
+      return `collections-${startLabel}-${yearLabel}.csv`;
+    }
+
+    return `collections-${startLabel}-${endLabel}-${yearLabel}.csv`;
+  };
+
+  const handleExport = () => {
+    const exportRows =
+      selectedMonthData.length > 0 ? selectedMonthData : monthWiseExportData;
+
+    if (!exportRows.length) return;
+
+    const headers = ["Sr No", "Client", "Revenue", "Status"];
+    const rows = exportRows.map((client, index) => [
+      index + 1,
+      client.clientName || "",
+      client.revenue != null ? inrFormat(client.revenue) : "",
+      client.rentStatus || "",
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row
+          .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+          .join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = buildExportFileName(selectedExportRange);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   if (isCoWorkingLoading) {
     return <div>Loading...</div>;
@@ -372,14 +441,26 @@ const Collections = () => {
         </WidgetSection>
       </WidgetSection>
 
-      <WidgetTable
-        data={flatClientData}
-        columns={kraColumn}
-        dateColumn="date"
-        totalKey="revenue"
-        tableTitle={"Collections"}
-        handleSubmit={() => console.log("Export triggered")}
-      />
+      <WidgetSection
+        border
+        title={"COLLECTIONS"}
+        TitleAmount={`INR ${inrFormat(grandTotal)}`}
+      >
+        <div className="flex justify-end px-4 pt-4">
+          <PrimaryButton title="Export" handleSubmit={handleExport} />
+        </div>
+
+        <WidgetTable
+          data={flatClientData}
+          columns={kraColumn}
+          dateColumn="date"
+          totalKey="revenue"
+          tableTitle={""}
+          border={false}
+          onMonthChange={handleMonthChange}
+          handleSubmit={() => console.log("Export triggered")}
+        />
+      </WidgetSection>
 
 
       {viewDetails && (
