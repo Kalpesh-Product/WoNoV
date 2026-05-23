@@ -94,6 +94,7 @@ const AltRevenues = () => {
           data={flattenedRevenueData}
           dateColumn={"invoiceCreationDate"}
           totalKey="taxableAmount"
+          exportData
           columns={[
             { headerName: "Sr No", field: "srNo", width: 100 },
             { headerName: "Particulars", field: "particulars", width: 350 },

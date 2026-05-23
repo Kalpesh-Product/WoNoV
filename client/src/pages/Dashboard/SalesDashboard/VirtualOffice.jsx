@@ -95,6 +95,7 @@ const VirtualOffice = () => {
           tableTitle={"Monthly Revenue with Client Details"}
           data={tableData}
           totalKey="revenue"
+          exportData
           dateColumn={"rentDate"}
           columns={[
             { headerName: "Sr No", field: "srNo", flex: 1 },

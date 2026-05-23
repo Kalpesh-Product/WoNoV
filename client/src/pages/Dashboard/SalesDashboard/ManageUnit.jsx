@@ -187,6 +187,7 @@ export default function ManageUnit() {
           loading={isUnitsDataPending}
           buttonTitle="Add New Unit"
           handleClick={handleAddClick}
+          exportData
         />
       </PageFrame>
 

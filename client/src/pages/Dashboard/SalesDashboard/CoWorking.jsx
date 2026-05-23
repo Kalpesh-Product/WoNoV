@@ -110,6 +110,7 @@ const CoWorking = () => {
         <WidgetTable
           data={flattenedRevenueData}
           dateColumn={"rentDate"}
+          exportData
           formatDate
           tableTitle={"MONTHLY REVENUE WITH CLIENT DETAILS"}
           totalKey="revenue"

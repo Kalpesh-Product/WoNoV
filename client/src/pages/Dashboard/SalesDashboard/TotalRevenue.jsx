@@ -336,6 +336,7 @@ const TotalRevenue = () => {
         ]}
         amount={`INR ${inrFormat(totalAnnualRevenue)}`}
         data={unifiedRevenueData}
+        exportData
       />
     </div>
   );
