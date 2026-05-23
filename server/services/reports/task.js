@@ -10,16 +10,15 @@ const fetchDeptTaskReportService = async ({
   isReport = false,
 }) => {
   try {
-    let dept = query ? query.dept : departments[0];
+    let dept = query ? query.dept : departments;
 
-    query = { company, isDeleted: { $ne: true } };
-
+    console.log("");
     const queryObj = {
       company,
       isDeleted: { $ne: true },
 
       ...(dept && {
-        department: dept,
+        department: { $in: departments },
         taskType: "Department",
       }),
 
@@ -83,14 +82,13 @@ const fetchMyTasksReportService = async ({
   isReport = false,
 }) => {
   try {
-    console.log("user", user);
     let { flag } = query;
 
     const queryObj = {
       company,
       isDeleted: { $ne: true },
       assignedBy: user,
-      department: departments[0],
+      department: { $in: departments },
       taskType: "Self",
       ...(flag === "Pending" &&
         !isReport && {
@@ -101,7 +99,6 @@ const fetchMyTasksReportService = async ({
       }),
     };
 
-    console.log("query", queryObj);
     const tasks = await Task.find(queryObj)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")

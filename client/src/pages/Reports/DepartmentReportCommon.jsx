@@ -70,6 +70,7 @@ const DepartmentReportCommon = () => {
   };
 
   const selectedDepartmentId = searchParams.get("departmentId");
+  const reportTypeForFetch = selectedDepartmentId ? "dashboard" : "app";
 
   const selectedDepartmentNames = useMemo(() => {
     const userDepartments = Array.isArray(auth?.user?.departments)
@@ -135,13 +136,14 @@ const DepartmentReportCommon = () => {
     queryKey: [
       "department-reports",
       selectedModule?.module,
+      reportTypeForFetch,
       selectedDepartmentNames.join(","),
     ],
     queryFn: async () => {
       const response = await axios.get("/api/reports", {
         params: {
           module: selectedModule?.module,
-          reportType: selectedModule?.reportType,
+          reportType: reportTypeForFetch,
           departments: selectedDepartmentNames.join(","),
         },
       });
@@ -518,6 +520,7 @@ const DepartmentReportCommon = () => {
         queryKey: [
           "department-reports",
           selectedModule?.module,
+          reportTypeForFetch,
           selectedDepartmentNames.join(","),
         ],
       });

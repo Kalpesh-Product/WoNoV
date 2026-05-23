@@ -11,6 +11,7 @@ const fetchMeetingReportService = async ({
   user,
   isReport = false,
 }) => {
+  console.log("meeting departments", departments);
   try {
     const meetings = await Meeting.find({
       company,

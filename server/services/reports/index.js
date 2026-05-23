@@ -231,7 +231,7 @@ const reportServiceRegistry = {
       isReport: true,
     }),
 
-  visitor: async ({ dateFilter, company }) =>
+  visitor: async ({ dateFilter, departmentId, company }) =>
     fetchVisitorReportService({
       dateFilter: {
         ...buildDateFilter({
@@ -240,6 +240,7 @@ const reportServiceRegistry = {
           field: "checkIn",
         }),
       },
+      departmentId,
       company,
     }),
 
@@ -286,13 +287,9 @@ const reportServiceRegistry = {
 };
 
 const resolveReportService = (reportMeta = {}) => {
-  console.log("Resolving report service for reportMeta:", reportMeta);
   const key = normalizeReportIdentifier(reportMeta.reportKey || "");
   const name = normalizeReportIdentifier(reportMeta.reportName || "");
 
-  console.log(
-    `Looking for report service with key: "${key}" or name: "${name}"`,
-  );
   if (key && reportServiceRegistry[key]) {
     return reportServiceRegistry[key];
   }
