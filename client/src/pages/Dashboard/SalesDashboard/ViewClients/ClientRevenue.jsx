@@ -120,6 +120,7 @@ const ClientRevenue = () => {
           searchColumn="clientName"
           data={tableData}
           columns={viewEmployeeColumns}
+          exportData
         />
       </PageFrame>
 
