@@ -198,6 +198,27 @@ const AgTableComponent = React.memo(
       return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
     }, []);
 
+     const getExportColumnKeys = useCallback(() => {
+      if (!gridRef.current?.api) return undefined;
+
+      return gridRef.current.api
+        .getAllGridColumns()
+        .filter((column) => {
+          const colDef = column.getColDef?.() || {};
+          const field = (colDef.field || "").toString().toLowerCase();
+          const headerName = (colDef.headerName || "").toString().toLowerCase();
+          const isActionColumn =
+            field.includes("action") || headerName.includes("action");
+
+          return (
+            !isActionColumn &&
+            !colDef.suppressCsvExport &&
+            !colDef.suppressExcelExport
+          );
+        })
+        .map((column) => column.getColId());
+    }, []);
+
     const filterableColumns = useMemo(
       () =>
         columns.filter((column) => {
@@ -238,23 +259,16 @@ const AgTableComponent = React.memo(
               </div>
             )}
             <div className="flex items-center gap-4">
-              {exportData ? (
+                {/* {buttonTitle ? (
                 <PrimaryButton
-                  title={"Export"}
-                  handleSubmit={() => {
-                    if (gridRef.current) {
-                      gridRef.current.api.exportDataAsCsv({
-                        fileName: `${tableTitle || "table-data"}.csv`,
-                        allColumns: true,
-                        processCellCallback: formatExportCell,
-                      });
-                    }
-                  }}
+                  title={buttonTitle}
+                  handleSubmit={handleClick}
+                  disabled={disabled}
                 />
               ) : (
                 ""
-              )}
-              {buttonTitle ? (
+              )} */}
+               {buttonTitle ? (
                 <PrimaryButton
                   title={buttonTitle}
                   handleSubmit={handleClick}
@@ -263,6 +277,32 @@ const AgTableComponent = React.memo(
               ) : (
                 ""
               )}
+              {exportData ? (
+                <PrimaryButton
+                  title={"Export"}
+                  handleSubmit={() => {
+                    if (gridRef.current) {
+                      gridRef.current.api.exportDataAsCsv({
+                        fileName: `${tableTitle || "table-data"}.csv`,
+                        allColumns: true,
+                        columnKeys: getExportColumnKeys(),
+                        processCellCallback: formatExportCell,
+                      });
+                    }
+                  }}
+                />
+              ) : (
+                ""
+              )}
+              {/* {buttonTitle ? (
+                <PrimaryButton
+                  title={buttonTitle}
+                  handleSubmit={handleClick}
+                  disabled={disabled}
+                />
+              ) : (
+                ""
+              )} */}
               {headerActions ? headerActions : ""}
 
               {/* {batchButton ? (
