@@ -163,6 +163,7 @@ const CoWorkingClients = () => {
             }
             data={tableData}
             columns={viewEmployeeColumns}
+            exportData
           />
         </PageFrame>
       </div>{" "}

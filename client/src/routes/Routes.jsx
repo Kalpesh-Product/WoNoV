@@ -736,6 +736,15 @@ export const routes = createBrowserRouter([
                         element: <DeptWiseBudgetDetails />,
                       },
                       {
+                        path: "finance/dept-wise-budget",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/finance-dashboard/mix-bag/department-wise-budget"
+                            replace
+                          />
+                        ),
+                      },
+                      {
                         path: "mix-bag/collection-payments",
                         element: <CollectionPaymentsFinanceLayout />,
                         children: [

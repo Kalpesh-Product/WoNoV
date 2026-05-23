@@ -457,6 +457,7 @@ const AverageProfitLoss = () => {
               data={monthlyProfitLossData}
               columns={monthlyProfitLossColumns}
               search={true}
+              exportData
             />
           </WidgetSection>
         ) : (

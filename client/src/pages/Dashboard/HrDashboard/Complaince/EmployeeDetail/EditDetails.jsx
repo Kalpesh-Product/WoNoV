@@ -1594,6 +1594,7 @@ const EditDetails = () => {
                       size="small"
                       label="Password"
                       fullWidth
+                      disabled
                       value={
                         watch("plainPassword") ||
                         transformEmployeeData?.plainPassword ||
