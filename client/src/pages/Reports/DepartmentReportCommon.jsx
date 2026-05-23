@@ -16,13 +16,41 @@ import { queryClient } from "../../main";
 import useAuth from "../../hooks/useAuth";
 
 const REPORT_MODULE_MAP = {
-  finance: { title: "Finance Department Report", module: "Finance" },
-  ticket: { title: "Ticket Report", module: "Ticket" },
-  meeting: { title: "Meeting Report", module: "Meeting" },
-  visitor: { title: "Visitor Report", module: "Visitor" },
-  asset: { title: "Asset Report", module: "Asset" },
-  task: { title: "Task Report", module: "Task" },
-  performance: { title: "Performance Report", module: "Performance" },
+  ticket: {
+    title: "Ticket Report",
+    module: "Ticket",
+    reportType: "app",
+  },
+
+  meeting: {
+    title: "Meeting Report",
+    module: "Meeting",
+    reportType: "app",
+  },
+
+  visitor: {
+    title: "Visitor Report",
+    module: "Visitor",
+    reportType: "app",
+  },
+
+  asset: {
+    title: "Asset Report",
+    module: "Asset",
+    reportType: "app",
+  },
+
+  task: {
+    title: "Task Report",
+    module: "Task",
+    reportType: "app",
+  },
+
+  performance: {
+    title: "Performance Report",
+    module: "Performance",
+    reportType: "app",
+  },
 };
 
 const RETRY_COOLDOWN_STORAGE_KEY = "department-report-retry-cooldown";
@@ -113,6 +141,7 @@ const DepartmentReportCommon = () => {
       const response = await axios.get("/api/reports", {
         params: {
           module: selectedModule?.module,
+          reportType: selectedModule?.reportType,
           departments: selectedDepartmentNames.join(","),
         },
       });

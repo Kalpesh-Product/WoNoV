@@ -243,7 +243,7 @@ const reportServiceRegistry = {
       company,
     }),
 
-  budget: async ({ dateFilter, departments, roles }) =>
+  budget: async ({ dateFilter, departmentId, departments, roles }) =>
     fetchBudgetService({
       departments,
       departmentId,
@@ -257,10 +257,10 @@ const reportServiceRegistry = {
       roles,
       isReport: true,
     }),
-  voucher: async ({ dateFilter, departments, roles }) =>
+  voucher: async ({ dateFilter, departmentId, departments, roles }) =>
     fetchVoucherService({
       departments,
-      departmentId,f
+      departmentId,
       dateFilter: {
         ...buildDateFilter({
           startDate: dateFilter?.startDate,

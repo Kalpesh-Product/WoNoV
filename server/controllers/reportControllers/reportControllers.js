@@ -124,14 +124,19 @@ const getReports = async (req, res, next) => {
       status: true,
     };
 
-    if (reportType) {
-      query.reportType = reportType;
+    if (!reportType || !module) {
+      return res
+        .status(404)
+        .json({ message: "report type and module is required" });
     }
 
-    if (module) {
+    if (reportType == "dashboard") {
       query.$or = [{ module }, { module: "cross-department" }];
+    } else {
+      query.module = module;
     }
 
+    console.log("report type query", query);
     const reports = await Report.find(query)
       .populate("departmentId", "name")
       .sort({ createdAt: -1 });

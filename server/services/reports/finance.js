@@ -73,19 +73,11 @@ const fetchBudgetService = async ({ dateFilter, departmentId, roles }) => {
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
-  const hasFinanceAccess = [
-    "Finance Admin",
-    "Finance Emloyee",
-    "Master Admin",
-    "Super Admin",
-  ].some((role) => roles?.includes(role));
-
   const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
-  if (!hasFinanceAccess && departmentId !== FINANCE_DEPT_ID) {
+  if (!departmentId.equals(FINANCE_DEPT_ID)) {
     query.department = departmentId;
   }
 
-  console.log("Finance Query", query);
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },
@@ -113,13 +105,6 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
     ],
   };
 
-  // const hasFinanceAccess = [
-  //   "Finance Admin",
-  //   "Finance Emloyee",
-  //   "Master Admin",
-  //   "Super Admin",
-  // ].some((role) => roles?.includes(role));
-
   const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
   if (!departmentId.equals(FINANCE_DEPT_ID)) {
     query.department = departmentId;
@@ -127,7 +112,6 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
-  console.log("voucher query", query);
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },

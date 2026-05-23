@@ -48,10 +48,10 @@ const worker = new Worker(
       }
 
       const foundUser = await UserData.findById(reportJob.userId)
-        .populate(
-          { populate: "role", select: "roleTitle" },
-          { populate: "departments", select: "name" },
-        )
+        .populate([
+          { path: "role", select: "roleTitle" },
+          { path: "departments", select: "name" },
+        ])
         .select("role company departments")
         .lean();
       const roles = (foundUser?.role || []).map((role) => role.roleTitle);
