@@ -423,6 +423,7 @@ const SqWiseData = () => {
               data={monthlyProfitLossData}
               columns={monthlyProfitLossColumns}
               search={true}
+              exportData
             />
           </WidgetSection>
         ) : (

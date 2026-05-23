@@ -234,6 +234,7 @@ const ActualBusinessRevenue = () => {
                 { headerName: "Revenue (INR)", field: "revenue", width: 400 },
               ]}
               data={tableData}
+              exportData
             />
           </WidgetSection>
         </>

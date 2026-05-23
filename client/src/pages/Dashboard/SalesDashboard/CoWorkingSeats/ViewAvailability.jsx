@@ -305,6 +305,7 @@ const ViewAvailability = () => {
             },
           ]}
           data={tableData}
+          exportData
         />
       </WidgetSection>
 

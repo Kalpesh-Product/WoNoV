@@ -198,6 +198,13 @@ const ClientMembers = () => {
     [members],
   );
 
+  const memberStats = useMemo(() => {
+    const activeCount = memberData.filter((member) => member.status).length;
+    const inactiveCount = memberData.length - activeCount;
+
+    return { activeCount, inactiveCount };
+  }, [memberData]);
+
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No" },
     {
@@ -257,9 +264,29 @@ const ClientMembers = () => {
             key={selectedClient?._id}
             search={true}
             searchColumn="Email"
-            tableTitle={`${selectedClient?.clientName} Members`}
+            tableTitle={`${selectedClient?.clientName || "Client"} Members`}
             data={memberData}
             columns={viewEmployeeColumns}
+            headerActions={
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#bfd4ff] bg-[#dbe4ff] text-[#26457d] font-semibold text-sm uppercase tracking-wide shadow-sm">
+                  <span>Total</span>
+                  <span>:</span>
+                  <span>{memberData.length}</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#b7e7cf] bg-[#d9f4e4] text-[#1e7a49] font-semibold text-sm uppercase tracking-wide shadow-sm">
+                  <span>Active</span>
+                  <span>:</span>
+                  <span>{memberStats.activeCount}</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#f3b7aa] bg-[#fde0d8] text-[#c24b3d] font-semibold text-sm uppercase tracking-wide shadow-sm">
+                  <span>Inactive</span>
+                  <span>:</span>
+                  <span>{memberStats.inactiveCount}</span>
+                </div>
+              </div>
+            }
+            exportData
           />
         </PageFrame>
       </div>

@@ -177,6 +177,7 @@ export default function BuildingUnits() {
               Total Desks : {totalDesksCount}
             </span>
           }
+          exportData
 
         />
       </PageFrame>

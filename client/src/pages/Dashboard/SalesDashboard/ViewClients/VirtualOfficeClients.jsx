@@ -152,6 +152,7 @@ const VirtualOfficeClients = () => {
             )
           }
           search
+          exportData
         />
       </PageFrame>
     </div>

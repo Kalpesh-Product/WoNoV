@@ -154,6 +154,7 @@ const ExternalClientCompanies = () => {
                             }
                             data={tableData}
                             columns={columns}
+                            exportData
                         />
                     )}
                 </PageFrame>
