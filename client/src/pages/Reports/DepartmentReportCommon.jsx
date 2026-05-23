@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Chip, Popover } from "@mui/material";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ const DepartmentReportCommon = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { moduleKey = "" } = useParams();
+  const [searchParams] = useSearchParams();
   const normalizedModuleKey = String(moduleKey).toLowerCase();
   const selectedModule = REPORT_MODULE_MAP[normalizedModuleKey] || {
     title: `${String(moduleKey || "").toUpperCase()} Department Report`,
@@ -39,6 +40,26 @@ const DepartmentReportCommon = () => {
         .trim()
         .replace(/^./, (char) => char.toUpperCase()) || "",
   };
+
+  const selectedDepartmentNames = useMemo(() => {
+    const selectedDepartmentId = searchParams.get("departmentId");
+    const userDepartments = Array.isArray(auth?.user?.departments)
+      ? auth.user.departments
+      : [];
+
+    if (selectedDepartmentId) {
+      const selectedDepartment = userDepartments.find(
+        (dept) => String(dept?._id) === String(selectedDepartmentId),
+      );
+
+      if (selectedDepartment?.name) {
+        return [selectedDepartment.name];
+      }
+    }
+
+    return userDepartments.map((dept) => dept?.name).filter(Boolean);
+  }, [auth?.user?.departments, searchParams]);
+
   const [activeReportId, setActiveReportId] = useState(null);
   const [jobStatusByReportId, setJobStatusByReportId] = useState({});
   const [downloadedByReportId, setDownloadedByReportId] = useState({});
@@ -82,15 +103,16 @@ const DepartmentReportCommon = () => {
   };
 
   const { data: reports = [], isLoading } = useQuery({
-    queryKey: ["department-reports", selectedModule?.module],
+    queryKey: [
+      "department-reports",
+      selectedModule?.module,
+      selectedDepartmentNames.join(","),
+    ],
     queryFn: async () => {
       const response = await axios.get("/api/reports", {
         params: {
           module: selectedModule?.module,
-          departments: (auth?.user?.departments || [])
-            .map((dept) => dept?.name)
-            .filter(Boolean)
-            .join(","),
+          departments: selectedDepartmentNames.join(","),
         },
       });
       return Array.isArray(response?.data?.reports)
@@ -462,7 +484,11 @@ const DepartmentReportCommon = () => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["department-reports", selectedModule?.module],
+        queryKey: [
+          "department-reports",
+          selectedModule?.module,
+          selectedDepartmentNames.join(","),
+        ],
       });
     },
     onError: (error, reportRow) => {

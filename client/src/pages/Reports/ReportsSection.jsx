@@ -47,23 +47,26 @@ const ReportsSection = () => {
   const navigate = useNavigate();
   const { permissions } = useUserPermissions();
   const { auth } = useAuth();
+  const userDepartments = useMemo(() => {
+    if (!Array.isArray(auth?.user?.departments)) return [];
 
-  const userDepartments = useMemo(
-    () =>
-      Array.isArray(auth?.user?.departments)
-        ? auth.user.departments.filter((dept) => dept?.name)
-        : [],
-    [auth?.user?.departments],
-  );
+    return auth.user.departments
+      .filter((dept) => dept?._id && dept?.name)
+      .filter(
+        (dept, index, arr) =>
+          arr.findIndex((candidate) => candidate?._id === dept?._id) === index,
+      );
+  }, [auth?.user?.departments]);
 
   const departmentCards = userDepartments.map((department) => {
     const moduleKey = String(department.name).trim().toLowerCase();
+    const encodedDepartmentId = encodeURIComponent(String(department._id));
 
     return {
       title: String(department.name).toUpperCase(),
       subtitle: `${department.name} Reports`,
-      route: `../reports-section/${moduleKey}`,
-      permission: PERMISSIONS.REPORTS_FINANCE.value,
+      route: `../reports-section/${moduleKey}?departmentId=${encodedDepartmentId}`,
+      permission: null,
     };
   });
 

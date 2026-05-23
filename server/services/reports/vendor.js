@@ -16,7 +16,7 @@ const fetchVendorReportService = async ({
 
   if (dateFilter) {
     queryObj.onboardingDate = dateFilter.onboardingDate;
-    queryObj.departmentId = { $in: departments };
+    queryObj.departmentId = { $in: departmentId };
   }
 
   const vendors = await Vendor.find(queryObj)
