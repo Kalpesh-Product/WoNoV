@@ -12,10 +12,10 @@ import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "../../../../utils/humanDateForamt";
 import dayjs from "dayjs";
-import { Chip } from "@mui/material";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import StatusChip from "../../../../components/StatusChip";
 
 const fiscalYears = ["FY 2024-25", "FY 2025-26"];
 
@@ -97,29 +97,7 @@ const Collections = () => {
       field: "status",
       headerName: "Status",
       flex: 1,
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          Paid: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
-          Unpaid: { backgroundColor: "#FFEBEE", color: "#B71C1C" }, // Light red bg, dark red font
-        };
-
-        const { backgroundColor, color } = statusColorMap[
-          params.data.rentStatus
-        ] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
-
-        return (
-          <Chip
-            label={params.data.rentStatus}
-            style={{
-              backgroundColor,
-              color,
-            }}
-          />
-        );
-      },
+      cellRenderer: (params) => <StatusChip status={params.value || params.data.rentStatus} />,
     },
   ];
 
@@ -300,6 +278,7 @@ const Collections = () => {
         monthLabel: dayjs(`01-${monthObj.month}`, "DD-MMM-YY").format("MMM-YYYY"),
         monthSortKey: dayjs(`01-${monthObj.month}`, "DD-MMM-YY").valueOf(),
         ...client,
+        status: client.rentStatus || "-",
         date: client.rentDate,
       }))
     );
@@ -382,7 +361,7 @@ const Collections = () => {
       client.clientName || "",
       client.channel || "",
       client.totalTerm != null ? `${client.totalTerm} months` : "",
-      client.rentStatus || "",
+      client.status || client.rentStatus || "",
       client.noOfDesks != null ? client.noOfDesks : "",
       client.deskRate != null ? `INR ${inrFormat(client.deskRate)}` : "",
       client.revenue != null ? `INR ${inrFormat(client.revenue)}` : "",

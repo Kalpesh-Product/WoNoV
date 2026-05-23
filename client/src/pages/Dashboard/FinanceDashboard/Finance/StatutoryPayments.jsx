@@ -15,6 +15,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import StatusChip from "../../../../components/StatusChip";
 
 const fiscalYears = ["FY 2024-25", "FY 2025-26"];
 
@@ -260,7 +261,12 @@ const StatutoryPayments = () => {
     { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
-    { field: "status", headerName: "Status", flex: 1 },
+    {
+      field: "status",
+      headerName: "Status",
+      flex: 1,
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
   ];
 
   const selectedFiscalYearMonths = fiscalYearMonthMap[selectedFiscalYear] || [];

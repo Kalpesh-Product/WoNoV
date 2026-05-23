@@ -26,6 +26,7 @@ import humanDate from "../../../utils/humanDateForamt";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useAuth from "../../../hooks/useAuth";
 import usePageDepartment from "../../../hooks/usePageDepartment";
+import StatusChip from "../../../components/StatusChip";
 
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -911,7 +912,7 @@ const FinanceDashboard = () => {
       width: 150,
       renderCell: (row) => `${row.actualAmount.toLocaleString("en-IN")}`,
     },
-    { id: "status", label: "Status", width: 120 },
+
     {
       id: "dueDate",
       label: "Due Date",
@@ -929,6 +930,12 @@ const FinanceDashboard = () => {
       label: "Unit No",
       width: 100,
       renderCell: (row) => row.unit?.unitNo || "-",
+    },
+        {
+      id: "status",
+      label: "Status",
+      width: 120,
+      renderCell: (row) => <StatusChip status={row.status} />,
     },
   ];
 
