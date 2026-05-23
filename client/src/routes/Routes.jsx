@@ -730,13 +730,22 @@ export const routes = createBrowserRouter([
                         path: "directors-company-KYC/:name",
                         element: <DirectorData />,
                       },
-                       {
+                      {
                         path: "mix-bag/department-wise-budget",
                         element: <DeptWiseBudget />,
                       },
                       {
                         path: "mix-bag/department-wise-budget/:department",
                         element: <DeptWiseBudgetDetails />,
+                      },
+                      {
+                        path: "finance/dept-wise-budget",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/finance-dashboard/mix-bag/department-wise-budget"
+                            replace
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/collection-payments",

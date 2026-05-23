@@ -134,6 +134,7 @@ const IncomeDetails = () => {
             cellRenderer: (params) => params.value,
           },
         ]}
+        exportData
       />
     </div>
   );
