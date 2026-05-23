@@ -182,6 +182,20 @@ const LandlordPaymentLocation = () => {
         </span>
       ),
     },
+    {
+      field: "department",
+      headerName: "Department",
+      flex: 1,
+      hide: true,
+      valueGetter: (params) => params.data?.department?.name || "-",
+    },
+    {
+      field: "isExtraBudget",
+      headerName: "Extra Budget",
+      flex: 1,
+      hide: true,
+      valueGetter: (params) => (params.data?.isExtraBudget ? "Yes" : "No"),
+    },
     { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
@@ -238,6 +252,7 @@ const LandlordPaymentLocation = () => {
               columns={paymentColumns}
               onMonthChange={setRangeTotal}
               TitleAmount={`INR ${inrFormat(rangeTotal)}`}
+              exportData
             />
           </WidgetSection>
         </>

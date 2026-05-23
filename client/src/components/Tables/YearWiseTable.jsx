@@ -273,16 +273,16 @@ const YearWiseTable = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="grid grid-cols-9 items-center w-full">
+<div className="w-full flex items-center justify-between gap-2">
         {tableTitle ? (
-          <span className="text-title text-primary font-pmedium uppercase col-span-6">
+          <span className="text-title text-primary font-pmedium uppercase">
             {tableTitle}
           </span>
         ) : (
-          <span></span>
+          <span />
         )}
 
-        <div className="flex gap-2 items-center justify-end flex-nowrap col-span-3">
+        <div className="flex gap-2 items-center justify-end flex-nowrap ml-auto">
           {/* ✅ Show calendar only if data is not empty */}
 
           {!hideDateControls && (
