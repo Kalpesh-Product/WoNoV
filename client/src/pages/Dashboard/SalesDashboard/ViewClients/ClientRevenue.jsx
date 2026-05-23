@@ -10,6 +10,7 @@ import { useState } from "react";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import humanDate from "../../../../utils/humanDateForamt";
+import StatusChip from "../../../../components/StatusChip";
 
 
 const ClientRevenue = () => {
@@ -76,24 +77,25 @@ const ClientRevenue = () => {
     {
       field: "rentStatus",
       headerName: "Status",
-      cellRenderer: (params) => {
-        const statusColorMap = {
-          Paid: { backgroundColor: "#90EE90", color: "#006400" },
-          Unpaid: { backgroundColor: "#D3D3D3", color: "#696969" },
-        };
+      cellRenderer: (params) => <StatusChip status={params.value || params.data.rentStatus} />,
+      // cellRenderer: (params) => {
+      //   const statusColorMap = {
+      //     Paid: { backgroundColor: "#90EE90", color: "#006400" },
+      //     Unpaid: { backgroundColor: "#D3D3D3", color: "#696969" },
+      //   };
 
-        const { backgroundColor, color } = statusColorMap[params?.value] || {
-          backgroundColor: "gray",
-          color: "white",
-        };
+      //   const { backgroundColor, color } = statusColorMap[params?.value] || {
+      //     backgroundColor: "gray",
+      //     color: "white",
+      //   };
 
-        return (
-          <Chip
-            label={params?.value || "N/A"}
-            style={{ backgroundColor, color }}
-          />
-        );
-      },
+      //   return (
+      //     <Chip
+      //       label={params?.value || "N/A"}
+      //       style={{ backgroundColor, color }}
+      //     />
+      //   );
+      // },
     },
   ];
 
