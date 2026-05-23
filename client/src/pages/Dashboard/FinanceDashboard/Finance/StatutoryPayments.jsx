@@ -10,7 +10,7 @@ import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import SecondaryButton from "../../../../components/SecondaryButton";
-import PrimaryButton from "../../../../components/PrimaryButton";
+//import PrimaryButton from "../../../../components/PrimaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import StatusChip from "../../../../components/StatusChip";
 
@@ -456,13 +456,13 @@ const StatutoryPayments = () => {
       </WidgetSection>
       {/* <YearlyGraph title={"Statutory Payments".toUpperCase()} /> */}
 
-      <div className="flex justify-end">
+      {/* <div className="flex justify-end">
         <PrimaryButton
           title="Export"
           handleSubmit={handleExport}
           disabled={!canExport}
         />
-      </div>
+      </div> */}
 
       <div ref={widgetTableWrapRef}>
         <WidgetTable
@@ -471,6 +471,8 @@ const StatutoryPayments = () => {
           totalKey="actualAmount"
           columns={kraColumn}
           tableTitle={`Statutory Payments ${selectedFiscalYear}`}
+           buttonTitle={canExport ? "Export" : undefined}
+          handleSubmit={handleExport}
         />
       </div>
 

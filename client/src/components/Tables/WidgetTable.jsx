@@ -267,8 +267,8 @@ const WidgetTable = ({
         title={tableTitle}
         TitleAmount={`${totalText}  ${inrFormat(rangeTotal)}`}
       >
-        <div className="grid grid-cols-9 items-center w-full">
-          <div className="flex gap-2 items-center justify-end flex-wrap col-span-3">
+         <div className="w-full flex justify-end">
+          <div className="flex gap-2 items-center justify-end flex-wrap">
             {/* ✅ Show calendar only if data is not empty */}
 
             <Popover
