@@ -493,7 +493,9 @@ const HrDepartmentTasks = () => {
           <AgTable
            key={selectedMonth}
             tableHeight={300}
-            hideFilter
+            //hideFilter
+            search={true}
+            exportData
             columns={tasksColumns}
             data={filteredTasks.map((item, index) => ({
               id: index + 1,

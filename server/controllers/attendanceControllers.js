@@ -452,6 +452,7 @@ const getAttendanceRequests = async (req, res, next) => {
           { path: "user", select: "firstName middleName lastName empId" },
           { path: "addedBy", select: "firstName middleName lastName empId" },
           { path: "approvedBy", select: "firstName middleName lastName empId" },
+          { path: "rejectedBy", select: "firstName middleName lastName empId" },
         ])
         .lean()
         .exec();
@@ -465,6 +466,7 @@ const getAttendanceRequests = async (req, res, next) => {
         { path: "user", select: "firstName middleName lastName empId" },
         { path: "addedBy", select: "firstName middleName lastName empId" },
         { path: "approvedBy", select: "firstName middleName lastName empId" },
+        { path: "rejectedBy", select: "firstName middleName lastName empId" },
       ])
       .lean()
       .exec();

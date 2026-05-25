@@ -351,6 +351,7 @@ const Leaves = () => {
             tableTitle={`${name}'s Leaves`}
             dateColumn={"fromDate"}
             buttonTitle={"Add Requested Leave"}
+            exportData
             buttonDisabled={!hasCorrectionRequestAccess}
             handleSubmit={() => {
               setOpenModal(true);

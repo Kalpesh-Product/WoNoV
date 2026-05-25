@@ -231,6 +231,7 @@ const HrSettingsDepartments = () => {
               handleClick={handleOpenModal}
               data={tableData}
               columns={departmentsColumn}
+              exportData
             />
           ) : (
             <div className="flex flex-col gap-2">
