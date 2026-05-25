@@ -5,7 +5,6 @@ const connectDb = require("../config/db");
 connectDb(process.env.DB_URL);
 
 mongoose.connection.once("open", () => {
-  console.log("Connected to MongoDB (worker)");
   require("./report.worker");
   console.log("Worker started ✅");
 });

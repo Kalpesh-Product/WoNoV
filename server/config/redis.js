@@ -1,7 +1,19 @@
-const IORedis = require("ioredis");
+let connection = null;
 
-const connection = new IORedis(process.env.REDIS_URL, {
-  maxRetriesPerRequest: null, // recommended for BullMQ
-});
+if (process.env.USE_QUEUE === "true") {
+  const IORedis = require("ioredis");
+
+  connection = new IORedis(process.env.REDIS_URL, {
+    maxRetriesPerRequest: null,
+  });
+
+  connection.on("connect", () => {
+    console.log("Redis connected");
+  });
+
+  connection.on("error", (err) => {
+    console.error("Redis error:", err.message);
+  });
+}
 
 module.exports = { connection };

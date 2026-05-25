@@ -350,6 +350,77 @@ const DepartmentReportCommon = () => {
     });
   };
 
+  const handleCompletedReportResponse = (responseData, reportId) => {
+    const downloadUrl =
+      responseData?.downloadUrl || responseData?.fileUrl || null;
+
+    const reportData = responseData?.data || null;
+    const reportRow = reports.find((r) => r?._id === reportId);
+
+    const hasDataPayload = (() => {
+      if (!reportData) return false;
+
+      if (Array.isArray(reportData)) {
+        return reportData.length > 0;
+      }
+
+      if (typeof reportData === "object") {
+        return Object.values(reportData).some((value) => {
+          if (Array.isArray(value)) {
+            return value.length > 0;
+          }
+
+          if (value && typeof value === "object") {
+            return Object.keys(value).length > 0;
+          }
+
+          return Boolean(value);
+        });
+      }
+
+      return Boolean(reportData);
+    })();
+
+    console.info("[Reports] Completed response received", {
+      reportId,
+      status: responseData?.status,
+      hasDataPayload,
+      hasDownloadUrl: Boolean(downloadUrl),
+      dataKeys:
+        responseData?.data && typeof responseData.data === "object"
+          ? Object.keys(responseData.data)
+          : [],
+      allBudgetsLength: Array.isArray(responseData?.data?.allBudgets)
+        ? responseData.data.allBudgets.length
+        : null,
+    });
+
+    if (!hasDataPayload && !downloadUrl) {
+      setDownloadedByReportId((prev) => ({
+        ...prev,
+        [reportId]: false,
+      }));
+      toast.info("No data found for the selected filters.");
+      return;
+    }
+
+    const downloadStarted =
+      (hasDataPayload &&
+        triggerDataDownload(reportData, reportRow?.reportName)) ||
+      triggerReportDownload(downloadUrl);
+
+    setDownloadedByReportId((prev) => ({
+      ...prev,
+      [reportId]: Boolean(downloadStarted),
+    }));
+
+    if (downloadStarted) {
+      toast.success("Report Generated.");
+    } else {
+      toast.error("Report was generated, but the download failed.");
+    }
+  };
+
   const hasReportData = (reportData) => {
     if (Array.isArray(reportData)) return reportData.length > 0;
     if (reportData && typeof reportData === "object")
@@ -389,63 +460,7 @@ const DepartmentReportCommon = () => {
       }));
 
       if (status === "completed") {
-        const downloadUrl =
-          response?.data?.downloadUrl || response?.data?.fileUrl || null;
-
-        const reportData = response?.data?.data || null;
-
-        const hasDataPayload = (() => {
-          if (!reportData) return false;
-
-          // direct array
-          if (Array.isArray(reportData)) {
-            return reportData.length > 0;
-          }
-
-          // object with nested arrays
-          if (typeof reportData === "object") {
-            return Object.values(reportData).some((value) => {
-              if (Array.isArray(value)) {
-                return value.length > 0;
-              }
-
-              if (value && typeof value === "object") {
-                return Object.keys(value).length > 0;
-              }
-
-              return Boolean(value);
-            });
-          }
-
-          return Boolean(reportData);
-        })();
-        const reportRow = reports.find((r) => r?._id === reportId);
-
-        if (!hasDataPayload && !downloadUrl) {
-          setDownloadedByReportId((prev) => ({
-            ...prev,
-            [reportId]: false,
-          }));
-
-          toast.info("No data found for the selected filters.");
-          return;
-        }
-
-        const downloadStarted =
-          (hasDataPayload &&
-            triggerDataDownload(reportData, reportRow?.reportName)) ||
-          triggerReportDownload(downloadUrl);
-
-        setDownloadedByReportId((prev) => ({
-          ...prev,
-          [reportId]: Boolean(downloadStarted),
-        }));
-
-        if (downloadStarted) {
-          toast.success("Report Generated.");
-        } else {
-          toast.error("Report was generated, but the download failed.");
-        }
+        handleCompletedReportResponse(response?.data, reportId);
         return;
       }
 
@@ -503,9 +518,34 @@ const DepartmentReportCommon = () => {
       }));
 
       let response = await axios.post("/api/reports/generate", payload);
-      const jobId = response?.data?.jobId;
+      const responseData = response?.data;
+      const responseStatus = responseData?.status;
+      const jobId = responseData?.jobId;
+
+      console.info("[Reports] Generate response received", {
+        reportId: reportRow?._id,
+        status: responseStatus,
+        hasJobId: Boolean(jobId),
+        hasData: Boolean(responseData?.data),
+        hasAllBudgets: Array.isArray(responseData?.data?.allBudgets),
+      });
+
+      if (responseStatus === "completed") {
+        setJobStatusByReportId((prev) => ({
+          ...prev,
+          [reportRow?._id]: "completed",
+        }));
+
+        handleCompletedReportResponse(responseData, reportRow?._id);
+        return responseData;
+      }
 
       if (!jobId) {
+        console.error("[Reports] Unexpected generate response shape", {
+          reportId: reportRow?._id,
+          status: responseStatus,
+          responseData,
+        });
         throw new Error("Report job id was not returned by the server");
       }
 
