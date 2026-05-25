@@ -13,6 +13,7 @@ import { queryClient } from "../../../../main";
 import humanTime from "../../../../utils/humanTime";
 import { CircularProgress } from "@mui/material";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import StatusChip from "../../../../components/StatusChip";
 
 const AttendanceRequests = () => {
   const axios = useAxiosPrivate();
@@ -81,11 +82,17 @@ const AttendanceRequests = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
+    {field:"empId", headerName:"Employee ID", flex:1,hide:true},
     { field: "name", headerName: "Name", flex: 1 },
+    { field: "reason", headerName: "Reason", flex: 1,hide:true },
     { field: "addedBy", headerName: "Added By", flex: 1 },
     { field: "requestDay", headerName: "Date" },
+    {field:"attendanceDate", headerName:"Attendance Date", flex:1,hide:true,valueGetter:(params) => params?.data?.requestDay || "N/A"},
     { field: "inTime", headerName: "Corrected In Time" },
     { field: "outTime", headerName: "Corrected Out Time" },
+    { field: "originalInTime", headerName: "Original In Time",hide:true },
+    { field: "originalOutTime", headerName: "Original Out Time",hide:true },
+    { field: "status", headerName: "Status", flex: 1, cellRenderer: (params) => <StatusChip status={params?.value} /> },
     {
       field: "actions",
       headerName: "Actions",
@@ -156,6 +163,7 @@ const AttendanceRequests = () => {
           columns={columns}
           data={!isLoading ? tableData : []}
           tableTitle={"ATTENDANCE REQUESTS"}
+          exportData
         />
       </PageFrame>
       <MuiModal

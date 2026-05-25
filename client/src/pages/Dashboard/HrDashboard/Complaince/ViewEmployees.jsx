@@ -118,6 +118,7 @@ const ViewEmployees = () => {
                 ]
             }
             columns={viewEmployeeColumns}
+            exportData
           />
         </div>
       </PageFrame>

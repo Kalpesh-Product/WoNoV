@@ -106,6 +106,7 @@ const JobApplicationList = () => {
                 }))
         }
         columns={leavesColumn}
+        exportData
       />
       <MuiModal
         open={openModal}

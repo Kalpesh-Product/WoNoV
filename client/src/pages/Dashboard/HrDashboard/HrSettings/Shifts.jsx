@@ -156,10 +156,11 @@ const Shifts = () => {
   };
 
   const departmentsColumn = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No" ,width: 300},
     {
       field: "shift",
       headerName: "Shift List",
+      flex: 1,
       cellRenderer: (params) => {
         return (
           <div>
@@ -167,7 +168,6 @@ const Shifts = () => {
           </div>
         );
       },
-      flex: 1,
     },
     {
       field: "status",
@@ -197,6 +197,8 @@ const Shifts = () => {
         );
       },
     },
+    {field: "startTime", headerName: "Start Time", flex: 1,hide: true, valueGetter: (params) => humanTime(params?.data?.startTime) || "N/A"},
+    {field: "endTime", headerName: "End Time", flex: 1, hide: true, valueGetter: (params) => humanTime(params?.data?.endTime) || "N/A"},
     {
       field: "actions",
       headerName: "Actions",
@@ -281,6 +283,7 @@ const Shifts = () => {
             })),
           ]}
           columns={departmentsColumn}
+          exportData
         />
 
         <div>

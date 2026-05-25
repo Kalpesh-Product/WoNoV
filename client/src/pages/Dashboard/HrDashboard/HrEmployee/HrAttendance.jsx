@@ -409,6 +409,7 @@ const HrAttendance = () => {
               columns={columns}
               search={true}
               searchColumn="empName"
+              exportData
             />
           ) : (
             <div className="text-center text-gray-500 py-8 text-lg">

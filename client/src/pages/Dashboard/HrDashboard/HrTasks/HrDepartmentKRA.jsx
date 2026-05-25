@@ -201,7 +201,9 @@ const HrDepartmentKRA = () => {
           columns={columns}
           data={filteredTasks}
           tableHeight={300}
-          hideFilter
+          // hideFilter
+          search={true}
+          exportData
         />
       </WidgetSection>
     </div>

@@ -321,7 +321,7 @@ const HrDepartmentKPA = () => {
       flex: 1,
       hide:true,
     },
-    { field: "assignedBy", headerName: "Assigned By", flex: 1,hide:true, },
+   // { field: "assignedBy", headerName: "Assigned By", flex: 1,hide:true, },
     { field: "assignedDate", headerName: "Assigned Date", flex: 1 },
     // { field: "totalPercent", headerName: "Total (%)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
@@ -410,7 +410,7 @@ const HrDepartmentKPA = () => {
           <AgTable
           key={selectedMonth}
             tableHeight={300}
-            hideFilter
+            search={true}
             columns={tasksColumns}
             data={filteredTasks.map((item, index) => ({
               id: index + 1,
@@ -421,6 +421,7 @@ const HrDepartmentKPA = () => {
               dueDate: item.dueDate,
               status: item.status,
             }))}
+            exportData
           />
         </div> 
       </WidgetSection>

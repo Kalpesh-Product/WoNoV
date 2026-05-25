@@ -573,6 +573,7 @@ const attendanceTableData = useMemo(() => {
               columns={attendanceColumns}
               dateColumn="date"
                onDateFilterChange={handleDateFilterChange}
+               exportData
             />
           </PageFrame>
         ) : (

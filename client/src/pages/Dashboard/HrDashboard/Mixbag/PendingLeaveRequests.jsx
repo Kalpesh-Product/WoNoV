@@ -126,6 +126,7 @@ export default function PendingLeaveRequests() {
           columns={leaveColumns}
           dateColumn="fromDate"
           tableTitle="Leave Requests"
+          exportData
         />
       </PageFrame>
     </div>
