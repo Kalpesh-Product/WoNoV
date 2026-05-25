@@ -1,6 +1,10 @@
-const { Queue } = require("bullmq");
-const { connection } = require("../config/redis");
+let reportQueue = null;
 
-const reportQueue = new Queue("report-generation", { connection });
+if (process.env.USE_QUEUE === "true") {
+  const { Queue } = require("bullmq");
+  const { connection } = require("../config/redis");
+
+  reportQueue = new Queue("report-generation", { connection });
+}
 
 module.exports = { reportQueue };

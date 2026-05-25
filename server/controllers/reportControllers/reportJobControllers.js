@@ -4,6 +4,9 @@ const ReportJob = require("../../models/reports/ReportJob");
 const { default: mongoose } = require("mongoose");
 const Report = require("../../models/reports/Report");
 const UserData = require("../../models/hr/UserData");
+const { executeReport } = require("../../services/reports/reportExecutor");
+
+const isQueueEnabled = () => process.env.USE_QUEUE === "true";
 
 const normalizeReportKey = (value = "") =>
   value
@@ -13,7 +16,7 @@ const normalizeReportKey = (value = "") =>
     .replace(/[^a-z0-9-]/g, "")
     .replace(/-report$/, "");
 
-const MAX_RETRIES = 100;
+const MAX_RETRIES = 3;
 const RETRY_COOLDOWN_MS = 15 * 60 * 1000;
 
 async function queueReportJob({
@@ -35,6 +38,10 @@ async function queueReportJob({
     status: "pending",
     isManualRetry,
   });
+
+  if (!reportQueue) {
+    throw new Error("Queue mode is disabled (USE_QUEUE=false)");
+  }
 
   const queueJob = await reportQueue.add(
     "generate-report",
@@ -83,6 +90,38 @@ async function generateReport(req, res) {
     ? foundUser.departments
     : [];
 
+  if (!isQueueEnabled()) {
+    console.log("1. non-queue|generate-report");
+    try {
+      const data = await executeReport({
+        report: foundReport,
+        filters,
+        department,
+        departments: userDepartments,
+        userId,
+      });
+
+      const latestDatefilter = {
+        startDate: filters?.startDate,
+        endDate: filters?.endDate,
+      };
+
+      foundReport.latestDatefilter = latestDatefilter;
+      foundReport.lastGeneratedAt = new Date();
+      await foundReport.save();
+
+      return res.status(200).json({
+        status: "completed",
+        data,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: "Report generation failed",
+        error: error.message,
+      });
+    }
+  }
+
   // Check for existing active jobs for the user and enforce limits
   const activeJobsCount = await ReportJob.countDocuments({
     userId,
@@ -123,7 +162,7 @@ async function generateReport(req, res) {
     filters,
     requestKey,
   });
-
+  console.log("queue|generate-report");
   const latestDatefilter = {
     startDate: filters.startDate,
     endDate: filters.endDate,
@@ -221,7 +260,7 @@ async function cancelReport(req, res) {
   reportJob.canceledAt = new Date();
   await reportJob.save();
 
-  if (reportJob.bullJobId) {
+  if (reportQueue && reportJob.bullJobId) {
     const queueJob = await reportQueue.getJob(reportJob.bullJobId);
 
     if (queueJob) {

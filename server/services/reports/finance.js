@@ -2,6 +2,8 @@
 const User = require("../../models/hr/UserData");
 const Budget = require("../../models/budget/Budget");
 
+const isSameId = (a, b) => String(a) === String(b);
+
 const fetchBudgetVoucherService = async ({ dateFilter, departmentId }) => {
   const query = {};
 
@@ -104,9 +106,11 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
       { "voucher.link": { $exists: true, $ne: "" } },
     ],
   };
-
+  console.log("4. non-queue | fetchVoucherService");
+  console.log("departmentId", departmentId);
   const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
-  if (!departmentId.equals(FINANCE_DEPT_ID)) {
+
+  if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
     query.department = departmentId;
   }
 

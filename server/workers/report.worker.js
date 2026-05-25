@@ -1,11 +1,16 @@
 // workers/report.worker.js
-const { Worker } = require("bullmq");
-const { connection } = require("../config/redis");
 require("../models/registerModels"); // ensure all models are registered
 require("../models/reports/Report");
 const ReportJob = require("../models/reports/ReportJob");
-const { resolveReportService } = require("../services/reports");
-const UserData = require("../models/hr/UserData");
+const { executeReport } = require("../services/reports/reportExecutor");
+
+if (process.env.USE_QUEUE !== "true") {
+  console.log("USE_QUEUE is false. Report worker is disabled.");
+  process.exit(0);
+}
+
+const { Worker } = require("bullmq");
+const { connection } = require("../config/redis");
 
 const worker = new Worker(
   "report-generation",
@@ -17,8 +22,6 @@ const worker = new Worker(
       "reportName reportKey",
     );
     if (!reportJob) throw new Error("ReportJob not found");
-
-    console.log("Attempts made:", job.attemptsMade);
 
     if (reportJob.status === "canceled") {
       await job.log("Job canceled");
@@ -34,40 +37,65 @@ const worker = new Worker(
     console.log("report job", reportJob);
     await reportJob.save();
 
-    //delay added to simulate long processing time and test retry/cancellation flows. Remove in production.
-    // await new Promise((resolve) => setTimeout(resolve, 5000));
+    // try {
+    //   let data;
+
+    //   const reportService = resolveReportService(reportJob.report);
+
+    //   if (!reportService) {
+    //     throw new Error(
+    //       `Unsupported report: ${reportJob.report.reportName}, ensure the reportKey is registered in reportServiceRegistry`,
+    //     );
+    //   }
+
+    //   const foundUser = await UserData.findById(reportJob.userId)
+    //     .populate([
+    //       { path: "role", select: "roleTitle" },
+    //       { path: "departments", select: "name" },
+    //     ])
+    //     .select("role company departments")
+    //     .lean();
+    //   const roles = (foundUser?.role || []).map((role) => role.roleTitle);
+    //   const company = foundUser.company;
+    //   const user = foundUser._id;
+
+    //   // throw new Error("Retry Error For Test");
+
+    //   console.log("worker dept");
+    //   data = await executeReport({
+    //     dateFilter: reportJob.filters,
+    //     departmentId: reportJob.department,
+    //     departments: reportJob.departments || [],
+    //     roles,
+    //     company,
+    //     user,
+    //   });
+
+    //   const latestState =
+    //     await ReportJob.findById(reportJobId).select("status");
+    //   if (latestState?.status === "canceled") {
+    //     await job.log("Job canceled");
+
+    //     return {
+    //       status: "canceled",
+    //     };
+    //   }
+
+    //   reportJob.data = data;
+    //   reportJob.status = "completed";
+    //   reportJob.completedAt = new Date();
+    //   reportJob.error = undefined;
+    //   await reportJob.save();
+
+    //   return { ok: true, reportJobId };
+    // }
     try {
-      let data;
-
-      const reportService = resolveReportService(reportJob.report);
-
-      if (!reportService) {
-        throw new Error(
-          `Unsupported report: ${reportJob.report.reportName}, ensure the reportKey is registered in reportServiceRegistry`,
-        );
-      }
-
-      const foundUser = await UserData.findById(reportJob.userId)
-        .populate([
-          { path: "role", select: "roleTitle" },
-          { path: "departments", select: "name" },
-        ])
-        .select("role company departments")
-        .lean();
-      const roles = (foundUser?.role || []).map((role) => role.roleTitle);
-      const company = foundUser.company;
-      const user = foundUser._id;
-
-      // throw new Error("Retry Error For Test");
-
-      console.log("worker dept");
-      data = await reportService({
-        dateFilter: reportJob.filters,
-        departmentId: reportJob.department,
+      const data = await executeReport({
+        report: reportJob.report,
+        filters: reportJob.filters,
+        department: reportJob.department,
         departments: reportJob.departments || [],
-        roles,
-        company,
-        user,
+        userId: reportJob.userId,
       });
 
       const latestState =
@@ -93,13 +121,14 @@ const worker = new Worker(
         message: err.message,
         stack: err.stack,
       };
+
       await reportJob.save();
       throw err; // important so BullMQ marks failed/retry
     }
   },
   {
     connection,
-    concurrency: 2,
+    concurrency: 4,
     removeOnComplete: {
       age: 24 * 3600 * 7,
       count: 100,

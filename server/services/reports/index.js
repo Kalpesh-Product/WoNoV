@@ -287,6 +287,7 @@ const reportServiceRegistry = {
 };
 
 const resolveReportService = (reportMeta = {}) => {
+  console.log("3. non-queue| resolveReportService");
   const key = normalizeReportIdentifier(reportMeta.reportKey || "");
   const name = normalizeReportIdentifier(reportMeta.reportName || "");
 
