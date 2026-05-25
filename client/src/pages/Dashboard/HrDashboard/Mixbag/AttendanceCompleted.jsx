@@ -97,7 +97,7 @@ const AttendanceCompleted = () => {
           dateColumn={"date"}
           columns={columns}
           data={!isLoading ? tableData : []}
-          tableTitle={"ATTENDANCE REQUESTS"}
+          tableTitle={"COMPLETED ATTENDANCE REQUESTS"}
           exportData
         />
       </PageFrame>

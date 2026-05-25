@@ -103,6 +103,7 @@ export default function PendingLeaveRequests() {
     {
       field: "action",
       headerName: "Action",
+      pinned: "right",
       cellRenderer: (params) => (
         <ThreeDotMenu
           rowId={params.data.id}
@@ -125,7 +126,7 @@ export default function PendingLeaveRequests() {
           data={leavesData}
           columns={leaveColumns}
           dateColumn="fromDate"
-          tableTitle="Leave Requests"
+          tableTitle="Pending Leave Requests"
           exportData
         />
       </PageFrame>

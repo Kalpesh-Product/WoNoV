@@ -162,7 +162,7 @@ const AttendanceRequests = () => {
           dateColumn={"createdDate"}
           columns={columns}
           data={!isLoading ? tableData : []}
-          tableTitle={"ATTENDANCE REQUESTS"}
+          tableTitle={"PENDING ATTENDANCE REQUESTS"}
           exportData
         />
       </PageFrame>

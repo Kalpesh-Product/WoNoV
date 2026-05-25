@@ -29,7 +29,7 @@ export default function CompletedLeaveRequests() {
       headerName: "Added By",
       field: "addedBy",
       valueGetter: (params) =>
-        params.data?.addedBy ? `${params.data?.addedBy?.firstName || ""} ${
+        params.data?.addedBy ?`${params.data?.addedBy?.firstName || ""} ${
           params.data?.addedBy?.lastName || ""
         }` : "—",
     },
