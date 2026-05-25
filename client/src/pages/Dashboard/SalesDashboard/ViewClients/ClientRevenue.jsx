@@ -57,17 +57,21 @@ const ClientRevenue = () => {
         </span>
       ),
     },
-    {
-      field: "revenue",
-      headerName: "Revenue",
-      cellRenderer: (params) => inrFormat(params?.value) || "₹0",
-    },
+    {field:"channel", headerName:"Channel", flex:1,hide:true, valueGetter:(params) => params?.data?.channel || "N/A"},
     {
       field: "noOfDesks",
       headerName: "No. Of Desks",
       flex: 1,
       valueGetter: (params) => params?.data?.noOfDesks || "N/A",
     },
+    {
+      field: "revenue",
+      headerName: "Revenue",
+      cellRenderer: (params) => inrFormat(params?.value) || "₹0",
+    },
+    {field:"deskRate", headerName:"Desk Rate", flex:1,hide:true, cellRenderer:(params) => inrFormat(params?.value) || "₹0"},
+    {field:"annualIncrement", headerName:"Annual Increment", flex:1,hide:true, cellRenderer:(params) => `${params?.value || 0}%`},
+    {field:"rentDate", headerName:"Rent Date", flex:1,hide:true, cellRenderer:(params) => humanDate(params?.value) || "N/A"},
     {
       field: "totalTerm",
       headerName: "Total Term (Months)",
@@ -97,6 +101,8 @@ const ClientRevenue = () => {
       //   );
       // },
     },
+    {field:"nextIncrementDate", headerName:"Next Increment Date", flex:1,hide:true, cellRenderer:(params) => humanDate(params?.value) || "N/A"},
+    {field:"pastDueDate", headerName:"Past Due Date", flex:1,hide:true, cellRenderer:(params) => humanDate(params?.value) || "N/A"},
   ];
 
   const tableData = isRevenuePending
