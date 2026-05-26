@@ -208,6 +208,7 @@ const HouseKeepingMembersList = () => {
             data={transformedData}
             columns={memberColumns}
             handleClick={handleAddUser}
+            exportData
           />
         ) : (
           <div className="flex justify-center items-center h-[60vh]">

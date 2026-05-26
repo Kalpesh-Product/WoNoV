@@ -600,6 +600,17 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           ...item,
           itemName: item?.itemName?.name || item?.itemName || "N/A",
           itemId: item?.itemName?._id || null,
+          departmentId:
+            item?.department?._id ||
+            (typeof item?.department === "string" ? item.department : null) ||
+            item?.departmentId ||
+            null,
+          departmentName:
+            item?.department?.name ||
+            item?.department?.departmentName ||
+            item?.departmentName ||
+            (typeof item?.department === "string" ? item.department : "") ||
+            "",
           unitId:
             item?.unit?._id ||
             (typeof item?.unit === "string" ? item.unit : null),
@@ -620,6 +631,26 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               ? item.category
               : item.category?.categoryName) ||
             "N/A",
+          lastConsumedUnitValue:
+            item?.lastConsumedUnitValue ??
+            item?.consumedOpenInventoryUnits ??
+            item?.lastConsumed ??
+            0,
+          lastRemainingUnitValue:
+            item?.lastRemainingUnitValue ??
+            item?.remainingInventoryUnits ??
+            item?.remainingOpeningInventoryUnits ??
+            0,
+          newConsumedUnitValue:
+            item?.newConsumedUnitValue ??
+            item?.consumedNewPurchaseInventoryUnits ??
+            item?.totalConsumed ??
+            0,
+          newRemainingUnitValue:
+            item?.newRemainingUnitValue ??
+            item?.remainingNewPurchaseInventoryUnits ??
+            item?.closingInventoryUnits ??
+            0,
           // Fix: Properly check for addedBy name
           addedByName: hasAddedByName
             ? [
@@ -1314,6 +1345,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       ),
     },
     {
+      field: "departmentName",
+      headerName: "Department",
+      hide: true,
+    },
+    {
       field: "openingInventoryUnits",
       headerName: "Opening Units",
       cellRenderer: (params) => inrFormat(params.value),
@@ -1340,8 +1376,33 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     },
     {
       field: "newPurchaseInventoryValue",
-      headerName: "New Purchase Value",
+      headerName: "New Purchase Value(INR)",
       cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "lastConsumedUnitValue",
+      headerName: "Last Consumed Unit Value",
+      hide: true,
+    },
+    {
+      field: "lastRemainingUnitValue",
+      headerName: "Last Remaining Units",
+      hide: true,
+    },
+    {
+      field: "newConsumedUnitValue",
+      headerName: "New Consumed Unit",
+      hide: true,
+    },
+    {
+      field: "newRemainingUnitValue",
+      headerName: "New Remaining Units",
+      hide: true,
+    },
+    {
+      field: "addedByName",
+      headerName: "Name",
+      hide: true,
     },
     // {
     //   field: "consumedOpenInventoryUnits",
@@ -1378,6 +1439,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned:"right",
       cellRenderer: (params) => (
         <ThreeDotMenu
           rowId={params.data._id}
@@ -1654,6 +1716,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       field: "action",
       headerName: "Action",
       flex: 0.8,
+      pinned:"right",
       minWidth: 100,
       cellRenderer: (params) => (
         <ThreeDotMenu
@@ -1707,6 +1770,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     {
       field: "action",
       headerName: "Action",
+      pinned:"right",
       width: 130,
       cellRenderer: (params) => (
         <ThreeDotMenu
@@ -1787,6 +1851,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               hideTitle={false}
               tableTitle={unitWiseHeading}
               tableHeight={440}
+              exportData
             />
           </PageFrame>
         </>
@@ -1849,6 +1914,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 buttonTitle={"Add Category"}
                 handleClick={handleOpenCategoryModal}
                 tableHeight={450}
+                exportData
               />
             </PageFrame>
           )}
@@ -1862,6 +1928,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 buttonTitle={"Add Item"}
                 handleClick={handleOpenAddItemModal}
                 tableHeight={450}
+                exportData
               />
             </PageFrame>
           )}
@@ -1878,6 +1945,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 dateColumn={"date"}
                 columns={inventoryColumns}
                 handleSubmit={handleAddAsset}
+                exportData
               />
             </PageFrame>
           )}

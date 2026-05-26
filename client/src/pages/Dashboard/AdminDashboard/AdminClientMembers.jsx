@@ -296,6 +296,7 @@ const AdminClientMembers = () => {
             tableTitle={`${selectedClient?.clientName} - Member Details`}
             data={memberData}
             columns={viewEmployeeColumns}
+            exportData
           />
         </PageFrame>
       </div>

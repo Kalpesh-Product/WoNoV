@@ -103,6 +103,17 @@ const InventoryRecordHistory = () => {
         return {
           ...item,
           itemName: item?.itemName?.name || item?.itemName || "N/A",
+          departmentId:
+            item?.department?._id ||
+            (typeof item?.department === "string" ? item.department : null) ||
+            item?.departmentId ||
+            null,
+          departmentName:
+            item?.department?.name ||
+            item?.department?.departmentName ||
+            item?.departmentName ||
+            (typeof item?.department === "string" ? item.department : "") ||
+            "",
           unitNo: item?.unit?.unitNo || item?.unitNo || "",
           categoryName:
             item.Category ||
@@ -110,6 +121,26 @@ const InventoryRecordHistory = () => {
               ? item.category
               : item.category?.categoryName) ||
             "N/A",
+          lastConsumedUnitValue:
+            item?.lastConsumedUnitValue ??
+            item?.consumedOpenInventoryUnits ??
+            item?.lastConsumed ??
+            0,
+          lastRemainingUnitValue:
+            item?.lastRemainingUnitValue ??
+            item?.remainingInventoryUnits ??
+            item?.remainingOpeningInventoryUnits ??
+            0,
+          newConsumedUnitValue:
+            item?.newConsumedUnitValue ??
+            item?.consumedNewPurchaseInventoryUnits ??
+            item?.totalConsumed ??
+            0,
+          newRemainingUnitValue:
+            item?.newRemainingUnitValue ??
+            item?.remainingNewPurchaseInventoryUnits ??
+            item?.closingInventoryUnits ??
+            0,
           addedByName: hasAddedByName
             ? [
                 item.addedBy.firstName,
@@ -179,6 +210,11 @@ const InventoryRecordHistory = () => {
       ),
     },
     {
+      field: "departmentName",
+      headerName: "Department",
+      hide: true,
+    },
+    {
       field: "openingInventoryUnits",
       headerName: "Opening Units",
       flex: 1,
@@ -218,6 +254,31 @@ const InventoryRecordHistory = () => {
       flex: 1,
       minWidth: 190,
       cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "lastConsumedUnitValue",
+      headerName: "Last Consumed Unit Value",
+      hide: true,
+    },
+    {
+      field: "lastRemainingUnitValue",
+      headerName: "Last Remaining Units",
+      hide: true,
+    },
+    {
+      field: "newConsumedUnitValue",
+      headerName: "New Consumed Unit",
+      hide: true,
+    },
+    {
+      field: "newRemainingUnitValue",
+      headerName: "New Remaining Units",
+      hide: true,
+    },
+    {
+      field: "addedByName",
+      headerName: "Name",
+      hide: true,
     },
     {
       field: "remainingNewPurchaseInventoryUnits",
@@ -296,6 +357,8 @@ const InventoryRecordHistory = () => {
           search={true}
           tableTitle={tableTitle}
           tableHeight={450}
+         // hideFilter
+          exportData
         />
       </PageFrame>
 
