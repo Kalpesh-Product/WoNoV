@@ -91,7 +91,6 @@ async function generateReport(req, res) {
     : [];
 
   if (!isQueueEnabled()) {
-    console.log("1. non-queue|generate-report");
     try {
       const data = await executeReport({
         report: foundReport,

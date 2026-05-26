@@ -106,8 +106,7 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
       { "voucher.link": { $exists: true, $ne: "" } },
     ],
   };
-  console.log("4. non-queue | fetchVoucherService");
-  console.log("departmentId", departmentId);
+
   const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
 
   if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
