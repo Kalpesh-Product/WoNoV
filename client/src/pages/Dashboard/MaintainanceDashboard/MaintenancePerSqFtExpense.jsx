@@ -95,14 +95,14 @@ const MaintenancePerSqFtExpense = () => {
       : 0;
 
   const columns = [
-    { headerName: "SR NO", field: "srNo", width: 100 },
+    { headerName: "SR NO", field: "srNo", width: 300 },
     {
       headerName: "Unit No",
       field: "unitNo",
       flex: 1,
     },
     { headerName: "Building", field: "buildingName", flex: 1 },
-    { headerName: "Expense (INR/sq.ft)", field: "expense" },
+    { headerName: "Expense (INR/sq.ft)", field: "expense",flex:1 },
   ];
 
   const maxY = Math.max(...tableData.map((item) => item.expensePerSqFt), 0);
@@ -172,6 +172,7 @@ const MaintenancePerSqFtExpense = () => {
           columns={columns}
           search
           tableTitle="maintenance expense per sq. ft"
+          exportData
         />
       </PageFrame>
     </div>

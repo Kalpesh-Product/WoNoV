@@ -118,6 +118,8 @@ const BiometricAccessClients = () => {
                                 <StatusChip status="Inactive" count={clientStats.inactive} variant="count" />
                             </div>
                         }
+                        exportData
+                       // hideFilter
                     />
                     </PageFrame>
                 </div>

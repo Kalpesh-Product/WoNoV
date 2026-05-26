@@ -288,6 +288,8 @@ const BiometricAccessMembers = () => {
                                 <StatusChip status="Inactive" count={memberStats.inactive} variant="count" />
                             </div>
                         }
+                        exportData
+                       // hideFilter
                     />
                      </PageFrame>
             </div>
