@@ -1,12 +1,14 @@
 import { Chip } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
+import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
+import StatusChip from "../../../../components/StatusChip";
 
 const BiometricAccessClients = () => {
     const navigate = useNavigate();
@@ -87,6 +89,17 @@ const BiometricAccessClients = () => {
         ...item,
     }));
 
+    const clientStats = useMemo(() => {
+        const total = data.length;
+        const active = data.filter((client) => {
+            if (typeof client?.isActive === "boolean") return client.isActive;
+            return client?.status === "Active";
+        }).length;
+        const inactive = total - active;
+
+        return { total, active, inactive };
+    }, [data]);
+
     return (
         <div className="p-4">
             
@@ -98,6 +111,13 @@ const BiometricAccessClients = () => {
                         key={data.length}
                         data={data}
                         columns={columns}
+                        headerActions={
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <StatusChip status="Total" count={clientStats.total} variant="count" />
+                                <StatusChip status="Active" count={clientStats.active} variant="count" />
+                                <StatusChip status="Inactive" count={clientStats.inactive} variant="count" />
+                            </div>
+                        }
                     />
                     </PageFrame>
                 </div>

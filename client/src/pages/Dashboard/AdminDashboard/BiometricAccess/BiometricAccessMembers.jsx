@@ -14,6 +14,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
+import StatusChip from "../../../../components/StatusChip";
 
 const BIOMETRIC_OPTIONS = ["Pending", "Approved", "Revoke"];
 
@@ -210,6 +211,14 @@ const BiometricAccessMembers = () => {
         [members],
     );
 
+    const memberStats = useMemo(() => {
+        const total = memberData.length;
+        const active = memberData.filter((member) => member.status).length;
+        const inactive = total - active;
+
+        return { total, active, inactive };
+    }, [memberData]);
+
     const columns = [
         { field: "srNo", headerName: "SR No" },
         { field: "employeeName", headerName: "Member Name", flex: 1 },
@@ -272,6 +281,13 @@ const BiometricAccessMembers = () => {
                         tableTitle={`${decodedClientName || selectedClient?.clientName || "Client"} - Biometric Access Members`}
                         data={memberData}
                         columns={columns}
+                        headerActions={
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <StatusChip status="Total" count={memberStats.total} variant="count" />
+                                <StatusChip status="Active" count={memberStats.active} variant="count" />
+                                <StatusChip status="Inactive" count={memberStats.inactive} variant="count" />
+                            </div>
+                        }
                     />
                      </PageFrame>
             </div>

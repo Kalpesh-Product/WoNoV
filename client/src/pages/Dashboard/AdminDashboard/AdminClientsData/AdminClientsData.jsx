@@ -7,6 +7,8 @@ import { setClientData } from "../../../../redux/slices/salesSlice";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
 import { Chip } from "@mui/material";
+import { useMemo } from "react";
+import StatusChip from "../../../../components/StatusChip";
 
 const AdminClientsData = () => {
   const navigate = useNavigate();
@@ -204,6 +206,19 @@ const AdminClientsData = () => {
     isClientsDataPending ? [] : clientsData,
   );
 
+  const clientStats = useMemo(() => {
+    const total = Array.isArray(clientsData) ? clientsData.length : 0;
+    const active = Array.isArray(clientsData)
+      ? clientsData.filter((client) => {
+          if (typeof client?.isActive === "boolean") return client.isActive;
+          return client?.status === "Active";
+        }).length
+      : 0;
+    const inactive = total - active;
+
+    return { total, active, inactive };
+  }, [clientsData]);
+
   return (
     <div className="flex flex-col gap-4">
       <PageFrame>
@@ -258,6 +273,13 @@ const AdminClientsData = () => {
               })),
             ]}
             columns={[...viewEmployeeColumns, ...hiddenClientDetailColumns]}
+            headerActions={
+              <div className="flex items-center gap-2 flex-wrap">
+                <StatusChip status="Total" count={clientStats.total} variant="count" />
+                <StatusChip status="Active" count={clientStats.active} variant="count" />
+                <StatusChip status="Inactive" count={clientStats.inactive} variant="count" />
+              </div>
+            }
             exportData
           />
         </div>
