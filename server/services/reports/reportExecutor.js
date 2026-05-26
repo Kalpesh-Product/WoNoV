@@ -1,43 +1,3 @@
-// const UserData = require("../../models/hr/UserData");
-// const { resolveReportService } = require("./index");
-
-// const executeReport = async ({
-//   report,
-//   filters,
-//   department,
-//   departments,
-//   userId,
-// }) => {
-//   const reportService = resolveReportService(report);
-
-//   if (!reportService) {
-//     throw new Error(`Unsupported report: ${report.reportName}`);
-//   }
-
-//   const foundUser = await UserData.findById(userId)
-//     .populate([
-//       { path: "role", select: "roleTitle" },
-//       { path: "departments", select: "name" },
-//     ])
-//     .select("role company departments")
-//     .lean();
-
-//   const roles = (foundUser?.role || []).map((role) => role.roleTitle);
-
-//   return await reportService({
-//     dateFilter: filters,
-//     departmentId: department,
-//     departments: departments || [],
-//     roles,
-//     company: foundUser.company,
-//     user: foundUser._id,
-//   });
-// };
-
-// module.exports = {
-//   executeReport,
-// };
-
 const UserData = require("../../models/hr/UserData");
 const { resolveReportService } = require("./index");
 
@@ -51,7 +11,6 @@ async function executeReport({
   departments,
   userId,
 }) {
-  console.log("2. non-queue| executeReport");
   const reportService = resolveReportService(report);
 
   if (!reportService) {
@@ -76,14 +35,15 @@ async function executeReport({
     .map((role) => role?.roleTitle)
     .filter(Boolean);
 
-  return reportService({
-    dateFilter: filters,
-    departmentId: department,
-    departments: departments || [],
-    roles,
-    company: foundUser.company,
-    user: foundUser._id,
-  });
+  //   return reportService({
+  //     dateFilter: filters,
+  //     departmentId: department,
+  //     departments: departments || [],
+  //     roles,
+  //     company: foundUser.company,
+  //     user: foundUser._id,
+  //   });
+  return reportService({});
 }
 
 module.exports = { executeReport };
