@@ -36,6 +36,13 @@ const MaintainanceDashboard = () => {
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const normalizeListResponse = (response) => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.tasks)) return response.tasks;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.response)) return response.response;
+    return [];
+  };
   const { data: selectedDepartments = [] } = useQuery({
     queryKey: ["maintenance-selectedDepartments"],
     queryFn: async () => {
@@ -164,18 +171,24 @@ const MaintainanceDashboard = () => {
   //----------------------Monthly average-----------------------//
   //----------------------KPA Data-----------------------//
   const fetchDepartments = async () => {
+    if (!department?._id) {
+      return [];
+    }
+
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${department?._id}&type=KPA`
+        `/api/performance/get-tasks?dept=${department._id}&type=KPA&duration=Monthly`
       );
-      return response.data;
+      return normalizeListResponse(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
+      return [];
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedMonthlyKPA"],
+    queryKey: ["fetchedMonthlyKPA", department?._id],
     queryFn: fetchDepartments,
+    enabled: !!department?._id,
   });
   //----------------------KPA Data-----------------------//
   const monthlyGroups = {};
@@ -202,17 +215,23 @@ const MaintainanceDashboard = () => {
   //----------------------Monthly average-----------------------//
 
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
-    queryKey: ["tasks"],
+    queryKey: ["tasks", department?._id],
     queryFn: async () => {
+      if (!department?._id) {
+        return [];
+      }
+
       try {
         const response = await axios.get(
           `/api/tasks/get-tasks?dept=${department._id}`
         );
-        return response.data;
+        return normalizeListResponse(response.data);
       } catch (error) {
-        throw new Error("Error fetching data");
+        console.error("Error fetching data:", error);
+        return [];
       }
     },
+    enabled: !!department?._id,
   });
 
   //----------------------Units data-----------------------//
@@ -234,21 +253,35 @@ const MaintainanceDashboard = () => {
     ? []
     : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
 
+  const monthlyDueTasksCount = useMemo(() => {
+    const currentMonth = dayjs();
+
+    return (Array.isArray(tasks) ? tasks : []).filter((task) =>
+      task?.dueDate ? dayjs(task.dueDate).isSame(currentMonth, "month") : false,
+    ).length;
+  }, [tasks]);
+
   //----------------------Units data-----------------------//
 
   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
     useQuery({
-      queryKey: ["weeklySchedule"],
+      queryKey: ["weeklySchedule", department?._id],
       queryFn: async () => {
+        if (!department?._id) {
+          return [];
+        }
+
         try {
           const response = await axios.get(
             `/api/weekly-unit/fetch-weekly-unit/${department._id}`
           );
           return response.data;
         } catch (error) {
-          throw new Error("Error fetching data");
+          console.error("Error fetching data:", error);
+          return [];
         }
       },
+      enabled: !!department?._id,
     });
 
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
@@ -988,7 +1021,7 @@ const MaintainanceDashboard = () => {
     {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_DUE_TASKS.value, // maintenance_monthly_due_tasks
       title: "Total",
-      data: tasks.length || 0,
+      data: monthlyDueTasksCount,
       description: "Monthly Due Tasks",
       route: "/app/tasks",
     },
@@ -1016,7 +1049,7 @@ const MaintainanceDashboard = () => {
     },
     {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_KPA.value,
-      title: "Score",
+      title: "Total",
       data: departmentKra.length || 0,
       description: "Monthly KPA",
       route: "/app/performance",
