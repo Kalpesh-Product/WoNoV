@@ -368,7 +368,7 @@ const ItPerSqInternetExpense = () => {
         </div>
       )} */}
 
-      <AllocatedBudget financialData={financialData} newTitle={"INTERNET EXPENSES"} />
+      <AllocatedBudget financialData={financialData} newTitle={"INTERNET EXPENSES"} exportData />
       <MuiModal
         title="Request Budget"
         open={openModal}

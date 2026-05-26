@@ -13,6 +13,7 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import { toast } from "sonner";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useMutation } from "@tanstack/react-query";
+import StatusChip from "../../../components/StatusChip";
 
 const BIOMETRIC_OPTIONS = ["Pending", "Approved", "Revoke"];
 const getMemberId = (member) => member?._id || member?.id || member?.employeeName;
@@ -209,6 +210,14 @@ const AdminClientMembers = () => {
     [members],
   );
 
+  const memberStats = useMemo(() => {
+    const total = memberData.length;
+    const active = memberData.filter((member) => member.status).length;
+    const inactive = total - active;
+
+    return { total, active, inactive };
+  }, [memberData]);
+
   const viewEmployeeColumns = [
     { field: "srNo", headerName: "SR No" },
     {
@@ -296,6 +305,14 @@ const AdminClientMembers = () => {
             tableTitle={`${selectedClient?.clientName} - Member Details`}
             data={memberData}
             columns={viewEmployeeColumns}
+            headerActions={
+              <div className="flex items-center gap-2 flex-wrap">
+                <StatusChip status="Total" count={memberStats.total} variant="count" />
+                <StatusChip status="Active" count={memberStats.active} variant="count" />
+                <StatusChip status="Inactive" count={memberStats.inactive} variant="count" />
+              </div>
+            }
+            exportData
           />
         </PageFrame>
       </div>

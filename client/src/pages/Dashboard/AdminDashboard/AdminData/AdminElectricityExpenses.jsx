@@ -172,8 +172,8 @@ const AdminElectricityExpenses = () => {
         ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
       }));
       const transformedCols = [
-        { field: "srNo", headerName: "Sr No", width: 100 },
-        { field: "unitNo", headerName: "Unit No", width: 100 },
+        { field: "srNo", headerName: "Sr No", flex: 1 },
+        { field: "unitNo", headerName: "Unit No", flex: 1  },
         ...data.tableData.columns,
       ];
 
@@ -374,6 +374,7 @@ const AdminElectricityExpenses = () => {
       <AllocatedBudget
         financialData={financialData}
         newTitle={"ELECTRICITY EXPENSES"}
+        exportData
       />
       <MuiModal
         title="Request Budget"

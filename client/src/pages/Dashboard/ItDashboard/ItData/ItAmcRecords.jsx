@@ -114,6 +114,7 @@ const ItAmcRecords = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => (
         <div className="p-2 mb-2  flex gap-2">
           <span
@@ -286,6 +287,7 @@ const ItAmcRecords = () => {
           data={[]}
           columns={assetColumns}
           handleClick={handleAddAsset}
+          exportData
         />
       </PageFrame>
 

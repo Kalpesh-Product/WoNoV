@@ -111,7 +111,7 @@ const MaintenanceOfficesNew = () => {
   };
 
   const columns = [
-    { headerName: "SR NO", field: "srNo", width: 100 },
+    { headerName: "SR NO", field: "srNo", width: 300 },
     { headerName: "Unit No", field: "unitNo", flex: 1, cellRenderer: (params) => (
         <span
           role="button"
@@ -127,12 +127,12 @@ const MaintenanceOfficesNew = () => {
         </span>
       ), },
     { headerName: "Building", field: "buildingName", flex: 1 },
-    { headerName: "Sqft", field: "sqft", width: 120 },
+    { headerName: "Sqft", field: "sqft",flex: 1, },
     {
       headerName: "Occupied Desks",
       field: "occupiedDesks",
-      width: 150,
-      cellStyle: { textAlign: "center" },
+      flex: 1,
+      cellStyle: { textAlign: "left" },
     },
   ];
 
@@ -154,6 +154,7 @@ const MaintenanceOfficesNew = () => {
           columns={columns}
           search
           tableTitle="Maintenance Offices Details"
+          exportData
         />
       </PageFrame>
     </div>

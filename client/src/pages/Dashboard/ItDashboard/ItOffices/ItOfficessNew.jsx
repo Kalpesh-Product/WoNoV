@@ -109,7 +109,7 @@ const ItOfficessNew = () => {
   };
 
   const columns = [
-    { headerName: "SR NO", field: "srNo", width: 100 },
+    { headerName: "SR NO", field: "srNo", width: 300 },
     {
       headerName: "Unit No",
       field: "unitNo",
@@ -129,12 +129,12 @@ const ItOfficessNew = () => {
       ),
     },
     { headerName: "Building", field: "buildingName", flex: 1 },
-    { headerName: "Sqft", field: "sqft", width: 120 },
+    { headerName: "Sqft", field: "sqft", flex: 1, },
     {
       headerName: "Occupied Desks",
       field: "occupiedDesks",
-      width: 150,
-      cellStyle: { textAlign: "center" },
+      flex: 1,
+      cellStyle: { textAlign: "left" },
     },
   ];
 
@@ -157,6 +157,7 @@ const ItOfficessNew = () => {
           columns={columns}
           search
           tableTitle="IT Offices Details"
+          exportData
         />
       </PageFrame>
     </div>

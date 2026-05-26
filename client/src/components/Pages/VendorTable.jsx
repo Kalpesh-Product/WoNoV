@@ -38,13 +38,13 @@ const VendorTable = () => {
     {
       headerName: "Sr No",
       valueGetter: (params) => params.node.rowIndex + 1,
-      width: 80,
+      width: 300,
     },
-    { field: "vendorID", headerName: "Vendor ID", width: 120 },
+    { field: "vendorID", headerName: "Vendor ID", flex: 1 },
     {
       field: "vendorName",
       headerName: "Vendor Name",
-      flex: 2,
+      flex: 1,
       cellRenderer: (params) => {
         const isEmpty = params.value === "N/A";
 
@@ -69,7 +69,7 @@ const VendorTable = () => {
       field: "status",
       headerName: "Status",
       sort: "desc",
-      width: 130,
+      flex: 1,
       cellRenderer: (params) => (
         <Chip
           label={params.value === "Inactive" ? "Inactive" : "Active"}
@@ -78,6 +78,23 @@ const VendorTable = () => {
         />
       ),
     },
+    {field: "email", headerName: "Email", flex: 1,hide: true},
+     {field: "mobile", headerName: "Mobile", flex: 1,hide: true},
+     {field: "address", headerName: "Address", flex: 1,hide: true},
+     {field: "pinCode", headerName: "Pin Code", flex: 1,hide: true},
+     {field: "panIdNo", headerName: "PAN ID No", flex: 1,hide: true},
+     {field: "companyName", headerName: "Company Name", flex: 1,hide: true},
+     {field: "country", headerName: "Country", flex: 1,hide: true},
+     {field: "state", headerName: "State", flex: 1,hide: true},
+     {field: "city", headerName: "City", flex: 1,hide: true},
+     {field: "gstIn", headerName: "GSTIN", flex: 1,hide: true},
+     {field: "partyType", headerName: "Party Type", flex: 1,hide: true},
+     {field: "ifscCode", headerName: "IFSC Code", flex: 1,hide: true},
+     {field: "bankName", headerName: "Bank Name", flex: 1,hide: true},
+     {field: "branchName", headerName: "Branch Name", flex: 1,hide: true},
+     {field: "nameOnAccount", headerName: "Name on Account", flex: 1,hide: true},
+     {field: "accountNumber", headerName: "Account Number", flex: 1,hide: true},
+     {field: "onboardingDate", headerName: "Onboarding Date", flex: 1,hide: true},
   ];
  const getCountryIsoCode = (countryValue) => {
     if (!countryValue) return "";
@@ -177,6 +194,7 @@ const VendorTable = () => {
             columns={vendorColumns}
             buttonTitle={"Add Vendor"}
             handleClick={() => navigate("vendor-onboard")}
+            exportData
           />
         </div>
       </PageFrame>
