@@ -38,13 +38,13 @@ const VendorTable = () => {
     {
       headerName: "Sr No",
       valueGetter: (params) => params.node.rowIndex + 1,
-      width: 80,
+      width: 300,
     },
-    { field: "vendorID", headerName: "Vendor ID", width: 120 },
+    { field: "vendorID", headerName: "Vendor ID", flex: 1 },
     {
       field: "vendorName",
       headerName: "Vendor Name",
-      flex: 2,
+      flex: 1,
       cellRenderer: (params) => {
         const isEmpty = params.value === "N/A";
 
@@ -69,7 +69,7 @@ const VendorTable = () => {
       field: "status",
       headerName: "Status",
       sort: "desc",
-      width: 130,
+      flex: 1,
       cellRenderer: (params) => (
         <Chip
           label={params.value === "Inactive" ? "Inactive" : "Active"}
