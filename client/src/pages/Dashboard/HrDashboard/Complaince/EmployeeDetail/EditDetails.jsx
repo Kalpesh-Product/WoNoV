@@ -17,7 +17,10 @@ import { PERMISSIONS } from "../../../../../constants/permissions";
 import { Checkbox, ListItemText } from "@mui/material";
 import { City, State } from "country-state-city";
 import { LuImageUp } from "react-icons/lu";
+import MuiModal from "../../../../../components/MuiModal";
 dayjs.extend(customParseFormat);
+
+
 
 const EditDetails = () => {
   const location = useLocation();
@@ -126,36 +129,52 @@ const EditDetails = () => {
   });
 
   const [isEditing, setIsEditing] = useState(false);
-   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+  const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+  const [policyPreview, setPolicyPreview] = useState({
+    open: false,
+    url: "",
+    title: "",
+  });
   //  const isValidHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
    const isValidHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
   const resolvePolicyLink = (value) => {
     const normalizedValue = String(value || "").trim();
     if (!normalizedValue) return "";
 
-    if (isValidHttpUrl(normalizedValue) || normalizedValue.startsWith("/")) {
+    if (isValidHttpUrl(normalizedValue)) {
       return normalizedValue;
-    }
-
-    const isPdfName = /\.pdf$/i.test(normalizedValue);
-    if (isPdfName) {
-      return `/uploads/${encodeURIComponent(normalizedValue)}`;
     }
 
     return "";
   };
+  const stripUploadSuffix = (fileName) => {
+    const decodedName = decodeURIComponent(String(fileName || "").trim());
+    if (!decodedName) return "";
+
+    return decodedName.replace(
+      /_(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i,
+      "",
+    );
+  };
+
   const getPolicyDisplayName = (value) => {
     const normalizedValue = String(value || "").trim();
     if (!normalizedValue) return "";
 
-    if (!isValidHttpUrl(normalizedValue)) return normalizedValue;
+    if (normalizedValue.startsWith("/")) {
+      return stripUploadSuffix(
+        normalizedValue.split("/").pop() || normalizedValue,
+      );
+    }
+
+    if (!isValidHttpUrl(normalizedValue)) return stripUploadSuffix(normalizedValue);
 
     try {
       const url = new URL(normalizedValue);
       const decodedName = decodeURIComponent(url.pathname.split("/").pop() || "");
-      return decodedName || normalizedValue;
+      return stripUploadSuffix(decodedName || normalizedValue);
     } catch {
-      return normalizedValue;
+      return stripUploadSuffix(normalizedValue);
     }
   };
   const normalizePolicyValue = (value) => {
@@ -182,6 +201,40 @@ const EditDetails = () => {
     clearErrors(fieldName);
     onChange(file);
   };
+  const openPolicyPreview = (url, title) => {
+    if (!url) return;
+    setPolicyPreview({ open: true, url, title: title || "Policy Preview" });
+  };
+
+  const closePolicyPreview = () => {
+    setPolicyPreview({ open: false, url: "", title: "" });
+  };
+
+  const uploadPolicyAgreement = async (file, agreementName) => {
+    if (!(file instanceof File)) return "";
+
+    const formData = new FormData();
+    formData.append("agreementName", agreementName);
+    formData.append("agreement", file);
+    formData.append("userId", employeeData?._id);
+
+    const response = await axios.post("/api/agreement/add-agreement", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response?.data?.agreementUrl || response?.data?.agreement?.url || "";
+  };
+
+  const resolvePolicySubmissionValue = async (value, agreementName) => {
+    if (value instanceof File) {
+      return uploadPolicyAgreement(value, agreementName);
+    }
+
+    return normalizePolicyValue(value);
+  };
+
   const workLocations = useMemo(() => {
     const unitSet = new Set();
     return unitsData
@@ -490,6 +543,15 @@ const EditDetails = () => {
     // mutationFn: async (statusValue) => {
     //   return axios.patch("/api/users/update-single-user", {
     mutationFn: async (formData) => {
+      const resolvedLeavePolicy = await resolvePolicySubmissionValue(
+        formData?.leavePolicy,
+        "Leave Policy",
+      );
+      const resolvedHolidayPolicy = await resolvePolicySubmissionValue(
+        formData?.holidayPolicy,
+        "Holiday Policy",
+      );
+
       const payload = {
         empId: employmentID,
         //isActive: statusValue === "Active",
@@ -528,10 +590,9 @@ const EditDetails = () => {
         jobDescription: formData?.jobDescription || "",
         shift: formData?.shift || "",
         attendanceSource: formData?.attendanceSource || "",
-        // leavePolicy: formData?.leavePolicy || "",
-        // holidayPolicy: formData?.holidayPolicy || "",
-         leavePolicy: normalizePolicyValue(formData?.leavePolicy),
-        holidayPolicy: normalizePolicyValue(formData?.holidayPolicy),
+
+        leavePolicy: resolvedLeavePolicy,
+        holidayPolicy: resolvedHolidayPolicy,
         addressLine1: formData?.addressLine1 || "",
         addressLine2: formData?.addressLine2 || "",
         state: formData?.state || "",
@@ -557,10 +618,9 @@ const EditDetails = () => {
         policies: {
           workSchedulePolicy: formData?.workSchedulePolicy || "",
           attendanceSource: formData?.attendanceSource || "",
-          // leavePolicy: formData?.leavePolicy || "",
-          // holidayPolicy: formData?.holidayPolicy || "",
-           leavePolicy: normalizePolicyValue(formData?.leavePolicy),
-        holidayPolicy: normalizePolicyValue(formData?.holidayPolicy),
+
+          leavePolicy: resolvedLeavePolicy,
+        holidayPolicy: resolvedHolidayPolicy,
         },
         panAadhaarDetails: {
           aadhaarId: formData?.aadharID || "",
@@ -1297,18 +1357,24 @@ const EditDetails = () => {
                                   fieldKey,
                                        ) &&
                                 resolvePolicyLink(transformEmployeeData[fieldKey]) ? (
-                                //      ) &&
-                                // transformEmployeeData[fieldKey] &&
-                                // isValidHttpUrl(transformEmployeeData[fieldKey]) ? (
-                                // // ) && transformEmployeeData[fieldKey] ? (
-                                  <a
-                                   href={resolvePolicyLink(transformEmployeeData[fieldKey])}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 underline"
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openPolicyPreview(
+                                        resolvePolicyLink(
+                                          transformEmployeeData[fieldKey],
+                                        ),
+                                        getPolicyDisplayName(
+                                          transformEmployeeData[fieldKey],
+                                        ),
+                                      )
+                                    }
+                                    className="bg-transparent p-0 text-left text-blue-600 underline cursor-pointer"
                                   >
-                                   {getPolicyDisplayName(transformEmployeeData[fieldKey])}
-                                  </a>
+                                    {getPolicyDisplayName(
+                                      transformEmployeeData[fieldKey],
+                                    )}
+                                  </button>
                                 ) : (
                                   <span className="text-gray-500">
                                     {transformEmployeeData[fieldKey]}
@@ -1705,8 +1771,38 @@ const EditDetails = () => {
                   <SecondaryButton title={"Reset"} handleSubmit={handleReset} />
                 )}
               </div>
+            )}          </form>
+        <MuiModal
+          open={policyPreview.open}
+          onClose={closePolicyPreview}
+          title={policyPreview.title || "Policy Preview"}
+        >
+          <div className="flex flex-col gap-3">
+            <div className="h-[75vh] w-full overflow-hidden rounded-md border border-borderGray">
+              {policyPreview.url ? (
+                <iframe
+                  src={policyPreview.url}
+                  title={policyPreview.title || "Policy Preview"}
+                  className="h-full w-full"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-gray-500">
+                  No preview available
+                </div>
+              )}
+            </div>
+            {policyPreview.url && (
+              <a
+                href={policyPreview.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline text-sm"
+              >
+                Open in new tab
+              </a>
             )}
-          </form>
+          </div>
+        </MuiModal>
         </div>
       </div>
     </div>

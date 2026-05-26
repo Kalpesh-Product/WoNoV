@@ -1,13 +1,14 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
 import { Chip } from "@mui/material";
+import { useMemo } from "react";
+import StatusChip from "../../../../components/StatusChip";
 
 const AdminClientsData = () => {
   const navigate = useNavigate();
@@ -26,6 +27,16 @@ const AdminClientsData = () => {
       }
     },
   });
+
+  const formatDateValue = (value) => {
+    if (!value) return "";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toISOString().split("T")[0];
+  };
+
   const handleClickRow = (clientData) => {
     dispatch(setSelectedClient(clientData));
     navigate(
@@ -35,11 +46,53 @@ const AdminClientsData = () => {
     );
   };
 
+  const hiddenClientDetailColumns = [
+    { field: "serviceName", headerName: "Service Name", hide: true },
+    { field: "serviceDescription", headerName: "Service Description", hide: true },
+    { field: "sector", headerName: "Sector", hide: true },
+    { field: "hoCity", headerName: "HO City", hide: true },
+    { field: "hoState", headerName: "HO State", hide: true },
+    { field: "bookingType", headerName: "Booking Type", hide: true },
+    { field: "unitName", headerName: "Unit Name", hide: true },
+    { field: "unitNo", headerName: "Unit No", hide: true },
+    { field: "buildingName", headerName: "Building Name", hide: true },
+    { field: "buildingAddress", headerName: "Building Address", hide: true },
+    { field: "cabinDesks", headerName: "Cabin Desks", hide: true },
+    { field: "openDesks", headerName: "Open Desks", hide: true },
+    { field: "totalDesks", headerName: "Total Desks", hide: true },
+    { field: "ratePerOpenDesk", headerName: "Rate Per Open Desk", hide: true },
+    { field: "ratePerCabinDesk", headerName: "Rate Per Cabin Desk", hide: true },
+    { field: "annualIncrement", headerName: "Annual Increment", hide: true },
+    {
+      field: "perDeskMeetingCredits",
+      headerName: "Per Desk Meeting Credits",
+      hide: true,
+    },
+    {
+      field: "meetingCreditBalance",
+      headerName: "Meeting Credit Balance",
+      hide: true,
+    },
+    { field: "startDate", headerName: "Start Date", hide: true },
+    { field: "endDate", headerName: "End Date", hide: true },
+    { field: "lockinPeriod", headerName: "Lock-in Period", hide: true },
+    { field: "rentDate", headerName: "Rent Date", hide: true },
+    { field: "nextIncrement", headerName: "Next Increment", hide: true },
+    { field: "localPocName", headerName: "Local POC Name", hide: true },
+    { field: "localPocPhone", headerName: "Local POC Phone", hide: true },
+    { field: "hoPocName", headerName: "HO POC Name", hide: true },
+    { field: "hoPocEmail", headerName: "HO POC Email", hide: true },
+    { field: "hoPocPhone", headerName: "HO POC Phone", hide: true },
+    // { field: "createdAt", headerName: "Created At", hide: true },
+    // { field: "updatedAt", headerName: "Updated At", hide: true },
+  ];
+
   const viewEmployeeColumns = [
-    { field: "id", headerName: "ID" },
+    { field: "id", headerName: "ID" ,width:300},
     {
       field: "clientName",
       headerName: "Client Name",
+      flex:1,
       cellRenderer: (params) => (
         <span
           style={{
@@ -54,11 +107,12 @@ const AdminClientsData = () => {
       ),
     },
     { field: "localPocEmail", headerName: "Email", flex: 1 },
-    { field: "memberCount", headerName: "Member Count" },
-    { field: "totalMeetingCredits", headerName: "Credits" },
+    { field: "memberCount", headerName: "Member Count" ,flex: 1 },
+    { field: "totalMeetingCredits", headerName: "Credits",flex: 1  },
     {
       field: "status",
       headerName: "Status",
+      flex: 1 ,
       sort: "desc",
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive";
@@ -152,13 +206,26 @@ const AdminClientsData = () => {
     isClientsDataPending ? [] : clientsData,
   );
 
+  const clientStats = useMemo(() => {
+    const total = Array.isArray(clientsData) ? clientsData.length : 0;
+    const active = Array.isArray(clientsData)
+      ? clientsData.filter((client) => {
+          if (typeof client?.isActive === "boolean") return client.isActive;
+          return client?.status === "Active";
+        }).length
+      : 0;
+    const inactive = total - active;
+
+    return { total, active, inactive };
+  }, [clientsData]);
+
   return (
     <div className="flex flex-col gap-4">
       <PageFrame>
         <div className="w-full">
           <AgTable
             search={true}
-            tableTitle={"Client Memebers Data"}
+            tableTitle={"Client Members Data"}
             key={clientsData.length}
             data={[
               ...clientsData.map((item, index) => ({
@@ -171,6 +238,7 @@ const AdminClientsData = () => {
                 sector: item.sector,
                 hoCity: item.hoCity,
                 hoState: item.hoState,
+                bookingType: item.bookingType,
                 unitName: item.unit?.unitName,
                 unitNo: item.unit?.unitNo,
                 buildingName: item.unit?.building?.buildingName,
@@ -186,11 +254,11 @@ const AdminClientsData = () => {
                 perDeskMeetingCredits: item.perDeskMeetingCredits,
                 totalMeetingCredits: item.totalMeetingCredits,
                 meetingCreditBalance: item.meetingCreditBalance,
-                startDate: item.startDate,
-                endDate: item.endDate,
+                startDate: formatDateValue(item.startDate),
+                endDate: formatDateValue(item.endDate),
                 lockinPeriod: item.lockinPeriod,
-                rentDate: item.rentDate,
-                nextIncrement: item.nextIncrement,
+                rentDate: formatDateValue(item.rentDate),
+                nextIncrement: formatDateValue(item.nextIncrement),
                 localPocName: item.localPoc?.name,
                 localPocEmail: item.localPoc?.email,
                 localPocPhone: item.localPoc?.phone,
@@ -199,12 +267,20 @@ const AdminClientsData = () => {
                 hoPocPhone: item.hOPoc?.phone,
                 status: item.isActive,
                 isActive: item.isActive,
-                createdAt: item.createdAt,
-                updatedAt: item.updatedAt,
+                createdAt: formatDateValue(item.createdAt),
+                updatedAt: formatDateValue(item.updatedAt),
                 occupiedImage: item.occupiedImage?.imageUrl,
               })),
             ]}
-            columns={viewEmployeeColumns}
+            columns={[...viewEmployeeColumns, ...hiddenClientDetailColumns]}
+            headerActions={
+              <div className="flex items-center gap-2 flex-wrap">
+                <StatusChip status="Total" count={clientStats.total} variant="count" />
+                <StatusChip status="Active" count={clientStats.active} variant="count" />
+                <StatusChip status="Inactive" count={clientStats.inactive} variant="count" />
+              </div>
+            }
+            exportData
           />
         </div>
       </PageFrame>

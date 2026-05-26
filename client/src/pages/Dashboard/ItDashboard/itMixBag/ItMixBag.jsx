@@ -16,7 +16,7 @@ const ItMixBag = () => {
   const routes = [
     {
       title: "Team Members Schedule",
-      route: "/app/dashboard/it-dashboard/mix-bag/team-members-schedule",
+      route: "/app/dashboard/IT-dashboard/mix-bag/team-members-schedule",
       permission: PERMISSIONS.IT_TEAM_MEMBERS_SCHEDULE_MIX_BAG.value,
     },
     {

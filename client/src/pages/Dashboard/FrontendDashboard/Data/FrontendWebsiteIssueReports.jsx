@@ -34,6 +34,7 @@ const FrontendWebsiteIssueReports = () => {
     {
       field: "action",
       headerName: "Action",
+      pinned: "right",
       cellRenderer: (params) => (
         <div className="p-2">
           <PrimaryButton
@@ -175,6 +176,7 @@ const FrontendWebsiteIssueReports = () => {
             tableTitle={"Website Issue Reports"}
             data={[]}
             columns={websiteIssueReportsColumn}
+            exportData
           />
         </div>
       </PageFrame>

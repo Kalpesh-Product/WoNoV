@@ -250,6 +250,7 @@ const EmployeeType = () => {
             })),
           ]}
           columns={departmentsColumn}
+          exportData
         />
 
         <MuiModal

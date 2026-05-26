@@ -329,7 +329,9 @@ const HrKPA = () => {
           columns={tasksColumns}
           data={tableData}
           tableHeight={300}
-          hideFilter
+         // hideFilter
+         search={true}     
+           exportData
         />
       </WidgetSection>
     </div>

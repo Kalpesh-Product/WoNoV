@@ -34,6 +34,7 @@ const AttendanceCompleted = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
+    {field:"empId", headerName:"Employee ID", flex:1,hide:true},
     {
       field: "name",
       headerName: "Name",
@@ -47,11 +48,16 @@ const AttendanceCompleted = () => {
         </span>
       ),
     },
+    { field: "reason", headerName: "Reason", flex: 1,hide:true },
     { field: "addedBy", headerName: "Added By", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "inTime", headerName: "Corrected In Time" },
     { field: "outTime", headerName: "Corrected Out Time" },
+    { field: "originalInTime", headerName: "Original In Time",hide:true },
+    { field: "originalOutTime", headerName: "Original Out Time",hide:true },
     { field: "status", headerName: "Status", cellRenderer : (params)=>(<StatusChip status={params.value} />) },
+    {field: "approvedBy", headerName: "Approved By", flex: 1,hide: true, valueGetter: (params) => params?.data?.approvedBy ? `${params.data.approvedBy.firstName} ${params.data.approvedBy.lastName}` : "N/A"},
+    {field: "rejectedBy", headerName: "Rejected By", flex: 1,hide: true, valueGetter: (params) => params?.data?.rejectedBy ? `${params.data.rejectedBy.firstName} ${params.data.rejectedBy.lastName}` : "N/A"},
   ];
 
   const tableData = isLoading
@@ -91,7 +97,8 @@ const AttendanceCompleted = () => {
           dateColumn={"date"}
           columns={columns}
           data={!isLoading ? tableData : []}
-          tableTitle={"ATTENDANCE REQUESTS"}
+          tableTitle={"COMPLETED ATTENDANCE REQUESTS"}
+          exportData
         />
       </PageFrame>
       <MuiModal

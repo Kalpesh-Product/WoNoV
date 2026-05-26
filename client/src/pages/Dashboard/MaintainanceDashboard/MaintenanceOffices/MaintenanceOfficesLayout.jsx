@@ -228,16 +228,18 @@ const MaintenanceOfficesLayout = () => {
           tableHeight={300}
           hideFilter
           columns={[
-            { field: "id", headerName: "Sr. No", width: 100 },
+            { field: "id", headerName: "Sr. No", width: 300 },
             { field: "client", headerName: "Client Name", flex: 1 },
-            { field: "occupiedDesks", headerName: "Occupied Desks" },
+            { field: "occupiedDesks", headerName: "Occupied Desks",flex: 1},
             {
               field: "occupancyPercent",
               headerName: "Occupied %",
+              flex: 1,
               cellRenderer: (params) => `${params.value}%`,
             },
           ]}
           data={tableData}
+          exportData
         />
       </WidgetSection>
 

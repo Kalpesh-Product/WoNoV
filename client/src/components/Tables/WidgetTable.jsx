@@ -181,6 +181,11 @@ const WidgetTable = ({
     });
   }, [columns, formatDate, formatTime]);
 
+  const exportColumnKeys = useMemo(
+    () => columns.map((col) => col.field).filter(Boolean),
+    [columns]
+  );
+
   const finalTableData = filteredData.map((item, index) => ({
     ...item,
     srNo: index + 1,
@@ -191,6 +196,8 @@ const WidgetTable = ({
     if (agGridRef.current) {
       agGridRef.current.api.exportDataAsCsv({
         fileName: `${tableTitle || "data"}.csv`,
+        allColumns: true,
+        columnKeys: exportColumnKeys,
       });
     }
   };
