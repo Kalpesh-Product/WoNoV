@@ -231,18 +231,18 @@ const reportServiceRegistry = {
   //     isReport: true,
   //   }),
 
-  // visitor: async ({ dateFilter, departmentId, company }) =>
-  //   fetchVisitorReportService({
-  //     dateFilter: {
-  //       ...buildDateFilter({
-  //         startDate: dateFilter?.startDate,
-  //         endDate: dateFilter?.endDate,
-  //         field: "checkIn",
-  //       }),
-  //     },
-  //     departmentId,
-  //     company,
-  //   }),
+  visitor: async ({ dateFilter, departmentId, company }) =>
+    fetchVisitorReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "checkIn",
+        }),
+      },
+      departmentId,
+      company,
+    }),
 
   budget: async ({ dateFilter, departmentId, departments, roles }) =>
     fetchBudgetService({
@@ -273,17 +273,17 @@ const reportServiceRegistry = {
       isReport: true,
     }),
 
-  // ticket: async ({ dateFilter, departmentId, departments, roles }) =>
-  //   fetchTicketReportService({
-  //     departmentId,
-  //     roles,
-  //     departments,
-  //     dateFilter: buildDateFilter({
-  //       startDate: dateFilter?.startDate,
-  //       endDate: dateFilter?.endDate,
-  //       field: "createdAt",
-  //     }),
-  //   }),
+  ticket: async ({ dateFilter, departmentId, departments, roles }) =>
+    fetchTicketReportService({
+      departmentId,
+      roles,
+      departments,
+      dateFilter: buildDateFilter({
+        startDate: dateFilter?.startDate,
+        endDate: dateFilter?.endDate,
+        field: "createdAt",
+      }),
+    }),
 };
 
 const resolveReportService = (reportMeta = {}) => {

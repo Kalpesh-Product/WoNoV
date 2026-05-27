@@ -51,10 +51,12 @@ const DEFAULT_COUNTS = {
     pendingKpa: 0,
 };
 
+const getTaskEffectiveDate = (task) => task?.assignedDate || task?.dueDate || task?.createdAt;
+
 const isTaskInSelectedMonth = (task, selectedMonth) => {
     if (!selectedMonth) return true;
 
-    const taskDate = new Date(task?.assignedDate);
+       const taskDate = new Date(getTaskEffectiveDate(task));
     if (Number.isNaN(taskDate.getTime())) return false;
 
     const taskMonth = taskDate.toLocaleString("en-US", { month: "long" });
@@ -372,7 +374,25 @@ const PerformanceMemberWiseKraKpa = () => {
 
                 map.get(userId)[field] += 1;
             };
-               const upsertManagerTeamKpaCount = (task, field) => {
+              const upsertManagerMonthlyKpaCount = (field) => {
+                const managerId =
+                    managerRowId ||
+                    memberIdByName.get(normalizedManagerName) ||
+                    `manager-${normalizedManagerName || "unknown"}`;
+                const managerName = selectedDepartmentManagerName || "Manager";
+
+                if (!map.has(managerId)) {
+                    map.set(managerId, {
+                        memberId: managerId,
+                        member: managerName,
+                        memberRole: getMemberRole(managerId, managerName, {}),
+                        ...DEFAULT_COUNTS,
+                    });
+                }
+
+                map.get(managerId)[field] += 1;
+            };
+            const upsertManagerTeamKpaCount = (task, field) => {
                // const managerId = loggedInUserId || "unassigned";
                 //const managerName = loggedInUserName || "Manager";
                 const managerId =
@@ -394,7 +414,7 @@ const PerformanceMemberWiseKraKpa = () => {
             };
 
             const incrementPendingKpa = (task) => {
-                const taskDate = new Date(task?.assignedDate);
+                 const taskDate = new Date(getTaskEffectiveDate(task));
                 if (Number.isNaN(taskDate.getTime())) return;
                 const fiscalMonth = [
                     "January",
@@ -440,7 +460,7 @@ const PerformanceMemberWiseKraKpa = () => {
                 .forEach((task) => upsert(task, "dailyKra"));
             getResponseData(kpaResponse)
                 .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
-                .forEach((task) => upsert(task, "monthlyKpa"));
+.forEach(() => upsertManagerMonthlyKpaCount("monthlyKpa"));
             getResponseData(individualKraResponse)
                 .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
                 .forEach((task) => upsert(task, "individualDailyKra"));

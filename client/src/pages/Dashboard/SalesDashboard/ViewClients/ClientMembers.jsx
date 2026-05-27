@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useParams } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { Chip, MenuItem, TextField } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +19,26 @@ import StatusChip from "../../../../components/StatusChip";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 
 const normalizeValue = (value) => String(value || "").trim().toLowerCase();
+const normalizeClientKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+const getCurrentMemberId = (member) => member?._id || member?.id || member?.employeeName;
+const getNextMembersAfterDelete = (members = [], memberId, preserveDeleted) =>
+  preserveDeleted
+    ? members.map((member) =>
+        getCurrentMemberId(member) === memberId
+          ? {
+              ...member,
+              isDeleted: true,
+              isActive: false,
+              status: false,
+              biometricStatus: "Revoke",
+            }
+          : member,
+      )
+    : members.filter((member) => getCurrentMemberId(member) !== memberId);
 
 const getMemberId = (member) => member?._id || member?.id || member?.employeeName;
 const getRoleTitles = (user) =>
@@ -53,8 +73,9 @@ const ClientMembers = () => {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const { auth } = useAuth();
+  const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
-  const [members, setMembers] = useState(selectedClient?.members || []);
+  const [members, setMembers] = useState([]);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState(null);
   const canViewDisabledMembers = useMemo(
@@ -62,29 +83,83 @@ const ClientMembers = () => {
     [auth?.user],
   );
 
+  const routeClientKey = normalizeClientKey(decodeURIComponent(clientName || ""));
+
   const { data: freshClientData } = useQuery({
     queryKey: [
       "selectedCoWorkingClient",
+      clientName,
       selectedClient?._id,
       selectedClient?.clientName,
     ],
-    enabled: Boolean(selectedClient?._id || selectedClient?.clientName),
+    enabled: Boolean(clientName || selectedClient?._id || selectedClient?.clientName),
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
-      const clients = response.data || [];
+      const clients = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
       return clients.find(
         (client) =>
-          client?._id === selectedClient?._id ||
-          (client?.clientName || "").trim().toLowerCase() ===
-            (selectedClient?.clientName || "").trim().toLowerCase(),
+          normalizeClientKey(client?._id) === routeClientKey ||
+          normalizeClientKey(client?.clientName) === routeClientKey ||
+          normalizeClientKey(client?._id) ===
+            normalizeClientKey(selectedClient?._id || selectedClient?.clientName) ||
+          normalizeClientKey(client?.clientName) ===
+            normalizeClientKey(selectedClient?._id || selectedClient?.clientName),
       );
     },
   });
 
+  const resolvedClient = useMemo(() => {
+    if (freshClientData) return freshClientData;
+
+    const selectedClientKey = normalizeClientKey(
+      selectedClient?._id || selectedClient?.clientName,
+    );
+
+    if (
+      selectedClient &&
+      (normalizeClientKey(selectedClient?._id) === routeClientKey ||
+        normalizeClientKey(selectedClient?.clientName) === routeClientKey ||
+        normalizeClientKey(selectedClient?._id) === selectedClientKey ||
+        normalizeClientKey(selectedClient?.clientName) === selectedClientKey)
+    ) {
+      return selectedClient;
+    }
+
+    return null;
+  }, [freshClientData, routeClientKey, selectedClient]);
+
+  const { data: clientMembersData } = useQuery({
+    queryKey: ["salesClientMembers", resolvedClient?._id, resolvedClient?.clientName],
+    enabled: Boolean(resolvedClient?._id),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/sales/co-working-client-members?clientId=${resolvedClient._id}`,
+      );
+      return Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+    },
+  });
+
   useEffect(() => {
-    const client = freshClientData || selectedClient;
-    setMembers(client?.members || []);
-  }, [freshClientData, selectedClient]);
+    const nextMembers = Array.isArray(clientMembersData) && clientMembersData.length > 0
+      ? clientMembersData
+      : Array.isArray(resolvedClient?.members)
+        ? resolvedClient.members
+        : [];
+
+    setMembers(nextMembers);
+
+    if (resolvedClient) {
+      dispatch(setSelectedClient(resolvedClient));
+    }
+  }, [clientMembersData, dispatch, resolvedClient]);
 
   const visibleMembers = useMemo(
     () =>
@@ -235,39 +310,32 @@ const ClientMembers = () => {
       return response.data;
     },
     onSuccess: (response, memberId) => {
-      setMembers((prev) =>
-        canViewDisabledMembers
-          ? prev.map((member) =>
-              getMemberId(member) === memberId
-                ? {
-                    ...member,
-                    isDeleted: true,
-                    isActive: false,
-                    status: false,
-                    biometricStatus: "Revoke",
-                  }
-                : member,
-            )
-          : prev.filter((member) => getMemberId(member) !== memberId),
+      const updatedMembers = getNextMembersAfterDelete(
+        members,
+        memberId,
+        canViewDisabledMembers,
       );
-      const updatedMembers = canViewDisabledMembers
-        ? members.map((member) =>
-            getMemberId(member) === memberId
-              ? {
-                  ...member,
-                  isDeleted: true,
-                  isActive: false,
-                  status: false,
-                  biometricStatus: "Revoke",
-                }
-              : member,
-          )
-        : members.filter((member) => getMemberId(member) !== memberId);
+
+      setMembers(updatedMembers);
       dispatch(
         setSelectedClient({
           ...selectedClient,
           members: updatedMembers,
         }),
+      );
+      queryClient.setQueryData(
+        ["selectedCoWorkingClient", clientName, selectedClient?._id, selectedClient?.clientName],
+        (current) =>
+          current
+            ? {
+                ...current,
+                members: updatedMembers,
+              }
+            : current,
+      );
+      queryClient.setQueryData(
+        ["salesClientMembers", resolvedClient?._id, resolvedClient?.clientName],
+        updatedMembers,
       );
       queryClient.invalidateQueries({ queryKey: ["clientsData"] });
       queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });

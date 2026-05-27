@@ -48,6 +48,11 @@ const canViewDeletedMembers = (user) => {
 const BIOMETRIC_OPTIONS = ["Pending", "Approved", "Revoke"];
 
 const getMemberId = (member) => member?._id || member?.id || member?.employeeName;
+const normalizeClientKey = (value) =>
+    String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
 const normalizeBiometricStatus = (status) =>
     String(status || "Pending").toLowerCase() === "approved"
         ? "Approved"
@@ -74,6 +79,19 @@ const BiometricAccessMembers = () => {
     const isItDashboard = location.pathname.includes("/IT-dashboard/");
     const canEditAllFields = !isItDashboard;
     const decodedClientName = decodeURIComponent(clientName || "");
+    const routeClientKey = normalizeClientKey(decodedClientName);
+
+    const isSameClient = (client) => {
+        if (!client) return false;
+
+        const clientIdKey = normalizeClientKey(client?._id);
+        const clientNameKey = normalizeClientKey(client?.clientName);
+
+        return (
+            Boolean(routeClientKey) &&
+            (clientIdKey === routeClientKey || clientNameKey === routeClientKey)
+        );
+    };
 
     const { reset, control, handleSubmit, formState: { errors } } = useForm({
         mode: "onChange",
@@ -88,34 +106,63 @@ const BiometricAccessMembers = () => {
     });
 
     const { data: clientData } = useQuery({
-        queryKey: ["biometricAccessClient", decodedClientName],
-        enabled: Boolean(decodedClientName),
+        queryKey: ["biometricAccessClient", decodedClientName, selectedClient?._id],
+        enabled: Boolean(decodedClientName || selectedClient?._id || selectedClient?.clientName),
         queryFn: async () => {
             const response = await axios.get("/api/sales/co-working-clients");
-            const clients = response.data || [];
+            const clients = Array.isArray(response.data)
+                ? response.data
+                : Array.isArray(response.data?.data)
+                    ? response.data.data
+                    : [];
             return clients.find(
                 (item) =>
-                    (item.clientName || "").trim().toLowerCase() ===
-                    decodedClientName.trim().toLowerCase(),
+                    normalizeClientKey(item?._id) === routeClientKey ||
+                    normalizeClientKey(item?.clientName) === routeClientKey,
             );
         },
     });
 
-    useEffect(() => {
-        const normalizedRouteName = decodedClientName.trim().toLowerCase();
-        const normalizedSelectedName = (selectedClient?.clientName || "")
-            .trim()
-            .toLowerCase();
-
-        const client =
-            clientData ||
-            (normalizedSelectedName === normalizedRouteName ? selectedClient : null);
-
-        if (client) {
-            dispatch(setSelectedClient(client));
-            setMembers(client.members || []);
+    const resolvedClient = useMemo(() => {
+        if (clientData) {
+            return clientData;
         }
-    }, [clientData, decodedClientName, dispatch, selectedClient]);
+
+        if (isSameClient(selectedClient)) {
+            return selectedClient;
+        }
+
+        return null;
+    }, [clientData, selectedClient, routeClientKey]);
+
+    const { data: clientMembersData } = useQuery({
+        queryKey: ["biometricAccessClientMembers", resolvedClient?._id, resolvedClient?.clientName],
+        enabled: Boolean(resolvedClient?._id),
+        queryFn: async () => {
+            const response = await axios.get(
+                `/api/sales/co-working-client-members?clientId=${resolvedClient._id}`,
+            );
+            return Array.isArray(response.data)
+                ? response.data
+                : Array.isArray(response.data?.data)
+                    ? response.data.data
+                    : [];
+        },
+    });
+
+    useEffect(() => {
+        const nextMembers = Array.isArray(clientMembersData) && clientMembersData.length > 0
+            ? clientMembersData
+            : Array.isArray(resolvedClient?.members)
+                ? resolvedClient.members
+                : [];
+
+        setMembers(nextMembers);
+
+        if (resolvedClient) {
+            dispatch(setSelectedClient(resolvedClient));
+        }
+    }, [clientMembersData, dispatch, resolvedClient]);
 
     const visibleMembers = useMemo(
         () =>

@@ -63,6 +63,16 @@ const filterVisibleMembers = (members = [], context) => {
   return members.filter((member) => !member?.isDeleted);
 };
 
+const getReferenceId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._id) return value._id.toString();
+  if (typeof value?.toString === "function") return value.toString();
+  return "";
+};
+
+const isSameReference = (left, right) => getReferenceId(left) === getReferenceId(right);
+
 const createMember = async (req, res, next) => {
   const logPath = "sales/SalesLog";
   const logAction = "Onboard Coworking Client Member";
@@ -348,9 +358,7 @@ const getMembersByUnit = async (req, res, next) => {
       let transformedMembers = [];
       if (members && members.length > 0) {
         const memberDetails = visibleMembers.find((member) => {
-          return (
-            member?.client?._id?.toString() === client._id.toString()
-          );
+          return isSameReference(member?.client, client?._id);
         });
         if (memberDetails) {
           transformedMembers = {
@@ -455,17 +463,18 @@ const getMemberById = async (req, res) => {
 
 const getMemberByClient = async (req, res) => {
   try {
-    const { clientId, active } = req.query;
+    const { clientId, client, active } = req.query;
+    const resolvedClientId = clientId || client;
 
-    if (!clientId) {
+    if (!resolvedClientId) {
       return res.status(400).json({ message: "clientId ID is missing" });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+    if (!mongoose.Types.ObjectId.isValid(resolvedClientId)) {
       return res.status(400).json({ message: "Invalid client ID provided" });
     }
 
-    let query = { client: clientId };
+    let query = { client: resolvedClientId };
     if (active) {
       query.isActive = active === "true" ? true : false;
     }
@@ -474,11 +483,13 @@ const getMemberByClient = async (req, res) => {
       .populate("client", "clientName service")
       .select(
         "employeeName email gender mobileNo phone dob dateOfJoining biometricStatus isActive isDeleted client unit",
-      );
+      )
+      .lean()
+      .exec();
 
     const visibleMembers = filterVisibleMembers(member, req);
 
-    if (!visibleMembers) {
+    if (!Array.isArray(visibleMembers)) {
       return res.status(404).json({ message: "Member not found" });
     }
 
