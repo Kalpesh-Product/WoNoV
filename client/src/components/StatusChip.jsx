@@ -6,6 +6,7 @@ const statusColorMap = {
   resolved: { backgroundColor: "#90EE90", color: "#006400" },
   active: { backgroundColor: "#90EE90", color: "#006400" },
   inactive: { backgroundColor: "#FF9F93", color: "#B71C1C" },
+  disabled: { backgroundColor: "#D3D3D3", color: "#666666" },
   total: { backgroundColor: "#dbe4ff", color: "#26457d" },
   open: { backgroundColor: "#FF9F93", color: "#B71C1C" },
   completed: { backgroundColor: "#D3D3D3", color: "#696969" },
@@ -39,6 +40,11 @@ const countChipStyles = {
     color: "#c24b3d",
     borderColor: "#f3b7aa",
   },
+  disabled: {
+    backgroundColor: "#ececec",
+    color: "#666666",
+    borderColor: "#d4d4d4",
+  },
 };
 
 const StatusChip = ({
@@ -55,6 +61,8 @@ const StatusChip = ({
       ? "inactive"
       : normalizedStatus === "active"
         ? "active"
+        : normalizedStatus === "disabled"
+          ? "disabled"
         : "total";
 
     const styles = countChipStyles[normalizedCountStatus];
