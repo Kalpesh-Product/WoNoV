@@ -407,18 +407,47 @@ const getCoworkingClients = async (req, res, next) => {
       return res.status(404).json({ message: "No clients or companies found" });
     }
 
-      const members = await CoworkingMembers.find({ company })
-        .populate([
-          { path: "client", select: "clientName email" },
-          { path: "unit", select: "unitName unitNo" },
-        ])
-        .lean()
+    const members = await CoworkingMembers.find({ company })
+      .populate([
+        { path: "client", select: "clientName email" },
+        { path: "unit", select: "unitName unitNo" },
+      ])
+      .lean()
       .exec();
     const visibleMembers = filterVisibleMembers(members, req);
+    const clientObjectIds = allEntities
+      .map((entity) => entity?._id)
+      .filter((entityId) => mongoose.Types.ObjectId.isValid(entityId))
+      .map((entityId) => new mongoose.Types.ObjectId(entityId));
+
+    const memberCounts = await CoworkingMembers.aggregate([
+      {
+        $match: {
+          client: { $in: clientObjectIds },
+        },
+      },
+      {
+        $group: {
+          _id: "$client",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const memberCountByClientId = memberCounts.reduce((acc, item) => {
+      const clientId = item?._id ? String(item._id) : "";
+      if (clientId) {
+        acc[clientId] = item.count || 0;
+      }
+      return acc;
+    }, {});
 
       const entitiesWithMembers = allEntities.map((entity) => {
+        const entityId = entity?._id?.toString();
+
         return {
           ...entity,
+          memberCount: entityId ? memberCountByClientId[entityId] || 0 : 0,
           members: visibleMembers.filter(
             (member) =>
               member.client &&

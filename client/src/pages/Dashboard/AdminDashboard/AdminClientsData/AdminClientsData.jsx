@@ -249,7 +249,7 @@ const AdminClientsData = () => {
                 ratePerOpenDesk: item.ratePerOpenDesk,
                 ratePerCabinDesk: item.ratePerCabinDesk,
                 members: item.members,
-                memberCount: item.members?.length || 0,
+                memberCount: item.memberCount ?? item.members?.length ?? 0,
                 annualIncrement: item.annualIncrement,
                 perDeskMeetingCredits: item.perDeskMeetingCredits,
                 totalMeetingCredits: item.totalMeetingCredits,

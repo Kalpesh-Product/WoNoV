@@ -78,15 +78,15 @@ const BiometricAccessClients = () => {
     ];
 
     const data = clientsData.map((item, index) => ({
+        ...item,
         id: index + 1,
         _id: item._id,
         clientName: item.clientName,
         localPocEmail: item.localPoc?.email || item.localPocEmail || "-",
         members: item.members || [],
-        memberCount: item.members?.length || 0,
+        memberCount: Number(item.memberCount ?? item.members?.length ?? 0),
         status: item.isActive,
         isActive: item.isActive,
-        ...item,
       }));
 
     const clientStats = useMemo(() => {
