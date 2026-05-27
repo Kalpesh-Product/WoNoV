@@ -35,15 +35,14 @@ async function executeReport({
     .map((role) => role?.roleTitle)
     .filter(Boolean);
 
-  //   return reportService({
-  //     dateFilter: filters,
-  //     departmentId: department,
-  //     departments: departments || [],
-  //     roles,
-  //     company: foundUser.company,
-  //     user: foundUser._id,
-  //   });
-  return reportService({});
+  return reportService({
+    dateFilter: filters,
+    departmentId: department,
+    departments: departments || [],
+    roles,
+    company: foundUser.company,
+    user: foundUser._id,
+  });
 }
 
 module.exports = { executeReport };

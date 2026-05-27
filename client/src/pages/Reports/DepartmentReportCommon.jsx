@@ -824,8 +824,20 @@ const DepartmentReportCommon = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    const jobId = reportJobByReportIdRef.current?.[row?._id];
-                    if (!jobId) return;
+                    const jobId =
+                      reportJobByReportIdRef.current?.[row?._id] ||
+                      row?.latestJobId ||
+                      row?.jobId ||
+                      row?.latestJob?._id;
+
+                    if (!jobId) {
+                      toast.error(
+                        "Unable to find failed job for this report. Please generate again.",
+                      );
+                      return;
+                    }
+
+                    reportJobByReportIdRef.current[row?._id] = jobId;
                     retryReportMutation.mutate({ reportId: row?._id, jobId });
                   }}
                   className="rounded bg-orange-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:bg-orange-300"

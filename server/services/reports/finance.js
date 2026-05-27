@@ -76,7 +76,7 @@ const fetchBudgetService = async ({ dateFilter, departmentId, roles }) => {
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
   const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
-  if (!departmentId.equals(FINANCE_DEPT_ID)) {
+  if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
     query.department = departmentId;
   }
 
