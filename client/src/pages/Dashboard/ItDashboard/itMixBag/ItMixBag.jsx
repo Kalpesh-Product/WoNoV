@@ -32,7 +32,10 @@ const ItMixBag = () => {
   };
 
   const filteredRoutes = routes.filter((route) => {
-    const hasPermission = !route.permission || userPermissions.includes(route.permission);
+    const hasPermission =
+      !route.permission ||
+      userPermissions.includes(route.permission) ||
+      route.title === "Biometric Access";
     const matchesSearch = route.title.toLowerCase().includes(search.toLowerCase());
     return hasPermission && matchesSearch;
   });

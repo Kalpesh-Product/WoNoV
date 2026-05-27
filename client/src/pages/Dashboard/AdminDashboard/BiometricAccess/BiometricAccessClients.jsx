@@ -87,7 +87,7 @@ const BiometricAccessClients = () => {
         status: item.isActive,
         isActive: item.isActive,
         ...item,
-    }));
+      }));
 
     const clientStats = useMemo(() => {
         const total = data.length;

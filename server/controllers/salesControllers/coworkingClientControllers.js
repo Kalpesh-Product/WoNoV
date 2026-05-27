@@ -407,25 +407,25 @@ const getCoworkingClients = async (req, res, next) => {
       return res.status(404).json({ message: "No clients or companies found" });
     }
 
-    const members = await CoworkingMembers.find({ company })
-      .populate([
-        { path: "client", select: "clientName email" },
-        { path: "unit", select: "unitName unitNo" },
-      ])
-      .lean()
+      const members = await CoworkingMembers.find({ company })
+        .populate([
+          { path: "client", select: "clientName email" },
+          { path: "unit", select: "unitName unitNo" },
+        ])
+        .lean()
       .exec();
     const visibleMembers = filterVisibleMembers(members, req);
 
-    const entitiesWithMembers = allEntities.map((entity) => {
-      return {
-        ...entity,
-        members: visibleMembers.filter(
-          (member) =>
-            member.client &&
-            member.client._id.toString() === entity._id.toString(),
-        ),
-      };
-    });
+      const entitiesWithMembers = allEntities.map((entity) => {
+        return {
+          ...entity,
+          members: visibleMembers.filter(
+            (member) =>
+              member.client &&
+              member.client._id.toString() === entity._id.toString(),
+          ),
+        };
+      });
 
     res.status(200).json(entitiesWithMembers);
   } catch (error) {

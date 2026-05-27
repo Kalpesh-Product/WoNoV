@@ -51,6 +51,13 @@ const getDateKey = (dateValue) => {
   return `${year}-${month}-${day}`;
 
 };
+const getTaskAssignedDateKey = (task) =>
+  getDateKey(task?.assignedDate || task?.dueDate || task?.createdAt);
+
+const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
+  const taskDateKey = getTaskAssignedDateKey(task);
+  return !!taskDateKey && taskDateKey <= selectedDateKey;
+};
 
 const PerformanceMemberWiseKra = () => {
   const dispatch = useDispatch();
@@ -317,7 +324,8 @@ const PerformanceMemberWiseKra = () => {
         map.get(userId)[field] += 1;
       };
 
-      const upsertManagerTeamKraCount = (field) => {
+      // const upsertManagerTeamKraCount = (field) => {
+          const upsertManagerCount = (field) => {
         const managerId = selectedDepartmentManagerId || managerRowId;
         if (!managerId) return;
         const managerName = selectedDepartmentManagerName || "Manager";
@@ -335,7 +343,8 @@ const PerformanceMemberWiseKra = () => {
       };
 
       const incrementPendingKra = (task) => {
-        const assignedDateKey = getDateKey(task?.assignedDate);
+        // const assignedDateKey = getDateKey(task?.assignedDate);
+        const assignedDateKey = getTaskAssignedDateKey(task);
         if (!assignedDateKey || assignedDateKey !== selectedDateKey) return;
 
         if (task?.status === "Completed") return;
@@ -390,19 +399,32 @@ const PerformanceMemberWiseKra = () => {
         map.get(matchedMemberId).completedKra += 1;
       };
 
-       getResponseData(kraResponse)
-        .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
-        .forEach((task) => upsert(task, "dailyKra"));
+      //  getResponseData(kraResponse)
+      //   .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
+      //   .forEach((task) => upsert(task, "dailyKra"));
+
+      // getResponseData(individualKraResponse)
+      //   .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
+      //   .forEach((task) => upsert(task, "individualDailyKra"));
+
+      // getResponseData(teamKraResponse)
+      //   .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
+      //   .forEach((task) => {
+      //     if (canManageTeam) {
+      //       upsertManagerTeamKraCount("teamDailyKra");
+         getResponseData(kraResponse)
+        .filter((task) => isTaskScheduledOnOrBeforeDate(task, selectedDateKey))
+        .forEach(() => upsertManagerCount("dailyKra"));
 
       getResponseData(individualKraResponse)
-        .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
+        .filter((task) => isTaskScheduledOnOrBeforeDate(task, selectedDateKey))
         .forEach((task) => upsert(task, "individualDailyKra"));
 
       getResponseData(teamKraResponse)
-        .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
+        .filter((task) => isTaskScheduledOnOrBeforeDate(task, selectedDateKey))
         .forEach((task) => {
           if (canManageTeam) {
-            upsertManagerTeamKraCount("teamDailyKra");
+            upsertManagerCount("teamDailyKra");
             const assigneeId = task?.assignToId?.toString?.();
             const assigneeName = normalizeName(task?.assignedTo);
             const managerName = normalizeName(loggedInUserName);
