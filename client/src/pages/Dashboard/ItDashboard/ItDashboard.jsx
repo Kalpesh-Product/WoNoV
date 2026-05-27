@@ -35,6 +35,13 @@ const ItDashboard = () => {
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const normalizeListResponse = (response) => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.tasks)) return response.tasks;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.response)) return response.response;
+    return [];
+  };
   const { data: selectedDepartments = [] } = useQuery({
     queryKey: ["it-selectedDepartments"],
     queryFn: async () => {
@@ -183,33 +190,45 @@ const ItDashboard = () => {
   //------------------------Graph round functions-------------------//
   //----------------------KPA Data-----------------------//
   const fetchDepartments = async () => {
+    if (!department?._id) {
+      return [];
+    }
+
     try {
       const response = await axios.get(
-        `api/performance/get-tasks?dept=${department?._id}&type=KPA`,
+        `/api/performance/get-tasks?dept=${department._id}&type=KPA&duration=Monthly`,
       );
-      return response.data;
+      return normalizeListResponse(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
+      return [];
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-    queryKey: ["fetchedMonthlyKPA"],
+    queryKey: ["fetchedMonthlyKPA", department?._id],
     queryFn: fetchDepartments,
+    enabled: !!department?._id,
   });
   //----------------------KPA Data-----------------------//
   //----------------------------Tasks Data-------------------------------//
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
-    queryKey: ["tasks"],
+    queryKey: ["tasks", department?._id],
     queryFn: async () => {
+      if (!department?._id) {
+        return [];
+      }
+
       try {
         const response = await axios.get(
           `/api/tasks/get-tasks?dept=${department._id}`,
         );
-        return response.data;
+        return normalizeListResponse(response.data);
       } catch (error) {
-        throw new Error("Error fetching data");
+        console.error("Error fetching data:", error);
+        return [];
       }
     },
+    enabled: !!department?._id,
   });
 
   //----------------------------Tasks Data-------------------------------//
@@ -251,17 +270,23 @@ const ItDashboard = () => {
 
   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
     useQuery({
-      queryKey: ["weeklySchedule"],
+      queryKey: ["weeklySchedule", department?._id],
       queryFn: async () => {
+        if (!department?._id) {
+          return [];
+        }
+
         try {
           const response = await axios.get(
             `/api/weekly-unit/fetch-weekly-unit/${department._id}`,
           );
           return response.data;
         } catch (error) {
-          throw new Error("Error fetching data");
+          console.error("Error fetching data:", error);
+          return [];
         }
       },
+      enabled: !!department?._id,
     });
 
   const { data: tickets = [], isLoading: isTicketsLoading } = useQuery({
@@ -896,6 +921,14 @@ const ItDashboard = () => {
     };
   });
 
+  const dueTasksThisMonthCount = useMemo(() => {
+    const currentMonth = dayjs();
+
+    return (Array.isArray(tasks) ? tasks : []).filter((task) =>
+      task?.dueDate ? dayjs(task.dueDate).isSame(currentMonth, "month") : false,
+    ).length;
+  }, [tasks]);
+
   //--------------------ACCESS CONFIG-------------------------//
   const yearlyGraphConfig = [
     {
@@ -930,7 +963,7 @@ const ItDashboard = () => {
     {
       key: PERMISSIONS.IT_DUE_TASKS_THIS_MONTH.value,
       title: "Total",
-      data: tasks.length || 0,
+      data: dueTasksThisMonthCount,
       description: "Due Tasks This Month",
       route: "/app/tasks/department-tasks",
     },

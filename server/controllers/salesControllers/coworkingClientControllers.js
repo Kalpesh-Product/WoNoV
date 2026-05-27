@@ -18,6 +18,55 @@ const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const TestCoworkingClient = require("../../models/sales/TestCoworkingClient");
 const { normalizeClientName } = require("../../utils/dataSheetFormatters");
 
+const DELETED_MEMBER_VIEW_ROLES = new Set([
+  "master admin",
+  "super admin",
+]);
+
+const normalizeRoleValue = (value) =>
+  String(value || "").trim().toLowerCase();
+
+const getUserRoleTitles = (context) =>
+  (Array.isArray(context?.roles) ? context.roles : [])
+    .map((role) => normalizeRoleValue(role?.roleTitle || role))
+    .filter(Boolean);
+
+const getUserDepartmentNames = (context) =>
+  (Array.isArray(context?.departments) ? context.departments : [])
+    .map((department) =>
+      normalizeRoleValue(department?.name || department?.departmentName || department),
+    )
+    .filter(Boolean);
+
+const canViewDeletedMembers = (context) => {
+  const roleTitles = getUserRoleTitles(context);
+  const departmentNames = getUserDepartmentNames(context);
+
+  if (
+    roleTitles.some((roleTitle) => DELETED_MEMBER_VIEW_ROLES.has(roleTitle))
+  ) {
+    return true;
+  }
+
+  return (
+    roleTitles.some((roleTitle) =>
+      roleTitle.includes("air tech department") || roleTitle.includes("air tech"),
+    ) ||
+    departmentNames.some((departmentName) =>
+      departmentName.includes("air tech department") ||
+      departmentName.includes("air tech"),
+    )
+  );
+};
+
+const filterVisibleMembers = (members = [], context) => {
+  if (canViewDeletedMembers(context)) {
+    return members;
+  }
+
+  return members.filter((member) => !member?.isDeleted);
+};
+
 const createCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
   const logAction = "Onboard CoworkingClient";
@@ -358,18 +407,19 @@ const getCoworkingClients = async (req, res, next) => {
       return res.status(404).json({ message: "No clients or companies found" });
     }
 
-    const members = await CoworkingMembers.find()
+    const members = await CoworkingMembers.find({ company })
       .populate([
         { path: "client", select: "clientName email" },
         { path: "unit", select: "unitName unitNo" },
       ])
       .lean()
       .exec();
+    const visibleMembers = filterVisibleMembers(members, req);
 
     const entitiesWithMembers = allEntities.map((entity) => {
       return {
         ...entity,
-        members: members.filter(
+        members: visibleMembers.filter(
           (member) =>
             member.client &&
             member.client._id.toString() === entity._id.toString(),
