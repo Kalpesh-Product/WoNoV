@@ -420,11 +420,18 @@ const getCoworkingClients = async (req, res, next) => {
       .filter((entityId) => mongoose.Types.ObjectId.isValid(entityId))
       .map((entityId) => new mongoose.Types.ObjectId(entityId));
 
+    const shouldIncludeDeletedMembers = canViewDeletedMembers(req);
+    const memberMatchStage = {
+      client: { $in: clientObjectIds },
+    };
+
+    if (!shouldIncludeDeletedMembers) {
+      memberMatchStage.isDeleted = { $ne: true };
+    }
+
     const memberCounts = await CoworkingMembers.aggregate([
       {
-        $match: {
-          client: { $in: clientObjectIds },
-        },
+        $match: memberMatchStage,
       },
       {
         $group: {

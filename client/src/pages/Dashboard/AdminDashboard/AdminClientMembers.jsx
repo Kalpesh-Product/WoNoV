@@ -32,6 +32,21 @@ const normalizeBiometricStatus = (status) =>
       ? "Revoke"
       : "Pending";
 const normalizeValue = (value) => String(value || "").trim().toLowerCase();
+const getCurrentMemberId = (member) => member?._id || member?.id || member?.employeeName;
+const getNextMembersAfterDelete = (members = [], memberId, preserveDeleted) =>
+  preserveDeleted
+    ? members.map((member) =>
+        getCurrentMemberId(member) === memberId
+          ? {
+              ...member,
+              isDeleted: true,
+              isActive: false,
+              status: false,
+              biometricStatus: "Revoke",
+            }
+          : member,
+      )
+    : members.filter((member) => getCurrentMemberId(member) !== memberId);
 const getRoleTitles = (user) =>
   (Array.isArray(user?.role) ? user.role : [])
     .map((role) => normalizeValue(role?.roleTitle || role))
@@ -303,39 +318,35 @@ const AdminClientMembers = () => {
       return response.data;
     },
     onSuccess: (response, memberId) => {
-      setMembers((prev) =>
-        canViewDisabledMembers
-          ? prev.map((member) =>
-              getMemberId(member) === memberId
-                ? {
-                    ...member,
-                    isDeleted: true,
-                    isActive: false,
-                    status: false,
-                    biometricStatus: "Revoke",
-                  }
-                : member,
-            )
-          : prev.filter((member) => getMemberId(member) !== memberId),
+      const updatedMembers = getNextMembersAfterDelete(
+        members,
+        memberId,
+        canViewDisabledMembers,
       );
-      const updatedMembers = canViewDisabledMembers
-        ? members.map((member) =>
-            getMemberId(member) === memberId
-              ? {
-                  ...member,
-                  isDeleted: true,
-                  isActive: false,
-                  status: false,
-                  biometricStatus: "Revoke",
-                }
-              : member,
-          )
-        : members.filter((member) => getMemberId(member) !== memberId);
+
+      setMembers(updatedMembers);
       dispatch(
         setSelectedClient({
           ...selectedClient,
           members: updatedMembers,
         }),
+      );
+      queryClient.setQueryData(
+        ["selectedCoWorkingClient", clientName, selectedClient?._id, selectedClient?.clientName],
+        (current) =>
+          current
+            ? {
+                ...current,
+                members: updatedMembers,
+                memberCount: canViewDisabledMembers
+                  ? updatedMembers.length
+                  : updatedMembers.length,
+              }
+            : current,
+      );
+      queryClient.setQueryData(
+        ["selectedCoWorkingClientMembers", resolvedClient?._id, resolvedClient?.clientName],
+        updatedMembers,
       );
       queryClient.invalidateQueries({ queryKey: ["clientsData"] });
       queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
