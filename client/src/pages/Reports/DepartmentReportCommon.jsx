@@ -815,7 +815,7 @@ const DepartmentReportCommon = () => {
                 Regenerate
               </button>
             ) : null}
-            {status === "failed" || hasCooldown ? (
+            {/* {status === "failed" || hasCooldown ? (
               hasCooldown ? (
                 <span className="rounded bg-orange-100 px-3 py-1 text-sm text-orange-700">
                   {retryLabel}
@@ -846,9 +846,9 @@ const DepartmentReportCommon = () => {
                   {retryReportMutation.isPending ? "Retrying..." : retryLabel}
                 </button>
               )
-            ) : null}
+            ) : null} */}
 
-            {isGenerating ? (
+            {/* {isGenerating ? (
               <button
                 type="button"
                 onClick={() => {
@@ -869,7 +869,7 @@ const DepartmentReportCommon = () => {
               >
                 {isCancelling ? "Cancelling..." : "Cancel"}
               </button>
-            ) : null}
+            ) : null} */}
           </div>
         );
       },
