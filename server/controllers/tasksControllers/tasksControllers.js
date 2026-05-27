@@ -1,3 +1,4 @@
+const { fetchDeptTaskReportService } = require("../../services/reports/task");
 const { default: mongoose } = require("mongoose");
 const User = require("../../models/hr/UserData");
 const Task = require("../../models/tasks/Task");
@@ -278,7 +279,7 @@ const updateTaskStatus = async (req, res, next) => {
     }
 
     const currDate = new Date();
-     const updatedTask = await Task.findOneAndUpdate(
+    const updatedTask = await Task.findOneAndUpdate(
       { _id: id, company, isDeleted: { $ne: true } },
       { status: "Completed", completedBy: user, completedDate: currDate },
       { new: true, runValidators: true },
@@ -351,7 +352,7 @@ const updateTask = async (req, res, next) => {
 
     if (taskName !== undefined) updates.taskName = taskName;
     if (description !== undefined) updates.description = description;
-     if (startDate !== undefined) {
+    if (startDate !== undefined) {
       const parsedAssignedDate = new Date(startDate);
       if (isNaN(parsedAssignedDate.getTime())) {
         throw new CustomError(
@@ -410,7 +411,7 @@ const updateTask = async (req, res, next) => {
       }
       updates.assignedTo = assignees;
     }
-     if (assignTo !== undefined) {
+    if (assignTo !== undefined) {
       const existingUsers = await validateUsers([assignTo]);
       if (existingUsers.length !== 1) {
         throw new CustomError(
@@ -463,7 +464,7 @@ const updateTask = async (req, res, next) => {
     const updatedTask = await Task.findByIdAndUpdate(
       id,
       { $set: updates },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedTask) {
@@ -540,149 +541,30 @@ const getAllTasks = async (req, res, next) => {
   }
 };
 
-const getTasks = async (req, res, next) => {
-  try {
-    const { company } = req;
-    const { dept } = req.query;
-   const query = { company, isDeleted: { $ne: true } };
+async function getTasks(req, res) {
+  const payload = await fetchDeptTaskReportService({
+    departmentId: req.body?.department,
+    departments: req.body?.departments || req?.departments || [],
+    roles: req?.roles || [],
+    company: req?.company || null,
+    user: req?.user || null,
+    query: req?.query,
+  });
 
-    // const team = await UserData.find({});
+  return res.status(200).json(payload);
+}
 
-    if (dept) {
-      // const admins = await User.aggregate([
-      //   {
-      //     $match: {
-      //       departments: { $in: [new mongoose.Types.ObjectId(dept)] },
-      //     },
-      //   },
-      //   {
-      //     $unwind: "$role", // Unwind role array
-      //   },
-      //   {
-      //     $lookup: {
-      //       from: "roles",
-      //       localField: "role",
-      //       foreignField: "_id",
-      //       as: "roleInfo",
-      //     },
-      //   },
-      //   {
-      //     $unwind: "$roleInfo",
-      //   },
-      //   {
-      //     $match: {
-      //       "roleInfo.roleTitle": {
-      //         $regex: /Admin$/,
-      //         $options: "i",
-      //       },
-      //     },
-      //   },
-      //   {
-      //     $project: { _id: 1 }, // Only need user IDs
-      //   },
-      // ]);
+const getMyTasks = async (req, res) => {
+  const payload = await fetchDeptTaskReportService({
+    departmentId: req.body?.department,
+    departments: req.body?.departments || req?.departments || [],
+    roles: req?.roles || [],
+    company: req?.company || null,
+    user: req?.user || null,
+    query: req?.query,
+  });
 
-      // const adminIds = admins.map((admin) => admin._id);
-
-      query.department = dept;
-      query.status = "Pending";
-      query.taskType = "Department";
-      // query.assignedBy = { $in: adminIds };
-    }
-
-    const tasks = await Task.find(query)
-      .populate("department", "name")
-      .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
-      .populate("completedBy", "firstName lastName")
-      .populate({ path: "location", select: "unitNo unitName" })
-      .populate({
-        path: "location",
-        select: "unitName unitNo",
-        populate: { path: "building", select: "buildingName" },
-      })
-      .select("-company")
-      .lean();
-
-    const transformedTasks = tasks.map((task) => {
-      const completedBy = task.completedBy
-        ? [
-            task.completedBy.firstName,
-            task.completedBy.middleName,
-            task.completedBy.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        : "";
-
-      return {
-        ...task,
-        department: task.department.name,
-        dueDate: task.dueDate,
-        dueTime: task.dueTime ? task.dueTime : null,
-        assignedDate: task.assignedDate,
-        completedBy,
-      };
-    });
-
-    return res.status(200).json(transformedTasks);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getMyTasks = async (req, res, next) => {
-  try {
-    const { user, company } = req;
-    const { flag } = req.query;
-    const query = {
-      company,
-      assignedBy: user,
-      taskType: "Self",
-      isDeleted: { $ne: true },
-    };
-
-    if (flag === "pending") {
-      query.status = "Pending";
-    }
-
-    const tasks = await Task.find(query)
-      .populate("department", "name")
-      .populate("assignedBy", "firstName lastName")
-      .populate("completedBy", "firstName lastName")
-      .populate({ path: "location", select: "unitNo unitName" })
-      .populate({
-        path: "location",
-        select: "unitName unitNo",
-        populate: { path: "building", select: "buildingName" },
-      })
-      .select("-company")
-      .lean();
-
-    const transformedTasks = tasks.map((task) => {
-      const completedBy = task.completedBy
-        ? [
-            task.completedBy.firstName,
-            task.completedBy.middleName,
-            task.completedBy.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        : "";
-
-      return {
-        ...task,
-        dueDate: task.dueDate,
-        dueTime: task.dueTime ? task.dueTime : null,
-        assignedDate: task.assignedDate,
-        completedBy,
-      };
-    });
-
-    return res.status(200).json(transformedTasks);
-  } catch (error) {
-    next(error);
-  }
+  return res.status(200).json(payload);
 };
 
 const getMyAssignedTasks = async (req, res, next) => {
@@ -698,7 +580,11 @@ const getMyAssignedTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
-      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
+      .populate({
+        path: "location",
+        select: "unitName unitNo",
+        populate: { path: "building", select: "buildingName" },
+      })
       .select("-company")
       .lean();
 
@@ -741,7 +627,11 @@ const getCompletedTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
-       .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
+      .populate({
+        path: "location",
+        select: "unitName unitNo",
+        populate: { path: "building", select: "buildingName" },
+      })
       .select("-company")
       .lean();
 
@@ -791,7 +681,11 @@ const getMyCompletedTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
-      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
+      .populate({
+        path: "location",
+        select: "unitName unitNo",
+        populate: { path: "building", select: "buildingName" },
+      })
       .select("-company")
       .lean();
 
@@ -849,7 +743,11 @@ const getMyTodayTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
-      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
+      .populate({
+        path: "location",
+        select: "unitName unitNo",
+        populate: { path: "building", select: "buildingName" },
+      })
       .select("-company")
       .lean();
 
@@ -880,7 +778,7 @@ const getMyTodayTasks = async (req, res, next) => {
         completedBy,
       };
     });
-    console.log("transformedTasks:", transformedTasks);
+
     return res.status(200).json(transformedTasks);
   } catch (error) {
     next(error);
@@ -913,7 +811,11 @@ const getTodayDeptTasks = async (req, res, next) => {
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
-      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
+      .populate({
+        path: "location",
+        select: "unitName unitNo",
+        populate: { path: "building", select: "buildingName" },
+      })
       .select("-company")
       .lean();
 
@@ -1122,7 +1024,11 @@ const getAssignedTasks = async (req, res, next) => {
     })
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
-      .populate({ path: "location", select: "unitName unitNo", populate: { path: "building", select: "buildingName" } })
+      .populate({
+        path: "location",
+        select: "unitName unitNo",
+        populate: { path: "building", select: "buildingName" },
+      })
       .select("-company")
       .lean();
 
@@ -1183,12 +1089,12 @@ const completeTasks = async (req, res, next) => {
     }
 
     await Task.updateMany(
-     { _id: { $in: taskIds }, company, isDeleted: { $ne: true } },
+      { _id: { $in: taskIds }, company, isDeleted: { $ne: true } },
       { status: "Completed" },
     );
 
     // Step 3: Fetch updated tasks
-     const updatedTasks = await Task.find({
+    const updatedTasks = await Task.find({
       _id: { $in: taskIds },
       company,
       isDeleted: { $ne: true },
@@ -1244,7 +1150,7 @@ const deleteTask = async (req, res, next) => {
         "Task ID must be provided",
         logPath,
         logAction,
-         logSourceKey,
+        logSourceKey,
       );
     }
 
@@ -1257,12 +1163,11 @@ const deleteTask = async (req, res, next) => {
       );
     }
 
-      const deletedTask = await Task.findOneAndUpdate(
+    const deletedTask = await Task.findOneAndUpdate(
       { _id: id, company, isDeleted: { $ne: true } },
       { isDeleted: true },
       { new: true, runValidators: true },
     );
-
 
     if (!deletedTask) {
       throw new CustomError(

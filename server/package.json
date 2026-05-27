@@ -7,7 +7,11 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "structure": "node generateStructure.js > structure.txt",
-    "migrate:externalvisits": "node scripts/migrateExternalVisits.js"
+    "migrate:externalvisits": "node scripts/migrateExternalVisits.js",
+    "start:worker": "node workers/index.js",
+    "dev:api": "nodemon server.js",
+    "dev:worker": "nodemon workers/index.js",
+    "scaffold:report": "node scripts/scaffoldReportAutomation.js"
   },
   "keywords": [],
   "author": "",
@@ -15,8 +19,11 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1015.0",
+    "@bull-board/api": "^7.0.0",
+    "@bull-board/express": "^7.0.0",
     "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
+    "bullmq": "^5.76.6",
     "cloudinary": "^2.5.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

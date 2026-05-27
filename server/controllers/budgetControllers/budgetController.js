@@ -16,6 +16,7 @@ const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const emitter = require("../../utils/eventEmitter");
 const { parseAmount } = require("../../utils/parseAmount");
+const { fetchBudgetVoucherService } = require("../../services/reports/finance");
 
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
@@ -444,54 +445,73 @@ const updateBudget = async (req, res, next) => {
   }
 };
 
+// const fetchBudget = async (req, res, next) => {
+//   try {
+//     const { departmentId } = req.query;
+//     const { user } = req;
+
+//     const foundUser = await User.findOne({ _id: user })
+//       .select("company")
+//       .populate([{ path: "company", select: "companyName" }])
+//       .lean()
+//       .exec();
+
+//     if (!foundUser) {
+//       return res.status(400).json({ message: "No user found" });
+//     }
+
+//     const query = { company: foundUser.company };
+//     if (departmentId) {
+//       query.department = departmentId;
+//     }
+
+//     const budgets = await Budget.find(query)
+//       .populate([
+//         { path: "department", select: "name" },
+//         { path: "unit", populate: { path: "building", model: "Building" } },
+//       ])
+//       .lean()
+//       .exec();
+
+//     const allBudgets = budgets.map((budget) => {
+//       let particularsTotalAmount = 0;
+//       if (budget?.particulars && budget.particulars.length > 0) {
+//         particularsTotalAmount = budget.particulars.reduce(
+//           (acc, curr) => acc + curr.particularAmount,
+//           0,
+//         );
+//         return {
+//           ...budget,
+//           projectedAmount: particularsTotalAmount,
+//         };
+//       }
+//       return {
+//         ...budget,
+//       };
+//     });
+
+//     res.status(200).json({ allBudgets });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const fetchBudget = async (req, res, next) => {
   try {
     const { departmentId } = req.query;
     const { user } = req;
 
-    const foundUser = await User.findOne({ _id: user })
-      .select("company")
-      .populate([{ path: "company", select: "companyName" }])
-      .lean()
-      .exec();
-
-    if (!foundUser) {
-      return res.status(400).json({ message: "No user found" });
-    }
-
-    const query = { company: foundUser.company };
-    if (departmentId) {
-      query.department = departmentId;
-    }
-
-    const budgets = await Budget.find(query)
-      .populate([
-        { path: "department", select: "name" },
-        { path: "unit", populate: { path: "building", model: "Building" } },
-      ])
-      .lean()
-      .exec();
-
-    const allBudgets = budgets.map((budget) => {
-      let particularsTotalAmount = 0;
-      if (budget?.particulars && budget.particulars.length > 0) {
-        particularsTotalAmount = budget.particulars.reduce(
-          (acc, curr) => acc + curr.particularAmount,
-          0,
-        );
-        return {
-          ...budget,
-          projectedAmount: particularsTotalAmount,
-        };
-      }
-      return {
-        ...budget,
-      };
+    const result = await fetchBudgetVoucherService({
+      userId: user,
+      departmentId,
     });
 
-    res.status(200).json({ allBudgets });
+    return res.status(200).json(result);
   } catch (error) {
-    next(error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    return next(error);
   }
 };
 

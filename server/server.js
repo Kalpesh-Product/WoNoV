@@ -46,9 +46,12 @@ const weeklyUnitRoutes = require("./routes/weeklyUnitRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const agreementRoutes = require("./routes/agreementRoutes");
 const logRoutes = require("./routes/logRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 const auditLogger = require("./middlewares/auditLogger");
 const CoworkingRevenue = require("./models/sales/CoworkingRevenue");
 const CoworkingClient = require("./models/sales/CoworkingClient");
+const bullBoardAdapter = require("./queues/bullBoard");
+require("./queues/queueEvents");
 require("./listeners/logEventListener");
 const app = express();
 const PORT = process.env.PORT || 5009;
@@ -72,6 +75,8 @@ app.get("/", (req, res) => {
     res.type("text").status(200).send("Welcome to the client API");
   }
 });
+
+require("./models/registerModels");
 
 app.use("/api/auth", auditLogger, authRoutes);
 
@@ -113,8 +118,9 @@ app.use("/api/inventory", verifyJwt, auditLogger, inventoryRoutes);
 app.use("/api/administration", verifyJwt, auditLogger, administrationRoutes);
 app.use("/api/finance", verifyJwt, auditLogger, financeRoutes);
 app.use("/api/weekly-unit", verifyJwt, auditLogger, weeklyUnitRoutes);
+app.use("/api/reports", verifyJwt, auditLogger, reportRoutes);
 app.use("/api/logs", verifyJwt, logRoutes);
-
+app.use("/admin/queues", bullBoardAdapter.getRouter());
 app.all("*", (req, res) => {
   if (req.accepts("html")) {
     res.status(404).sendFile(path.join(__dirname, "views", "404.html"));

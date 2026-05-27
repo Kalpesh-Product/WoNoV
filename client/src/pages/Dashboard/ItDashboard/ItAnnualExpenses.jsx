@@ -119,7 +119,8 @@ const ItAnnualExpenses = () => {
           search={true}
           searchColumn={"Asset Number"}
           tableTitle={"Annual Expenses"}
-          data={[]}
+          exportData
+          data={expenseData}
           columns={expenseColumns}
         />
       </PageFrame>

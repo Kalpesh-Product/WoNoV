@@ -1,3 +1,4 @@
+const { fetchAssetReportService } = require("../../services/reports/asset");
 const Asset = require("../../models/assets/Assets");
 const User = require("../../models/hr/UserData");
 const Company = require("../../models/hr/Company");
@@ -86,111 +87,124 @@ const getAssetsWithDepartments = async (req, res, next) => {
   }
 };
 
-const getAssets = async (req, res, next) => {
-  try {
-    const userId = req.user;
-    const user = await User.findById(userId)
-      .populate("departments")
-      .lean()
-      .exec();
+async function getAssets(req, res) {
+  const payload = await fetchAssetReportService({
+    departmentId: req.body?.department,
+    departments: req.departments || [],
+    roles: req?.roles || [],
+    company: req?.company || null,
+    user: req?.user || null,
+    query: req?.query || {},
+  });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+  return res.status(200).json(payload);
+}
 
-    const userDepartments = req.departments || user.departments || [];
+// const getAssets = async (req, res, next) => {
+//   try {
+//     const userId = req.user;
+//     const user = await User.findById(userId)
+//       .populate("departments")
+//       .lean()
+//       .exec();
 
-    const isTopManagement = userDepartments.some(
-      (dept) => dept.name === "Top Management",
-    );
-    const userDepartmentIds = userDepartments.map((dept) => dept._id);
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
 
-    const companyId = user.company;
-    let { assigned, departmentId, vendorId, sortBy, order } = req.query;
+//     const userDepartments = req.departments || user.departments || [];
 
-    const departments = await Department.find({ isActive: true }).lean().exec();
+//     const isTopManagement = userDepartments.some(
+//       (dept) => dept.name === "Top Management",
+//     );
+//     const userDepartmentIds = userDepartments.map((dept) => dept._id);
 
-    const assetFilter = {
-      company: companyId,
-    };
+//     const companyId = user.company;
+//     let { assigned, departmentId, vendorId, sortBy, order } = req.query;
 
-    if (!isTopManagement) assetFilter.department = { $in: userDepartmentIds };
+//     const departments = await Department.find({ isActive: true }).lean().exec();
 
-    if (departmentId) assetFilter.department = departmentId;
+//     const assetFilter = {
+//       company: companyId,
+//     };
 
-    if (vendorId) assetFilter.vendor = vendorId;
-    if (assigned === "true") assetFilter.assignedTo = { $ne: null };
-    else if (assigned === "false") assetFilter.assignedTo = null;
+//     if (!isTopManagement) assetFilter.department = { $in: userDepartmentIds };
 
-    const sortField = sortBy || "purchaseDate";
-    const sortOrder = order === "desc" ? -1 : 1;
+//     if (departmentId) assetFilter.department = departmentId;
 
-    const assets = await Asset.find(assetFilter)
-      .populate([
-        { path: "department", select: "name" },
-        { path: "vendor", populate: { path: "departmentId", select: "name" } },
-        {
-          path: "subCategory",
-          select: "subCategoryName category",
-          populate: { path: "category", select: "categoryName" },
-        },
-        {
-          path: "location",
-          select: "unitNo unitName",
-          populate: { path: "building", select: "buildingName" },
-        },
-      ])
+//     if (vendorId) assetFilter.vendor = vendorId;
+//     if (assigned === "true") assetFilter.assignedTo = { $ne: null };
+//     else if (assigned === "false") assetFilter.assignedTo = null;
 
-      .select("-company")
-      .sort({ [sortField]: sortOrder });
+//     const sortField = sortBy || "purchaseDate";
+//     const sortOrder = order === "desc" ? -1 : 1;
 
-    const assetIds = assets.map((asset) => asset._id);
-    const pendingRequests = await AssignAsset.find({
-      asset: { $in: assetIds },
-      status: "Pending",
-    })
-      .select("asset")
-      .lean()
-      .exec();
+//     const assets = await Asset.find(assetFilter)
+//       .populate([
+//         { path: "department", select: "name" },
+//         { path: "vendor", populate: { path: "departmentId", select: "name" } },
+//         {
+//           path: "subCategory",
+//           select: "subCategoryName category",
+//           populate: { path: "category", select: "categoryName" },
+//         },
+//         {
+//           path: "location",
+//           select: "unitNo unitName",
+//           populate: { path: "building", select: "buildingName" },
+//         },
+//       ])
 
-    const pendingAssetIds = new Set(
-      pendingRequests.map((request) => request.asset?.toString()),
-    );
+//       .select("-company")
+//       .sort({ [sortField]: sortOrder });
 
-    const assetsWithAssignmentState = assets.map((asset) => {
-      const parsedAsset = asset.toObject();
-      parsedAsset.assignmentState = pendingAssetIds.has(asset._id.toString())
-        ? "Pending"
-        : asset.isAssigned
-          ? "Assigned"
-          : "Available";
-      return parsedAsset;
-    });
+//     const assetIds = assets.map((asset) => asset._id);
+//     const pendingRequests = await AssignAsset.find({
+//       asset: { $in: assetIds },
+//       status: "Pending",
+//     })
+//       .select("asset")
+//       .lean()
+//       .exec();
 
-    // Group assets by department ID
-    const assetMap = {};
-    for (const asset of assetsWithAssignmentState) {
-      const deptId = asset.department?._id?.toString();
-      if (!assetMap[deptId]) assetMap[deptId] = [];
-      assetMap[deptId].push(asset);
-    }
+//     const pendingAssetIds = new Set(
+//       pendingRequests.map((request) => request.asset?.toString()),
+//     );
 
-    // Combine with departments, include empty ones
-    const result = (
-      departmentId
-        ? departments.filter((dept) => dept._id.toString() === departmentId)
-        : departments
-    ).map((dept) => ({
-      departmentId: dept._id.toString(),
-      departmentName: dept.name,
-      assets: assetMap[dept._id.toString()] || [],
-    }));
+//     const assetsWithAssignmentState = assets.map((asset) => {
+//       const parsedAsset = asset.toObject();
+//       parsedAsset.assignmentState = pendingAssetIds.has(asset._id.toString())
+//         ? "Pending"
+//         : asset.isAssigned
+//           ? "Assigned"
+//           : "Available";
+//       return parsedAsset;
+//     });
 
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
+//     // Group assets by department ID
+//     const assetMap = {};
+//     for (const asset of assetsWithAssignmentState) {
+//       const deptId = asset.department?._id?.toString();
+//       if (!assetMap[deptId]) assetMap[deptId] = [];
+//       assetMap[deptId].push(asset);
+//     }
+
+//     // Combine with departments, include empty ones
+//     const result = (
+//       departmentId
+//         ? departments.filter((dept) => dept._id.toString() === departmentId)
+//         : departments
+//     ).map((dept) => ({
+//       departmentId: dept._id.toString(),
+//       departmentName: dept.name,
+//       assets: assetMap[dept._id.toString()] || [],
+//     }));
+
+//     res.status(200).json(result);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 const addAsset = async (req, res, next) => {
   const logPath = "assets/AssetLog";

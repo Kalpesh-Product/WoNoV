@@ -76,6 +76,7 @@ const {
   bulkInsertCoworkingMembers,
   updateCoworkingMember,
   updateMemberStatus,
+  softDeleteCoworkingMember,
   bulkUpdateCoworkingMembers,
 } = require("../controllers/salesControllers/coworkingMemberControllers");
 const {
@@ -120,6 +121,7 @@ router.post(
 router.post("/onboard-co-working-member", createMember);
 router.patch("/co-working-member/:memberId", updateCoworkingMember);
 router.patch("/co-working-member/:memberId/status", updateMemberStatus);
+router.delete("/co-working-member/:memberId", softDeleteCoworkingMember);
 router.get("/co-working-members", getMembersByUnit);
 router.get("/co-working-client-members", getMemberByClient);
 router.post(

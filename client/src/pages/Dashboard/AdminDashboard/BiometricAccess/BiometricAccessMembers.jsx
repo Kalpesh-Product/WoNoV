@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Chip, MenuItem, TextField } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -15,6 +15,35 @@ import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import StatusChip from "../../../../components/StatusChip";
+import useAuth from "../../../../hooks/useAuth";
+
+const normalizeValue = (value) => String(value || "").trim().toLowerCase();
+const getRoleTitles = (user) =>
+    (Array.isArray(user?.role) ? user.role : [])
+        .map((role) => normalizeValue(role?.roleTitle || role))
+        .filter(Boolean);
+const getDepartmentNames = (user) =>
+    (Array.isArray(user?.departments) ? user.departments : [])
+        .map((department) => normalizeValue(department?.name || department?.departmentName || department))
+        .filter(Boolean);
+const canViewDeletedMembers = (user) => {
+    const roleTitles = getRoleTitles(user);
+    const departmentNames = getDepartmentNames(user);
+
+    if (roleTitles.some((role) => ["master admin", "super admin"].includes(role))) {
+        return true;
+    }
+
+    return (
+        roleTitles.some((roleTitle) =>
+            roleTitle.includes("air tech department") || roleTitle.includes("air tech"),
+        ) ||
+        departmentNames.some((departmentName) =>
+            departmentName.includes("air tech department") ||
+            departmentName.includes("air tech"),
+        )
+    );
+};
 
 const BIOMETRIC_OPTIONS = ["Pending", "Approved", "Revoke"];
 
@@ -28,13 +57,19 @@ const normalizeBiometricStatus = (status) =>
 
 const BiometricAccessMembers = () => {
     const axios = useAxiosPrivate();
+    const queryClient = useQueryClient();
     const dispatch = useDispatch();
+    const { auth } = useAuth();
     const location = useLocation();
     const { clientName } = useParams();
     const selectedClient = useSelector((state) => state.client.selectedClient);
     const [members, setMembers] = useState([]);
     const [openEditModal, setOpenEditModal] = useState(false);
     const [selectedMemberId, setSelectedMemberId] = useState(null);
+    const canViewDisabledMembers = useMemo(
+        () => canViewDeletedMembers(auth?.user),
+        [auth?.user],
+    );
 
     const isItDashboard = location.pathname.includes("/IT-dashboard/");
     const canEditAllFields = !isItDashboard;
@@ -73,13 +108,22 @@ const BiometricAccessMembers = () => {
             .toLowerCase();
 
         const client =
-            normalizedSelectedName === normalizedRouteName ? selectedClient : clientData;
+            clientData ||
+            (normalizedSelectedName === normalizedRouteName ? selectedClient : null);
 
         if (client) {
             dispatch(setSelectedClient(client));
             setMembers(client.members || []);
         }
     }, [clientData, decodedClientName, dispatch, selectedClient]);
+
+    const visibleMembers = useMemo(
+        () =>
+            canViewDisabledMembers
+                ? members
+                : members.filter((member) => !member?.isDeleted),
+        [canViewDisabledMembers, members],
+    );
 
     const handleEditMember = (member) => {
         setSelectedMemberId(getMemberId(member));
@@ -100,21 +144,41 @@ const BiometricAccessMembers = () => {
             return response.data;
         },
         onSuccess: (response, variables) => {
-            const updatedMember = response?.data;
-            setMembers((prev) =>
-                prev.map((member) =>
+            let updatedMembers = [];
+
+            setMembers((prev) => {
+                updatedMembers = prev.map((member) =>
                     getMemberId(member) === variables.memberId
                        ? {
                             ...member,
-                            isActive: variables.isActive,
-                            status: variables.isActive ? "Active" : "Inactive",
+                            isDeleted: Boolean(member?.isDeleted),
+                            isActive: member?.isDeleted ? false : variables.isActive,
+                            status: member?.isDeleted
+                                ? false
+                                : variables.isActive
+                                    ? "Active"
+                                    : "Inactive",
                             biometricStatus: normalizeBiometricStatus(
                                 response?.data?.biometricStatus,
                             ),
                         }
                         : member,
-                ),
+                );
+
+                return updatedMembers;
+            });
+
+            dispatch(
+                setSelectedClient({
+                    ...selectedClient,
+                    members: updatedMembers,
+                }),
             );
+            queryClient.invalidateQueries({ queryKey: ["clientsData"] });
+            queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
+            queryClient.invalidateQueries({ queryKey: ["biometricAccessClientsData"] });
+            queryClient.invalidateQueries({ queryKey: ["biometricAccessClient"] });
+            queryClient.invalidateQueries({ queryKey: ["selectedCoWorkingClient"] });
             toast.success(response?.message || "Member details updated successfully");
             setOpenEditModal(false);
             setSelectedMemberId(null);
@@ -130,13 +194,36 @@ const BiometricAccessMembers = () => {
             return response.data;
         },
         onSuccess: (response, variables) => {
-            setMembers((prev) =>
-                prev.map((member) =>
+            let updatedMembers = [];
+
+            setMembers((prev) => {
+                updatedMembers = prev.map((member) =>
                     getMemberId(member) === variables.memberId
-                        ? { ...member, isActive: variables.isActive, status: variables.isActive ? "Active" : "Inactive" }
+                        ? {
+                            ...member,
+                            isActive: variables.isActive,
+                            status: variables.isActive ? "Active" : "Inactive",
+                            biometricStatus: normalizeBiometricStatus(
+                                response?.data?.biometricStatus,
+                            ),
+                        }
                         : member,
-                ),
+                );
+
+                return updatedMembers;
+            });
+
+            dispatch(
+                setSelectedClient({
+                    ...selectedClient,
+                    members: updatedMembers,
+                }),
             );
+            queryClient.invalidateQueries({ queryKey: ["clientsData"] });
+            queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
+            queryClient.invalidateQueries({ queryKey: ["biometricAccessClientsData"] });
+            queryClient.invalidateQueries({ queryKey: ["biometricAccessClient"] });
+            queryClient.invalidateQueries({ queryKey: ["selectedCoWorkingClient"] });
             toast.success(response?.message || "Member status updated successfully");
         },
         onError: (error) => {
@@ -151,6 +238,11 @@ const BiometricAccessMembers = () => {
 
         if (!selectedMember || !selectedMemberId) {
             toast.error("Unable to find selected member");
+            return;
+        }
+
+        if (selectedMember?.isDeleted) {
+            toast.error("Deleted member cannot be edited");
             return;
         }
 
@@ -194,29 +286,40 @@ const BiometricAccessMembers = () => {
         const currentStatus =
             typeof member?.isActive === "boolean" ? member.isActive : member?.status === "Active";
 
+        if (member?.isDeleted) {
+            toast.error("Deleted member status cannot be changed");
+            return;
+        }
+
         updateMemberStatus({ memberId, isActive: !currentStatus });
     };
 
     const memberData = useMemo(
         () =>
-            members.map((item, index) => ({
+            visibleMembers.map((item, index) => ({
                 ...item,
                 srNo: index + 1,
                 email: item.email || "-",
                 phone: item.mobileNo || item.phone || "-",
                 status:
-                    typeof item?.isActive === "boolean" ? item.isActive : item?.status === "Active",
+                    item?.isDeleted
+                        ? false
+                        : typeof item?.isActive === "boolean"
+                            ? item.isActive
+                            : item?.status === "Active",
                   biometricStatus: normalizeBiometricStatus(item.biometricStatus),
+                isDeleted: Boolean(item?.isDeleted),
             })),
-        [members],
+        [visibleMembers],
     );
 
     const memberStats = useMemo(() => {
         const total = memberData.length;
-        const active = memberData.filter((member) => member.status).length;
-        const inactive = total - active;
+        const active = memberData.filter((member) => !member.isDeleted && member.status).length;
+        const inactive = memberData.filter((member) => !member.isDeleted && !member.status).length;
+        const disabled = memberData.filter((member) => member.isDeleted).length;
 
-        return { total, active, inactive };
+        return { total, active, inactive, disabled };
     }, [memberData]);
 
     const columns = [
@@ -243,12 +346,17 @@ const BiometricAccessMembers = () => {
             field: "status",
             headerName: "Status",
             cellRenderer: (params) => {
-                const status = params.value ? "Active" : "Inactive";
+                const status = params.data?.isDeleted
+                    ? "Disabled"
+                    : params.value
+                        ? "Active"
+                        : "Inactive";
                 const palette = {
                     Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" },
                     Active: { backgroundColor: "#90EE90", color: "#006400" },
+                    Disabled: { backgroundColor: "#D3D3D3", color: "#666666" },
                 };
-                const { backgroundColor, color } = palette[status];
+                const { backgroundColor, color } = palette[status] || palette.Disabled;
                 return <Chip label={status} style={{ backgroundColor, color }} />;
             },
         },
@@ -256,12 +364,17 @@ const BiometricAccessMembers = () => {
             field: "actions",
             headerName: "Actions",
             cellRenderer: (params) => {
-                const menuItems = [{ label: "Edit", onClick: () => handleEditMember(params.data) }];
+                const menuItems = [{
+                    label: "Edit",
+                    onClick: () => handleEditMember(params.data),
+                    disabled: params.data?.isDeleted,
+                }];
 
                 if (canEditAllFields) {
                     menuItems.push({
                         label: params.data.status ? "Mark As Inactive" : "Mark As Active",
                         onClick: () => handleToggleMemberStatus(params.data),
+                        disabled: params.data?.isDeleted,
                     });
                 }
 
@@ -281,11 +394,19 @@ const BiometricAccessMembers = () => {
                         tableTitle={`${decodedClientName || selectedClient?.clientName || "Client"} - Biometric Access Members`}
                         data={memberData}
                         columns={columns}
+                        getRowStyle={(params) =>
+                            params.data?.isDeleted
+                                ? { backgroundColor: "#f4f4f4", color: "#7a7a7a" }
+                                : undefined
+                        }
                         headerActions={
                             <div className="flex items-center gap-2 flex-wrap">
                                 <StatusChip status="Total" count={memberStats.total} variant="count" />
                                 <StatusChip status="Active" count={memberStats.active} variant="count" />
                                 <StatusChip status="Inactive" count={memberStats.inactive} variant="count" />
+                                {canViewDisabledMembers ? (
+                                    <StatusChip status="Disabled" count={memberStats.disabled} variant="count" />
+                                ) : null}
                             </div>
                         }
                         exportData
