@@ -415,17 +415,53 @@ const getCoworkingClients = async (req, res, next) => {
       .lean()
       .exec();
     const visibleMembers = filterVisibleMembers(members, req);
+    const clientObjectIds = allEntities
+      .map((entity) => entity?._id)
+      .filter((entityId) => mongoose.Types.ObjectId.isValid(entityId))
+      .map((entityId) => new mongoose.Types.ObjectId(entityId));
 
-    const entitiesWithMembers = allEntities.map((entity) => {
-      return {
-        ...entity,
-        members: visibleMembers.filter(
-          (member) =>
-            member.client &&
-            member.client._id.toString() === entity._id.toString(),
-        ),
-      };
-    });
+    const shouldIncludeDeletedMembers = canViewDeletedMembers(req);
+    const memberMatchStage = {
+      client: { $in: clientObjectIds },
+    };
+
+    if (!shouldIncludeDeletedMembers) {
+      memberMatchStage.isDeleted = { $ne: true };
+    }
+
+    const memberCounts = await CoworkingMembers.aggregate([
+      {
+        $match: memberMatchStage,
+      },
+      {
+        $group: {
+          _id: "$client",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const memberCountByClientId = memberCounts.reduce((acc, item) => {
+      const clientId = item?._id ? String(item._id) : "";
+      if (clientId) {
+        acc[clientId] = item.count || 0;
+      }
+      return acc;
+    }, {});
+
+      const entitiesWithMembers = allEntities.map((entity) => {
+        const entityId = entity?._id?.toString();
+
+        return {
+          ...entity,
+          memberCount: entityId ? memberCountByClientId[entityId] || 0 : 0,
+          members: visibleMembers.filter(
+            (member) =>
+              member.client &&
+              member.client._id.toString() === entity._id.toString(),
+          ),
+        };
+      });
 
     res.status(200).json(entitiesWithMembers);
   } catch (error) {
