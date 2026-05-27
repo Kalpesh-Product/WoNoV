@@ -472,7 +472,9 @@ const getMemberByClient = async (req, res) => {
 
     const member = await CoworkingMembers.find(query)
       .populate("client", "clientName service")
-      .select("employeeName email gender");
+      .select(
+        "employeeName email gender mobileNo phone dob dateOfJoining biometricStatus isActive isDeleted client unit",
+      );
 
     const visibleMembers = filterVisibleMembers(member, req);
 

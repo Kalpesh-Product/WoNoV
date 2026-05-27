@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Chip, MenuItem, TextField } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -57,6 +57,7 @@ const normalizeBiometricStatus = (status) =>
 
 const BiometricAccessMembers = () => {
     const axios = useAxiosPrivate();
+    const queryClient = useQueryClient();
     const dispatch = useDispatch();
     const { auth } = useAuth();
     const location = useLocation();
@@ -107,7 +108,8 @@ const BiometricAccessMembers = () => {
             .toLowerCase();
 
         const client =
-            normalizedSelectedName === normalizedRouteName ? selectedClient : clientData;
+            clientData ||
+            (normalizedSelectedName === normalizedRouteName ? selectedClient : null);
 
         if (client) {
             dispatch(setSelectedClient(client));
@@ -142,9 +144,10 @@ const BiometricAccessMembers = () => {
             return response.data;
         },
         onSuccess: (response, variables) => {
-            const updatedMember = response?.data;
-            setMembers((prev) =>
-                prev.map((member) =>
+            let updatedMembers = [];
+
+            setMembers((prev) => {
+                updatedMembers = prev.map((member) =>
                     getMemberId(member) === variables.memberId
                        ? {
                             ...member,
@@ -160,8 +163,22 @@ const BiometricAccessMembers = () => {
                             ),
                         }
                         : member,
-                ),
+                );
+
+                return updatedMembers;
+            });
+
+            dispatch(
+                setSelectedClient({
+                    ...selectedClient,
+                    members: updatedMembers,
+                }),
             );
+            queryClient.invalidateQueries({ queryKey: ["clientsData"] });
+            queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
+            queryClient.invalidateQueries({ queryKey: ["biometricAccessClientsData"] });
+            queryClient.invalidateQueries({ queryKey: ["biometricAccessClient"] });
+            queryClient.invalidateQueries({ queryKey: ["selectedCoWorkingClient"] });
             toast.success(response?.message || "Member details updated successfully");
             setOpenEditModal(false);
             setSelectedMemberId(null);
@@ -177,13 +194,36 @@ const BiometricAccessMembers = () => {
             return response.data;
         },
         onSuccess: (response, variables) => {
-            setMembers((prev) =>
-                prev.map((member) =>
+            let updatedMembers = [];
+
+            setMembers((prev) => {
+                updatedMembers = prev.map((member) =>
                     getMemberId(member) === variables.memberId
-                        ? { ...member, isActive: variables.isActive, status: variables.isActive ? "Active" : "Inactive" }
+                        ? {
+                            ...member,
+                            isActive: variables.isActive,
+                            status: variables.isActive ? "Active" : "Inactive",
+                            biometricStatus: normalizeBiometricStatus(
+                                response?.data?.biometricStatus,
+                            ),
+                        }
                         : member,
-                ),
+                );
+
+                return updatedMembers;
+            });
+
+            dispatch(
+                setSelectedClient({
+                    ...selectedClient,
+                    members: updatedMembers,
+                }),
             );
+            queryClient.invalidateQueries({ queryKey: ["clientsData"] });
+            queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
+            queryClient.invalidateQueries({ queryKey: ["biometricAccessClientsData"] });
+            queryClient.invalidateQueries({ queryKey: ["biometricAccessClient"] });
+            queryClient.invalidateQueries({ queryKey: ["selectedCoWorkingClient"] });
             toast.success(response?.message || "Member status updated successfully");
         },
         onError: (error) => {
