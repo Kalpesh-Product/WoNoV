@@ -447,7 +447,19 @@ const PerformanceMemberWiseKra = () => {
       getResponseData(completedIndividualKraResponse).forEach(incrementCompletedKra);
       getResponseData(completedTeamKraResponse).forEach(incrementCompletedKra);
 
-      return Array.from(map.values());
+      const withDerivedPending = Array.from(map.values()).map((item) => {
+        const derivedPendingKra =
+          (Number(item?.dailyKra) || 0) +
+          (Number(item?.individualDailyKra) || 0);
+
+        return {
+          ...item,
+          // Align graph pending with visible KRA table buckets (excluding team daily KRA).
+          pendingKra: derivedPendingKra,
+        };
+      });
+
+      return withDerivedPending;
     },
   });
 

@@ -288,27 +288,32 @@ const MeetingFormLayout = () => {
             .filter((u) => u.isActive === true)
         );
       } else {
-        const response = await axios.get("/api/sales/co-working-clients");
-        const activeClients = response.data.filter((item) => item.isActive);
-        const flattened = activeClients.flatMap((client) =>
-          client.members.map((member) => ({
-            ...member,
-            clientName: client.clientName,
-          })),
+        const [membersResponse, clientsResponse] = await Promise.all([
+          axios.get("/api/sales/co-working-client-members", {
+            params: { clientId: company, active: true },
+          }),
+          axios.get("/api/sales/co-working-clients"),
+        ]);
+        const selectedClient = (clientsResponse.data || []).find(
+          (item) => String(item?._id) === String(company),
         );
-        // Flatten members and inject clientName for context
-        return flattened.filter((item) => {
-          return item.client?._id === company;
-        });
+        return (membersResponse.data || []).map((member) => ({
+          ...member,
+          clientName: selectedClient?.clientName || "Client",
+        }));
       }
     },
     enabled: shouldFetchParticipants && !!company,
   });
 
-  const { data: availableEmployees = [], isFetching: isAvailableEmployees } =
-    useQuery({
+  const {
+    data: availableEmployees = [],
+    isFetching: isAvailableEmployees,
+    refetch: refetchAvailableEmployees,
+  } = useQuery({
       queryKey: [
         "available-participants",
+        company,
         startDateTime?.toISOString?.(),
         endDateTime?.toISOString?.(),
       ],
@@ -322,7 +327,21 @@ const MeetingFormLayout = () => {
         return response.data;
       },
       enabled: shouldCheckAvailability,
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: true,
     });
+
+  useEffect(() => {
+    if (!shouldCheckAvailability) return;
+    refetchAvailableEmployees();
+  }, [
+    company,
+    startDateTime,
+    endDateTime,
+    shouldCheckAvailability,
+    refetchAvailableEmployees,
+  ]);
 
   const availableEmployeeIds = useMemo(
     () => new Set(availableEmployees.map((user) => user._id)),
@@ -810,6 +829,7 @@ const MeetingFormLayout = () => {
                         }
                         onChange={(_, newValue) => {
                           onChange(newValue ? newValue.id : ""); // store only _id in form
+                          setShouldFetchParticipants(true);
                         }}
                         loading={isClientsDataPending}
                         renderInput={(params) => (
@@ -894,7 +914,12 @@ const MeetingFormLayout = () => {
                           }
                           // Very important when company changes
                           key={company} // ← forces remount when company changes
-                          onFocus={() => setShouldFetchParticipants(true)}
+                          onFocus={() => {
+                            setShouldFetchParticipants(true);
+                            if (shouldCheckAvailability) {
+                              refetchAvailableEmployees();
+                            }
+                          }}
                           onChange={(_, newValue) => {
                             const selectedId = newValue?._id || "";
 
@@ -972,11 +997,14 @@ const MeetingFormLayout = () => {
                           getOptionLabel={(user) =>
                             isBizNest
                               ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
-                              : `${user.employeeName ?? ""} (${
-                                  user.clientName ?? ""
-                                })`
+                              : `${user.employeeName ?? ""}`
                           }
-                          onFocus={() => setShouldFetchParticipants(true)}
+                          onFocus={() => {
+                            setShouldFetchParticipants(true);
+                            if (shouldCheckAvailability) {
+                              refetchAvailableEmployees();
+                            }
+                          }}
                           value={participantOptions.filter((user) =>
                             field.value?.includes(user._id),
                           )}
@@ -992,9 +1020,7 @@ const MeetingFormLayout = () => {
                                     ? `${user.firstName ?? ""} ${
                                         user.lastName ?? ""
                                       }`
-                                    : `${user.employeeName ?? ""} (${
-                                        user.clientName ?? ""
-                                      })`
+                                    : `${user.employeeName ?? ""}`
                                 }
                                 {...getTagProps({ index })}
                                 deleteIcon={<IoMdClose />}
