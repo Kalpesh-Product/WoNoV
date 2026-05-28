@@ -449,9 +449,11 @@ const getAvaliableUsers = async (req, res, next) => {
 
     const start = new Date(startTime);
     const end = new Date(endTime);
+    const cancelledStatuses = ["Cancelled", "Canceled", "cancelled", "canceled"];
 
     const meetings = await Meeting.find({
       company: req.company,
+      status: { $nin: cancelledStatuses },
       $and: [{ startTime: { $lte: end } }, { endTime: { $gte: start } }],
     })
       .select(
