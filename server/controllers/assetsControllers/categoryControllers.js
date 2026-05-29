@@ -9,6 +9,7 @@ const Category = require("../../models/category/Category");
 const csv = require("csv-parser");
 const { Readable } = require("stream");
 const SubCategory = require("../../models/category/SubCategories");
+const Asset = require("../../models/assets/Assets");
 
 const addAssetCategory = async (req, res, next) => {
   const { assetCategoryName, departmentId, appliesTo = "asset" } = req.body;
@@ -415,22 +416,56 @@ const getCategory = async (req, res, next) => {
       category: { $in: categoryIds },
     }).select("_id subCategoryName category");
 
+     const subCategoryIds = assetSubCategories.map((sub) => sub._id);
+    const assetQuantityCounts = subCategoryIds.length
+      ? await Asset.aggregate([
+          {
+            $match: {
+              company: new mongoose.Types.ObjectId(company),
+              subCategory: { $in: subCategoryIds },
+            },
+          },
+          {
+            $group: {
+              _id: "$subCategory",
+              quantity: { $sum: 1 },
+            },
+          },
+        ])
+      : [];
+
+    const quantityBySubCategory = new Map(
+      assetQuantityCounts.map((item) => [item._id.toString(), item.quantity]),
+    );
+    const quantityByCategory = new Map();
+
     const subCategoryMap = new Map();
 
-    assetSubCategories.forEach((sub) => {
+     assetSubCategories.forEach((sub) => {
       const catId = sub.category.toString();
+      const assetQuantity = quantityBySubCategory.get(sub._id.toString()) || 0;
+
       if (!subCategoryMap.has(catId)) {
         subCategoryMap.set(catId, []);
       }
+
       subCategoryMap.get(catId).push({
         _id: sub._id,
         subCategoryName: sub.subCategoryName,
+        assetQuantity,
       });
+      quantityByCategory.set(
+        catId,
+        (quantityByCategory.get(catId) || 0) + assetQuantity,
+      );
     });
 
     const enrichedCategories = assetCategories.map((cat) => {
       const catObj = cat.toObject();
-      catObj.subCategories = subCategoryMap.get(cat._id.toString()) || [];
+      const subCategories = subCategoryMap.get(cat._id.toString()) || [];
+      catObj.subCategories = subCategories;
+      catObj.subCategoriesCount = subCategories.length;
+      catObj.assetQuantity = quantityByCategory.get(cat._id.toString()) || 0;
       return catObj;
     });
 
@@ -439,6 +474,29 @@ const getCategory = async (req, res, next) => {
     next(error);
   }
 };
+
+//     assetSubCategories.forEach((sub) => {
+//       const catId = sub.category.toString();
+//       if (!subCategoryMap.has(catId)) {
+//         subCategoryMap.set(catId, []);
+//       }
+//       subCategoryMap.get(catId).push({
+//         _id: sub._id,
+//         subCategoryName: sub.subCategoryName,
+//       });
+//     });
+
+//     const enrichedCategories = assetCategories.map((cat) => {
+//       const catObj = cat.toObject();
+//       catObj.subCategories = subCategoryMap.get(cat._id.toString()) || [];
+//       return catObj;
+//     });
+
+//     return res.status(200).json(enrichedCategories);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 const getSubCategory = async (req, res, next) => {
   const company = req.company;
@@ -478,7 +536,36 @@ const getSubCategory = async (req, res, next) => {
         populate: { path: "department", select: "name" },
       },
     ]);
-    return res.status(200).json(assetSubCategories);
+   const subCategoryIds = assetSubCategories.map((subCategory) => subCategory._id);
+    const assetQuantityCounts = subCategoryIds.length
+      ? await Asset.aggregate([
+          {
+            $match: {
+              company: new mongoose.Types.ObjectId(company),
+              subCategory: { $in: subCategoryIds },
+            },
+          },
+          {
+            $group: {
+              _id: "$subCategory",
+              quantity: { $sum: 1 },
+            },
+          },
+        ])
+      : [];
+
+    const quantityBySubCategory = new Map(
+      assetQuantityCounts.map((item) => [item._id.toString(), item.quantity]),
+    );
+
+    const subCategoriesWithQuantity = assetSubCategories.map((subCategory) => {
+      const parsedSubCategory = subCategory.toObject();
+      parsedSubCategory.assetQuantity =
+        quantityBySubCategory.get(subCategory._id.toString()) || 0;
+      return parsedSubCategory;
+    });
+
+    return res.status(200).json(subCategoriesWithQuantity);
   } catch (error) {
     next(error);
   }

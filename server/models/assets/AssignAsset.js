@@ -18,6 +18,10 @@ const assignAssetSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
+    assignedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
     rejectededBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",

@@ -614,6 +614,32 @@ const ExternalMeetingCLients = () => {
     setPaymentValue,
   ]);
   //---------------------------------Event handlers----------------------------------------//
+  const getFinanceStatus = (rowData = {}) => {
+    const isPaid = rowData?.paymentStatus === "Paid" || rowData?.paymentStatus === true;
+    const paymentVerificationStatus = String(
+      rowData?.paymentVerification || "Pending",
+    ).toLowerCase();
+
+    if (!isPaid) return "Wait for Payment";
+    if (paymentVerificationStatus === "under review") return "Verify Payment";
+    if (paymentVerificationStatus === "verified") return "Completed";
+    return "Review Payment";
+  };
+
+  const getFinanceStatusChipStyle = (status) => {
+    const normalizedStatus = String(status || "").toLowerCase();
+
+    if (normalizedStatus === "completed") {
+      return { backgroundColor: "#D1FAE5", color: "#047857" };
+    }
+    if (normalizedStatus === "verify payment") {
+      return { backgroundColor: "#DBEAFE", color: "#1D4ED8" };
+    }
+    if (normalizedStatus === "review payment") {
+      return { backgroundColor: "#FEF3C7", color: "#B45309" };
+    }
+    return { backgroundColor: "#FEE2E2", color: "#B91C1C" };
+  };
 
   const columns = [
     { field: "srNo", headerName: "Sr No" },
@@ -645,7 +671,8 @@ const ExternalMeetingCLients = () => {
     },
     {
       field: "paymentStatus",
-      headerName: "Status",
+      headerName: "Payment Status",
+      pinned:"right",
       cellRenderer: (params) => (
         <Chip
           label={params.value === "Paid" ? "Paid" : "Unpaid"}
@@ -658,6 +685,29 @@ const ExternalMeetingCLients = () => {
       ),
       cellStyle: { textAlign: "center" },
     },
+    ...(isFinance
+      ? [
+          {
+            field: "financeStatus",
+            headerName: "Finance Status",
+            pinned:"right",
+            cellRenderer: (params) => {
+              const status = getFinanceStatus(params.data);
+              const chipStyle = getFinanceStatusChipStyle(status);
+              return (
+                <Chip
+                  label={status}
+                  sx={{
+                    backgroundColor: chipStyle.backgroundColor,
+                    color: chipStyle.color,
+                    fontWeight: "bold",
+                  }}
+                />
+              );
+            },
+          },
+        ]
+      : []),
       {
       field: "meetingStatus",
       headerName: "Meeting Status",
