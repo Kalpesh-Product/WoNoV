@@ -433,7 +433,7 @@ const ExternalClients = ({
       ? [
           {
             field: "paymentStatus",
-            headerName: "Status",
+            headerName: "Payment Status",
             cellRenderer: (params) => (
               <Chip
                 label={isPaymentCompleted(params.value) ? "Paid" : "Unpaid"}
@@ -448,7 +448,7 @@ const ExternalClients = ({
                 }}
               />
             ),
-            cellStyle: { textAlign: "center" },
+            cellStyle: { textAlign: "left" },
           },
         ]
       : []),
