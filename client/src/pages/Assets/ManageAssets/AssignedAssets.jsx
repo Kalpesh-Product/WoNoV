@@ -25,6 +25,7 @@ import humanDate from "../../../utils/humanDateForamt";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const AssignedAssets = () => {
   const axios = useAxiosPrivate();
@@ -107,6 +108,10 @@ const AssignedAssets = () => {
     { field: "department", headerName: "Department" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
+    { field: "name", headerName: "Asset Name" },
+    { field: "serialNumber", headerName: "Serial Number" },
+    { field: "building", headerName: "Building" },
+    { field: "location", headerName: "Location" },
     {
       field: "status",
       headerName: "Status",
@@ -118,16 +123,25 @@ const AssignedAssets = () => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data.assetId}
-          menuItems={[
-            { label: "View", onClick: () => handleView(params.data) },
-            params.data.status !== "Revoked" && {
-              label: "Revoke",
-              onClick: () => revokeAsset(params.data),
-            },
-          ]}
-        />
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            title="View"
+            className="p-1 text-gray-600 hover:text-primary"
+            onClick={() => handleView(params.data)}
+          >
+            <MdOutlineRemoveRedEye size={20} />
+          </button>
+          <ThreeDotMenu
+            rowId={params.data.assetId}
+            menuItems={[
+              params.data.status !== "Revoked" && {
+                label: "Revoke",
+                onClick: () => revokeAsset(params.data),
+              },
+            ]}
+          />
+        </div>
       ),
     },
   ];
@@ -136,6 +150,24 @@ const AssignedAssets = () => {
     ? []
     : assignedAssets.map((item, index) => {
         const assets = item.asset;
+        const assetLocation =
+          assets?.location ||
+          item?.location ||
+          assets?.unit ||
+          item?.unit ||
+          null;
+        const buildingName =
+          assetLocation?.building?.buildingName ||
+          assetLocation?.buildingName ||
+          item?.building?.buildingName ||
+          item?.buildingName ||
+          "N/A";
+        const unitNo =
+          assetLocation?.unitNo ||
+          assetLocation?.unit ||
+          item?.unitNo ||
+          item?.unit ||
+          "N/A";
         const category = assets?.subCategory?.category?.categoryName;
         return {
           ...assets,
@@ -147,6 +179,11 @@ const AssignedAssets = () => {
           department: item?.fromDepartment?.name,
           category: category,
           brand: assets?.brand,
+          name: assets?.name || "N/A",
+          serialNumber: assets?.serialNumber || "N/A",
+         building: item?.location?.building?.buildingName || "N/A",
+        location: item?.location?.unitNo || "N/A",
+          assetLocation,
         };
       });
 
@@ -284,14 +321,18 @@ const AssignedAssets = () => {
               title={"Status"}
               detail={selectedAsset?.status || "N/A"}
             />
-            <DetalisFormatted
-              title={"Department"}
-              detail={selectedAsset?.department || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Unit No"}
-              detail={selectedAsset?.location?.unitNo || "N/A"}
-            />
+              <DetalisFormatted
+                title={"Department"}
+                detail={selectedAsset?.department || "N/A"}
+              />
+              <DetalisFormatted
+               title={"Building"}
+               detail={selectedAsset?.location?.building?.buildingName || "N/A"}
+             />
+             <DetalisFormatted
+               title={"UnitNo"}
+               detail={selectedAsset?.location?.unitNo || "N/A"}
+             />
             <DetalisFormatted
               title={"Damaged"}
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}

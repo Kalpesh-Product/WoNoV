@@ -15,6 +15,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import StatusChip from "../../../components/StatusChip";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const AssignAssets = () => {
   const axios = useAxiosPrivate();
@@ -167,9 +168,12 @@ const AssignAssets = () => {
   const assetsColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "assetId", headerName: "Asset ID" },
-    { field: "name", headerName: "Asset Name" },
     // { field: "department", headerName: "Department" },
     { field: "brand", headerName: "Brand" },
+    { field: "name", headerName: "Asset Name" },
+    { field: "serialNumber", headerName: "Serial Number" },
+    { field: "building", headerName: "Building" },
+    { field: "location", headerName: "Location" },
     {
       field: "price",
       headerName: "Price (INR)",
@@ -193,18 +197,29 @@ const AssignAssets = () => {
       pinned: "right",
       cellRenderer: (params) => {
         const isAssignable = params.data.isAssigned === "Available";
-        const menuItems = [
-          { label: "View", onClick: () => handleViewAsset(params.data) },
-        ];
-
-        if (isAssignable) {
-          menuItems.push({
-            label: "Assign",
-            onClick: () => handleAssignAsset(params.data),
-          });
-        }
-
-        return <ThreeDotMenu rowId={params.data._id} menuItems={menuItems} />;
+        return (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              title="View"
+              className="p-1 text-gray-600 hover:text-primary"
+              onClick={() => handleViewAsset(params.data)}
+            >
+              <MdOutlineRemoveRedEye size={20} />
+            </button>
+            {isAssignable && (
+              <ThreeDotMenu
+                rowId={params.data._id}
+                menuItems={[
+                  {
+                    label: "Assign",
+                    onClick: () => handleAssignAsset(params.data),
+                  },
+                ]}
+              />
+            )}
+          </div>
+        );
       },
     },
   ];
@@ -222,6 +237,8 @@ const AssignAssets = () => {
         srNo: index + 1,
         department: item?.department?.name,
         subCategory: item?.subCategory?.subCategoryName,
+        building: item?.location?.building?.buildingName || "N/A",
+        location: item?.location?.unitNo || "N/A",
         isAssigned:
           item?.assignmentState || (item?.isAssigned ? "Assigned" : "Available"),
       }));
@@ -277,6 +294,10 @@ const AssignAssets = () => {
             <DetalisFormatted
               title={"Under Maintenance"}
               detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Building"}
+              detail={selectedAsset?.location?.building?.buildingName || "N/A"}
             />
             <DetalisFormatted
               title={"UnitNo"}

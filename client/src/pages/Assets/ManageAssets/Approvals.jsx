@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { queryClient } from "../../../main";
 import useAuth from "../../../hooks/useAuth";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const Approvals = () => {
   const axios = useAxiosPrivate();
@@ -130,6 +131,10 @@ const Approvals = () => {
     { field: "department", headerName: "Department" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
+    { field: "name", headerName: "Asset Name" },
+    { field: "serialNumber", headerName: "Serial Number" },
+    { field: "building", headerName: "Building" },
+    { field: "location", headerName: "Location" },
     {
       field: "status",
       headerName: "Status",
@@ -141,9 +146,9 @@ const Approvals = () => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => {
-        const status = params.data.status;
-        const viewOnlyStatuses = ["Rejected", "Revoked"];
-        const menuItems = [{ label: "View", onClick: () => handleView(params.data) }];
+          const status = params.data.status;
+         const viewOnlyStatuses = ["Rejected", "Revoked"];
+        const menuItems = [];
 
         // if (!isEmployeeRole && params.data.status === "Pending") {
          if (!viewOnlyStatuses.includes(status) && !isEmployeeRole && status === "Pending") {
@@ -169,35 +174,57 @@ const Approvals = () => {
         //   });
         // }
 
-        return (
-          <ThreeDotMenu
-            rowId={params.data.assetId}
-            menuItems={menuItems}
-          />
-        );
-      },
-    }
+          return (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                title="View"
+                className="p-1 text-gray-600 hover:text-primary"
+                onClick={() => handleView(params.data)}
+              >
+                <MdOutlineRemoveRedEye size={20} />
+              </button>
+              {menuItems.length > 0 && (
+                <ThreeDotMenu
+                  rowId={params.data.assetId}
+                  menuItems={menuItems}
+                />
+              )}
+            </div>
+          );
+        },
+      }
 
   ];
 
   const tableData = isAssignedPending
     ? []
     : assignedAssets.map((item, index) => {
-      const assets = item.asset;
-      const category = assets?.subCategory?.category?.categoryName;
-      console.log("assets inside data", category);
+        const assets = item.asset;
+        const assetLocation =
+          assets?.location ||
+          item?.location ||
+          assets?.unit ||
+          item?.unit ||
+          null;
+        const category = assets?.subCategory?.category?.categoryName;
+        console.log("assets inside data", category);
       return {
         ...assets,
         ...item,
         srNo: index + 1,
         assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
         assetId: item._id,
-        assetNumber: item?.asset?.assetId,
-        department: item?.fromDepartment?.name,
-        category: category,
-        brand: assets?.brand,
-      };
-    });
+          assetNumber: item?.asset?.assetId,
+          department: item?.fromDepartment?.name,
+          category: category,
+          brand: assets?.brand,
+          name: assets?.name || "N/A",
+          serialNumber: assets?.serialNumber || "N/A",
+          building: item?.location?.building?.buildingName || "N/A",
+        location: item?.location?.unitNo || "N/A",
+        };
+      });
 
   //-----------------------Table Data----------------------//
 
@@ -318,12 +345,16 @@ const Approvals = () => {
               title={"Status"}
               detail={selectedAsset?.status || "N/A"}
             />
-            <DetalisFormatted
-              title={"Department"}
-              detail={selectedAsset?.department || "N/A"}
+              <DetalisFormatted
+                title={"Department"}
+                detail={selectedAsset?.department || "N/A"}
+              />
+              <DetalisFormatted
+              title={"Building"}
+              detail={selectedAsset?.location?.building?.buildingName || "N/A"}
             />
             <DetalisFormatted
-              title={"Unit No"}
+              title={"UnitNo"}
               detail={selectedAsset?.location?.unitNo || "N/A"}
             />
             <DetalisFormatted

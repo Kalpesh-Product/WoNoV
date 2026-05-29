@@ -366,6 +366,31 @@ const ExternalClients = ({
       status,
     });
   };
+  const getFinanceStatus = (rowData = {}) => {
+    const isPaid = isPaymentCompleted(rowData?.paymentStatus);
+    const verificationStatus = String(
+      rowData?.paymentVerification || "Pending",
+    ).toLowerCase();
+
+    if (!isPaid) return "Wait for Payment";
+    if (verificationStatus === "under review") return "Verify Payment";
+    if (verificationStatus === "verified") return "Completed";
+    return "Review Payment";
+  };
+  const getFinanceStatusChipStyle = (status) => {
+    const normalizedStatus = String(status || "").toLowerCase();
+
+    if (normalizedStatus === "completed") {
+      return { backgroundColor: "#D1FAE5", color: "#047857" };
+    }
+    if (normalizedStatus === "verify payment") {
+      return { backgroundColor: "#DBEAFE", color: "#1D4ED8" };
+    }
+    if (normalizedStatus === "review payment") {
+      return { backgroundColor: "#FEF3C7", color: "#B45309" };
+    }
+    return { backgroundColor: "#FEE2E2", color: "#B91C1C" };
+  };
 
   const hiddenModalColumns = [
     // { field: "firstName", headerName: "First Name", hide: true },
@@ -434,6 +459,7 @@ const ExternalClients = ({
           {
             field: "paymentStatus",
             headerName: "Payment Status",
+            pinned:"right",
             cellRenderer: (params) => (
               <Chip
                 label={isPaymentCompleted(params.value) ? "Paid" : "Unpaid"}
@@ -449,6 +475,25 @@ const ExternalClients = ({
               />
             ),
             cellStyle: { textAlign: "left" },
+          },
+          {
+            field: "financeStatus",
+            headerName: "Finance Status",
+            pinned:"right",
+            cellRenderer: (params) => {
+              const status = params.value || "Wait for Payment";
+              const chipStyle = getFinanceStatusChipStyle(status);
+              return (
+                <Chip
+                  label={status}
+                  sx={{
+                    backgroundColor: chipStyle.backgroundColor,
+                    color: chipStyle.color,
+                    fontWeight: "bold",
+                  }}
+                />
+              );
+            },
           },
         ]
       : []),
@@ -839,6 +884,22 @@ const ExternalClients = ({
                     latestVisit?.paymentVerification ||
                     item.paymentVerification ||
                     "Pending",
+                  financeStatus: getFinanceStatus({
+                    paymentStatus:
+                      typeof latestVisit?.paymentStatus === "boolean"
+                        ? latestVisit.paymentStatus
+                          ? "Paid"
+                          : "Unpaid"
+                        : typeof item.paymentStatus === "string"
+                          ? item.paymentStatus
+                          : item.paymentStatus === true
+                            ? "Paid"
+                            : "Unpaid",
+                    paymentVerification:
+                      latestVisit?.paymentVerification ||
+                      item.paymentVerification ||
+                      "Pending",
+                  }),
                   paymentDate: latestVisit?.updatedAt || item.updatedAt || null,
                   paymentProof:
                     latestVisit?.paymentProof?.url ||
