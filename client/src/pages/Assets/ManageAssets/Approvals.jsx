@@ -226,8 +226,8 @@ const Approvals = () => {
             <DetalisFormatted
               title={"Assigned By"}
               detail={
-                selectedAsset?.approvedBy
-                  ? `${selectedAsset.approvedBy.firstName || ""} ${selectedAsset.approvedBy.lastName || ""}`.trim()
+                (selectedAsset?.assignedBy || selectedAsset?.approvedBy)
+                  ? `${(selectedAsset.assignedBy || selectedAsset.approvedBy)?.firstName || ""} ${(selectedAsset.assignedBy || selectedAsset.approvedBy)?.lastName || ""}`.trim()
                   : "N/A"
               }
             />
