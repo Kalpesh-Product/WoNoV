@@ -32,6 +32,24 @@ const AssignedAssets = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
+
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
+    const dateObj = new Date(value);
+    if (Number.isNaN(dateObj.getTime())) return "N/A";
+
+    const datePart = `${dateObj.getDate()}-${dateObj.getMonth() + 1}-${dateObj.getFullYear()}`;
+    const timePart = dateObj
+      .toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase();
+
+    return `${datePart}, ${timePart}`;
+  };
   //-----------------------API----------------------//
   const { data: assignedAssets = [], isLoading: isAssignedPending } = useQuery({
     queryKey: ["assignedAssets"],
@@ -168,9 +186,13 @@ const AssignedAssets = () => {
               title={"Approved At"}
               detail={
                 selectedAsset?.status === "Approved" && selectedAsset?.updatedAt
-                  ? humanDate(selectedAsset.updatedAt)
+                  ? formatDateTime(selectedAsset.updatedAt)
                   : "N/A"
               }
+            />
+             <DetalisFormatted
+              title={"Assigned At"}
+              detail={formatDateTime(selectedAsset?.assignedAt || selectedAsset?.createdAt)}
             />
             <DetalisFormatted
               title={"Asset Name"}
@@ -202,12 +224,8 @@ const AssignedAssets = () => {
               detail={selectedAsset?.subCategory?.subCategoryName}
             />
             <DetalisFormatted
-              title={"Assigned Date"}
-              detail={humanDate(selectedAsset?.createdAt)}
-            />
-               <DetalisFormatted
               title={"Purchase Date"}
-              detail={humanDate(selectedAsset?.purchaseDate)}
+              detail={formatDateTime(selectedAsset?.purchaseDate)}
             />
             <DetalisFormatted
               title={"Warranty (Months)"}
