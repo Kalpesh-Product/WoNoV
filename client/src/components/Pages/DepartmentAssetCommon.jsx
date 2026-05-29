@@ -8,6 +8,7 @@ import PageFrame from "../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import humanDate from "../../utils/humanDateForamt";
+import humanTime from "../../utils/humanTime";
 
 const DepartmentAssetCommon = ({ disabled }) => {
   const axios = useAxiosPrivate();
@@ -27,19 +28,22 @@ const DepartmentAssetCommon = ({ disabled }) => {
   });
 
   const assetColumns = [
-    { field: "id", headerName: "Sr No", width: 90 },
+    { field: "id", headerName: "Sr No", width: 100 },
     //{ field: "assetNumber", headerName: "Asset Id", width: 130 },
     { field: "assetName", headerName: "Asset Name", minWidth: 160, flex: 1 },
     //{ field: "category", headerName: "Category", minWidth: 140, flex: 1 },
     //{ field: "brand", headerName: "Brand", minWidth: 120, flex: 1 },
-    { field: "assignedBy", headerName: "Assigned By", minWidth: 170, flex: 1 },
     { field: "assignedTo", headerName: "Assigned To", minWidth: 170, flex: 1 },
+    { field: "assignedBy", headerName: "Assigned By", minWidth: 170, flex: 1 },
+    { field: "assignedAt", headerName: "Assigned At", minWidth: 170, flex: 1 },
+    { field: "approvedBy", headerName: "Approved By", minWidth: 170, flex: 1 },
     //{ field: "fromDepartment", headerName: "Assigned From", minWidth: 150, flex: 1 },
     //{ field: "toDepartment", headerName: "Assigned Department", minWidth: 170, flex: 1 },
-    { field: "assignedDate", headerName: "Assigned Date", minWidth: 130, flex: 1 },
+    { field: "approvedAt", headerName: "Approved At", minWidth: 170, flex: 1 },
     {
       field: "actions",
       headerName: "Action",
+      pinned:"right",
       width: 100,
       cellRenderer: (params) => (
         <button
@@ -67,10 +71,14 @@ const DepartmentAssetCommon = ({ disabled }) => {
         const assignedToName = [item?.assignee?.firstName, item?.assignee?.lastName]
           .filter(Boolean)
           .join(" ");
+        const assignedByUser = item?.assignedBy || item?.approvedBy;
         const assignedByName = [
-          item?.approvedBy?.firstName,
-          item?.approvedBy?.lastName,
+          assignedByUser?.firstName,
+          assignedByUser?.lastName,
         ]
+          .filter(Boolean)
+          .join(" ");
+        const approvedByName = [item?.approvedBy?.firstName, item?.approvedBy?.lastName]
           .filter(Boolean)
           .join(" ");
 
@@ -90,12 +98,18 @@ const DepartmentAssetCommon = ({ disabled }) => {
           brand: item?.asset?.brand || "-",
           status: item?.asset?.status || item?.status || "-",
           assignedBy: assignedByName || "-",
+          approvedBy: approvedByName || "-",
          // assignedByEmail: item?.approvedBy?.email || "-",
           assignedTo: assignedToName || "-",
          // assignedToEmail: item?.assignee?.email || "-",
           fromDepartment: item?.fromDepartment?.name || "-",
           toDepartment: item?.toDepartment?.name || department?.name || "-",
-          assignedDate: item?.updatedAt ? humanDate(item.updatedAt) : "-",
+          assignedAt: item?.updatedAt
+            ? `${humanDate(item.updatedAt)} ${humanTime(item.updatedAt)}`
+            : "-",
+          approvedAt: item?.updatedAt
+            ? `${humanDate(item.updatedAt)} ${humanTime(item.updatedAt)}`
+            : "-",
           createdDate: item?.createdAt ? humanDate(item.createdAt) : "-",
           remarks: item?.remarks || "-",
         };
@@ -157,17 +171,21 @@ const DepartmentAssetCommon = ({ disabled }) => {
             detail={selectedAsset?.status || "-"}
           />
           <DetalisFormatted
+            title="Assigned To"
+            detail={selectedAsset?.assignedTo || "-"}
+          />
+          <DetalisFormatted
             title="Assigned By"
             detail={selectedAsset?.assignedBy || "-"}
+          />
+          <DetalisFormatted
+            title="Approved By"
+            detail={selectedAsset?.approvedBy || "-"}
           />
           {/* <DetalisFormatted
             title="Assigned By Email"
             detail={selectedAsset?.assignedByEmail || "-"}
           /> */}
-          <DetalisFormatted
-            title="Assigned To"
-            detail={selectedAsset?.assignedTo || "-"}
-          />
           {/* <DetalisFormatted
             title="Assigned To Email"
             detail={selectedAsset?.assignedToEmail || "-"}
@@ -181,8 +199,12 @@ const DepartmentAssetCommon = ({ disabled }) => {
             detail={selectedAsset?.toDepartment || "-"}
           />
           <DetalisFormatted
-            title="Assigned Date"
-            detail={selectedAsset?.assignedDate || "-"}
+            title="Assigned At"
+            detail={selectedAsset?.assignedAt || "-"}
+          />
+          <DetalisFormatted
+            title="Approved At"
+            detail={selectedAsset?.approvedAt || "-"}
           />
           <DetalisFormatted
             title="Created Date"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   CircularProgress,
@@ -82,7 +82,7 @@ const AssetsSubCategories = () => {
 
   const { data: assetSubCategories = [], isPending: isSubCategoriesPending } =
     useQuery({
-      queryKey: ["assetSubCategories"],
+      queryKey: ["assetSubCategories", departmentId],
       queryFn: async () => {
         try {
           const response = await axios.get(
@@ -97,7 +97,7 @@ const AssetsSubCategories = () => {
     });
 
   const { data: assetCategories = [], isPending: isCategoriesPending } = useQuery({
-    queryKey: ["assetCategories"],
+   queryKey: ["assetCategories", departmentId],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -155,16 +155,20 @@ const AssetsSubCategories = () => {
   useEffect(() => {
     setValue("subCategoryName", selectedAsset?.subCategoryName);
     setValue("status", selectedAsset?.isActive);
-  }, [selectedAsset]);
+  }, [selectedAsset, setValue]);
   //--------------------Event handlers------------------------------//
   //--------------------Table Data------------------------------//
   const categoriesColumn = [
-    { field: "srNo", headerName: "Sr No" },
-
+    { field: "srNo", headerName: "Sr No" ,width:200},
+    { field: "categoryName", headerName: "Category",flex:1 },
+    //   {
+    //   field: "subCategoriesCount",
+    //   headerName: "Sub Categories Count",
+    // },
     {
       field: "subCategoryName",
       headerName: "Sub Category Name",
-      flex: 3,
+      flex: 1,
       cellRenderer: (params) => (
         <span
           role="button"
@@ -179,17 +183,22 @@ const AssetsSubCategories = () => {
         </span>
       ),
     },
-    { field: "categoryName", headerName: "Category" },
+      {
+      field: "assetQuantity",
+      headerName: "No. of Assets",
+      flex:1 
+    },
     {
       field: "status",
       headerName: "Status",
+      flex:1 ,
       sort: "desc",
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
       field: "action",
       headerName: "Action",
-      flex: 1,
+      flex: 0.7 ,
       cellRenderer: (params) => {
         return (
           <ThreeDotMenu
@@ -219,6 +228,7 @@ const AssetsSubCategories = () => {
         srNo: index + 1,
         status: status,
         categoryName: item?.category?.categoryName || "N/A",
+         assetQuantity: item?.assetQuantity || 0,
       };
     });
   //--------------------Table Data------------------------------//
@@ -377,6 +387,14 @@ const AssetsSubCategories = () => {
             <DetalisFormatted
               title={"Sub Category"}
               detail={selectedAsset?.subCategoryName || "N/A"}
+            />
+            {/* <DetalisFormatted
+              title={"Sub Categories Count"}
+              detail={selectedAsset?.subCategoriesCount ?? 0}
+            /> */}
+             <DetalisFormatted
+              title={"No. of Assets"}
+              detail={selectedAsset?.assetQuantity ?? 0}
             />
           </div>
         )}
