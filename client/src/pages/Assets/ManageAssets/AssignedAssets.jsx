@@ -111,7 +111,9 @@ const AssignedAssets = () => {
     { field: "name", headerName: "Asset Name" },
     { field: "serialNumber", headerName: "Serial Number" },
     { field: "building", headerName: "Building" },
-    { field: "location", headerName: "Location" },
+    // { field: "location", headerName: "Location" },
+    //  { field: "building", headerName: "Building" },
+    { field: "unit", headerName: "Location" },
     {
       field: "status",
       headerName: "Status",
@@ -181,8 +183,8 @@ const AssignedAssets = () => {
           brand: assets?.brand,
           name: assets?.name || "N/A",
           serialNumber: assets?.serialNumber || "N/A",
-         building: item?.location?.building?.buildingName || "N/A",
-        location: item?.location?.unitNo || "N/A",
+          location: item?.location || null,
+          unit: item?.location?.unitNo || "N/A",
           assetLocation,
         };
       });
@@ -325,14 +327,18 @@ const AssignedAssets = () => {
                 title={"Department"}
                 detail={selectedAsset?.department || "N/A"}
               />
-              <DetalisFormatted
-               title={"Building"}
-               detail={selectedAsset?.location?.building?.buildingName || "N/A"}
-             />
              <DetalisFormatted
-               title={"UnitNo"}
-               detail={selectedAsset?.location?.unitNo || "N/A"}
-             />
+                           title={"Building"}
+                           detail={
+                             selectedAsset?.location?.building?.buildingName ||
+                             selectedAsset?.building ||
+                             "N/A"
+                           }
+                         />
+                         <DetalisFormatted
+                           title={"UnitNo"}
+                           detail={selectedAsset?.location?.unitNo || selectedAsset?.unit || "N/A"}
+                         />
             <DetalisFormatted
               title={"Damaged"}
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}

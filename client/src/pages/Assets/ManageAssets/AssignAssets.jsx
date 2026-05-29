@@ -172,8 +172,8 @@ const AssignAssets = () => {
     { field: "brand", headerName: "Brand" },
     { field: "name", headerName: "Asset Name" },
     { field: "serialNumber", headerName: "Serial Number" },
-    { field: "building", headerName: "Building" },
-    { field: "location", headerName: "Location" },
+   { field: "building", headerName: "Building" },
+    { field: "unit", headerName: "Location" },
     {
       field: "price",
       headerName: "Price (INR)",
@@ -237,8 +237,9 @@ const AssignAssets = () => {
         srNo: index + 1,
         department: item?.department?.name,
         subCategory: item?.subCategory?.subCategoryName,
-        building: item?.location?.building?.buildingName || "N/A",
-        location: item?.location?.unitNo || "N/A",
+      //  building: item?.location?.building?.buildingName || "N/A",
+        location: item?.location || null,
+        unit: item?.location?.unitNo || "N/A",
         isAssigned:
           item?.assignmentState || (item?.isAssigned ? "Assigned" : "Available"),
       }));
@@ -297,11 +298,15 @@ const AssignAssets = () => {
             />
             <DetalisFormatted
               title={"Building"}
-              detail={selectedAsset?.location?.building?.buildingName || "N/A"}
+              detail={
+                selectedAsset?.location?.building?.buildingName ||
+                selectedAsset?.building ||
+                "N/A"
+              }
             />
             <DetalisFormatted
               title={"UnitNo"}
-              detail={selectedAsset?.location?.unitNo || "N/A"}
+              detail={selectedAsset?.location?.unitNo || selectedAsset?.unit || "N/A"}
             />
             <DetalisFormatted
               title={"Ownership Type"}

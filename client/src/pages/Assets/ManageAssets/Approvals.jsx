@@ -134,7 +134,7 @@ const Approvals = () => {
     { field: "name", headerName: "Asset Name" },
     { field: "serialNumber", headerName: "Serial Number" },
     { field: "building", headerName: "Building" },
-    { field: "location", headerName: "Location" },
+    { field: "unit", headerName: "Location" },
     {
       field: "status",
       headerName: "Status",
@@ -207,6 +207,18 @@ const Approvals = () => {
           assets?.unit ||
           item?.unit ||
           null;
+        const buildingName =
+          assetLocation?.building?.buildingName ||
+          assetLocation?.buildingName ||
+          item?.building?.buildingName ||
+          item?.buildingName ||
+          "N/A";
+        const unitNo =
+          assetLocation?.unitNo ||
+          assetLocation?.unit ||
+          item?.unitNo ||
+          item?.unit ||
+          "N/A";
         const category = assets?.subCategory?.category?.categoryName;
         console.log("assets inside data", category);
       return {
@@ -221,8 +233,9 @@ const Approvals = () => {
           brand: assets?.brand,
           name: assets?.name || "N/A",
           serialNumber: assets?.serialNumber || "N/A",
-          building: item?.location?.building?.buildingName || "N/A",
-        location: item?.location?.unitNo || "N/A",
+          location: item?.location || null,
+          unit: item?.location?.unitNo || "N/A",
+          assetLocation,
         };
       });
 
@@ -350,13 +363,17 @@ const Approvals = () => {
                 detail={selectedAsset?.department || "N/A"}
               />
               <DetalisFormatted
-              title={"Building"}
-              detail={selectedAsset?.location?.building?.buildingName || "N/A"}
-            />
-            <DetalisFormatted
-              title={"UnitNo"}
-              detail={selectedAsset?.location?.unitNo || "N/A"}
-            />
+                           title={"Building"}
+                           detail={
+                             selectedAsset?.location?.building?.buildingName ||
+                             selectedAsset?.building ||
+                             "N/A"
+                           }
+                         />
+                         <DetalisFormatted
+                           title={"UnitNo"}
+                           detail={selectedAsset?.location?.unitNo || selectedAsset?.unit || "N/A"}
+                         />
             <DetalisFormatted
               title={"Damaged"}
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}
