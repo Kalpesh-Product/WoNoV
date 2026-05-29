@@ -133,8 +133,8 @@ const Approvals = () => {
     { field: "brand", headerName: "Brand" },
     { field: "name", headerName: "Asset Name" },
     { field: "serialNumber", headerName: "Serial Number" },
-    { field: "building", headerName: "Building" },
-    { field: "unit", headerName: "Location" },
+    { field: "building", headerName: "Building", minWidth: 160, flex: 1 },
+    { field: "unit", headerName: "Location", minWidth: 140, flex: 1 },
     {
       field: "status",
       headerName: "Status",
@@ -208,12 +208,20 @@ const Approvals = () => {
           item?.unit ||
           null;
         const buildingName =
+          item?.location?.building?.buildingName ||
+          assets?.location?.building?.buildingName ||
           assetLocation?.building?.buildingName ||
           assetLocation?.buildingName ||
           item?.building?.buildingName ||
+          assets?.building?.buildingName ||
           item?.buildingName ||
+          assets?.buildingName ||
           "N/A";
         const unitNo =
+          item?.location?.unitNo ||
+          item?.location?.unit ||
+          assets?.location?.unitNo ||
+          assets?.location?.unit ||
           assetLocation?.unitNo ||
           assetLocation?.unit ||
           item?.unitNo ||
@@ -233,8 +241,9 @@ const Approvals = () => {
           brand: assets?.brand,
           name: assets?.name || "N/A",
           serialNumber: assets?.serialNumber || "N/A",
+          building: buildingName,
           location: item?.location || null,
-          unit: item?.location?.unitNo || "N/A",
+          unit: unitNo,
           assetLocation,
         };
       });
