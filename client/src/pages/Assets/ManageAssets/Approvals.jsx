@@ -207,6 +207,19 @@ const Approvals = () => {
               detail={selectedAsset?.assignee}
             />
             <DetalisFormatted
+              title={"Approved By"}
+              detail={
+                selectedAsset?.approvedBy
+                  ? `${selectedAsset.approvedBy.firstName || ""} ${selectedAsset.approvedBy.lastName || ""}`.trim()
+                  : "N/A"
+              }
+            />
+             <DetalisFormatted
+              title={"Assigned At"}
+              detail={humanDate(selectedAsset?.createdAt)}
+            />
+          
+            <DetalisFormatted
               title={"Asset Name"}
               detail={selectedAsset?.name}
             />
@@ -234,10 +247,6 @@ const Approvals = () => {
             <DetalisFormatted
               title={"Sub Category"}
               detail={selectedAsset?.subCategory?.subCategoryName}
-            />
-            <DetalisFormatted
-              title={"Assigned Date"}
-              detail={humanDate(selectedAsset?.createdAt)}
             />
               <DetalisFormatted
               title={"Purchase Date"}

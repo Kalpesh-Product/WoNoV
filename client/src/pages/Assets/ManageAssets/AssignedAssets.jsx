@@ -157,6 +157,22 @@ const AssignedAssets = () => {
               detail={selectedAsset?.assignee}
             />
             <DetalisFormatted
+              title={"Approved By"}
+              detail={
+                selectedAsset?.approvedBy
+                  ? `${selectedAsset.approvedBy.firstName || ""} ${selectedAsset.approvedBy.lastName || ""}`.trim()
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Approved At"}
+              detail={
+                selectedAsset?.status === "Approved" && selectedAsset?.updatedAt
+                  ? humanDate(selectedAsset.updatedAt)
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted
               title={"Asset Name"}
               detail={selectedAsset?.name}
             />

@@ -117,7 +117,7 @@ const AssetsDashboard = () => {
     );
   }
 
-  const totalCategories = !isCategoriesLoading
+  const totalCategories = !isCategoriesLoading && Array.isArray(departmentCategories)
     ? departmentCategories.length
     : 0;
   const totalAssets = (isDepartmentLoading || !Array.isArray(assetsDept))
@@ -261,7 +261,7 @@ const AssetsDashboard = () => {
   const assetCategoriesData = {
     labels: !isCategoriesLoading
       ? departmentCategories.map((cat) => {
-        return cat.categoryName;
+        return cat?.categoryName || "N/A";
       })
       : [],
     series: !isCategoriesLoading && Array.isArray(departmentCategories)
@@ -350,7 +350,7 @@ const AssetsDashboard = () => {
           assetId: item.assetId,
           department: item?.department?.name,
           subCategory: item?.subCategory?.subCategoryName,
-          category: item?.subCategory?.category.categoryName,
+          category: item?.subCategory?.category?.categoryName || "N/A",
           brand: item?.brand,
           warranty: item?.warranty,
           purchaseDate: humanDate(item?.purchaseDate),
