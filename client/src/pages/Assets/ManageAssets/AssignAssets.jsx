@@ -237,7 +237,11 @@ const AssignAssets = () => {
         srNo: index + 1,
         department: item?.department?.name,
         subCategory: item?.subCategory?.subCategoryName,
-      //  building: item?.location?.building?.buildingName || "N/A",
+        building:
+          item?.location?.building?.buildingName ||
+          item?.building?.buildingName ||
+          item?.buildingName ||
+          "N/A",
         location: item?.location || null,
         unit: item?.location?.unitNo || "N/A",
         isAssigned:
