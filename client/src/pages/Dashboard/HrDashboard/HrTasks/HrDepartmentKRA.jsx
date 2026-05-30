@@ -270,6 +270,13 @@ const HrDepartmentKRA = () => {
         show: false,
       },
     },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "14%",
+        borderRadius: 3,
+      },
+    },
     xaxis: {
       categories: [department || "Department"],
       labels: {
