@@ -438,18 +438,20 @@ const HrKRA = () => {
 
         <div className="flex justify-center items-center">
           <div className="flex items-center pb-4">
-              <SecondaryButton
+            <SecondaryButton
               title={<MdNavigateBefore />}
               handleSubmit={handlePreviousDate}
+             // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
             />
 
-            <div className="text-sm min-w-[180px] text-center">
+          <div className="text-sm min-w-[120px] text-center text-primary font-semibold">
               {selectedDateLabel}
             </div>
 
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={handleNextDate}
+              externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
             />
           </div>
         </div>

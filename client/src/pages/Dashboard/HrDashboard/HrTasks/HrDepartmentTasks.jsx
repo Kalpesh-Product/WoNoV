@@ -450,13 +450,15 @@ const HrDepartmentTasks = () => {
           <SecondaryButton
             title={<MdNavigateBefore />}
             handleSubmit={handlePrevFiscalYear}
+           // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
           />
-          <div className="text-subtitle text-center font-pmedium">
+          <div className="text-sm min-w-[80px] text-center text-primary font-semibold">
             {overviewFiscalYearLabel}
           </div>
           <PrimaryButton
             title={<MdNavigateNext />}
             handleSubmit={handleNextFiscalYear}
+            externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
           />
         </div>
       </WidgetSection>
@@ -474,14 +476,16 @@ const HrDepartmentTasks = () => {
           <SecondaryButton
             title={<MdNavigateBefore />}
             handleSubmit={handlePrevMonth}
+            //externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
            // disabled={selectedMonthIndex === 0}
           />
-          <div className="text-subtitle  text-center font-pmedium">
+         <div className="text-sm min-w-[80px] text-center text-primary font-semibold">
                         {selectedMonthDisplay}
           </div>
           <PrimaryButton
             title={<MdNavigateNext />}
             handleSubmit={handleNextMonth}
+            externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
            // disabled={selectedMonthIndex === fyMonths.length - 1}
           />
         </div>

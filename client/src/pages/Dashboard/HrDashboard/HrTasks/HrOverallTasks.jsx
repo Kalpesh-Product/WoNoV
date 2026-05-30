@@ -353,14 +353,16 @@ const HrOverallTasks = () => {
             <SecondaryButton
               title={<MdNavigateBefore />}
               handleSubmit={handlePrevMonth}
+             // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
               // disabled={!isPrevAvailable}
             />
-            <div className="text-sm min-w-[120px] text-center">
+            <div className="text-sm min-w-[120px] text-center text-primary font-semibold">
                    {activeMonthYear}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={handleNextMonth}
+              externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
               // disabled={!isNextAvailable}
             />
           </div>
