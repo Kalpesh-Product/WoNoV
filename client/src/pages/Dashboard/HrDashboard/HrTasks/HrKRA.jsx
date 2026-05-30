@@ -47,9 +47,36 @@ const toLocalIsoDate = (value) => {
 };
 
 const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
-  const taskDateKey = toLocalIsoDate(task?.assignedDate || task?.dueDate || task?.createdAt);
+   const taskDateKey = toLocalIsoDate(
+    task?.assignedDate || task?.dueDate || task?.createdAt,
+  );
   return !!taskDateKey && taskDateKey <= selectedDateKey;
 };
+
+const isAfterSelectedDate = (dateValue, selectedDateKey) => {
+  const dateKey = toLocalIsoDate(dateValue);
+  return !!dateKey && dateKey > selectedDateKey;
+};
+
+const getTaskName = (task) =>
+  task?.kraName || task?.taskName || task?.task || task?.title || "task";
+
+const getTaskIdentity = (task) =>
+  [getTaskName(task), task?.assignedDate || "", task?.dueDate || ""]
+    .map((value) => String(value).trim().toLowerCase())
+    .join("|");
+
+const uniqueTasksByIdentity = (tasks) =>
+  Array.from(
+    tasks
+      .reduce((uniqueTasks, task) => {
+        const taskIdentity = getTaskIdentity(task);
+        if (!uniqueTasks.has(taskIdentity)) uniqueTasks.set(taskIdentity, task);
+        return uniqueTasks;
+      }, new Map())
+      .values(),
+  );
+
 
 const isSameSelectedDate = (dateValue, selectedDateKey) =>
   toLocalIsoDate(dateValue) === selectedDateKey;
@@ -88,39 +115,68 @@ const HrKRA = () => {
   );
 
   const { data: departmentWiseData = [] } = useQuery({
-    queryKey: ["hrDepartmentKraStats", selectedDateKey, departmentList.map((d) => d.departmentId).join(",")],
+     queryKey: [
+      "hrDepartmentKraStats",
+      selectedDateKey,
+      departmentList.map((d) => d.departmentId).join(","),
+    ],
     enabled: departmentList.length > 0,
     queryFn: async () => {
       const stats = await Promise.all(
         departmentList.map(async ({ departmentId, departmentName }) => {
           const settled = await Promise.allSettled([
-            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
-            axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`),
+  axios.get(
+              `/api/performance/get-tasks?dept=${departmentId}&type=KRA`,
+            ),
+            axios.get(
+              `/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`,
+            ),  
           ]);
 
           const assignedTasks =
-            settled[0]?.status === "fulfilled" ? settled[0].value?.data || [] : [];
+             settled[0]?.status === "fulfilled"
+              ? settled[0].value?.data || []
+              : [];
           const completedTasks =
-            settled[1]?.status === "fulfilled" ? settled[1].value?.data || [] : [];
-
-          const dailyTasks = assignedTasks.filter((task) =>
-            isTaskScheduledOnOrBeforeDate(task, selectedDateKey),
-          );
+            settled[1]?.status === "fulfilled"
+              ? settled[1].value?.data || []
+              : [];
 
           const completedOnSelectedDate = completedTasks.filter((task) =>
             isSameSelectedDate(task?.completionDate, selectedDateKey),
-          ).length;
+        );
+
+          const completedAfterSelectedDate = completedTasks.filter(
+            (task) =>
+              isTaskScheduledOnOrBeforeDate(task, selectedDateKey) &&
+              isAfterSelectedDate(task?.completionDate, selectedDateKey),
+          );
+
+          const completedOnSelectedDateKeys = new Set(
+            completedOnSelectedDate.map(getTaskIdentity),
+          );
+
+          const pendingTasks = uniqueTasksByIdentity([
+            ...assignedTasks
+              .filter((task) =>
+                isTaskScheduledOnOrBeforeDate(task, selectedDateKey),
+              )
+              .filter(
+                (task) =>
+                  !completedOnSelectedDateKeys.has(getTaskIdentity(task)),
+              ),
+            ...completedAfterSelectedDate,
+          ]);
 
           return {
             departmentId,
             departmentName,
-            tasks: dailyTasks,
-            totalTasks: dailyTasks.length,
-            achievedTasks: completedOnSelectedDate,
+            tasks: pendingTasks,
+            totalTasks: pendingTasks.length + completedOnSelectedDate.length,
+            achievedTasks: completedOnSelectedDate.length,
           };
         }),
       );
-
       return stats.filter(Boolean);
     },
   });
@@ -142,7 +198,10 @@ const HrKRA = () => {
       : 0;
 
     const shortFall = item.totalTasks
-      ? (((item.totalTasks - item.achievedTasks) / item.totalTasks) * 100).toFixed(0)
+  ? (
+          ((item.totalTasks - item.achievedTasks) / item.totalTasks) *
+          100
+        ).toFixed(0)
       : 0;
 
     return {
@@ -155,14 +214,19 @@ const HrKRA = () => {
   });
 
   const totalTasks = tableData.reduce((sum, item) => sum + item.totalTasks, 0);
-  const completedTasks = tableData.reduce((sum, item) => sum + item.achievedTasks, 0);
+   const completedTasks = tableData.reduce(
+    (sum, item) => sum + item.achievedTasks,
+    0,
+  );
   const pendingTasks = Math.max(totalTasks - completedTasks, 0);
 
   const graphData = ["Completed", "Pending"].map((type) => ({
     name: `${type} KRA`,
     group: `KRA - ${selectedDateLabel}`,
     data: allDepartments.map((department) => {
-      const tableItem = tableData.find((item) => item.department === department);
+           const tableItem = tableData.find(
+        (item) => item.department === department,
+      );
       const completed = tableItem?.achievedTasks || 0;
       const total = tableItem?.totalTasks || 0;
       const pending = Math.max(total - completed, 0);
@@ -193,7 +257,9 @@ const HrKRA = () => {
       events: {
         dataPointSelection: (_event, _chartContext, config) => {
           const clickedDept =
-            config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
+          config.w.config.series[config.seriesIndex].data[
+              config.dataPointIndex
+            ].x;
           const departmentTasks = groupedTasks[clickedDept] || [];
           navigate(`${clickedDept}`, {
             state: {
@@ -342,15 +408,29 @@ const HrKRA = () => {
         redTitle={"pending"}
         TitleAmountRed={pendingTasks}
       >
-        <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
+  <NormalBarGraph
+          data={graphData}
+          options={graphOptions}
+          year={false}
+          height={400}
+        />
+
 
         <div className="flex justify-center items-center">
           <div className="flex items-center pb-4">
-            <SecondaryButton title={<MdNavigateBefore />} handleSubmit={handlePreviousDate} />
+              <SecondaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={handlePreviousDate}
+            />
 
-            <div className="text-sm min-w-[180px] text-center">{selectedDateLabel}</div>
+            <div className="text-sm min-w-[180px] text-center">
+              {selectedDateLabel}
+            </div>
 
-            <SecondaryButton title={<MdNavigateNext />} handleSubmit={handleNextDate} />
+            <SecondaryButton
+              title={<MdNavigateNext />}
+              handleSubmit={handleNextDate}
+            />
           </div>
         </div>
       </WidgetSection>
@@ -360,7 +440,13 @@ const HrKRA = () => {
         border
         TitleAmount={`TOTAL TASKS : ${totalTasks}`}
       >
-        <AgTable columns={tasksColumns} data={tableData} tableHeight={300} search={true} exportData />
+        <AgTable
+          columns={tasksColumns}
+          data={tableData}
+          tableHeight={300}
+          search={true}
+          exportData
+        />
       </WidgetSection>
     </div>
   );

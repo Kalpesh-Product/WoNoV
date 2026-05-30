@@ -45,7 +45,8 @@ const toDate = (value) => {
 
 const parseSelectedDate = (value) => {
   if (!value) return new Date();
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? new Date() : value;
+   if (value instanceof Date)
+    return Number.isNaN(value.getTime()) ? new Date() : value;
   if (typeof value === "string" && value.includes("-")) {
     const [a, b, c] = value.split("-");
     if (a?.length === 4) {
@@ -64,6 +65,16 @@ const toLocalIsoDate = (value) => {
   if (!date) return null;
   return formatDateKey(date);
 };
+
+const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
+  const taskDateKey = toLocalIsoDate(
+    task?.assignedDate || task?.dueDate || task?.createdAt,
+  );
+  return !!taskDateKey && taskDateKey <= selectedDateKey;
+};
+
+const isSameSelectedDate = (dateValue, selectedDateKey) =>
+  toLocalIsoDate(dateValue) === selectedDateKey;
 
 const formatDateOnly = (value) => {
   const parsed = toDate(value);
@@ -85,7 +96,7 @@ const HrDepartmentKRA = () => {
   const axios = useAxiosPrivate();
 
   const [selectedDate, setSelectedDate] = useState(() =>
-    parseSelectedDate(location.state?.selectedDate)
+     parseSelectedDate(location.state?.selectedDate),
   );
 
   const selectedDateKey = formatDateKey(selectedDate);
@@ -106,7 +117,7 @@ const HrDepartmentKRA = () => {
 
   const departmentId = useMemo(() => {
     const matched = fetchedDepartments.find(
-      (item) => item?.department?.name === department
+            (item) => item?.department?.name === department,
     );
     return matched?.department?._id || null;
   }, [fetchedDepartments, department]);
@@ -116,7 +127,7 @@ const HrDepartmentKRA = () => {
     enabled: !!departmentId,
     queryFn: async () => {
       const response = await axios.get(
-        `/api/performance/get-tasks?dept=${departmentId}&type=KRA`
+        `/api/performance/get-tasks?dept=${departmentId}&type=KRA`,
       );
       return Array.isArray(response.data) ? response.data : [];
     },
@@ -127,77 +138,44 @@ const HrDepartmentKRA = () => {
     enabled: !!departmentId,
     queryFn: async () => {
       const response = await axios.get(
-        `/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`
+        `/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`,
       );
       return Array.isArray(response.data) ? response.data : [];
     },
   });
 
-  const sourceTasks = useMemo(() => {
-    const preferredAssignedTasks =
+  const assignedSourceTasks = useMemo(
+    () =>
       Array.isArray(fetchedDepartmentTasks) && fetchedDepartmentTasks.length
         ? fetchedDepartmentTasks
         : Array.isArray(tasks)
         ? tasks
-        : [];
+          : [],
+    [tasks, fetchedDepartmentTasks],
+     );
 
-    const merged = [...preferredAssignedTasks, ...fetchedCompletedTasks];
-    const uniqueById = new Map();
+  const dailyTaskSummary = useMemo(() => {
+    const dailyTasks = assignedSourceTasks.filter((task) =>
+      isTaskScheduledOnOrBeforeDate(task, selectedDateKey),
+    );
 
-    merged.forEach((task, index) => {
-      const key = task?._id || task?.id || `${task?.taskName || task?.task || "task"}-${index}`;
-      const previous = uniqueById.get(key) || {};
-      uniqueById.set(key, {
-        ...previous,
-        ...task,
-      });
-    });
+    const completedTasks = fetchedCompletedTasks.filter((task) =>
+      isSameSelectedDate(task?.completionDate, selectedDateKey),
+    );
 
-    return Array.from(uniqueById.values());
-  }, [tasks, fetchedDepartmentTasks, fetchedCompletedTasks]);
+    return {
+      completedTasks,
+      total: dailyTasks.length + completedTasks.length,
+      completed: completedTasks.length,
+    };
+  }, [assignedSourceTasks, fetchedCompletedTasks, selectedDateKey]);
 
-  const filteredTasks = useMemo(() => {
-    const completedTasksForDay = sourceTasks.filter((task) => {
-      const status = String(task?.status || "").trim().toLowerCase();
-      const completionKey = toLocalIsoDate(task?.completionDate);
-      const assignedKey = toLocalIsoDate(task?.assignedDate || task?.createdAt || task?.dueDate);
-      return status === "completed" && (completionKey === selectedDateKey || assignedKey === selectedDateKey);
-    });
-
-    const pendingTasksForDay = sourceTasks.filter((task) => {
-      const status = String(task?.status || "").trim().toLowerCase();
-      const assignedKey = toLocalIsoDate(task?.assignedDate || task?.createdAt || task?.dueDate);
-      return status !== "completed" && assignedKey === selectedDateKey;
-    });
-
-    const allDailyTasks = [...completedTasksForDay, ...pendingTasksForDay];
-    const uniqueById = new Map();
-    allDailyTasks.forEach((task, index) => {
-      const key = task?._id || task?.id || `${task?.taskName || task?.task || "task"}-${index}`;
-      if (!uniqueById.has(key)) uniqueById.set(key, task);
-    });
-
-    return Array.from(uniqueById.values());
-  }, [sourceTasks, selectedDateKey]);
-
-  const completedFromStatus = filteredTasks.filter(
-    (task) => String(task?.status || "").trim().toLowerCase() === "completed"
-  ).length;
-
-  const completedFromApi = useMemo(
-    () =>
-      fetchedCompletedTasks.filter(
-        (task) => toLocalIsoDate(task?.completionDate) === selectedDateKey
-      ).length,
-    [fetchedCompletedTasks, selectedDateKey]
-  );
-
-  // Keep same behavior as outer Department KRA page for matching tooltip numbers.
-  const effectiveCompleted = completedFromApi || completedFromStatus;
-
-  const pending = Math.max(filteredTasks.length - effectiveCompleted, 0);
-  const completionPercent = filteredTasks.length
-    ? +((effectiveCompleted / filteredTasks.length) * 100).toFixed(1)
+  const completedTasks = dailyTaskSummary.completed;
+  const totalTasks = dailyTaskSummary.total;
+  const pending = Math.max(totalTasks - completedTasks, 0);
+  const completedTableData = dailyTaskSummary.completedTasks;
+  const completionPercent = totalTasks
+    ? +((completedTasks / totalTasks) * 100).toFixed(1)
     : 0;
 
   const graphData = [
@@ -206,10 +184,8 @@ const HrDepartmentKRA = () => {
       data: [
         {
           x: department || "Department",
-          y: filteredTasks.length
-            ? completionPercent
-            : 0,
-          raw: effectiveCompleted,
+          y: totalTasks ? completionPercent : 0,
+          raw: completedTasks,
         },
       ],
     },
@@ -218,9 +194,7 @@ const HrDepartmentKRA = () => {
       data: [
         {
           x: department || "Department",
-          y: filteredTasks.length
-            ? +((pending / filteredTasks.length) * 100).toFixed(1)
-            : 0,
+          y: totalTasks ? +((pending / totalTasks) * 100).toFixed(1) : 0,
           raw: pending,
         },
       ],
@@ -343,7 +317,9 @@ const HrDepartmentKRA = () => {
           color: "#374151",
         };
 
-        return <Chip label={status || "-"} style={{ backgroundColor, color }} />;
+        return (
+          <Chip label={status || "-"} style={{ backgroundColor, color }} />
+        );
       },
     },
     {
@@ -360,8 +336,8 @@ const HrDepartmentKRA = () => {
         new Date(
           prevDate.getFullYear(),
           prevDate.getMonth(),
-          prevDate.getDate() - 1
-        )
+         prevDate.getDate() - 1,
+        ),
     );
   };
 
@@ -371,8 +347,8 @@ const HrDepartmentKRA = () => {
         new Date(
           prevDate.getFullYear(),
           prevDate.getMonth(),
-          prevDate.getDate() + 1
-        )
+           prevDate.getDate() + 1,
+        ),
     );
   };
 
@@ -383,7 +359,7 @@ const HrDepartmentKRA = () => {
         border
         padding
         greenTitle="completed"
-        TitleAmountGreen={effectiveCompleted}
+          TitleAmountGreen={completedTasks}
         redTitle="pending"
         TitleAmountRed={pending}
       >
@@ -413,10 +389,10 @@ const HrDepartmentKRA = () => {
         </div>
       </WidgetSection>
 
-      <WidgetSection title="Department Daily KRA Details" border>
+     <WidgetSection title="Department Completed KRA Details" border>
         <AgTable
           columns={columns}
-          data={filteredTasks}
+          data={completedTableData}
           tableHeight={300}
           // hideFilter
           search={true}
