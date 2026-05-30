@@ -58,6 +58,16 @@ const isAfterSelectedDate = (dateValue, selectedDateKey) => {
   return !!dateKey && dateKey > selectedDateKey;
 };
 
+const isBeforeSelectedDate = (dateValue, selectedDateKey) => {
+  const dateKey = toLocalIsoDate(dateValue);
+  return !!dateKey && dateKey < selectedDateKey;
+};
+
+const isOnOrAfterDateKey = (dateValue, referenceDateKey) => {
+  const dateKey = toLocalIsoDate(dateValue);
+  return !!dateKey && dateKey >= referenceDateKey;
+};
+
 const getTaskName = (task) =>
   task?.kraName || task?.taskName || task?.task || task?.title || "task";
 
@@ -88,6 +98,8 @@ const HrKRA = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const selectedDateKey = formatDateKey(selectedDate);
+  const todayDateKey = formatDateKey(new Date());
+  const isFutureSelectedDate = selectedDateKey > todayDateKey;
 
   const selectedDateLabel = selectedDate.toLocaleDateString("en-US", {
     day: "2-digit",
@@ -152,6 +164,13 @@ const HrKRA = () => {
               isAfterSelectedDate(task?.completionDate, selectedDateKey),
           );
 
+          const completedBeforeSelectedDate = completedTasks.filter(
+            (task) =>
+              isTaskScheduledOnOrBeforeDate(task, selectedDateKey) &&
+              isBeforeSelectedDate(task?.completionDate, selectedDateKey) &&
+              isOnOrAfterDateKey(task?.completionDate, todayDateKey),
+          );
+
           const completedOnSelectedDateKeys = new Set(
             completedOnSelectedDate.map(getTaskIdentity),
           );
@@ -165,6 +184,7 @@ const HrKRA = () => {
                 (task) =>
                   !completedOnSelectedDateKeys.has(getTaskIdentity(task)),
               ),
+            ...(isFutureSelectedDate ? completedBeforeSelectedDate : []),
             ...completedAfterSelectedDate,
           ]);
 

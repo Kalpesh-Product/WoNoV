@@ -8,6 +8,8 @@ import { useSelector } from "react-redux";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
 const SHORT_MONTHS = [
   "Jan",
@@ -65,6 +67,54 @@ const getTaskMonthLabel = (assignedDate) => {
   return `${SHORT_MONTHS[jsDate.getMonth()]}-${String(jsDate.getFullYear()).slice(2)}`;
 };
 
+const getDisplayName = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value.trim();
+  if (typeof value !== "object") return "";
+
+  const fullName =
+    value.fullName ||
+    value.name ||
+    [value.firstName, value.lastName].filter(Boolean).join(" ");
+
+  return String(fullName || "").trim();
+};
+
+const getCompletedByName = (task) => {
+  const candidates = [
+    task?.completedByName,
+    task?.completedByUser,
+    task?.completedBy,
+    task?.completedByDetails,
+    task?.completedByMember,
+  ];
+
+  for (const candidate of candidates) {
+    const name = getDisplayName(candidate);
+    if (name && !/^[a-f0-9]{24}$/i.test(name)) return name;
+  }
+
+  return "-";
+};
+
+const getDepartmentManagerName = (selectedDepartments, departmentName) => {
+  if (!departmentName) return "Unassigned";
+
+  const normalizedDepartment = String(departmentName).trim().toLowerCase();
+
+  const matchedDepartment = selectedDepartments.find(
+    (item) =>
+      String(item?.department?.name || "")
+        .trim()
+        .toLowerCase() === normalizedDepartment,
+  );
+
+  const admin = matchedDepartment?.admin;
+  const adminName = getDisplayName(admin);
+
+  return adminName || (typeof admin === "string" && admin.trim()) || "Unassigned";
+};
+
 
 const HrDepartmentKPA = () => {
   const location = useLocation();
@@ -72,6 +122,18 @@ const HrDepartmentKPA = () => {
   const { department: departmentFromState, tasks } = location.state || {};
   const department = departmentFromState || departmentParam;
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+  const axios = useAxiosPrivate();
+  const { data: selectedDepartments = [] } = useQuery({
+    queryKey: ["hr-selectedDepartments"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments",
+      );
+      return Array.isArray(response.data?.selectedDepartments)
+        ? response.data.selectedDepartments
+        : [];
+    },
+  });
   const fullMonthNames = {
     Jan: "January",
     Feb: "February",
@@ -164,6 +226,10 @@ const HrDepartmentKPA = () => {
 
   const departmentName = filteredData[0]?.department || department || "Department";
   const tasksData = filteredData[0]?.tasks || tasks || [];
+  const departmentManagerName = useMemo(
+    () => getDepartmentManagerName(selectedDepartments, departmentName),
+    [selectedDepartments, departmentName],
+  );
 
    const handlePrevMonth = () => {
     if (detailsMonthIndex > 0) {
@@ -342,6 +408,12 @@ const HrDepartmentKPA = () => {
       flex: 1,
     },
     {
+      field: "completedBy",
+      headerName: "Completed By",
+      flex: 1,
+      valueGetter: (params) => getCompletedByName(params.data),
+    },
+    {
       field: "assignedTo",
       headerName: "Assigned To",
       flex: 1,
@@ -443,6 +515,7 @@ const HrDepartmentKPA = () => {
             search={true}
             columns={tasksColumns}
             data={completedFilteredTasks.map((item, index) => ({
+              ...item,
               id: index + 1,
               taskName: item.taskName,
               assignedTo: item.assignedTo,
@@ -450,6 +523,10 @@ const HrDepartmentKPA = () => {
               assignedDate: item.assignedDate,
               dueDate: item.dueDate,
               status: item.status,
+              completedByName: departmentManagerName,
+              completedBy: item.completedBy,
+              completedById: item.completedById,
+              completedByUser: item.completedByUser,
             }))}
             exportData
           />
