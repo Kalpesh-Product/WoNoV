@@ -134,9 +134,12 @@ const PerformanceDepartmentWiseKra = () => {
           if (!departmentId || !departmentName) return null;
 
           const settledResponses = await Promise.allSettled([
-            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
-            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
-            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
+            // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
+            // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
+            // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
+                        axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA&date=${selectedDate}`),
+            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA&date=${selectedDate}`),
+            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA&date=${selectedDate}`),
             axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`),
             axios.get(
               `/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKRA`,

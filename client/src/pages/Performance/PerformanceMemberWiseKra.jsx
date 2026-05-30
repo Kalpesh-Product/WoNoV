@@ -88,7 +88,15 @@ const PerformanceMemberWiseKra = () => {
   const loggedInUserId = auth?.user?._id?.toString();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  //const [selectedDate, setSelectedDate] = useState(new Date());
+   const initialSelectedDate = useMemo(() => {
+    const routedDate = location.state?.date;
+    if (!routedDate) return new Date();
+
+    const parsedDate = new Date(routedDate);
+    return Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+  }, [location.state?.date]);
+  const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
   const selectedDateKey = useMemo(() => getDateKey(selectedDate), [selectedDate]);
   const selectedDateLabel = useMemo(
     () =>
@@ -184,9 +192,12 @@ const PerformanceMemberWiseKra = () => {
 
       const settledResponses = await Promise.allSettled([
         axios.get(`/api/users/assignees?deptId=${departmentId}`),
-        axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
-        axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
-        axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
+        // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
+        // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
+        // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
+         axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA&date=${selectedDateKey}`),
+        axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA&date=${selectedDateKey}`),
+        axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA&date=${selectedDateKey}`),
         axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`),
         axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
         axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=TEAMKRA`),
@@ -498,9 +509,10 @@ const PerformanceMemberWiseKra = () => {
       },
     ];
   }, [
+     canManageTeam,
     isEmployeeLevel,
     isTop,
-    isTopManagementDepartment,
+   // isTopManagementDepartment,
     loggedInUserId,
     loggedInUserName,
     rowData,
