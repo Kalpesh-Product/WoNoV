@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { useQuery } from "@tanstack/react-query";
+import { Chip } from "@mui/material";
 
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
@@ -58,6 +59,21 @@ const parseSelectedDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 };
 
+const toLocalIsoDate = (value) => {
+  const date = toDate(value);
+  if (!date) return null;
+  return formatDateKey(date);
+};
+
+const formatDateOnly = (value) => {
+  const parsed = toDate(value);
+  if (!parsed) return value || "-";
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const year = parsed.getFullYear();
+  return `${day}-${month}-${year}`;
+};
+
 const HrDepartmentKRA = () => {
   const location = useLocation();
 
@@ -106,23 +122,83 @@ const HrDepartmentKRA = () => {
     },
   });
 
+  const { data: fetchedCompletedTasks = [] } = useQuery({
+    queryKey: ["hrDepartmentKraCompletedTasks", departmentId],
+    enabled: !!departmentId,
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`
+      );
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
   const sourceTasks = useMemo(() => {
-    if (Array.isArray(tasks) && tasks.length) return tasks;
-    return fetchedDepartmentTasks;
-  }, [tasks, fetchedDepartmentTasks]);
+    const preferredAssignedTasks =
+      Array.isArray(fetchedDepartmentTasks) && fetchedDepartmentTasks.length
+        ? fetchedDepartmentTasks
+        : Array.isArray(tasks)
+        ? tasks
+        : [];
+
+    const merged = [...preferredAssignedTasks, ...fetchedCompletedTasks];
+    const uniqueById = new Map();
+
+    merged.forEach((task, index) => {
+      const key = task?._id || task?.id || `${task?.taskName || task?.task || "task"}-${index}`;
+      const previous = uniqueById.get(key) || {};
+      uniqueById.set(key, {
+        ...previous,
+        ...task,
+      });
+    });
+
+    return Array.from(uniqueById.values());
+  }, [tasks, fetchedDepartmentTasks, fetchedCompletedTasks]);
 
   const filteredTasks = useMemo(() => {
-    return sourceTasks.filter((task) => {
-      const taskDate = toDate(task.assignedDate || task.dueDate || task.createdAt);
-      return taskDate && formatDateKey(taskDate) <= selectedDateKey;
+    const completedTasksForDay = sourceTasks.filter((task) => {
+      const status = String(task?.status || "").trim().toLowerCase();
+      const completionKey = toLocalIsoDate(task?.completionDate);
+      const assignedKey = toLocalIsoDate(task?.assignedDate || task?.createdAt || task?.dueDate);
+      return status === "completed" && (completionKey === selectedDateKey || assignedKey === selectedDateKey);
     });
+
+    const pendingTasksForDay = sourceTasks.filter((task) => {
+      const status = String(task?.status || "").trim().toLowerCase();
+      const assignedKey = toLocalIsoDate(task?.assignedDate || task?.createdAt || task?.dueDate);
+      return status !== "completed" && assignedKey === selectedDateKey;
+    });
+
+    const allDailyTasks = [...completedTasksForDay, ...pendingTasksForDay];
+    const uniqueById = new Map();
+    allDailyTasks.forEach((task, index) => {
+      const key = task?._id || task?.id || `${task?.taskName || task?.task || "task"}-${index}`;
+      if (!uniqueById.has(key)) uniqueById.set(key, task);
+    });
+
+    return Array.from(uniqueById.values());
   }, [sourceTasks, selectedDateKey]);
 
-  const completed = filteredTasks.filter(
-    (task) => task.status === "Completed"
+  const completedFromStatus = filteredTasks.filter(
+    (task) => String(task?.status || "").trim().toLowerCase() === "completed"
   ).length;
 
-  const remaining = filteredTasks.length - completed;
+  const completedFromApi = useMemo(
+    () =>
+      fetchedCompletedTasks.filter(
+        (task) => toLocalIsoDate(task?.completionDate) === selectedDateKey
+      ).length,
+    [fetchedCompletedTasks, selectedDateKey]
+  );
+
+  // Keep same behavior as outer Department KRA page for matching tooltip numbers.
+  const effectiveCompleted = completedFromApi || completedFromStatus;
+
+  const pending = Math.max(filteredTasks.length - effectiveCompleted, 0);
+  const completionPercent = filteredTasks.length
+    ? +((effectiveCompleted / filteredTasks.length) * 100).toFixed(1)
+    : 0;
 
   const graphData = [
     {
@@ -131,21 +207,21 @@ const HrDepartmentKRA = () => {
         {
           x: department || "Department",
           y: filteredTasks.length
-            ? +((completed / filteredTasks.length) * 100).toFixed(1)
+            ? completionPercent
             : 0,
-          raw: completed,
+          raw: effectiveCompleted,
         },
       ],
     },
     {
-      name: "Remaining KRA",
+      name: "Pending KRA",
       data: [
         {
           x: department || "Department",
           y: filteredTasks.length
-            ? +((remaining / filteredTasks.length) * 100).toFixed(1)
+            ? +((pending / filteredTasks.length) * 100).toFixed(1)
             : 0,
-          raw: remaining,
+          raw: pending,
         },
       ],
     },
@@ -155,18 +231,68 @@ const HrDepartmentKRA = () => {
     chart: {
       type: "bar",
       stacked: true,
+      fontFamily: "Poppins-Regular",
       toolbar: {
         show: false,
       },
     },
     xaxis: {
       categories: [department || "Department"],
+      labels: {
+        style: {
+          fontFamily: "Poppins-Regular",
+        },
+      },
     },
     yaxis: {
       max: 100,
+      title: {
+        text: "Completion (%)",
+        style: {
+          fontFamily: "Poppins-Regular",
+        },
+      },
+      labels: {
+        formatter: (value) => `${value.toFixed(0)}%`,
+        style: {
+          fontFamily: "Poppins-Regular",
+        },
+      },
     },
     dataLabels: {
       enabled: false,
+    },
+    legend: {
+      position: "top",
+      fontFamily: "Poppins-Regular",
+    },
+    tooltip: {
+      custom: ({ dataPointIndex, w }) => {
+        const departmentName = w.config.series[0].data[dataPointIndex].x;
+        const completedCount = w.config.series[0].data[dataPointIndex].raw;
+        const pendingCount = w.config.series[1].data[dataPointIndex].raw;
+        const totalCount = completedCount + pendingCount;
+
+        return `
+          <div style="padding:8px; font-family: Poppins, sans-serif; font-size: 13px; width: 220px;">
+            <strong>${departmentName}</strong>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Total KRA</span>
+              <span>${totalCount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Completed KRA</span>
+              <span>${completedCount}</span>
+            </div>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Pending KRA</span>
+              <span>${pendingCount}</span>
+            </div>
+          </div>
+        `;
+      },
     },
     colors: ["#54C4A7", "#EB5C45"],
   };
@@ -178,19 +304,53 @@ const HrDepartmentKRA = () => {
       width: 100,
     },
     {
-      field: "task",
-      headerName: "Task",
+      headerName: "KRA Name",
       flex: 2,
+      valueGetter: (params) =>
+        params.data?.kraName ||
+        params.data?.taskName ||
+        params.data?.task ||
+        params.data?.title ||
+        "-",
+    },
+    {
+      headerName: "Completed By",
+      flex: 1.2,
+      valueGetter: (params) =>
+        params.data?.completedByName ||
+        params.data?.completedBy?.name ||
+        params.data?.completedBy?.fullName ||
+        params.data?.completedByUser?.name ||
+        params.data?.completedBy ||
+        "-",
     },
     {
       field: "status",
       headerName: "Status",
       flex: 1,
+      cellRenderer: (params) => {
+        const status = String(params.value || "").trim();
+        const statusLower = status.toLowerCase();
+
+        const statusColorMap = {
+          pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
+          "in-progress": { backgroundColor: "#ADD8E6", color: "#00008B" },
+          completed: { backgroundColor: "#90EE90", color: "#006400" },
+        };
+
+        const { backgroundColor, color } = statusColorMap[statusLower] || {
+          backgroundColor: "#E5E7EB",
+          color: "#374151",
+        };
+
+        return <Chip label={status || "-"} style={{ backgroundColor, color }} />;
+      },
     },
     {
       field: "assignedDate",
       headerName: "Assigned Date",
       flex: 1,
+      valueGetter: (params) => formatDateOnly(params.data?.assignedDate),
     },
   ];
 
@@ -223,9 +383,9 @@ const HrDepartmentKRA = () => {
         border
         padding
         greenTitle="completed"
-        TitleAmountGreen={completed}
-        redTitle="remaining"
-        TitleAmountRed={remaining}
+        TitleAmountGreen={effectiveCompleted}
+        redTitle="pending"
+        TitleAmountRed={pending}
       >
         <NormalBarGraph
           data={graphData}
@@ -241,7 +401,7 @@ const HrDepartmentKRA = () => {
               handleSubmit={handlePreviousDate}
             />
 
-            <div className="text-sm min-w-[180px] text-center">
+            <div className="text-sm min-w-[130px] text-center">
               {selectedDateLabel}
             </div>
 
@@ -253,7 +413,7 @@ const HrDepartmentKRA = () => {
         </div>
       </WidgetSection>
 
-      <WidgetSection title="KRA Details" border>
+      <WidgetSection title="Department Daily KRA Details" border>
         <AgTable
           columns={columns}
           data={filteredTasks}

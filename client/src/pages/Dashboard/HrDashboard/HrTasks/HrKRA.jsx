@@ -156,18 +156,18 @@ const HrKRA = () => {
 
   const totalTasks = tableData.reduce((sum, item) => sum + item.totalTasks, 0);
   const completedTasks = tableData.reduce((sum, item) => sum + item.achievedTasks, 0);
-  const remainingTasks = Math.max(totalTasks - completedTasks, 0);
+  const pendingTasks = Math.max(totalTasks - completedTasks, 0);
 
-  const graphData = ["Completed", "Remaining"].map((type) => ({
+  const graphData = ["Completed", "Pending"].map((type) => ({
     name: `${type} KRA`,
     group: `KRA - ${selectedDateLabel}`,
     data: allDepartments.map((department) => {
       const tableItem = tableData.find((item) => item.department === department);
       const completed = tableItem?.achievedTasks || 0;
       const total = tableItem?.totalTasks || 0;
-      const remaining = Math.max(total - completed, 0);
+      const pending = Math.max(total - completed, 0);
 
-      const raw = type === "Completed" ? completed : remaining;
+      const raw = type === "Completed" ? completed : pending;
 
       const y = total ? +((raw / total) * 100).toFixed(1) : 0;
 
@@ -242,8 +242,8 @@ const HrKRA = () => {
       custom: ({ dataPointIndex, w }) => {
         const departmentName = w.config.series[0].data[dataPointIndex].x;
         const completed = w.config.series[0].data[dataPointIndex].raw;
-        const remaining = w.config.series[1].data[dataPointIndex].raw;
-        const total = completed + remaining;
+        const pending = w.config.series[1].data[dataPointIndex].raw;
+        const total = completed + pending;
 
         return `
           <div style="padding:8px; font-family: Poppins, sans-serif; font-size: 13px; width: 220px;">
@@ -251,7 +251,8 @@ const HrKRA = () => {
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
             <div style="display: flex; justify-content: space-between;"><span>Total KRA</span><span>${total}</span></div>
             <div style="display: flex; justify-content: space-between;"><span>Completed KRA</span><span>${completed}</span></div>
-            <div style="display: flex; justify-content: space-between;"><span>Remaining KRA</span><span>${remaining}</span></div>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+            <div style="display: flex; justify-content: space-between;"><span>Pending KRA</span><span>${pending}</span></div>
           </div>
         `;
       },
@@ -338,8 +339,8 @@ const HrKRA = () => {
         padding
         greenTitle={"completed"}
         TitleAmountGreen={completedTasks}
-        redTitle={"remaining"}
-        TitleAmountRed={remainingTasks}
+        redTitle={"pending"}
+        TitleAmountRed={pendingTasks}
       >
         <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
 
