@@ -85,7 +85,7 @@ const HrDepartmentTasks = () => {
   const location = useLocation();
   const { department: departmentParam } = useParams();
   const axios = useAxiosPrivate()
-  const { month, department: departmentFromState, tasks, year } = location.state || {};
+  const { department: departmentFromState, tasks } = location.state || {};
   const department = departmentFromState || departmentParam;
  // const { month, department, tasks, year } = location.state || {};
   // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
@@ -172,17 +172,9 @@ const HrDepartmentTasks = () => {
   const currentMonthLabel = `${SHORT_MONTHS[currentDate.getMonth()]}-${String(
     currentDate.getFullYear()
   ).slice(2)}`;
-  const initialShortMonth = Object.keys(fullMonthNames).find(
-    (key) => fullMonthNames[key] === month
-  );
-
-   const initialDate =
-    initialShortMonth && year
-      ? new Date(Number(year), SHORT_MONTHS.indexOf(initialShortMonth), 1)
-      : currentDate;
 
   const [detailsFiscalStartYear, setDetailsFiscalStartYear] = useState(
-    getFiscalStartYearFromDate(initialDate)
+    getFiscalStartYearFromDate(currentDate)
   );
 
   const detailsFyMonths = useMemo(
@@ -190,8 +182,8 @@ const HrDepartmentTasks = () => {
     [detailsFiscalStartYear]
   );
 
-  const initialMonthIndex = detailsFyMonths.findIndex((m) =>
-    initialShortMonth ? m.startsWith(initialShortMonth) : m === currentMonthLabel
+  const initialMonthIndex = detailsFyMonths.findIndex(
+    (m) => m === currentMonthLabel
   );
 
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(
@@ -273,7 +265,7 @@ const HrDepartmentTasks = () => {
   const graphData = [
     {
       name: "Completed Tasks",
-      group: `${departmentName} - ${month}`,
+      group: `${departmentName} - ${selectedMonthDisplay}`,
     data: overviewFyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
           total: 0,
@@ -288,8 +280,8 @@ const HrDepartmentTasks = () => {
       }),
     },
     {
-      name: "Remaining Tasks",
-      group: `${departmentName} - ${month}`,
+      name: "Pending Tasks",
+      group: `${departmentName} - ${selectedMonthDisplay}`,
       data: overviewFyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
           total: 0,
@@ -367,7 +359,7 @@ const HrDepartmentTasks = () => {
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
     
             <div style="display: flex; justify-content: space-between;">
-              <span>Remaining Tasks</span>
+              <span>Pending Tasks</span>
               <span>${remaining}</span>
             </div>
           </div>
@@ -437,6 +429,10 @@ const HrDepartmentTasks = () => {
     return taskMonthLabel === selectedMonth;
   });
 
+  const completedFilteredTasks = filteredTasks.filter(
+    (task) => String(task.status || "").toLowerCase() === "completed"
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
@@ -469,9 +465,9 @@ const HrDepartmentTasks = () => {
         title={`Tasks details`}
         border
        TitleAmount={`${selectedMonthDisplay} : ${
-          filteredTasks.length > 1
-            ? `${filteredTasks.length} Tasks`
-            : `${filteredTasks.length} Tasks`
+          completedFilteredTasks.length > 1
+            ? `${completedFilteredTasks.length} Tasks`
+            : `${completedFilteredTasks.length} Tasks`
         } `}
       >
         <div className="flex justify-center items-center gap-4">
@@ -497,7 +493,7 @@ const HrDepartmentTasks = () => {
             search={true}
             exportData
             columns={tasksColumns}
-            data={filteredTasks.map((item, index) => ({
+            data={completedFilteredTasks.map((item, index) => ({
               id: index + 1,
               taskName: item.taskName,
               assignedTo: formatAssignedUser(item.assignedTo, userIdToNameMap),
