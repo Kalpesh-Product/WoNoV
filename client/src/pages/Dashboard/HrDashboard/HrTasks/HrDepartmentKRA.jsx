@@ -389,7 +389,11 @@ const HrDepartmentKRA = () => {
         </div>
       </WidgetSection>
 
-     <WidgetSection title="Department Completed KRA Details" border>
+      <WidgetSection
+        title="Department Completed KRA Details"
+        border
+        TitleAmount={`${selectedDateLabel} : ${totalTasks} KRA`}
+      >
         <AgTable
           columns={columns}
           data={completedTableData}

@@ -128,7 +128,7 @@ const HrKPA = () => {
       }),
     },
     {
-      name: "Remaining KPA",
+      name: "Pending KPA",
        group: `KPA - ${effectiveSelectedMonthYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
@@ -207,7 +207,7 @@ const HrKPA = () => {
             </div>
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
              <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div>Remaining KPA</div> 
+              <div>Pending KPA</div> 
               <div>${remaining}</div>
             </div>
           </div>
@@ -289,7 +289,7 @@ const HrKPA = () => {
         padding
         greenTitle={"completed"}
         TitleAmountGreen={totalCompleted || 0}
-        redTitle={"remaining"}
+        redTitle={"pending"}
         TitleAmountRed={totalRemaining || 0}
       >
         <NormalBarGraph
@@ -320,7 +320,7 @@ const HrKPA = () => {
       <WidgetSection
         title="Department-wise KPA overview"
         border
-        TitleAmount={`TOTAL Tasks : ${tableData.reduce(
+        TitleAmount={`TOTAL KPA : ${tableData.reduce(
           (sum, item) => item.totalTasks + sum,
           0
         )}`}

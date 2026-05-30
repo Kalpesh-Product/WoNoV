@@ -438,7 +438,7 @@ const HrKRA = () => {
       <WidgetSection
         title="Department-wise KRA overview"
         border
-        TitleAmount={`TOTAL TASKS : ${totalTasks}`}
+        TitleAmount={`TOTAL KRA : ${totalTasks}`}
       >
         <AgTable
           columns={tasksColumns}

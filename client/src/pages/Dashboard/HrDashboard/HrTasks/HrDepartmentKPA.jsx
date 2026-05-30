@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
@@ -41,6 +41,20 @@ const getFiscalMonths = (startYear) => {
   return months;
 };
 
+const getFiscalStartYearFromDate = (date) => {
+  const month = date.getMonth();
+  return month >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+};
+
+const getMonthLabelFromDate = (date) =>
+  `${SHORT_MONTHS[date.getMonth()]}-${String(date.getFullYear()).slice(2)}`;
+
+const getMonthIndexForDateInFiscalYear = (fiscalStartYear, date) => {
+  const monthLabel = getMonthLabelFromDate(date);
+  const fiscalMonths = getFiscalMonths(fiscalStartYear);
+  return fiscalMonths.findIndex((item) => item === monthLabel);
+};
+
 const getTaskMonthLabel = (assignedDate) => {
   const [day, month, year] = (assignedDate || "").split("-").map(Number);
   if (!day || !month || !year) return null;
@@ -54,9 +68,8 @@ const getTaskMonthLabel = (assignedDate) => {
 
 const HrDepartmentKPA = () => {
   const location = useLocation();
-  //const { month, department, tasks, year } = location.state || {};
    const { department: departmentParam } = useParams();
-  const { month, department: departmentFromState, tasks, year } = location.state || {};
+  const { department: departmentFromState, tasks } = location.state || {};
   const department = departmentFromState || departmentParam;
   const tasksRawData = useSelector((state) => state.hr.tasksRawData);
   const fullMonthNames = {
@@ -85,20 +98,11 @@ const HrDepartmentKPA = () => {
   const overviewFiscalYearLabel = `FY ${overviewFiscalStartYear}-${String(
     overviewFiscalStartYear + 1
   ).slice(2)}`;
-  const currentMonthLabel = `${SHORT_MONTHS[new Date().getMonth()]}-${String(
-    new Date().getFullYear()
-  ).slice(2)}`;
-  
-  const initialShortMonth = Object.keys(fullMonthNames).find(
-    (key) => fullMonthNames[key] === month
+  const currentDate = new Date();
+  const initialMonthIndex = getMonthIndexForDateInFiscalYear(
+    overviewFiscalStartYear,
+    currentDate
   );
-
-  const initialMonthIndex = overviewFyMonths.findIndex((label) => {
-    if (initialShortMonth) {
-      return label.startsWith(initialShortMonth);
-    }
-    return label === currentMonthLabel;
-  });
 
   const formatMonthYearLabel = (monthLabel) => {
   const [shortMonth, shortYear] = (monthLabel || "").split("-");
@@ -126,6 +130,28 @@ const HrDepartmentKPA = () => {
   const selectedMonth = detailsFyMonths[detailsMonthIndex];
   const shortMonth = selectedMonth.split("-")[0];
   const selectedMonthDisplay = formatMonthYearLabel(selectedMonth);
+
+  useEffect(() => {
+    const syncToCurrentMonth = () => {
+      const now = new Date();
+      const nowFiscalStartYear = getFiscalStartYearFromDate(now);
+      const nowMonthIndex = getMonthIndexForDateInFiscalYear(nowFiscalStartYear, now);
+
+      setOverviewFiscalStartYear((prev) =>
+        prev === nowFiscalStartYear ? prev : nowFiscalStartYear
+      );
+      setDetailsFiscalStartYear((prev) =>
+        prev === nowFiscalStartYear ? prev : nowFiscalStartYear
+      );
+      setDetailsMonthIndex((prev) =>
+        prev === nowMonthIndex || nowMonthIndex === -1 ? prev : nowMonthIndex
+      );
+    };
+
+    syncToCurrentMonth();
+    const intervalId = setInterval(syncToCurrentMonth, 60 * 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   // if (!department || !tasks?.length) {
   //   return <div className="">No tasks found for this department.</div>;
@@ -199,8 +225,8 @@ const HrDepartmentKPA = () => {
 
   const graphData = [
     {
-      name: "Completed Tasks",
-      group: `${departmentName} - ${month}`,
+      name: "Completed KPA",
+      group: `${departmentName} - ${selectedMonthDisplay}`,
        data: overviewFyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
           total: 0,
@@ -215,8 +241,8 @@ const HrDepartmentKPA = () => {
       }),
     },
     {
-      name: "Remaining Tasks",
-      group: `${departmentName} - ${month}`,
+      name: "Pending KPA",
+      group: `${departmentName} - ${selectedMonthDisplay}`,
       data: overviewFyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
           total: 0,
@@ -294,7 +320,7 @@ const HrDepartmentKPA = () => {
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
     
             <div style="display: flex; justify-content: space-between;">
-              <span>Remaining KPA</span>
+              <span>Pending KPA</span>
               <span>${remaining}</span>
             </div>
           </div>
@@ -355,8 +381,12 @@ const HrDepartmentKPA = () => {
     },
   ];
 
-   const filteredTasks = tasksData.filter((task) =>
+  const filteredTasks = tasksData.filter((task) =>
     getTaskMonthLabel(task.assignedDate) === selectedMonth
+  );
+
+  const completedFilteredTasks = filteredTasks.filter(
+    (task) => String(task.status || "").toLowerCase() === "completed"
   );
 
   return (
@@ -412,7 +442,7 @@ const HrDepartmentKPA = () => {
             tableHeight={300}
             search={true}
             columns={tasksColumns}
-            data={filteredTasks.map((item, index) => ({
+            data={completedFilteredTasks.map((item, index) => ({
               id: index + 1,
               taskName: item.taskName,
               assignedTo: item.assignedTo,
