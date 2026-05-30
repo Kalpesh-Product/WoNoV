@@ -1,23 +1,61 @@
 import React, { useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import { useQuery } from "@tanstack/react-query";
 
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import SecondaryButton from "../../../../components/SecondaryButton";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
-const formatDateKey = (date) => date.toISOString().slice(0, 10);
+const formatDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 const toDate = (value) => {
-  const [d, m, y] = (value || "").split("-").map(Number);
+  if (!value) return null;
 
-  if (!d || !m || !y) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
 
-  const parsed = new Date(y, m - 1, d);
+  if (typeof value === "string" && value.includes("-")) {
+    const [a, b, c] = value.split("-");
 
+    if (a?.length === 4) {
+      const parsedIso = new Date(value);
+      return Number.isNaN(parsedIso.getTime()) ? null : parsedIso;
+    }
+
+    const [d, m, y] = [Number(a), Number(b), Number(c)];
+    if (d && m && y) {
+      const parsed = new Date(y, m - 1, d);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+  }
+
+  const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const parseSelectedDate = (value) => {
+  if (!value) return new Date();
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? new Date() : value;
+  if (typeof value === "string" && value.includes("-")) {
+    const [a, b, c] = value.split("-");
+    if (a?.length === 4) {
+      const y = Number(a);
+      const m = Number(b);
+      const d = Number(c);
+      if (y && m && d) return new Date(y, m - 1, d, 12, 0, 0);
+    }
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 };
 
 const HrDepartmentKRA = () => {
@@ -28,13 +66,10 @@ const HrDepartmentKRA = () => {
   const { department: departmentFromState, tasks } = location.state || {};
 
   const department = departmentFromState || departmentParam;
-
-  const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+  const axios = useAxiosPrivate();
 
   const [selectedDate, setSelectedDate] = useState(() =>
-    location.state?.selectedDate
-      ? new Date(location.state.selectedDate)
-      : new Date()
+    parseSelectedDate(location.state?.selectedDate)
   );
 
   const selectedDateKey = formatDateKey(selectedDate);
@@ -45,19 +80,41 @@ const HrDepartmentKRA = () => {
     year: "numeric",
   });
 
-  const sourceTasks = useMemo(() => {
-    return (
-      tasksRawData.find((data) => data.department === department)?.tasks ||
-      tasks ||
-      []
+  const { data: fetchedDepartments = [] } = useQuery({
+    queryKey: ["hrKraDepartments"],
+    queryFn: async () => {
+      const response = await axios.get("/api/performance/get-depts-tasks");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
+  const departmentId = useMemo(() => {
+    const matched = fetchedDepartments.find(
+      (item) => item?.department?.name === department
     );
-  }, [tasksRawData, department, tasks]);
+    return matched?.department?._id || null;
+  }, [fetchedDepartments, department]);
+
+  const { data: fetchedDepartmentTasks = [] } = useQuery({
+    queryKey: ["hrDepartmentKraTasks", departmentId],
+    enabled: !!departmentId,
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/performance/get-tasks?dept=${departmentId}&type=KRA`
+      );
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
+  const sourceTasks = useMemo(() => {
+    if (Array.isArray(tasks) && tasks.length) return tasks;
+    return fetchedDepartmentTasks;
+  }, [tasks, fetchedDepartmentTasks]);
 
   const filteredTasks = useMemo(() => {
     return sourceTasks.filter((task) => {
-      const taskDate = toDate(task.assignedDate);
-
-      return taskDate && formatDateKey(taskDate) === selectedDateKey;
+      const taskDate = toDate(task.assignedDate || task.dueDate || task.createdAt);
+      return taskDate && formatDateKey(taskDate) <= selectedDateKey;
     });
   }, [sourceTasks, selectedDateKey]);
 
