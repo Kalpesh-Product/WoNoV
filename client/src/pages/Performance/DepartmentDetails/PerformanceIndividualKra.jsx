@@ -153,6 +153,7 @@ const PerformanceIndividualKra = () => {
     const canUseCheckbox =
         shouldForceOwnControlsInEmployeeRoute ||
         isCurrentDateView ||
+        selectedMemberCanManageView ||
         (showCheckBox && !isSelectedMemberEmployee);
     const isEmployeeLevel = !isSuperOrMasterAdmin && !isManager;
     const shouldHideActionsForEmployeeFuture = isEmployeeLevel && isFutureDateView;
