@@ -2185,25 +2185,9 @@ export const routes = createBrowserRouter([
                         element: <HrTasksLayout />,
                         children: [
                           {
-                            path: "department-KPA",
-                            element: <HrKPA />,
-                            index: true,
-                          },
-                          {
-                            path: "department-KRA",
-                            element: <HrKRA />,
-                          },
-                          {
                             path: "department-task",
                             element: <HrOverallTasks />,
-                          },
-                          {
-                            path: "department-KPA/:department",
-                            element: <HrDepartmentKPA />,
-                          },
-                          {
-                            path: "department-KRA/:department",
-                            element: <HrDepartmentKRA />,
+                            index: true,
                           },
                           {
                             path: "department-task/:department",
@@ -2229,28 +2213,12 @@ export const routes = createBrowserRouter([
                             element: <HrKRA />,
                           },
                           {
-                            path: "department-task",
-                            element: <HrOverallTasks />,
-                          },
-                          {
-                            path: "department-tasks",
-                            element: <HrOverallTasks />,
-                          },
-                          {
                             path: "department-KPA/:department",
                             element: <HrDepartmentKPA />,
                           },
                           {
                             path: "department-KRA/:department",
                             element: <HrDepartmentKRA />,
-                          },
-                          {
-                            path: "department-task/:department",
-                            element: <HrDepartmentTasks />,
-                          },
-                          {
-                            path: "department-tasks/:department",
-                            element: <HrDepartmentTasks />,
                           },
                         ],
                       },
