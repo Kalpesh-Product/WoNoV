@@ -23,12 +23,18 @@ const HrTasksLayout = () => {
   const matchKPA = useMatch(
     "/app/dashboard/HR-dashboard/overall-KPA/department-KPA/:department"
   );
+   const matchKRA = useMatch(
+    "/app/dashboard/HR-dashboard/overall-KPA/department-KRA/:department"
+  );
   const matchTasks = useMatch(
     "/app/dashboard/HR-dashboard/overall-KPA/department-tasks/:department"
   );
 
   const matchKpaMixBag = useMatch(
     "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/:department"
+  );
+  const matchKraMixBag = useMatch(
+    "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/:department"
   );
   const matchTaskMixBagDepartmentTasks = useMatch(
     "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-task/:department"
@@ -39,8 +45,10 @@ const HrTasksLayout = () => {
 
    const isDepartmentView =
     !!matchKPA ||
+     !!matchKRA ||
     !!matchTasks ||
     !!matchKpaMixBag ||
+       !!matchKraMixBag ||
     !!matchTaskMixBagDepartmentTasks ||
     !!matchTasksMixBagDepartmentTasks;
 
