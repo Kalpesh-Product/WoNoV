@@ -20,7 +20,6 @@ const fetchDeptTaskReportService = async ({
   try {
     let dept = query ? query.dept : departments;
 
-    console.log("");
     const queryObj = {
       company,
       isDeleted: { $ne: true },
