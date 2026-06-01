@@ -143,51 +143,51 @@ const reportServiceRegistry = {
   //     type: "INDIVIDUALKPA",
   //     isReport: true,
   //   }),
-  // "my-task": async ({
-  //   dateFilter,
-  //   departmentId,
-  //   departments,
-  //   roles,
-  //   company,
-  //   user,
-  // }) =>
-  //   fetchMyTasksReportService({
-  //     dateFilter: {
-  //       ...buildDateFilter({
-  //         startDate: dateFilter?.startDate,
-  //         endDate: dateFilter?.endDate,
-  //         field: "assignedDate",
-  //       }),
-  //     },
-  //     departmentId,
-  //     departments,
-  //     roles,
-  //     company,
-  //     user,
-  //   }),
-  // "department-task": async ({
-  //   dateFilter,
-  //   departmentId,
-  //   departments,
-  //   roles,
-  //   company,
-  //   user,
-  // }) =>
-  //   fetchDeptTaskReportService({
-  //     dateFilter: {
-  //       ...buildDateFilter({
-  //         startDate: dateFilter?.startDate,
-  //         endDate: dateFilter?.endDate,
-  //         field: "assignedDate",
-  //       }),
-  //     },
-  //     departmentId,
-  //     departments,
-  //     roles,
-  //     company,
-  //     user,
-  //     isReport: true,
-  //   }),
+  "my-task": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchMyTasksReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "assignedDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+    }),
+  "department-task": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchDeptTaskReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "assignedDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+      isReport: true,
+    }),
 
   asset: async ({
     dateFilter,
@@ -215,21 +215,21 @@ const reportServiceRegistry = {
       isReport: true,
     }),
 
-  // meeting: async ({ dateFilter, company, departmentId, departments, roles }) =>
-  //   fetchMeetingReportService({
-  //     dateFilter: {
-  //       ...buildDateFilter({
-  //         startDate: dateFilter?.startDate,
-  //         endDate: dateFilter?.endDate,
-  //         field: "startDate",
-  //       }),
-  //     },
-  //     company,
-  //     departmentId,
-  //     departments,
-  //     roles,
-  //     isReport: true,
-  //   }),
+  meeting: async ({ dateFilter, company, departmentId, departments, roles }) =>
+    fetchMeetingReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "startDate",
+        }),
+      },
+      company,
+      departmentId,
+      departments,
+      roles,
+      isReport: true,
+    }),
 
   visitor: async ({ dateFilter, departmentId, company }) =>
     fetchVisitorReportService({
