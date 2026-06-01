@@ -59,6 +59,7 @@ const PerformanceKra = () => {
     .trim();
   const [selectedKra, setSelectedKra] = useState(null);
    const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
+  const getTodayIsoStart = () => dayjs().startOf("day").toISOString();
   const today = useCurrentDay();
 
   const restrictedRoles = [
@@ -161,7 +162,7 @@ const PerformanceKra = () => {
     defaultValues: {
       dailyKra: "",
       description: "",
-      assignedDate: null,
+      assignedDate: getTodayIsoStart(),
     },
   });
 
@@ -208,13 +209,24 @@ const PerformanceKra = () => {
       // toast.error(error.message || "Error Adding KRA");
     },
   });
-   const handleOpenEditModal = (task) => {
+  const handleOpenEditModal = (task) => {
     setIsEditMode(true);
     setEditingTaskId(task.id);
     reset({
       dailyKra: task.taskName || "",
       assignedDate: task.assignedDate || null,
       description: task.description || "",
+    });
+    setOpenModal(true);
+  };
+
+  const handleOpenAddModal = () => {
+    setIsEditMode(false);
+    setEditingTaskId(null);
+    reset({
+      dailyKra: "",
+      description: "",
+      assignedDate: getTodayIsoStart(),
     });
     setOpenModal(true);
   };
@@ -595,7 +607,7 @@ const PerformanceKra = () => {
                   !canShowControls ||
                   !canShowAddDepartmentKraButton
                 }
-                handleSubmit={() => setOpenModal(true)}
+                handleSubmit={handleOpenAddModal}
                   showDateNavigator
                 selectedDateLabel={selectedDateLabel}
                 onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}

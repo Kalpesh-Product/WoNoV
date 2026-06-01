@@ -46,6 +46,9 @@ const YearWiseTable = ({
   selectedDateLabel = "",
   onPreviousDay,
   onNextDay,
+  customExportTitle,
+  handleCustomExport,
+  exportButtonTitle = "Export",
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -355,8 +358,17 @@ const YearWiseTable = ({
               disabled={buttonDisabled}
             />
           )}
+          {customExportTitle && handleCustomExport && (
+            <PrimaryButton
+              title={customExportTitle}
+              handleSubmit={handleCustomExport}
+            />
+          )}
           {exportData && (
-            <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+            <PrimaryButton
+              title={exportButtonTitle}
+              handleSubmit={handleExportPass}
+            />
           )}
           {batchButton && selectedRows.length > 0 && (
             <PrimaryButton

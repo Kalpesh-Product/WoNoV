@@ -59,7 +59,10 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
   return !!taskDateKey && taskDateKey <= selectedDateKey;
 };
 
-const PerformanceMemberWiseKra = () => {
+// const PerformanceMemberWiseKra = () => {
+ const PerformanceMemberWiseKra = ({
+  memberDetailsBasePath = "/app/performance/department-KRA/member-wise-KRA",
+}) => { 
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -454,7 +457,12 @@ const PerformanceMemberWiseKra = () => {
       getResponseData(individualKraResponse).forEach(incrementPendingKra);
       getResponseData(teamKraResponse).forEach(incrementPendingKra);
 
-      getResponseData(completedKraResponse).forEach(incrementCompletedKra);
+      // Department Daily KRA completion should roll up to manager in member-wise graph.
+      getResponseData(completedKraResponse).forEach((task) => {
+        const completionDateKey = getDateKey(task?.completionDate);
+        if (!completionDateKey || completionDateKey !== selectedDateKey) return;
+        upsertManagerCount("completedKra");
+      });
       getResponseData(completedIndividualKraResponse).forEach(incrementCompletedKra);
       getResponseData(completedTeamKraResponse).forEach(incrementCompletedKra);
 
@@ -553,7 +561,8 @@ const PerformanceMemberWiseKra = () => {
             firstTab = "daily-KRA";
           }
 
-             navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`, {
+           //  navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`, {
+                        navigate(`${memberDetailsBasePath}/${firstTab}`, {
              // state: { selectedMember: { memberId, memberName: params.value } },
               state: {
                 selectedMember: {

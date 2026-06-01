@@ -64,7 +64,10 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
 };
 
 
-const PerformanceMemberWiseKraKpa = () => {
+// const PerformanceMemberWiseKraKpa = () => {
+    const PerformanceMemberWiseKraKpa = ({
+    memberDetailsBasePath = "/app/performance/department-KPA/member-wise-KPA",
+}) => {
     const dispatch = useDispatch();
     const axios = useAxiosPrivate();
     const navigate = useNavigate();
@@ -660,7 +663,8 @@ const PerformanceMemberWiseKraKpa = () => {
           );
  const firstTab = "individual-Monthly-KPA";
 
- navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
+                        //navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
+                    navigate(`${memberDetailsBasePath}/${firstTab}`, {
                         // state: { selectedMember: { memberId, memberName: params.value } },
                                                 state: {
                 selectedMember: {

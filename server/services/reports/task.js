@@ -1,5 +1,13 @@
 const Task = require("../../models/tasks/Task");
 
+const isDepartmentAdmin = (roles) =>
+  roles.some(
+    (role) =>
+      typeof role === "string" &&
+      role.endsWith(" Admin") &&
+      !["Master Admin", "Super Admin"].includes(role),
+  );
+
 const fetchDeptTaskReportService = async ({
   dateFilter,
   departments = [],
@@ -16,7 +24,7 @@ const fetchDeptTaskReportService = async ({
     const queryObj = {
       company,
       isDeleted: { $ne: true },
-
+      ...(!isDepartmentAdmin(roles) && { assignedTo: { $in: [user] } }),
       ...(dept && {
         department: { $in: departments },
         taskType: "Department",
@@ -87,7 +95,7 @@ const fetchMyTasksReportService = async ({
     const queryObj = {
       company,
       isDeleted: { $ne: true },
-      assignedBy: user,
+      ...(!isDepartmentAdmin(roles) && { assignedBy: user }),
       department: { $in: departments },
       taskType: "Self",
       ...(flag === "Pending" &&

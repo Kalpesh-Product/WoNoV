@@ -1599,6 +1599,35 @@ export const PERMISSIONS = {
     route:
       "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA",
   },
+  HR_DEPARTMENT_KPA_DEPARTMENT_WISE_OVERVIEW_TAB: {
+    value: "hr_department_kpa_department_wise_overview_tab",
+    title: "DEPARTMENT WISE KPA OVERVIEW",
+    type: "read",
+    route:
+      "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/:department/department-wise",
+  },
+  HR_DEPARTMENT_KPA_MEMBER_WISE_OVERVIEW_TAB: {
+    value: "hr_department_kpa_member_wise_overview_tab",
+    title: "MEMBER WISE KPA OVERVIEW",
+    type: "read",
+    route:
+      "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/:department/member-wise",
+  },
+
+HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
+    value: "hr_department_kra_department_wise_overview_tab",
+    title: "DEPARTMENT WISE KRA OVERVIEW",
+    type: "read",
+    route:
+      "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/:department/department-wise",
+  },
+  HR_DEPARTMENT_KRA_MEMBER_WISE_OVERVIEW_TAB: {
+    value: "hr_department_kra_member_wise_overview_tab",
+    title: "MEMBER WISE KRA OVERVIEW",
+    type: "read",
+    route:
+      "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/:department/member-wise",
+  },
   HR_DEPARTMENT_TASK_MIX_BAG: {
     value: "hr_department_tasks_card",
     title: "Department Tasks",
