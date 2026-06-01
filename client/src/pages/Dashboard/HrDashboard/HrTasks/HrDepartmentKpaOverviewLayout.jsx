@@ -6,6 +6,7 @@ import { PERMISSIONS } from "../../../../constants/permissions";
 const HrDepartmentKpaOverviewLayout = () => {
   const { department } = useParams();
   const basePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/${encodeURIComponent(department)}`;
+  const consistentSpacingClass = "-mt-8 -mx-5 -mb-3";
 
   const tabs = [
     {
@@ -22,12 +23,14 @@ const HrDepartmentKpaOverviewLayout = () => {
   ];
 
   return (
-    <TabLayout
-      basePath={basePath}
-      defaultTabPath="department-wise"
-      tabs={tabs}
-      hideTabsCondition={(pathname) => pathname.includes("/member-wise/")}
-    />
+    <div className={consistentSpacingClass}>
+      <TabLayout
+        basePath={basePath}
+        defaultTabPath="department-wise"
+        tabs={tabs}
+        hideTabsCondition={(pathname) => pathname.includes("/member-wise/")}
+      />
+    </div>
   );
 };
 
