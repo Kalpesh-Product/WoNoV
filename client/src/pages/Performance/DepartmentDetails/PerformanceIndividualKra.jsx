@@ -323,14 +323,29 @@ const PerformanceIndividualKra = () => {
             return response.data;
         },
         onSuccess: (data, taskId) => {
-            queryClient.setQueriesData(
-                { queryKey: individualKraQueryKey },
-                (oldData = []) =>
-                    (oldData || []).filter((item) => item?.id?.toString?.() !== taskId?.toString?.())
+            const removeCompletedTaskFromList = (oldData = []) =>
+                (oldData || []).filter((item) => {
+                    const rowId = item?.id || item?._id;
+                    return rowId?.toString?.() !== taskId?.toString?.();
+                });
+
+            // Remove immediately from all visible pending sources so row disappears without refresh.
+            queryClient.setQueryData(individualKraQueryKey, removeCompletedTaskFromList);
+            queryClient.setQueryData(
+                ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+                removeCompletedTaskFromList
             );
+            queryClient.setQueryData(teamKraQueryKey, removeCompletedTaskFromList);
+
             queryClient.refetchQueries({ queryKey: individualKraQueryKey });
+            queryClient.refetchQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
             queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
             queryClient.invalidateQueries({ queryKey: individualKraQueryKey });
+            queryClient.invalidateQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
             queryClient.invalidateQueries({ queryKey: ["completedEntries", effectiveDeptId] });
             toast.success(data.message || "KRA updated");
         },

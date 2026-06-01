@@ -454,7 +454,12 @@ const PerformanceMemberWiseKra = () => {
       getResponseData(individualKraResponse).forEach(incrementPendingKra);
       getResponseData(teamKraResponse).forEach(incrementPendingKra);
 
-      getResponseData(completedKraResponse).forEach(incrementCompletedKra);
+      // Department Daily KRA completion should roll up to manager in member-wise graph.
+      getResponseData(completedKraResponse).forEach((task) => {
+        const completionDateKey = getDateKey(task?.completionDate);
+        if (!completionDateKey || completionDateKey !== selectedDateKey) return;
+        upsertManagerCount("completedKra");
+      });
       getResponseData(completedIndividualKraResponse).forEach(incrementCompletedKra);
       getResponseData(completedTeamKraResponse).forEach(incrementCompletedKra);
 
