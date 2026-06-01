@@ -445,6 +445,10 @@ import HrDepartmentKraOverviewLayout from "../pages/Dashboard/HrDashboard/HrTask
 import HrMemberWiseKraOverview from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberWiseKraOverview";
 import HrMemberKraDetailsLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberKraDetailsLayout";
 import HrCompletedMemberKraDetails from "../pages/Dashboard/HrDashboard/HrTasks/HrCompletedMemberKraDetails";
+import HrCompletedMemberKpaDetails from "../pages/Dashboard/HrDashboard/HrTasks/HrCompletedMemberKpaDetails";
+import HrDepartmentKpaOverviewLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKpaOverviewLayout";
+import HrMemberWiseKpaOverview from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberWiseKpaOverview";
+import HrMemberKpaDetailsLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberKpaDetailsLayout";
 import VendorTable from "../components/Pages/VendorTable";
 import MonthlyBudgetCommon from "../components/Pages/MonthlyBudgetCommon";
 import AssetsHome from "../pages/Assets/AssetsHome";
@@ -2218,7 +2222,72 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "department-KPA/:department",
-                            element: <HrDepartmentKPA />,
+                            // element: <HrDepartmentKPA />,
+                             element: <HrDepartmentKpaOverviewLayout />,
+                            children: [
+                              {
+                                path: "department-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KPA_DEPARTMENT_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrDepartmentKPA />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KPA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberWiseKpaOverview />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise/member",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KPA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberKpaDetailsLayout />}
+                                  />
+                                ),
+                                children: [
+                                  {
+                                    path: "monthly-KPA",
+                                    element: (
+                                      <HrCompletedMemberKpaDetails
+                                        kpaType="KPA"
+                                        title="DEPARTMENT MONTHLY KPA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "individual-Monthly-KPA",
+                                    element: (
+                                      <HrCompletedMemberKpaDetails
+                                        kpaType="INDIVIDUALKPA"
+                                        title="INDIVIDUAL MONTHLY KPA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "team-Monthly-KPA",
+                                    element: (
+                                      <HrCompletedMemberKpaDetails
+                                        kpaType="TEAMKPA"
+                                        title="TEAM MONTHLY KPA"
+                                      />
+                                    ),
+                                  },
+                                ],
+                              },
+                            ],
                           },
                           {
                             path: "department-KRA/:department",
