@@ -249,10 +249,11 @@ const PerformanceKra = () => {
       queryClient.setQueriesData(
         { queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] },
         (oldData = []) =>
-          (oldData || []).filter((item) => item?.id?.toString?.() !== taskId?.toString?.())
+          (oldData || []).filter((item) => {
+            const rowId = item?.id || item?._id;
+            return rowId?.toString?.() !== taskId?.toString?.();
+          })
       );
-      queryClient.refetchQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
-      queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
       queryClient.invalidateQueries({ queryKey: ["completedEntries", effectiveDeptId] });
       toast.success(data.message || "KRA updated");
@@ -366,7 +367,7 @@ const PerformanceKra = () => {
                   onClick={() => {
                     if (!rowCanMarkDone || !isRowSelected || isUpdatePending || isDeletePending)
                       return;
-                    updateDailyKra(params.data.id);
+                    updateDailyKra(params.data.id || params.data._id);
                   }}
                   className="p-2"
                 >
@@ -424,7 +425,7 @@ const PerformanceKra = () => {
                     }
                     onClick={() => {
                       if (!isRowSelected || !rowCanEditDelete) return;
-                      deleteDailyKraRecurrence(params.data.id);
+                      deleteDailyKraRecurrence(params.data.id || params.data._id);
                     }}
                     // className="ml-2 disabled:cursor-not-allowed"
                     className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
@@ -505,19 +506,11 @@ const PerformanceKra = () => {
     ? uniqueDepartmentKra || []
     : uniqueDepartmentKra || [];
   const uniqueCompletedMap = new Map();
-  (completedEntries || []).forEach((item) => {
-    const completedDay = item?.completionDate
-      ? dayjs(item.completionDate).isValid()
-        ? dayjs(item.completionDate).format("YYYY-MM-DD")
-        : String(item.completionDate)
-      : "no-date";
-    const completedByKey =
-      item?.completedById || item?.completedByName || item?.completedBy || "unknown";
+  (completedEntries || []).forEach((item, index) => {
+    const stableId = item?.id || item?._id;
     const key =
-      `${(item?.taskName || "").toString().trim().toLowerCase()}-${completedDay}-${completedByKey
-        .toString()
-        .trim()
-        .toLowerCase()}`;
+      stableId?.toString?.() ||
+      `${(item?.taskName || "").toString().trim().toLowerCase()}-${index}`;
     if (!uniqueCompletedMap.has(key)) {
       uniqueCompletedMap.set(key, item);
     }
@@ -560,9 +553,17 @@ const PerformanceKra = () => {
     };
   });
   const dateWiseCompletedEntries = filteredCompletedEntries.filter((item) => {
-    const completionDate = item.completedDate || item.completionDate || item.dueDate;
-    return toDateKey(completionDate) === selectedDateKey;
-  });    
+    const completionDateKey = toDateKey(
+      item.completedDate || item.completionDate || item.completionTime
+    );
+    const assignedDateKey = toDateKey(item.assignedDate || item.dueDate || item.createdAt);
+    return completionDateKey === selectedDateKey || assignedDateKey === selectedDateKey;
+  });
+  const completedTaskNamesForSelectedDate = new Set(
+    dateWiseCompletedEntries.map((item) =>
+      (item?.taskName || "").toString().trim().toLowerCase()
+    )
+  );
   const canShowAddDepartmentKraButton = isEmployeeKraKpaRoute
     ? isSuperOrMasterAdmin || isManager
     : isSuperOrMasterAdmin || isCurrentDateView;
@@ -605,10 +606,17 @@ const PerformanceKra = () => {
                  // tableTitle={`${departmentName} DEPARTMENT - DAILY KRA - ${loggedInUserName || "User Name"}`}
                 // data={filteredDepartmentKra
                   data={dateWiseDepartmentKra
-                  .filter((item) => item.status !== "Completed")
+                  .filter((item) => {
+                    const status = (item?.status || "").toString().trim().toLowerCase();
+                    const taskKey = (item?.taskName || "").toString().trim().toLowerCase();
+                    const isCompletedOnSelectedDate =
+                      taskKey && completedTaskNamesForSelectedDate.has(taskKey);
+                    return status !== "completed" && !isCompletedOnSelectedDate;
+                  })
                   .map((item, index) => ({
                     srno: index + 1,
-                    id: item.id,
+                    id: item.id || item._id,
+                    _id: item._id || item.id,
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
                     dueDate: item.dueDate || item.assignedDate,
@@ -645,7 +653,7 @@ const PerformanceKra = () => {
                       key={dateWiseCompletedEntries.length}
                   data={dateWiseCompletedEntries.map((item, index) => ({
                     srno: index + 1,
-                    id: item.id,
+                    id: item.id || item._id,
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
                     completionDateRaw:

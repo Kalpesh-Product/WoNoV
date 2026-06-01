@@ -136,6 +136,18 @@ const Approvals = () => {
     { field: "building", headerName: "Building", minWidth: 160, flex: 1 },
     { field: "unit", headerName: "Location", minWidth: 140, flex: 1 },
     {
+      field: "assignedBuilding",
+      headerName: "Assigned Building",
+      minWidth: 180,
+      flex: 1,
+    },
+    {
+      field: "assignedUnit",
+      headerName: "Assigned Unit",
+      minWidth: 160,
+      flex: 1,
+    },
+    {
       field: "status",
       headerName: "Status",
       pinned: "right",
@@ -201,40 +213,39 @@ const Approvals = () => {
     ? []
     : assignedAssets.map((item, index) => {
         const assets = item.asset;
-        const assetLocation =
-          assets?.location ||
-          item?.location ||
-          assets?.unit ||
-          item?.unit ||
-          null;
+         const assetLocation = assets?.location || assets?.unit || null;
+        const assignedLocation = item?.location || item?.unit || null;
         const buildingName =
-          item?.location?.building?.buildingName ||
-          assets?.location?.building?.buildingName ||
           assetLocation?.building?.buildingName ||
           assetLocation?.buildingName ||
-          item?.building?.buildingName ||
           assets?.building?.buildingName ||
-          item?.buildingName ||
           assets?.buildingName ||
           "N/A";
         const unitNo =
-          item?.location?.unitNo ||
-          item?.location?.unit ||
-          assets?.location?.unitNo ||
-          assets?.location?.unit ||
           assetLocation?.unitNo ||
           assetLocation?.unit ||
+          assets?.unitNo ||
+          assets?.unit ||
+          "N/A";
+        const assignedBuildingName =
+          assignedLocation?.building?.buildingName ||
+          assignedLocation?.buildingName ||
+          item?.building?.buildingName ||
+          item?.buildingName ||
+          "N/A";
+        const assignedUnitNo =
+          assignedLocation?.unitNo ||
+          assignedLocation?.unit ||
           item?.unitNo ||
           item?.unit ||
           "N/A";
         const category = assets?.subCategory?.category?.categoryName;
-        console.log("assets inside data", category);
-      return {
-        ...assets,
-        ...item,
-        srNo: index + 1,
-        assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
-        assetId: item._id,
+        return {
+          ...assets,
+          ...item,
+          srNo: index + 1,
+          assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
+          assetId: item._id,
           assetNumber: item?.asset?.assetId,
           department: item?.fromDepartment?.name,
           category: category,
@@ -242,11 +253,61 @@ const Approvals = () => {
           name: assets?.name || "N/A",
           serialNumber: assets?.serialNumber || "N/A",
           building: buildingName,
-          location: item?.location || null,
+          location: assignedLocation,
           unit: unitNo,
+          assignedBuilding: assignedBuildingName,
+          assignedUnit: assignedUnitNo,
           assetLocation,
+          assignedLocation,
         };
       });
+
+      //   const assetLocation =
+      //     assets?.location ||
+      //     item?.location ||
+      //     assets?.unit ||
+      //     item?.unit ||
+      //     null;
+      //   const buildingName =
+      //     item?.location?.building?.buildingName ||
+      //     assets?.location?.building?.buildingName ||
+      //     assetLocation?.building?.buildingName ||
+      //     assetLocation?.buildingName ||
+      //     item?.building?.buildingName ||
+      //     assets?.building?.buildingName ||
+      //     item?.buildingName ||
+      //     assets?.buildingName ||
+      //     "N/A";
+      //   const unitNo =
+      //     item?.location?.unitNo ||
+      //     item?.location?.unit ||
+      //     assets?.location?.unitNo ||
+      //     assets?.location?.unit ||
+      //     assetLocation?.unitNo ||
+      //     assetLocation?.unit ||
+      //     item?.unitNo ||
+      //     item?.unit ||
+      //     "N/A";
+      //   const category = assets?.subCategory?.category?.categoryName;
+      //   console.log("assets inside data", category);
+      // return {
+      //   ...assets,
+      //   ...item,
+      //   srNo: index + 1,
+      //   assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
+      //   assetId: item._id,
+      //     assetNumber: item?.asset?.assetId,
+      //     department: item?.fromDepartment?.name,
+      //     category: category,
+      //     brand: assets?.brand,
+      //     name: assets?.name || "N/A",
+      //     serialNumber: assets?.serialNumber || "N/A",
+      //     building: buildingName,
+      //     location: item?.location || null,
+      //     unit: unitNo,
+      //     assetLocation,
+      //   };
+      // });
 
   //-----------------------Table Data----------------------//
 
@@ -367,7 +428,33 @@ const Approvals = () => {
               title={"Status"}
               detail={selectedAsset?.status || "N/A"}
             />
-              <DetalisFormatted
+             <DetalisFormatted
+              title={"Department"}
+              detail={selectedAsset?.department || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Building"}
+              detail={
+                selectedAsset?.assetLocation?.building?.buildingName ||
+                selectedAsset?.building ||
+                "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"UnitNo"}
+              detail={
+                selectedAsset?.assetLocation?.unitNo || selectedAsset?.unit || "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Assigned Building"}
+              detail={selectedAsset?.assignedBuilding || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Assigned Unit"}
+              detail={selectedAsset?.assignedUnit || "N/A"}
+            />
+              {/* <DetalisFormatted
                 title={"Department"}
                 detail={selectedAsset?.department || "N/A"}
               />
@@ -382,7 +469,7 @@ const Approvals = () => {
                          <DetalisFormatted
                            title={"UnitNo"}
                            detail={selectedAsset?.location?.unitNo || selectedAsset?.unit || "N/A"}
-                         />
+                         /> */}
             <DetalisFormatted
               title={"Damaged"}
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}

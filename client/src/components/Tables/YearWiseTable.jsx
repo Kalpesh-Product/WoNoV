@@ -61,7 +61,8 @@ const YearWiseTable = ({
   };
 
   useEffect(() => {
-    if (!dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
+      if (!dateColumn || showDateNavigator || isUserChangedRange) return; // ✅ skip if user manually changed or parent controls date navigation
+    // if (!dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
 
     if (!data.length) {
       setDateRange([]);
@@ -115,7 +116,8 @@ const YearWiseTable = ({
         key: "selection",
       },
     ]);
-  }, [data, dateColumn, isUserChangedRange, today]);
+     }, [data, dateColumn, isUserChangedRange, showDateNavigator, today]);
+  // }, [data, dateColumn, isUserChangedRange, today]);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -132,7 +134,8 @@ const YearWiseTable = ({
   }, [data, dateColumn]);
 
   const filteredData = useMemo(() => {
-    if (!dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
+        if (showDateNavigator || !dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
+    //if (!dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
 
     const { startDate, endDate } = dateRange[0];
     const start = dayjs(startDate).startOf("day").toDate();
@@ -144,7 +147,8 @@ const YearWiseTable = ({
 
       return isWithinInterval(itemDate.toDate(), { start, end });
     });
-  }, [data, dateColumn, dateRange]);
+     }, [data, dateColumn, dateRange, showDateNavigator]);
+  // }, [data, dateColumn, dateRange]);
 
    useEffect(() => {
     if (!onDateFilterChange) return;
