@@ -1,5 +1,4 @@
 // POST /reports/generate
-const { reportQueue } = require("../../queues/report.queue");
 const ReportJob = require("../../models/reports/ReportJob");
 const { default: mongoose } = require("mongoose");
 const Report = require("../../models/reports/Report");
@@ -7,6 +6,12 @@ const UserData = require("../../models/hr/UserData");
 const { executeReport } = require("../../services/reports/reportExecutor");
 
 const isQueueEnabled = () => process.env.USE_QUEUE === "true";
+
+function getReportQueue() {
+  if (!isQueueEnabled()) return null;
+  const { reportQueue } = require("../../queues/report.queue");
+  return reportQueue;
+}
 
 const normalizeReportKey = (value = "") =>
   value
@@ -18,6 +23,7 @@ const normalizeReportKey = (value = "") =>
 
 const MAX_RETRIES = 3;
 const RETRY_COOLDOWN_MS = 15 * 60 * 1000;
+const REPORT_GENERATION_START_DELAY_MS = 5 * 1000; // 5 seconds delay before starting report generation to allow for cancellation simulation in tests
 
 async function queueReportJob({
   userId,
@@ -38,6 +44,7 @@ async function queueReportJob({
     status: "pending",
     isManualRetry,
   });
+  const reportQueue = getReportQueue();
 
   if (!reportQueue) {
     throw new Error("Queue mode is disabled (USE_QUEUE=false)");
@@ -49,6 +56,7 @@ async function queueReportJob({
     {
       attempts: 2,
       backoff: { type: "exponential", delay: 2000 },
+      // delay: REPORT_GENERATION_START_DELAY_MS,
     },
   );
 
@@ -223,6 +231,53 @@ async function retryReport(req, res) {
     });
   }
 
+  if (!isQueueEnabled()) {
+    try {
+      const report = await Report.findById(failedJob.report);
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      failedJob.status = "processing";
+      failedJob.startedAt = new Date();
+      failedJob.isManualRetry = true;
+      await failedJob.save();
+
+      const data = await executeReport({
+        report,
+        filters: failedJob.filters,
+        department: failedJob.department,
+        departments: failedJob.departments || [],
+        userId,
+      });
+
+      failedJob.status = "completed";
+      failedJob.data = data;
+      failedJob.error = undefined;
+      failedJob.completedAt = new Date();
+      await failedJob.save();
+
+      return res.status(200).json({
+        status: "completed",
+        data,
+        retriesRemaining: Math.max(0, MAX_RETRIES - (retriesInWindow + 1)),
+      });
+    } catch (error) {
+      failedJob.status = "failed";
+      failedJob.error = {
+        message: error.message,
+        stack: error.stack,
+      };
+      failedJob.completedAt = new Date();
+      await failedJob.save();
+
+      return res.status(500).json({
+        message: "Report retry failed",
+        error: error.message,
+      });
+    }
+  }
+
   const reportJob = await queueReportJob({
     userId,
     report: failedJob.report,
@@ -245,6 +300,7 @@ async function cancelReport(req, res) {
   const userId = req.user;
 
   const reportJob = await ReportJob.findOne({ _id: jobId, userId });
+
   if (!reportJob) return res.status(404).json({ message: "Job not found" });
 
   if (["completed", "failed", "canceled"].includes(reportJob.status)) {
@@ -258,6 +314,8 @@ async function cancelReport(req, res) {
   reportJob.cancelReason = "user_canceled";
   reportJob.canceledAt = new Date();
   await reportJob.save();
+
+  const reportQueue = getReportQueue();
 
   if (reportQueue && reportJob.bullJobId) {
     const queueJob = await reportQueue.getJob(reportJob.bullJobId);
