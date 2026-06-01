@@ -59,7 +59,10 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
   return !!taskDateKey && taskDateKey <= selectedDateKey;
 };
 
-const PerformanceMemberWiseKra = () => {
+// const PerformanceMemberWiseKra = () => {
+ const PerformanceMemberWiseKra = ({
+  memberDetailsBasePath = "/app/performance/department-KRA/member-wise-KRA",
+}) => { 
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -558,7 +561,8 @@ const PerformanceMemberWiseKra = () => {
             firstTab = "daily-KRA";
           }
 
-             navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`, {
+           //  navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`, {
+                        navigate(`${memberDetailsBasePath}/${firstTab}`, {
              // state: { selectedMember: { memberId, memberName: params.value } },
               state: {
                 selectedMember: {

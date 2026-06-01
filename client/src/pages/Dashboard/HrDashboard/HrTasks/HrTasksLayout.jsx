@@ -9,6 +9,9 @@ const HrTasksLayout = () => {
    pathname.includes("/overall-KPA/department-tasks");
  const isMixBagKpaKraRoute = pathname.includes("/mix-bag/department-kpa-kra");
  const isMixBagDepartmentTasksRoute = pathname.includes("/mix-bag/department-tasks");
+ const isMixBagDepartmentKraDetailRoute = pathname.includes(
+   "/mix-bag/department-kpa-kra/department-KRA/",
+ );
   const kpaTabPermission = isMixBagKpaKraRoute
     ? PERMISSIONS.HR_DEPARTMENT_KPA_KRA_MIX_BAG_TAB.value
     : undefined;
@@ -48,7 +51,7 @@ const HrTasksLayout = () => {
      !!matchKRA ||
     !!matchTasks ||
     !!matchKpaMixBag ||
-       !!matchKraMixBag ||
+    !!matchKraMixBag ||
     !!matchTaskMixBagDepartmentTasks ||
     !!matchTasksMixBagDepartmentTasks;
 
@@ -105,7 +108,9 @@ const HrTasksLayout = () => {
       hideTabsCondition={() =>
         isDepartmentView ||
         isMixBagDepartmentTasksRoute ||
-        isOverallDepartmentTasksRoute
+        // isOverallDepartmentTasksRoute
+        isOverallDepartmentTasksRoute ||
+        isMixBagDepartmentKraDetailRoute
       }
     />
   );

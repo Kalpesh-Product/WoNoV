@@ -441,6 +441,10 @@ import HrKRA from "../pages/Dashboard/HrDashboard/HrTasks/HrKRA";
 import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTasks";
 import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
 import HrDepartmentKRA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKRA";
+import HrDepartmentKraOverviewLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKraOverviewLayout";
+import HrMemberWiseKraOverview from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberWiseKraOverview";
+import HrMemberKraDetailsLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberKraDetailsLayout";
+import HrCompletedMemberKraDetails from "../pages/Dashboard/HrDashboard/HrTasks/HrCompletedMemberKraDetails";
 import VendorTable from "../components/Pages/VendorTable";
 import MonthlyBudgetCommon from "../components/Pages/MonthlyBudgetCommon";
 import AssetsHome from "../pages/Assets/AssetsHome";
@@ -2218,7 +2222,97 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "department-KRA/:department",
-                            element: <HrDepartmentKRA />,
+                             element: <HrDepartmentKraOverviewLayout />,
+                            children: [
+                              {
+                                path: "department-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrDepartmentKRA />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KRA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberWiseKraOverview />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise/member",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KRA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberKraDetailsLayout />}
+                                  />
+                                ),
+                                children: [
+                                  {
+                                    path: "daily-KRA",
+                                    element: (
+                                      <HrCompletedMemberKraDetails
+                                        kraType="KRA"
+                                        title="DEPARTMENT DAILY KRA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "individual-Daily-KRA",
+                                    element: (
+                                      <HrCompletedMemberKraDetails
+                                        kraType="INDIVIDUALKRA"
+                                        title="INDIVIDUAL DAILY KRA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "team-Daily-KRA",
+                                    element: (
+                                      <HrCompletedMemberKraDetails
+                                        kraType="TEAMKRA"
+                                        title="TEAM DAILY KRA"
+                                      />
+                                    ),
+                                  },
+                                ],
+                              },
+                            ],
+                            // element: <HrDepartmentKRA />,
+                            //  element: <HrDepartmentKraOverviewLayout />,
+                            // children: [
+                            //   {
+                            //     path: "department-wise",
+                            //     element: (
+                            //       <PerformancePermissionRoute
+                            //         permissions={[
+                            //           PERMISSIONS.HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB,
+                            //         ]}
+                            //         element={<HrDepartmentKRA />}
+                            //       />
+                            //     ),
+                            //   },
+                            //   {
+                            //     path: "member-wise",
+                            //     element: (
+                            //       <PerformancePermissionRoute
+                            //         permissions={[
+                            //           PERMISSIONS.HR_DEPARTMENT_KRA_MEMBER_WISE_OVERVIEW_TAB,
+                            //         ]}
+                            //         element={<HrMemberWiseKraOverview />}
+                            //       />
+                            //     ),
+                            //   },
+                            // ],
                           },
                         ],
                       },
