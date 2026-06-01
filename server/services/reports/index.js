@@ -47,102 +47,102 @@ const reportServiceRegistry = {
       user,
     }),
 
-  // "dept-kpa": async ({
-  //   dateFilter,
-  //   departmentId,
-  //   departments,
-  //   roles,
-  //   company,
-  //   user,
-  // }) =>
-  //   fetchPerformanceReportService({
-  //     dateFilter: {
-  //       ...buildDateFilter({
-  //         startDate: dateFilter?.startDate,
-  //         endDate: dateFilter?.endDate,
-  //         field: "assignedDate",
-  //       }),
-  //     },
-  //     departmentId,
-  //     departments,
-  //     roles,
-  //     company,
-  //     user,
-  //     type: "KPA",
-  //     isReport: true,
-  //   }),
-  // "dept-kra": async ({
-  //   dateFilter,
-  //   departmentId,
-  //   departments,
-  //   roles,
-  //   company,
-  //   user,
-  // }) =>
-  //   fetchPerformanceReportService({
-  //     dateFilter: {
-  //       ...buildDateFilter({
-  //         startDate: dateFilter?.startDate,
-  //         endDate: dateFilter?.endDate,
-  //         field: "assignedDate",
-  //       }),
-  //     },
-  //     departmentId,
-  //     departments,
-  //     roles,
-  //     company,
-  //     user,
-  //     type: "KRA",
-  //     isReport: true,
-  //   }),
-  // "individual-kra": async ({
-  //   dateFilter,
-  //   departmentId,
-  //   departments,
-  //   roles,
-  //   company,
-  //   user,
-  // }) =>
-  //   fetchPerformanceReportService({
-  //     dateFilter: {
-  //       ...buildDateFilter({
-  //         startDate: dateFilter?.startDate,
-  //         endDate: dateFilter?.endDate,
-  //         field: "assignedDate",
-  //       }),
-  //     },
-  //     departmentId,
-  //     departments,
-  //     roles,
-  //     company,
-  //     user,
-  //     type: "INDIVIDUALKRA",
-  //     isReport: true,
-  //   }),
-  // "individual-kpa": async ({
-  //   dateFilter,
-  //   departmentId,
-  //   departments,
-  //   roles,
-  //   company,
-  //   user,
-  // }) =>
-  //   fetchPerformanceReportService({
-  //     dateFilter: {
-  //       ...buildDateFilter({
-  //         startDate: dateFilter?.startDate,
-  //         endDate: dateFilter?.endDate,
-  //         field: "assignedDate",
-  //       }),
-  //     },
-  //     departmentId,
-  //     departments,
-  //     roles,
-  //     company,
-  //     user,
-  //     type: "INDIVIDUALKPA",
-  //     isReport: true,
-  //   }),
+  "dept-kpa": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchPerformanceReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "assignedDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+      type: "KPA",
+      isReport: true,
+    }),
+  "dept-kra": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchPerformanceReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "assignedDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+      type: "KRA",
+      isReport: true,
+    }),
+  "individual-kra": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchPerformanceReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "assignedDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+      type: "INDIVIDUALKRA",
+      isReport: true,
+    }),
+  "individual-kpa": async ({
+    dateFilter,
+    departmentId,
+    departments,
+    roles,
+    company,
+    user,
+  }) =>
+    fetchPerformanceReportService({
+      dateFilter: {
+        ...buildDateFilter({
+          startDate: dateFilter?.startDate,
+          endDate: dateFilter?.endDate,
+          field: "assignedDate",
+        }),
+      },
+      departmentId,
+      departments,
+      roles,
+      company,
+      user,
+      type: "INDIVIDUALKPA",
+      isReport: true,
+    }),
   "my-task": async ({
     dateFilter,
     departmentId,

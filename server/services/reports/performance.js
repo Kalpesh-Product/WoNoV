@@ -1,6 +1,14 @@
 const kraKpaRole = require("../../models/performances/kraKpaRole");
 const kraKpaTask = require("../../models/performances/kraKpaTask");
 
+const isDepartmentAdmin = (roles) =>
+  roles.some(
+    (role) =>
+      typeof role === "string" &&
+      role.endsWith(" Admin") &&
+      !["Master Admin", "Super Admin"].includes(role),
+  );
+
 const REPORT_TYPE_CONFIG = {
   KPA: ["KPA"],
   KRA: ["KRA"],
@@ -39,6 +47,7 @@ const fetchPerformanceReportService = async ({
   company,
   type,
   user,
+  roles,
 }) => {
   try {
     const dept = departmentId || departments?.[0];
@@ -65,9 +74,14 @@ const fetchPerformanceReportService = async ({
       department: dept,
       taskType: { $in: reportTaskTypes },
       isDeleted: { $ne: true },
-      ...(dateFilter || {}),
-      ...(isIndividualReport && user?._id ? { assignTo: user._id } : {}),
+      ...(isIndividualReport && dateFilter ? { ...dateFilter } : {}), //Add date filter only for individual reports as dept reports are recurring
+      ...(!isDepartmentAdmin(roles)
+        ? { ...(isIndividualReport && user ? { assignTo: user } : {}) }
+        : {}), // If not department admin, then filter by assignedTo for individual reports
     };
+
+    console.log("baseRoleQuery", baseRoleQuery);
+    console.log("user", user);
 
     const roleTasks = await kraKpaRole
       .find(baseRoleQuery)
