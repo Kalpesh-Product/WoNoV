@@ -12,7 +12,7 @@ const HrDepartmentKraOverviewLayout = () => {
     pathname.includes("/member-wise/daily-KRA") ||
     pathname.includes("/member-wise/individual-Daily-KRA") ||
     pathname.includes("/member-wise/team-Daily-KRA");
-  const consistentSpacingClass = "-mt-8 -mx-3 -mb-3";
+  const consistentSpacingClass = "-mt-8 -mx-5 -mb-3";
 
   const tabs = [
     {
