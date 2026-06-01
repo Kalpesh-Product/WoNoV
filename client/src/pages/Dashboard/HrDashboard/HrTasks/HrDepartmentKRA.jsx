@@ -76,40 +76,6 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
 const isSameSelectedDate = (dateValue, selectedDateKey) =>
   toLocalIsoDate(dateValue) === selectedDateKey;
 
-const isAfterSelectedDate = (dateValue, selectedDateKey) => {
-  const dateKey = toLocalIsoDate(dateValue);
-  return !!dateKey && dateKey > selectedDateKey;
-};
-
-const isBeforeSelectedDate = (dateValue, selectedDateKey) => {
-  const dateKey = toLocalIsoDate(dateValue);
-  return !!dateKey && dateKey < selectedDateKey;
-};
-
-const isOnOrAfterDateKey = (dateValue, referenceDateKey) => {
-  const dateKey = toLocalIsoDate(dateValue);
-  return !!dateKey && dateKey >= referenceDateKey;
-};
-
-const getTaskName = (task) =>
-  task?.kraName || task?.taskName || task?.task || task?.title || "task";
-
-const getTaskIdentity = (task) =>
-  [getTaskName(task), task?.assignedDate || "", task?.dueDate || ""]
-    .map((value) => String(value).trim().toLowerCase())
-    .join("|");
-
-const uniqueTasksByIdentity = (tasks) =>
-  Array.from(
-    tasks
-      .reduce((uniqueTasks, task) => {
-        const taskIdentity = getTaskIdentity(task);
-        if (!uniqueTasks.has(taskIdentity)) uniqueTasks.set(taskIdentity, task);
-        return uniqueTasks;
-      }, new Map())
-      .values(),
-  );
-
 const formatDateOnly = (value) => {
   const parsed = toDate(value);
   if (!parsed) return value || "-";
@@ -134,9 +100,6 @@ const HrDepartmentKRA = () => {
   );
 
   const selectedDateKey = formatDateKey(selectedDate);
-  const todayDateKey = formatDateKey(new Date());
-  const isFutureSelectedDate = selectedDateKey > todayDateKey;
-
   const selectedDateLabel = selectedDate.toLocaleDateString("en-US", {
     day: "2-digit",
     month: "long",
@@ -159,11 +122,11 @@ const HrDepartmentKRA = () => {
   }, [fetchedDepartments, department]);
 
   const { data: fetchedDepartmentTasks = [] } = useQuery({
-    queryKey: ["hrDepartmentKraTasks", departmentId],
+    queryKey: ["hrDepartmentKraTasks", departmentId, selectedDateKey],
     enabled: !!departmentId,
     queryFn: async () => {
       const response = await axios.get(
-        `/api/performance/get-tasks?dept=${departmentId}&type=KRA`,
+        `/api/performance/get-tasks?dept=${departmentId}&type=KRA&date=${selectedDateKey}`,
       );
       return Array.isArray(response.data) ? response.data : [];
     },
@@ -195,32 +158,9 @@ const HrDepartmentKRA = () => {
       isSameSelectedDate(task?.completionDate, selectedDateKey),
     );
 
-    const completedAfterSelectedDate = fetchedCompletedTasks.filter(
-      (task) =>
-        isTaskScheduledOnOrBeforeDate(task, selectedDateKey) &&
-        isAfterSelectedDate(task?.completionDate, selectedDateKey),
+    const pendingTasks = assignedSourceTasks.filter((task) =>
+      isTaskScheduledOnOrBeforeDate(task, selectedDateKey),
     );
-
-    const completedBeforeSelectedDate = fetchedCompletedTasks.filter(
-      (task) =>
-        isTaskScheduledOnOrBeforeDate(task, selectedDateKey) &&
-        isBeforeSelectedDate(task?.completionDate, selectedDateKey) &&
-        isOnOrAfterDateKey(task?.completionDate, todayDateKey),
-    );
-
-    const completedOnSelectedDateKeys = new Set(
-      completedOnSelectedDate.map(getTaskIdentity),
-    );
-
-    const pendingTasks = uniqueTasksByIdentity([
-      ...assignedSourceTasks
-        .filter((task) => isTaskScheduledOnOrBeforeDate(task, selectedDateKey))
-        .filter(
-          (task) => !completedOnSelectedDateKeys.has(getTaskIdentity(task)),
-        ),
-      ...(isFutureSelectedDate ? completedBeforeSelectedDate : []),
-      ...completedAfterSelectedDate,
-    ]);
 
     return {
       completedTasks: completedOnSelectedDate,
