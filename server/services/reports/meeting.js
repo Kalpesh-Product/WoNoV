@@ -378,6 +378,7 @@
 
 const Meeting = require("../../models/meetings/Meetings");
 const Review = require("../../models/meetings/Reviews");
+const UserData = require("../../models/hr/UserData");
 const { formatDuration } = require("../../utils/formatDateTime");
 
 const formatPersonName = (person) =>
@@ -453,47 +454,34 @@ const fetchMeetingReportService = async ({
         { path: "externalParticipants", select: "firstName lastName email" },
       ]);
 
-    const departmentIds = departments
-      .map((dept) => (dept?._id || dept)?.toString())
-      .filter(Boolean);
-
-    let filteredMeetings = meetings;
-
     const currentUserId = user?.toString();
 
-    if (
-      !roles.includes("Administration Admin") &&
-      !roles.includes("Finance Admin") &&
-      !roles.includes("Administration Employee") &&
-      !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin") &&
-      !roles.includes("Tech Admin") &&
-      !roles.includes("Tech Employee")
-    ) {
-      filteredMeetings = meetings.filter((meeting) => {
-        const isMeetingParticipant =
-          meeting?.bookedBy?._id?.toString() === currentUserId ||
-          meeting?.clientBookedBy?._id?.toString() === currentUserId ||
-          (meeting?.internalParticipants || []).some(
-            (participant) => participant?._id?.toString() === currentUserId,
-          ) ||
-          (meeting?.clientParticipants || []).some(
-            (participant) => participant?._id?.toString() === currentUserId,
-          );
+    const foundUser = currentUserId
+      ? await UserData.findById(currentUserId)
+          .populate({ path: "departments", select: "name" })
+          .select("departments")
+          .lean()
+      : null;
+    const userDepartments = foundUser?.departments?.length
+      ? foundUser.departments
+      : departments;
+    const canViewAllMeetings = (userDepartments || []).some((department) =>
+      ["Administration", "Top Management"].includes(department?.name),
+    );
 
-        if (isMeetingParticipant) return true;
-
-        if (!meeting.bookedBy || !Array.isArray(meeting.bookedBy.departments)) {
-          return false;
-        }
-
-        const bookedDeptIds = meeting.bookedBy.departments.map((dept) =>
-          dept._id?.toString(),
+    const filteredMeetings = canViewAllMeetings
+      ? meetings
+      : meetings.filter(
+          (meeting) =>
+            meeting?.bookedBy?._id?.toString() === currentUserId ||
+            meeting?.clientBookedBy?._id?.toString() === currentUserId ||
+            (meeting?.internalParticipants || []).some(
+              (participant) => participant?._id?.toString() === currentUserId,
+            ) ||
+            (meeting?.clientParticipants || []).some(
+              (participant) => participant?._id?.toString() === currentUserId,
+            ),
         );
-
-        return bookedDeptIds.some((deptId) => departmentIds.includes(deptId));
-      });
-    }
 
     const reviews = await Review.find().select(
       "-createdAt -updatedAt -__v -company",
@@ -579,7 +567,7 @@ const fetchMeetingReportService = async ({
     });
 
     if (isReport) {
-      return transformedMeetings.map((meeting, index) => {
+      return transformedMeetings.map((meeting) => {
         const effectiveEndTime = getEffectiveEndTime(meeting);
         const client =
           meeting?.company?.companyName ||
@@ -589,7 +577,6 @@ const fetchMeetingReportService = async ({
           "N/A";
 
         return {
-          srNo: index + 1,
           client,
           bookedBy:
             formatPersonName(meeting.bookedBy) ||

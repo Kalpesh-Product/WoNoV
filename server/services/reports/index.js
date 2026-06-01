@@ -215,7 +215,14 @@ const reportServiceRegistry = {
       isReport: true,
     }),
 
-  meeting: async ({ dateFilter, company, departmentId, departments, roles }) =>
+  meeting: async ({
+    dateFilter,
+    company,
+    departmentId,
+    departments,
+    roles,
+    user,
+  }) =>
     fetchMeetingReportService({
       dateFilter: {
         ...buildDateFilter({
@@ -228,6 +235,7 @@ const reportServiceRegistry = {
       departmentId,
       departments,
       roles,
+      user,
       isReport: true,
     }),
 
