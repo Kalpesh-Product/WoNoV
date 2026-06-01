@@ -340,11 +340,78 @@ const PerformanceIndividualKpa = () => {
             );
             return response.data;
         },
-        onSuccess: (data) => {
-            queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
-            queryClient.refetchQueries({ queryKey: ["completedEntriesIndividualKPA", effectiveDeptId] });
-            queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
-            queryClient.invalidateQueries({ queryKey: ["completedEntriesIndividualKPA", effectiveDeptId] });
+        onSuccess: async (data, taskId) => {
+            const removeTaskFromPending = (prev) =>
+                Array.isArray(prev)
+                    ? prev.filter((item) => String(item?.id) !== String(taskId))
+                    : prev;
+
+            // Remove instantly from pending lists so employee sees the change without manual refresh.
+            queryClient.setQueryData(
+                ["fetchedMonthlyKPA", effectiveDeptId],
+                removeTaskFromPending,
+            );
+            queryClient.setQueryData(
+                ["fetchedTeamKPAForIndividual", effectiveDeptId],
+                removeTaskFromPending,
+            );
+
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ["fetchedMonthlyKPA", effectiveDeptId],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["fetchedTeamKPAForIndividual", effectiveDeptId],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["completedEntriesIndividualKPA", effectiveDeptId],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["completedTeamEntriesForIndividual", effectiveDeptId],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["tasksRawData"],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["performanceMemberWiseKraKpa"],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["hrDepartmentKraTasks"],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["hrDepartmentKraCompletedTasks"],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["hrCompletedMemberKpa"],
+                }),
+                queryClient.refetchQueries({
+                    queryKey: ["fetchedMonthlyKPA", effectiveDeptId],
+                }),
+                queryClient.refetchQueries({
+                    queryKey: ["fetchedTeamKPAForIndividual", effectiveDeptId],
+                }),
+                queryClient.refetchQueries({
+                    queryKey: ["completedEntriesIndividualKPA", effectiveDeptId],
+                }),
+                queryClient.refetchQueries({
+                    queryKey: ["completedTeamEntriesForIndividual", effectiveDeptId],
+                }),
+                queryClient.refetchQueries({
+                    queryKey: ["tasksRawData"],
+                }),
+                queryClient.refetchQueries({
+                    queryKey: ["performanceMemberWiseKraKpa"],
+                }),
+                queryClient.refetchQueries({
+                    queryKey: ["hrDepartmentKraTasks"],
+                }),
+                queryClient.refetchQueries({
+                    queryKey: ["hrDepartmentKraCompletedTasks"],
+                }),
+                queryClient.refetchQueries({
+                    queryKey: ["hrCompletedMemberKpa"],
+                }),
+            ]);
             toast.success(data.message || "KPA updated");
         },
         onError: (error) => {
