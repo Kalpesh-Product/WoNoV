@@ -128,7 +128,7 @@ const HrKPA = () => {
       }),
     },
     {
-      name: "Remaining KPA",
+      name: "Pending KPA",
        group: `KPA - ${effectiveSelectedMonthYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
@@ -207,7 +207,7 @@ const HrKPA = () => {
             </div>
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
              <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div>Remaining KPA</div> 
+              <div>Pending KPA</div> 
               <div>${remaining}</div>
             </div>
           </div>
@@ -289,7 +289,7 @@ const HrKPA = () => {
         padding
         greenTitle={"completed"}
         TitleAmountGreen={totalCompleted || 0}
-        redTitle={"remaining"}
+        redTitle={"pending"}
         TitleAmountRed={totalRemaining || 0}
       >
         <NormalBarGraph
@@ -303,14 +303,16 @@ const HrKPA = () => {
             <SecondaryButton
               title={<MdNavigateBefore />}
               handleSubmit={handlePrevMonth}
+             // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
               // disabled={!isPrevAvailable}
             />
-            <div className="text-sm min-w-[120px] text-center">
+            <div className="text-sm min-w-[120px] text-center text-primary font-semibold">
                   {effectiveSelectedMonthYear}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={handleNextMonth}
+              externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
               // disabled={!isNextAvailable}
             />
           </div>
@@ -320,7 +322,7 @@ const HrKPA = () => {
       <WidgetSection
         title="Department-wise KPA overview"
         border
-        TitleAmount={`TOTAL Tasks : ${tableData.reduce(
+        TitleAmount={`TOTAL KPA : ${tableData.reduce(
           (sum, item) => item.totalTasks + sum,
           0
         )}`}

@@ -52,7 +52,15 @@ const getAssetRequests = async (req, res, next) => {
       .populate([
         {
           path: "asset",
-          populate: { path: "subCategory", populate: "category" },
+          // populate: { path: "subCategory", populate: "category" },
+           populate: [
+            { path: "subCategory", populate: "category" },
+            {
+              path: "location",
+              select: "unitName unitNo",
+              populate: { path: "building", select: "buildingName" },
+            },
+          ],
         },
         { path: "fromDepartment", select: "name" },
         { path: "toDepartment", select: "name" },
@@ -62,6 +70,7 @@ const getAssetRequests = async (req, res, next) => {
           populate: { path: "building" },
         },
         { path: "assignee", select: "firstName lastName empId" },
+        { path: "assignedBy", select: "firstName lastName empId" },
         { path: "approvedBy", select: "firstName lastName empId" },
       ])
       .sort({ dateOfAssigning: -1 }); // Sort by latest assignments
@@ -105,6 +114,7 @@ const requestAsset = async (req, res, next) => {
       fromDepartment: fromDepartmentId,
       toDepartment: toDepartmentId,
       assignee: user,
+      assignedBy: user,
       company: company,
       location,
       status: "Pending",
@@ -204,8 +214,8 @@ const assignAsset = async (req, res, next) => {
       );
     }
 
-    const user = await User.findById(assignee);
-    if (!user) {
+    const assigneeUser = await User.findById(assignee);
+    if (!assigneeUser) {
       throw new CustomError(
         "User not found.",
         logPath,
@@ -284,7 +294,8 @@ const assignAsset = async (req, res, next) => {
       asset: assetId,
       fromDepartment: fromDepartmentId,
       toDepartment: toDepartmentId,
-      assignee: user,
+      assignee,
+      assignedBy: user,
       company: company,
       location,
       approvedBy: isAdmin ? user : null,

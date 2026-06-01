@@ -1599,33 +1599,12 @@ export const PERMISSIONS = {
     route:
       "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA",
   },
-  HR_DEPARTMENT_KPA_KRA_MIX_BAG_TASK_TAB: {
-    value: "hr_department_task_tab",
-    title: "DEPARTMENT TASK",
-    type: "read",
-    route:
-      "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-task",
-  },
   HR_DEPARTMENT_TASK_MIX_BAG: {
     value: "hr_department_tasks_card",
     title: "Department Tasks",
     type: "read",
     route:
       "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-task",
-  },
-  HR_DEPARTMENT_TASK_MIX_BAG_KPA_KRA_TAB: {
-    value: "hr_department_kpa[task]_tab",
-    title: "DEPARTMENT KPA[TASK]",
-    type: "read",
-    route:
-      "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-KPA",
-  },
-  HR_DEPARTMENT_TASK_MIX_BAG_KRA_TAB: {
-    value: "hr_department_kra[task]_tab",
-    title: "DEPARTMENT KRA[TASK]",
-    type: "read",
-    route:
-      "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-KRA",
   },
   HR_DEPARTMENT_TASK_MIX_BAG_TASK_TAB: {
     value: "hr_department_task[task]_tab",

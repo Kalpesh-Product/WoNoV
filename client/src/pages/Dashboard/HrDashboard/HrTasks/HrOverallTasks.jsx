@@ -1,7 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { setSelectedMonth } from "../../../../redux/slices/hrSlice";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -42,11 +40,10 @@ const getYearFromTaskDate = (assignedDate) => {
 };
 
 const HrOverallTasks = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const selectedMonth = useSelector((state) => state.hr.selectedMonth);
-   const [selectedYear, setSelectedYear] = useState(getCurrentFiscalStartYear());
-  const activeMonth = selectedMonth || getDefaultFiscalMonth();
+  const [selectedMonth, setSelectedMonth] = useState(getDefaultFiscalMonth());
+  const [selectedYear, setSelectedYear] = useState(getCurrentFiscalStartYear());
+  const activeMonth = selectedMonth;
   const activeYear = selectedYear;
   const activeMonthYear = `${activeMonth} ${activeYear}`;
   const axios = useAxiosPrivate();
@@ -92,22 +89,22 @@ const HrOverallTasks = () => {
 
    const handlePrevMonth = () => {
     if (currentMonthIndex === 0) {
-      dispatch(setSelectedMonth(calendarMonths[calendarMonths.length - 1]));
+      setSelectedMonth(calendarMonths[calendarMonths.length - 1]);
       setSelectedYear((prev) => prev - 1);
       return;
     }
 
-    dispatch(setSelectedMonth(calendarMonths[currentMonthIndex - 1]));
+    setSelectedMonth(calendarMonths[currentMonthIndex - 1]);
   };
 
   const handleNextMonth = () => {
     if (currentMonthIndex === calendarMonths.length - 1) {
-      dispatch(setSelectedMonth(calendarMonths[0]));
+      setSelectedMonth(calendarMonths[0]);
       setSelectedYear((prev) => prev + 1);
       return;
     }
 
-    dispatch(setSelectedMonth(calendarMonths[currentMonthIndex + 1]));
+    setSelectedMonth(calendarMonths[currentMonthIndex + 1]);
   };
 
   const filteredTasks = useMemo(() => {
@@ -179,7 +176,7 @@ const HrOverallTasks = () => {
       }),
     },
     {
-      name: "Remaining Tasks",
+      name: "Pending Tasks",
        group: `Tasks - ${activeMonthYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
@@ -259,7 +256,7 @@ const HrOverallTasks = () => {
             </div>
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
              <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div>Remaining Tasks</div> 
+              <div>Pending Tasks</div> 
               <div>${remaining}</div>
             </div>
           </div>
@@ -342,7 +339,7 @@ const HrOverallTasks = () => {
         padding
         greenTitle={"completed"}
         TitleAmountGreen={totalCompleted || 0}
-        redTitle={"remaining"}
+        redTitle={"pending"}
         TitleAmountRed={totalRemaining || 0}
       >
         <NormalBarGraph
@@ -356,14 +353,16 @@ const HrOverallTasks = () => {
             <SecondaryButton
               title={<MdNavigateBefore />}
               handleSubmit={handlePrevMonth}
+             // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
               // disabled={!isPrevAvailable}
             />
-            <div className="text-sm min-w-[120px] text-center">
+            <div className="text-sm min-w-[120px] text-center text-primary font-semibold">
                    {activeMonthYear}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={handleNextMonth}
+              externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
               // disabled={!isNextAvailable}
             />
           </div>

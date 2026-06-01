@@ -564,7 +564,19 @@ const PerformanceMemberWiseKraKpa = () => {
                 return acc;
             }, {});
 
-            return Object.values(mergedByMemberName);
+            const withDerivedPending = Object.values(mergedByMemberName).map((item) => {
+                const derivedPendingKpa =
+                    (Number(item?.monthlyKpa) || 0) +
+                    (Number(item?.individualMonthlyKpa) || 0);
+
+                return {
+                    ...item,
+                    // Keep existing pending pipeline intact, but align final pending with visible pending KPA buckets.
+                    pendingKpa: derivedPendingKpa,
+                };
+            });
+
+            return withDerivedPending;
         },
     });
 
@@ -713,6 +725,24 @@ const PerformanceMemberWiseKraKpa = () => {
     );
     const totalKpaCount = totalCompletedKpa + totalPendingKpa;
 
+    const tooltipStatsByMember = useMemo(() => {
+        return visibleRowData.reduce((acc, item) => {
+            const key = (item?.member || "").toString().trim();
+            if (!key) return acc;
+
+            const completed = Number(item?.completedKpa) || 0;
+            const pending = Number(item?.pendingKpa) || 0;
+
+            acc[key] = {
+                completed,
+                pending,
+                total: completed + pending,
+            };
+
+            return acc;
+        }, {});
+    }, [visibleRowData]);
+
 
     const graphOptions = {
         chart: {
@@ -742,9 +772,10 @@ tooltip: {
             custom: ({ series, dataPointIndex, w }) => {
                 const label =
                     w?.config?.series?.[0]?.data?.[dataPointIndex]?.x || "Department";
-                const completed = series?.[0]?.[dataPointIndex] ?? 0;
-                const pending = series?.[1]?.[dataPointIndex] ?? 0;
-                const total = completed + pending;
+                const matchedStats = tooltipStatsByMember[label];
+                const completed = matchedStats?.completed ?? (series?.[0]?.[dataPointIndex] ?? 0);
+                const pending = matchedStats?.pending ?? (series?.[1]?.[dataPointIndex] ?? 0);
+                const total = matchedStats?.total ?? (completed + pending);
 
                 return `
                     <div style="padding:8px; font-family:Poppins, sans-serif; font-size:13px; width:220px;">
