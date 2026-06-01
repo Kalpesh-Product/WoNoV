@@ -172,43 +172,107 @@ const TicketReports = () => {
         })
       : [];
 
+    // const assignedToDisplay = assignmentDetails
+    //   .map(({ assigneeName, assignedAtFormatted }) =>
+    //     assignedAtFormatted
+    //       ? `${assigneeName} (${assignedAtFormatted})`
+    //       : assigneeName,
+    //   )
+    //   .join(", ");
     const assignedToDisplay = assignmentDetails
-      .map(({ assigneeName, assignedAtFormatted }) =>
-        assignedAtFormatted
-          ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName,
-      )
-      .join(", ");
+  .map(({ assigneeName }) => assigneeName)
+  .join(", ");
 
     return { assignedToDisplay, assignmentDetails };
   };
 
-  const formatEscalation = (escalations = []) => {
-    if (!Array.isArray(escalations) || !escalations.length) {
-      return {
-        escalatedTo: "",
-        escalatedStatus: "",
-        escalatedAt: "",
-        escalatedAtDate: "",
-        escalatedAtTime: "",
-      };
-    }
+  // const formatEscalation = (escalations = []) => {
+  //   if (!Array.isArray(escalations) || !escalations.length) {
+  //     return {
+  //       escalatedTo: "",
+  //       escalatedStatus: "",
+  //       escalatedAt: "",
+  //       escalatedAtDate: "",
+  //       escalatedAtTime: "",
+  //     };
+  //   }
 
-    const latest = escalations[escalations.length - 1];
+  //   const latest = escalations[escalations.length - 1];
 
+  //   return {
+  //     escalatedTo: latest?.raisedToDepartment?.name || "",
+  //     escalatedStatus: latest?.status || "",
+  //     escalatedAt: latest?.createdAt
+  // ? formatDateTime(latest.createdAt)
+  // : "",
+  //     // escalatedAt: latest?.createdAt
+  //     //   ? `${humanDate(latest.createdAt)}, ${humanTime(latest.createdAt)}`
+  //     //   : "",
+  //     escalatedAtDate: latest?.createdAt,
+  //     escalatedAtTime: latest?.createdAt,
+  //   };
+  // };
+  const getFullName = (user) => {
+  if (!user) return "";
+  if (typeof user === "string") return user;
+
+  return `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+};
+
+const getDepartmentName = (department) => {
+  if (!department) return "";
+  if (typeof department === "string") return department;
+
+  return department?.name || department?.departmentName || "";
+};
+
+const formatEscalation = (escalations) => {
+  const escalationList = Array.isArray(escalations)
+    ? escalations
+    : escalations
+      ? [escalations]
+      : [];
+
+  if (!escalationList.length) {
     return {
-      escalatedTo: latest?.raisedToDepartment?.name || "",
-      escalatedStatus: latest?.status || "",
-      escalatedAt: latest?.createdAt
-  ? formatDateTime(latest.createdAt)
-  : "",
-      // escalatedAt: latest?.createdAt
-      //   ? `${humanDate(latest.createdAt)}, ${humanTime(latest.createdAt)}`
-      //   : "",
-      escalatedAtDate: latest?.createdAt,
-      escalatedAtTime: latest?.createdAt,
+      escalatedTo: "N/A",
+      escalatedStatus: "N/A",
+      escalatedAt: "N/A",
+      escalatedAtDate: "",
+      escalatedAtTime: "",
     };
+  }
+
+  const latest = escalationList[escalationList.length - 1];
+
+  const escalatedTo =
+    getDepartmentName(latest?.raisedToDepartment) ||
+    getDepartmentName(latest?.escalatedTo) ||
+    getDepartmentName(latest?.department) ||
+    getFullName(latest?.user) ||
+    getFullName(latest?.assignee) ||
+    "N/A";
+
+  const escalatedStatus =
+    latest?.status ||
+    latest?.escalatedStatus ||
+    latest?.ticketStatus ||
+    "N/A";
+
+  const escalatedAtRaw =
+    latest?.createdAt ||
+    latest?.escalatedAt ||
+    latest?.updatedAt ||
+    "";
+
+  return {
+    escalatedTo,
+    escalatedStatus,
+    escalatedAt: escalatedAtRaw ? formatDateTime(escalatedAtRaw) : "N/A",
+    escalatedAtDate: escalatedAtRaw,
+    escalatedAtTime: escalatedAtRaw,
   };
+};
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -273,7 +337,8 @@ const TicketReports = () => {
                       assignedToDetails: assignmentDetails,
                     };
                   })(),
-                  ...formatEscalation(item.escalatedTo),
+                  // ...formatEscalation(item.escalatedTo),
+                 ...formatEscalation(item),
                   ...(() => {
                     // const { assignedToDisplay, assignmentDetails } =
                     //   formatAssignments(item.assignedTo);
@@ -294,14 +359,6 @@ const TicketReports = () => {
 
                       assignedAtDate,
                       assignedAtTime,
-                    };
-                  })(),
-                  ...(() => {
-                    const { escalatedAtDate, escalatedAtTime } =
-                      formatEscalation(item.escalatedTo);
-                    return {
-                      escalatedAtDate,
-                      escalatedAtTime,
                     };
                   })(),
                 })),
