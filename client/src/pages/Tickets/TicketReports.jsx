@@ -104,48 +104,51 @@ const TicketReports = () => {
     },
     { field: "priority", headerName: "Priority", hide: true },
     { field: "description", headerName: "Description", hide: true },
-    { field: "company", headerName: "Company", hide: true },
+    //{ field: "company", headerName: "Company", hide: true },
     { field: "assignedTo", headerName: "Assigned To", hide: true },
     { field: "acceptedBy", headerName: "Accepted By", hide: true },
     {
-      field: "acceptedAtDate",
+      // field: "acceptedAtDate",
+      field: "acceptedAt",
       headerName: "Accepted Date",
       hide: true,
-      cellRenderer: (params) => params.value,
+      // cellRenderer: (params) => params.value,
     },
 
-    {
-      field: "assignedAtTime",
-      headerName: "Assigned Time",
-      hide: true,
-      cellRenderer: (params) => humanTime(params.value),
-    },
+    // {
+    //   field: "assignedAtTime",
+    //   headerName: "Assigned Time",
+    //   hide: true,
+    //   cellRenderer: (params) => humanTime(params.value),
+    // },
     { field: "escalatedTo", headerName: "Escalated To", hide: true },
     { field: "escalatedStatus", headerName: "Escalated Status", hide: true },
     {
-      field: "escalatedAtDate",
+      // field: "escalatedAtDate",
+      field: "escalatedAt",
       headerName: "Escalated Date",
       hide: true,
     },
-    {
-      field: "escalatedAtTime",
-      headerName: "Escalated Time",
-      hide: true,
-      cellRenderer: (params) => params.value,
-    },
+    // {
+    //   field: "escalatedAtTime",
+    //   headerName: "Escalated Time",
+    //   hide: true,
+    //   cellRenderer: (params) => params.value,
+    // },
     { field: "closedBy", headerName: "Closed By", hide: true },
     {
-      field: "closedAtDate",
+      // field: "closedAtDate",
+      field: "closedAt",
       headerName: "Closed Date",
       hide: true,
-      cellRenderer: (params) => params.value,
+      // cellRenderer: (params) => params.value,
     },
-    {
-      field: "closedAtTime",
-      headerName: "Closed Time",
-      hide: true,
-      cellRenderer: (params) => params.value,
-    },
+    // {
+    //   field: "closedAtTime",
+    //   headerName: "Closed Time",
+    //   hide: true,
+    //   cellRenderer: (params) => params.value,
+    // },
     { field: "rejectedBy", headerName: "Rejected By", hide: true },
     { field: "reason", headerName: "Rejection Reason", hide: true },
   ];
@@ -197,8 +200,11 @@ const TicketReports = () => {
       escalatedTo: latest?.raisedToDepartment?.name || "",
       escalatedStatus: latest?.status || "",
       escalatedAt: latest?.createdAt
-        ? `${humanDate(latest.createdAt)}, ${humanTime(latest.createdAt)}`
-        : "",
+  ? formatDateTime(latest.createdAt)
+  : "",
+      // escalatedAt: latest?.createdAt
+      //   ? `${humanDate(latest.createdAt)}, ${humanTime(latest.createdAt)}`
+      //   : "",
       escalatedAtDate: latest?.createdAt,
       escalatedAtTime: latest?.createdAt,
     };
@@ -239,6 +245,9 @@ const TicketReports = () => {
                   closedBy: item?.closedBy
                     ? `${item.closedBy.firstName} ${item.closedBy.lastName}`
                     : "None",
+                  closedAt: item.closedAt
+  ? formatDateTime(item.closedAt)
+  : "N/A",  
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
                   rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
@@ -246,6 +255,9 @@ const TicketReports = () => {
                   }`,
                   acceptedAtDate: item.acceptedAt || "",
                   acceptedAtTime: item.acceptedAt || "",
+                  acceptedAt: item.acceptedAt
+  ? formatDateTime(item.acceptedAt)
+  : "N/A",
                   assignedAt:
                     item.assignedAt ||
                     (Array.isArray(item.assignedTo) &&

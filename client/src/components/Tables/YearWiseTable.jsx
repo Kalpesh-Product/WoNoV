@@ -267,7 +267,7 @@ const YearWiseTable = ({
           if (!shouldPreserveAsText) return stringValue;
 
           // Keep date/time cells as literal text so Excel does not auto-convert them.
-          return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
+          return stringValue.startsWith(" ") ? stringValue : `${stringValue}`;
         },
         columnKeys: formattedColumns
           .filter((col) => !col.field?.toLowerCase().includes("action"))
