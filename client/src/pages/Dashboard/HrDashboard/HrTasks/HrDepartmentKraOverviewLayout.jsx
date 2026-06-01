@@ -1,11 +1,16 @@
-import { useParams } from "react-router-dom";
+import { Outlet, useLocation, useParams } from "react-router-dom";
 
 import TabLayout from "../../../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../../../constants/permissions";
 
 const HrDepartmentKraOverviewLayout = () => {
   const { department } = useParams();
+  const { pathname } = useLocation();
   const basePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/${encodeURIComponent(department)}`;
+  const isMemberDetailsRoute =
+    pathname.includes("/member-wise/kra") ||
+    pathname.includes("/member-wise/member");
+  const consistentSpacingClass = "-mt-8 -mx-3 -mb-3";
 
   const tabs = [
     {
@@ -21,13 +26,18 @@ const HrDepartmentKraOverviewLayout = () => {
     },
   ];
 
+  if (isMemberDetailsRoute) {
+    return (
+      <div className={consistentSpacingClass}>
+        <Outlet />
+      </div>
+    );
+  }
+
   return (
-    <TabLayout
-      basePath={basePath}
-      defaultTabPath="department-wise"
-      tabs={tabs}
-      hideTabsCondition={(pathname) => pathname.includes("/member-wise/member")}
-    />
+    <div className={consistentSpacingClass}>
+      <TabLayout basePath={basePath} defaultTabPath="department-wise" tabs={tabs} />
+    </div>
   );
 };
 
