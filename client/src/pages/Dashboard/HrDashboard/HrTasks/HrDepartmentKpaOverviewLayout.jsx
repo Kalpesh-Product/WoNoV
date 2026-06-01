@@ -26,7 +26,7 @@ const HrDepartmentKpaOverviewLayout = () => {
       basePath={basePath}
       defaultTabPath="department-wise"
       tabs={tabs}
-      hideTabsCondition={(pathname) => pathname.includes("/member-wise/member")}
+      hideTabsCondition={(pathname) => pathname.includes("/member-wise/")}
     />
   );
 };

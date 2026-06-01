@@ -2248,7 +2248,7 @@ export const routes = createBrowserRouter([
                                 ),
                               },
                               {
-                                path: "member-wise/member",
+                                path: "member-wise/*",
                                 element: (
                                   <PerformancePermissionRoute
                                     permissions={[
@@ -2316,7 +2316,7 @@ export const routes = createBrowserRouter([
                                 ),
                               },
                               {
-                                path: "member-wise/member",
+                                path: "member-wise/*",
                                 element: (
                                   <PerformancePermissionRoute
                                     permissions={[

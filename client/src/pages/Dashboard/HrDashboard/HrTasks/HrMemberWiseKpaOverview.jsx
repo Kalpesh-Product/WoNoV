@@ -42,7 +42,7 @@ const HrMemberWiseKpaOverview = () => {
 
   if (!isDepartmentSynchronized) return null;
 
-  const memberDetailsBasePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/${encodeURIComponent(department)}/member-wise/member`;
+  const memberDetailsBasePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/${encodeURIComponent(department)}/member-wise`;
 
   return (
     <PerformanceMemberWiseKraKpa memberDetailsBasePath={memberDetailsBasePath} />

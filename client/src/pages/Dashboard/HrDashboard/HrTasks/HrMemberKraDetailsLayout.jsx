@@ -15,7 +15,7 @@ const HrMemberKraDetailsLayout = () => {
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const loggedInUserId = auth?.user?._id?.toString();
   const selectedMemberId = selectedMember?.memberId?.toString();
-  const basePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/${encodeURIComponent(department)}/member-wise/member`;
+  const basePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/${encodeURIComponent(department)}/member-wise`;
 
   const canManageTeam =
     userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) ||

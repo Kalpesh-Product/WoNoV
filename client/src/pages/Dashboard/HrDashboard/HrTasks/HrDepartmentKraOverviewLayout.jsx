@@ -9,7 +9,9 @@ const HrDepartmentKraOverviewLayout = () => {
   const basePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/${encodeURIComponent(department)}`;
   const isMemberDetailsRoute =
     pathname.includes("/member-wise/kra") ||
-    pathname.includes("/member-wise/member");
+    pathname.includes("/member-wise/daily-KRA") ||
+    pathname.includes("/member-wise/individual-Daily-KRA") ||
+    pathname.includes("/member-wise/team-Daily-KRA");
   const consistentSpacingClass = "-mt-8 -mx-3 -mb-3";
 
   const tabs = [
