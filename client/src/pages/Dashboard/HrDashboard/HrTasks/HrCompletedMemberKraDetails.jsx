@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Chip, CircularProgress } from "@mui/material";
 import { useLocation, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import dayjs from "dayjs";
 
 import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
@@ -10,6 +11,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import humanDate from "../../../../utils/humanDateForamt";
 import humanTime from "../../../../utils/humanTime";
+import { downloadCsv } from "../../../../utils/downloadCsv";
 
 const normalize = (value) =>
   (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
@@ -142,6 +144,33 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
     },
   ];
 
+  const handleDailyExport = () => {
+    const todayRows = completedRows.filter((row) => {
+      const completionDate = row?.completionDateRaw;
+      if (!completionDate) return false;
+      return dayjs(completionDate).isSame(dayjs(), "day");
+    });
+
+    const exportRows = todayRows
+      .filter((row) => (row?.status || "").toString().toLowerCase() === "completed")
+      .map((row, index) => ({
+        "Sr No": index + 1,
+        "KRA List": row?.taskName || "-",
+        "Assigned Date": row?.assignedDate || "-",
+        "Completion Date": row?.completionDate || "-",
+        "Completion Time": row?.completionTime || "-",
+        "Completed By": row?.completedBy || "-",
+        Status: row?.status || "Completed",
+      }));
+
+    if (!exportRows.length) return;
+
+    downloadCsv({
+      data: exportRows,
+      fileName: `daily-completed-kra-${dayjs().format("DD-MM-YYYY")}`,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="h-72 flex items-center justify-center">
@@ -159,6 +188,9 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
           data={completedRows}
           dateColumn="completionDateRaw"
           columns={columns}
+          customExportTitle="Daily Export"
+          handleCustomExport={handleDailyExport}
+          exportButtonTitle="Monthly Export"
           exportData
           checkAll={false}
         />
