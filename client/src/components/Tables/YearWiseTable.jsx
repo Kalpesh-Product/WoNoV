@@ -48,6 +48,7 @@ const YearWiseTable = ({
   onNextDay,
   customExportTitle,
   handleCustomExport,
+  customExportDisabled = false,
   exportButtonTitle = "Export",
 }) => {
   const agGridRef = useRef(null);
@@ -362,6 +363,7 @@ const YearWiseTable = ({
             <PrimaryButton
               title={customExportTitle}
               handleSubmit={handleCustomExport}
+              disabled={customExportDisabled}
             />
           )}
           {exportData && (

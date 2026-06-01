@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Chip, CircularProgress } from "@mui/material";
 import { useLocation, useParams } from "react-router-dom";
@@ -12,6 +12,21 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import humanDate from "../../../../utils/humanDateForamt";
 import humanTime from "../../../../utils/humanTime";
 import { downloadCsv } from "../../../../utils/downloadCsv";
+
+const toDateKey = (value) => {
+  if (!value) return "";
+
+  if (typeof value === "string") {
+    const trimmedValue = value.trim();
+
+    if (/^\d{2}-\d{2}-\d{4}$/.test(trimmedValue)) {
+      return dayjs(trimmedValue, "DD-MM-YYYY", true).format("YYYY-MM-DD");
+    }
+  }
+
+  const parsedDate = dayjs(value);
+  return parsedDate.isValid() ? parsedDate.format("YYYY-MM-DD") : "";
+};
 
 const normalize = (value) =>
   (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
@@ -44,6 +59,7 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
     (state) => state.performance.selectedMember,
   );
   const selectedMember = location.state?.selectedMember || selectedMemberFromStore;
+  const [isTodayInSelectedRange, setIsTodayInSelectedRange] = useState(true);
 
   const { data: fetchedDepartments = [] } = useQuery({
     queryKey: ["hrKraDepartments"],
@@ -108,6 +124,7 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
       srno: index + 1,
       taskName: item?.taskName || item?.kraName || item?.task || "-",
       assignedDate: item?.assignedDate,
+      actualCompletionDateRaw: item?.completedDate || item?.completionDate || "",
       completionDateRaw:
         item?.completedDate || item?.completionDate || item?.dueDate,
       completionDate: humanDate(
@@ -144,11 +161,27 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
     },
   ];
 
+  const hasTodayCompletedRows = useMemo(
+    () =>
+      completedRows.some((row) => {
+        const completionDate = row?.actualCompletionDateRaw;
+        if (!completionDate) return false;
+        return (
+          (row?.status || "").toString().toLowerCase() === "completed" &&
+          toDateKey(completionDate) === dayjs().format("YYYY-MM-DD")
+        );
+      }),
+    [completedRows],
+  );
+
+  const isDailyExportDisabled =
+    !hasTodayCompletedRows || !isTodayInSelectedRange;
+
   const handleDailyExport = () => {
     const todayRows = completedRows.filter((row) => {
-      const completionDate = row?.completionDateRaw;
+      const completionDate = row?.actualCompletionDateRaw;
       if (!completionDate) return false;
-      return dayjs(completionDate).isSame(dayjs(), "day");
+      return toDateKey(completionDate) === dayjs().format("YYYY-MM-DD");
     });
 
     const exportRows = todayRows
@@ -188,8 +221,23 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
           data={completedRows}
           dateColumn="completionDateRaw"
           columns={columns}
+          onDateFilterChange={({ selectedRange }) => {
+            if (!selectedRange?.startDate || !selectedRange?.endDate) {
+              setIsTodayInSelectedRange(true);
+              return;
+            }
+
+            const todayKey = dayjs().format("YYYY-MM-DD");
+            const startKey = dayjs(selectedRange.startDate).format("YYYY-MM-DD");
+            const endKey = dayjs(selectedRange.endDate).format("YYYY-MM-DD");
+
+            setIsTodayInSelectedRange(
+              todayKey >= startKey && todayKey <= endKey,
+            );
+          }}
           customExportTitle="Daily Export"
           handleCustomExport={handleDailyExport}
+          customExportDisabled={isDailyExportDisabled}
           exportButtonTitle="Monthly Export"
           exportData
           checkAll={false}
