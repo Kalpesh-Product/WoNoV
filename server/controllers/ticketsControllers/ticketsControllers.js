@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const Department = require("../../models/Departments");
 const NewTicketIssue = require("../../models/tickets/NewTicketIssue");
 const { handleFileUpload } = require("../../config/s3Config");
+const { fetchTicketReportService } = require("../../services/reports/ticket");
 // const sharp = require("sharp");
 const {
   filterCloseTickets,
@@ -1057,7 +1058,7 @@ const ticketsReports = async (req, res, next) => {
     const { company, departments, roles } = req;
     const { departmentId } = req.params;
 
-    const tickets = await fetchTicketsForReport({
+    const tickets = await fetchTicketReportService({
       company,
       departmentId,
       roles,
