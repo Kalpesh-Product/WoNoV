@@ -106,7 +106,8 @@ const TicketReports = () => {
     { field: "description", headerName: "Description", hide: true },
     //{ field: "company", headerName: "Company", hide: true },
     { field: "assignedTo", headerName: "Assigned To", hide: true },
-    { field: "acceptedBy", headerName: "Accepted By", hide: true },
+    { field: "assignedAtDate", headerName: "Assign Date", hide: true },
+   // { field: "acceptedBy", headerName: "Accepted By", hide: true },
     {
       // field: "acceptedAtDate",
       field: "acceptedAt",
@@ -150,6 +151,7 @@ const TicketReports = () => {
     //   cellRenderer: (params) => params.value,
     // },
     { field: "rejectedBy", headerName: "Rejected By", hide: true },
+    { field: "rejectedAtDate", headerName: "Rejected Date", hide: true },
     { field: "reason", headerName: "Rejection Reason", hide: true },
   ];
 
@@ -317,6 +319,11 @@ const formatEscalation = (escalations) => {
                   rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
                     item.reject?.rejectedBy?.lastName || ""
                   }`,
+                  rejectedAtDate:
+                    formatDateTime(
+                      item.reject?.rejectedAt ||
+                        (item.status === "Rejected" ? item.updatedAt : ""),
+                    ) || "N/A",
                   acceptedAtDate: item.acceptedAt || "",
                   acceptedAtTime: item.acceptedAt || "",
                   acceptedAt: item.acceptedAt
@@ -348,16 +355,18 @@ const formatEscalation = (escalations) => {
                         ? item.assignedTo[item.assignedTo.length - 1]
                         : null;
 
-                    const { date: assignedAtDate, time: assignedAtTime } =
-                      splitDateAndTime(
-                        item.assignedAt || latestAssignment?.assignedAt,
-                      );
+                    const assignedAtRaw =
+                      item.assignedAt || latestAssignment?.assignedAt;
+
+                    const { time: assignedAtTime } =
+                      splitDateAndTime(assignedAtRaw);
 
                     return {
                       // assignedTo: assignedToDisplay,
                       // assignedToDetails: assignmentDetails,
 
-                      assignedAtDate,
+                      assignedAtDate:
+                        formatDateTime(assignedAtRaw) || "N/A",
                       assignedAtTime,
                     };
                   })(),
