@@ -177,7 +177,8 @@ const AdminAnnualExpenses = () => {
           searchColumn={"Asset Number"}
           tableTitle={"Annual Expenses"}
           buttonTitle={"Add Expense"}
-          data={[]}
+          exportData
+          data={annualExpenses}
           columns={annualExpenseColumns}
           handleClick={handleAddAsset}
         />

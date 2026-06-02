@@ -112,6 +112,7 @@ const MaintenanceAmcRecords = (disabled) => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
       cellRenderer: (params) => (
         <div
           onClick={() => {
@@ -263,6 +264,7 @@ const MaintenanceAmcRecords = (disabled) => {
           data={[]}
           columns={assetColumns}
           handleClick={handleAddAsset}
+          exportData
         />
       </PageFrame>
 

@@ -106,6 +106,7 @@ const TabLayout = ({
               key={index}
               className="border-r-[1px] border-borderGray"
               to={`${basePath}/${tab.path}`}
+              state={location.state}
               style={({ isActive }) => ({
                 textDecoration: "none",
                 color: isActive ? "white" : "#1E3D73",

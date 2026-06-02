@@ -229,6 +229,7 @@ const HistoricalPnl = () => {
           ]}
           hideFilter
           data={historicalTableData}
+          exportData
         />
       </WidgetSection>
     </div>

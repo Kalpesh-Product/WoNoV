@@ -18,10 +18,6 @@ import Profile from "../pages/Profile/Profile";
 import ReportsLayout from "../pages/Reports/ReportsLayout";
 import ReportsDashboard from "../pages/Reports/ReportsDashboard";
 import ReportsSection from "../pages/Reports/ReportsSection";
-import FinanceReports from "../pages/Reports/FinanceReports/FinanceReports";
-import TicketReportsPage from "../pages/Reports/TicketReports/TicketReports";
-import MeetingReportsPage from "../pages/Reports/MeetingReports/MeetingReports";
-import VisitorReportsPage from "../pages/Reports/VisitorReports/VisitorReports";
 import DepartmentReportCommon from "../pages/Reports/DepartmentReportCommon";
 
 // Import tickets pages
@@ -445,6 +441,14 @@ import HrKRA from "../pages/Dashboard/HrDashboard/HrTasks/HrKRA";
 import HrOverallTasks from "../pages/Dashboard/HrDashboard/HrTasks/HrOverallTasks";
 import HrDepartmentKPA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKPA";
 import HrDepartmentKRA from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKRA";
+import HrDepartmentKraOverviewLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKraOverviewLayout";
+import HrMemberWiseKraOverview from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberWiseKraOverview";
+import HrMemberKraDetailsLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberKraDetailsLayout";
+import HrCompletedMemberKraDetails from "../pages/Dashboard/HrDashboard/HrTasks/HrCompletedMemberKraDetails";
+import HrCompletedMemberKpaDetails from "../pages/Dashboard/HrDashboard/HrTasks/HrCompletedMemberKpaDetails";
+import HrDepartmentKpaOverviewLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrDepartmentKpaOverviewLayout";
+import HrMemberWiseKpaOverview from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberWiseKpaOverview";
+import HrMemberKpaDetailsLayout from "../pages/Dashboard/HrDashboard/HrTasks/HrMemberKpaDetailsLayout";
 import VendorTable from "../components/Pages/VendorTable";
 import MonthlyBudgetCommon from "../components/Pages/MonthlyBudgetCommon";
 import AssetsHome from "../pages/Assets/AssetsHome";
@@ -472,6 +476,7 @@ import EditWebsiteTemp from "../pages/Dashboard/FrontendDashboard/WebsiteBuilder
 import ProtectedDepartmentRoute from "../components/ProtectedDepartmentRoute";
 import PerformancePermissionRoute from "../pages/Performance/PerformancePermissionRoute";
 import { PERMISSIONS } from "../constants/permissions";
+import FinanceReports from "../pages/Reports/FinanceReports/FinanceReports";
 
 export const routes = createBrowserRouter([
   {
@@ -613,7 +618,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                            {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -625,7 +630,7 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
-                           {
+                          {
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
@@ -677,7 +682,7 @@ export const routes = createBrowserRouter([
                             path: "external-clients",
                             element: <ExternalMeetingClients />,
                           },
-                           {
+                          {
                             path: "day-pass",
                             element: (
                               <ExternalClients
@@ -730,13 +735,22 @@ export const routes = createBrowserRouter([
                         path: "directors-company-KYC/:name",
                         element: <DirectorData />,
                       },
-                       {
+                      {
                         path: "mix-bag/department-wise-budget",
                         element: <DeptWiseBudget />,
                       },
                       {
                         path: "mix-bag/department-wise-budget/:department",
                         element: <DeptWiseBudgetDetails />,
+                      },
+                      {
+                        path: "finance/dept-wise-budget",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/finance-dashboard/mix-bag/department-wise-budget"
+                            replace
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/collection-payments",
@@ -905,7 +919,7 @@ export const routes = createBrowserRouter([
                               },
                             ],
                           },
-                         {
+                          {
                             path: "budget-request",
                             element: <BudgetRequest />,
                             children: [
@@ -918,23 +932,27 @@ export const routes = createBrowserRouter([
                                 element: <PendingApprovalsBudget />,
                               },
                               {
-                              path: "budget-history",
+                                path: "budget-history",
                                 element: <BudgetHistory />,
                               },
                               {
                                 path: "pending-approvals-budget/review-request",
                                 element: <ReviewRequest />,
                               },
-                               {
+                              {
                                 path: "voucher-history-budget",
-                                element: <Navigate to="../budget-history" replace />,
+                                element: (
+                                  <Navigate to="../budget-history" replace />
+                                ),
                               },
                             ],
                           },
                           // Legacy billing routes (temporary redirects)
                           {
                             path: "client-invoice",
-                            element: <Navigate to="../client-invoicing" replace />,
+                            element: (
+                              <Navigate to="../client-invoicing" replace />
+                            ),
                           },
                           {
                             path: "department-invoice",
@@ -945,13 +963,16 @@ export const routes = createBrowserRouter([
                               />
                             ),
                           },
-                           {
+                          {
                             path: "voucher-history",
                             element: (
-                              <Navigate to="../voucher-request/voucher-history" replace />
+                              <Navigate
+                                to="../voucher-request/voucher-history"
+                                replace
+                              />
                             ),
                           },
-                           {
+                          {
                             path: "pending-approvals",
                             element: (
                               <Navigate
@@ -979,7 +1000,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                             {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -991,11 +1012,11 @@ export const routes = createBrowserRouter([
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
-                           {
+                          {
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
                           },
-                          
+
                           // {
                           //   path: "dept-wise-budget",
                           //   element: <DeptWiseBudget />,
@@ -1078,7 +1099,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                          path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1332,7 +1353,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                             path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1348,7 +1369,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                             path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1372,7 +1393,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                           {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -1544,7 +1565,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                             path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1560,7 +1581,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                             path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1573,7 +1594,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                           {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -1585,7 +1606,7 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
-                           {
+                          {
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
@@ -1757,7 +1778,7 @@ export const routes = createBrowserRouter([
                             path: "budget",
                             element: <BudgetPage />,
                           },
-                           {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -1769,7 +1790,7 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
-                            {
+                          {
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
@@ -2144,7 +2165,7 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
-                           {
+                          {
                             path: "department-KRA",
                             element: <HrKRA />,
                           },
@@ -2155,11 +2176,147 @@ export const routes = createBrowserRouter([
 
                           {
                             path: "department-KPA/:department",
-                            element: <HrDepartmentKPA />,
+                            element: <HrDepartmentKpaOverviewLayout />,
+                            children: [
+                              {
+                                index: true,
+                                element: <Navigate to="department-wise" replace />,
+                              },
+                              {
+                                path: "department-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KPA_DEPARTMENT_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrDepartmentKPA />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KPA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberWiseKpaOverview />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise/*",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KPA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberKpaDetailsLayout />}
+                                  />
+                                ),
+                                children: [
+                                  {
+                                    path: "monthly-KPA",
+                                    element: (
+                                      <HrCompletedMemberKpaDetails
+                                        kpaType="KPA"
+                                        title="DEPARTMENT MONTHLY KPA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "individual-Monthly-KPA",
+                                    element: (
+                                      <HrCompletedMemberKpaDetails
+                                        kpaType="INDIVIDUALKPA"
+                                        title="INDIVIDUAL MONTHLY KPA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "team-Monthly-KPA",
+                                    element: (
+                                      <HrCompletedMemberKpaDetails
+                                        kpaType="TEAMKPA"
+                                        title="TEAM MONTHLY KPA"
+                                      />
+                                    ),
+                                  },
+                                ],
+                              },
+                            ],
                           },
-                           {
+                          {
                             path: "department-KRA/:department",
-                            element: <HrDepartmentKRA />,
+                            element: <HrDepartmentKraOverviewLayout />,
+                            children: [
+                              {
+                                index: true,
+                                element: <Navigate to="department-wise" replace />,
+                              },
+                              {
+                                path: "department-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrDepartmentKRA />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KRA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberWiseKraOverview />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise/*",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KRA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberKraDetailsLayout />}
+                                  />
+                                ),
+                                children: [
+                                  {
+                                    path: "daily-KRA",
+                                    element: (
+                                      <HrCompletedMemberKraDetails
+                                        kraType="KRA"
+                                        title="DEPARTMENT DAILY KRA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "individual-Daily-KRA",
+                                    element: (
+                                      <HrCompletedMemberKraDetails
+                                        kraType="INDIVIDUALKRA"
+                                        title="INDIVIDUAL DAILY KRA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "team-Daily-KRA",
+                                    element: (
+                                      <HrCompletedMemberKraDetails
+                                        kraType="TEAMKRA"
+                                        title="TEAM DAILY KRA"
+                                      />
+                                    ),
+                                  },
+                                ],
+                              },
+                            ],
                           },
                           {
                             path: "department-tasks/:department",
@@ -2167,30 +2324,14 @@ export const routes = createBrowserRouter([
                           },
                         ],
                       },
-                       {
+                      {
                         path: "mix-bag/department-tasks",
                         element: <HrTasksLayout />,
                         children: [
                           {
-                            path: "department-KPA",
-                            element: <HrKPA />,
-                            index: true,
-                          },
-                           {
-                            path: "department-KRA",
-                            element: <HrKRA />,
-                          },
-                          {
                             path: "department-task",
                             element: <HrOverallTasks />,
-                          },
-                          {
-                            path: "department-KPA/:department",
-                            element: <HrDepartmentKPA />,
-                          },
-                           {
-                            path: "department-KRA/:department",
-                            element: <HrDepartmentKRA />,
+                            index: true,
                           },
                           {
                             path: "department-task/:department",
@@ -2203,7 +2344,7 @@ export const routes = createBrowserRouter([
                         element: <HrMixBag />,
                       },
                       {
-                          path: "mix-bag/department-kpa-kra",
+                        path: "mix-bag/department-kpa-kra",
                         element: <HrTasksLayout />,
                         children: [
                           {
@@ -2211,33 +2352,172 @@ export const routes = createBrowserRouter([
                             element: <HrKPA />,
                             index: true,
                           },
-                            {
+                          {
                             path: "department-KRA",
                             element: <HrKRA />,
                           },
                           {
-                            path: "department-task",
-                            element: <HrOverallTasks />,
-                          },
-                          {
-                            path: "department-tasks",
-                            element: <HrOverallTasks />,
-                          },
-                          {
                             path: "department-KPA/:department",
-                            element: <HrDepartmentKPA />,
+                            // element: <HrDepartmentKPA />,
+                             element: <HrDepartmentKpaOverviewLayout />,
+                            children: [
+                              {
+                                path: "department-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KPA_DEPARTMENT_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrDepartmentKPA />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KPA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberWiseKpaOverview />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise/*",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KPA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberKpaDetailsLayout />}
+                                  />
+                                ),
+                                children: [
+                                  {
+                                    path: "monthly-KPA",
+                                    element: (
+                                      <HrCompletedMemberKpaDetails
+                                        kpaType="KPA"
+                                        title="DEPARTMENT MONTHLY KPA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "individual-Monthly-KPA",
+                                    element: (
+                                      <HrCompletedMemberKpaDetails
+                                        kpaType="INDIVIDUALKPA"
+                                        title="INDIVIDUAL MONTHLY KPA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "team-Monthly-KPA",
+                                    element: (
+                                      <HrCompletedMemberKpaDetails
+                                        kpaType="TEAMKPA"
+                                        title="TEAM MONTHLY KPA"
+                                      />
+                                    ),
+                                  },
+                                ],
+                              },
+                            ],
                           },
-                           {
+                          {
                             path: "department-KRA/:department",
-                            element: <HrDepartmentKRA />,
-                          },
-                          {
-                            path: "department-task/:department",
-                            element: <HrDepartmentTasks />,
-                          },
-                          {
-                            path: "department-tasks/:department",
-                            element: <HrDepartmentTasks />,
+                             element: <HrDepartmentKraOverviewLayout />,
+                            children: [
+                              {
+                                path: "department-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrDepartmentKRA />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KRA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberWiseKraOverview />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "member-wise/*",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.HR_DEPARTMENT_KRA_MEMBER_WISE_OVERVIEW_TAB,
+                                    ]}
+                                    element={<HrMemberKraDetailsLayout />}
+                                  />
+                                ),
+                                children: [
+                                  {
+                                    path: "daily-KRA",
+                                    element: (
+                                      <HrCompletedMemberKraDetails
+                                        kraType="KRA"
+                                        title="DEPARTMENT DAILY KRA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "individual-Daily-KRA",
+                                    element: (
+                                      <HrCompletedMemberKraDetails
+                                        kraType="INDIVIDUALKRA"
+                                        title="INDIVIDUAL DAILY KRA"
+                                      />
+                                    ),
+                                  },
+                                  {
+                                    path: "team-Daily-KRA",
+                                    element: (
+                                      <HrCompletedMemberKraDetails
+                                        kraType="TEAMKRA"
+                                        title="TEAM DAILY KRA"
+                                      />
+                                    ),
+                                  },
+                                ],
+                              },
+                            ],
+                            // element: <HrDepartmentKRA />,
+                            //  element: <HrDepartmentKraOverviewLayout />,
+                            // children: [
+                            //   {
+                            //     path: "department-wise",
+                            //     element: (
+                            //       <PerformancePermissionRoute
+                            //         permissions={[
+                            //           PERMISSIONS.HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB,
+                            //         ]}
+                            //         element={<HrDepartmentKRA />}
+                            //       />
+                            //     ),
+                            //   },
+                            //   {
+                            //     path: "member-wise",
+                            //     element: (
+                            //       <PerformancePermissionRoute
+                            //         permissions={[
+                            //           PERMISSIONS.HR_DEPARTMENT_KRA_MEMBER_WISE_OVERVIEW_TAB,
+                            //         ]}
+                            //         element={<HrMemberWiseKraOverview />}
+                            //       />
+                            //     ),
+                            //   },
+                            // ],
                           },
                         ],
                       },
@@ -2277,64 +2557,85 @@ export const routes = createBrowserRouter([
                         element: <Compliances />,
                         children: [
                           {
-                          //   path: "company-logo",
-                          //   element: <CompanyLogo />,
-                          // },
-                          // {
-                          //   path: "departments",
-                          //   element: <HrSettingsDepartments />,
-                          // },
-                          // {
-                          //   path: "work-locations",
-                          //   element: <WorkLocations />,
-                          // },
-                          // {
-                          //   path: "holidays",
-                          //   element: <HolidaysEvents />,
-                          // },
-                          // {
-                          //   path: "events",
-                          //   element: <HrEvents />,
-                          // },
-                          // {
-                          //   path: "company-handbook",
-                          //   element: <ComapanyHandbook />,
-                          // },
-                          // {
-                          //   path: "company-handbook/:department",
-                          //   element: <DepartmentSOP />,
-                          // },
+                            //   path: "company-logo",
+                            //   element: <CompanyLogo />,
+                            // },
+                            // {
+                            //   path: "departments",
+                            //   element: <HrSettingsDepartments />,
+                            // },
+                            // {
+                            //   path: "work-locations",
+                            //   element: <WorkLocations />,
+                            // },
+                            // {
+                            //   path: "holidays",
+                            //   element: <HolidaysEvents />,
+                            // },
+                            // {
+                            //   path: "events",
+                            //   element: <HrEvents />,
+                            // },
+                            // {
+                            //   path: "company-handbook",
+                            //   element: <ComapanyHandbook />,
+                            // },
+                            // {
+                            //   path: "company-handbook/:department",
+                            //   element: <DepartmentSOP />,
+                            // },
 
-                          // {
-                          //   path: "policies",
-                          //   element: <HrSettingsPolicies />,
-                          // },
-                          // {
-                          //   path: "sops",
-                          //   element: <HrSOP />,
-                          // },
-                          // {
-                          //   path: "employee-type",
-                          //   element: <EmployeeType />,
+                            // {
+                            //   path: "policies",
+                            //   element: <HrSettingsPolicies />,
+                            // },
+                            // {
+                            //   path: "sops",
+                            //   element: <HrSOP />,
+                            // },
+                            // {
+                            //   path: "employee-type",
+                            //   element: <EmployeeType />,
                             path: "company-settings",
                             element: <CompanySettings />,
                             children: [
-                              { path: "company-logo", element: <CompanyLogo /> },
-                              { path: "company-handbook", element: <ComapanyHandbook /> },
-                              { path: "company-handbook/:department", element: <DepartmentSOP /> },
-                              { path: "policies", element: <HrSettingsPolicies /> },
+                              {
+                                path: "company-logo",
+                                element: <CompanyLogo />,
+                              },
+                              {
+                                path: "company-handbook",
+                                element: <ComapanyHandbook />,
+                              },
+                              {
+                                path: "company-handbook/:department",
+                                element: <DepartmentSOP />,
+                              },
+                              {
+                                path: "policies",
+                                element: <HrSettingsPolicies />,
+                              },
                               { path: "sops", element: <HrSOP /> },
                             ],
                           },
                           {
                             // path: "shifts",
                             // element: <Shifts />,
-                             path: "company-structure-workforce",
+                            path: "company-structure-workforce",
                             element: <StructureWorkforce />,
                             children: [
-                              { path: "departments", element: <HrSettingsDepartments /> },
-                              { path: "work-locations", element: <WorkLocations /> },
-                              { path: "employee-type", element: <EmployeeType /> },
+                              {
+                                path: "departments",
+                                element: <HrSettingsDepartments />,
+                              },
+                              {
+                                path: "work-locations",
+                                element: <WorkLocations />,
+                              },
+                              {
+                                path: "employee-type",
+                                element: <EmployeeType />,
+                              },
                               { path: "shifts", element: <Shifts /> },
                             ],
                           },
@@ -2342,7 +2643,7 @@ export const routes = createBrowserRouter([
                           {
                             // path: "templates",
                             // element: <Templates />,
-                             path: "company-calendar-activities",
+                            path: "company-calendar-activities",
                             element: <CalendarActivities />,
                             children: [
                               { path: "holidays", element: <HolidaysEvents /> },
@@ -2352,11 +2653,14 @@ export const routes = createBrowserRouter([
                           {
                             // path: "templates/:id",
                             // element: <ViewTemplate />,
-                             path: "company-templates-configuration",
+                            path: "company-templates-configuration",
                             element: <TemplatesConfiguration />,
                             children: [
                               { path: "templates", element: <Templates /> },
-                              { path: "templates/:id", element: <ViewTemplate /> },
+                              {
+                                path: "templates/:id",
+                                element: <ViewTemplate />,
+                              },
                             ],
                           },
                         ],
@@ -2389,7 +2693,8 @@ export const routes = createBrowserRouter([
                           },
 
                           {
-                            path: "employee-list/:firstName/",
+                            // path: "employee-list/:firstName/",
+                             path: "employee-list/",
                             element: <EmployeeDetail />,
                             children: [
                               {
@@ -2482,7 +2787,7 @@ export const routes = createBrowserRouter([
                             index: true,
                             element: <BudgetPage />,
                           },
-                           {
+                          {
                             path: "budget-history",
                             element: <DepartmentBudgetHistory />,
                           },
@@ -2494,7 +2799,7 @@ export const routes = createBrowserRouter([
                             path: "voucher",
                             element: <Reimbursement />,
                           },
-                            {
+                          {
                             path: "reject-voucher",
                             element: <DepartmentRejectedVoucher />,
                           },
@@ -2547,7 +2852,7 @@ export const routes = createBrowserRouter([
 
               {
                 path: "reports",
-                  element: <ReportsLayout />,
+                element: <ReportsLayout />,
                 children: [
                   {
                     path: "",
@@ -2559,7 +2864,7 @@ export const routes = createBrowserRouter([
                       />
                     ),
                   },
-                    {
+                  {
                     path: "reports-section",
                     element: (
                       <PerformancePermissionRoute
@@ -2569,42 +2874,15 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "reports-section/finance",
+                    path: "reports-section/:moduleKey",
                     element: (
                       <PerformancePermissionRoute
-                        permissions={[PERMISSIONS.REPORTS_FINANCE]}
-                        element={<FinanceReports />}
+                        permissions={[PERMISSIONS.REPORTS_SECTION]}
+                        element={<DepartmentReportCommon />}
                       />
                     ),
                   },
                   {
-                    path: "reports-section/ticket",
-                    element: (
-                      <PerformancePermissionRoute
-                        permissions={[PERMISSIONS.REPORTS_TICKETS]}
-                        element={<TicketReportsPage />}
-                      />
-                    ),
-                  },
-                  {
-                     path: "reports-section/meeting",
-                    element: (
-                      <PerformancePermissionRoute
-                        permissions={[PERMISSIONS.REPORTS_MEETINGS]}
-                        element={<MeetingReportsPage />}
-                      />
-                    ),
-                  },
-                  {
-                  path: "reports-section/visitor",
-                    element: (
-                      <PerformancePermissionRoute
-                        permissions={[PERMISSIONS.REPORTS_VISITORS]}
-                        element={<VisitorReportsPage />}
-                      />
-                    ),
-                  },
-                   {
                     path: "department-report-common",
                     element: (
                       <PerformancePermissionRoute
@@ -2613,6 +2891,24 @@ export const routes = createBrowserRouter([
                       />
                     ),
                   },
+                  // {
+                  //   path: "reports-section/:moduleKey",
+                  //   element: (
+                  //     <PerformancePermissionRoute
+                  //       permissions={[PERMISSIONS.REPORTS_SECTION]}
+                  //       element={<FinanceReports />}
+                  //     />
+                  //   ),
+                  // },
+                  // {
+                  //   path: "department-report-common",
+                  //   element: (
+                  //     <PerformancePermissionRoute
+                  //       permissions={[PERMISSIONS.REPORTS_DASHBOARD]}
+                  //       element={<FinanceReports />}
+                  //     />
+                  //   ),
+                  // },
                 ],
               },
               {
@@ -2892,7 +3188,7 @@ export const routes = createBrowserRouter([
                   {
                     path: "mix-bag",
                     element: <AssetsMixBag />,
-                      children: [
+                    children: [
                       {
                         path: "vendor",
                         element: <VendorTable />,
@@ -2933,11 +3229,11 @@ export const routes = createBrowserRouter([
                 children: [
                   {
                     path: "",
-                     element: (
+                    element: (
                       <PerformancePermissionRoute
                         permissions={[
                           PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS,
-                           PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD,
+                          PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD,
                           PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD,
                           PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA,
                           PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA,
@@ -2950,7 +3246,7 @@ export const routes = createBrowserRouter([
                     index: true,
                   },
                   {
-                  path: "overall-department-kpa",
+                    path: "overall-department-kpa",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[
@@ -2971,12 +3267,12 @@ export const routes = createBrowserRouter([
                       />
                     ),
                   },
-                   {
+                  {
                     path: "department-KPA",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[
-                        //  PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD,
+                          //  PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD,
                           PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
                         ]}
                         //mode="any"
@@ -2991,7 +3287,9 @@ export const routes = createBrowserRouter([
                         index: true,
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KPA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_MEMBER_WISE_KPA,
+                            ]}
                             element={<PerformanceMemberWiseKraKpa />}
                           />
                         ),
@@ -3041,20 +3339,20 @@ export const routes = createBrowserRouter([
                     ],
                   },
                   {
-                   path: "department-KRA",
+                    path: "department-KRA",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[
-                         // PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD,
+                          // PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD,
                           PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
                         ]}
-                       // mode="any"
+                        // mode="any"
                         element={<PerformanceDepartmentWiseKra />}
                       />
                     ),
                   },
                   {
-                   path: "department-KRA/member-wise-KRA",
+                    path: "department-KRA/member-wise-KRA",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA]}
@@ -3064,145 +3362,145 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: ":overallType/:memberWiseType",
-                  // {
-                  //   path: "department-wise",
-                  //   element: (
-                  //     <PerformancePermissionRoute
-                  //       permissions={[
-                  //         PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
-                  //         PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
-                  //         PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
-                  //       ]}
-                  //       element={<PerformanceDepartmentWiseLayout />}
-                  //     />
-                  //   ),
-                  //   children: [
-                  //     {
-                  //       path: "overall-department-kpa",
-                  //       element: (
-                  //         <PerformancePermissionRoute
-                  //           permissions={[
-                  //             PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
-                  //             PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
-                  //           ]}
-                  //           mode="any"
-                  //           element={<PerformanceDepartmentWiseKraKpa />}
-                  //         />
-                  //       ),
-                  //     },
-                  //     {
-                  //       path: "overall-department-kra",
-                  //       element: (
-                  //         <PerformancePermissionRoute
-                  //           permissions={[
-                  //             PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
-                  //             PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
-                  //           ]}
-                  //           mode="any"
-                  //           element={<PerformanceDepartmentWiseKra />}
-                  //         />
-                  //       ),
-                  //     },
-                  //   ],
-                  // },
-                  // {
-                  //   path: "overall-department-kpa",
-                  //   element: (
-                  //     <PerformancePermissionRoute
-                  //       permissions={[
-                  //         PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS,
-                  //       ]}
-                  //       element={<PerformanceOverallKPA />}
-                  //     />
-                  //   ),
-                  // },
-                  // {
-                  //   path: "overall-department-kpa/department-KPA/:department",
-                  //   element: (
-                  //     <PerformancePermissionRoute
-                  //       permissions={[
-                  //         PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS,
-                  //       ]}
-                  //       element={<PerformanceDepartmentKPA />}
-                  //     />
-                  //   ),
-                  // },
-                  // {
-                  //   path: "department-wise",
-                  //   element: (
-                  //     <PerformancePermissionRoute
-                  //       permissions={[
-                  //         PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
-                  //         PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
-                  //         PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
-                  //       ]}
-                  //       element={<PerformanceDepartmentWiseLayout />}
-                  //     />
-                  //   ),
-                  //   children: [
-                  //     {
-                  //       path: "overall-department-kpa",
-                  //       element: (
-                  //         <PerformancePermissionRoute
-                  //           permissions={[
-                  //             PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
-                  //             PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
-                  //           ]}
-                  //           mode="any"
-                  //           element={<PerformanceDepartmentWiseKraKpa />}
-                  //         />
-                  //       ),
-                  //     },
-                  //     {
-                  //       path: "overall-department-kra",
-                  //       element: (
-                  //         <PerformancePermissionRoute
-                  //           permissions={[
-                  //             PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
-                  //             PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
-                  //           ]}
-                  //           mode="any"
-                  //           element={<PerformanceDepartmentWiseKra />}
-                  //         />
-                  //       ),
-                  //     },
-                  //   ],
-                  // },
-                  // {
-                  //   path: "department-wise/:overallType",
-                  //   element: (
-                  //     <PerformancePermissionRoute
-                  //       permissions={[
-                  //         PERMISSIONS.PERFORMANCE_MEMBER_WISE_KPA,
-                  //         PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA,
-                  //       ]}
-                  //       mode="any"
-                  //       element={<PerformanceMemberWiseLayout />}
-                  //     />
-                  //   ),
-                  //   children: [
-                  //     {
-                  //       path: "member-wise-kpa",
-                  //       element: (
-                  //         <PerformancePermissionRoute
-                  //           permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KPA]}
-                  //           element={<PerformanceMemberWiseKraKpa />}
-                  //         />
-                  //       ),
-                  //     },
-                  //     {
-                  //       path: "member-wise-kra",
-                  //       element: (
-                  //         <PerformancePermissionRoute
-                  //           permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA]}
-                  //           element={<PerformanceMemberWiseKra />}
-                  //         />
-                  //       ),
-                  //     },
-                  //   ],
-                  // },
-                  // {
-                  //   path: "department-wise/:overallType/:memberWiseType",
+                    // {
+                    //   path: "department-wise",
+                    //   element: (
+                    //     <PerformancePermissionRoute
+                    //       permissions={[
+                    //         PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                    //         PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
+                    //         PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
+                    //       ]}
+                    //       element={<PerformanceDepartmentWiseLayout />}
+                    //     />
+                    //   ),
+                    //   children: [
+                    //     {
+                    //       path: "overall-department-kpa",
+                    //       element: (
+                    //         <PerformancePermissionRoute
+                    //           permissions={[
+                    //             PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
+                    //             PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                    //           ]}
+                    //           mode="any"
+                    //           element={<PerformanceDepartmentWiseKraKpa />}
+                    //         />
+                    //       ),
+                    //     },
+                    //     {
+                    //       path: "overall-department-kra",
+                    //       element: (
+                    //         <PerformancePermissionRoute
+                    //           permissions={[
+                    //             PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
+                    //             PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                    //           ]}
+                    //           mode="any"
+                    //           element={<PerformanceDepartmentWiseKra />}
+                    //         />
+                    //       ),
+                    //     },
+                    //   ],
+                    // },
+                    // {
+                    //   path: "overall-department-kpa",
+                    //   element: (
+                    //     <PerformancePermissionRoute
+                    //       permissions={[
+                    //         PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS,
+                    //       ]}
+                    //       element={<PerformanceOverallKPA />}
+                    //     />
+                    //   ),
+                    // },
+                    // {
+                    //   path: "overall-department-kpa/department-KPA/:department",
+                    //   element: (
+                    //     <PerformancePermissionRoute
+                    //       permissions={[
+                    //         PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS,
+                    //       ]}
+                    //       element={<PerformanceDepartmentKPA />}
+                    //     />
+                    //   ),
+                    // },
+                    // {
+                    //   path: "department-wise",
+                    //   element: (
+                    //     <PerformancePermissionRoute
+                    //       permissions={[
+                    //         PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                    //         PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
+                    //         PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
+                    //       ]}
+                    //       element={<PerformanceDepartmentWiseLayout />}
+                    //     />
+                    //   ),
+                    //   children: [
+                    //     {
+                    //       path: "overall-department-kpa",
+                    //       element: (
+                    //         <PerformancePermissionRoute
+                    //           permissions={[
+                    //             PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KPA,
+                    //             PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                    //           ]}
+                    //           mode="any"
+                    //           element={<PerformanceDepartmentWiseKraKpa />}
+                    //         />
+                    //       ),
+                    //     },
+                    //     {
+                    //       path: "overall-department-kra",
+                    //       element: (
+                    //         <PerformancePermissionRoute
+                    //           permissions={[
+                    //             PERMISSIONS.PERFORMANCE_OVERALL_DEPARTMENT_WISE_KRA,
+                    //             PERMISSIONS.PERFORMANCE_DEPARTMENT_WISE_KRA_KPA,
+                    //           ]}
+                    //           mode="any"
+                    //           element={<PerformanceDepartmentWiseKra />}
+                    //         />
+                    //       ),
+                    //     },
+                    //   ],
+                    // },
+                    // {
+                    //   path: "department-wise/:overallType",
+                    //   element: (
+                    //     <PerformancePermissionRoute
+                    //       permissions={[
+                    //         PERMISSIONS.PERFORMANCE_MEMBER_WISE_KPA,
+                    //         PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA,
+                    //       ]}
+                    //       mode="any"
+                    //       element={<PerformanceMemberWiseLayout />}
+                    //     />
+                    //   ),
+                    //   children: [
+                    //     {
+                    //       path: "member-wise-kpa",
+                    //       element: (
+                    //         <PerformancePermissionRoute
+                    //           permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KPA]}
+                    //           element={<PerformanceMemberWiseKraKpa />}
+                    //         />
+                    //       ),
+                    //     },
+                    //     {
+                    //       path: "member-wise-kra",
+                    //       element: (
+                    //         <PerformancePermissionRoute
+                    //           permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA]}
+                    //           element={<PerformanceMemberWiseKra />}
+                    //         />
+                    //       ),
+                    //     },
+                    //   ],
+                    // },
+                    // {
+                    //   path: "department-wise/:overallType/:memberWiseType",
                     element: (
                       <PerformancePermissionRoute
                         permissions={[
@@ -3273,7 +3571,9 @@ export const routes = createBrowserRouter([
                         index: true,
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_MEMBER_WISE_KRA,
+                            ]}
                             element={<PerformanceMemberWiseKra />}
                           />
                         ),
@@ -3324,7 +3624,9 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "overall-KPA/department-KPA",
-                      element: <Navigate to="/app/performance/department-KPA" replace />,
+                    element: (
+                      <Navigate to="/app/performance/department-KPA" replace />
+                    ),
                   },
                   {
                     path: "overall-KPA/department-KPA/:department",
@@ -3339,22 +3641,28 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "overall-KPA/department-wise-KPA",
-                    element: <Navigate to="/app/performance/department-KPA" replace />,
+                    element: (
+                      <Navigate to="/app/performance/department-KPA" replace />
+                    ),
                   },
                   {
                     path: "overall-KPA/department-wise-kra-kpa",
-                    element: <Navigate to="/app/performance/department-KPA" replace />,
+                    element: (
+                      <Navigate to="/app/performance/department-KPA" replace />
+                    ),
                   },
-                    
+
                   {
                     path: "assign-KRA-KPA",
-                     children: [
+                    children: [
                       {
                         path: "",
                         index: true,
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA,
+                            ]}
                             element={<PerformanceAssignKraKpa />}
                           />
                         ),
@@ -3364,6 +3672,7 @@ export const routes = createBrowserRouter([
                         element: (
                           <ProtectedDepartmentRoute
                             allowHrForPerformance={true}
+                            allowAdminForPerformance={true}
                             element={<DepartmentPerformanceLayout />}
                           />
                         ),
@@ -3401,7 +3710,7 @@ export const routes = createBrowserRouter([
                     ],
                   },
 
-                    {
+                  {
                     path: "employee-KRA-KPA",
                     element: (
                       <PerformancePermissionRoute
@@ -3414,16 +3723,20 @@ export const routes = createBrowserRouter([
                         path: "daily-KRA",
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_DAILY_KRA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_DAILY_KRA,
+                            ]}
                             element={<PerformanceKra />}
                           />
                         ),
                       },
-                       {
+                      {
                         path: "monthly-KPA",
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_MONTHLY_KPA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_EMPLOYEE_DEPARTMENT_MONTHLY_KPA,
+                            ]}
                             element={<PerformanceMonthly />}
                           />
                         ),
@@ -3432,7 +3745,9 @@ export const routes = createBrowserRouter([
                         path: "individual-Daily-KRA",
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_INDIVIDUAL_DAILY_KRA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_EMPLOYEE_INDIVIDUAL_DAILY_KRA,
+                            ]}
                             element={<PerformanceIndividualKra />}
                           />
                         ),
@@ -3441,7 +3756,9 @@ export const routes = createBrowserRouter([
                         path: "individual-Monthly-KPA",
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_EMPLOYEE_INDIVIDUAL_MONTHLY_KPA]}
+                            permissions={[
+                              PERMISSIONS.PERFORMANCE_EMPLOYEE_INDIVIDUAL_MONTHLY_KPA,
+                            ]}
                             element={<PerformanceIndividualKpa />}
                           />
                         ),
@@ -3451,16 +3768,16 @@ export const routes = createBrowserRouter([
 
                   {
                     path: "report-KRA-KPA",
-                      element: (
+                    element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}
                         element={<PerformanceReportKraKpa />}
                       />
                     ),
                   },
-                      {
+                  {
                     path: "report-KRA-KPA/:departmentName",
-                      element: (
+                    element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}
                         element={<PerformanceReportKraKpa />}
@@ -3469,7 +3786,7 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "report-KRA-KPA/:departmentName/:reportType",
-                      element: (
+                    element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}
                         element={<PerformanceReportKraKpa />}
@@ -3478,14 +3795,14 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "report-KRA-KPA/:departmentName/:reportType/:reportStatus",
-                      element: (
+                    element: (
                       <PerformancePermissionRoute
                         permissions={[PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA]}
                         element={<PerformanceReportKraKpa />}
                       />
                     ),
                   },
-                ],    
+                ],
               },
               {
                 path: "tasks", // Parent path
@@ -3666,11 +3983,13 @@ export const routes = createBrowserRouter([
                     element: (
                       <PerformancePermissionRoute
                         element={<RepeatExternalCompaanies />}
-                        permissions={[PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS]}
+                        permissions={[
+                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS,
+                        ]}
                       />
                     ),
                   },
-                    {
+                  {
                     path: "mix-bag/visitors-to-client",
                     element: (
                       <Navigate
@@ -3690,7 +4009,7 @@ export const routes = createBrowserRouter([
                         ]}
                       />
                     ),
-                    },
+                  },
                   {
                     path: "mix-bag/repeat-visitors",
                     element: (

@@ -125,7 +125,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
           const departmentName = item?.department?.name;
           if (!departmentId || !departmentName) return null;
 
-          const [assignedResponse, completedResponse, individualAssignedResponse] =
+  const [assignedResponse, completedResponse, individualAssignedResponse, teamAssignedResponse] =
             await Promise.allSettled([
               axios.get(
                 `/api/performance/get-tasks?dept=${departmentId}&type=KPA&duration=Monthly`,
@@ -135,6 +135,9 @@ const PerformanceDepartmentWiseKraKpa = () => {
               ),
               axios.get(
                 `/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKPA&duration=Monthly`,
+              ),
+              axios.get(
+                `/api/performance/get-tasks?dept=${departmentId}&type=TEAMKPA&duration=Monthly`,
               ),
             ]);
 
@@ -150,6 +153,10 @@ const PerformanceDepartmentWiseKraKpa = () => {
             individualAssignedResponse?.status === "fulfilled"
               ? individualAssignedResponse.value?.data || []
               : [];
+            const teamAssignedTasks =
+            teamAssignedResponse?.status === "fulfilled"
+              ? teamAssignedResponse.value?.data || []
+              : [];    
 
           const monthlyAssignedCount = assignedTasks.filter((task) =>
             isSameSelectedMonth(task?.assignedDate),
@@ -158,6 +165,11 @@ const PerformanceDepartmentWiseKraKpa = () => {
             isSameSelectedMonth(task?.completionDate),
           ).length;
           const monthlyPendingCount = assignedTasks.filter(
+            (task) =>
+              isSameSelectedMonth(task?.assignedDate) &&
+              task?.status !== "Completed",
+          ).length;
+          const teamMonthlyPendingCount = teamAssignedTasks.filter(
             (task) =>
               isSameSelectedMonth(task?.assignedDate) &&
               task?.status !== "Completed",
@@ -175,6 +187,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
             monthlyCompletedCount,
             monthlyPendingCount,
             individualMonthlyPendingCount,
+            teamMonthlyPendingCount,
           };
         }),
       );
@@ -227,6 +240,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
     (sum, count) => sum + count,
     0,
   );
+  const totalKpaCount = totalCompletedKpa + totalPendingKpa;
 
   const graphData = [
     {
@@ -272,7 +286,13 @@ const PerformanceDepartmentWiseKraKpa = () => {
  `/app/performance/department-KPA/member-wise-KPA`,
              //  `/app/performance/department-wise/overall-department-KPA/member-wise-KPA`,
               // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${departmentData.department?.name}`,
-              { state: { month: selectedMonth } },
+              {
+                state: {
+                  month: selectedMonth,
+                  selectedDepartment: departmentData.department?._id,
+                  selectedDepartmentName: departmentData.department?.name,
+                },
+              },
             );
           }
         },
@@ -337,7 +357,13 @@ tooltip: {
                             `/app/performance/department-KPA/member-wise-KPA`,
                 // `/app/performance/department-wise/overall-department-KPA/member-wise-KPA`,
               // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${params.value}`,
-              { state: { month: selectedMonth } },
+              {
+                state: {
+                  month: selectedMonth,
+                  selectedDepartment: params.data.mongoId,
+                  selectedDepartmentName: params.data.department,
+                },
+              },
             );
           }}
           className="text-primary font-pregular hover:underline cursor-pointer"
@@ -379,6 +405,8 @@ tooltip: {
         title={`KPA overview - ${selectedMonth}`}
         border
         padding
+        TitleAmountTotal={totalKpaCount}
+        totalTitle="Total"
         greenTitle="KPA "
         TitleAmountGreen={totalCompletedKpa}
         redTitle="KPA "
@@ -435,10 +463,14 @@ tooltip: {
                 departmentMonthlyStatsById[item.department?._id?.toString()]
                   ?.monthlyPendingCount || 0,
               individualMonthlyKpa:
-                departmentMonthlyStatsById[item.department?._id?.toString()]
-                  ?.individualMonthlyPendingCount || 0,
+                (departmentMonthlyStatsById[item.department?._id?.toString()]
+                  ?.individualMonthlyPendingCount || 0) +
+                (departmentMonthlyStatsById[item.department?._id?.toString()]
+                  ?.teamMonthlyPendingCount || 0),
               
-              teamMonthlyKpa: item.teamMonthlyKPA,
+              teamMonthlyKpa:
+                departmentMonthlyStatsById[item.department?._id?.toString()]
+                  ?.teamMonthlyPendingCount || 0,
               //annualKpa: item.annualKPA,
             }))}
             columns={departmentColumns}

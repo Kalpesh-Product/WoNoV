@@ -40,6 +40,15 @@ const parseIsoDate = (isoDateValue) => {
   return new Date(year, month - 1, day, 12, 0, 0);
 };
 
+const getTaskAssignedDateKey = (task) =>
+  toLocalIsoDate(task?.assignedDate || task?.dueDate || task?.createdAt);
+
+const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
+  const taskDateKey = getTaskAssignedDateKey(task);
+  return !!taskDateKey && taskDateKey <= selectedDateKey;
+};
+
+
 const PerformanceDepartmentWiseKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -125,9 +134,12 @@ const PerformanceDepartmentWiseKra = () => {
           if (!departmentId || !departmentName) return null;
 
           const settledResponses = await Promise.allSettled([
-            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
-            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
-            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
+            // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
+            // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
+            // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
+                        axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA&date=${selectedDate}`),
+            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA&date=${selectedDate}`),
+            axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA&date=${selectedDate}`),
             axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`),
             axios.get(
               `/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKRA`,
@@ -152,24 +164,45 @@ const PerformanceDepartmentWiseKra = () => {
   departmentId,
   departmentName,
 
-  // Only Department Daily KRA
+  // // Only Department Daily KRA
+  // dailyKra: departmentTasks.filter((task) =>
+  //   isSameSelectedDate(task?.assignedDate),
+  // ).length,
+
+  // // Keep these if needed for table
+  // individualDailyKra: individualTasks.filter((task) =>
+  //   isSameSelectedDate(task?.assignedDate),
+  // ).length,
+
+  // teamDailyKra: teamTasks.filter((task) =>
+  //   isSameSelectedDate(task?.assignedDate),
+  // ).length,
+
+  // // ✅ ONLY Department Pending
+  // pendingKra: departmentTasks.filter(
+  //   (task) =>
+  //     isSameSelectedDate(task?.assignedDate) &&
+  //     task?.status !== "Completed",
+  // ).length,
+
+   // Only Department Daily KRA
   dailyKra: departmentTasks.filter((task) =>
-    isSameSelectedDate(task?.assignedDate),
+    isTaskScheduledOnOrBeforeDate(task, selectedDate),
   ).length,
 
   // Keep these if needed for table
   individualDailyKra: individualTasks.filter((task) =>
-    isSameSelectedDate(task?.assignedDate),
+    isTaskScheduledOnOrBeforeDate(task, selectedDate),
   ).length,
 
   teamDailyKra: teamTasks.filter((task) =>
-    isSameSelectedDate(task?.assignedDate),
+    isTaskScheduledOnOrBeforeDate(task, selectedDate),
   ).length,
 
   // ✅ ONLY Department Pending
   pendingKra: departmentTasks.filter(
     (task) =>
-      isSameSelectedDate(task?.assignedDate) &&
+      isTaskScheduledOnOrBeforeDate(task, selectedDate) &&
       task?.status !== "Completed",
   ).length,
 
@@ -217,6 +250,7 @@ const PerformanceDepartmentWiseKra = () => {
     (sum, count) => sum + count,
     0,
   );
+  const totalKraCount = totalCompletedKra + totalPendingKra;
 
   const graphData = [
     {
@@ -356,6 +390,8 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
         title={`KRA overview - ${formatReadableDate(selectedDate)}`}
         border
         padding
+        TitleAmountTotal={totalKraCount}
+        totalTitle="Total"
         greenTitle="KRA "
         TitleAmountGreen={totalCompletedKra}
         redTitle="KRA "
@@ -408,9 +444,9 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
               mongoId: item.departmentId,
               department: item.departmentName,
               dailyKra: item.dailyKra,
-              individualDailyKra: item.individualDailyKra,
-              //  individualDailyKra:
-              //   (item.individualDailyKra || 0) + (item.teamDailyKra || 0),
+             // individualDailyKra: item.individualDailyKra,
+               individualDailyKra:
+                (item.individualDailyKra || 0) + (item.teamDailyKra || 0),
               teamDailyKra: item.teamDailyKra,
             }))}
             columns={visibleDepartmentColumns}

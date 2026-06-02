@@ -32,6 +32,7 @@ const WidgetTable = ({
   isRowSelectable,
   hideTitle = true,
   search = true,
+  border = true,
   onMonthChange,
   totalKey = "actualAmount",
   totalText = "INR",
@@ -159,8 +160,8 @@ const WidgetTable = ({
       return sum + (isNaN(amt) ? 0 : amt);
     }, 0);
 
-    onMonthChange(total);
-  }, [filteredData, onMonthChange]);
+    onMonthChange(total, filteredData, dateRange[0]);
+  }, [filteredData, onMonthChange, dateRange]);
 
   const formattedColumns = useMemo(() => {
     return columns.map((col) => {
@@ -180,6 +181,11 @@ const WidgetTable = ({
     });
   }, [columns, formatDate, formatTime]);
 
+  const exportColumnKeys = useMemo(
+    () => columns.map((col) => col.field).filter(Boolean),
+    [columns]
+  );
+
   const finalTableData = filteredData.map((item, index) => ({
     ...item,
     srNo: index + 1,
@@ -190,6 +196,8 @@ const WidgetTable = ({
     if (agGridRef.current) {
       agGridRef.current.api.exportDataAsCsv({
         fileName: `${tableTitle || "data"}.csv`,
+        allColumns: true,
+        columnKeys: exportColumnKeys,
       });
     }
   };
@@ -262,12 +270,12 @@ const WidgetTable = ({
       {/* Header */}
 
       <WidgetSection
-        border
+        border={border}
         title={tableTitle}
         TitleAmount={`${totalText}  ${inrFormat(rangeTotal)}`}
       >
-        <div className="grid grid-cols-9 items-center w-full">
-          <div className="flex gap-2 items-center justify-end flex-wrap col-span-3">
+         <div className="w-full flex justify-end">
+          <div className="flex gap-2 items-center justify-end flex-wrap">
             {/* ✅ Show calendar only if data is not empty */}
 
             <Popover

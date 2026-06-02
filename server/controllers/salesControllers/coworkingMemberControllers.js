@@ -14,6 +14,65 @@ const {
 } = require("../../utils/dataSheetFormatters");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
 
+const DELETED_MEMBER_VIEW_ROLES = new Set([
+  "master admin",
+  "super admin",
+]);
+
+const normalizeRoleValue = (value) =>
+  String(value || "").trim().toLowerCase();
+
+const getUserRoleTitles = (context) =>
+  (Array.isArray(context?.roles) ? context.roles : [])
+    .map((role) => normalizeRoleValue(role?.roleTitle || role))
+    .filter(Boolean);
+
+const getUserDepartmentNames = (context) =>
+  (Array.isArray(context?.departments) ? context.departments : [])
+    .map((department) =>
+      normalizeRoleValue(department?.name || department?.departmentName || department),
+    )
+    .filter(Boolean);
+
+const canViewDeletedMembers = (context) => {
+  const roleTitles = getUserRoleTitles(context);
+  const departmentNames = getUserDepartmentNames(context);
+
+  if (
+    roleTitles.some((roleTitle) => DELETED_MEMBER_VIEW_ROLES.has(roleTitle))
+  ) {
+    return true;
+  }
+
+  return (
+    roleTitles.some((roleTitle) =>
+      roleTitle.includes("air tech department") || roleTitle.includes("air tech"),
+    ) ||
+    departmentNames.some((departmentName) =>
+      departmentName.includes("air tech department") ||
+      departmentName.includes("air tech"),
+    )
+  );
+};
+
+const filterVisibleMembers = (members = [], context) => {
+  if (canViewDeletedMembers(context)) {
+    return members;
+  }
+
+  return members.filter((member) => !member?.isDeleted);
+};
+
+const getReferenceId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._id) return value._id.toString();
+  if (typeof value?.toString === "function") return value.toString();
+  return "";
+};
+
+const isSameReference = (left, right) => getReferenceId(left) === getReferenceId(right);
+
 const createMember = async (req, res, next) => {
   const logPath = "sales/SalesLog";
   const logAction = "Onboard Coworking Client Member";
@@ -122,6 +181,10 @@ const updateCoworkingMember = async (req, res, next) => {
       return res.status(404).json({ message: "Member not found" });
     }
 
+    if (existingMember.isDeleted) {
+      return res.status(400).json({ message: "Deleted members cannot be edited" });
+    }
+
     const {
       name,
       gender,
@@ -159,6 +222,7 @@ const updateCoworkingMember = async (req, res, next) => {
     if (name) {
       const duplicate = await CoworkingMembers.findOne({
         employeeName: name,
+        client: existingMember.client,
         _id: { $ne: memberId },
       });
 
@@ -276,6 +340,7 @@ const getMembersByUnit = async (req, res, next) => {
       ])
       .lean()
       .exec();
+    const visibleMembers = filterVisibleMembers(members, req);
 
     const unitDetails =
       clients[0]?.unit ||
@@ -292,8 +357,8 @@ const getMembersByUnit = async (req, res, next) => {
     const clientDetails = clients.map((client) => {
       let transformedMembers = [];
       if (members && members.length > 0) {
-        const memberDetails = members.find((member) => {
-          return member.client._id.toString() === client._id.toString();
+        const memberDetails = visibleMembers.find((member) => {
+          return isSameReference(member?.client, client?._id);
         });
         if (memberDetails) {
           transformedMembers = {
@@ -398,32 +463,81 @@ const getMemberById = async (req, res) => {
 
 const getMemberByClient = async (req, res) => {
   try {
-    const { clientId, active } = req.query;
+    const { clientId, client, active } = req.query;
+    const resolvedClientId = clientId || client;
 
-    if (!clientId) {
+    if (!resolvedClientId) {
       return res.status(400).json({ message: "clientId ID is missing" });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+    if (!mongoose.Types.ObjectId.isValid(resolvedClientId)) {
       return res.status(400).json({ message: "Invalid client ID provided" });
     }
 
-    let query = { client: clientId };
+    let query = { client: resolvedClientId };
     if (active) {
       query.isActive = active === "true" ? true : false;
     }
 
     const member = await CoworkingMembers.find(query)
       .populate("client", "clientName service")
-      .select("employeeName email gender");
+      .select(
+        "employeeName email gender mobileNo phone dob dateOfJoining biometricStatus isActive isDeleted client unit",
+      )
+      .lean()
+      .exec();
+
+    const visibleMembers = filterVisibleMembers(member, req);
+
+    if (!Array.isArray(visibleMembers)) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.status(200).json(visibleMembers);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const softDeleteCoworkingMember = async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const { user } = req;
+
+    if (!mongoose.Types.ObjectId.isValid(memberId)) {
+      return res.status(400).json({ message: "Invalid member ID" });
+    }
+
+    const member = await CoworkingMembers.findById(memberId);
 
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
     }
 
-    res.status(200).json(member);
+    if (member.isDeleted) {
+      return res.status(200).json({
+        message: "Member already deleted",
+        data: member,
+      });
+    }
+
+    member.isDeleted = true;
+    member.isActive = false;
+    member.biometricStatus = "Revoke";
+    member.deletedAt = new Date();
+    member.deletedBy = user?._id || null;
+
+    await member.save();
+
+    return res.status(200).json({
+      message: "Member deleted successfully",
+      data: member,
+    });
   } catch (error) {
-    next(error);
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+    });
   }
 };
 
@@ -446,6 +560,10 @@ const updateMemberStatus = async (req, res) => {
 
     if (!member) {
       return res.status(404).json({ message: "Member not found" });
+    }
+
+    if (member.isDeleted) {
+      return res.status(400).json({ message: "Deleted members cannot be updated" });
     }
 
     member.isActive = isActive;
@@ -1371,4 +1489,5 @@ module.exports = {
   bulkInsertCoworkingMembers,
   bulkUpdateCoworkingMembers,
   updateMemberStatus,
+  softDeleteCoworkingMember,
 };

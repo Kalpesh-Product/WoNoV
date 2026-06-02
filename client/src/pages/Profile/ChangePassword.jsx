@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import TextField from "@mui/material/TextField"; // Assuming you're using Material-UI for TextField
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import PrimaryButton from "../../components/PrimaryButton";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "sonner";
@@ -9,6 +12,12 @@ import PageFrame from "../../components/Pages/PageFrame";
 const ChangePassword = ({ pageTitle }) => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
+  const userDepartments = auth?.user?.departments || [];
+  const roleTitles =
+    auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+  const canChangePassword =
+    userDepartments.some((dept) => dept?.name?.trim().toLowerCase() === "tech") ||
+    roleTitles.some((roleTitle) => roleTitle?.includes("tech employee"));
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -17,15 +26,50 @@ const ChangePassword = ({ pageTitle }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [passwordVerified, setPasswordVerified] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
 
   const handleChange = (field, value) => {
     setFormData((prevData) => ({
       ...prevData,
       [field]: value,
     }));
+    if (field === "currentPassword") {
+      setPasswordVerified(false);
+    }
     setErrorMessage(""); // Clear errors on input change
     setSuccessMessage(""); // Clear success message on input change
   };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+  };
+
+  const getPasswordFieldProps = (field, disabled) => ({
+    type: showPasswords[field] ? "text" : "password",
+    disabled,
+    InputProps: {
+      endAdornment: (
+        <InputAdornment position="end">
+          <IconButton
+            aria-label={`toggle ${field}`}
+            onClick={() => togglePasswordVisibility(field)}
+            edge="end"
+            size="small"
+            disabled={disabled}
+          >
+            {showPasswords[field] ? <VisibilityOff /> : <Visibility />}
+          </IconButton>
+        </InputAdornment>
+      ),
+    },
+  });
 
   const handlePasswordCheck = async () => {
     try {
@@ -93,9 +137,10 @@ const ChangePassword = ({ pageTitle }) => {
             <TextField
               size="small"
               label="Current Password"
-              type="password"
-              // disabled={passwordVerified}
-              disabled={true}
+              {...getPasswordFieldProps(
+                "currentPassword",
+                !canChangePassword || passwordVerified
+              )}
               sx={{ width: "49.3%" }}
               value={formData.currentPassword}
               onChange={(e) => handleChange("currentPassword", e.target.value)}
@@ -105,7 +150,7 @@ const ChangePassword = ({ pageTitle }) => {
               <PrimaryButton
                 title="Verify"
                 type="button"
-                disabled={true}
+                disabled={!canChangePassword}
                 handleSubmit={handlePasswordCheck}
               />
             )}
@@ -116,8 +161,10 @@ const ChangePassword = ({ pageTitle }) => {
             <TextField
               size="small"
               label="New Password"
-              disabled
-              type="password"
+              {...getPasswordFieldProps(
+                "newPassword",
+                !canChangePassword || !passwordVerified
+              )}
               value={formData.newPassword}
               onChange={(e) => handleChange("newPassword", e.target.value)}
               fullWidth
@@ -126,8 +173,10 @@ const ChangePassword = ({ pageTitle }) => {
             <TextField
               size="small"
               label="Confirm Password"
-              type="password"
-              disabled
+              {...getPasswordFieldProps(
+                "confirmPassword",
+                !canChangePassword || !passwordVerified
+              )}
               value={formData.confirmPassword}
               onChange={(e) => handleChange("confirmPassword", e.target.value)}
               fullWidth
@@ -157,7 +206,7 @@ const ChangePassword = ({ pageTitle }) => {
             <PrimaryButton
               title={"Submit"}
               handleSubmit={handlePasswordChange}
-              disabled={true}>
+              disabled={!canChangePassword || !passwordVerified}>
               Change Password
             </PrimaryButton>
           </div>

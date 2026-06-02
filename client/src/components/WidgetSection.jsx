@@ -20,8 +20,10 @@ const WidgetSection = ({
   TitleAmount,
   TitleAmountGreen,
   TitleAmountRed,
+  TitleAmountTotal,
   greenTitle,
   redTitle,
+  totalTitle,
   titleLabel,
   fun,
   normalCase,
@@ -91,6 +93,20 @@ const WidgetSection = ({
                 {TitleAmount}{" "}
               </span>
               <div className="flex gap-2">
+                {TitleAmountTotal !== undefined &&
+                  TitleAmountTotal !== null && (
+                    <span
+                      className={`${
+                        titleFont
+                          ? "text-subtitle text-slate-800"
+                          : "text-body text-slate-800 font-pmedium"
+                      }`}>
+                      <div className="flex gap-2 justify-center items-center uppercase bg-[#dbe4ff] p-2 rounded-lg">
+                        {totalTitle && <div>{totalTitle} : </div>}
+                        <div>{TitleAmountTotal}</div>
+                      </div>
+                    </span>
+                  )}
                 {TitleAmountGreen !== undefined &&
                   TitleAmountGreen !== null && (
                     <span

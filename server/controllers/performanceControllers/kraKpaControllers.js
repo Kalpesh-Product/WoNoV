@@ -55,7 +55,7 @@ const createDeptBasedTask = async (req, res, next) => {
       parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 1
         ? "Monthly"
         : parsedDueDate.getMonth() - parsedAssignedDate.getMonth() > 1 &&
-          parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
+            parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 12
           ? "Annually"
           : "No match";
 
@@ -83,8 +83,8 @@ const createDeptBasedTask = async (req, res, next) => {
       assignedDate: parsedAssignedDate,
       dueDate:
         taskType === "KRA" ||
-          taskType === "TEAMKRA" ||
-          taskType === "INDIVIDUALKRA"
+        taskType === "TEAMKRA" ||
+        taskType === "INDIVIDUALKRA"
           ? currDate
           : parsedDueDate,
       dueTime,
@@ -159,11 +159,43 @@ const updateTaskStatus = async (req, res, next) => {
     }
 
     const completionDate = new Date();
+    const completionDayStart = new Date(completionDate);
+    completionDayStart.setHours(0, 0, 0, 0);
+    const completionDayEnd = new Date(completionDate);
+    completionDayEnd.setHours(23, 59, 59, 999);
 
     const existingTask = await kraKpaTask.findOne({
       task: taskId,
       status: "Completed",
+      completionDate: {
+        $gte: completionDayStart,
+        $lte: completionDayEnd,
+      },
     });
+
+    if (existingTask) {
+      return res.status(200).json({
+        message: `${taskType} already marked completed for today`,
+      });
+    }
+
+    const existingRoleTask = await kraKpaRole
+      .findById(taskId)
+      .select("completedDate");
+    const alreadyCompletedToday = (existingRoleTask?.completedDate || []).some(
+      (dateValue) => {
+        const completedAt = new Date(dateValue);
+        return (
+          completedAt >= completionDayStart && completedAt <= completionDayEnd
+        );
+      },
+    );
+
+    if (alreadyCompletedToday) {
+      return res.status(200).json({
+        message: `${taskType} already marked completed for today`,
+      });
+    }
 
     // if (existingTask) {
     //   throw new CustomError(
@@ -234,7 +266,8 @@ const updateKraKpaTask = async (req, res, next) => {
   try {
     const { company } = req;
     const { taskId } = req.params;
-    const { task, assignedDate, dueDate, assignTo, description, kpaDuration } = req.body;
+    const { task, assignedDate, dueDate, assignTo, description, kpaDuration } =
+      req.body;
 
     if (!taskId || !mongoose.Types.ObjectId.isValid(taskId)) {
       return res.status(400).json({ message: "Invalid task ID provided" });
@@ -255,10 +288,15 @@ const updateKraKpaTask = async (req, res, next) => {
     if (assignedDate) updateDoc.assignedDate = new Date(assignedDate);
     if (dueDate) updateDoc.dueDate = new Date(dueDate);
     if (kpaDuration) updateDoc.kpaDuration = kpaDuration;
-    if (assignTo && mongoose.Types.ObjectId.isValid(assignTo)) updateDoc.assignTo = assignTo;
+    if (assignTo && mongoose.Types.ObjectId.isValid(assignTo))
+      updateDoc.assignTo = assignTo;
 
-    const updatedTask = await kraKpaRole.findByIdAndUpdate(taskId, updateDoc, { new: true });
-    return res.status(200).json({ message: "Task updated successfully", data: updatedTask });
+    const updatedTask = await kraKpaRole.findByIdAndUpdate(taskId, updateDoc, {
+      new: true,
+    });
+    return res
+      .status(200)
+      .json({ message: "Task updated successfully", data: updatedTask });
   } catch (error) {
     next(error);
   }
@@ -295,7 +333,7 @@ const deleteTaskRecurrence = async (req, res, next) => {
 const getKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { type, dept, duration } = req.query;
+    const { type, dept, duration, date } = req.query;
 
     const query = { company };
 
@@ -309,9 +347,11 @@ const getKraKpaTasks = async (req, res, next) => {
       query.kpaDuration = duration;
     }
 
-    const today = new Date();
-    const startOfDay = new Date(today.setUTCHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setUTCHours(23, 59, 59, 999));
+    const targetDay = date ? new Date(date) : new Date();
+    const startOfDay = new Date(targetDay);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDay);
+    endOfDay.setUTCHours(23, 59, 59, 999);
 
     // query.department = dept;
     if (type === "INDIVIDUALKRA") {
@@ -352,7 +392,38 @@ const getKraKpaTasks = async (req, res, next) => {
       ])
       .select("-company");
 
-    const transformedTasks = tasks
+    const uniqueTasks = Array.from(
+      new Map(tasks.map((task) => [task._id.toString(), task])).values(),
+    );
+
+    const dedupedByTaskName =
+      type === "KRA"
+        ? Array.from(
+            uniqueTasks
+              .reduce((map, task) => {
+                const key = (task.task || "").toString().trim().toLowerCase();
+                const previous = map.get(key);
+                if (!previous) {
+                  map.set(key, task);
+                  return map;
+                }
+
+                const previousDate = new Date(
+                  previous.assignedDate || previous.createdAt || 0,
+                );
+                const currentDate = new Date(
+                  task.assignedDate || task.createdAt || 0,
+                );
+                if (currentDate > previousDate) {
+                  map.set(key, task);
+                }
+                return map;
+              }, new Map())
+              .values(),
+          )
+        : uniqueTasks;
+
+    const transformedTasks = dedupedByTaskName
       .filter((task) => {
         // Department KRA/KPA: Everyone in dept sees
         if (type === "KRA" || type === "KPA") {
@@ -550,7 +621,7 @@ const getMyKraKpaTasks = async (req, res, next) => {
 const getCompletedKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
-     const { type, dept, duration, empId, month, year } = req.query;
+    const { type, dept, duration, empId, month, year } = req.query;
     const { roles, departments: userDepts } = req;
 
     if (!dept) {
@@ -585,10 +656,20 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
 
     const isManager = isHrOrSuperAdmin || userDepts.includes(dept);
 
-    const transformedCompletedTasks =
-      completedTasks.length < 0
-        ? []
-        : completedTasks
+    const uniqueCompletedTasks = Array.from(
+      new Map(
+        completedTasks.map((task) => {
+          const taskId =
+            task?.task?._id?.toString?.() || task?._id?.toString?.();
+          const completionKey = `${taskId || "unknown"}-${new Date(task.completionDate).toISOString().slice(0, 10)}`;
+          return [completionKey, task];
+        }),
+      ).values(),
+    );
+
+    const transformedCompletedTasks = !uniqueCompletedTasks.length
+      ? []
+      : uniqueCompletedTasks
           .filter((task) => {
             if (!task.task || task.task.isDeleted) return false;
             if (duration && duration !== task.task.kpaDuration) return;
@@ -625,7 +706,6 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
               if (completionDate.getFullYear() !== Number(year)) return false;
             }
 
-            
             // Department KRA/KPA
             if (type === "KRA" || type === "KPA") {
               return task.task.taskType === type;
@@ -656,20 +736,22 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
             return false;
           })
           .map((task) => {
-            const completedBy = `${task.completedBy.firstName} ${task.completedBy.middleName || ""
-              } ${task.completedBy.lastName}`;
+            const completedBy = `${task.completedBy.firstName} ${
+              task.completedBy.middleName || ""
+            } ${task.completedBy.lastName}`;
 
             return {
               id: task._id,
+              taskId: task.task?._id?.toString?.() || "",
               taskName: task.task.task,
               department: task.task.department.name,
               completedBy: completedBy,
+              completedById: task.completedBy?._id?.toString?.() || "",
+              completedByName: completedBy,
               assignedDate: task.task.assignedDate,
               dueDate: task.task.dueDate,
               dueTime: "6:30 PM",
-              completionDate: task.completionDate
-                ? task.completionDate
-                : "N/A",
+              completionDate: task.completionDate ? task.completionDate : "N/A",
               status: task.status,
             };
           });
@@ -805,10 +887,12 @@ const getAllKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
 
-    const pendingTasks = await kraKpaRole.find({ company, isDeleted: false }).populate(
-      { path: "department", select: "name" },
-      // { path: "assignedBy", select: "firstName middleName lastName" },
-    );
+    const pendingTasks = await kraKpaRole
+      .find({ company, isDeleted: false })
+      .populate(
+        { path: "department", select: "name" },
+        // { path: "assignedBy", select: "firstName middleName lastName" },
+      );
 
     const completedTasks = await kraKpaTask
       .find({
@@ -839,8 +923,9 @@ const getAllKpaTasks = async (req, res, next) => {
       completedTaskIds.add(String(task.task._id));
 
       const departmentName = task.task.department.name;
-      const assignee = `${task.completedBy.firstName} ${task.completedBy.middleName || ""
-        } ${task.completedBy.lastName}`.trim();
+      const assignee = `${task.completedBy.firstName} ${
+        task.completedBy.middleName || ""
+      } ${task.completedBy.lastName}`.trim();
 
       const transformedTask = {
         taskName: task.task.task,

@@ -1,15 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../constants/permissions";
 import useUserPermissions from "../../hooks/useUserPermissions";
+import useAuth from "../../hooks/useAuth";
 
-const reportModules = [
-  {
-    title: "FINANCE",
-    subtitle: "Finance Reports",
-    route: "../reports-section/finance",
-    permission: PERMISSIONS.REPORTS_FINANCE.value,
-  },
+const staticReportModules = [
   {
     title: "TICKETS",
     subtitle: "Ticket Reports",
@@ -28,14 +23,57 @@ const reportModules = [
     route: "../reports-section/visitor",
     permission: PERMISSIONS.REPORTS_VISITORS.value,
   },
+  {
+    title: "ASSETS",
+    subtitle: "Asset Reports",
+    route: "../reports-section/asset",
+    permission: PERMISSIONS.REPORTS_ASSETS?.value,
+  },
+  {
+    title: "TASKS",
+    subtitle: "Task Reports",
+    route: "../reports-section/task",
+    permission: PERMISSIONS.REPORTS_TASKS?.value,
+  },
+  {
+    title: "PERFORMANCE",
+    subtitle: "Performance Reports",
+    route: "../reports-section/performance",
+    permission: PERMISSIONS.REPORTS_PERFORMANCE?.value,
+  },
 ];
 
 const ReportsSection = () => {
   const navigate = useNavigate();
   const { permissions } = useUserPermissions();
+  const { auth } = useAuth();
+  const userDepartments = useMemo(() => {
+    if (!Array.isArray(auth?.user?.departments)) return [];
 
-  const visibleReportModules = reportModules.filter((module) =>
-    permissions.includes(module.permission),
+    return auth.user.departments
+      .filter((dept) => dept?._id && dept?.name)
+      .filter(
+        (dept, index, arr) =>
+          arr.findIndex((candidate) => candidate?._id === dept?._id) === index,
+      );
+  }, [auth?.user?.departments]);
+
+  const departmentCards = userDepartments.map((department) => {
+    const moduleKey = String(department.name).trim().toLowerCase();
+    const encodedDepartmentId = encodeURIComponent(String(department._id));
+
+    return {
+      title: String(department.name).toUpperCase(),
+      subtitle: `${department.name} Reports`,
+      route: `../reports-section/${moduleKey}?departmentId=${encodedDepartmentId}`,
+      permission: null,
+    };
+  });
+
+  const allModules = [...departmentCards, ...staticReportModules];
+
+  const visibleReportModules = allModules.filter(
+    (module) => !module.permission || permissions.includes(module.permission),
   );
 
   return (
@@ -47,7 +85,7 @@ const ReportsSection = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {visibleReportModules.map((module) => (
           <button
-            key={module.title}
+            key={`${module.title}-${module.route}`}
             onClick={() => navigate(module.route)}
             className="text-left p-4 rounded-md shadow-md border border-gray-200 bg-white transition hover:bg-gray-50"
           >

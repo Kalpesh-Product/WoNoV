@@ -85,7 +85,7 @@ const AssetsCategories = () => {
 
   const { data: assetCategories = [], isPending: isCategoriesPending } =
     useQuery({
-      queryKey: ["assetCategories"],
+     queryKey: ["assetCategories", departmentId],
       queryFn: async () => {
         try {
           const response = await axios.get(
@@ -116,7 +116,7 @@ const AssetsCategories = () => {
   useEffect(() => {
     setValue("categoryName", selectedAsset?.categoryName);
     setValue("status", selectedAsset?.isActive);
-  }, [selectedAsset]);
+  }, [selectedAsset, setValue]);
 
   const getRowStyle = (params) => {
     if (!params.data.isActive) {
@@ -127,11 +127,11 @@ const AssetsCategories = () => {
   //--------------------Event handlers------------------------------//
   //--------------------Table Data------------------------------//
   const categoriesColumn = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No",width:200 },
     {
       field: "categoryName",
       headerName: "Category Name",
-      flex: 3,
+      flex: 1,
       cellRenderer: (params) => (
         <span
           role="button"
@@ -147,15 +147,26 @@ const AssetsCategories = () => {
       ),
     },
     {
+      field: "subCategoriesCount",
+      headerName: "Sub Categories Count",
+       flex: 1,
+    },
+    {
+      field: "assetQuantity",
+      headerName: "No. of Assets",
+       flex: 1,
+    },
+    {
       field: "status",
       headerName: "Status",
       sort: "desc",
+      flex: 1,
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
       field: "action",
       headerName: "Action",
-      flex: 1,
+      flex: 0.7,
       cellRenderer: (params) => {
         return (
           <ThreeDotMenu
@@ -189,6 +200,8 @@ const AssetsCategories = () => {
         srNo: index + 1,
         status: status,
         subCategories,
+        subCategoriesCount: item?.subCategoriesCount || subCategories.length,
+        assetQuantity: item?.assetQuantity || 0,
       };
     });
   //--------------------Table Data------------------------------//
@@ -327,6 +340,14 @@ const AssetsCategories = () => {
                   ? [...selectedAsset.subCategories].join(",")
                   : "N/A"
               }
+            />
+             <DetalisFormatted
+              title={"Sub Categories Count"}
+              detail={selectedAsset?.subCategoriesCount ?? 0}
+            />
+            <DetalisFormatted
+              title={"No. of Assets"}
+              detail={selectedAsset?.assetQuantity ?? 0}
             />
             <DetalisFormatted
               title={"Department"}

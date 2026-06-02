@@ -527,7 +527,10 @@ const SupportTickets = ({ title, departmentId }) => {
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
       <div className="pb-4">
-        <span className="text-subtitle">{title}</span>
+        {/* <span className="text-subtitle">{title}</span> */}
+        <span className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium uppercase">
+          {title}
+        </span>
       </div>
       <div className="w-full">
         {!isClosingTicket ? (

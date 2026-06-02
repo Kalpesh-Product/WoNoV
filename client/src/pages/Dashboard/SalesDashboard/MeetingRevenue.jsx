@@ -100,6 +100,7 @@ const MeetingRevenue = () => {
             tableTitle={"Monthly Revenue with Client Details"}
             dateColumn={"date"}
             formatDate
+            exportData
             totalKey="taxable"
             columns={[
               { headerName: "Sr No", field: "srNo", width: 100 },

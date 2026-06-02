@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { Controller, useForm } from "react-hook-form";
@@ -25,28 +25,48 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
+import useCurrentDay from "../../../hooks/useCurrentDay";
 
 const PerformanceIndividualKra = () => {
     const axios = useAxiosPrivate();
     const { auth } = useAuth();
+    const location = useLocation();
     const { department } = useParams();
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
-    const deptId = useSelector((state) => state.performance.selectedDepartment);
- const selectedDepartmentName = useSelector(
+    const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
+    const today = useCurrentDay();
+    const selectedMember = useSelector((state) => state.performance.selectedMember);
+    const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
+    const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
     );
+    const primaryUserDepartment = auth?.user?.departments?.[0];
+ const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+    const effectiveDeptId = isEmployeeKraKpaRoute
+        ? primaryUserDepartment?._id
+        : selectedDepartment?.toString?.() || primaryUserDepartment?._id;
+    const effectiveDepartmentName = isEmployeeKraKpaRoute
+        ? primaryUserDepartment?.name
+        : selectedDepartmentName || primaryUserDepartment?.name;
     const departmentName =
-        selectedDepartmentName ||
+        effectiveDepartmentName ||
         department ||
-        auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
+        auth?.user?.departments?.find((dept) => dept._id?.toString() === effectiveDeptId?.toString())?.name ||
         "Department";
          const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
     .filter(Boolean)
     .join(" ")
     .trim();
     const userId = auth.user._id;
+     const selectedMemberFromRoute = location.state?.selectedMember;
+    const activeMember = selectedMemberFromRoute || selectedMember;
+   // const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+    const activeMemberName = isEmployeeKraKpaRoute
+        ? loggedInUserName || "User Name"
+        : activeMember?.memberName || loggedInUserName || "User Name";
+    const activeMemberId = activeMember?.memberId?.toString?.() || "";
     const [selectedKra, setSelectedKra] = useState(null);
 
     const restrictedRoles = [
@@ -76,21 +96,93 @@ const PerformanceIndividualKra = () => {
     });
 
     const allowedDept = auth.user.departments.some((item) => {
-        return item._id.toString() === deptId.toString();
+        return item._id.toString() === effectiveDeptId?.toString();
     });
 
-    const showCheckBox = allowedDept;
     const userPermissions = auth?.user?.permissions?.permissions || [];
+    const roleTitles =
+        auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
     const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_DAILY_KRA.value);
+    const isSuperOrMasterAdmin =
+        roleTitles.some((roleTitle) => roleTitle?.includes("super admin")) ||
+        roleTitles.some((roleTitle) => roleTitle?.includes("master admin"));
     const isHr = department === "HR";
 
     const matchingDepartment = auth.user?.departments?.some(
-        (dept) => dept._id === deptId
+        (dept) => dept._id?.toString() === effectiveDeptId?.toString()
+    );
+
+     const normalizeValue = (value) =>
+        (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+    const isViewingOwnMember =
+        normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
+        normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    const selectedMemberCanManageView = isManager || isSuperOrMasterAdmin;
+    const selectedMemberRole = normalizeValue(activeMember?.memberRole);
+    const isSelectedMemberManager = selectedMemberRole.includes("manager");
+    const isSelectedMemberEmployee =
+        !!activeMember?.memberId && !isSelectedMemberManager;
+    const shouldUseTeamAddButton =
+        !isEmployeeKraKpaRoute &&
+        isSelectedMemberEmployee &&
+        !!activeMemberId &&
+        !isViewingOwnMember;
+    const addButtonLabel = shouldUseTeamAddButton
+        ? "Add Team Daily KRA"
+        : "Add Individual Daily KRA";
+    const addFieldLabel = shouldUseTeamAddButton
+        ? "Team Daily KRA"
+        : "Individual Daily KRA";
+    const addTaskType = shouldUseTeamAddButton ? "TEAMKRA" : "INDIVIDUALKRA";
+    // const addAssignToId = activeMemberId || userId?.toString?.();
+    //     const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+      const addAssignToId = isEmployeeKraKpaRoute
+        ? userId?.toString?.()
+        : activeMemberId || userId?.toString?.();
+    const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+    const showCheckBox = allowedDept || selectedMemberCanManageView;
+    const shouldHideControlsForSelectedMemberView =
+        isSelectedMemberEmployee && activeMember?.memberId;
+    const selectedDateKey = selectedDate.format("YYYY-MM-DD");
+    const todayKey = today.format("YYYY-MM-DD");
+    const isCurrentDateView = selectedDateKey === todayKey;
+    const isPastDateView = selectedDateKey < todayKey;
+    const isFutureDateView = selectedDateKey > todayKey;
+    const canShowControls =
+          shouldForceOwnControlsInEmployeeRoute ||
+          isCurrentDateView ||
+          selectedMemberCanManageView ||
+        (!isSelectedMemberEmployee &&
+        (selectedMemberCanManageView || !activeMember?.memberId || isViewingOwnMember));
+    const canUseCheckbox =
+        shouldForceOwnControlsInEmployeeRoute ||
+        isCurrentDateView ||
+        selectedMemberCanManageView ||
+        (showCheckBox && !isSelectedMemberEmployee);
+    const isEmployeeLevel = !isSuperOrMasterAdmin && !isManager;
+    const shouldHideActionsForEmployeeFuture = isEmployeeLevel && isFutureDateView;
+
+    const individualKraQueryKey = useMemo(
+        () => ["fetchedIndividualKRA", effectiveDeptId, selectedDateKey],
+        [effectiveDeptId, selectedDateKey]
+    );
+    const teamKraQueryKey = useMemo(
+        () => ["fetchedTeamKRA", effectiveDeptId, selectedDateKey],
+        [effectiveDeptId, selectedDateKey]
     );
 
     useEffect(() => {
-        queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
-    }, [department]);
+        queryClient.invalidateQueries({ queryKey: individualKraQueryKey });
+    }, [individualKraQueryKey]);
+
+    const { data: assignees = [] } = useQuery({
+        queryKey: ["fetchAssignees", effectiveDeptId],
+        queryFn: async () => {
+            const response = await axios.get(`/api/users/assignees?deptId=${effectiveDeptId}`);
+            return response.data || [];
+        },
+        enabled: !!effectiveDeptId,
+    });
 
     const {
         handleSubmit: submitDailyKra,
@@ -102,7 +194,7 @@ const PerformanceIndividualKra = () => {
         defaultValues: {
             individualDailyKra: "",
             description: "",
-            assignTo: "",
+            assignTo: shouldUseTeamAddButton && addAssignToId ? [addAssignToId] : [],
             assignedDate: dayjs().toISOString(),
         },
     });
@@ -114,8 +206,8 @@ const PerformanceIndividualKra = () => {
             return response.data;
         },
         onSuccess: (data) => {
-            queryClient.refetchQueries({ queryKey: ["fetchedIndividualKRA"] });
-            queryClient.refetchQueries({ queryKey: ["completedEntries"] });
+            queryClient.refetchQueries({ queryKey: individualKraQueryKey });
+            queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
             toast.success(data.message || "KRA recurrence removed");
         },
         onError: () => {
@@ -129,18 +221,52 @@ const PerformanceIndividualKra = () => {
         mutationFn: async (data) => {
             const response = await axios.post("/api/performance/create-task", {
                 task: data.individualDailyKra, // Fixed field name
-                taskType: "INDIVIDUALKRA",
+                taskType: data.taskType || "INDIVIDUALKRA",
                 // description: data.description,
-                department: deptId,
+                 department: effectiveDeptId,
                 assignedDate: data.assignedDate,
                 assignTo: data.assignTo,
             });
             return response.data;
         },
-        onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
-            queryClient.refetchQueries({ queryKey: ["fetchedIndividualKRA"] });
+        onSuccess: (data, variables) => {
+            const createdTasks = Array.isArray(data?.data)
+                ? data.data
+                : data?.data
+                    ? [data.data]
+                    : [];
+
+            if (createdTasks.length > 0) {
+                const normalizeCreatedTask = (task) => ({
+                        id: task?._id || task?.id,
+                        taskName: task?.task || task?.taskName || variables?.individualDailyKra || "",
+                        assignedDate: task?.assignedDate || variables?.assignedDate || null,
+                        dueDate: task?.dueDate || task?.assignedDate || variables?.assignedDate || null,
+                        dueTime: task?.dueTime || "6:30 PM",
+                        status: task?.status || "Pending",
+                        assignedTo:
+                            task?.assignTo?.firstName && task?.assignTo?.lastName
+                                ? `${task.assignTo.firstName} ${task.assignTo.lastName}`
+                                : task?.assignedTo || "N/A",
+                        assignToId: task?.assignTo?._id || task?.assignToId || task?.assignTo,
+                });
+
+                queryClient.setQueryData(individualKraQueryKey, (oldData = []) => [
+                    ...createdTasks.map(normalizeCreatedTask),
+                    ...(oldData || []),
+                ]);
+                queryClient.setQueryData(teamKraQueryKey, (oldData = []) => [
+                    ...createdTasks.map(normalizeCreatedTask),
+                    ...(oldData || []),
+                ]);
+            }
+
             toast.success(data.message || "KRA Added");
+                        queryClient.invalidateQueries({ queryKey: individualKraQueryKey });
+            queryClient.invalidateQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
+            queryClient.invalidateQueries({ queryKey: teamKraQueryKey });
             reset();
             setOpenModal(false);
             setIsEditMode(false);
@@ -151,6 +277,16 @@ const PerformanceIndividualKra = () => {
             // toast.error(error.message || "Error Adding KRA");
         },
     });
+
+    const handleOpenAddModal = () => {
+        reset({
+            individualDailyKra: "",
+            description: "",
+            assignTo: shouldUseTeamAddButton && addAssignToId ? [addAssignToId] : [],
+            assignedDate: dayjs().toISOString(),
+        });
+        setOpenModal(true);
+    };
    const handleOpenEditModal = (task) => {
     setIsEditMode(true);
     setEditingTaskId(task.id);
@@ -168,10 +304,10 @@ const PerformanceIndividualKra = () => {
                 task: data.individualDailyKra,
                 assignedDate: data.assignedDate,
                 description: data.description || "",
-                assignTo: userId,
+                assignTo: addAssignToId,
             });
             toast.success("KRA updated successfully");
-            queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
+            queryClient.invalidateQueries({ queryKey: individualKraQueryKey });
             setOpenModal(false);
             setIsEditMode(false);
             setEditingTaskId(null);
@@ -180,7 +316,8 @@ const PerformanceIndividualKra = () => {
         }
         const payload = {
             ...data,
-            assignTo: userId,
+            assignTo: addAssignToId,
+            taskType: addTaskType,
         };
         addDailyKra(payload);
     };
@@ -193,11 +330,31 @@ const PerformanceIndividualKra = () => {
             );
             return response.data;
         },
-        onSuccess: (data) => {
-            queryClient.refetchQueries({ queryKey: ["fetchedIndividualKRA"] });
-            queryClient.refetchQueries({ queryKey: ["completedEntries"] });
-            queryClient.invalidateQueries({ queryKey: ["fetchedIndividualKRA"] });
-            queryClient.invalidateQueries({ queryKey: ["completedEntries"] });
+        onSuccess: (data, taskId) => {
+            const removeCompletedTaskFromList = (oldData = []) =>
+                (oldData || []).filter((item) => {
+                    const rowId = item?.id || item?._id;
+                    return rowId?.toString?.() !== taskId?.toString?.();
+                });
+
+            // Remove immediately from all visible pending sources so row disappears without refresh.
+            queryClient.setQueryData(individualKraQueryKey, removeCompletedTaskFromList);
+            queryClient.setQueryData(
+                ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+                removeCompletedTaskFromList
+            );
+            queryClient.setQueryData(teamKraQueryKey, removeCompletedTaskFromList);
+
+            queryClient.refetchQueries({ queryKey: individualKraQueryKey });
+            queryClient.refetchQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
+            queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
+            queryClient.invalidateQueries({ queryKey: individualKraQueryKey });
+            queryClient.invalidateQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
+            queryClient.invalidateQueries({ queryKey: ["completedEntries", effectiveDeptId] });
             toast.success(data.message || "KRA updated");
         },
         onError: (error) => {
@@ -210,7 +367,7 @@ const PerformanceIndividualKra = () => {
     const fetchTasks = async () => {
         try {
             const response = await axios.get(
-                `/api/performance/get-tasks?dept=${deptId}&type=INDIVIDUALKRA`
+                 `/api/performance/get-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA`
             );
             return response.data;
         } catch (error) {
@@ -219,8 +376,24 @@ const PerformanceIndividualKra = () => {
         }
     };
     const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-        queryKey: ["fetchedIndividualKRA"],
+        queryKey: individualKraQueryKey,
         queryFn: fetchTasks,
+    });
+
+    const { data: teamKraForIndividual = [] } = useQuery({
+        queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+        queryFn: async () => {
+            try {
+                const response = await axios.get(
+                     `/api/performance/get-tasks?dept=${effectiveDeptId}&type=TEAMKRA`
+                );
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        },
+        enabled: !!effectiveDeptId,
     });
 
     // const { data: assignees = [] } = useQuery({
@@ -233,11 +406,11 @@ const PerformanceIndividualKra = () => {
     // });
     const { data: completedEntries = [], isLoading: isCompletedLoading } =
         useQuery({
-            queryKey: ["completedEntries"],
+             queryKey: ["completedEntries", effectiveDeptId],
             queryFn: async () => {
                 try {
                     const response = await axios.get(
-                        `/api/performance/get-completed-tasks?dept=${deptId}&type=INDIVIDUALKRA`
+                        `/api/performance/get-completed-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA`
                     );
                     return response.data;
                 } catch (error) {
@@ -246,6 +419,21 @@ const PerformanceIndividualKra = () => {
                 }
             },
         });
+    const { data: completedTeamEntries = [] } = useQuery({
+        queryKey: ["completedTeamEntriesKRA", effectiveDeptId],
+        queryFn: async () => {
+            try {
+                const response = await axios.get(
+                    `/api/performance/get-completed-tasks?dept=${effectiveDeptId}&type=TEAMKRA`
+                );
+                return response.data;
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        },
+        enabled: !!effectiveDeptId,
+    });
 
     const departmentColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -272,7 +460,9 @@ const PerformanceIndividualKra = () => {
                 return <Chip label={params.value} style={{ backgroundColor, color }} />;
             },
         },
-        ...(matchingDepartment
+        ...(((isSuperOrMasterAdmin || isCurrentDateView || (isFutureDateView && selectedMemberCanManageView)) && (matchingDepartment || selectedMemberCanManageView || shouldForceOwnControlsInEmployeeRoute) && canShowControls && !shouldHideActionsForEmployeeFuture)
+        //   ...((matchingDepartment || selectedMemberCanManageView) && canShowControls
+       //   ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
             ? [
                 {
                     headerName: "Actions",
@@ -280,17 +470,22 @@ const PerformanceIndividualKra = () => {
                     field: "actions",
                     width:250,
                     cellRenderer: (params) => {
+                        const rowCanMarkDone = !!params?.data?.canMarkDoneRow;
+                        const rowCanEditDelete = !!params?.data?.canEditDeleteRow;
+                        const showMarkAsDone = rowCanMarkDone && (!isFutureDateView || isSuperOrMasterAdmin);
+                        const isRowSelected = !!params?.node?.selected;
+                        const markAsDoneClass = isRowSelected
+                            ? "bg-[#1E3D73] text-white shadow-md ring-2 ring-[#8fb2ff]"
+                            : "bg-gray-300 text-gray-700";
+
                         return (
                             <div className="flex items-center">
                                 {/* Mark As Done */}
+                                {showMarkAsDone && (
                                 <div
                                     role="button"
                                     onClick={() => {
-                                        if (
-                                            !params.node.selected ||
-                                            isUpdatePending ||
-                                            isDeletePending
-                                        )
+                                        if (!rowCanMarkDone || !isRowSelected || isUpdatePending || isDeletePending)
                                             return;
                                         updateDailyKra(params.data.id);
                                     }}
@@ -299,15 +494,17 @@ const PerformanceIndividualKra = () => {
                                     <PrimaryButton
                                         title={isUpdatePending ? "⏳" : "Mark As Done"}
                                         disabled={
-                                            !params.node.selected ||
+                                            !rowCanMarkDone ||
+                                            !isRowSelected ||
                                             isUpdatePending ||
                                             isDeletePending
                                         }
                                         //className="px-2 py-1 text-sm w-28"
                                         //className="px-2 py-1 text-xs w-28"
-                                        className="px-2 py-1 text-xs w-28 h-7"
+                                        className={`px-2 py-1 text-xs w-28 h-7 ${markAsDoneClass}`}
                                     />
                                 </div>
+                                )}
 
                                {/* <button
                   type="button"
@@ -318,12 +515,16 @@ const PerformanceIndividualKra = () => {
                 >
                   <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
                 </button> */}
-                {!isAddKraDisabled && (
+                {rowCanEditDelete && !isAddKraDisabled && (
                                     <button
                                         type="button"
                                         title="Edit"
-                                        disabled={!params.node.selected || isUpdatePending || isDeletePending}
-                                        onClick={() => handleOpenEditModal(params.data)}
+                                        disabled={!isRowSelected || !rowCanEditDelete || isUpdatePending || isDeletePending}
+                                        //disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                                        onClick={() => {
+                                            if (!isRowSelected || !rowCanEditDelete) return;
+                                            handleOpenEditModal(params.data);
+                                        }}
                                         className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                                     >
                                         <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
@@ -331,16 +532,20 @@ const PerformanceIndividualKra = () => {
                                 )}
 
                 {/* Delete Recurrence */}
-                                {canDeleteRecurrence && (
+                {rowCanEditDelete && canDeleteRecurrence && (
                                     <button
                                         type="button"
                                         title="Delete Recurrence"
                                         disabled={
-                                            !params.node.selected ||
+                                            !isRowSelected ||
+                                            !rowCanEditDelete ||
                                             isDeletePending ||
                                             isUpdatePending
                                         }
-                                        onClick={() => deleteDailyKraRecurrence(params.data.id)}
+                                        onClick={() => {
+                                            if (!isRowSelected || !rowCanEditDelete) return;
+                                            deleteDailyKraRecurrence(params.data.id);
+                                        }}
                                         // className="ml-2 disabled:cursor-not-allowed"
                                         className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                                     >
@@ -374,7 +579,8 @@ const PerformanceIndividualKra = () => {
         {
             headerName: "Completed Date",
             field: "completionDate",
-            flex: 1
+            flex: 1,
+            hide: true,
         },
         {
             headerName: "Completed Time",
@@ -412,6 +618,122 @@ const PerformanceIndividualKra = () => {
             },
         },
     ];
+     const uniqueTaskMap = new Map();
+    [...(departmentKra || []), ...(teamKraForIndividual || [])].forEach((item) => {
+        const taskId = item?.id?.toString?.();
+        if (!taskId || uniqueTaskMap.has(taskId)) return;
+        uniqueTaskMap.set(taskId, item);
+    });
+      const targetMemberName = isEmployeeKraKpaRoute ? loggedInUserName : activeMember?.memberName;
+    const targetMemberId = isEmployeeKraKpaRoute ? userId : activeMember?.memberId;
+    const filteredDepartmentKra = Array.from(uniqueTaskMap.values()).filter((item) => {
+         if (!targetMemberName && !targetMemberId) return true;
+        return (
+            normalizeValue(item?.assignedTo) === normalizeValue(targetMemberName) ||
+            normalizeValue(item?.assignToId) === normalizeValue(targetMemberId)
+        );
+    });
+    const uniqueCompletedMap = new Map();
+    [...(completedEntries || []), ...(completedTeamEntries || [])].forEach((item) => {
+        const completedDay = item?.completionDate
+            ? dayjs(item.completionDate).isValid()
+                ? dayjs(item.completionDate).format("YYYY-MM-DD")
+                : String(item.completionDate)
+            : "no-date";
+        const completedByKey =
+            item?.completedById || item?.completedByName || item?.completedBy || "unknown";
+        const completedId =
+            item?.id?.toString?.() ||
+            `${item?.taskName}-${completedDay}-${completedByKey}`;
+        if (uniqueCompletedMap.has(completedId)) return;
+        uniqueCompletedMap.set(completedId, item);
+    });
+
+    const hasSelectedMember = !!targetMemberName || !!targetMemberId;
+    const matchesCompletedMember = (value) => {
+        const normalizedValue = normalizeValue(value);
+        if (!normalizedValue || !hasSelectedMember) return false;
+
+        return (
+            normalizedValue === normalizeValue(targetMemberId) ||
+            normalizedValue === normalizeValue(targetMemberName)
+        );
+    };
+
+    const filteredCompletedEntries = Array.from(uniqueCompletedMap.values()).filter((item) => {
+        if (!hasSelectedMember) return true;
+
+        const completedByCandidates = [
+            item?.completedBy,
+            item?.completedById,
+            item?.completedByName,
+        ];
+
+        return completedByCandidates.some(matchesCompletedMember);
+    });
+    const selectedDateLabel = selectedDate.format("DD MMM YYYY");
+    const toDateKey = (value) => {
+      if (!value) return null;
+      const parsed = dayjs(value);
+      return parsed.isValid() ? parsed.format("YYYY-MM-DD") : null;
+    };
+    const dateWiseDepartmentKra = filteredDepartmentKra
+      .filter((item) => {
+        const rowDateKey = toDateKey(item.assignedDate || item.dueDate || item.createdAt);
+        if (!rowDateKey) return false;
+
+        return rowDateKey <= selectedDateKey;
+      })
+      .sort((a, b) => {
+        const aKey = toDateKey(a.assignedDate || a.dueDate || a.createdAt) || "";
+        const bKey = toDateKey(b.assignedDate || b.dueDate || b.createdAt) || "";
+        return aKey.localeCompare(bKey);
+      })
+      .map((item) => {
+      const rowDateKey = toDateKey(item.assignedDate || item.dueDate || item.createdAt);
+      const isBackdatedRow = rowDateKey < selectedDateKey;
+      const canMarkDoneRow =
+        isSuperOrMasterAdmin ||
+        (isCurrentDateView && rowDateKey <= todayKey);
+      const canEditDeleteRow =
+        isSuperOrMasterAdmin ||
+        (isManager && (isFutureDateView || (isCurrentDateView && rowDateKey <= todayKey)));
+
+      return {
+        ...item,
+        isCarryoverRow: isBackdatedRow,
+        canMarkDoneRow,
+        canEditDeleteRow,
+      };
+    });
+    const dateWiseCompletedEntries = filteredCompletedEntries.filter((item) => {
+      const completionDate = item.completedDate || item.completionDate || item.dueDate;
+      return toDateKey(completionDate) === selectedDateKey;
+    });
+    const normalizeTaskKey = (taskName, dateValue) =>
+      `${normalizeValue(taskName)}-${toDateKey(dateValue) || "no-date"}`;
+    const completedTaskIdsForSelectedDate = new Set(
+      dateWiseCompletedEntries
+        .map((item) => item?.taskId?.toString?.())
+        .filter(Boolean)
+    );
+    const completedTaskKeysForSelectedDate = new Set(
+      dateWiseCompletedEntries.map((item) =>
+        normalizeTaskKey(item?.taskName, item?.assignedDate || item?.dueDate)
+      )
+    );
+    const canShowAddIndividualKraButton = isEmployeeKraKpaRoute
+        ? isSuperOrMasterAdmin || isManager
+        : isSuperOrMasterAdmin || isCurrentDateView;
+    const getIndividualRowStyle = (params) => {
+      if (params?.data?.canMarkDoneRow || params?.data?.canEditDeleteRow) return {};
+
+      return {
+        backgroundColor: params?.data?.isCarryoverRow ? "#f3f4f6" : "#fafafa",
+        color: "#6b7280",
+        opacity: 0.75,
+      };
+    };
     return (
         <>
             <div className="flex flex-col gap-4">
@@ -420,15 +742,52 @@ const PerformanceIndividualKra = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                                 formatTime
-                                checkbox={showCheckBox}
-                                buttonTitle={"Add Daily KRA"}
-                                buttonDisabled={isAddKraDisabled}
-                                handleSubmit={() => setOpenModal(true)}
-                                tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
+                                // checkbox={showCheckBox}
+                                //  checkbox={showCheckBox && !shouldHideControlsForSelectedMemberView}
+                                // buttonTitle={
+                                //     shouldHideControlsForSelectedMemberView
+                                //         ? undefined
+                                //         : "Add Daily KRA"
+                                // }
+                                // buttonDisabled={
+                                //     isAddKraDisabled || shouldHideControlsForSelectedMemberView
+                                checkbox={canUseCheckbox && canShowControls && !(isEmployeeLevel && isFutureDateView)}
+                                buttonTitle={
+                                     canShowAddIndividualKraButton
+                                        ? addButtonLabel
+                                        : undefined
+                                }
+                                buttonDisabled={
+                                    isAddKraDisabled ||
+                                    !canShowControls ||
+                                    !canShowAddIndividualKraButton
+                                   // isAddKraDisabled || !canShowControls
+                                }
+                                handleSubmit={handleOpenAddModal}
+                                  showDateNavigator
+                                selectedDateLabel={selectedDateLabel}
+                                onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}
+                                onNextDay={() => setSelectedDate((prev) => prev.add(1, "day"))}
+                                tableTitle={`${departmentName} - INDIVIDUAL DAILY KRA - ${activeMemberName}`}
+                               // tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
                                  // tableTitle={`${departmentName} INDIVIDUAL - DAILY KRA`}
                                 //tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
-                                data={(departmentKra || [])
-                                    .filter((item) => item.status !== "Completed")
+                                // data={filteredDepartmentKra
+                                data={dateWiseDepartmentKra
+                                    .filter((item) => {
+                                        if (item.status === "Completed") return false;
+
+                                        const taskId = item?.id?.toString?.();
+                                        if (taskId && completedTaskIdsForSelectedDate.has(taskId)) {
+                                            return false;
+                                        }
+
+                                        const taskKey = normalizeTaskKey(
+                                            item?.taskName,
+                                            item?.assignedDate || item?.dueDate || item?.createdAt
+                                        );
+                                        return !completedTaskKeysForSelectedDate.has(taskKey);
+                                    })
                                     .map((item, index) => ({
                                         srno: index + 1,
                                         id: item.id,
@@ -437,9 +796,16 @@ const PerformanceIndividualKra = () => {
                                         dueTime: item.dueTime,
                                         status: item.status,
                                         assignedTo: item.assignedTo,
+                                        isCarryoverRow: item.isCarryoverRow,
+                                        canMarkDoneRow: item.canMarkDoneRow,
+                                        canEditDeleteRow: item.canEditDeleteRow,
                                     }))}
-                                dateColumn={"dueDate"}
+                                      dateColumn={"assignedDate"}
                                 columns={departmentColumns}
+                                isRowSelectable={(params) => !!params?.data?.canMarkDoneRow || !!params?.data?.canEditDeleteRow}
+                                getRowStyle={getIndividualRowStyle}
+                                // dateColumn={"dueDate"}
+                                // columns={departmentColumns}
                             />
                         </WidgetSection>
                     ) : (
@@ -454,23 +820,27 @@ const PerformanceIndividualKra = () => {
                             <WidgetSection padding>
                                 <YearWiseTable
                                     formatTime
-                                    tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
-                                    exportData={true}
+                                       tableTitle={`COMPLETED - INDIVIDUAL DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
+                                    //tableTitle={`COMPLETED INDIVIDUAL - DAILY KRA - ${loggedInUserName || "User Name"}`}
+                                    exportData={!isFutureDateView}
                                     checkAll={false}
-                                    key={completedEntries.length}
-                                    data={completedEntries.map((item, index) => ({
+                                    //  key={filteredCompletedEntries.length}
+                                    // data={filteredCompletedEntries.map((item, index) => ({
+                                    key={dateWiseCompletedEntries.length}
+                                    data={dateWiseCompletedEntries.map((item, index) => ({
                                         srno: index + 1,
                                         id: item.id,
                                         taskName: item.taskName,
                                         assignedDate: item.assignedDate,
-                                        dueDate: item.dueDate,
+                                        completionDateRaw: item.completedDate || item.completionDate || item.dueDate,
+                                        completionDate: humanDate(item.completedDate || item.completionDate || item.dueDate),
+                                        completionTime: humanTime(item.completedDate || item.completionTime || item.completionDate || item.dueDate),
                                         status: item.status,
                                         completedBy: item.completedBy,
-                                        completionDate: humanDate(item.completionDate),
-                                        completionTime: humanTime(item.completionDate),
                                     }))}
-                                    dateColumn={"dueDate"}
+                                    dateColumn={"completionDateRaw"}
                                     columns={completedColumns}
+                                    hideDateControls
                                 />
                             </WidgetSection>
                         ) : (
@@ -485,7 +855,7 @@ const PerformanceIndividualKra = () => {
             <MuiModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
-                title={isEditMode ? "Edit Task" : "Add Daily KRA"}
+                title={isEditMode ? "Edit Task" : addButtonLabel}
             >
                 <form
                     onSubmit={submitDailyKra(handleFormSubmit)}
@@ -505,7 +875,7 @@ const PerformanceIndividualKra = () => {
                             <TextField
                                 {...field}
                                 size="small"
-                                label={"Individual Daily KRA"}
+                                label={addFieldLabel}
                                 fullWidth
                                 error={!!errors?.individualDailyKra?.message}
                                 helperText={errors?.individualDailyKra?.message}
@@ -538,24 +908,60 @@ const PerformanceIndividualKra = () => {
                         )}
                     />
 
-                    {/* removed assignTo dropdown */}
-                    {/* <Controller
-            name="description"
-            control={control}
-            rules={{ required: "Description is required" }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                size="small"
-                label={"Description"}
-                multiline
-                rows={4}
-                fullWidth
-                error={!!errors?.description?.message}
-                helperText={errors?.description?.message}
-              />
-            )}
-          /> */}
+                    {!isEditMode && shouldUseTeamAddButton && (
+                        <Controller
+                            name="assignTo"
+                            control={control}
+                            rules={{ required: "Select at least one team member" }}
+                            render={({ field, fieldState: { error } }) => (
+                                <TextField
+                                    {...field}
+                                    select
+                                    size="small"
+                                    label="Assign To"
+                                    fullWidth
+                                    value={field.value || []}
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        field.onChange(
+                                            Array.isArray(value)
+                                                ? value
+                                                : typeof value === "string"
+                                                    ? value
+                                                        .split(",")
+                                                        .map((id) => id.trim())
+                                                        .filter(Boolean)
+                                                    : []
+                                        );
+                                    }}
+                                    error={!!error}
+                                    helperText={error?.message}
+                                    disabled={!assignees.length}
+                                    SelectProps={{
+                                        multiple: true,
+                                        renderValue: (selected) => (
+                                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                                                {selected.map((value) => (
+                                                    <Chip
+                                                        key={value}
+                                                        label={assignees.find((a) => a.id === value)?.name || value}
+                                                        size="small"
+                                                    />
+                                                ))}
+                                            </div>
+                                        ),
+                                    }}
+                                >
+                                    {assignees.map((emp) => (
+                                        <MenuItem key={emp.id} value={emp.id}>
+                                            {emp.name}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            )}
+                        />
+                    )}
+
                     <PrimaryButton
                         type="submit"
                         title={"Submit"}
@@ -569,3 +975,4 @@ const PerformanceIndividualKra = () => {
 };
 
 export default PerformanceIndividualKra;
+

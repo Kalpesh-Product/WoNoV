@@ -15,6 +15,7 @@ import {
   MenuItem,
   TextField,
 } from "@mui/material";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
@@ -478,6 +479,10 @@ const ListOfAssets = () => {
     // { field: "department", headerName: "Department" },
     { field: "subCategory", headerName: "Sub-Category" },
     { field: "brand", headerName: "Brand" },
+    { field: "name", headerName: "Asset Name" },
+    { field: "serialNumber", headerName: "Serial Number" },
+    { field: "building", headerName: "Building" },
+    { field: "unit", headerName: "Unit" },
     // {
     //   field: "price",
     //   headerName: "Price (INR)",
@@ -498,6 +503,7 @@ const ListOfAssets = () => {
     {
       field: "status",
       headerName: "Status",
+      pinned:"right",
       cellRenderer: (params) => <StatusChip status={params.value || "N/A"} />,
     },
     {
@@ -505,19 +511,25 @@ const ListOfAssets = () => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data._id}
-          menuItems={[
-            {
-              label: "View",
-              onClick: () => handleView(params.data),
-            },
-            {
-              label: "Edit",
-              onClick: () => handleEdit(params.data),
-            },
-          ]}
-        />
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            title="View"
+            className="p-1 text-gray-600 hover:text-primary"
+            onClick={() => handleView(params.data)}
+          >
+            <MdOutlineRemoveRedEye size={20} />
+          </button>
+          <ThreeDotMenu
+            rowId={params.data._id}
+            menuItems={[
+              {
+                label: "Edit",
+                onClick: () => handleEdit(params.data),
+              },
+            ]}
+          />
+        </div>
       ),
     },
   ];
@@ -546,6 +558,8 @@ const ListOfAssets = () => {
             subCatId: item?.subCategory?._id,
             categoryId: item?.subCategory?.category?._id,
             category: item?.subCategory?.category?.categoryName || "N/A",
+            building: item?.location?.building?.buildingName || "N/A",
+            unit: item?.location?.unitNo || "N/A",
           };
         });
   //-----------------------Table Data----------------------//
@@ -1454,6 +1468,10 @@ const ListOfAssets = () => {
             <DetalisFormatted
               title={"Department"}
               detail={selectedAsset?.department || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Building"}
+              detail={selectedAsset?.location?.building?.buildingName || "N/A"}
             />
             <DetalisFormatted
               title={"UnitNo"}

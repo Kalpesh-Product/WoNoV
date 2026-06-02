@@ -4,28 +4,39 @@ import { useLocation, useMatch } from "react-router-dom";
 
 const HrTasksLayout = () => {
  const { pathname } = useLocation();
+ const isOverallKpaRoute = pathname.includes("/overall-KPA");
+ const isOverallDepartmentTasksRoute =
+   pathname.includes("/overall-KPA/department-tasks");
  const isMixBagKpaKraRoute = pathname.includes("/mix-bag/department-kpa-kra");
-  const isMixBagDepartmentTasksRoute = pathname.includes("/mix-bag/department-tasks");
-  const isMixBagRoute = isMixBagKpaKraRoute || isMixBagDepartmentTasksRoute;
+ const isMixBagDepartmentTasksRoute = pathname.includes("/mix-bag/department-tasks");
+ const isMixBagDepartmentKraDetailRoute = pathname.includes(
+   "/mix-bag/department-kpa-kra/department-KRA/",
+ );
+  const isMixBagDepartmentKpaDetailRoute = pathname.includes(
+   "/mix-bag/department-kpa-kra/department-KPA/",
+ );
+ const isOverallDepartmentKraDetailRoute = pathname.includes(
+   "/overall-KPA/department-KRA/",
+ );
+ const isOverallDepartmentKpaDetailRoute = pathname.includes(
+   "/overall-KPA/department-KPA/",
+ );
   const kpaTabPermission = isMixBagKpaKraRoute
     ? PERMISSIONS.HR_DEPARTMENT_KPA_KRA_MIX_BAG_TAB.value
-    : isMixBagDepartmentTasksRoute
-      ? PERMISSIONS.HR_DEPARTMENT_TASK_MIX_BAG_KPA_KRA_TAB.value
-      : undefined;
+    : undefined;
    const kraTabPermission = isMixBagKpaKraRoute
     ? PERMISSIONS.HR_DEPARTMENT_KPA_KRA_MIX_BAG_KRA_TAB.value
-    : isMixBagDepartmentTasksRoute
-      ? PERMISSIONS.HR_DEPARTMENT_TASK_MIX_BAG_KRA_TAB.value
-      : undefined;
+    : undefined;
     
-  const taskTabPermission = isMixBagKpaKraRoute
-    ? PERMISSIONS.HR_DEPARTMENT_KPA_KRA_MIX_BAG_TASK_TAB.value
-    : isMixBagDepartmentTasksRoute
-      ? PERMISSIONS.HR_DEPARTMENT_TASK_MIX_BAG_TASK_TAB.value
-      : undefined;
+  const taskTabPermission = isMixBagDepartmentTasksRoute
+    ? PERMISSIONS.HR_DEPARTMENT_TASK_MIX_BAG_TASK_TAB.value
+    : undefined;
   
   const matchKPA = useMatch(
     "/app/dashboard/HR-dashboard/overall-KPA/department-KPA/:department"
+  );
+   const matchKRA = useMatch(
+    "/app/dashboard/HR-dashboard/overall-KPA/department-KRA/:department"
   );
   const matchTasks = useMatch(
     "/app/dashboard/HR-dashboard/overall-KPA/department-tasks/:department"
@@ -34,17 +45,11 @@ const HrTasksLayout = () => {
   const matchKpaMixBag = useMatch(
     "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/:department"
   );
-  const matchKpaMixBagDepartmentTasks = useMatch(
-    "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-KPA/:department"
-  );
-  const matchTaskMixBag = useMatch(
-    "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-task/:department"
+  const matchKraMixBag = useMatch(
+    "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/:department"
   );
   const matchTaskMixBagDepartmentTasks = useMatch(
     "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-task/:department"
-  );
-  const matchTasksMixBag = useMatch(
-    "/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-tasks/:department"
   );
   const matchTasksMixBagDepartmentTasks = useMatch(
     "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-tasks/:department"
@@ -52,31 +57,43 @@ const HrTasksLayout = () => {
 
    const isDepartmentView =
     !!matchKPA ||
+     !!matchKRA ||
     !!matchTasks ||
     !!matchKpaMixBag ||
-    !!matchKpaMixBagDepartmentTasks ||
-    !!matchTaskMixBag ||
+    !!matchKraMixBag ||
     !!matchTaskMixBagDepartmentTasks ||
-    !!matchTasksMixBag ||
     !!matchTasksMixBagDepartmentTasks;
 
   const tabs = [
-    {
-      label: "Department KPA",
-      path: "department-KPA",
-      permission: kpaTabPermission,
-    },
-    //{ label: "Department Tasks", path: "department-tasks" },
-     {
-      label: "Department KRA",
-      path: "department-KRA",
-      permission: kraTabPermission,
-    },
-    {
-      label: "Department Tasks",
-      path: isMixBagRoute ? "department-task" : "department-tasks",
-      permission: taskTabPermission,
-    },
+    ...(isOverallDepartmentTasksRoute || isMixBagDepartmentTasksRoute
+      ? [
+          {
+            label: "Department Tasks",
+            path: isMixBagDepartmentTasksRoute ? "department-task" : "department-tasks",
+            permission: taskTabPermission,
+          },
+        ]
+      : [
+          {
+            label: "Department KPA",
+            path: "department-KPA",
+            permission: kpaTabPermission,
+          },
+          {
+            label: "Department KRA",
+            path: "department-KRA",
+            permission: kraTabPermission,
+          },
+          ...(isOverallKpaRoute || isMixBagKpaKraRoute
+            ? []
+            : [
+                {
+                  label: "Department Tasks",
+                  path: "department-tasks",
+                  permission: taskTabPermission,
+                },
+              ]),
+        ]),
   ];
 
   return (
@@ -89,9 +106,24 @@ const HrTasksLayout = () => {
             ? "/app/dashboard/HR-dashboard/mix-bag/department-tasks"
             : "/app/dashboard/HR-dashboard/overall-KPA"
       }
-      defaultTabPath="department-KPA"
+      defaultTabPath={
+        isOverallDepartmentTasksRoute
+          ? "department-tasks"
+          : isMixBagDepartmentTasksRoute
+            ? "department-task"
+            : "department-KPA"
+      }
       tabs={tabs}
-      hideTabsCondition={() => isDepartmentView}
+      hideTabsCondition={() =>
+        isDepartmentView ||
+        isMixBagDepartmentTasksRoute ||
+        // isOverallDepartmentTasksRoute
+        isOverallDepartmentTasksRoute ||
+        isMixBagDepartmentKraDetailRoute ||
+        isMixBagDepartmentKpaDetailRoute ||
+        isOverallDepartmentKraDetailRoute ||
+        isOverallDepartmentKpaDetailRoute
+      }
     />
   );
 };

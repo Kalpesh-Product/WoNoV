@@ -10,6 +10,7 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
+import StatusChip from "../../../../components/StatusChip";
 
 const JobApplicationList = () => {
   const axios = useAxiosPrivate();
@@ -28,8 +29,7 @@ const JobApplicationList = () => {
   });
 
   const leavesColumn = [
-    { field: "srNo", headerName: "SR No", width: 100 },
-    { field: "finalSubmissionDate", headerName: "Submission Date" },
+    { field: "srNo", headerName: "SR No", width: 300 },
     {
       field: "name",
       headerName: "Name",
@@ -43,7 +43,41 @@ const JobApplicationList = () => {
         </span>
       ),
     },
+    { field: "email", headerName: "Email", flex: 1 ,hide:true},
+    { field: "dateOfBirth", headerName: "Date of Birth", flex:1,hide:true },
+    { field: "mobileNumber", headerName: "Mobile Number", flex: 1,hide:true },
+    { field: "location", headerName: "Location", flex: 1,hide:true },
+    { field: "experienceInYears", headerName: "Experience (Years)", flex: 1 ,hide:true},
+    {
+      field: "currentMonthlySalary",
+      headerName: "Current Monthly Salary",
+      flex: 1,
+      hide:true,
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+    { field: "expectedMonthlySalary",
+      headerName: "Expected Monthly Salary",
+      flex: 1,
+      hide:true,
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+    { field: "howSoonYouCanJoinInDays", headerName: "Joining Time (Days)", flex: 1 ,hide:true},
+    { field: "willRelocateToGoa", headerName: "Willing to Relocate to Goa", flex: 1 ,hide:true},
+    { field: "willingToBootstrap", headerName: "Willing to Bootstrap", flex: 1 ,hide:true},   
+    {field: "linkedInProfileUrl", headerName: "LinkedIn Profile", flex: 1, hide:true},
+    { field: "skillSetsForJob", headerName: "Skill Sets for Job", flex: 1, hide:true },
+    { field: "whyShouldWeConsiderYou", headerName: "Why Should We Consider You?", flex: 1, hide:true },
+    { field: "whoAreYouAsPerson", headerName: "Who Are You As a Person?", flex: 1, hide:true },
+    { field: "message", headerName: "Message", flex: 1, hide:true },
+    { field: "resumeLink", headerName: "Resume Link", flex: 1, hide:true },
+    { field: "remarks", headerName: "Remarks", flex: 1, hide:true },
+    { field: "finalSubmissionDate", headerName: "Submission Date" ,flex:1},
     { field: "jobPosition", headerName: "Job Position", flex: 1 },
+    { field: "status",
+      headerName: "Status",
+      flex: 1,
+      cellRenderer: (params) => <StatusChip status={params.value} />
+    }
   ];
 
   const handleViewApplicationDetails = (job) => {
@@ -106,6 +140,7 @@ const JobApplicationList = () => {
                 }))
         }
         columns={leavesColumn}
+        exportData
       />
       <MuiModal
         open={openModal}

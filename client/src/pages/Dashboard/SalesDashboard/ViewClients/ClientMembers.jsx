@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useParams } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { Chip, MenuItem, TextField } from "@mui/material";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import humanDate from "../../../../utils/humanDateForamt";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
@@ -13,18 +13,161 @@ import dayjs from "dayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import useAuth from "../../../../hooks/useAuth";
+import StatusChip from "../../../../components/StatusChip";
+import { setSelectedClient } from "../../../../redux/slices/clientSlice";
+
+const normalizeValue = (value) => String(value || "").trim().toLowerCase();
+const normalizeClientKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+const getCurrentMemberId = (member) => member?._id || member?.id || member?.employeeName;
+const getNextMembersAfterDelete = (members = [], memberId, preserveDeleted) =>
+  preserveDeleted
+    ? members.map((member) =>
+        getCurrentMemberId(member) === memberId
+          ? {
+              ...member,
+              isDeleted: true,
+              isActive: false,
+              status: false,
+              biometricStatus: "Revoke",
+            }
+          : member,
+      )
+    : members.filter((member) => getCurrentMemberId(member) !== memberId);
+
+const getMemberId = (member) => member?._id || member?.id || member?.employeeName;
+const getRoleTitles = (user) =>
+  (Array.isArray(user?.role) ? user.role : [])
+    .map((role) => normalizeValue(role?.roleTitle || role))
+    .filter(Boolean);
+const getDepartmentNames = (user) =>
+  (Array.isArray(user?.departments) ? user.departments : [])
+    .map((department) => normalizeValue(department?.name || department?.departmentName || department))
+    .filter(Boolean);
+const canViewDeletedMembers = (user) => {
+  const roleTitles = getRoleTitles(user);
+  const departmentNames = getDepartmentNames(user);
+
+  if (roleTitles.some((role) => ["master admin", "super admin"].includes(role))) {
+    return true;
+  }
+
+  return (
+    roleTitles.some((roleTitle) =>
+      roleTitle.includes("air tech department") || roleTitle.includes("air tech"),
+    ) ||
+    departmentNames.some((departmentName) =>
+      departmentName.includes("air tech department") ||
+      departmentName.includes("air tech"),
+    )
+  );
+};
 
 const ClientMembers = () => {
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  const { auth } = useAuth();
+  const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
-  const [members, setMembers] = useState(selectedClient?.members || []);
+  const [members, setMembers] = useState([]);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState(null);
+  const canViewDisabledMembers = useMemo(
+    () => canViewDeletedMembers(auth?.user),
+    [auth?.user],
+  );
+
+  const routeClientKey = normalizeClientKey(decodeURIComponent(clientName || ""));
+
+  const { data: freshClientData } = useQuery({
+    queryKey: [
+      "selectedCoWorkingClient",
+      clientName,
+      selectedClient?._id,
+      selectedClient?.clientName,
+    ],
+    enabled: Boolean(clientName || selectedClient?._id || selectedClient?.clientName),
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      const clients = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+      return clients.find(
+        (client) =>
+          normalizeClientKey(client?._id) === routeClientKey ||
+          normalizeClientKey(client?.clientName) === routeClientKey ||
+          normalizeClientKey(client?._id) ===
+            normalizeClientKey(selectedClient?._id || selectedClient?.clientName) ||
+          normalizeClientKey(client?.clientName) ===
+            normalizeClientKey(selectedClient?._id || selectedClient?.clientName),
+      );
+    },
+  });
+
+  const resolvedClient = useMemo(() => {
+    if (freshClientData) return freshClientData;
+
+    const selectedClientKey = normalizeClientKey(
+      selectedClient?._id || selectedClient?.clientName,
+    );
+
+    if (
+      selectedClient &&
+      (normalizeClientKey(selectedClient?._id) === routeClientKey ||
+        normalizeClientKey(selectedClient?.clientName) === routeClientKey ||
+        normalizeClientKey(selectedClient?._id) === selectedClientKey ||
+        normalizeClientKey(selectedClient?.clientName) === selectedClientKey)
+    ) {
+      return selectedClient;
+    }
+
+    return null;
+  }, [freshClientData, routeClientKey, selectedClient]);
+
+  const { data: clientMembersData } = useQuery({
+    queryKey: ["salesClientMembers", resolvedClient?._id, resolvedClient?.clientName],
+    enabled: Boolean(resolvedClient?._id),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/sales/co-working-client-members?clientId=${resolvedClient._id}`,
+      );
+      return Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+    },
+  });
 
   useEffect(() => {
-    setMembers(selectedClient?.members || []);
-  }, [selectedClient]);
+    const nextMembers = Array.isArray(clientMembersData) && clientMembersData.length > 0
+      ? clientMembersData
+      : Array.isArray(resolvedClient?.members)
+        ? resolvedClient.members
+        : [];
+
+    setMembers(nextMembers);
+
+    if (resolvedClient) {
+      dispatch(setSelectedClient(resolvedClient));
+    }
+  }, [clientMembersData, dispatch, resolvedClient]);
+
+  const visibleMembers = useMemo(
+    () =>
+      canViewDisabledMembers
+        ? members
+        : members.filter((member) => !member?.isDeleted),
+    [canViewDisabledMembers, members],
+  );
 
   const {
     control,
@@ -67,9 +210,10 @@ const ClientMembers = () => {
     },
     onSuccess: (response, variables) => {
       const updatedMember = response?.data;
+      let updatedMembers = [];
 
-      setMembers((prev) =>
-        prev.map((member) => {
+      setMembers((prev) => {
+        updatedMembers = prev.map((member) => {
           const currentMemberId = member._id || member.id || member.employeeName;
 
           if (currentMemberId !== variables.memberId) {
@@ -77,8 +221,22 @@ const ClientMembers = () => {
           }
 
           return updatedMember ? { ...member, ...updatedMember } : member;
+        });
+
+        return updatedMembers;
+      });
+
+      dispatch(
+        setSelectedClient({
+          ...selectedClient,
+          members: updatedMembers,
         }),
       );
+      queryClient.invalidateQueries({ queryKey: ["clientsData"] });
+      queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["biometricAccessClientsData"] });
+      queryClient.invalidateQueries({ queryKey: ["biometricAccessClient"] });
+      queryClient.invalidateQueries({ queryKey: ["selectedCoWorkingClient"] });
 
       toast.success(response?.message || "Member details updated successfully");
       setOpenEditModal(false);
@@ -102,8 +260,10 @@ const ClientMembers = () => {
       return response.data;
     },
     onSuccess: (response, variables) => {
-      setMembers((prev) =>
-        prev.map((member) => {
+      let updatedMembers = [];
+
+      setMembers((prev) => {
+        updatedMembers = prev.map((member) => {
           const currentMemberId = member._id || member.id || member.employeeName;
 
           if (currentMemberId !== variables.memberId) {
@@ -116,8 +276,22 @@ const ClientMembers = () => {
             status: variables.isActive ? "Active" : "Inactive",
             biometricStatus: response?.data?.biometricStatus || member.biometricStatus,
           };
+        });
+
+        return updatedMembers;
+      });
+
+      dispatch(
+        setSelectedClient({
+          ...selectedClient,
+          members: updatedMembers,
         }),
       );
+      queryClient.invalidateQueries({ queryKey: ["clientsData"] });
+      queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["biometricAccessClientsData"] });
+      queryClient.invalidateQueries({ queryKey: ["biometricAccessClient"] });
+      queryClient.invalidateQueries({ queryKey: ["selectedCoWorkingClient"] });
 
       toast.success(response?.message || "Member status updated successfully");
     },
@@ -126,6 +300,55 @@ const ClientMembers = () => {
         error?.response?.data?.message ||
         error?.message ||
         "Failed to update member status",
+      );
+    },
+  });
+
+  const { mutate: deleteMember, isPending: isDeletePending } = useMutation({
+    mutationFn: async (memberId) => {
+      const response = await axios.delete(`/api/sales/co-working-member/${memberId}`);
+      return response.data;
+    },
+    onSuccess: (response, memberId) => {
+      const updatedMembers = getNextMembersAfterDelete(
+        members,
+        memberId,
+        canViewDisabledMembers,
+      );
+
+      setMembers(updatedMembers);
+      dispatch(
+        setSelectedClient({
+          ...selectedClient,
+          members: updatedMembers,
+        }),
+      );
+      queryClient.setQueryData(
+        ["selectedCoWorkingClient", clientName, selectedClient?._id, selectedClient?.clientName],
+        (current) =>
+          current
+            ? {
+                ...current,
+                members: updatedMembers,
+              }
+            : current,
+      );
+      queryClient.setQueryData(
+        ["salesClientMembers", resolvedClient?._id, resolvedClient?.clientName],
+        updatedMembers,
+      );
+      queryClient.invalidateQueries({ queryKey: ["clientsData"] });
+      queryClient.invalidateQueries({ queryKey: ["co-working-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["biometricAccessClientsData"] });
+      queryClient.invalidateQueries({ queryKey: ["biometricAccessClient"] });
+      queryClient.invalidateQueries({ queryKey: ["selectedCoWorkingClient"] });
+      toast.success(response?.message || "Member deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete member",
       );
     },
   });
@@ -182,7 +405,7 @@ const ClientMembers = () => {
 
   const memberData = useMemo(
     () =>
-      members.map((item, index) => ({
+      visibleMembers.map((item, index) => ({
         ...item,
         srno: index + 1,
         employeeName: item.employeeName,
@@ -191,12 +414,27 @@ const ClientMembers = () => {
         mobileNo: item.mobileNo || 0,
         email: item.email || "N/A",
         status:
-          typeof item?.isActive === "boolean"
+          item?.isDeleted
+            ? false
+            : typeof item?.isActive === "boolean"
             ? item.isActive
             : item?.status === "Active",
+        isDeleted: Boolean(item?.isDeleted),
       })),
-    [members],
+    [visibleMembers],
   );
+
+  const memberStats = useMemo(() => {
+    const activeCount = memberData.filter(
+      (member) => !member.isDeleted && member.status,
+    ).length;
+    const inactiveCount = memberData.filter(
+      (member) => !member.isDeleted && !member.status,
+    ).length;
+    const disabledCount = memberData.filter((member) => member.isDeleted).length;
+
+    return { activeCount, inactiveCount, disabledCount, total: memberData.length };
+  }, [memberData]);
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No" },
@@ -212,13 +450,18 @@ const ClientMembers = () => {
       field: "status",
       headerName: "Status",
       cellRenderer: (params) => {
-        const status = params.value ? "Active" : "Inactive";
+        const status = params.data?.isDeleted
+          ? "Disabled"
+          : params.value
+            ? "Active"
+            : "Inactive";
         const statusColorMap = {
           Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" },
           Active: { backgroundColor: "#90EE90", color: "#006400" },
+          Disabled: { backgroundColor: "#D3D3D3", color: "#666666" },
         };
 
-        const { backgroundColor, color } = statusColorMap[status];
+        const { backgroundColor, color } = statusColorMap[status] || statusColorMap.Disabled;
 
         return (
           <Chip
@@ -238,10 +481,20 @@ const ClientMembers = () => {
         <ThreeDotMenu
           rowId={params.data.srno}
           menuItems={[
-            { label: "Edit", onClick: () => handleEditMember(params.data) },
+            {
+              label: "Edit",
+              onClick: () => handleEditMember(params.data),
+              disabled: params.data?.isDeleted,
+            },
             {
               label: params.data.status ? "Mark As Inactive" : "Mark As Active",
               onClick: () => handleToggleMemberStatus(params.data),
+              disabled: params.data?.isDeleted,
+            },
+            {
+              label: "Delete",
+              onClick: () => deleteMember(getMemberId(params.data)),
+              disabled: params.data?.isDeleted || isDeletePending,
             },
           ]}
         />
@@ -257,9 +510,25 @@ const ClientMembers = () => {
             key={selectedClient?._id}
             search={true}
             searchColumn="Email"
-            tableTitle={`${selectedClient?.clientName} Members`}
+            tableTitle={`${selectedClient?.clientName || "Client"} Members`}
             data={memberData}
             columns={viewEmployeeColumns}
+            getRowStyle={(params) =>
+              params.data?.isDeleted
+                ? { backgroundColor: "#f4f4f4", color: "#7a7a7a" }
+                : undefined
+            }
+            headerActions={
+              <div className="flex items-center gap-2 flex-wrap">
+                <StatusChip status="Total" count={memberStats.total} variant="count" />
+                <StatusChip status="Active" count={memberStats.activeCount} variant="count" />
+                <StatusChip status="Inactive" count={memberStats.inactiveCount} variant="count" />
+                {canViewDisabledMembers ? (
+                  <StatusChip status="Disabled" count={memberStats.disabledCount} variant="count" />
+                ) : null}
+              </div>
+            }
+            exportData
           />
         </PageFrame>
       </div>

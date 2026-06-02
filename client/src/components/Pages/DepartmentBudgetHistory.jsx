@@ -108,6 +108,7 @@ const DepartmentBudgetHistory = () => {
         tableTitle={`${departmentTitle} Budget History`}
         tableHeight={450}
         isLoading={isBudgetLoading}
+        exportData
       />
     </PageFrame>
   );

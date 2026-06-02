@@ -51,10 +51,12 @@ const DEFAULT_COUNTS = {
     pendingKpa: 0,
 };
 
+const getTaskEffectiveDate = (task) => task?.assignedDate || task?.dueDate || task?.createdAt;
+
 const isTaskInSelectedMonth = (task, selectedMonth) => {
     if (!selectedMonth) return true;
 
-    const taskDate = new Date(task?.assignedDate);
+       const taskDate = new Date(getTaskEffectiveDate(task));
     if (Number.isNaN(taskDate.getTime())) return false;
 
     const taskMonth = taskDate.toLocaleString("en-US", { month: "long" });
@@ -62,7 +64,10 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
 };
 
 
-const PerformanceMemberWiseKraKpa = () => {
+// const PerformanceMemberWiseKraKpa = () => {
+    const PerformanceMemberWiseKraKpa = ({
+    memberDetailsBasePath = "/app/performance/department-KPA/member-wise-KPA",
+}) => {
     const dispatch = useDispatch();
     const axios = useAxiosPrivate();
     const navigate = useNavigate();
@@ -82,6 +87,17 @@ const PerformanceMemberWiseKraKpa = () => {
     const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
     );
+    const selectedDepartmentFromRoute = location.state?.selectedDepartment;
+    const selectedDepartmentNameFromRoute = location.state?.selectedDepartmentName;
+    const activeDepartmentId = (
+        selectedDepartmentFromRoute || selectedDepartment || currentDepartmentId || ""
+    )?.toString?.() || "";
+    const activeDepartmentName =
+        selectedDepartmentNameFromRoute ||
+        selectedDepartmentName ||
+        department ||
+        currentDepartmentName ||
+        "Department";
     const loggedInUserId = auth?.user?._id?.toString();
     const userPermissions = auth?.user?.permissions?.permissions || [];
     
@@ -95,6 +111,63 @@ const PerformanceMemberWiseKraKpa = () => {
         userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) ||
         userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value);
     const isEmployeeLevel = !canManageTeam;
+    const { data: selectedDepartments = [] } = useQuery({
+        queryKey: ["performance-selectedDepartments-kpa"],
+        queryFn: async () => {
+            const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+            return response.data?.selectedDepartments || [];
+        },
+    });
+
+    const selectedDepartmentManagerName = useMemo(() => {
+        const normalize = (value) =>
+            (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+        const matchedDepartment = selectedDepartments.find((item) => {
+            const itemDepartmentId = item?.department?._id?.toString?.();
+            const itemDepartmentName = item?.department?.name;
+
+            return (
+                (activeDepartmentId &&
+                    itemDepartmentId &&
+                    activeDepartmentId.toString() === itemDepartmentId) ||
+                (activeDepartmentName &&
+                    itemDepartmentName &&
+                    normalize(activeDepartmentName) === normalize(itemDepartmentName))
+            );
+        });
+
+        return matchedDepartment?.admin || "";
+    }, [
+        currentDepartmentId,
+        currentDepartmentName,
+        department,
+        selectedDepartment,
+        selectedDepartmentName,
+        selectedDepartmentFromRoute,
+        selectedDepartmentNameFromRoute,
+        activeDepartmentId,
+        activeDepartmentName,
+        selectedDepartments,
+    ]);
+    const activeDepartmentDisplayName = activeDepartmentName;
+    const selectedDepartmentManagerKey = selectedDepartmentManagerName
+        .toString()
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+
+    const isTopManagementDepartment = useMemo(() => {
+        const normalize = (value) =>
+            (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+        const activeDepartmentName =
+            selectedDepartmentNameFromRoute ||
+            selectedDepartmentName ||
+            department ||
+            currentDepartmentName;
+        return normalize(activeDepartmentName) === "top management";
+    }, [currentDepartmentName, department, selectedDepartmentName, selectedDepartmentNameFromRoute]);
     const { isTop } = useTopDepartment({
         additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
     });
@@ -105,9 +178,15 @@ const PerformanceMemberWiseKraKpa = () => {
 
     const { data: memberWiseData = [] } = useQuery({
         // Added selectedMonth in queryKey so data refetches on month change
-         queryKey: ["performanceMemberWiseKraKpa", selectedDepartment, department, selectedMonth],
+        queryKey: [
+            "performanceMemberWiseKraKpa",
+            activeDepartmentId,
+            department,
+            selectedMonth,
+            selectedDepartmentManagerKey,
+        ],
         queryFn: async () => {
-            let departmentId = selectedDepartment;
+            let departmentId = activeDepartmentId;
 
             if (!departmentId && department) {
                 const departmentResponse = await axios.get("/api/performance/get-depts-tasks");
@@ -159,43 +238,186 @@ const PerformanceMemberWiseKraKpa = () => {
             const getResponseData = (response) =>
                 response?.status === "fulfilled" ? response.value?.data || [] : [];
             
-              const normalizeName = (value) =>
+            const normalizeName = (value) =>
                 (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+            const getRoleTitleLabel = (member) => {
+                const roleTitles = Array.isArray(member?.roleTitles)
+                    ? member.roleTitles.filter(Boolean)
+                    : [];
+
+                if (roleTitles.length > 0) {
+                    return [...new Set(roleTitles)].join(", ");
+                }
+
+                return "Employee";
+            };
+
+            let selectedDepartmentManagerId = null;
+            const getMemberRole = (memberId, memberName, member) => {
+                if (isTopManagementDepartment) {
+                    return getRoleTitleLabel(member);
+                }
+
+                return (
+                    (selectedDepartmentManagerId &&
+                        memberId?.toString?.() === selectedDepartmentManagerId?.toString?.()) ||
+                    normalizeName(memberName) === normalizeName(selectedDepartmentManagerName)
+                )
+                    ? "Manager"
+                    : "Employee";
+            };
 
             const map = new Map();
 
             const assignees = getResponseData(assigneesResponse);
             const memberIdByName = new Map();
+            const allowedMemberIds = new Set();
 
             assignees.forEach((member) => {
                 const memberId = member?.id?.toString();
                 if (!memberId) return;
                  const memberName = member?.name || "Unknown";
+                allowedMemberIds.add(memberId);
 
                 map.set(memberId, {
                     memberId,
                      member: memberName,
+                    memberRole: getMemberRole(memberId, memberName, member),
                     ...DEFAULT_COUNTS,
                 });
                  memberIdByName.set(normalizeName(memberName), memberId);
             });
+
+            const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
+            const normalizedLoggedInName = normalizeName(loggedInUserName);
+            const managerRowId =
+                normalizedManagerName === normalizedLoggedInName && loggedInUserId
+                    ? loggedInUserId
+                    : normalizedManagerName
+                        ? `manager-${normalizedManagerName}`
+                        : null;
+            selectedDepartmentManagerId =
+                normalizedManagerName && memberIdByName.has(normalizedManagerName)
+                    ? memberIdByName.get(normalizedManagerName)
+                    : null;
+            if (selectedDepartmentManagerId && map.has(selectedDepartmentManagerId)) {
+                map.set(selectedDepartmentManagerId, {
+                    ...map.get(selectedDepartmentManagerId),
+                    memberRole: "Manager",
+                });
+            }
+            if (normalizedManagerName && !memberIdByName.has(normalizedManagerName)) {
+                map.set(managerRowId, {
+                    memberId: managerRowId,
+                    member: selectedDepartmentManagerName,
+                    memberRole: "Manager",
+                    ...DEFAULT_COUNTS,
+                });
+            }
+
+            const resolveManagerAwareMemberId = (task) => {
+                const directId = task?.assignToId?.toString?.() || task?.assignedToId?.toString?.();
+                if (directId && allowedMemberIds.has(directId)) return directId;
+
+                const taskName = (task?.assignedTo || task?.assignTo || "")
+                    .toString()
+                    .replace(/\s+/g, " ")
+                    .trim();
+                const normalizedTaskName = normalizeName(taskName);
+                const matchedId = memberIdByName.get(normalizedTaskName);
+                if (matchedId && allowedMemberIds.has(matchedId)) return matchedId;
+
+                if (
+                    managerRowId &&
+                    normalizedManagerName &&
+                    normalizedTaskName === normalizedManagerName
+                ) {
+                    return managerRowId;
+                }
+
+                return null;
+            };
+
+            const resolveCompletedMemberId = (task) => {
+                const completedByName = (task?.completedBy || "")
+                  .toString()
+                  .replace(/\s+/g, " ")
+                  .trim();
+                const normalizedCompletedBy = normalizeName(completedByName);
+                const matchedId = memberIdByName.get(normalizedCompletedBy);
+                if (matchedId && allowedMemberIds.has(matchedId)) return matchedId;
+
+                if (
+                    managerRowId &&
+                    normalizedManagerName &&
+                    normalizedCompletedBy === normalizedManagerName
+                ) {
+                    return managerRowId;
+                }
+
+                return null;
+            };
+
             const upsert = (task, field) => {
-                const userId = task.assignToId || task.assignedTo || "unassigned";
-               // const userName = task.assignedTo || "Unassigned";
-                const userName = (task.assignedTo || "Unassigned").replace(/\s+/g, " ").trim();
+                const userId = resolveManagerAwareMemberId(task);
+                if (!userId) return;
+                const userName = (task.assignedTo || task.assignTo || "Unassigned")
+                  .toString()
+                  .replace(/\s+/g, " ")
+                  .trim();
                 if (!map.has(userId)) {
                     map.set(userId, {
                         memberId: userId,
                         member: userName,
+                        memberRole: getMemberRole(userId, userName, {}),
                         ...DEFAULT_COUNTS,
                     });
                 }
 
                 map.get(userId)[field] += 1;
             };
+              const upsertManagerMonthlyKpaCount = (field) => {
+                const managerId =
+                    managerRowId ||
+                    memberIdByName.get(normalizedManagerName) ||
+                    `manager-${normalizedManagerName || "unknown"}`;
+                const managerName = selectedDepartmentManagerName || "Manager";
 
-             const incrementPendingKpa = (task) => {
-                const taskDate = new Date(task?.assignedDate);
+                if (!map.has(managerId)) {
+                    map.set(managerId, {
+                        memberId: managerId,
+                        member: managerName,
+                        memberRole: getMemberRole(managerId, managerName, {}),
+                        ...DEFAULT_COUNTS,
+                    });
+                }
+
+                map.get(managerId)[field] += 1;
+            };
+            const upsertManagerTeamKpaCount = (task, field) => {
+               // const managerId = loggedInUserId || "unassigned";
+                //const managerName = loggedInUserName || "Manager";
+                const managerId =
+                    managerRowId ||
+                    memberIdByName.get(normalizedManagerName) ||
+                    `manager-${normalizedManagerName || "unknown"}`;
+                const managerName = selectedDepartmentManagerName || "Manager";
+
+                if (!map.has(managerId)) {
+                    map.set(managerId, {
+                        memberId: managerId,
+                        member: managerName,
+                        memberRole: getMemberRole(managerId, managerName, {}),
+                        ...DEFAULT_COUNTS,
+                    });
+                }
+
+                map.get(managerId)[field] += 1;
+            };
+
+            const incrementPendingKpa = (task) => {
+                 const taskDate = new Date(getTaskEffectiveDate(task));
                 if (Number.isNaN(taskDate.getTime())) return;
                 const fiscalMonth = [
                     "January",
@@ -217,13 +439,18 @@ const PerformanceMemberWiseKraKpa = () => {
 
                 if (task?.status === "Completed") return;
 
-                const userId = task.assignToId || task.assignedTo || "unassigned";
-                const userName = (task.assignedTo || "Unassigned").replace(/\s+/g, " ").trim();
+                const userId = resolveManagerAwareMemberId(task);
+                if (!userId) return;
+                const userName = (task.assignedTo || task.assignTo || "Unassigned")
+                  .toString()
+                  .replace(/\s+/g, " ")
+                  .trim();
 
                 if (!map.has(userId)) {
                     map.set(userId, {
                         memberId: userId,
                         member: userName,
+                        memberRole: getMemberRole(userId, userName, {}),
                         ...DEFAULT_COUNTS,
                     });
                 }
@@ -236,7 +463,7 @@ const PerformanceMemberWiseKraKpa = () => {
                 .forEach((task) => upsert(task, "dailyKra"));
             getResponseData(kpaResponse)
                 .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
-                .forEach((task) => upsert(task, "monthlyKpa"));
+.forEach(() => upsertManagerMonthlyKpaCount("monthlyKpa"));
             getResponseData(individualKraResponse)
                 .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
                 .forEach((task) => upsert(task, "individualDailyKra"));
@@ -248,7 +475,23 @@ const PerformanceMemberWiseKraKpa = () => {
                 .forEach((task) => upsert(task, "teamDailyKra"));
             getResponseData(teamKpaResponse)
                 .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
-                .forEach((task) => upsert(task, "teamMonthlyKpa"));
+                  .forEach((task) => {
+                    if (canManageTeam) {
+                        upsertManagerTeamKpaCount(task, "teamMonthlyKpa");
+                       upsert(task, "individualMonthlyKpa");
+                        return;
+                    }
+                    upsert(task, "teamMonthlyKpa");
+                });
+                
+                //upsertManagerTeamKpaCount(task, "teamMonthlyKpa");
+                //  .forEach((task) => {
+                //     if (canManageTeam) {
+                //         upsertManagerTeamKpaCount(task, "teamMonthlyKpa");
+                //         return;
+                //     }
+                //     upsert(task, "teamMonthlyKpa");
+                // });
 
              const getFiscalMonthFromDate = (dateValue) => {
                 const date = new Date(dateValue);
@@ -278,13 +521,14 @@ const PerformanceMemberWiseKraKpa = () => {
                 const completedByName = task?.completedBy?.replace(/\s+/g, " ").trim();
                 if (!completedByName) return;
 
-                const matchedMemberId =
-                    memberIdByName.get(normalizeName(completedByName)) || completedByName;
+                const matchedMemberId = resolveCompletedMemberId(task);
+                if (!matchedMemberId) return;
 
                 if (!map.has(matchedMemberId)) {
                     map.set(matchedMemberId, {
                         memberId: matchedMemberId,
                         member: completedByName,
+                        memberRole: getMemberRole(matchedMemberId, completedByName, {}),
                         ...DEFAULT_COUNTS,
                     });
                 }
@@ -323,7 +567,19 @@ const PerformanceMemberWiseKraKpa = () => {
                 return acc;
             }, {});
 
-            return Object.values(mergedByMemberName);
+            const withDerivedPending = Object.values(mergedByMemberName).map((item) => {
+                const derivedPendingKpa =
+                    (Number(item?.monthlyKpa) || 0) +
+                    (Number(item?.individualMonthlyKpa) || 0);
+
+                return {
+                    ...item,
+                    // Keep existing pending pipeline intact, but align final pending with visible pending KPA buckets.
+                    pendingKpa: derivedPendingKpa,
+                };
+            });
+
+            return withDerivedPending;
         },
     });
 
@@ -333,8 +589,10 @@ const PerformanceMemberWiseKraKpa = () => {
             : memberWiseData;
 
         return filteredData.map((item, index) => ({
-            srNo: index + 1,
-            ...item,
+    srNo: index + 1,
+    ...item,
+    individualMonthlyKpa: item?.individualMonthlyKpa || 0,
+
         }));
     }, [isEmployeeLevel, loggedInUserId, memberWiseData]);
 
@@ -357,10 +615,18 @@ const PerformanceMemberWiseKraKpa = () => {
                 srNo: 1,
                 memberId: loggedInUserId,
                 member: loggedInUserName || "You",
+                memberRole: "Employee",
                 ...DEFAULT_COUNTS,
             },
         ];
-    }, [canManageTeam, isEmployeeLevel, isTop, loggedInUserId, loggedInUserName, rowData]);
+    }, [
+        canManageTeam,
+        isEmployeeLevel,
+        isTop,
+        loggedInUserId,
+        loggedInUserName,
+        rowData,
+    ]);
 
     const columns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
@@ -370,25 +636,43 @@ const PerformanceMemberWiseKraKpa = () => {
                 const memberId = params?.data?.memberId?.toString();
                 const isOwnRow = memberId && loggedInUserId === memberId;
                 const isClickable = canManageTeam || isOwnRow;
+                const roleLabel = params?.data?.memberRole || "Employee";
 
                 const handleMemberNavigation = () => {
                     if (!isClickable) return;
 
-                    const targetDepartmentId = selectedDepartment || currentDepartmentId;
+                    const targetDepartmentId =
+                        selectedDepartmentFromRoute ||
+                        selectedDepartment ||
+                        currentDepartmentId;
                     const targetDepartmentName =
-                        selectedDepartmentName || department || currentDepartmentName;
+                        selectedDepartmentNameFromRoute ||
+                        selectedDepartmentName ||
+                        department ||
+                        currentDepartmentName;
 
                     dispatch(setSelectedDepartment(targetDepartmentId));
                     dispatch(setSelectedDepartmentName(targetDepartmentName));
-                    dispatch(setSelectedMember({ memberId, memberName: params.value }));
+                   // dispatch(setSelectedMember({ memberId, memberName: params.value }));
+                   dispatch(
+            setSelectedMember({
+              memberId,
+              memberName: params.value,
+              memberRole: params?.data?.memberRole || "Employee",
+            }),
+          );
+ const firstTab = "individual-Monthly-KPA";
 
-                     let firstTab = "individual-Monthly-KPA";
-                     if (canManageTeam && !isOwnRow) {
-                      firstTab = "Monthly-KPA";
-                         }
-
- navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
-                        state: { selectedMember: { memberId, memberName: params.value } },
+                        //navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
+                    navigate(`${memberDetailsBasePath}/${firstTab}`, {
+                        // state: { selectedMember: { memberId, memberName: params.value } },
+                                                state: {
+                selectedMember: {
+                  memberId,
+                  memberName: params.value,
+                  memberRole: params?.data?.memberRole || "Employee",
+                },
+              },
                     });
                 };
 
@@ -401,7 +685,8 @@ const PerformanceMemberWiseKraKpa = () => {
                             : "text-gray-500 cursor-not-allowed"
                             }`}
                     >
-                        {params.value}
+                        {params.value}{" "}
+                        <span className="text-xs text-gray-400">{`- ${roleLabel}`}</span>
                     </span>
                 );
             },
@@ -442,6 +727,25 @@ const PerformanceMemberWiseKraKpa = () => {
         (sum, item) => sum + (item.pendingKpa || 0),
         0
     );
+    const totalKpaCount = totalCompletedKpa + totalPendingKpa;
+
+    const tooltipStatsByMember = useMemo(() => {
+        return visibleRowData.reduce((acc, item) => {
+            const key = (item?.member || "").toString().trim();
+            if (!key) return acc;
+
+            const completed = Number(item?.completedKpa) || 0;
+            const pending = Number(item?.pendingKpa) || 0;
+
+            acc[key] = {
+                completed,
+                pending,
+                total: completed + pending,
+            };
+
+            return acc;
+        }, {});
+    }, [visibleRowData]);
 
 
     const graphOptions = {
@@ -472,9 +776,10 @@ tooltip: {
             custom: ({ series, dataPointIndex, w }) => {
                 const label =
                     w?.config?.series?.[0]?.data?.[dataPointIndex]?.x || "Department";
-                const completed = series?.[0]?.[dataPointIndex] ?? 0;
-                const pending = series?.[1]?.[dataPointIndex] ?? 0;
-                const total = completed + pending;
+                const matchedStats = tooltipStatsByMember[label];
+                const completed = matchedStats?.completed ?? (series?.[0]?.[dataPointIndex] ?? 0);
+                const pending = matchedStats?.pending ?? (series?.[1]?.[dataPointIndex] ?? 0);
+                const total = matchedStats?.total ?? (completed + pending);
 
                 return `
                     <div style="padding:8px; font-family:Poppins, sans-serif; font-size:13px; width:220px;">
@@ -495,9 +800,11 @@ tooltip: {
     return (
         <div className="flex flex-col gap-4">
             <WidgetSection
-                 title={`${selectedDepartmentName || department || "Department"} KPA overview - ${selectedMonth}`}
+                 title={`${activeDepartmentDisplayName} KPA overview - ${selectedMonth}`}
                 border
                 padding
+                TitleAmountTotal={totalKpaCount}
+                totalTitle="Total"
                 greenTitle="KPA"
                 TitleAmountGreen={totalCompletedKpa}
                 redTitle="KPA"
@@ -540,7 +847,7 @@ tooltip: {
                     <AgTable
                          data={visibleRowData}
                         columns={columns}
-                        tableTitle={`${selectedDepartmentName || department || "Department"} - MEMBER WISE PENDING KPA`}
+                        tableTitle={`${activeDepartmentDisplayName} - MEMBER WISE PENDING KPA`}
                         hideFilter
                     />
                 </WidgetSection>

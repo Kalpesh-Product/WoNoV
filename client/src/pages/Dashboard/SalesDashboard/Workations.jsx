@@ -93,6 +93,7 @@ const Workations = () => {
         tableTitle={"Monthly Revenue with Client Details"}
         totalKey="taxableAmount"
         dateColumn={"date"}
+        exportData
         columns={[
           { headerName: "Sr No", field: "srNo", flex: 1 },
           { headerName: "Client Name", field: "clientName", flex: 1 },

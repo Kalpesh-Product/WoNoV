@@ -354,7 +354,7 @@ const totalUtilised =
         onYearChange={setSelectedFiscalYear}
       /> */}
 
-      <AllocatedBudget financialData={financialData} annaualExpense={true}/>
+      <AllocatedBudget financialData={financialData} annaualExpense={true} exportData/>
       <MuiModal
         title="Request Budget"
         open={openModal}

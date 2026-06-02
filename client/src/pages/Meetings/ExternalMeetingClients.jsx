@@ -35,6 +35,7 @@ import { inrFormat } from "../../utils/currencyFormat";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import { time } from "motion/react";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
@@ -51,6 +52,10 @@ const ExternalMeetingCLients = () => {
   const isFinance =
     department?.name?.toLowerCase().includes("finance") ||
     location.pathname.includes("finance-dashboard");
+  const shouldShowExportButton =
+    location.pathname.includes(
+      "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
+    );
 
   const paymentModes = [
     "UPI",
@@ -199,7 +204,10 @@ const ExternalMeetingCLients = () => {
     .map((meeting, index) => {
       return {
         ...meeting,
+        title: meeting.subject || meeting.title || "",
+        agenda: meeting.agenda || "",
         date: meeting.date,
+        time: `${humanTime(meeting.startTime)} - ${humanTime(meeting.endTime)}`,
         bookedBy: meeting.bookedBy
           ? [
               meeting.bookedBy.firstName,
@@ -218,12 +226,30 @@ const ExternalMeetingCLients = () => {
         srNo: index + 1,
         paymentAmount: meeting.paymentAmount ?? 0,
         paymnetDiscountAmount: meeting.discountAmount ?? 0,
+        paymentDiscountAmount: meeting.discountAmount ?? 0,
         paymentMode: meeting.paymentMode ?? "",
         paymentProofUrl: meeting?.paymentProof ?? "",
         paymentStatus: meeting.paymentStatus ?? false,
         paymentVerification: meeting.paymentVerification || "Under Review",
-        client: meeting.client || "",
+          client:
+            meeting.client ||
+            meeting.externalClient?.companyName ||
+            meeting.externalClient ||
+            "",
+          companyName:
+            meeting.client ||
+            meeting.externalClient?.companyName ||
+            meeting.externalClient ||
+            "",
         building: meeting.location?.building?.buildingName || "",
+        duration: meeting.duration || "",
+        receptionist: meeting.receptionist || "",
+        departmentLabel: Array.isArray(meeting.department)
+          ? meeting.department.map((item) => item?.name).filter(Boolean).join(", ")
+          : meeting.department?.name || "",
+        locationLabel: `${meeting.location?.unitNo || ""}${
+          meeting.location?.unitName ? ` (${meeting.location.unitName})` : ""
+        }`,
       };
     });
 
@@ -588,6 +614,32 @@ const ExternalMeetingCLients = () => {
     setPaymentValue,
   ]);
   //---------------------------------Event handlers----------------------------------------//
+  const getFinanceStatus = (rowData = {}) => {
+    const isPaid = rowData?.paymentStatus === "Paid" || rowData?.paymentStatus === true;
+    const paymentVerificationStatus = String(
+      rowData?.paymentVerification || "Pending",
+    ).toLowerCase();
+
+    if (!isPaid) return "Wait for Payment";
+    if (paymentVerificationStatus === "under review") return "Verify Payment";
+    if (paymentVerificationStatus === "verified") return "Completed";
+    return "Review Payment";
+  };
+
+  const getFinanceStatusChipStyle = (status) => {
+    const normalizedStatus = String(status || "").toLowerCase();
+
+    if (normalizedStatus === "completed") {
+      return { backgroundColor: "#D1FAE5", color: "#047857" };
+    }
+    if (normalizedStatus === "verify payment") {
+      return { backgroundColor: "#DBEAFE", color: "#1D4ED8" };
+    }
+    if (normalizedStatus === "review payment") {
+      return { backgroundColor: "#FEF3C7", color: "#B45309" };
+    }
+    return { backgroundColor: "#FEE2E2", color: "#B91C1C" };
+  };
 
   const columns = [
     { field: "srNo", headerName: "Sr No" },
@@ -609,12 +661,7 @@ const ExternalMeetingCLients = () => {
       headerName: "End Time",
       cellRenderer: (params) => humanTime(params.value),
     },
-    // {
-    //   field: "extendTime",
-    //   headerName: "Extended Time",
-    //   cellRenderer: (params) => humanTime(params.value) || "-",
-    // },
-    {
+     {
       field: "paymentAmount",
       headerName: "Amount (INR)",
     },
@@ -624,7 +671,8 @@ const ExternalMeetingCLients = () => {
     },
     {
       field: "paymentStatus",
-      headerName: "Status",
+      headerName: "Payment Status",
+      pinned:"right",
       cellRenderer: (params) => (
         <Chip
           label={params.value === "Paid" ? "Paid" : "Unpaid"}
@@ -637,8 +685,30 @@ const ExternalMeetingCLients = () => {
       ),
       cellStyle: { textAlign: "center" },
     },
-
-    {
+    ...(isFinance
+      ? [
+          {
+            field: "financeStatus",
+            headerName: "Finance Status",
+            pinned:"right",
+            cellRenderer: (params) => {
+              const status = getFinanceStatus(params.data);
+              const chipStyle = getFinanceStatusChipStyle(status);
+              return (
+                <Chip
+                  label={status}
+                  sx={{
+                    backgroundColor: chipStyle.backgroundColor,
+                    color: chipStyle.color,
+                    fontWeight: "bold",
+                  }}
+                />
+              );
+            },
+          },
+        ]
+      : []),
+      {
       field: "meetingStatus",
       headerName: "Meeting Status",
       sort: "desc",
@@ -653,7 +723,7 @@ const ExternalMeetingCLients = () => {
         />
       ),
     },
-    {
+     {
       field: "housekeepingStatus",
       headerName: "Housekeeping Status",
       cellRenderer: (params) => {
@@ -669,6 +739,39 @@ const ExternalMeetingCLients = () => {
         );
       },
     },
+    { field: "title", headerName: "Title", hide: true },
+    { field: "agenda", headerName: "Agenda", hide: true },
+   
+    {field: "time", headerName: "Time", hide: true },
+    { field: "duration", headerName: "Duration", hide: true },
+   
+    {field: "meetingType", headerName: "Meeting Type", hide: true },
+    {field: "companyName", headerName: "Company Name", hide: true },
+   
+    { field: "receptionist", headerName: "Receptionist", hide: true },
+   // { field: "departmentLabel", headerName: "Department", hide: true },
+    { field: "client", headerName: "Client Name",hide: true },
+  
+    { field: "locationLabel", headerName: "Location", hide: true },
+   
+    
+   
+    {
+      field: "paymentDiscountAmount",
+      headerName: "Discount (INR)",
+      hide: true,
+      valueFormatter: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    
+    { field: "paymentVerification", headerName: "Verification", hide: true },
+    { field: "paymentProofUrl", headerName: "Proof URL", hide: true },
+    
+    
+    // {
+    //   field: "extendTime",
+    //   headerName: "Extended Time",
+    //   cellRenderer: (params) => humanTime(params.value) || "-",
+    // },
     {
       field: "action",
       headerName: "Action",
@@ -786,6 +889,7 @@ const ExternalMeetingCLients = () => {
             tableTitle={"Manage Meetings"}
             data={transformedMeetings || []}
             columns={columns}
+            exportData={shouldShowExportButton}
           />
         ) : (
           <CircularProgress />

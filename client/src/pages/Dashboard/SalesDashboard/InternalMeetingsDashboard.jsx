@@ -20,6 +20,20 @@ const statusColors = {
     "In Progress": { bg: "#FBE9E7", text: "#BF360C" },
 };
 
+const getParticipantDisplayName = (participant) => {
+    if (participant.employeeName) {
+        return participant.employeeName;
+    }
+
+    const fullName = `${participant.firstName || ""} ${participant.lastName || ""}`.trim();
+
+    if (fullName) {
+        return fullName;
+    }
+
+    return "User";
+};
+
 const getAvatarName = (participant) => {
     if (participant.firstName && participant.lastName) {
         return `${participant.firstName}+${participant.lastName}`;
@@ -95,8 +109,10 @@ const InternalMeetingsDashboard = () => {
             headerName: "Participants",
             flex: 1,
             cellRenderer: (params) => {
-                const participants = Array.isArray(params.data?.participants)
-                    ? params.data.participants
+                // const participants = Array.isArray(params.data?.participants)
+                //     ? params.data.participants
+                 const participants = Array.isArray(params.data?.participantsRaw)
+                    ? params.data.participantsRaw
                     : [];
 
                 return (
@@ -155,6 +171,16 @@ const InternalMeetingsDashboard = () => {
                 meetingCreditBalance:
                     typeof balance === "number" ? balance.toFixed(2) : "0.00",
                 meetingStatus: meeting?.meetingStatus || "-",
+
+                  participantsRaw: Array.isArray(meeting?.participants)
+                    ? meeting.participants
+                    : [],
+                participants: Array.isArray(meeting?.participants)
+                    ? meeting.participants
+                          .map((participant) => getParticipantDisplayName(participant))
+                          .filter(Boolean)
+                          .join(", ")
+                    : "-",
             };
         });
     }, [coWorkingClients, meetings]);

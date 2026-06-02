@@ -18,6 +18,55 @@ const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const TestCoworkingClient = require("../../models/sales/TestCoworkingClient");
 const { normalizeClientName } = require("../../utils/dataSheetFormatters");
 
+const DELETED_MEMBER_VIEW_ROLES = new Set([
+  "master admin",
+  "super admin",
+]);
+
+const normalizeRoleValue = (value) =>
+  String(value || "").trim().toLowerCase();
+
+const getUserRoleTitles = (context) =>
+  (Array.isArray(context?.roles) ? context.roles : [])
+    .map((role) => normalizeRoleValue(role?.roleTitle || role))
+    .filter(Boolean);
+
+const getUserDepartmentNames = (context) =>
+  (Array.isArray(context?.departments) ? context.departments : [])
+    .map((department) =>
+      normalizeRoleValue(department?.name || department?.departmentName || department),
+    )
+    .filter(Boolean);
+
+const canViewDeletedMembers = (context) => {
+  const roleTitles = getUserRoleTitles(context);
+  const departmentNames = getUserDepartmentNames(context);
+
+  if (
+    roleTitles.some((roleTitle) => DELETED_MEMBER_VIEW_ROLES.has(roleTitle))
+  ) {
+    return true;
+  }
+
+  return (
+    roleTitles.some((roleTitle) =>
+      roleTitle.includes("air tech department") || roleTitle.includes("air tech"),
+    ) ||
+    departmentNames.some((departmentName) =>
+      departmentName.includes("air tech department") ||
+      departmentName.includes("air tech"),
+    )
+  );
+};
+
+const filterVisibleMembers = (members = [], context) => {
+  if (canViewDeletedMembers(context)) {
+    return members;
+  }
+
+  return members.filter((member) => !member?.isDeleted);
+};
+
 const createCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
   const logAction = "Onboard CoworkingClient";
@@ -358,24 +407,61 @@ const getCoworkingClients = async (req, res, next) => {
       return res.status(404).json({ message: "No clients or companies found" });
     }
 
-    const members = await CoworkingMembers.find()
+    const members = await CoworkingMembers.find({ company })
       .populate([
         { path: "client", select: "clientName email" },
         { path: "unit", select: "unitName unitNo" },
       ])
       .lean()
       .exec();
+    const visibleMembers = filterVisibleMembers(members, req);
+    const clientObjectIds = allEntities
+      .map((entity) => entity?._id)
+      .filter((entityId) => mongoose.Types.ObjectId.isValid(entityId))
+      .map((entityId) => new mongoose.Types.ObjectId(entityId));
 
-    const entitiesWithMembers = allEntities.map((entity) => {
-      return {
-        ...entity,
-        members: members.filter(
-          (member) =>
-            member.client &&
-            member.client._id.toString() === entity._id.toString(),
-        ),
-      };
-    });
+    const shouldIncludeDeletedMembers = canViewDeletedMembers(req);
+    const memberMatchStage = {
+      client: { $in: clientObjectIds },
+    };
+
+    if (!shouldIncludeDeletedMembers) {
+      memberMatchStage.isDeleted = { $ne: true };
+    }
+
+    const memberCounts = await CoworkingMembers.aggregate([
+      {
+        $match: memberMatchStage,
+      },
+      {
+        $group: {
+          _id: "$client",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const memberCountByClientId = memberCounts.reduce((acc, item) => {
+      const clientId = item?._id ? String(item._id) : "";
+      if (clientId) {
+        acc[clientId] = item.count || 0;
+      }
+      return acc;
+    }, {});
+
+      const entitiesWithMembers = allEntities.map((entity) => {
+        const entityId = entity?._id?.toString();
+
+        return {
+          ...entity,
+          memberCount: entityId ? memberCountByClientId[entityId] || 0 : 0,
+          members: visibleMembers.filter(
+            (member) =>
+              member.client &&
+              member.client._id.toString() === entity._id.toString(),
+          ),
+        };
+      });
 
     res.status(200).json(entitiesWithMembers);
   } catch (error) {

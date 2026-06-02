@@ -1,6 +1,7 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
 import AgTable from '../../../../components/AgTable'
+import StatusChip from '../../../../components/StatusChip'
 
 const CollectionsLayout = () => {
   const collectionsColumns = [{
@@ -12,7 +13,11 @@ const CollectionsLayout = () => {
   { field: "client", headerName: "Client", flex : 1},
   { field: "month", headerName: "Month"},
   { field: "amount", headerName: "Amount (INR)"},
-  { field: "status", headerName: "Status"},
+  {
+    field: "status",
+    headerName: "Status",
+    cellRenderer: (params) => <StatusChip status={params.value} />,
+  },
 ]
 
 const collectionsRows = [

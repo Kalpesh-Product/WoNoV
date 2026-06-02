@@ -1,10 +1,16 @@
 import { useLocation, useParams } from "react-router-dom";
 import { PERMISSIONS } from "./../../constants/permissions";
 import TabLayout from "../../components/Tabs/TabLayout";
+import { useSelector } from "react-redux";
+import useAuth from "../../hooks/useAuth";
 
 const DepartmentPerformanceLayout = () => {
   const location = useLocation();
   const { overallType, department, memberWiseType } = useParams();
+  const { auth } = useAuth();
+  const roleTitles =
+    auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+  const selectedMember = useSelector((state) => state.performance.selectedMember);
    const isDepartmentKraMemberWiseRoute = location.pathname.includes("/department-KRA/member-wise-KRA");
   const isDepartmentKpaMemberWiseRoute = location.pathname.includes("/department-KPA/member-wise-KPA");
   const isMemberHierarchyRoute = Boolean(overallType && memberWiseType);
@@ -19,8 +25,25 @@ const DepartmentPerformanceLayout = () => {
       ? "/app/performance/assign-KRA-KPA"
     : `/app/performance/${department}`;
 
-   const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-wise-KPA");
+const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-wise-KPA");
   const isMemberWiseKraFlow = location.pathname.includes("/department-KRA/member-wise-KRA");
+  const userPermissions = auth?.user?.permissions?.permissions || [];
+  const canManageTeam =
+    userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) ||
+    userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value);
+     const isSuperOrMasterAdmin =
+    roleTitles.some((roleTitle) => roleTitle?.includes("super admin")) ||
+    roleTitles.some((roleTitle) => roleTitle?.includes("master admin"));
+  const canViewMemberLevelControls = canManageTeam || isSuperOrMasterAdmin;
+  const loggedInUserId = auth?.user?._id?.toString();
+  const selectedMemberId = selectedMember?.memberId?.toString();
+  const isManagerViewingOwnMemberRow =
+    !!loggedInUserId && !!selectedMemberId && loggedInUserId === selectedMemberId;
+
+
+     const selectedMemberRole = (selectedMember?.memberRole || "").toLowerCase();
+  const isSelectedMemberManager = selectedMemberRole.includes("manager");
+  const isSelectedMemberEmployee = !!selectedMemberId && !isSelectedMemberManager;
 
   // Map routes to tabs
   const tabs = [
@@ -73,6 +96,14 @@ const DepartmentPerformanceLayout = () => {
     ? tabs.filter(
         (tab) => tab.path === "team-Daily-KRA" || tab.path === "team-Monthly-KPA"
       )
+  //  : isMemberWiseKpaFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+  //     ? tabs.filter((tab) => tab.path === "individual-Monthly-KPA")
+  //   : isMemberWiseKraFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+  //     ? tabs.filter((tab) => tab.path === "daily-KRA" || tab.path === "individual-Daily-KRA")    
+   : isMemberWiseKpaFlow && canViewMemberLevelControls && isSelectedMemberEmployee && !isManagerViewingOwnMemberRow
+      ? tabs.filter((tab) => tab.path === "individual-Monthly-KPA")
+    : isMemberWiseKraFlow && canViewMemberLevelControls && isSelectedMemberEmployee && !isManagerViewingOwnMemberRow
+      ? tabs.filter((tab) => tab.path === "daily-KRA" || tab.path === "individual-Daily-KRA")
     : isMemberWiseKpaFlow
       ? tabs.filter((tab) => tab.path.toLowerCase().includes("kpa"))
       : isMemberWiseKraFlow
@@ -81,6 +112,13 @@ const DepartmentPerformanceLayout = () => {
 
   const defaultTabPath = isAssignRoute
     ? "team-Daily-KRA"
+    //    : isMemberWiseKpaFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+    //   ? "individual-Monthly-KPA"
+    // : isMemberWiseKraFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
+            : isMemberWiseKpaFlow && canViewMemberLevelControls && isSelectedMemberEmployee && !isManagerViewingOwnMemberRow
+      ? "individual-Monthly-KPA"
+    : isMemberWiseKraFlow && canViewMemberLevelControls && isSelectedMemberEmployee && !isManagerViewingOwnMemberRow
+      ? "daily-KRA"
     : isMemberWiseKpaFlow
       ? "monthly-KPA"
       : isMemberWiseKraFlow

@@ -1,13 +1,19 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import { useQuery } from "@tanstack/react-query";
 
-const formatDateKey = (date) => date.toISOString().slice(0, 10);
+const formatDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 const toDate = (value) => {
   if (!value) return null;
@@ -31,107 +37,159 @@ const toDate = (value) => {
   }
 
   const parsed = new Date(value);
-
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
+const toLocalIsoDate = (value) => {
+  const date = toDate(value);
+  if (!date) return null;
+  return formatDateKey(date);
+};
+
+const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
+  const taskDateKey = toLocalIsoDate(
+    task?.assignedDate || task?.dueDate || task?.createdAt,
+  );
+  return !!taskDateKey && taskDateKey <= selectedDateKey;
+};
+
+const isSameSelectedDate = (dateValue, selectedDateKey) =>
+  toLocalIsoDate(dateValue) === selectedDateKey;
+
 const HrKRA = () => {
   const navigate = useNavigate();
-
-  const tasksRawData = useSelector((state) => state.hr.tasksRawData);
+  const axios = useAxiosPrivate();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const selectedDateKey = formatDateKey(selectedDate);
-
   const selectedDateLabel = selectedDate.toLocaleDateString("en-US", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
-  const selectedDateLabelUpper = selectedDateLabel.toUpperCase();
-  const allDepartments = useMemo(() => {
-    return Array.from(
-      new Set(tasksRawData.map((data) => data.department).filter(Boolean))
-    );
-  }, [tasksRawData]);
 
-  const filteredTasks = useMemo(() => {
-    return tasksRawData.flatMap((departmentData) =>
-      (departmentData.tasks || [])
-        .filter((task) => {
-          const taskDate = toDate(task.assignedDate);
+  const { data: fetchedDepartments = [] } = useQuery({
+    queryKey: ["hrKraDepartments"],
+    queryFn: async () => {
+      const response = await axios.get("/api/performance/get-depts-tasks");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
 
-          return taskDate && formatDateKey(taskDate) === selectedDateKey;
-        })
-        .map((task) => ({
-          ...task,
-          department: departmentData.department,
+  const departmentList = useMemo(
+    () =>
+      fetchedDepartments
+        .map((item) => ({
+          departmentId: item?.department?._id,
+          departmentName: item?.department?.name,
         }))
-    );
-  }, [tasksRawData, selectedDateKey]);
+        .filter((item) => item.departmentId && item.departmentName),
+    [fetchedDepartments],
+  );
 
-  const groupedTasks = useMemo(() => {
-    return filteredTasks.reduce((acc, task) => {
-      if (!acc[task.department]) {
-        acc[task.department] = [];
-      }
+  const { data: departmentWiseData = [] } = useQuery({
+     queryKey: [
+      "hrDepartmentKraStats",
+      selectedDateKey,
+      departmentList.map((d) => d.departmentId).join(","),
+    ],
+    enabled: departmentList.length > 0,
+    queryFn: async () => {
+      const stats = await Promise.all(
+        departmentList.map(async ({ departmentId, departmentName }) => {
+          const settled = await Promise.allSettled([
+  axios.get(
+              `/api/performance/get-tasks?dept=${departmentId}&type=KRA&date=${selectedDateKey}`,
+            ),
+            axios.get(
+              `/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`,
+            ),  
+          ]);
 
-      acc[task.department].push(task);
+          const assignedTasks =
+             settled[0]?.status === "fulfilled"
+              ? settled[0].value?.data || []
+              : [];
+          const completedTasks =
+            settled[1]?.status === "fulfilled"
+              ? settled[1].value?.data || []
+              : [];
 
-      return acc;
-    }, {});
-  }, [filteredTasks]);
+          const completedOnSelectedDate = completedTasks.filter((task) =>
+            isSameSelectedDate(task?.completionDate, selectedDateKey),
+        );
 
-  const totalTasks = filteredTasks.length;
-  const completedTasks = filteredTasks.filter(
-    (task) => task.status === "Completed"
-  ).length;
-  const remainingTasks = totalTasks - completedTasks;
+          const pendingTasks = assignedTasks.filter((task) =>
+            isTaskScheduledOnOrBeforeDate(task, selectedDateKey),
+          );
 
-  const tableData = allDepartments.map((department) => {
-    const deptTasks = groupedTasks[department] || [];
+          return {
+            departmentId,
+            departmentName,
+            tasks: pendingTasks,
+            totalTasks: pendingTasks.length + completedOnSelectedDate.length,
+            achievedTasks: completedOnSelectedDate.length,
+          };
+        }),
+      );
+      return stats.filter(Boolean);
+    },
+  });
 
-    const totalTasks = deptTasks.length;
+  const allDepartments = departmentWiseData.map((item) => item.departmentName);
 
-    const achievedTasks = deptTasks.filter(
-      (task) => task.status === "Completed"
-    ).length;
+  const groupedTasks = useMemo(
+    () =>
+      departmentWiseData.reduce((acc, item) => {
+        acc[item.departmentName] = item.tasks || [];
+        return acc;
+      }, {}),
+    [departmentWiseData],
+  );
 
-    const achievedPercent = totalTasks
-      ? ((achievedTasks / totalTasks) * 100).toFixed(0)
+  const tableData = departmentWiseData.map((item) => {
+    const achievedPercent = item.totalTasks
+      ? ((item.achievedTasks / item.totalTasks) * 100).toFixed(0)
       : 0;
 
-    const shortFall = totalTasks
-      ? (((totalTasks - achievedTasks) / totalTasks) * 100).toFixed(0)
+    const shortFall = item.totalTasks
+  ? (
+          ((item.totalTasks - item.achievedTasks) / item.totalTasks) *
+          100
+        ).toFixed(0)
       : 0;
 
     return {
-      department,
-      totalTasks,
-      achievedTasks,
+      department: item.departmentName,
+      totalTasks: item.totalTasks,
+      achievedTasks: item.achievedTasks,
       achievedPercent: `${achievedPercent}%`,
       shortFall: `${shortFall}%`,
     };
   });
 
-  const graphData = ["Completed", "Remaining"].map((type) => ({
+  const totalTasks = tableData.reduce((sum, item) => sum + item.totalTasks, 0);
+   const completedTasks = tableData.reduce(
+    (sum, item) => sum + item.achievedTasks,
+    0,
+  );
+  const pendingTasks = Math.max(totalTasks - completedTasks, 0);
+
+  const graphData = ["Completed", "Pending"].map((type) => ({
     name: `${type} KRA`,
     group: `KRA - ${selectedDateLabel}`,
     data: allDepartments.map((department) => {
-      const deptTasks = groupedTasks[department] || [];
+           const tableItem = tableData.find(
+        (item) => item.department === department,
+      );
+      const completed = tableItem?.achievedTasks || 0;
+      const total = tableItem?.totalTasks || 0;
+      const pending = Math.max(total - completed, 0);
 
-      const completed = deptTasks.filter(
-        (task) => task.status === "Completed"
-      ).length;
+      const raw = type === "Completed" ? completed : pending;
 
-      const remaining = deptTasks.length - completed;
-
-      const raw = type === "Completed" ? completed : remaining;
-
-      const y = deptTasks.length
-        ? +((raw / deptTasks.length) * 100).toFixed(1)
-        : 0;
+      const y = total ? +((raw / total) * 100).toFixed(1) : 0;
 
       return {
         x: department,
@@ -144,32 +202,32 @@ const HrKRA = () => {
   const graphOptions = {
     chart: {
       type: "bar",
-       animations: {
+      animations: {
         enabled: false,
       },
       stacked: true,
       toolbar: {
         show: false,
       },
-       fontFamily: "Poppins-Regular",
+      fontFamily: "Poppins-Regular",
       events: {
         dataPointSelection: (_event, _chartContext, config) => {
-        const clickedDept =
-            config.w.config.series[config.seriesIndex].data[
+          const clickedDept =
+          config.w.config.series[config.seriesIndex].data[
               config.dataPointIndex
             ].x;
-        const departmentTasks = groupedTasks[clickedDept] || [];
+          const departmentTasks = groupedTasks[clickedDept] || [];
           navigate(`${clickedDept}`, {
             state: {
               department: clickedDept,
-               tasks: departmentTasks,
+              tasks: departmentTasks,
               selectedDate: selectedDateKey,
             },
           });
         },
       },
     },
-     plotOptions: {
+    plotOptions: {
       bar: {
         horizontal: false,
         columnWidth: "20%",
@@ -192,7 +250,7 @@ const HrKRA = () => {
     },
     yaxis: {
       max: 100,
-       title: {
+      title: {
         text: "Completion (%)",
       },
       labels: {
@@ -206,8 +264,8 @@ const HrKRA = () => {
       custom: ({ dataPointIndex, w }) => {
         const departmentName = w.config.series[0].data[dataPointIndex].x;
         const completed = w.config.series[0].data[dataPointIndex].raw;
-        const remaining = w.config.series[1].data[dataPointIndex].raw;
-        const total = completed + remaining;
+        const pending = w.config.series[1].data[dataPointIndex].raw;
+        const total = completed + pending;
 
         return `
           <div style="padding:8px; font-family: Poppins, sans-serif; font-size: 13px; width: 220px;">
@@ -215,7 +273,8 @@ const HrKRA = () => {
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
             <div style="display: flex; justify-content: space-between;"><span>Total KRA</span><span>${total}</span></div>
             <div style="display: flex; justify-content: space-between;"><span>Completed KRA</span><span>${completed}</span></div>
-            <div style="display: flex; justify-content: space-between;"><span>Remaining KRA</span><span>${remaining}</span></div>
+            <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
+            <div style="display: flex; justify-content: space-between;"><span>Pending KRA</span><span>${pending}</span></div>
           </div>
         `;
       },
@@ -278,8 +337,8 @@ const HrKRA = () => {
         new Date(
           prevDate.getFullYear(),
           prevDate.getMonth(),
-          prevDate.getDate() - 1
-        )
+          prevDate.getDate() - 1,
+        ),
     );
   };
 
@@ -289,8 +348,8 @@ const HrKRA = () => {
         new Date(
           prevDate.getFullYear(),
           prevDate.getMonth(),
-          prevDate.getDate() + 1
-        )
+          prevDate.getDate() + 1,
+        ),
     );
   };
 
@@ -302,56 +361,49 @@ const HrKRA = () => {
         padding
         greenTitle={"completed"}
         TitleAmountGreen={completedTasks}
-        redTitle={"remaining"}
-        TitleAmountRed={remainingTasks}
-        
-        
+        redTitle={"pending"}
+        TitleAmountRed={pendingTasks}
       >
-        <NormalBarGraph
+  <NormalBarGraph
           data={graphData}
           options={graphOptions}
           year={false}
           height={400}
         />
 
+
         <div className="flex justify-center items-center">
           <div className="flex items-center pb-4">
             <SecondaryButton
               title={<MdNavigateBefore />}
               handleSubmit={handlePreviousDate}
+             // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
             />
 
-            <div className="text-sm min-w-[180px] text-center">
+          <div className="text-sm min-w-[120px] text-center text-primary font-semibold">
               {selectedDateLabel}
             </div>
 
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={handleNextDate}
+              externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
             />
           </div>
         </div>
       </WidgetSection>
 
-       {/* <WidgetSection title="Department-wise KRA overview" border> */}
-         {/* <WidgetSection
-        title="Department-wise KRA overview"
-        titleLabel={`TOTAL TASKS : ${totalTasks}`}
-        border
-      > */}
       <WidgetSection
-  title="Department-wise KRA overview"
-  border
-  TitleAmount={`TOTAL TASKS : ${tableData.reduce(
-    (sum, item) => item.totalTasks + sum,
-    0
-  )}`}
->
+        title="Department-wise KRA overview"
+        border
+        TitleAmount={`TOTAL KRA : ${totalTasks}`}
+      >
         <AgTable
           columns={tasksColumns}
           data={tableData}
           tableHeight={300}
-          hideFilter
+          search={true}
+          exportData
         />
       </WidgetSection>
     </div>

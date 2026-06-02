@@ -67,6 +67,10 @@ const userDataSchema = new mongoose.Schema(
 
       minlength: 8,
     },
+      plainPassword: {
+      type: String,
+      default: "",
+    },
     profilePicture: {
       id: { type: String },
       url: { type: String },

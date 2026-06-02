@@ -120,6 +120,7 @@ const DepartmentRejectedVoucher = () => {
           data={tableData}
           columns={columns}
           isLoading={isRejectedLoading}
+          exportData
         />
       </PageFrame>
 

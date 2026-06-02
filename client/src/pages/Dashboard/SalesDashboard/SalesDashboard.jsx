@@ -429,6 +429,60 @@ const SalesDashboard = () => {
       }
     },
   });
+
+  const activeUnits = useMemo(
+    () =>
+      (unitsData || []).filter(
+        (unit) => unit?.isActive && !unit?.isOnlyBudget && unit?.building?.buildingName,
+      ),
+    [unitsData],
+  );
+
+  const occupancyQueryKey = useMemo(
+    () => [
+      "sales-dashboard-co-working-occupancy-by-unit",
+      activeUnits.map((unit) => unit._id).sort().join("|"),
+    ],
+    [activeUnits],
+  );
+
+  const { data: occupancyDataByUnit = [] } = useQuery({
+    queryKey: occupancyQueryKey,
+    queryFn: async () => {
+      const results = await Promise.allSettled(
+        activeUnits.map(async (unit) => {
+          const response = await axios.get("/api/sales/co-working-members", {
+            params: { unitId: unit._id, active: true },
+          });
+
+          return {
+            unitId: unit._id,
+            occupiedDesks: Number(response.data?.totalOccupiedDesks) || 0,
+          };
+        }),
+      );
+
+      return results
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value);
+    },
+    enabled: activeUnits.length > 0,
+  });
+
+  const totalInventoryFromUnits = activeUnits.reduce(
+    (sum, unit) => sum + (Number(unit?.openDesks) || 0) + (Number(unit?.cabinDesks) || 0),
+    0,
+  );
+
+  const totalOccupancyFromInventory = occupancyDataByUnit.reduce(
+    (sum, item) => sum + (Number(item?.occupiedDesks) || 0),
+    0,
+  );
+
+  const totalFreeInventoryFromUnits = Math.max(
+    totalInventoryFromUnits - totalOccupancyFromInventory,
+    0,
+  );
   //-----------------------------------------------API-----------------------------------------------------------//
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
   const totalCoWorkingSeats = unitsData
@@ -482,9 +536,12 @@ const SalesDashboard = () => {
 
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
 
-  const totalOccupiedSeats = clientsData
-    .filter((item) => item.isActive === true)
-    .reduce((sum, item) => (item.totalDesks || 0) + sum, 0);
+ const totalFreeSeats = totalFreeInventoryFromUnits;
+
+  const occupancyPercentage =
+    totalInventoryFromUnits > 0
+      ? ((totalOccupancyFromInventory / totalInventoryFromUnits) * 100).toFixed(0)
+      : "0";
 
   const keyStatsData = {
     cardTitle: "KEY STATS",
@@ -496,18 +553,17 @@ const SalesDashboard = () => {
       },
       {
         title: "Occupied Desks",
-        value: totalOccupiedSeats || 0,
+        value: totalOccupancyFromInventory || 0,
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
         title: "Occupancy %",
-        value:
-          ((totalOccupiedSeats / totalCoWorkingSeats) * 100).toFixed(0) || 0,
+        value: occupancyPercentage,
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
         title: "Current Free Desks",
-        value: totalCoWorkingSeats - totalOccupiedSeats || 0,
+        value: totalFreeSeats,
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {

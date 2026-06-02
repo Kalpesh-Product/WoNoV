@@ -322,7 +322,7 @@ const DeptWiseBudgetDetails = () => {
         />
       </div> */}
 
-      <AllocatedBudget financialData={financialData} noInvoice />
+      <AllocatedBudget financialData={financialData} noInvoice exportData />
       <MuiModal
         title="Request Budget"
         open={openModal}

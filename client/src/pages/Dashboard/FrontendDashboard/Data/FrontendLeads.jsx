@@ -539,7 +539,8 @@ const FrontendLeads = () => {
                   <AccordionDetails sx={{ borderTop: "1px solid  #d1d5db" }}>
                     <AgTable
                       data={[]}
-                      hideFilter
+                      // hideFilter
+                      search
                       columns={[
                         { header: "Sr. No.", field: "srNo", flex: 0.5 },
                         { header: "Date", field: "date", flex: 1 },
@@ -549,6 +550,7 @@ const FrontendLeads = () => {
                         { header: "Status", field: "status", flex: 1 },
                       ]}
                       tableHeight={400}
+                      exportData
                     />
                   </AccordionDetails>
                 </Accordion>

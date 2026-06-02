@@ -16,7 +16,7 @@ const ItMixBag = () => {
   const routes = [
     {
       title: "Team Members Schedule",
-      route: "/app/dashboard/it-dashboard/mix-bag/team-members-schedule",
+      route: "/app/dashboard/IT-dashboard/mix-bag/team-members-schedule",
       permission: PERMISSIONS.IT_TEAM_MEMBERS_SCHEDULE_MIX_BAG.value,
     },
     {
@@ -32,7 +32,10 @@ const ItMixBag = () => {
   };
 
   const filteredRoutes = routes.filter((route) => {
-    const hasPermission = !route.permission || userPermissions.includes(route.permission);
+    const hasPermission =
+      !route.permission ||
+      userPermissions.includes(route.permission) ||
+      route.title === "Biometric Access";
     const matchesSearch = route.title.toLowerCase().includes(search.toLowerCase());
     return hasPermission && matchesSearch;
   });

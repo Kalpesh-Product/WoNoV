@@ -2,7 +2,7 @@ import React from "react";
 import DepartmentReportCommon from "../DepartmentReportCommon";
 
 const TicketReports = () => {
-   return <DepartmentReportCommon title="Ticket Report" />;
+  return <DepartmentReportCommon title="Ticket Report" />;
 };
 
 export default TicketReports;

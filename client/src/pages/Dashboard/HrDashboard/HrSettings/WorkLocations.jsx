@@ -246,6 +246,7 @@ const WorkLocations = () => {
                   status: location.isActive,
                 })),
               ]}
+              exportData
             />
           </PageFrame>
         </div>

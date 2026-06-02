@@ -50,9 +50,7 @@ const AgTableComponent = React.memo(
     const gridRef = useRef(null);
 
     useEffect(() => {
-      if (data && data.length > 0) {
-        setFilteredData(data);
-      }
+      setFilteredData(data || []);
     }, [data]);
 
     useEffect(() => {
@@ -180,6 +178,66 @@ const AgTableComponent = React.memo(
       handleBatchAction(selectedRows);
     };
 
+    const formatExportCell = useCallback((params) => {
+      const field = params?.column?.getColDef?.()?.field || "";
+      const value = params?.value;
+
+      if (value === null || value === undefined) return "";
+
+      const normalizedField = field.toLowerCase();
+      const shouldPreserveAsText =
+        normalizedField.includes("date") ||
+        normalizedField.includes("time") ||
+        /(at)$/i.test(field);
+
+      const stringValue = String(value);
+
+      if (!shouldPreserveAsText) return stringValue;
+
+      // Prefix with an apostrophe so Excel keeps the literal date/time text.
+      return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
+    }, []);
+
+    const renderExportButton = () =>
+      exportData ? (
+        <PrimaryButton
+          title={"Export"}
+          handleSubmit={() => {
+            if (gridRef.current) {
+              gridRef.current.api.exportDataAsCsv({
+                fileName: `${tableTitle || "table-data"}.csv`,
+                allColumns: true,
+                columnKeys: getExportColumnKeys(),
+                processCellCallback: formatExportCell,
+              });
+            }
+          }}
+        />
+      ) : (
+        ""
+      );
+
+     const getExportColumnKeys = useCallback(() => {
+      if (!gridRef.current?.api) return undefined;
+
+      return gridRef.current.api
+        .getAllGridColumns()
+        .filter((column) => {
+          const colDef = column.getColDef?.() || {};
+          const field = (colDef.field || "").toString().toLowerCase();
+          const headerName = (colDef.headerName || "").toString().toLowerCase();
+          const isActionColumn =
+            field.includes("action") || headerName.includes("action");
+
+          return (
+            !isActionColumn &&
+            !colDef.suppressCsvExport &&
+            !colDef.suppressExcelExport
+          );
+        })
+        .map((column) => column.getColId());
+    }, []);
+
     const filterableColumns = useMemo(
       () =>
         columns.filter((column) => {
@@ -220,21 +278,16 @@ const AgTableComponent = React.memo(
               </div>
             )}
             <div className="flex items-center gap-4">
-              {exportData ? (
+                {/* {buttonTitle ? (
                 <PrimaryButton
-                  title={"Export"}
-                  handleSubmit={() => {
-                    if (gridRef.current) {
-                      gridRef.current.api.exportDataAsCsv({
-                        fileName: `${tableTitle || "table-data"}.csv`,
-                      });
-                    }
-                  }}
+                  title={buttonTitle}
+                  handleSubmit={handleClick}
+                  disabled={disabled}
                 />
               ) : (
                 ""
-              )}
-              {buttonTitle ? (
+              )} */}
+               {buttonTitle ? (
                 <PrimaryButton
                   title={buttonTitle}
                   handleSubmit={handleClick}
@@ -244,6 +297,18 @@ const AgTableComponent = React.memo(
                 ""
               )}
               {headerActions ? headerActions : ""}
+              {hideFilter ? renderExportButton() : ""}
+
+               {/* {buttonTitle ? (
+                <PrimaryButton
+                  title={buttonTitle}
+                  handleSubmit={handleClick}
+                  disabled={disabled}
+                />
+              ) : (
+                ""
+              )} */}
+              {/* {headerActions ? headerActions : ""} */}
 
               {/* {batchButton ? (
                 <div cla>
@@ -283,18 +348,17 @@ const AgTableComponent = React.memo(
           ) : (
             <></>
           )}
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             {hideFilter ? (
               ""
             ) : (
-              <div className="flex items-center gap-4">
-                <div className="flex justify-end items-center w-full">
-                  <div
-                    className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
-                    onClick={() => setFilterDrawerOpen(true)}
-                  >
-                    <IoFilter />
-                  </div>
+              <div className="flex flex-col items-end gap-2">
+                {renderExportButton()}
+                <div
+                  className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
+                  onClick={() => setFilterDrawerOpen(true)}
+                >
+                  <IoFilter />
                 </div>
               </div>
             )}

@@ -25,6 +25,7 @@ import humanDate from "../../../utils/humanDateForamt";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const AssignedAssets = () => {
   const axios = useAxiosPrivate();
@@ -32,6 +33,24 @@ const AssignedAssets = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
+
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
+    const dateObj = new Date(value);
+    if (Number.isNaN(dateObj.getTime())) return "N/A";
+
+    const datePart = `${dateObj.getDate()}-${dateObj.getMonth() + 1}-${dateObj.getFullYear()}`;
+    const timePart = dateObj
+      .toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase();
+
+    return `${datePart}, ${timePart}`;
+  };
   //-----------------------API----------------------//
   const { data: assignedAssets = [], isLoading: isAssignedPending } = useQuery({
     queryKey: ["assignedAssets"],
@@ -89,6 +108,24 @@ const AssignedAssets = () => {
     { field: "department", headerName: "Department" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
+    { field: "name", headerName: "Asset Name" },
+    { field: "serialNumber", headerName: "Serial Number" },
+    { field: "building", headerName: "Building", minWidth: 160, flex: 1 },
+    // { field: "location", headerName: "Location" },
+    //  { field: "building", headerName: "Building" },
+    { field: "unit", headerName: "Location", minWidth: 140, flex: 1 },
+    {
+      field: "assignedBuilding",
+      headerName: "Assigned Building",
+      minWidth: 180,
+      flex: 1,
+    },
+    {
+      field: "assignedUnit",
+      headerName: "Assigned Unit",
+      minWidth: 160,
+      flex: 1,
+    },
     {
       field: "status",
       headerName: "Status",
@@ -100,16 +137,25 @@ const AssignedAssets = () => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data.assetId}
-          menuItems={[
-            { label: "View", onClick: () => handleView(params.data) },
-            params.data.status !== "Revoked" && {
-              label: "Revoke",
-              onClick: () => revokeAsset(params.data),
-            },
-          ]}
-        />
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            title="View"
+            className="p-1 text-gray-600 hover:text-primary"
+            onClick={() => handleView(params.data)}
+          >
+            <MdOutlineRemoveRedEye size={20} />
+          </button>
+          <ThreeDotMenu
+            rowId={params.data.assetId}
+            menuItems={[
+              params.data.status !== "Revoked" && {
+                label: "Revoke",
+                onClick: () => revokeAsset(params.data),
+              },
+            ]}
+          />
+        </div>
       ),
     },
   ];
@@ -118,6 +164,32 @@ const AssignedAssets = () => {
     ? []
     : assignedAssets.map((item, index) => {
         const assets = item.asset;
+          const assetLocation = assets?.location || assets?.unit || null;
+        const assignedLocation = item?.location || item?.unit || null;
+        const buildingName =
+          assetLocation?.building?.buildingName ||
+          assetLocation?.buildingName ||
+          assets?.building?.buildingName ||
+          assets?.buildingName ||
+          "N/A";
+        const unitNo =
+          assetLocation?.unitNo ||
+          assetLocation?.unit ||
+          assets?.unitNo ||
+          assets?.unit ||
+          "N/A";
+        const assignedBuildingName =
+          assignedLocation?.building?.buildingName ||
+          assignedLocation?.buildingName ||
+          item?.building?.buildingName ||
+          item?.buildingName ||
+          "N/A";
+        const assignedUnitNo =
+          assignedLocation?.unitNo ||
+          assignedLocation?.unit ||
+          item?.unitNo ||
+          item?.unit ||
+          "N/A";
         const category = assets?.subCategory?.category?.categoryName;
         return {
           ...assets,
@@ -129,8 +201,62 @@ const AssignedAssets = () => {
           department: item?.fromDepartment?.name,
           category: category,
           brand: assets?.brand,
+          name: assets?.name || "N/A",
+          serialNumber: assets?.serialNumber || "N/A",
+          building: buildingName,
+          location: assignedLocation,
+          unit: unitNo,
+          assignedBuilding: assignedBuildingName,
+          assignedUnit: assignedUnitNo,
+          assetLocation,
+          assignedLocation,
         };
       });
+      //   const assetLocation =
+      //     assets?.location ||
+      //     item?.location ||
+      //     assets?.unit ||
+      //     item?.unit ||
+      //     null;
+      //   const buildingName =
+      //     item?.location?.building?.buildingName ||
+      //     assets?.location?.building?.buildingName ||
+      //     assetLocation?.building?.buildingName ||
+      //     assetLocation?.buildingName ||
+      //     item?.building?.buildingName ||
+      //     assets?.building?.buildingName ||
+      //     item?.buildingName ||
+      //     assets?.buildingName ||
+      //     "N/A";
+      //   const unitNo =
+      //     item?.location?.unitNo ||
+      //     item?.location?.unit ||
+      //     assets?.location?.unitNo ||
+      //     assets?.location?.unit ||
+      //     assetLocation?.unitNo ||
+      //     assetLocation?.unit ||
+      //     item?.unitNo ||
+      //     item?.unit ||
+      //     "N/A";
+      //   const category = assets?.subCategory?.category?.categoryName;
+      //   return {
+      //     ...assets,
+      //     ...item,
+      //     srNo: index + 1,
+      //     assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
+      //     assetId: item._id,
+      //     assetNumber: item?.asset?.assetId,
+      //     department: item?.fromDepartment?.name,
+      //     category: category,
+      //     brand: assets?.brand,
+      //     name: assets?.name || "N/A",
+      //     serialNumber: assets?.serialNumber || "N/A",
+      //     building: buildingName,
+      //     location: item?.location || null,
+      //     unit: unitNo,
+      //     assetLocation,
+      //   };
+      // });
 
   //-----------------------Table Data----------------------//
 
@@ -155,6 +281,34 @@ const AssignedAssets = () => {
             <DetalisFormatted
               title={"Assignee"}
               detail={selectedAsset?.assignee}
+            />
+            <DetalisFormatted
+              title={"Approved By"}
+              detail={
+                selectedAsset?.approvedBy
+                  ? `${selectedAsset.approvedBy.firstName || ""} ${selectedAsset.approvedBy.lastName || ""}`.trim()
+                  : "N/A"
+              }
+            />
+             <DetalisFormatted
+              title={"Assigned By"}
+              detail={
+                (selectedAsset?.assignedBy || selectedAsset?.approvedBy)
+                  ? `${(selectedAsset.assignedBy || selectedAsset.approvedBy)?.firstName || ""} ${(selectedAsset.assignedBy || selectedAsset.approvedBy)?.lastName || ""}`.trim()
+                  : "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Approved At"}
+              detail={
+                selectedAsset?.status === "Approved" && selectedAsset?.updatedAt
+                  ? formatDateTime(selectedAsset.updatedAt)
+                  : "N/A"
+              }
+            />
+             <DetalisFormatted
+              title={"Assigned At"}
+              detail={formatDateTime(selectedAsset?.assignedAt || selectedAsset?.createdAt)}
             />
             <DetalisFormatted
               title={"Asset Name"}
@@ -186,12 +340,8 @@ const AssignedAssets = () => {
               detail={selectedAsset?.subCategory?.subCategoryName}
             />
             <DetalisFormatted
-              title={"Assigned Date"}
-              detail={humanDate(selectedAsset?.createdAt)}
-            />
-               <DetalisFormatted
               title={"Purchase Date"}
-              detail={humanDate(selectedAsset?.purchaseDate)}
+              detail={formatDateTime(selectedAsset?.purchaseDate)}
             />
             <DetalisFormatted
               title={"Warranty (Months)"}
@@ -242,14 +392,48 @@ const AssignedAssets = () => {
               title={"Status"}
               detail={selectedAsset?.status || "N/A"}
             />
-            <DetalisFormatted
+              <DetalisFormatted
               title={"Department"}
               detail={selectedAsset?.department || "N/A"}
             />
             <DetalisFormatted
-              title={"Unit No"}
-              detail={selectedAsset?.location?.unitNo || "N/A"}
+              title={"Building"}
+              detail={
+                selectedAsset?.assetLocation?.building?.buildingName ||
+                selectedAsset?.building ||
+                "N/A"
+              }
             />
+            <DetalisFormatted
+              title={"UnitNo"}
+              detail={
+                selectedAsset?.assetLocation?.unitNo || selectedAsset?.unit || "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Assigned Building"}
+              detail={selectedAsset?.assignedBuilding || "N/A"}
+            />
+            <DetalisFormatted
+              title={"Assigned Unit"}
+              detail={selectedAsset?.assignedUnit || "N/A"}
+            />
+              {/* <DetalisFormatted
+                title={"Department"}
+                detail={selectedAsset?.department || "N/A"}
+              />
+             <DetalisFormatted
+                           title={"Building"}
+                           detail={
+                             selectedAsset?.location?.building?.buildingName ||
+                             selectedAsset?.building ||
+                             "N/A"
+                           }
+                         />
+                         <DetalisFormatted
+                           title={"UnitNo"}
+                           detail={selectedAsset?.location?.unitNo || selectedAsset?.unit || "N/A"}
+                         /> */}
             <DetalisFormatted
               title={"Damaged"}
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}

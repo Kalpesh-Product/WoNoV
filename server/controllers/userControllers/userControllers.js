@@ -50,26 +50,27 @@ const buildPolicyAgreements = ({
       const stringValue = String(value).trim();
       const isHttpUrl = isValidHttpUrl(stringValue);
 
-      if (
-        (name === "Leave Policy" || name === "Holiday Policy") &&
-        !isHttpUrl
-      ) {
-        throw new CustomError(
-          `${name} link is invalid. Please provide a valid http/https URL`,
-          logPath,
-          logAction,
-          logSourceKey,
-        );
-      }
+      // if (
+      //   (name === "Leave Policy" || name === "Holiday Policy") &&
+      //   !isHttpUrl
+      // ) {
+      //   throw new CustomError(
+      //     `${name} link is invalid. Please provide a valid http/https URL`,
+      //     logPath,
+      //     logAction,
+      //     logSourceKey,
+      //   );
+      // }
 
       return {
         name,
         user: userId,
         url: isHttpUrl ? stringValue : undefined,
-        type:
-          name === "Work Schedule Policy" && !isHttpUrl
-            ? stringValue
-            : undefined,
+        type: !isHttpUrl ? stringValue : undefined,
+        // type:
+        //   name === "Work Schedule Policy" && !isHttpUrl
+        //     ? stringValue
+        //     : undefined,
         isActive: true,
         isDeleted: false,
       };
@@ -377,7 +378,8 @@ const createUser = async (req, res, next) => {
     }
 
     // Hash the default password
-    const defaultPassword = `${firstName.trim()}@0625`;
+    //const defaultPassword = `${firstName.trim()}@0625`;
+     const defaultPassword = "xyz@123";
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
     const resolvedAttendanceSource =
@@ -396,6 +398,7 @@ const createUser = async (req, res, next) => {
       role,
       company,
       password: hashedPassword,
+      plainPassword: defaultPassword,
       attendanceSource: resolvedAttendanceSource,
       departments,
       employeeType,
@@ -539,9 +542,14 @@ const fetchSingleUser = async (req, res) => {
         .lean();
     }
 
-    const policies = await Agreements.find({ user: user._id }).lean();
+    // const policies = await Agreements.find({ user: user._id }).lean();
+    // const policyMap = policies.reduce((acc, policy) => {
+    //   if (policy?.name) acc[policy.name] = policy;
+     const policies = await Agreements.find({ user: user._id })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
     const policyMap = policies.reduce((acc, policy) => {
-      if (policy?.name) acc[policy.name] = policy;
+      if (policy?.name && !acc[policy.name]) acc[policy.name] = policy;
       return acc;
     }, {});
 
@@ -578,8 +586,16 @@ const fetchSingleUser = async (req, res) => {
         policyMap?.["Work Schedule Policy"]?.url ||
         "",
       attendanceSource: user?.attendanceSource || "",
-      leavePolicy: policyMap?.["Leave Policy"]?.url || "",
-      holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
+      // leavePolicy: policyMap?.["Leave Policy"]?.url || "",
+      // holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
+       leavePolicy:
+        policyMap?.["Leave Policy"]?.url ||
+        policyMap?.["Leave Policy"]?.type ||
+        "",
+      holidayPolicy:
+        policyMap?.["Holiday Policy"]?.url ||
+        policyMap?.["Holiday Policy"]?.type ||
+        "",
       status: user.isActive ? "Active" : "Inactive",
       isActive: Boolean(user.isActive),
       aadhaarID: user.panAadhaarDetails?.aadhaarId || "",
@@ -620,6 +636,7 @@ const fetchSingleUser = async (req, res) => {
       tdsCalculationBasedOn:
         user.payrollInformation?.tdsCalculationBasedOn || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
+         plainPassword: user.plainPassword || "",
     };
 
     res.status(200).json(formattedUser);
@@ -675,7 +692,8 @@ const updatePassword = async (req, res, next) => {
     // Find the user by ID and update the password
     const updatedUser = await User.findByIdAndUpdate(
       { _id: user },
-      { $set: { password: hashedPassword } }, // Update the password field
+       { $set: { password: hashedPassword, plainPassword: newPassword } }, // Update the password field
+      // { $set: { password: hashedPassword } }, // Update the password field
       { new: true, runValidators: true }, // Return the updated document and enforce validation
     )
       .lean()
@@ -900,9 +918,23 @@ const updateProfile = async (req, res, next) => {
     if (agreementsToUpsert.length) {
       await Promise.all(
         agreementsToUpsert.map(async (agreement) => {
+          const updateDoc = {
+            name: agreement.name,
+            user: agreement.user,
+            isActive: agreement.isActive,
+            isDeleted: agreement.isDeleted,
+          };
+
+          const updateQuery = agreement.url
+            ? { $set: { ...updateDoc, url: agreement.url }, $unset: { type: 1 } }
+            : {
+                $set: { ...updateDoc, type: agreement.type },
+                $unset: { url: 1 },
+              };
           await Agreements.findOneAndUpdate(
             { user: targetUser._id, name: agreement.name },
-            { $set: agreement },
+            // { $set: agreement },
+             updateQuery,
             { upsert: true, new: true, setDefaultsOnInsert: true },
           );
         }),
@@ -1029,9 +1061,10 @@ const bulkInsertUsers = async (req, res, next) => {
                   ? roleMap.get(row["Reports To (Role ID)"].trim())
                   : null;
 
-                // console.log("reportsToId", reportsToId);
+                 // console.log("reportsToId", reportsToId);
+                const defaultPassword = "xyz@123";
                 const hashedPassword = await bcrypt.hash(
-                  `${row["First Name"].trim()}@0625`,
+                  defaultPassword,
                   10,
                 );
 
@@ -1046,7 +1079,7 @@ const bulkInsertUsers = async (req, res, next) => {
                   email: row["Company Email"].trim().toLowerCase(),
                   company: new mongoose.Types.ObjectId(companyId),
                   password: hashedPassword,
-
+                  plainPassword: defaultPassword,
                   departments: departmentObjectIds,
                   role: roleObjectIds,
                   reportsTo: reportsToId,
@@ -1266,9 +1299,14 @@ const getAssignees = async (req, res, next) => {
     }
 
     const transformAssignees = team.map((assignee) => {
+      const roleTitles = Array.isArray(assignee.role)
+        ? assignee.role.map((role) => role?.roleTitle).filter(Boolean)
+        : [];
+
       return {
         id: assignee._id,
         name: `${assignee.firstName} ${assignee.lastName}`,
+        roleTitles,
       };
     });
     return res.status(200).json(transformAssignees);
@@ -1301,6 +1339,37 @@ const getEmployeePoliciesByEmpId = async (req, res) => {
   }
 };
 
+const updateEmployeePasswordByEmpId = async (req, res, next) => {
+  try {
+    const { empid } = req.params;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    const user = await User.findOne({ empId: empid });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isCurrentValid = await bcrypt.compare(currentPassword || "", user.password || "");
+    if (!isCurrentValid) {
+      return res.status(400).json({ message: "Invalid current password" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "New password and confirm password do not match" });
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: "Password should be at least 8 characters long" });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.plainPassword = newPassword;
+    await user.save();
+
+    return res.status(200).json({ message: "Password updated successfully", plainPassword: user.plainPassword });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createUser,
   fetchUser,
@@ -1310,5 +1379,6 @@ module.exports = {
   getAssignees,
   checkPassword,
   updatePassword,
+  updateEmployeePasswordByEmpId,
   getEmployeePoliciesByEmpId,
 };
