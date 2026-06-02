@@ -106,7 +106,8 @@ const TicketReports = () => {
     { field: "description", headerName: "Description", hide: true },
     //{ field: "company", headerName: "Company", hide: true },
     { field: "assignedTo", headerName: "Assigned To", hide: true },
-    { field: "acceptedBy", headerName: "Accepted By", hide: true },
+    { field: "assignedAtDate", headerName: "Assign Date", hide: true },
+   // { field: "acceptedBy", headerName: "Accepted By", hide: true },
     {
       // field: "acceptedAtDate",
       field: "acceptedAt",
@@ -150,6 +151,7 @@ const TicketReports = () => {
     //   cellRenderer: (params) => params.value,
     // },
     { field: "rejectedBy", headerName: "Rejected By", hide: true },
+    { field: "rejectedAtDate", headerName: "Rejected Date", hide: true },
     { field: "reason", headerName: "Rejection Reason", hide: true },
   ];
 
@@ -226,14 +228,17 @@ const getDepartmentName = (department) => {
   return department?.name || department?.departmentName || "";
 };
 
-const formatEscalation = (escalations) => {
-  const escalationList = Array.isArray(escalations)
-    ? escalations
-    : escalations
-      ? [escalations]
+const formatEscalation = (ticket) => {
+  const escalationList = Array.isArray(ticket?.escalatedTo)
+    ? ticket.escalatedTo
+    : ticket?.escalatedTo
+      ? [ticket.escalatedTo]
       : [];
 
-  if (!escalationList.length) {
+  const isEscalatedTicket =
+    ticket?.status === "Escalated" || escalationList.length > 0;
+
+  if (!isEscalatedTicket) {
     return {
       escalatedTo: "N/A",
       escalatedStatus: "N/A",
@@ -247,22 +252,18 @@ const formatEscalation = (escalations) => {
 
   const escalatedTo =
     getDepartmentName(latest?.raisedToDepartment) ||
-    getDepartmentName(latest?.escalatedTo) ||
-    getDepartmentName(latest?.department) ||
-    getFullName(latest?.user) ||
-    getFullName(latest?.assignee) ||
+    getDepartmentName(ticket?.raisedToDepartment) ||
     "N/A";
 
   const escalatedStatus =
+    ticket?.status ||
     latest?.status ||
-    latest?.escalatedStatus ||
-    latest?.ticketStatus ||
     "N/A";
 
   const escalatedAtRaw =
+    ticket?.escalatededAt ||
     latest?.createdAt ||
-    latest?.escalatedAt ||
-    latest?.updatedAt ||
+    ticket?.updatedAt ||
     "";
 
   return {
@@ -317,6 +318,11 @@ const formatEscalation = (escalations) => {
                   rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
                     item.reject?.rejectedBy?.lastName || ""
                   }`,
+                  rejectedAtDate:
+                    formatDateTime(
+                      item.reject?.rejectedAt ||
+                        (item.status === "Rejected" ? item.updatedAt : ""),
+                    ) || "N/A",
                   acceptedAtDate: item.acceptedAt || "",
                   acceptedAtTime: item.acceptedAt || "",
                   acceptedAt: item.acceptedAt
@@ -337,8 +343,7 @@ const formatEscalation = (escalations) => {
                       assignedToDetails: assignmentDetails,
                     };
                   })(),
-                  // ...formatEscalation(item.escalatedTo),
-                 ...formatEscalation(item),
+                  ...formatEscalation(item),
                   ...(() => {
                     // const { assignedToDisplay, assignmentDetails } =
                     //   formatAssignments(item.assignedTo);
@@ -348,16 +353,18 @@ const formatEscalation = (escalations) => {
                         ? item.assignedTo[item.assignedTo.length - 1]
                         : null;
 
-                    const { date: assignedAtDate, time: assignedAtTime } =
-                      splitDateAndTime(
-                        item.assignedAt || latestAssignment?.assignedAt,
-                      );
+                    const assignedAtRaw =
+                      item.assignedAt || latestAssignment?.assignedAt;
+
+                    const { time: assignedAtTime } =
+                      splitDateAndTime(assignedAtRaw);
 
                     return {
                       // assignedTo: assignedToDisplay,
                       // assignedToDetails: assignmentDetails,
 
-                      assignedAtDate,
+                      assignedAtDate:
+                        formatDateTime(assignedAtRaw) || "N/A",
                       assignedAtTime,
                     };
                   })(),

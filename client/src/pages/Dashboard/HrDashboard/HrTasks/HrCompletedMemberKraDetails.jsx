@@ -235,7 +235,7 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
               todayKey >= startKey && todayKey <= endKey,
             );
           }}
-          customExportTitle="Daily Export"
+          customExportTitle="Today Export"
           handleCustomExport={handleDailyExport}
           customExportDisabled={isDailyExportDisabled}
           exportButtonTitle="Monthly Export"

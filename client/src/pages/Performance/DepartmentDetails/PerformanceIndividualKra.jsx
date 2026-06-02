@@ -134,8 +134,12 @@ const PerformanceIndividualKra = () => {
         ? "Team Daily KRA"
         : "Individual Daily KRA";
     const addTaskType = shouldUseTeamAddButton ? "TEAMKRA" : "INDIVIDUALKRA";
-    const addAssignToId = activeMemberId || userId?.toString?.();
-        const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+    // const addAssignToId = activeMemberId || userId?.toString?.();
+    //     const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+      const addAssignToId = isEmployeeKraKpaRoute
+        ? userId?.toString?.()
+        : activeMemberId || userId?.toString?.();
+    const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
     const showCheckBox = allowedDept || selectedMemberCanManageView;
     const shouldHideControlsForSelectedMemberView =
         isSelectedMemberEmployee && activeMember?.memberId;
@@ -258,6 +262,10 @@ const PerformanceIndividualKra = () => {
             }
 
             toast.success(data.message || "KRA Added");
+                        queryClient.invalidateQueries({ queryKey: individualKraQueryKey });
+            queryClient.invalidateQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
             queryClient.invalidateQueries({ queryKey: teamKraQueryKey });
             reset();
             setOpenModal(false);
@@ -359,7 +367,7 @@ const PerformanceIndividualKra = () => {
     const fetchTasks = async () => {
         try {
             const response = await axios.get(
-                 `/api/performance/get-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA&date=${selectedDateKey}`
+                 `/api/performance/get-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA`
             );
             return response.data;
         } catch (error) {
@@ -377,7 +385,7 @@ const PerformanceIndividualKra = () => {
         queryFn: async () => {
             try {
                 const response = await axios.get(
-                     `/api/performance/get-tasks?dept=${effectiveDeptId}&type=TEAMKRA&date=${selectedDateKey}`
+                     `/api/performance/get-tasks?dept=${effectiveDeptId}&type=TEAMKRA`
                 );
                 return response.data;
             } catch (error) {
@@ -702,6 +710,18 @@ const PerformanceIndividualKra = () => {
       const completionDate = item.completedDate || item.completionDate || item.dueDate;
       return toDateKey(completionDate) === selectedDateKey;
     });
+    const normalizeTaskKey = (taskName, dateValue) =>
+      `${normalizeValue(taskName)}-${toDateKey(dateValue) || "no-date"}`;
+    const completedTaskIdsForSelectedDate = new Set(
+      dateWiseCompletedEntries
+        .map((item) => item?.taskId?.toString?.())
+        .filter(Boolean)
+    );
+    const completedTaskKeysForSelectedDate = new Set(
+      dateWiseCompletedEntries.map((item) =>
+        normalizeTaskKey(item?.taskName, item?.assignedDate || item?.dueDate)
+      )
+    );
     const canShowAddIndividualKraButton = isEmployeeKraKpaRoute
         ? isSuperOrMasterAdmin || isManager
         : isSuperOrMasterAdmin || isCurrentDateView;
@@ -754,7 +774,20 @@ const PerformanceIndividualKra = () => {
                                 //tableTitle={`${department} INDIVIDUAL - DAILY KRA`}
                                 // data={filteredDepartmentKra
                                 data={dateWiseDepartmentKra
-                                    .filter((item) => item.status !== "Completed")
+                                    .filter((item) => {
+                                        if (item.status === "Completed") return false;
+
+                                        const taskId = item?.id?.toString?.();
+                                        if (taskId && completedTaskIdsForSelectedDate.has(taskId)) {
+                                            return false;
+                                        }
+
+                                        const taskKey = normalizeTaskKey(
+                                            item?.taskName,
+                                            item?.assignedDate || item?.dueDate || item?.createdAt
+                                        );
+                                        return !completedTaskKeysForSelectedDate.has(taskKey);
+                                    })
                                     .map((item, index) => ({
                                         srno: index + 1,
                                         id: item.id,
