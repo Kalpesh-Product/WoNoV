@@ -18,6 +18,7 @@ import formatDateTime from "../../utils/formatDateTime";
 const TicketReports = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
+  const departmentId = auth.user?.departments?.[0]?._id;
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
 
@@ -26,11 +27,12 @@ const TicketReports = () => {
     setDetailsModal(true);
   };
   const { data: ticketsData = [], isLoading } = useQuery({
-    queryKey: ["tickets-data"],
+    queryKey: ["tickets-data", departmentId],
+    enabled: Boolean(departmentId),
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/ticket-reports/${auth.user?.departments[0]?._id}`,
+          `/api/tickets/department-tickets/${departmentId}`,
         );
         // const response = await axios.get(
         //   `/api/tickets/get-all-tickets`
