@@ -228,14 +228,17 @@ const getDepartmentName = (department) => {
   return department?.name || department?.departmentName || "";
 };
 
-const formatEscalation = (escalations) => {
-  const escalationList = Array.isArray(escalations)
-    ? escalations
-    : escalations
-      ? [escalations]
+const formatEscalation = (ticket) => {
+  const escalationList = Array.isArray(ticket?.escalatedTo)
+    ? ticket.escalatedTo
+    : ticket?.escalatedTo
+      ? [ticket.escalatedTo]
       : [];
 
-  if (!escalationList.length) {
+  const isEscalatedTicket =
+    ticket?.status === "Escalated" || escalationList.length > 0;
+
+  if (!isEscalatedTicket) {
     return {
       escalatedTo: "N/A",
       escalatedStatus: "N/A",
@@ -249,22 +252,18 @@ const formatEscalation = (escalations) => {
 
   const escalatedTo =
     getDepartmentName(latest?.raisedToDepartment) ||
-    getDepartmentName(latest?.escalatedTo) ||
-    getDepartmentName(latest?.department) ||
-    getFullName(latest?.user) ||
-    getFullName(latest?.assignee) ||
+    getDepartmentName(ticket?.raisedToDepartment) ||
     "N/A";
 
   const escalatedStatus =
+    ticket?.status ||
     latest?.status ||
-    latest?.escalatedStatus ||
-    latest?.ticketStatus ||
     "N/A";
 
   const escalatedAtRaw =
+    ticket?.escalatededAt ||
     latest?.createdAt ||
-    latest?.escalatedAt ||
-    latest?.updatedAt ||
+    ticket?.updatedAt ||
     "";
 
   return {
@@ -344,8 +343,7 @@ const formatEscalation = (escalations) => {
                       assignedToDetails: assignmentDetails,
                     };
                   })(),
-                  // ...formatEscalation(item.escalatedTo),
-                 ...formatEscalation(item),
+                  ...formatEscalation(item),
                   ...(() => {
                     // const { assignedToDisplay, assignmentDetails } =
                     //   formatAssignments(item.assignedTo);
