@@ -104,48 +104,51 @@ const TicketReports = () => {
     },
     { field: "priority", headerName: "Priority", hide: true },
     { field: "description", headerName: "Description", hide: true },
-    { field: "company", headerName: "Company", hide: true },
+    //{ field: "company", headerName: "Company", hide: true },
     { field: "assignedTo", headerName: "Assigned To", hide: true },
     { field: "acceptedBy", headerName: "Accepted By", hide: true },
     {
-      field: "acceptedAtDate",
+      // field: "acceptedAtDate",
+      field: "acceptedAt",
       headerName: "Accepted Date",
       hide: true,
-      cellRenderer: (params) => params.value,
+      // cellRenderer: (params) => params.value,
     },
 
-    {
-      field: "assignedAtTime",
-      headerName: "Assigned Time",
-      hide: true,
-      cellRenderer: (params) => humanTime(params.value),
-    },
+    // {
+    //   field: "assignedAtTime",
+    //   headerName: "Assigned Time",
+    //   hide: true,
+    //   cellRenderer: (params) => humanTime(params.value),
+    // },
     { field: "escalatedTo", headerName: "Escalated To", hide: true },
     { field: "escalatedStatus", headerName: "Escalated Status", hide: true },
     {
-      field: "escalatedAtDate",
+      // field: "escalatedAtDate",
+      field: "escalatedAt",
       headerName: "Escalated Date",
       hide: true,
     },
-    {
-      field: "escalatedAtTime",
-      headerName: "Escalated Time",
-      hide: true,
-      cellRenderer: (params) => params.value,
-    },
+    // {
+    //   field: "escalatedAtTime",
+    //   headerName: "Escalated Time",
+    //   hide: true,
+    //   cellRenderer: (params) => params.value,
+    // },
     { field: "closedBy", headerName: "Closed By", hide: true },
     {
-      field: "closedAtDate",
+      // field: "closedAtDate",
+      field: "closedAt",
       headerName: "Closed Date",
       hide: true,
-      cellRenderer: (params) => params.value,
+      // cellRenderer: (params) => params.value,
     },
-    {
-      field: "closedAtTime",
-      headerName: "Closed Time",
-      hide: true,
-      cellRenderer: (params) => params.value,
-    },
+    // {
+    //   field: "closedAtTime",
+    //   headerName: "Closed Time",
+    //   hide: true,
+    //   cellRenderer: (params) => params.value,
+    // },
     { field: "rejectedBy", headerName: "Rejected By", hide: true },
     { field: "reason", headerName: "Rejection Reason", hide: true },
   ];
@@ -169,40 +172,107 @@ const TicketReports = () => {
         })
       : [];
 
+    // const assignedToDisplay = assignmentDetails
+    //   .map(({ assigneeName, assignedAtFormatted }) =>
+    //     assignedAtFormatted
+    //       ? `${assigneeName} (${assignedAtFormatted})`
+    //       : assigneeName,
+    //   )
+    //   .join(", ");
     const assignedToDisplay = assignmentDetails
-      .map(({ assigneeName, assignedAtFormatted }) =>
-        assignedAtFormatted
-          ? `${assigneeName} (${assignedAtFormatted})`
-          : assigneeName,
-      )
-      .join(", ");
+  .map(({ assigneeName }) => assigneeName)
+  .join(", ");
 
     return { assignedToDisplay, assignmentDetails };
   };
 
-  const formatEscalation = (escalations = []) => {
-    if (!Array.isArray(escalations) || !escalations.length) {
-      return {
-        escalatedTo: "",
-        escalatedStatus: "",
-        escalatedAt: "",
-        escalatedAtDate: "",
-        escalatedAtTime: "",
-      };
-    }
+  // const formatEscalation = (escalations = []) => {
+  //   if (!Array.isArray(escalations) || !escalations.length) {
+  //     return {
+  //       escalatedTo: "",
+  //       escalatedStatus: "",
+  //       escalatedAt: "",
+  //       escalatedAtDate: "",
+  //       escalatedAtTime: "",
+  //     };
+  //   }
 
-    const latest = escalations[escalations.length - 1];
+  //   const latest = escalations[escalations.length - 1];
 
+  //   return {
+  //     escalatedTo: latest?.raisedToDepartment?.name || "",
+  //     escalatedStatus: latest?.status || "",
+  //     escalatedAt: latest?.createdAt
+  // ? formatDateTime(latest.createdAt)
+  // : "",
+  //     // escalatedAt: latest?.createdAt
+  //     //   ? `${humanDate(latest.createdAt)}, ${humanTime(latest.createdAt)}`
+  //     //   : "",
+  //     escalatedAtDate: latest?.createdAt,
+  //     escalatedAtTime: latest?.createdAt,
+  //   };
+  // };
+  const getFullName = (user) => {
+  if (!user) return "";
+  if (typeof user === "string") return user;
+
+  return `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+};
+
+const getDepartmentName = (department) => {
+  if (!department) return "";
+  if (typeof department === "string") return department;
+
+  return department?.name || department?.departmentName || "";
+};
+
+const formatEscalation = (escalations) => {
+  const escalationList = Array.isArray(escalations)
+    ? escalations
+    : escalations
+      ? [escalations]
+      : [];
+
+  if (!escalationList.length) {
     return {
-      escalatedTo: latest?.raisedToDepartment?.name || "",
-      escalatedStatus: latest?.status || "",
-      escalatedAt: latest?.createdAt
-        ? `${humanDate(latest.createdAt)}, ${humanTime(latest.createdAt)}`
-        : "",
-      escalatedAtDate: latest?.createdAt,
-      escalatedAtTime: latest?.createdAt,
+      escalatedTo: "N/A",
+      escalatedStatus: "N/A",
+      escalatedAt: "N/A",
+      escalatedAtDate: "",
+      escalatedAtTime: "",
     };
+  }
+
+  const latest = escalationList[escalationList.length - 1];
+
+  const escalatedTo =
+    getDepartmentName(latest?.raisedToDepartment) ||
+    getDepartmentName(latest?.escalatedTo) ||
+    getDepartmentName(latest?.department) ||
+    getFullName(latest?.user) ||
+    getFullName(latest?.assignee) ||
+    "N/A";
+
+  const escalatedStatus =
+    latest?.status ||
+    latest?.escalatedStatus ||
+    latest?.ticketStatus ||
+    "N/A";
+
+  const escalatedAtRaw =
+    latest?.createdAt ||
+    latest?.escalatedAt ||
+    latest?.updatedAt ||
+    "";
+
+  return {
+    escalatedTo,
+    escalatedStatus,
+    escalatedAt: escalatedAtRaw ? formatDateTime(escalatedAtRaw) : "N/A",
+    escalatedAtDate: escalatedAtRaw,
+    escalatedAtTime: escalatedAtRaw,
   };
+};
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -239,6 +309,9 @@ const TicketReports = () => {
                   closedBy: item?.closedBy
                     ? `${item.closedBy.firstName} ${item.closedBy.lastName}`
                     : "None",
+                  closedAt: item.closedAt
+  ? formatDateTime(item.closedAt)
+  : "N/A",  
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
                   rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
@@ -246,6 +319,9 @@ const TicketReports = () => {
                   }`,
                   acceptedAtDate: item.acceptedAt || "",
                   acceptedAtTime: item.acceptedAt || "",
+                  acceptedAt: item.acceptedAt
+  ? formatDateTime(item.acceptedAt)
+  : "N/A",
                   assignedAt:
                     item.assignedAt ||
                     (Array.isArray(item.assignedTo) &&
@@ -261,7 +337,8 @@ const TicketReports = () => {
                       assignedToDetails: assignmentDetails,
                     };
                   })(),
-                  ...formatEscalation(item.escalatedTo),
+                  // ...formatEscalation(item.escalatedTo),
+                 ...formatEscalation(item),
                   ...(() => {
                     // const { assignedToDisplay, assignmentDetails } =
                     //   formatAssignments(item.assignedTo);
@@ -282,14 +359,6 @@ const TicketReports = () => {
 
                       assignedAtDate,
                       assignedAtTime,
-                    };
-                  })(),
-                  ...(() => {
-                    const { escalatedAtDate, escalatedAtTime } =
-                      formatEscalation(item.escalatedTo);
-                    return {
-                      escalatedAtDate,
-                      escalatedAtTime,
                     };
                   })(),
                 })),

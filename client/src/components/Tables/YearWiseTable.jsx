@@ -48,6 +48,7 @@ const YearWiseTable = ({
   onNextDay,
   customExportTitle,
   handleCustomExport,
+  customExportDisabled = false,
   exportButtonTitle = "Export",
 }) => {
   const agGridRef = useRef(null);
@@ -267,7 +268,7 @@ const YearWiseTable = ({
           if (!shouldPreserveAsText) return stringValue;
 
           // Keep date/time cells as literal text so Excel does not auto-convert them.
-          return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
+          return stringValue.startsWith(" ") ? stringValue : `${stringValue}`;
         },
         columnKeys: formattedColumns
           .filter((col) => !col.field?.toLowerCase().includes("action"))
@@ -362,6 +363,7 @@ const YearWiseTable = ({
             <PrimaryButton
               title={customExportTitle}
               handleSubmit={handleCustomExport}
+              disabled={customExportDisabled}
             />
           )}
           {exportData && (

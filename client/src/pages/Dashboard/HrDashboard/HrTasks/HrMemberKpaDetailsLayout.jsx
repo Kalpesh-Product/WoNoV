@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 import TabLayout from "../../../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../../../constants/permissions";
@@ -9,13 +9,16 @@ import useAuth from "../../../../hooks/useAuth";
 const HrMemberKpaDetailsLayout = () => {
   const { auth } = useAuth();
   const { department } = useParams();
+  const { pathname } = useLocation();
   const selectedMember = useSelector((state) => state.performance.selectedMember);
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const loggedInUserId = auth?.user?._id?.toString();
   const selectedMemberId = selectedMember?.memberId?.toString();
-  const basePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/${encodeURIComponent(department)}/member-wise`;
+  const basePath = pathname.includes("/mix-bag/department-kpa-kra/")
+    ? `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/${encodeURIComponent(department)}/member-wise`
+    : `/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${encodeURIComponent(department)}/member-wise`;
   const consistentSpacingClass = "-mt-8 -mx-5 -mb-3";
 
   const canManageTeam =

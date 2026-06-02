@@ -6,7 +6,9 @@ import { PERMISSIONS } from "../../../../constants/permissions";
 const HrDepartmentKraOverviewLayout = () => {
   const { department } = useParams();
   const { pathname } = useLocation();
-  const basePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/${encodeURIComponent(department)}`;
+  const basePath = pathname.includes("/mix-bag/department-kpa-kra/")
+    ? `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/${encodeURIComponent(department)}`
+    : `/app/dashboard/HR-dashboard/overall-KPA/department-KRA/${encodeURIComponent(department)}`;
   const isMemberDetailsRoute =
     pathname.includes("/member-wise/kra") ||
     pathname.includes("/member-wise/daily-KRA") ||

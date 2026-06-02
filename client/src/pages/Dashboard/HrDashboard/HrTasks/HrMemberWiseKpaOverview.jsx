@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import {
@@ -14,6 +14,7 @@ const HrMemberWiseKpaOverview = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
   const { department } = useParams();
+  const { pathname } = useLocation();
   const [isDepartmentSynchronized, setIsDepartmentSynchronized] =
     useState(false);
 
@@ -42,7 +43,9 @@ const HrMemberWiseKpaOverview = () => {
 
   if (!isDepartmentSynchronized) return null;
 
-  const memberDetailsBasePath = `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/${encodeURIComponent(department)}/member-wise`;
+  const memberDetailsBasePath = pathname.includes("/mix-bag/department-kpa-kra/")
+    ? `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/${encodeURIComponent(department)}/member-wise`
+    : `/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${encodeURIComponent(department)}/member-wise`;
 
   return (
     <PerformanceMemberWiseKraKpa memberDetailsBasePath={memberDetailsBasePath} />
