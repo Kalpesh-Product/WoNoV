@@ -49,6 +49,12 @@ const TicketReports = () => {
     time: value ? humanTime(value) : "",
   });
 
+  const formatDateTimeOrEmpty = (value) => {
+    if (!value) return "";
+    const formatted = formatDateTime(value);
+    return formatted === "N/A" ? "" : formatted;
+  };
+
   const getFromDepartment = (ticket) => {
     const departments = [
       ...(Array.isArray(ticket?.raisedBy?.departments)
@@ -63,7 +69,7 @@ const TicketReports = () => {
       .map((department) => department?.name)
       .filter(Boolean);
 
-    return departmentNames.length ? departmentNames.join(", ") : "N/A";
+    return departmentNames.length ? departmentNames.join(", ") : "";
   };
 
   const kraColumn = [
@@ -80,7 +86,7 @@ const TicketReports = () => {
     {
       field: "status",
       headerName: "Status",
-      cellRenderer: (params) => <StatusChip status={params.value || "N/A"} />,
+      cellRenderer: (params) => <StatusChip status={params.value } />,
     },
     {
       field: "actions",
@@ -215,65 +221,65 @@ const TicketReports = () => {
   //   };
   // };
   const getFullName = (user) => {
-  if (!user) return "";
-  if (typeof user === "string") return user;
+    if (!user) return "";
+    if (typeof user === "string") return user;
 
-  return `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-};
-
-const getDepartmentName = (department) => {
-  if (!department) return "";
-  if (typeof department === "string") return department;
-
-  return department?.name || department?.departmentName || "";
-};
-
-const formatEscalation = (ticket) => {
-  const escalationList = Array.isArray(ticket?.escalatedTo)
-    ? ticket.escalatedTo
-    : ticket?.escalatedTo
-      ? [ticket.escalatedTo]
-      : [];
-
-  const isEscalatedTicket =
-    ticket?.status === "Escalated" || escalationList.length > 0;
-
-  if (!isEscalatedTicket) {
-    return {
-      escalatedTo: "N/A",
-      escalatedStatus: "N/A",
-      escalatedAt: "N/A",
-      escalatedAtDate: "",
-      escalatedAtTime: "",
-    };
-  }
-
-  const latest = escalationList[escalationList.length - 1];
-
-  const escalatedTo =
-    getDepartmentName(latest?.raisedToDepartment) ||
-    getDepartmentName(ticket?.raisedToDepartment) ||
-    "N/A";
-
-  const escalatedStatus =
-    ticket?.status ||
-    latest?.status ||
-    "N/A";
-
-  const escalatedAtRaw =
-    ticket?.escalatededAt ||
-    latest?.createdAt ||
-    ticket?.updatedAt ||
-    "";
-
-  return {
-    escalatedTo,
-    escalatedStatus,
-    escalatedAt: escalatedAtRaw ? formatDateTime(escalatedAtRaw) : "N/A",
-    escalatedAtDate: escalatedAtRaw,
-    escalatedAtTime: escalatedAtRaw,
+    return `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
   };
-};
+
+  const getDepartmentName = (department) => {
+    if (!department) return "";
+    if (typeof department === "string") return department;
+
+    return department?.name || department?.departmentName || "";
+  };
+
+  const getRejectedByUser = (ticket) =>
+    ticket?.reject?.rejectedBy ||
+    ticket?.rejectedBy ||
+    ticket?.rejectBy ||
+    null;
+
+  const formatEscalation = (ticket) => {
+    const escalationList = Array.isArray(ticket?.escalatedTo)
+      ? ticket.escalatedTo
+      : ticket?.escalatedTo
+        ? [ticket.escalatedTo]
+        : [];
+
+    const isEscalatedTicket =
+      ticket?.status === "Escalated" || escalationList.length > 0;
+
+    if (!isEscalatedTicket) {
+      return {
+        escalatedTo: "",
+        escalatedStatus: "",
+        escalatedAt: "",
+        escalatedAtDate: "",
+        escalatedAtTime: "",
+      };
+    }
+
+    const latest = escalationList[escalationList.length - 1];
+
+    const escalatedTo =
+      getDepartmentName(latest?.raisedToDepartment) ||
+      getDepartmentName(ticket?.raisedToDepartment) ||
+      "";
+
+    const escalatedStatus = ticket?.status || latest?.status || "";
+
+    const escalatedAtRaw =
+      ticket?.escalatededAt || latest?.createdAt || ticket?.updatedAt || "";
+
+    return {
+      escalatedTo,
+      escalatedStatus,
+      escalatedAt: escalatedAtRaw ? formatDateTime(escalatedAtRaw) : "",
+      escalatedAtDate: escalatedAtRaw || "",
+      escalatedAtTime: escalatedAtRaw || "",
+    };
+  };
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -290,10 +296,8 @@ const formatEscalation = (ticket) => {
                   ...item,
                   ticket: item.ticket || "",
                   fromDepartment: getFromDepartment(item),
-                  raisedToDepartment: item.raisedToDepartment?.name || "",
-                  raisedBy: `${item.raisedBy?.firstName || ""} ${
-                    item.raisedBy?.lastName || ""
-                  }`.trim(),
+                  raisedToDepartment: getDepartmentName(item.raisedToDepartment),
+                  raisedBy: getFullName(item.raisedBy),
                   description: item.description || "",
                   status: item.status || "",
                   assignees:
@@ -302,39 +306,32 @@ const formatEscalation = (ticket) => {
                         `${assignee.firstName} ${assignee.lastName}`,
                     ) || "",
                   company: item.company?.companyName,
-                  raisedAt: formatDateTime(item.createdAt) || "N/A",
+                  priority: item.priority || "",
+                  raisedAt: formatDateTime(item.createdAt) || "",
                   updatedAt: item.updatedAt || "",
-                  acceptedBy: `${item.acceptedBy?.firstName || ""} ${
-                    item.acceptedBy?.lastName || ""
-                  }`,
-                  closedBy: item?.closedBy
-                    ? `${item.closedBy.firstName} ${item.closedBy.lastName}`
-                    : "None",
-                  closedAt: item.closedAt
-  ? formatDateTime(item.closedAt)
-  : "N/A",  
+                  acceptedBy: getFullName(item.acceptedBy),
+                  closedBy: getFullName(item.closedBy),
+                  closedAt: item.closedAt ? formatDateTime(item.closedAt) : "",
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
-                  rejectedBy: `${item.reject?.rejectedBy?.firstName || ""} ${
-                    item.reject?.rejectedBy?.lastName || ""
-                  }`,
+                  rejectedBy: getFullName(getRejectedByUser(item)),
                   rejectedAtDate:
-                    formatDateTime(
+                    formatDateTimeOrEmpty(
                       item.reject?.rejectedAt ||
                         (item.status === "Rejected" ? item.updatedAt : ""),
-                    ) || "N/A",
+                    ) || "",
                   acceptedAtDate: item.acceptedAt || "",
                   acceptedAtTime: item.acceptedAt || "",
                   acceptedAt: item.acceptedAt
   ? formatDateTime(item.acceptedAt)
-  : "N/A",
+  : "",
                   assignedAt:
                     item.assignedAt ||
                     (Array.isArray(item.assignedTo) &&
                       item.assignedTo[item.assignedTo.length - 1]
                         ?.assignedAt) ||
                     "",
-                  reason: item.reject?.reason,
+                  reason: item.reject?.reason || "",
                   ...(() => {
                     const { assignedToDisplay, assignmentDetails } =
                       formatAssignments(item.assignedTo);
@@ -364,7 +361,7 @@ const formatEscalation = (ticket) => {
                       // assignedToDetails: assignmentDetails,
 
                       assignedAtDate:
-                        formatDateTime(assignedAtRaw) || "N/A",
+                        formatDateTimeOrEmpty(assignedAtRaw) || "",
                       assignedAtTime,
                     };
                   })(),
@@ -390,17 +387,17 @@ const formatEscalation = (ticket) => {
       >
         {!isLoading && selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
-            <DetalisFormatted
-              title={"Ticket Title"}
-              detail={selectedMeeting?.ticket || ""}
-            />
-            <DetalisFormatted
-              title={"Description"}
-              detail={selectedMeeting?.description || ""}
-            />
+              <DetalisFormatted
+                title={"Ticket Title"}
+                detail={selectedMeeting?.ticket || ""}
+              />
+              <DetalisFormatted
+                title={"Description"}
+                detail={selectedMeeting?.description || ""}
+              />
             <DetalisFormatted
               title={"From Department"}
-              detail={selectedMeeting?.fromDepartment || "N/A"}
+              detail={selectedMeeting?.fromDepartment || ""}
             />
             <DetalisFormatted
               title={"Raised By"}
@@ -408,20 +405,20 @@ const formatEscalation = (ticket) => {
             />
             <DetalisFormatted
               title={"Raised At"}
-              detail={`${formatDateTime(selectedMeeting?.createdAt) || "N/A"}`}
+              detail={`${formatDateTime(selectedMeeting?.createdAt) || ""}`}
             />
-            <DetalisFormatted
-              title={"Raised To Department"}
-              detail={selectedMeeting?.raisedToDepartment || ""}
-            />
-            <DetalisFormatted
-              title={"Priority"}
-              detail={selectedMeeting?.priority || ""}
-            />
-            <DetalisFormatted
-              title={"Status"}
-              detail={selectedMeeting?.status || ""}
-            />
+              <DetalisFormatted
+                title={"Raised To Department"}
+                detail={selectedMeeting?.raisedToDepartment || ""}
+              />
+              <DetalisFormatted
+                title={"Priority"}
+                detail={selectedMeeting?.priority || ""}
+              />
+              <DetalisFormatted
+                title={"Status"}
+                detail={selectedMeeting?.status || ""}
+              />
             {/* <DetalisFormatted
               title={"Assignees"}
               detail={
@@ -433,13 +430,13 @@ const formatEscalation = (ticket) => {
                   : "None"
               }
             /> */}
-            <DetalisFormatted
-              title={"Accepted By"}
-              detail={selectedMeeting.acceptedBy || "None"}
-            />
+              <DetalisFormatted
+                title={"Accepted By"}
+                detail={selectedMeeting.acceptedBy || ""}
+              />
             <DetalisFormatted
               title={"Accepted At"}
-              detail={formatDateTime(selectedMeeting?.acceptedAt) || "N/A"}
+              detail={formatDateTime(selectedMeeting?.acceptedAt) || ""}
             />
             {selectedMeeting?.assignedToDetails?.length ? (
               <div className="text-content flex items-start w-full">
@@ -453,7 +450,7 @@ const formatEscalation = (ticket) => {
                           {assignment.assigneeName}
                         </div>
                         <div className="text-borderGray">
-                          {assignment.assignedAtFormatted || "N/A"}
+                          {assignment.assignedAtFormatted || ""}
                         </div>
                       </div>
                     ),
@@ -480,11 +477,11 @@ const formatEscalation = (ticket) => {
             />
             <DetalisFormatted
               title="Closed By"
-              detail={selectedMeeting?.closedBy}
+              detail={selectedMeeting?.closedBy || ""}
             />
             <DetalisFormatted
               title="Closed At"
-              detail={formatDateTime(selectedMeeting?.closedAt)}
+              detail={formatDateTime(selectedMeeting?.closedAt) || ""}
             />
             {/* <DetalisFormatted
               title={"Rejected By"}
@@ -493,7 +490,7 @@ const formatEscalation = (ticket) => {
             {selectedMeeting.reason ? (
               <DetalisFormatted
                 title={"Reason"}
-                detail={selectedMeeting?.reason || "None"}
+                detail={selectedMeeting?.reason || ""}
               />
             ) : (
               ""
