@@ -134,8 +134,12 @@ const PerformanceIndividualKra = () => {
         ? "Team Daily KRA"
         : "Individual Daily KRA";
     const addTaskType = shouldUseTeamAddButton ? "TEAMKRA" : "INDIVIDUALKRA";
-    const addAssignToId = activeMemberId || userId?.toString?.();
-        const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+    // const addAssignToId = activeMemberId || userId?.toString?.();
+    //     const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+      const addAssignToId = isEmployeeKraKpaRoute
+        ? userId?.toString?.()
+        : activeMemberId || userId?.toString?.();
+    const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
     const showCheckBox = allowedDept || selectedMemberCanManageView;
     const shouldHideControlsForSelectedMemberView =
         isSelectedMemberEmployee && activeMember?.memberId;
@@ -258,6 +262,10 @@ const PerformanceIndividualKra = () => {
             }
 
             toast.success(data.message || "KRA Added");
+                        queryClient.invalidateQueries({ queryKey: individualKraQueryKey });
+            queryClient.invalidateQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
             queryClient.invalidateQueries({ queryKey: teamKraQueryKey });
             reset();
             setOpenModal(false);
