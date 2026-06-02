@@ -60,12 +60,11 @@ const ReportsSection = () => {
 
   const departmentCards = userDepartments.map((department) => {
     const moduleKey = String(department.name).trim().toLowerCase();
-    const encodedDepartmentId = encodeURIComponent(String(department._id));
 
     return {
       title: String(department.name).toUpperCase(),
       subtitle: `${department.name} Reports`,
-      route: `../reports-section/${moduleKey}?departmentId=${encodedDepartmentId}`,
+      route: `../reports-section/${moduleKey}`,
       permission: null,
     };
   });
