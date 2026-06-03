@@ -602,6 +602,7 @@ const getAllTickets = async (req, res, next) => {
           select: "firstName lastName",
         },
         { path: "closedBy", select: "firstName middleName lastName" },
+        { path: "reject.rejectedBy", select: "firstName lastName email" },
         { path: "assignees", select: "firstName middleName lastName" },
       ])
       .lean()
