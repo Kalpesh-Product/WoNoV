@@ -82,6 +82,10 @@ const formatValue = (value, keyPath = "", hiddenFields = []) => {
   }
 
   if (typeof value === "object") {
+    if (value !== null && Object.keys(value).length === 1 && value.name) {
+      return value.name;
+    }
+
     return Object.entries(value)
       .filter(([key]) => {
         const nextKey = keyPath ? `${keyPath}.${key}` : key;
