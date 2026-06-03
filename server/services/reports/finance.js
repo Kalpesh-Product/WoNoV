@@ -64,11 +64,11 @@ const mapBudgetBaseFields = (budget = {}) => {
     dueDate: budget?.dueDate || null,
     invoiceAttached: budget?.invoiceAttached ?? false,
     invoiceName: budget?.invoice?.name || "-",
+    invoiceFile: budget?.invoice?.link || "-",
     invoiceDate: budget?.invoice?.date || null,
     isExtraBudget: budget?.isExtraBudget ?? false,
     approvalStatus: budget?.status || "-",
     paidStatus: budget?.isPaid || "-",
-    invoiceFile: budget?.invoice?.link || "-",
   };
 };
 
@@ -143,23 +143,22 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
       emergencyApproval: budget?.emergencyApproval ?? false,
       budgetApproval: budget?.budgetApproval ?? false,
       l1Approval: budget?.l1Approval ?? false,
-      financeSrNo: budget?.finance?.fSrNo || budget?.srNo || "-",
       modeOfPayment: budget?.finance?.modeOfPayment || "-",
       chequeNo: budget?.finance?.chequeNo || "-",
       chequeDate: budget?.finance?.chequeDate || null,
       advanceAmount: budget?.finance?.advanceAmount ?? "-",
       approvedAt: budget?.finance?.approvedAt || null,
       expectedDateInvoice: budget?.finance?.expectedDateInvoice || null,
-      voucherParticulars: budget?.particulars || [],
-      financeParticulars: budget?.finance?.particulars || [],
+      voucherSrNo: budget?.srNo || "-",
       voucherName: budget?.voucher?.name || "-",
       voucherDate: budget?.voucher?.date || null,
+      voucherParticulars: budget?.particulars || [],
       voucherFile: budget?.voucher?.link || "-",
-      voucherSrNo: budget?.srNo || "-",
+      financeSrNo: budget?.finance?.fSrNo || budget?.srNo || "-",
       financeVoucherName: budget?.finance?.voucher?.name || "-",
       financeVoucherDate: budget?.finance?.voucher?.date || null,
+      financeParticulars: budget?.finance?.particulars || [],
       financeVoucherFile: budget?.finance?.voucher?.link || "-",
-      financeVoucherSrNo: budget?.finance?.fSrNo || "-",
     };
   });
 
