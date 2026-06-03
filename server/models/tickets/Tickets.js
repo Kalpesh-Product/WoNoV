@@ -81,6 +81,7 @@ const ticketsSchema = new mongoose.Schema(
       reason: {
         type: String,
       },
+      rejectedAt: Date,
     },
     resolvedDate: Date,
     assignedAt: Date, //deprecated in support & assigned tickets

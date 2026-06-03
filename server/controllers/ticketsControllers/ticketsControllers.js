@@ -624,6 +624,12 @@ const getAllTickets = async (req, res, next) => {
     // Extract the ticket priority from the company's selected departments
     const updatedTickets = matchingTickets.map((ticket) => {
       let updatedTicket = { ...ticket };
+       if (updatedTicket.status === "Rejected") {
+        updatedTicket.reject = {
+          ...(updatedTicket.reject || {}),
+          rejectedAt: updatedTicket.reject?.rejectedAt || updatedTicket.updatedAt,
+        };
+      }
 
       foundCompany.selectedDepartments.forEach((dept) => {
         dept?.ticketIssues?.forEach((issue) => {
@@ -775,7 +781,6 @@ const rejectTicket = async (req, res, next) => {
         logSourceKey,
       );
     }
-
     // Update the ticket by marking it as rejected and storing reason
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
@@ -784,6 +789,7 @@ const rejectTicket = async (req, res, next) => {
         reject: {
           rejectedBy: user,
           reason: reason,
+          rejectedAt: new Date(),
         },
       },
       { new: true },
@@ -814,6 +820,7 @@ const rejectTicket = async (req, res, next) => {
         reject: {
           rejectedBy: user,
           reason: reason,
+          rejectedAt: new Date(),
         },
       },
     });
