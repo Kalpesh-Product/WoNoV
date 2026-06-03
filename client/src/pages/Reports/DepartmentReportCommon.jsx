@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Chip, Popover } from "@mui/material";
 import { toast } from "sonner";
@@ -59,9 +59,9 @@ const DepartmentReportCommon = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { moduleKey = "" } = useParams();
-  const [searchParams] = useSearchParams();
   const normalizedModuleKey = String(moduleKey).toLowerCase();
-  const selectedModule = REPORT_MODULE_MAP[normalizedModuleKey] || {
+  const matchedReportModule = REPORT_MODULE_MAP[normalizedModuleKey];
+  const selectedModule = matchedReportModule || {
     title: `${String(moduleKey || "").toUpperCase()} Department Report`,
     module:
       String(moduleKey || "")
@@ -69,26 +69,36 @@ const DepartmentReportCommon = () => {
         .replace(/^./, (char) => char.toUpperCase()) || "",
   };
 
-  const selectedDepartmentId = searchParams.get("departmentId");
+  const userDepartments = Array.isArray(auth?.user?.departments)
+    ? auth.user.departments
+    : [];
+  const selectedDepartment = useMemo(() => {
+    const normalizedDepartmentName = String(moduleKey || "").trim().toLowerCase();
+
+    if (!normalizedDepartmentName || matchedReportModule) {
+      return null;
+    }
+
+    return (
+      userDepartments.find(
+        (department) =>
+          String(department?.name || "")
+            .trim()
+            .toLowerCase() === normalizedDepartmentName,
+      ) || null
+    );
+  }, [matchedReportModule, moduleKey, userDepartments]);
+
+  const selectedDepartmentId = selectedDepartment?._id || null;
   const reportTypeForFetch = selectedDepartmentId ? "dashboard" : "app";
 
   const selectedDepartmentNames = useMemo(() => {
-    const userDepartments = Array.isArray(auth?.user?.departments)
-      ? auth.user.departments
-      : [];
-
-    if (selectedDepartmentId) {
-      const selectedDepartment = userDepartments.find(
-        (dept) => String(dept?._id) === String(selectedDepartmentId),
-      );
-
-      if (selectedDepartment?.name) {
-        return [selectedDepartment.name];
-      }
+    if (selectedDepartment?.name) {
+      return [selectedDepartment.name];
     }
 
     return userDepartments.map((dept) => dept?.name).filter(Boolean);
-  }, [auth?.user?.departments, selectedDepartmentId]);
+  }, [selectedDepartment, userDepartments]);
 
   const [activeReportId, setActiveReportId] = useState(null);
   const [jobStatusByReportId, setJobStatusByReportId] = useState({});
