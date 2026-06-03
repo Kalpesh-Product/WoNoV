@@ -742,6 +742,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
 
             return {
               id: task._id,
+              taskId: task.task?._id?.toString?.() || "",
               taskName: task.task.task,
               department: task.task.department.name,
               completedBy: completedBy,
