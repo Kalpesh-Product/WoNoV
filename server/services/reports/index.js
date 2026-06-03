@@ -10,6 +10,9 @@ const {
 const { fetchAssetReportService } = require("./asset");
 const { fetchMeetingReportService } = require("./meeting");
 const { fetchVisitorReportService } = require("./visitor");
+// const {
+//   getRevenues,
+// } = require("../../controllers/salesControllers/coworkingClientRevenue");
 
 const normalizeReportIdentifier = (value = "") =>
   value
@@ -387,9 +390,9 @@ const reportServiceRegistry = {
     dateField: "onboardingDate",
   }),
 
-  vendor: createReportService(fetchVendorReportService, {
-    dateField: "onboardingDate",
-  }),
+  // "coworking-revenue": createReportService(getRevenues, {
+  //   dateField: "onboardingDate",
+  // }),
 };
 
 const resolveReportService = (reportMeta = {}) => {
