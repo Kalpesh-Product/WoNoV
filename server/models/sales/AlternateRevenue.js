@@ -37,11 +37,11 @@ const alternateRevenueSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // Optional: Adds createdAt and updatedAt fields
-  }
+  },
 );
 
 const AlternateRevenue = mongoose.model(
   "AlternateRevenue",
-  alternateRevenueSchema
+  alternateRevenueSchema,
 );
 module.exports = AlternateRevenue;

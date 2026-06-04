@@ -201,10 +201,7 @@ const getRevenues = async (req, res, next) => {
   //   next(error);
   // }
   try {
-    const company = req.company;
-
     const result = await fetchCoworkingRevenueService({
-      company,
       query: req.query,
     });
 

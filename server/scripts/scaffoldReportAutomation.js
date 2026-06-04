@@ -1,20 +1,33 @@
 #!/usr/bin/env node
+
 const fs = require("fs");
 const path = require("path");
 
 const root = path.resolve(__dirname, "..");
 const reportsDir = path.join(root, "services", "reports");
 const registryFile = path.join(reportsDir, "index.js");
-const scriptsDir = path.join(root, "scripts");
-const testDir = path.join(root, "tests", "report");
+
+const DEFAULT_CONTEXT_KEYS = [
+  "departmentId",
+  "departments",
+  "roles",
+  "company",
+  "user",
+  "query",
+  "params",
+];
 
 function parseArgs(argv) {
   const args = {};
+
   for (let i = 2; i < argv.length; i += 1) {
     const part = argv[i];
+
     if (!part.startsWith("--")) continue;
+
     const key = part.slice(2);
     const next = argv[i + 1];
+
     if (!next || next.startsWith("--")) {
       args[key] = true;
     } else {
@@ -22,6 +35,7 @@ function parseArgs(argv) {
       i += 1;
     }
   }
+
   return args;
 }
 
@@ -38,266 +52,335 @@ function toPascalCase(value = "") {
   return value
     .split(/[-_\s]+/)
     .filter(Boolean)
-    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
     .join("");
 }
 
-function ensureDir(dirPath) {
-  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+function ensureFileExists(filePath, label) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`${label} not found: ${filePath}`);
+  }
 }
 
-function createServiceFile({ key, serviceName, controllerFile, controllerFn }) {
-  const filePath = path.join(reportsDir, `${key}.js`);
-  if (fs.existsSync(filePath)) {
-    console.log(`Service file already exists: ${filePath}`);
-    return filePath;
+function getRelativeRequirePath(fromFile, toFile) {
+  let relativePath = path
+    .relative(path.dirname(fromFile), toFile)
+    .replace(/\\/g, "/");
+
+  if (!relativePath.startsWith(".")) {
+    relativePath = `./${relativePath}`;
   }
 
-  const content = `const ${serviceName} = async ({ dateFilter, departmentId, departments = [], roles = [],company,user }) => {
-  // TODO: Move business logic from controller here.
-  // Source controller: ${controllerFile || "n/a"}${controllerFn ? `#${controllerFn}` : ""}
-  return {
-    rows: [],
-    meta: {
-      reportKey: '${key}',
-      dateFilter,
-      departmentId,
-      departmentsCount: departments.length,
-      roles,
-      company,
-      user
-    },
-  };
+  return relativePath.replace(/\.js$/, "");
+}
+
+function parseList(value, fallback = []) {
+  if (!value) return fallback;
+
+  return String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function formatArray(items) {
+  return `[${items.map((item) => `"${item}"`).join(", ")}]`;
+}
+
+function findControllerFunction(content, controllerFn) {
+  const patterns = [
+    new RegExp(`const\\s+${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>`),
+    new RegExp(`exports\\.${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>`),
+    new RegExp(
+      `module\\.exports\\.${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>`,
+    ),
+    new RegExp(`async\\s+function\\s+${controllerFn}\\s*\\([^)]*\\)`),
+    new RegExp(`function\\s+${controllerFn}\\s*\\([^)]*\\)`),
+    new RegExp(
+      `export\\s+const\\s+${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>`,
+    ),
+  ];
+
+  return patterns.some((pattern) => pattern.test(content));
+}
+
+function createServiceFile({
+  key,
+  serviceName,
+  controllerFile,
+  controllerFn,
+  contextKeys,
+}) {
+  const servicePath = path.join(reportsDir, `${key}.js`);
+
+  if (fs.existsSync(servicePath)) {
+    throw new Error(`Service file already exists: ${servicePath}`);
+  }
+
+  const params = [...new Set(["dateFilter", ...contextKeys])];
+
+  const content = `const ${serviceName} = async ({
+${params.map((param) => `  ${param},`).join("\n")}
+}) => {
+  // Source controller: ${controllerFile}#${controllerFn}
+  // TODO: Add report business logic here.
+
+  return [];
 };
 
 module.exports = {
   ${serviceName},
 };
 `;
-  fs.writeFileSync(filePath, content, "utf8");
-  console.log(`Created service file: ${filePath}`);
-  return filePath;
+
+  fs.writeFileSync(servicePath, content, "utf8");
+  console.log(`Created service file: ${servicePath}`);
+
+  return servicePath;
 }
 
-function updateRegistry({ key, serviceName }) {
-  let content = fs.readFileSync(registryFile, "utf8");
-  const importLine = `const { ${serviceName} } = require('./${key}');`;
-  if (!content.includes(importLine)) {
-    const marker = 'const { fetchTicketReportService } = require("./ticket");';
-    if (content.includes(marker)) {
-      content = content.replace(marker, `${marker}\n${importLine}`);
-    } else {
-      content = `${importLine}\n${content}`;
-    }
+function addRequireOnce(content, importLine) {
+  if (content.includes(importLine)) return content;
+
+  const requireMatches = [
+    ...content.matchAll(/^const\s+.*?=\s+require\(.+?\);\s*$/gm),
+  ];
+
+  if (requireMatches.length) {
+    const lastMatch = requireMatches[requireMatches.length - 1];
+    const insertAt = lastMatch.index + lastMatch[0].length;
+
+    return `${content.slice(0, insertAt)}\n${importLine}${content.slice(insertAt)}`;
   }
 
-  const registryEntry = `  '${key}': async ({ dateFilter, departmentId, departments, roles,company,user }) =>\n    ${serviceName}({ dateFilter, departmentId, departments, roles,company,user }),`;
+  return `${importLine}\n${content}`;
+}
 
-  if (!content.includes(`'${key}':`) && !content.includes(`${key}:`)) {
-    content = content.replace(
-      /const reportServiceRegistry = \{/,
-      (m) => `${m}\n${registryEntry}\n`,
+function updateRegistry({
+  key,
+  serviceName,
+  servicePath,
+  dateField,
+  contextKeys,
+}) {
+  ensureFileExists(registryFile, "Report registry file");
+
+  let content = fs.readFileSync(registryFile, "utf8");
+
+  const duplicatePatterns = [
+    new RegExp(`['"]${key}['"]\\s*:`),
+    new RegExp(`\\b${key}\\s*:`),
+  ];
+
+  if (duplicatePatterns.some((pattern) => pattern.test(content))) {
+    throw new Error(`Report key '${key}' already exists in registry.`);
+  }
+
+  const requirePath = getRelativeRequirePath(registryFile, servicePath);
+  const importLine = `const { ${serviceName} } = require("${requirePath}");`;
+
+  content = addRequireOnce(content, importLine);
+
+  const registryStart = /const\s+reportServiceRegistry\s*=\s*\{\s*\n/;
+
+  if (!registryStart.test(content)) {
+    throw new Error(
+      "Could not find `const reportServiceRegistry = {` in registry file.",
     );
   }
+
+  const registryEntry = `  "${key}": createReportService(${serviceName}, {
+    dateField: "${dateField}",
+   }),
+
+`;
+
+  content = content.replace(
+    registryStart,
+    (match) => `${match}${registryEntry}`,
+  );
 
   fs.writeFileSync(registryFile, content, "utf8");
-  console.log(`Updated registry file: ${registryFile}`);
+  console.log(`Updated report registry: ${registryFile}`);
 }
 
-function updateController({ controllerFile, controllerFn, serviceName, key }) {
-  if (!controllerFile || !controllerFn) {
-    console.log(
-      "Skipping controller update (--controller and --controllerFn not provided).",
-    );
-    return;
+function buildControllerPayload(contextKeys) {
+  const lines = [];
+
+  if (contextKeys.includes("query")) {
+    lines.push("    query: { ...req.query },");
   }
 
-  const controllerPath = path.join(root, controllerFile);
-  if (!fs.existsSync(controllerPath)) {
-    throw new Error(`Controller file not found: ${controllerPath}`);
+  if (contextKeys.includes("params")) {
+    lines.push("    params: req.params || {},");
   }
+
+  return lines.join("\n");
+}
+
+function replaceControllerFunction(content, controllerFn, replacement) {
+  const startPatterns = [
+    new RegExp(
+      `const\\s+${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*\\{`,
+    ),
+    new RegExp(
+      `exports\\.${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*\\{`,
+    ),
+    new RegExp(
+      `module\\.exports\\.${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*\\{`,
+    ),
+    new RegExp(`async\\s+function\\s+${controllerFn}\\s*\\([^)]*\\)\\s*\\{`),
+    new RegExp(`function\\s+${controllerFn}\\s*\\([^)]*\\)\\s*\\{`),
+    new RegExp(
+      `export\\s+const\\s+${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*\\{`,
+    ),
+  ];
+
+  for (const pattern of startPatterns) {
+    const match = pattern.exec(content);
+
+    if (!match) continue;
+
+    const startIndex = match.index;
+    const bodyStartIndex = startIndex + match[0].length - 1;
+
+    let depth = 0;
+    let endIndex = -1;
+
+    for (let i = bodyStartIndex; i < content.length; i += 1) {
+      const char = content[i];
+
+      if (char === "{") depth += 1;
+      if (char === "}") depth -= 1;
+
+      if (depth === 0) {
+        endIndex = i + 1;
+
+        while (
+          content[endIndex] === ";" ||
+          content[endIndex] === "\n" ||
+          content[endIndex] === "\r"
+        ) {
+          if (content[endIndex] === ";") {
+            endIndex += 1;
+            break;
+          }
+
+          endIndex += 1;
+        }
+
+        break;
+      }
+    }
+
+    if (endIndex === -1) {
+      throw new Error(
+        `Could not find the end of controller function '${controllerFn}'.`,
+      );
+    }
+
+    return `${content.slice(0, startIndex)}${replacement}${content.slice(endIndex)}`;
+  }
+
+  throw new Error(`Could not replace controller function '${controllerFn}'.`);
+}
+
+function updateController({
+  controllerFile,
+  controllerFn,
+  serviceName,
+  servicePath,
+  contextKeys,
+}) {
+  const controllerPath = path.join(root, controllerFile);
+
+  ensureFileExists(controllerPath, "Controller file");
 
   let content = fs.readFileSync(controllerPath, "utf8");
-  const importLine = `const { ${serviceName} } = require('../../services/reports/${key}');`;
-  if (!content.includes(importLine)) {
-    const firstConst = content.indexOf("const ");
-    if (firstConst >= 0) {
-      content = `${content.slice(0, firstConst)}${importLine}\n${content.slice(firstConst)}`;
-    } else {
-      content = `${importLine}\n${content}`;
-    }
-  }
 
-  const fnRegex = new RegExp(
-    `(const\\s+${controllerFn}\\s*=\\s*async\\s*\\([^)]*\\)\\s*=>\\s*\\{[\\s\\S]*?\\n\\}|async function\\s+${controllerFn}\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\})`,
-    "m",
-  );
-  if (!fnRegex.test(content)) {
+  if (!findControllerFunction(content, controllerFn)) {
     throw new Error(
-      `Could not find async function ${controllerFn} in ${controllerFile}`,
+      `Could not find controller function '${controllerFn}' in ${controllerFile}`,
     );
   }
 
-  const replacement = `async function ${controllerFn}(req, res) {\n  const payload = await ${serviceName}({\n    dateFilter: req.body?.dateFilter || {},\n    departmentId: req.body?.department,\n    departments: req.body?.departments || || req?.departments || [],\n    roles: req?.roles || [],\n    company: req?.company || null,\n    user: req?.user || null  });\n\n  return res.status(200).json(payload);\n}`;
+  const requirePath = getRelativeRequirePath(controllerPath, servicePath);
+  const importLine = `const { ${serviceName} } = require("${requirePath}");`;
 
-  content = content.replace(fnRegex, replacement);
-  fs.writeFileSync(controllerPath, content, "utf8");
-  console.log(
-    `Updated controller function ${controllerFn} in ${controllerFile}`,
-  );
-}
+  content = addRequireOnce(content, importLine);
 
-function createSeedTemplate({ key, reportName, moduleName }) {
-  ensureDir(scriptsDir);
-  const filePath = path.join(scriptsDir, `seedReport.${key}.js`);
-  if (fs.existsSync(filePath)) return;
-  const content = `require('dotenv').config();
-const connectDb = require('../config/db');
-const Report = require('../models/reports/Report');
+  const payload = buildControllerPayload(contextKeys);
 
-(async () => {
+  const replacement = `const ${controllerFn} = async (req, res, next) => {
   try {
-    await connectDb(process.env.DB_URL);
-    await Report.updateOne(
-      { reportKey: '${key}' },
-      {
-        $set: {
-          module: '${moduleName || "reports"}',
-          reportName: '${reportName}',
-          reportKey: '${key}',
-          status: true,
-        },
-      },
-      { upsert: true },
-    );
+    const payload = await ${serviceName}({
+${payload}
+    });
 
-    console.log('Seeded report ${key}');
-    process.exit(0);
+    return res.status(200).json(payload);
   } catch (error) {
-    console.error(error);
-    process.exit(1);
+    next(error);
   }
-})();
-`;
-  fs.writeFileSync(filePath, content, "utf8");
-  console.log(`Created seed template: ${filePath}`);
+};`;
+
+  content = replaceControllerFunction(content, controllerFn, replacement);
+
+  fs.writeFileSync(controllerPath, content, "utf8");
+  console.log(`Updated controller: ${controllerPath}`);
 }
 
-function createSmokeTestTemplate({ key }) {
-  ensureDir(testDir);
-  const filePath = path.join(testDir, `${key}.smoke.md`);
-  if (fs.existsSync(filePath)) return;
-  const content = [
-    `# Smoke test for ${key}`,
-    "",
-    "1. Run seed script:",
-    `   - \`node scripts/seedReport.${key}.js\``,
-    "2. Start API + worker:",
-    "   - `npm run dev:api`",
-    "   - `npm run dev:worker`",
-    `3. Trigger report generation via API (using a valid report id for reportKey=${key}).`,
-    "4. Verify status transitions pending -> processing -> completed in ReportJob.",
-    "5. Verify generated payload stored in ReportJob.data.",
-    "",
-  ].join("\\n");
-  fs.writeFileSync(filePath, content, "utf8");
-  console.log(`Created smoke test checklist: ${filePath}`);
-}
+function validateArgs(args) {
+  const required = ["name", "controller", "controllerFn", "dateField"];
+  const missing = required.filter((key) => !args[key]);
 
-function createStartupValidation() {
-  const validationDir = path.join(root, "services", "reports");
-  const validationFile = path.join(validationDir, "validateRegistry.js");
-  if (!fs.existsSync(validationFile)) {
-    const content = [
-      "const Report = require('../../models/reports/Report');",
-      "const { reportServiceRegistry } = require('./index');",
-      "",
-      "const normalizeReportIdentifier = (value = '') =>",
-      "  value",
-      "    .trim()",
-      "    .toLowerCase()",
-      "    .replace(/\\\\s+/g, '-')",
-      "    .replace(/[^a-z0-9-]/g, '')",
-      "    .replace(/-report$/, '');",
-      "",
-      "async function validateReportRegistryMappings() {",
-      "  const reports = await Report.find({ status: true }).select('reportName reportKey').lean();",
-      "",
-      "  const missing = reports.filter((report) => {",
-      "    const normalizedKey = normalizeReportIdentifier(report.reportKey || report.reportName || '');",
-      "    return !normalizedKey || !reportServiceRegistry[normalizedKey];",
-      "  });",
-      "",
-      "  if (missing.length) {",
-      "    const details = missing",
-      "      .map((item) => `${item.reportName} (${item.reportKey || 'no-reportKey'})`)",
-      "      .join(', ');",
-      "    throw new Error(`Missing report service mappings: ${details}`);",
-      "  }",
-      "}",
-      "",
-      "module.exports = {",
-      "  validateReportRegistryMappings,",
-      "};",
-      "",
-    ].join("\\n");
-    fs.writeFileSync(validationFile, content, "utf8");
-    console.log(`Created startup validation helper: ${validationFile}`);
-  }
-
-  const serverFile = path.join(root, "server.js");
-  let serverContent = fs.readFileSync(serverFile, "utf8");
-  const importLine =
-    "const { validateReportRegistryMappings } = require('./services/reports/validateRegistry');";
-  if (!serverContent.includes(importLine)) {
-    serverContent = serverContent.replace(
-      'const bullBoardAdapter = require("./queues/bullBoard");',
-      `const bullBoardAdapter = require(\"./queues/bullBoard\");\n${importLine}`,
+  if (missing.length) {
+    throw new Error(
+      `Missing required argument(s): ${missing.join(", ")}\n` +
+        `Usage: node scripts/scaffoldReportAutomation.js --name "Vendor" --controller controllers/vendorControllers/vendorController.js --controllerFn fetchVendors --dateField onboardingDate`,
     );
   }
-
-  const hook = `mongoose.connection.once("open", async () => {\n  console.log("Connected to MongoDB");\n  await validateReportRegistryMappings();\n  app.listen(PORT);\n  console.log(\`Server running on port \${PORT}\`);\n});`;
-
-  serverContent = serverContent.replace(
-    /mongoose\.connection\.once\("open", \(\) => \{[\s\S]*?\n\}\);/m,
-    hook,
-  );
-  fs.writeFileSync(serverFile, serverContent, "utf8");
-  console.log("Enabled startup validation in server.js");
 }
 
 function main() {
   const args = parseArgs(process.argv);
-  const reportName = args.name;
-  if (!reportName) {
-    throw new Error(
-      'Usage: node scripts/scaffoldReportAutomation.js --name "Report Name" [--controller path] [--controllerFn functionName] [--module moduleName] [--withValidation true]',
-    );
-  }
-  const key = normalizeKey(args.key || reportName);
-  const serviceName = `fetch${toPascalCase(key)}ReportService`;
 
-  createServiceFile({
+  validateArgs(args);
+
+  const key = normalizeKey(args.key || args.name);
+  const serviceName =
+    args.serviceName || `fetch${toPascalCase(key)}ReportService`;
+  const contextKeys = parseList(args.contextKeys, DEFAULT_CONTEXT_KEYS);
+
+  ensureFileExists(registryFile, "Report registry file");
+  ensureFileExists(path.join(root, args.controller), "Controller file");
+
+  const servicePath = createServiceFile({
     key,
     serviceName,
     controllerFile: args.controller,
     controllerFn: args.controllerFn,
+    contextKeys,
   });
-  updateRegistry({ key, serviceName });
+
+  updateRegistry({
+    key,
+    serviceName,
+    servicePath,
+    dateField: args.dateField,
+    contextKeys,
+  });
+
   updateController({
     controllerFile: args.controller,
     controllerFn: args.controllerFn,
     serviceName,
-    key,
+    servicePath,
+    contextKeys,
   });
-  createSeedTemplate({ key, reportName, moduleName: args.module });
-  createSmokeTestTemplate({ key });
 
-  if (args.withValidation === "true" || args.withValidation === true) {
-    createStartupValidation();
-  }
-
-  console.log("\nDone. Next: run seed script and smoke test checklist.");
+  console.log(
+    "\nDone. Report service created, registry updated, and controller now calls the service.",
+  );
 }
 
 main();

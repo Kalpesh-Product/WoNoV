@@ -1,4 +1,7 @@
+const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+const MeetingRevenue = require("../../models/sales/MeetingRevenue");
+const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 
 const fetchCoworkingRevenueService = async ({
   dateFilter,
@@ -84,6 +87,204 @@ const fetchCoworkingRevenueService = async ({
   }
 };
 
+const fetchAlternateRevenueReportService = async ({
+  dateFilter,
+  isReport = false,
+}) => {
+  let filter = {};
+  if (dateFilter) {
+    filter.invoiceCreationDate = dateFilter.invoiceCreationDate;
+  }
+
+  const records = await AlternateRevenue.find(filter)
+    .sort({ createdAt: -1 })
+    .lean()
+    .exec();
+
+  const monthlyMap = new Map();
+
+  const MONTHS_SHORT = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  records.forEach((item) => {
+    const invoiceCreationDate = new Date(item.invoiceCreationDate);
+
+    const month = MONTHS_SHORT[invoiceCreationDate.getMonth()];
+    const year = invoiceCreationDate.getFullYear().toString().slice(-2);
+
+    const monthKey = `${month}-${year}`;
+
+    if (!monthlyMap.has(monthKey)) {
+      monthlyMap.set(monthKey, {
+        month: monthKey,
+        taxable: 0,
+        revenue: [],
+      });
+    }
+
+    const monthData = monthlyMap.get(monthKey);
+
+    monthData.taxable += item.taxableAmount || 0;
+
+    monthData.revenue.push({
+      name: item.name,
+      particulars: item.particulars,
+      taxableAmount: item.taxableAmount,
+      invoiceAmount: item.invoiceAmount,
+      invoiceCreationDate: item.invoiceCreationDate,
+      invoicePaidDate: item.invoicePaidDate,
+      gst: item.gst,
+      status: item.status || "Paid",
+    });
+  });
+
+  const transformedRecords = Array.from(monthlyMap.values()).sort((a, b) => {
+    const parseKey = (key) => {
+      const [month, year] = key.split("-");
+      const monthIndex = MONTHS_SHORT.indexOf(month);
+
+      return parseInt(`20${year}${String(monthIndex + 1).padStart(2, "0")}`);
+    };
+
+    return parseKey(a.month) - parseKey(b.month);
+  });
+
+  if (isReport) {
+    return transformedRecords.flatMap((month) => month.revenue);
+  }
+
+  return transformedRecords;
+};
+
+const fetchMeetingRevenueReportService = async ({
+  company,
+  dateFilter,
+  isReport = false,
+}) => {
+  const filter = {};
+
+  if (dateFilter) {
+    filter.date = dateFilter.date;
+  }
+
+  const revenues = await MeetingRevenue.find(filter)
+    .sort({ date: -1 })
+    .lean()
+    .exec();
+
+  const MONTHS_SHORT = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const monthlyMap = new Map();
+
+  revenues.forEach((item) => {
+    const referenceDate = new Date(item.date);
+
+    const month = MONTHS_SHORT[referenceDate.getMonth()];
+    const year = referenceDate.getFullYear().toString().slice(-2);
+
+    const monthKey = `${month}-${year}`;
+
+    if (!monthlyMap.has(monthKey)) {
+      monthlyMap.set(monthKey, {
+        month: monthKey,
+        actual: 0,
+        revenue: [],
+      });
+    }
+
+    const monthData = monthlyMap.get(monthKey);
+
+    monthData.actual += item.taxable || 0;
+
+    monthData.revenue.push({
+      clientName: item.client,
+      particulars: item.particulars,
+      unitsOrHours: item.unitsOrHours,
+      hoursBooked: item.hoursBooked,
+      costPerHour: item.costPerHour,
+      taxable: item.taxable,
+      gst: item.gst,
+      status: item.status,
+      totalAmount: item.totalAmount,
+      date: item.date,
+      paymentDate: item.paymentDate,
+      meetingRoomName: item.meetingRoomName,
+      remarks: item.remarks || "",
+    });
+  });
+
+  const transformedRecords = Array.from(monthlyMap.values()).sort((a, b) => {
+    const parseKey = (key) => {
+      const [month, year] = key.split("-");
+      const monthIndex = MONTHS_SHORT.indexOf(month);
+
+      return parseInt(
+        `20${year}${String(monthIndex + 1).padStart(2, "0")}`,
+        10,
+      );
+    };
+
+    return parseKey(a.month) - parseKey(b.month);
+  });
+
+  if (isReport) {
+    return transformedRecords.flatMap((month) => month.revenue);
+  }
+
+  return transformedRecords;
+};
+
+const fetchVirtualOfficeRevenueReportService = async ({
+  dateFilter,
+  departmentId,
+  departments,
+  roles,
+  company,
+  user,
+  query,
+  params,
+}) => {
+  let filter = {};
+
+  if (dateFilter) {
+    filter.rentDate = dateFilter.rentDate;
+  }
+  const revenues = await VirtualOfficeRevenue.find(filter)
+    .populate([{ path: "client", select: "clientName" }])
+    .lean()
+    .exec();
+
+  return revenues;
+};
+
 module.exports = {
   fetchCoworkingRevenueService,
+  fetchMeetingRevenueReportService,
+  fetchAlternateRevenueReportService,
+  fetchVirtualOfficeRevenueReportService,
 };
