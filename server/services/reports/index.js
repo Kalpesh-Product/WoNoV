@@ -12,6 +12,10 @@ const { fetchMeetingReportService } = require("./meeting");
 const { fetchVisitorReportService } = require("./visitor");
 const { fetchCoworkingRevenueService } = require("./revenue");
 
+const { fetchMeetingRevenueReportService } = require("./revenue");
+const { fetchAlternateRevenueReportService } = require("./revenue");
+const { fetchVirtualOfficeRevenueReportService } = require("./revenue");
+const { fetchCoworkingClientReportService } = require("./client");
 const normalizeReportIdentifier = (value = "") =>
   value
     .trim()
@@ -70,278 +74,31 @@ const createPerformanceReportService = (type) =>
  * Stable keys should come from Report.reportKey in DB where possible.
  * Keeping reportName aliases for backward compatibility.
  */
-// const reportServiceRegistry = {
-//   vendor: async ({
-//     dateFilter,
-//     departmentId,
-//     departments,
-//     roles,
-//     company,
-//     user,
-//   }) =>
-//     fetchVendorReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "onboardingDate",
-//         }),
-//       },
-//       departmentId,
-//       departments,
-//       roles,
-//       company,
-//       user,
-//     }),
-
-//   "dept-kpa": async ({
-//     dateFilter,
-//     departmentId,
-//     departments,
-//     roles,
-//     company,
-//     user,
-//   }) =>
-//     fetchPerformanceReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "assignedDate",
-//         }),
-//       },
-//       departmentId,
-//       departments,
-//       roles,
-//       company,
-//       user,
-//       type: "KPA",
-//       isReport: true,
-//     }),
-//   "dept-kra": async ({
-//     dateFilter,
-//     departmentId,
-//     departments,
-//     roles,
-//     company,
-//     user,
-//   }) =>
-//     fetchPerformanceReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "assignedDate",
-//         }),
-//       },
-//       departmentId,
-//       departments,
-//       roles,
-//       company,
-//       user,
-//       type: "KRA",
-//       isReport: true,
-//     }),
-//   "individual-kra": async ({
-//     dateFilter,
-//     departmentId,
-//     departments,
-//     roles,
-//     company,
-//     user,
-//   }) =>
-//     fetchPerformanceReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "assignedDate",
-//         }),
-//       },
-//       departmentId,
-//       departments,
-//       roles,
-//       company,
-//       user,
-//       type: "INDIVIDUALKRA",
-//       isReport: true,
-//     }),
-//   "individual-kpa": async ({
-//     dateFilter,
-//     departmentId,
-//     departments,
-//     roles,
-//     company,
-//     user,
-//   }) =>
-//     fetchPerformanceReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "assignedDate",
-//         }),
-//       },
-//       departmentId,
-//       departments,
-//       roles,
-//       company,
-//       user,
-//       type: "INDIVIDUALKPA",
-//       isReport: true,
-//     }),
-//   "my-task": async ({
-//     dateFilter,
-//     departmentId,
-//     departments,
-//     roles,
-//     company,
-//     user,
-//   }) =>
-//     fetchMyTasksReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "assignedDate",
-//         }),
-//       },
-//       departmentId,
-//       departments,
-//       roles,
-//       company,
-//       user,
-//     }),
-//   "department-task": async ({
-//     dateFilter,
-//     departmentId,
-//     departments,
-//     roles,
-//     company,
-//     user,
-//   }) =>
-//     fetchDeptTaskReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "assignedDate",
-//         }),
-//       },
-//       departmentId,
-//       departments,
-//       roles,
-//       company,
-//       user,
-//       isReport: true,
-//     }),
-
-//   asset: async ({
-//     dateFilter,
-//     departmentId,
-//     departments,
-//     roles,
-//     company,
-//     user,
-//     query,
-//   }) =>
-//     fetchAssetReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "createdAt",
-//         }),
-//       },
-//       departmentId,
-//       departments,
-//       roles,
-//       company,
-//       user,
-//       query,
-//       isReport: true,
-//     }),
-
-//   meeting: async ({
-//     dateFilter,
-//     company,
-//     departmentId,
-//     departments,
-//     roles,
-//     user,
-//   }) =>
-//     fetchMeetingReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "startDate",
-//         }),
-//       },
-//       company,
-//       departmentId,
-//       departments,
-//       roles,
-//       user,
-//       isReport: true,
-//     }),
-
-//   visitor: async ({ dateFilter, departmentId, company }) =>
-//     fetchVisitorReportService({
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "checkIn",
-//         }),
-//       },
-//       departmentId,
-//       company,
-//     }),
-
-//   budget: async ({ dateFilter, departmentId, departments, roles }) =>
-//     fetchBudgetService({
-//       departments,
-//       departmentId,
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "dueDate",
-//         }),
-//       },
-//       roles,
-//       isReport: true,
-//     }),
-//   voucher: async ({ dateFilter, departmentId, departments, roles }) =>
-//     fetchVoucherService({
-//       departments,
-//       departmentId,
-//       dateFilter: {
-//         ...buildDateFilter({
-//           startDate: dateFilter?.startDate,
-//           endDate: dateFilter?.endDate,
-//           field: "dueDate",
-//         }),
-//       },
-//       roles,
-//       isReport: true,
-//     }),
-
-//   ticket: async ({ dateFilter, departmentId, departments, roles }) =>
-//     fetchTicketReportService({
-//       departmentId,
-//       roles,
-//       departments,
-//       dateFilter: buildDateFilter({
-//         startDate: dateFilter?.startDate,
-//         endDate: dateFilter?.endDate,
-//         field: "createdAt",
-//       }),
-//     }),
-// };
 
 const reportServiceRegistry = {
+  "coworking-clients": createReportService(fetchCoworkingClientReportService, {
+    dateField: "startDate",
+  }),
+
+  "virtual-office-revenue": createReportService(
+    fetchVirtualOfficeRevenueReportService,
+    {
+      dateField: "rentDate",
+    },
+  ),
+
+  "alternate-revenue": createReportService(fetchAlternateRevenueReportService, {
+    dateField: "invoiceCreationDate",
+  }),
+
+  "coworking-revenue": createReportService(fetchCoworkingRevenueService, {
+    dateField: "rentDate",
+  }),
+
+  "meeting-revenue": createReportService(fetchMeetingRevenueReportService, {
+    dateField: "date",
+  }),
+
   "dept-kpa": createPerformanceReportService("KPA"),
   "dept-kra": createPerformanceReportService("KRA"),
   "individual-kra": createPerformanceReportService("INDIVIDUALKRA"),
@@ -384,10 +141,6 @@ const reportServiceRegistry = {
 
   vendor: createReportService(fetchVendorReportService, {
     dateField: "onboardingDate",
-  }),
-
-  "coworking-revenue": createReportService(fetchCoworkingRevenueService, {
-    dateField: "rentDate",
   }),
 };
 
