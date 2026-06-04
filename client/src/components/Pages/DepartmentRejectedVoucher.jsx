@@ -49,66 +49,182 @@ const DepartmentRejectedVoucher = () => {
     enabled: !!department?._id,
   });
 
-  const columns = [
-    { field: "srno", headerName: "Sr No", flex:0.5},
-    { field: "expanseName", headerName: "Expense Name ", flex:1},
-    { field: "department", headerName: "Department", flex:1 , hide:true},
-    { field: "expanseType", headerName: "Expense Type " ,flex:1},
-    { field: "projectedAmount", headerName: "Particular Amount (INR)" ,flex:1},
-   // { field: "reimbursementDate", headerName: "Date" },
-    { field: "dueDate", headerName: "Due Date" ,flex:1},
-    {
-      field: "status",
-      headerName: "Approval Status",
-      flex:1,
-      cellRenderer: (params) => (
-        <Chip
-          label={params.value || "-"}
-          size="small"
-          sx={{
-            backgroundColor: "#FEE2E2",
-            color: "#991B1B",
-            fontWeight: 500,
-            textTransform: "capitalize",
-          }}
-        />
-      ),
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      flex:1,
-      pinned: "right",
-      cellRenderer: (params) => (
-        <div className="h-10 flex items-center gap-3">
-          <MdOutlineRemoveRedEye
-            className="cursor-pointer text-lg"
-            onClick={() => {
-              setSelectedBudget(params.data);
-              setModalOpen(true);
+   const columns = [
+      // { field: "srno", headerName: "Sr No", flex: 0.8 },
+      // { field: "expanseName", headerName: "Expense Name ", flex: 1.5  },
+      // { field: "department", headerName: "Department", flex: 1.5},
+      // { field: "expanseType", headerName: "Expense Type " ,flex: 1.5},
+      // { field: "projectedAmount", headerName: "Particular Amount (INR)",flex: 1.5 },
+      // { field: "reimbursementDate", headerName: "Date" ,hide: true},
+      // { field: "dueDate", headerName: "Due Date" ,flex: 1.5},
+      { headerName: "Sr No", field: "srNo", width: 100 },
+     // { headerName: "Voucher Sr.No", field: "voucherSrNo", hide: true },
+      { headerName: "Expense Name", field: "expanseName", flex: 1 },
+      { headerName: "Department", field: "department", flex: 1},
+      { headerName: "Expense Type", field: "expanseType"},
+      { headerName: "Unit", field: "unitName", hide: true },
+      { headerName: "Unit No", field: "unitNo", hide: true },
+      { headerName: "Building", field: "buildingName", hide: true },
+      { headerName: "Particulars", field: "particularSummary", hide: true },
+      { headerName: "Total Amount (INR)", field: "projectedAmount" },
+      { headerName: "Paid Status", field: "isPaid", hide: true },
+      { headerName: "Extra Budget", field: "isExtraBudgetText", hide: true },
+      { headerName: "Pre-Approved", field: "preApprovedText", hide: true },
+      { headerName: "Emergency Approval", field: "emergencyApprovalText", hide: true },
+      { headerName: "Budget Approval", field: "budgetApprovalText", hide: true },
+      { headerName: "L1 Approval", field: "l1ApprovalText", hide: true },
+      { headerName: "Invoice Attached", field: "invoiceAttachedText", hide: true },
+      { headerName: "Invoice Name", field: "invoiceName", flex: 1, hide: true },
+      { headerName: "GSTIN", field: "gstIn", flex: 1, hide: true },
+      { headerName: "Invoice Link", field: "invoiceLink", hide: true },
+      { headerName: "Invoice Date", field: "invoiceDate", flex: 1, hide: true },
+      { headerName: "Voucher Name", field: "voucherName", hide: true },
+      { headerName: "Voucher Link", field: "voucherLink", hide: true },
+      { headerName: "Reimbursement Date", field: "reimbursementDate", hide: true},
+      { headerName: "Due Date", field: "dueDate", flex: 1 },
+      {
+        field: "status",
+        headerName: "Approval Status",
+        cellRenderer: (params) => (
+          <Chip
+            label={params.value || "-"}
+            size="small"
+            sx={{
+              backgroundColor: "#FEE2E2",
+              color: "#991B1B",
+              fontWeight: 500,
+              textTransform: "capitalize",
             }}
           />
-        </div>
-      ),
-    },
-  ];
+        ),
+      },
+      {
+        field: "actions",
+        headerName: "Actions",
+        pinned: "right",
+        cellRenderer: (params) => (
+          <div className="h-10 flex items-center gap-3">
+            <MdOutlineRemoveRedEye
+              className="cursor-pointer text-lg"
+              onClick={() => {
+                setSelectedBudget(params.data);
+                setModalOpen(true);
+              }}
+            />
+          </div>
+        ),
+      },
+    ];
+  
+    const tableData = rejectedVouchers.map((item, index) => ({
+      ...item,
+      srNo: item.srNo,
+      srno: index + 1,
+      department: item.department?.name,
+      unitName: item.unit?.unitName || "-",
+      unitNo: item.unit?.unitNo || "-",
+      buildingName: item.unit?.building?.buildingName || "-",
+      reimbursementDate: item.reimbursementDate ? humanDate(item.reimbursementDate) : "-",
+      dueDate: item.dueDate ? humanDate(item.dueDate) : "-",
+      dueDateRaw: item?.dueDate || null,
+      projectedAmount: inrFormat(item.projectedAmount),
+      status: item?.status || "Rejected",
+      voucherSrNo: item.srNo || "-",
+        expanseName: item.expanseName || "-",
+        expanseType: item.expanseType || "-",
+  
+      particularSummary: Array.isArray(item.particulars)
+    ? item.particulars
+        .map(
+          (p, idx) =>
+            `Particular ${idx + 1}: ${p.particularName || "-"} — INR ${inrFormat(
+              p.particularAmount || 0
+            )}`
+        )
+        .join("\n")
+    : "-", 
+       gstIn: item.gstIn || "-",
+        
+        isPaid: item.status === "Approved" ? "Paid" : "Unpaid",
+        isExtraBudget: Boolean(item.isExtraBudget),
+        isExtraBudgetText: item.isExtraBudget ? "Yes" : "No",
+        preApproved: Boolean(item.preApproved),
+        preApprovedText: item.preApproved ? "Yes" : "No",
+        emergencyApproval: Boolean(item.emergencyApproval),
+        emergencyApprovalText: item.emergencyApproval ? "Yes" : "No",
+        budgetApproval: Boolean(item.budgetApproval),
+        budgetApprovalText: item.budgetApproval ? "Yes" : "No",
+        l1Approval: Boolean(item.l1Approval),
+        l1ApprovalText: item.l1Approval ? "Yes" : "No",
+        invoiceAttached: Boolean(item.invoiceAttached),
+        invoiceAttachedText: item.invoiceAttached ? "Yes" : "No",
+        invoiceName: item.invoice?.name || "-",
+        invoiceLink: item.invoice?.link || "-",
+        invoiceDate: item.invoice?.date ? humanDate(item.invoice.date) : "-",
+        voucherName: item.voucher?.name || "-",
+        voucherLink: item.voucher?.link || "-",
+    }));
 
-  const tableData = rejectedVouchers.map((item, index) => ({
-    ...item,
-    srNo: item.srNo,
-    srno: index + 1,
-    department: item.department?.name,
-    unitName: item.unit?.unitName || "-",
-    unitNo: item.unit?.unitNo || "-",
-    buildingName: item.unit?.building?.buildingName || "-",
-    reimbursementDate: item.reimbursementDate
-      ? humanDate(item.reimbursementDate)
-      : "-",
-    dueDate: item.dueDate ? humanDate(item.dueDate) : "-",
-    dueDateRaw: item?.dueDate || null,
-    projectedAmount: inrFormat(item.projectedAmount),
-    status: item?.status || "Rejected",
-  }));
+  // const columns = [
+  //   { field: "srno", headerName: "Sr No", flex:0.5},
+  //   { field: "expanseName", headerName: "Expense Name ", flex:1},
+  //   { field: "department", headerName: "Department", flex:1 , hide:true},
+  //   { field: "expanseType", headerName: "Expense Type " ,flex:1},
+  //   { field: "projectedAmount", headerName: "Particular Amount (INR)" ,flex:1},
+  //  // { field: "reimbursementDate", headerName: "Date" },
+  //   { field: "dueDate", headerName: "Due Date" ,flex:1},
+  //   {
+  //     field: "status",
+  //     headerName: "Approval Status",
+  //     flex:1,
+  //     cellRenderer: (params) => (
+  //       <Chip
+  //         label={params.value || "-"}
+  //         size="small"
+  //         sx={{
+  //           backgroundColor: "#FEE2E2",
+  //           color: "#991B1B",
+  //           fontWeight: 500,
+  //           textTransform: "capitalize",
+  //         }}
+  //       />
+  //     ),
+  //   },
+  //   {
+  //     field: "actions",
+  //     headerName: "Actions",
+  //     flex:1,
+  //     pinned: "right",
+  //     cellRenderer: (params) => (
+  //       <div className="h-10 flex items-center gap-3">
+  //         <MdOutlineRemoveRedEye
+  //           className="cursor-pointer text-lg"
+  //           onClick={() => {
+  //             setSelectedBudget(params.data);
+  //             setModalOpen(true);
+  //           }}
+  //         />
+  //       </div>
+  //     ),
+  //   },
+  // ];
+
+  // const tableData = rejectedVouchers.map((item, index) => ({
+  //   ...item,
+  //   srNo: item.srNo,
+  //   srno: index + 1,
+  //   department: item.department?.name,
+  //   unitName: item.unit?.unitName || "-",
+  //   unitNo: item.unit?.unitNo || "-",
+  //   buildingName: item.unit?.building?.buildingName || "-",
+  //   reimbursementDate: item.reimbursementDate
+  //     ? humanDate(item.reimbursementDate)
+  //     : "-",
+  //   dueDate: item.dueDate ? humanDate(item.dueDate) : "-",
+  //   dueDateRaw: item?.dueDate || null,
+  //   projectedAmount: inrFormat(item.projectedAmount),
+  //   status: item?.status || "Rejected",
+  // }));
 
   return (
     <div>

@@ -34,8 +34,9 @@ const BudgetHistory = () => {
     { field: "dueDate", headerName: "Due Date", flex: 1.1 },
     {
       field: "status",
-      headerName: "Status",
+      headerName: "Approval Status",
       flex: 1,
+      pinned: "right",
       cellRenderer: (params) => {
         const status = String(params?.value || "-");
         const normalizedStatus = status.toLowerCase();
