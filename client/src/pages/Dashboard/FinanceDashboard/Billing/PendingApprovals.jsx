@@ -19,6 +19,7 @@ import { setVoucherDetails } from "../../../../redux/slices/financeSlice";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import StatusChip from "../../../../components/StatusChip";
 const PendingApprovals = () => {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
@@ -111,11 +112,12 @@ const PendingApprovals = () => {
 
   const kraColumn = [
     { field: "srno", headerName: "Sr No", width: 100 },
-    { field: "expanseName", headerName: "Expense Name ", width: 200 },
-    { field: "department", headerName: "Department", width: 150 },
-    { field: "expanseType", headerName: "Expense Type " },
-    { field: "projectedAmount", headerName: "Particular Amount (INR)" },
-    { field: "reimbursementDate", headerName: "Date" },
+    { field: "expanseName", headerName: "Expense Name ", flex: 1 },
+    { field: "department", headerName: "Department", flex: 1},
+    { field: "expanseType", headerName: "Expense Type ", flex: 1},
+    { field: "projectedAmount", headerName: "Particular Amount (INR)" ,flex: 1},
+    { field: "reimbursementDate", headerName: "Raised Date",flex: 1 },
+    {field: "status", headerName: "Approval Status", flex: 1,cellRenderer: (params) => <StatusChip status={params.value} />},
     {
       field: "actions",
       headerName: "Actions",

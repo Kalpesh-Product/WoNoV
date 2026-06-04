@@ -35,7 +35,7 @@ const DepartmentBudgetHistory = () => {
     { field: "dueDate", headerName: "Due Date", flex: 1 },
     {
       field: "status",
-      headerName: "Status",
+      headerName: "Approval Status",
       pinned:"right",
       flex: 1,
       cellRenderer: (params) => {
