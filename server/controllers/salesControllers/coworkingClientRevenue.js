@@ -9,6 +9,9 @@ const {
   normalizeClientName,
   normalizeAmount,
 } = require("../../utils/dataSheetFormatters");
+const {
+  fetchCoworkingRevenueService,
+} = require("../../services/reports/revenue");
 
 const addRevenue = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -127,75 +130,90 @@ const addRevenue = async (req, res, next) => {
 };
 
 const getRevenues = async (req, res, next) => {
+  // try {
+  //   const company = req.company;
+  //   const { serviceId } = req.query;
+
+  //   const filter = { company };
+  //   if (serviceId) {
+  //     filter.service = serviceId;
+  //   }
+
+  //   const revenues = await CoworkingRevenue.find(filter).lean().exec();
+
+  //   const MONTHS_SHORT = [
+  //     "Jan",
+  //     "Feb",
+  //     "Mar",
+  //     "Apr",
+  //     "May",
+  //     "Jun",
+  //     "Jul",
+  //     "Aug",
+  //     "Sep",
+  //     "Oct",
+  //     "Nov",
+  //     "Dec",
+  //   ];
+
+  //   const monthlyMap = new Map();
+
+  //   revenues.forEach((item) => {
+  //     const referenceDate = item.rentDate || item.createdAt;
+  //     const dateObj = new Date(referenceDate);
+  //     const month = MONTHS_SHORT[dateObj.getMonth()];
+  //     const year = dateObj.getFullYear().toString().slice(-2);
+  //     const monthKey = `${month}-${year}`;
+
+  //     if (!monthlyMap.has(monthKey)) {
+  //       monthlyMap.set(monthKey, {
+  //         month: monthKey,
+  //         totalRevenue: 0,
+  //         clients: [],
+  //       });
+  //     }
+
+  //     const monthData = monthlyMap.get(monthKey);
+  //     monthData.totalRevenue += item.revenue || 0;
+
+  //     monthData.clients.push({
+  //       clientName: item.clientName || item.client?.clientName,
+  //       channel: item.channel,
+  //       noOfDesks: item.noOfDesks,
+  //       deskRate: item.deskRate,
+  //       occupation: item.occupation,
+  //       revenue: item.revenue,
+  //       totalTerm: item.totalTerm,
+  //       dueTerm: item.dueTerm,
+  //       rentDate: item.rentDate,
+  //       rentStatus: item.rentStatus,
+  //       pastDueDate: item.pastDueDate,
+  //       annualIncrement: item.annualIncrement,
+  //       nextIncrementDate: item.nextIncrementDate,
+  //       serviceName: item.service?.serviceName,
+  //     });
+  //   });
+
+  //   const transformedData = Array.from(monthlyMap.values());
+
+  //   res.status(200).json(transformedData);
+  // } catch (error) {
+  //   next(error);
+  // }
   try {
     const company = req.company;
-    const { serviceId } = req.query;
 
-    const filter = { company };
-    if (serviceId) {
-      filter.service = serviceId;
-    }
-
-    const revenues = await CoworkingRevenue.find(filter).lean().exec();
-
-    const MONTHS_SHORT = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
-    const monthlyMap = new Map();
-
-    revenues.forEach((item) => {
-      const referenceDate = item.rentDate || item.createdAt;
-      const dateObj = new Date(referenceDate);
-      const month = MONTHS_SHORT[dateObj.getMonth()];
-      const year = dateObj.getFullYear().toString().slice(-2);
-      const monthKey = `${month}-${year}`;
-
-      if (!monthlyMap.has(monthKey)) {
-        monthlyMap.set(monthKey, {
-          month: monthKey,
-          totalRevenue: 0,
-          clients: [],
-        });
-      }
-
-      const monthData = monthlyMap.get(monthKey);
-      monthData.totalRevenue += item.revenue || 0;
-
-      monthData.clients.push({
-        clientName: item.clientName || item.client?.clientName,
-        channel: item.channel,
-        noOfDesks: item.noOfDesks,
-        deskRate: item.deskRate,
-        occupation: item.occupation,
-        revenue: item.revenue,
-        totalTerm: item.totalTerm,
-        dueTerm: item.dueTerm,
-        rentDate: item.rentDate,
-        rentStatus: item.rentStatus,
-        pastDueDate: item.pastDueDate,
-        annualIncrement: item.annualIncrement,
-        nextIncrementDate: item.nextIncrementDate,
-        serviceName: item.service?.serviceName,
-      });
+    const result = await fetchCoworkingRevenueService({
+      company,
+      query: req.query,
     });
 
-    const transformedData = Array.from(monthlyMap.values());
-
-    res.status(200).json(transformedData);
+    return res.status(200).json(result);
   } catch (error) {
-    next(error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    return next(error);
   }
 };
 
