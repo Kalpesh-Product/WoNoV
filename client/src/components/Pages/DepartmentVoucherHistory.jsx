@@ -41,13 +41,7 @@ const DepartmentVoucherHistory = () => {
     { field: "srNo", headerName: "Sr No", flex: 0.5 },
     { field: "voucherName", headerName: "Voucher Name", flex: 1 },
     { field: "modeOfPayment", headerName: "Mode of Payment", flex: 1 },
-    {field: "particularsSummary", headerName: "Particulars Summary", flex: 1,hide: true, cellRenderer: (params) => {
-      const particulars = Array.isArray(params.data.financeParticulars)
-        ? params.data.financeParticulars
-        : [];
-      if (particulars.length === 0) return "-";
-      return particulars.map((p) => p.particularName).join(", ");
-    }},
+    { field: "particularSummary",headerName: "Particulars", hide: true },
     { field: "totalAmount", headerName: "Total Amount(INR)", flex: 1, valueFormatter: (params) => inrFormat(params.value), },
     {
       field: "advanceAmount",
@@ -129,6 +123,9 @@ const DepartmentVoucherHistory = () => {
             voucherName: item.finance?.voucher?.name || "-",
             voucherLink: item.finance?.voucher?.link || "-",
             modeOfPayment: item.finance?.modeOfPayment || "-",
+            particularSummary: Array.isArray(item.finance?.particulars)
+                ? item.finance.particulars.map((p) => p.particularName).join(", ")
+                : "-",
             totalAmount: Array.isArray(item.finance?.particulars)
               ? item.finance.particulars.reduce(
                   (sum, entry) => sum + Number(entry?.particularAmount || 0),
