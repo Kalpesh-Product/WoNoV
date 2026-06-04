@@ -24,6 +24,7 @@ const COLLECTION_FIELD_NAMES = new Set([
   "records",
   "results",
   "rows",
+  "reports",
 ]);
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]*)?$/;

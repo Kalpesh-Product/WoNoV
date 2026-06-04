@@ -10,9 +10,7 @@ const {
 const { fetchAssetReportService } = require("./asset");
 const { fetchMeetingReportService } = require("./meeting");
 const { fetchVisitorReportService } = require("./visitor");
-// const {
-//   getRevenues,
-// } = require("../../controllers/salesControllers/coworkingClientRevenue");
+const { fetchCoworkingRevenueService } = require("./revenue");
 
 const normalizeReportIdentifier = (value = "") =>
   value
@@ -50,7 +48,11 @@ const buildReportDateFilter = (dateFilter, field) =>
 const createReportService =
   (
     service,
-    { dateField, contextKeys = COMMON_REPORT_CONTEXT_KEYS, staticParams = {} },
+    {
+      dateField,
+      contextKeys = COMMON_REPORT_CONTEXT_KEYS,
+      staticParams = { isReport: true },
+    },
   ) =>
   async (context = {}) =>
     service({
@@ -62,7 +64,6 @@ const createReportService =
 const createPerformanceReportService = (type) =>
   createReportService(fetchPerformanceReportService, {
     dateField: "assignedDate",
-    staticParams: { type, isReport: true },
   });
 
 /**
@@ -351,18 +352,15 @@ const reportServiceRegistry = {
   }),
   "department-task": createReportService(fetchDeptTaskReportService, {
     dateField: "assignedDate",
-    staticParams: { isReport: true },
   }),
 
   asset: createReportService(fetchAssetReportService, {
     dateField: "createdAt",
     contextKeys: [...COMMON_REPORT_CONTEXT_KEYS, "query"],
-    staticParams: { isReport: true },
   }),
 
   meeting: createReportService(fetchMeetingReportService, {
     dateField: "startDate",
-    staticParams: { isReport: true },
   }),
 
   visitor: createReportService(fetchVisitorReportService, {
@@ -378,21 +376,19 @@ const reportServiceRegistry = {
   budget: createReportService(fetchBudgetService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
-    staticParams: { isReport: true },
   }),
   voucher: createReportService(fetchVoucherService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
-    staticParams: { isReport: true },
   }),
 
   vendor: createReportService(fetchVendorReportService, {
     dateField: "onboardingDate",
   }),
 
-  // "coworking-revenue": createReportService(getRevenues, {
-  //   dateField: "onboardingDate",
-  // }),
+  "coworking-revenue": createReportService(fetchCoworkingRevenueService, {
+    dateField: "rentDate",
+  }),
 };
 
 const resolveReportService = (reportMeta = {}) => {
