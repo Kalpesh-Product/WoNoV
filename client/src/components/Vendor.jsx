@@ -85,6 +85,7 @@ const Vendor = () => {
       queryClient.invalidateQueries({
         queryKey: ["vendors", department._id],
       });
+      navigate("..", { relative: "path" });
     },
     onError: function (data) {
       if (!department) {
