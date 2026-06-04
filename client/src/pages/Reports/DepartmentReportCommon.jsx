@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Navigate, useLocation, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Chip, Popover } from "@mui/material";
 import { toast } from "sonner";
@@ -14,42 +14,35 @@ import "react-date-range/dist/theme/default.css";
 import { downloadCsv } from "../../utils/downloadCsv";
 import { queryClient } from "../../main";
 import useAuth from "../../hooks/useAuth";
+import useUserPermissions from "../../hooks/useUserPermissions";
 
 const REPORT_MODULE_MAP = {
   ticket: {
     title: "Ticket Report",
     module: "Ticket",
     reportType: "app",
+     permission: "reports_tickets",
   },
 
   meeting: {
     title: "Meeting Report",
     module: "Meeting",
     reportType: "app",
+    permission: "reports_meetings",
   },
 
   visitor: {
     title: "Visitor Report",
     module: "Visitor",
     reportType: "app",
+    permission: "reports_visitors",
   },
 
   asset: {
     title: "Asset Report",
     module: "Asset",
     reportType: "app",
-  },
-
-  task: {
-    title: "Task Report",
-    module: "Task",
-    reportType: "app",
-  },
-
-  performance: {
-    title: "Performance Report",
-    module: "Performance",
-    reportType: "app",
+    permission: "reports_assets",
   },
 };
 
@@ -58,39 +51,102 @@ const RETRY_COOLDOWN_STORAGE_KEY = "department-report-retry-cooldown";
 const DepartmentReportCommon = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+   const { permissions } = useUserPermissions();
+  const location = useLocation();
   const { moduleKey = "" } = useParams();
-  const normalizedModuleKey = String(moduleKey).toLowerCase();
+  const normalizedModuleKey = String(moduleKey).trim().toLowerCase();
   const matchedReportModule = REPORT_MODULE_MAP[normalizedModuleKey];
-  const selectedModule = matchedReportModule || {
-    title: `${String(moduleKey || "").toUpperCase()} Department Report`,
-    module:
-      String(moduleKey || "")
-        .trim()
-        .replace(/^./, (char) => char.toUpperCase()) || "",
-  };
 
-  const userDepartments = Array.isArray(auth?.user?.departments)
-    ? auth.user.departments
-    : [];
+  const { data: departments = [], isLoading: isDepartmentsLoading } = useQuery({
+    queryKey: ["report-departments"],
+    queryFn: async () => {
+      const response = await axios.get("/api/departments/get-departments");
+      return Array.isArray(response?.data) ? response.data : [];
+    },
+  });
+
+  const userDepartments = useMemo(
+    () => (Array.isArray(auth?.user?.departments) ? auth.user.departments : []),
+    [auth?.user?.departments],
+  );
+
   const selectedDepartment = useMemo(() => {
-    const normalizedDepartmentName = String(moduleKey || "").trim().toLowerCase();
-
-    if (!normalizedDepartmentName || matchedReportModule) {
+    if (!normalizedModuleKey || matchedReportModule) {
       return null;
     }
 
     return (
-      userDepartments.find(
+      departments.find(
         (department) =>
+          department?.isActive !== false &&
           String(department?.name || "")
             .trim()
-            .toLowerCase() === normalizedDepartmentName,
+            .toLowerCase() === normalizedModuleKey,
       ) || null
     );
-  }, [matchedReportModule, moduleKey, userDepartments]);
+  }, [departments, matchedReportModule, normalizedModuleKey]);
+
+  const selectedModule = matchedReportModule
+    ? {
+        title: matchedReportModule.title,
+        module: matchedReportModule.module,
+        reportType: matchedReportModule.reportType,
+      }
+    : {
+        title: `${String(selectedDepartment?.name || moduleKey || "")
+          .trim()
+          .toUpperCase()} Department Report`,
+        module: selectedDepartment?.name || "",
+        reportType: "dashboard",
+      };
+
+  const selectedDepartmentKey = String(selectedDepartment?.name || "")
+    .trim()
+    .toLowerCase();
+  const requiredPermission =
+    matchedReportModule?.permission ||
+    (selectedDepartmentKey
+      ? `reports_${selectedDepartmentKey.replace(/\s+/g, "_")}`
+      : null);
+  const isDepartmentReportRoute = !matchedReportModule;
+  const hasRequiredPermission =
+    !requiredPermission || permissions.includes(requiredPermission);
 
   const selectedDepartmentId = selectedDepartment?._id || null;
-  const reportTypeForFetch = selectedDepartmentId ? "dashboard" : "app";
+  const reportTypeForFetch = selectedModule.reportType || "app";
+  // const { moduleKey = "" } = useParams();
+  // const normalizedModuleKey = String(moduleKey).toLowerCase();
+  // const matchedReportModule = REPORT_MODULE_MAP[normalizedModuleKey];
+  // const selectedModule = matchedReportModule || {
+  //   title: `${String(moduleKey || "").toUpperCase()} Department Report`,
+  //   module:
+  //     String(moduleKey || "")
+  //       .trim()
+  //       .replace(/^./, (char) => char.toUpperCase()) || "",
+  // };
+
+  // const userDepartments = Array.isArray(auth?.user?.departments)
+  //   ? auth.user.departments
+  //   : [];
+  // const selectedDepartment = useMemo(() => {
+  //   const normalizedDepartmentName = String(moduleKey || "").trim().toLowerCase();
+
+  //   if (!normalizedDepartmentName || matchedReportModule) {
+  //     return null;
+  //   }
+
+  //   return (
+  //     userDepartments.find(
+  //       (department) =>
+  //         String(department?.name || "")
+  //           .trim()
+  //           .toLowerCase() === normalizedDepartmentName,
+  //     ) || null
+  //   );
+  // }, [matchedReportModule, moduleKey, userDepartments]);
+
+  // const selectedDepartmentId = selectedDepartment?._id || null;
+  // const reportTypeForFetch = selectedDepartmentId ? "dashboard" : "app";
 
   const selectedDepartmentNames = useMemo(() => {
     if (selectedDepartment?.name) {
@@ -161,7 +217,11 @@ const DepartmentReportCommon = () => {
         ? response.data.reports
         : [];
     },
-    enabled: Boolean(selectedModule?.module),
+    //enabled: Boolean(selectedModule?.module),
+   enabled:
+      Boolean(selectedModule?.module) &&
+      hasRequiredPermission &&
+      (!isDepartmentReportRoute || !isDepartmentsLoading),
   });
 
   const triggerReportDownload = (downloadUrl) => {
@@ -906,7 +966,16 @@ const DepartmentReportCommon = () => {
     [reports],
   );
 
-  if (!selectedModule) return null;
+  // if (!selectedModule) return null;
+  if (isDepartmentReportRoute && isDepartmentsLoading) return null;
+
+  if (isDepartmentReportRoute && !selectedDepartment) {
+    return <Navigate to="/unauthorized" replace state={{ from: location }} />;
+  }
+
+  if (!hasRequiredPermission) {
+    return <Navigate to="/unauthorized" replace state={{ from: location }} />;
+  }
 
   return (
     <div className="bg-white min-h-full p-4">

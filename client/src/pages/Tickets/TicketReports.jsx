@@ -164,7 +164,7 @@ const TicketReports = () => {
     //   cellRenderer: (params) => params.value,
     // },
     { field: "rejectedBy", headerName: "Rejected By", hide: true },
-    { field: "rejectedAtDate", headerName: "Rejected Date", hide: true },
+    { field: "rejectedAt", headerName: "Rejected Date", hide: true },
     { field: "reason", headerName: "Rejection Reason", hide: true },
   ];
 
@@ -322,7 +322,7 @@ const TicketReports = () => {
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
                   rejectedBy: getFullName(getRejectedByUser(item)),
-                  rejectedAtDate:
+                  rejectedAt:
                     formatDateTimeOrEmpty(
                       item.reject?.rejectedAt ||
                         (item.status === "Rejected" ? item.updatedAt : ""),

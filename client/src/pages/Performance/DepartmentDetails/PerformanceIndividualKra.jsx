@@ -367,7 +367,8 @@ const PerformanceIndividualKra = () => {
     const fetchTasks = async () => {
         try {
             const response = await axios.get(
-                 `/api/performance/get-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA`
+                  `/api/performance/get-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA&date=${selectedDateKey}`
+               //  `/api/performance/get-tasks?dept=${effectiveDeptId}&type=INDIVIDUALKRA`
             );
             return response.data;
         } catch (error) {
@@ -385,7 +386,8 @@ const PerformanceIndividualKra = () => {
         queryFn: async () => {
             try {
                 const response = await axios.get(
-                     `/api/performance/get-tasks?dept=${effectiveDeptId}&type=TEAMKRA`
+                      `/api/performance/get-tasks?dept=${effectiveDeptId}&type=TEAMKRA&date=${selectedDateKey}`
+                  //   `/api/performance/get-tasks?dept=${effectiveDeptId}&type=TEAMKRA`
                 );
                 return response.data;
             } catch (error) {
