@@ -115,9 +115,14 @@ const getCountryIsoCode = (countryValue) => {
         vendorID: state.vendorID,
         vendorName: state.vendorName,
         address: state.address,
-        state: normalizedState || state.stateCode || state.state,
+        state: getStateName(
+          normalizedCountry || state.countryCode || state.country,
+          normalizedState || state.stateCode || state.state
+        ),
         city: state.city,
-        country: normalizedCountry || state.countryCode || state.country,
+        country: getCountryName(
+          normalizedCountry || state.countryCode || state.country
+        ),
         pinCode: state.pinCode || state.address?.match(/\b\d{6}\b/)?.[0] || "",
         email: state.email,
         mobile: state.mobile,
