@@ -8,64 +8,15 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const Company = require("../../models/hr/Company");
-const {
-  handleFileDelete,
-  handleFileUpload,
-} = require("../../config/s3Config");
+const { handleFileDelete, handleFileUpload } = require("../../config/s3Config");
 const sharp = require("sharp");
 const ClientService = require("../../models/sales/ClientService");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const TestCoworkingClient = require("../../models/sales/TestCoworkingClient");
 const { normalizeClientName } = require("../../utils/dataSheetFormatters");
-
-const DELETED_MEMBER_VIEW_ROLES = new Set([
-  "master admin",
-  "super admin",
-]);
-
-const normalizeRoleValue = (value) =>
-  String(value || "").trim().toLowerCase();
-
-const getUserRoleTitles = (context) =>
-  (Array.isArray(context?.roles) ? context.roles : [])
-    .map((role) => normalizeRoleValue(role?.roleTitle || role))
-    .filter(Boolean);
-
-const getUserDepartmentNames = (context) =>
-  (Array.isArray(context?.departments) ? context.departments : [])
-    .map((department) =>
-      normalizeRoleValue(department?.name || department?.departmentName || department),
-    )
-    .filter(Boolean);
-
-const canViewDeletedMembers = (context) => {
-  const roleTitles = getUserRoleTitles(context);
-  const departmentNames = getUserDepartmentNames(context);
-
-  if (
-    roleTitles.some((roleTitle) => DELETED_MEMBER_VIEW_ROLES.has(roleTitle))
-  ) {
-    return true;
-  }
-
-  return (
-    roleTitles.some((roleTitle) =>
-      roleTitle.includes("air tech department") || roleTitle.includes("air tech"),
-    ) ||
-    departmentNames.some((departmentName) =>
-      departmentName.includes("air tech department") ||
-      departmentName.includes("air tech"),
-    )
-  );
-};
-
-const filterVisibleMembers = (members = [], context) => {
-  if (canViewDeletedMembers(context)) {
-    return members;
-  }
-
-  return members.filter((member) => !member?.isDeleted);
-};
+const {
+  fetchCoworkingClientReportService,
+} = require("../../services/reports/client");
 
 const createCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -149,7 +100,6 @@ const createCoworkingClient = async (req, res, next) => {
         logSourceKey,
       );
     }
-
 
     const coworkingService = await ClientService.findOne({
       serviceName: "Co-working",
@@ -246,7 +196,11 @@ const createCoworkingClient = async (req, res, next) => {
       meetingCreditBalance: Number(totalMeetingCredits) || 0,
       meetingCreditBalanceHistory: [
         {
-          monthStartDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          monthStartDate: new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            1,
+          ),
           remainingCredit: Number(totalMeetingCredits) || 0,
           consumedCredit: 0,
         },
@@ -325,145 +279,157 @@ const createCoworkingClient = async (req, res, next) => {
 };
 
 const getCoworkingClients = async (req, res, next) => {
+  // try {
+  //   const { company } = req;
+  //   const { coworkingclientid, unitId, active } = req.query;
+
+  //   if (
+  //     coworkingclientid &&
+  //     !mongoose.Types.ObjectId.isValid(coworkingclientid)
+  //   ) {
+  //     return res.status(400).json({ message: "Invalid client ID format" });
+  //   }
+
+  //   if (unitId && !mongoose.Types.ObjectId.isValid(unitId)) {
+  //     return res.status(400).json({ message: "Invalid unit ID format" });
+  //   }
+
+  //   const units = await Unit.find({ company }).populate({
+  //     path: "building",
+  //     select: "buildingName",
+  //   });
+
+  //   if (!units) {
+  //     return res.status(400).json({ message: "No unit found" });
+  //   }
+
+  //   let query = { company };
+
+  //   if (coworkingclientid) {
+  //     query = { _id: coworkingclientid };
+  //   } else if (unitId) {
+  //     query.unit = unitId;
+  //   } else if (active) {
+  //     query.isActive = active === "true" ? true : false;
+  //   }
+
+  //   const populateOptions = [
+  //     {
+  //       path: "unit",
+  //       select: "_id unitName unitNo cabinDesks openDesks",
+  //       populate: {
+  //         path: "building",
+  //         select: "_id buildingName fullAddress",
+  //       },
+  //     },
+  //     { path: "service", select: "_id serviceName description" },
+  //   ];
+
+  //   const clients = await CoworkingClient.find(query)
+  //     .populate(populateOptions)
+  //     .lean()
+  //     .exec();
+
+  //   // --- INCLUDE HOST COMPANY (BIZNEST) ---
+  //   let hostCompanyData = [];
+  //   if (!coworkingclientid || coworkingclientid.toString() === company.toString()) {
+  //     const hostCompany = await Company.findById(company)
+  //       .select(
+  //         "companyName totalMeetingCredits meetingCreditBalance meetingCreditBalanceHistory",
+  //       )
+  //       .lean()
+  //       .exec();
+
+  //     if (hostCompany) {
+  //       hostCompanyData = [
+  //         {
+  //           _id: hostCompany._id,
+  //           clientName: "BIZNest",
+  //           totalMeetingCredits: hostCompany.totalMeetingCredits,
+  //           meetingCreditBalance: hostCompany.meetingCreditBalance,
+  //           meetingCreditBalanceHistory: hostCompany.meetingCreditBalanceHistory || [],
+  //           isActive: true,
+  //           isHost: true,
+  //         },
+  //       ];
+  //     }
+  //   }
+
+  //   const allEntities = [...hostCompanyData, ...clients];
+
+  //   if (!allEntities.length) {
+  //     return res.status(404).json({ message: "No clients or companies found" });
+  //   }
+
+  //   const members = await CoworkingMembers.find({ company })
+  //     .populate([
+  //       { path: "client", select: "clientName email" },
+  //       { path: "unit", select: "unitName unitNo" },
+  //     ])
+  //     .lean()
+  //     .exec();
+  //   const visibleMembers = filterVisibleMembers(members, req);
+  //   const clientObjectIds = allEntities
+  //     .map((entity) => entity?._id)
+  //     .filter((entityId) => mongoose.Types.ObjectId.isValid(entityId))
+  //     .map((entityId) => new mongoose.Types.ObjectId(entityId));
+
+  //   const shouldIncludeDeletedMembers = canViewDeletedMembers(req);
+  //   const memberMatchStage = {
+  //     client: { $in: clientObjectIds },
+  //   };
+
+  //   if (!shouldIncludeDeletedMembers) {
+  //     memberMatchStage.isDeleted = { $ne: true };
+  //   }
+
+  //   const memberCounts = await CoworkingMembers.aggregate([
+  //     {
+  //       $match: memberMatchStage,
+  //     },
+  //     {
+  //       $group: {
+  //         _id: "$client",
+  //         count: { $sum: 1 },
+  //       },
+  //     },
+  //   ]);
+
+  //   const memberCountByClientId = memberCounts.reduce((acc, item) => {
+  //     const clientId = item?._id ? String(item._id) : "";
+  //     if (clientId) {
+  //       acc[clientId] = item.count || 0;
+  //     }
+  //     return acc;
+  //   }, {});
+
+  //     const entitiesWithMembers = allEntities.map((entity) => {
+  //       const entityId = entity?._id?.toString();
+
+  //       return {
+  //         ...entity,
+  //         memberCount: entityId ? memberCountByClientId[entityId] || 0 : 0,
+  //         members: visibleMembers.filter(
+  //           (member) =>
+  //             member.client &&
+  //             member.client._id.toString() === entity._id.toString(),
+  //         ),
+  //       };
+  //     });
+
+  //   res.status(200).json(entitiesWithMembers);
+  // } catch (error) {
+  //   next(error);
+  // }
+
   try {
-    const { company } = req;
-    const { coworkingclientid, unitId, active } = req.query;
-
-    if (
-      coworkingclientid &&
-      !mongoose.Types.ObjectId.isValid(coworkingclientid)
-    ) {
-      return res.status(400).json({ message: "Invalid client ID format" });
-    }
-
-    if (unitId && !mongoose.Types.ObjectId.isValid(unitId)) {
-      return res.status(400).json({ message: "Invalid unit ID format" });
-    }
-
-    const units = await Unit.find({ company }).populate({
-      path: "building",
-      select: "buildingName",
+    const payload = await fetchCoworkingClientReportService({
+      query: { ...req.query },
+      params: req.params || {},
+      company: req.company,
     });
 
-    if (!units) {
-      return res.status(400).json({ message: "No unit found" });
-    }
-
-    let query = { company };
-
-    if (coworkingclientid) {
-      query = { _id: coworkingclientid };
-    } else if (unitId) {
-      query.unit = unitId;
-    } else if (active) {
-      query.isActive = active === "true" ? true : false;
-    }
-
-    const populateOptions = [
-      {
-        path: "unit",
-        select: "_id unitName unitNo cabinDesks openDesks",
-        populate: {
-          path: "building",
-          select: "_id buildingName fullAddress",
-        },
-      },
-      { path: "service", select: "_id serviceName description" },
-    ];
-
-    const clients = await CoworkingClient.find(query)
-      .populate(populateOptions)
-      .lean()
-      .exec();
-
-    // --- INCLUDE HOST COMPANY (BIZNEST) ---
-    let hostCompanyData = [];
-    if (!coworkingclientid || coworkingclientid.toString() === company.toString()) {
-      const hostCompany = await Company.findById(company)
-        .select(
-          "companyName totalMeetingCredits meetingCreditBalance meetingCreditBalanceHistory",
-        )
-        .lean()
-        .exec();
-
-      if (hostCompany) {
-        hostCompanyData = [
-          {
-            _id: hostCompany._id,
-            clientName: "BIZNest",
-            totalMeetingCredits: hostCompany.totalMeetingCredits,
-            meetingCreditBalance: hostCompany.meetingCreditBalance,
-            meetingCreditBalanceHistory: hostCompany.meetingCreditBalanceHistory || [],
-            isActive: true,
-            isHost: true,
-          },
-        ];
-      }
-    }
-
-    const allEntities = [...hostCompanyData, ...clients];
-
-    if (!allEntities.length) {
-      return res.status(404).json({ message: "No clients or companies found" });
-    }
-
-    const members = await CoworkingMembers.find({ company })
-      .populate([
-        { path: "client", select: "clientName email" },
-        { path: "unit", select: "unitName unitNo" },
-      ])
-      .lean()
-      .exec();
-    const visibleMembers = filterVisibleMembers(members, req);
-    const clientObjectIds = allEntities
-      .map((entity) => entity?._id)
-      .filter((entityId) => mongoose.Types.ObjectId.isValid(entityId))
-      .map((entityId) => new mongoose.Types.ObjectId(entityId));
-
-    const shouldIncludeDeletedMembers = canViewDeletedMembers(req);
-    const memberMatchStage = {
-      client: { $in: clientObjectIds },
-    };
-
-    if (!shouldIncludeDeletedMembers) {
-      memberMatchStage.isDeleted = { $ne: true };
-    }
-
-    const memberCounts = await CoworkingMembers.aggregate([
-      {
-        $match: memberMatchStage,
-      },
-      {
-        $group: {
-          _id: "$client",
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const memberCountByClientId = memberCounts.reduce((acc, item) => {
-      const clientId = item?._id ? String(item._id) : "";
-      if (clientId) {
-        acc[clientId] = item.count || 0;
-      }
-      return acc;
-    }, {});
-
-      const entitiesWithMembers = allEntities.map((entity) => {
-        const entityId = entity?._id?.toString();
-
-        return {
-          ...entity,
-          memberCount: entityId ? memberCountByClientId[entityId] || 0 : 0,
-          members: visibleMembers.filter(
-            (member) =>
-              member.client &&
-              member.client._id.toString() === entity._id.toString(),
-          ),
-        };
-      });
-
-    res.status(200).json(entitiesWithMembers);
+    return res.status(200).json(payload);
   } catch (error) {
     next(error);
   }
@@ -759,7 +725,6 @@ const updateCoworkingClient = async (req, res, next) => {
       updateData.building = unitExists.building;
     }
 
-
     updateData.totalDesks = newBookedDesks;
 
     // nested POCs
@@ -872,7 +837,9 @@ const resetCoworkingClientCredits = async (req, res, next) => {
       1,
     );
 
-    const existingHistory = Array.isArray(existingClient.meetingCreditBalanceHistory)
+    const existingHistory = Array.isArray(
+      existingClient.meetingCreditBalanceHistory,
+    )
       ? [...existingClient.meetingCreditBalanceHistory]
       : [];
 
@@ -947,7 +914,6 @@ const resetCoworkingClientCredits = async (req, res, next) => {
     }
   }
 };
-
 
 const updateClientStatus = async (req, res) => {
   try {

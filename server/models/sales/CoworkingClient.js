@@ -18,7 +18,6 @@ const meetingCreditBalanceHistorySchema = new mongoose.Schema(
   { _id: false },
 );
 
-
 const clientSchema = new mongoose.Schema(
   {
     company: {
@@ -149,7 +148,7 @@ const clientSchema = new mongoose.Schema(
             trim: true,
           },
         },
-        { _id: false, timestamps: true }
+        { _id: false, timestamps: true },
       ),
     ],
     // rentDate: { type: Date },
