@@ -14,13 +14,12 @@ const {
 } = require("../../utils/dataSheetFormatters");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
 
-const DELETED_MEMBER_VIEW_ROLES = new Set([
-  "master admin",
-  "super admin",
-]);
+const DELETED_MEMBER_VIEW_ROLES = new Set(["master admin", "super admin"]);
 
 const normalizeRoleValue = (value) =>
-  String(value || "").trim().toLowerCase();
+  String(value || "")
+    .trim()
+    .toLowerCase();
 
 const getUserRoleTitles = (context) =>
   (Array.isArray(context?.roles) ? context.roles : [])
@@ -30,7 +29,9 @@ const getUserRoleTitles = (context) =>
 const getUserDepartmentNames = (context) =>
   (Array.isArray(context?.departments) ? context.departments : [])
     .map((department) =>
-      normalizeRoleValue(department?.name || department?.departmentName || department),
+      normalizeRoleValue(
+        department?.name || department?.departmentName || department,
+      ),
     )
     .filter(Boolean);
 
@@ -45,12 +46,15 @@ const canViewDeletedMembers = (context) => {
   }
 
   return (
-    roleTitles.some((roleTitle) =>
-      roleTitle.includes("air tech department") || roleTitle.includes("air tech"),
+    roleTitles.some(
+      (roleTitle) =>
+        roleTitle.includes("air tech department") ||
+        roleTitle.includes("air tech"),
     ) ||
-    departmentNames.some((departmentName) =>
-      departmentName.includes("air tech department") ||
-      departmentName.includes("air tech"),
+    departmentNames.some(
+      (departmentName) =>
+        departmentName.includes("air tech department") ||
+        departmentName.includes("air tech"),
     )
   );
 };
@@ -71,7 +75,8 @@ const getReferenceId = (value) => {
   return "";
 };
 
-const isSameReference = (left, right) => getReferenceId(left) === getReferenceId(right);
+const isSameReference = (left, right) =>
+  getReferenceId(left) === getReferenceId(right);
 
 const createMember = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -97,9 +102,10 @@ const createMember = async (req, res, next) => {
     } = req.body;
 
     if (isActive !== undefined && typeof isActive !== "boolean") {
-      return res.status(400).json({ message: "isActive must be true or false" });
+      return res
+        .status(400)
+        .json({ message: "isActive must be true or false" });
     }
-
 
     if (!name || !client) {
       throw new CustomError(
@@ -182,7 +188,9 @@ const updateCoworkingMember = async (req, res, next) => {
     }
 
     if (existingMember.isDeleted) {
-      return res.status(400).json({ message: "Deleted members cannot be edited" });
+      return res
+        .status(400)
+        .json({ message: "Deleted members cannot be edited" });
     }
 
     const {
@@ -202,9 +210,10 @@ const updateCoworkingMember = async (req, res, next) => {
     } = req.body;
 
     if (isActive !== undefined && typeof isActive !== "boolean") {
-      return res.status(400).json({ message: "isActive must be true or false" });
+      return res
+        .status(400)
+        .json({ message: "isActive must be true or false" });
     }
-
 
     // Validate client if provided
     if (client) {
@@ -563,7 +572,9 @@ const updateMemberStatus = async (req, res) => {
     }
 
     if (member.isDeleted) {
-      return res.status(400).json({ message: "Deleted members cannot be updated" });
+      return res
+        .status(400)
+        .json({ message: "Deleted members cannot be updated" });
     }
 
     member.isActive = isActive;

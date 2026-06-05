@@ -72,7 +72,12 @@ const mapBudgetBaseFields = (budget = {}) => {
   };
 };
 
-const fetchBudgetService = async ({ dateFilter, departmentId, roles }) => {
+const fetchBudgetService = async ({
+  dateFilter,
+  departmentId,
+  roles,
+  isElectricity,
+}) => {
   const query = { expanseType: { $ne: "Reimbursement" } };
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
@@ -80,6 +85,10 @@ const fetchBudgetService = async ({ dateFilter, departmentId, roles }) => {
   const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
   if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
     query.department = departmentId;
+  }
+
+  if (isElectricity) {
+    query.expanseType = "ELECTRICITY";
   }
 
   const budgets = await Budget.find(query)
@@ -135,6 +144,15 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
 
   const vouchers = budgets.map((budget) => {
     const base = mapBudgetBaseFields(budget);
+    const totalAmountVoucher = budget.particulars.reduce(
+      (acc, curr) => acc + curr.particularAmount,
+      0,
+    );
+    const totalAmountFinance = budget.finance.particulars.reduce(
+      (acc, curr) => acc + curr.particularAmount,
+      0,
+    );
+
     return {
       ...base,
       gstin: budget?.gstIn || "-",
@@ -153,11 +171,13 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
       voucherName: budget?.voucher?.name || "-",
       voucherDate: budget?.voucher?.date || null,
       voucherParticulars: budget?.particulars || [],
+      totalAmountVoucher,
       voucherFile: budget?.voucher?.link || "-",
       financeSrNo: budget?.finance?.fSrNo || budget?.srNo || "-",
       financeVoucherName: budget?.finance?.voucher?.name || "-",
       financeVoucherDate: budget?.finance?.voucher?.date || null,
       financeParticulars: budget?.finance?.particulars || [],
+      totalAmountFinance,
       financeVoucherFile: budget?.finance?.voucher?.link || "-",
     };
   });

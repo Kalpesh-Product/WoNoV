@@ -54,8 +54,6 @@ const fetchTicketReportService = async ({
       };
     }
 
-    console.log("date filter:", dateFilter);
-    console.log("Constructed query:", query);
     const tickets = await Ticket.find(query)
       .populate([
         {
@@ -70,8 +68,8 @@ const fetchTicketReportService = async ({
         { path: "raisedToDepartment", select: "name" },
         { path: "acceptedBy", select: "firstName lastName email" },
         { path: "closedBy", select: "firstName lastName email" },
-        { path: "assignees", select: "firstName lastName email" },
-        { path: "assignedTo.assignee", select: "firstName lastName email" },
+        { path: "assignees", select: "firstName lastName" },
+        { path: "assignedTo.assignee", select: "firstName lastName" },
         {
           path: "escalatedTo",
           select: "status raisedToDepartment createdAt",
@@ -81,7 +79,7 @@ const fetchTicketReportService = async ({
           },
         },
         { path: "company", select: "companyName" },
-        { path: "reject.rejectedBy", select: "firstName lastName email" },
+        { path: "reject.rejectedBy", select: "firstName lastName" },
       ])
       .lean()
       .exec();
@@ -108,7 +106,6 @@ const fetchTicketReportService = async ({
       return updatedTicket;
     });
 
-    console.log("Fetched tickets:", updatedTickets.length);
     return updatedTickets || [];
   } catch (error) {
     throw error;
