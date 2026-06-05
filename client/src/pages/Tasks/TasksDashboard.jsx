@@ -194,7 +194,7 @@ const TasksDashboard = () => {
   );
 
 
-    const myTasksQuery = useQuery({
+  const myTasksQuery = useQuery({
     queryKey: ["dashboardMyTasks"],
     queryFn: async () => {
       const response = await axios.get("/api/tasks/my-tasks");
@@ -203,6 +203,16 @@ const TasksDashboard = () => {
   });
 
   const myTasks = myTasksQuery.isLoading ? [] : myTasksQuery.data || [];
+  const currentUserId = auth?.user?._id;
+  const visibleMyTasks = myTasks.filter((task) => {
+    const ownerId =
+      task?.assignedBy?._id ||
+      task?.assignedBy?.id ||
+      task?.assignedBy ||
+      "";
+
+    return String(ownerId) === String(currentUserId);
+  });
 
 
   useEffect(() => {
@@ -772,13 +782,13 @@ const TasksDashboard = () => {
   
   const getTaskCardCount = (dataType) => {
     if (dataType === "my-all") {
-      return myTasks.length;
+      return visibleMyTasks.length;
     }
     if (dataType === "my-pending") {
-      return myTasks.filter((task) => task.status === "Pending").length;
+      return visibleMyTasks.filter((task) => task.status === "Pending").length;
     }
     if (dataType === "my-completed") {
-      return myTasks.filter((task) => task.status === "Completed").length;
+      return visibleMyTasks.filter((task) => task.status === "Completed").length;
     }
     if (dataType === "all") {
        return isSuperAdminView
