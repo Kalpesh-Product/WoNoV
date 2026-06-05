@@ -204,7 +204,10 @@ const HrDepartmentTasks = () => {
   // const tasksData = filteredData[0]?.tasks;
 
     const departmentName = filteredData[0]?.department || department || "Department";
-  const tasksData = filteredData[0]?.tasks || tasks || [];
+  const rawTasksData = filteredData[0]?.tasks || tasks || [];
+  const tasksData = rawTasksData.filter(
+    (task) => task?.taskType === "Department"
+  );
 
  const handlePrevMonth = () => {
     if (selectedMonthIndex > 0) {

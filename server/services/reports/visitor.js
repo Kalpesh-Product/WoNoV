@@ -32,11 +32,40 @@ const attachExternalVisits = async (visitors) => {
   }));
 };
 
-const fetchVisitorReportService = async ({ dateFilter, query, company }) => {
+const fetchVisitorReportService = async ({
+  dateFilter,
+  query,
+  company,
+  isMeeting = false,
+  isOpendDesk = false,
+}) => {
   try {
     const companyId = new mongoose.Types.ObjectId(company);
     let visitors;
+    let filter = { company: companyId };
 
+    if (dateFilter) {
+      filter.checkIn = dateFilter.checkIn;
+    }
+
+    if (isMeeting) {
+      filter.visitorType = "Meeting";
+    }
+
+    if (isOpendDesk) {
+      filter.visitorType = {
+        $in: ["Full-Day Pass", "Half-Day Pass"],
+      };
+    }
+
+    // {
+    //       company: companyId,
+    //       ...(dateFilter?.checkIn && {
+    //         checkIn: dateFilter?.checkIn,
+    //       }),
+    //     }
+
+    console.log("filter", filter);
     switch (query) {
       case "department":
         visitors = await Visitor.aggregate([
@@ -122,12 +151,7 @@ const fetchVisitorReportService = async ({ dateFilter, query, company }) => {
         break;
 
       default:
-        visitors = await Visitor.find({
-          company: companyId,
-          ...(dateFilter?.checkIn && {
-            checkIn: dateFilter?.checkIn,
-          }),
-        }).populate([
+        visitors = await Visitor.find(filter).populate([
           {
             path: "department",
             select: "name",

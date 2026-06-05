@@ -15,7 +15,12 @@ const { fetchCoworkingRevenueService } = require("./revenue");
 const { fetchMeetingRevenueReportService } = require("./revenue");
 const { fetchAlternateRevenueReportService } = require("./revenue");
 const { fetchVirtualOfficeRevenueReportService } = require("./revenue");
-const { fetchCoworkingClientReportService } = require("./client");
+const {
+  fetchCoworkingClientReportService,
+  fetchVirtualOfficeClientsReportService,
+  fetchCoworkingMembersReportService,
+} = require("./client");
+const { fetchUsersReportService } = require("./employees");
 const normalizeReportIdentifier = (value = "") =>
   value
     .trim()
@@ -76,6 +81,43 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
+  employees: createReportService(fetchUsersReportService, {
+    dateField: "startDate",
+  }),
+
+  "external-clients": createReportService(fetchVisitorReportService, {
+    dateField: "checkIn",
+    contextKeys: ["departmentId", "company"],
+    staticParams: { isMeeting: true },
+  }),
+
+  "open-desk-clients": createReportService(fetchVisitorReportService, {
+    dateField: "checkIn",
+    contextKeys: ["departmentId", "company"],
+    staticParams: { isOpendDesk: true },
+  }),
+
+  "virtual-office-clients": createReportService(
+    fetchVirtualOfficeClientsReportService,
+    {
+      dateField: "termStartDate",
+    },
+  ),
+
+  "coworking-client-members-biometric": createReportService(
+    fetchCoworkingMembersReportService,
+    {
+      dateField: "dateOfJoining",
+    },
+  ),
+
+  "coworking-client-members": createReportService(
+    fetchCoworkingMembersReportService,
+    {
+      dateField: "dateOfJoining",
+    },
+  ),
+
   "coworking-clients": createReportService(fetchCoworkingClientReportService, {
     dateField: "startDate",
   }),
@@ -134,6 +176,13 @@ const reportServiceRegistry = {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
   }),
+
+  "electricity-expense": createReportService(fetchBudgetService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { isElectricity: true },
+  }),
+
   voucher: createReportService(fetchVoucherService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
@@ -145,6 +194,8 @@ const reportServiceRegistry = {
 };
 
 const resolveReportService = (reportMeta = {}) => {
+  console.log;
+  ("Resolving report service for reportMeta:", reportMeta);
   const key = normalizeReportIdentifier(reportMeta.reportKey || "");
   const name = normalizeReportIdentifier(reportMeta.reportName || "");
 

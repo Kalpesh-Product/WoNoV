@@ -16,6 +16,7 @@ const sharp = require("sharp");
 const Agreements = require("../../models/hr/Agreements");
 const TestUserData = require("../../models/hr/TestUserData");
 const TestAgreements = require("../../models/hr/TestAgreements");
+const { fetchUsersReportService } = require("../../services/reports/employees");
 
 const isValidHttpUrl = (value) => {
   try {
@@ -379,7 +380,7 @@ const createUser = async (req, res, next) => {
 
     // Hash the default password
     //const defaultPassword = `${firstName.trim()}@0625`;
-     const defaultPassword = "xyz@123";
+    const defaultPassword = "xyz@123";
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
     const resolvedAttendanceSource =
@@ -442,51 +443,61 @@ const createUser = async (req, res, next) => {
 };
 
 const fetchUser = async (req, res, next) => {
-  const { deptId, status = "true" } = req.query;
-  const company = req.company;
+  // const { deptId, status = "true" } = req.query;
+  // const company = req.company;
 
+  // try {
+  //   if (status && !["true", "false"].includes(status)) {
+  //     return res.status(400).json({ message: "Status must be true/false" });
+  //   }
+
+  //   if (deptId) {
+  //     const users = await User.find({
+  //       departments: deptId,
+  //       company,
+  //       isActive: true,
+  //     })
+  //       .select("-password")
+  //       .populate([
+  //         { path: "reportsTo", select: "name email" },
+  //         { path: "departments", select: "name" },
+  //         { path: "company", select: "name" },
+  //         { path: "role", select: "roleTitle" },
+  //       ]);
+
+  //     return res.status(200).json(users);
+  //   }
+
+  //   const users = await User.find({
+  //     company: company,
+  //     isActive: status === "true",
+  //   })
+  //     .select("-password")
+  //     .populate([
+  //       { path: "reportsTo", select: "_id roleTitle" },
+  //       { path: "departments", select: "name" },
+  //       { path: "company", select: "name" },
+  //       { path: "role", select: "roleTitle" },
+  //     ])
+  //     .sort({ startDate: 1 })
+  //     .lean()
+  //     .exec();
+
+  //   if (!users) {
+  //     return res.status(404).json({ message: "User not found" });
+  //   }
+
+  //   res.status(200).json(users);
+  // } catch (error) {
+  //   next(error);
+  // }
   try {
-    if (status && !["true", "false"].includes(status)) {
-      return res.status(400).json({ message: "Status must be true/false" });
-    }
+    const payload = await fetchUsersReportService({
+      company: req.company,
+      query: req.query,
+    });
 
-    if (deptId) {
-      const users = await User.find({
-        departments: deptId,
-        company,
-        isActive: true,
-      })
-        .select("-password")
-        .populate([
-          { path: "reportsTo", select: "name email" },
-          { path: "departments", select: "name" },
-          { path: "company", select: "name" },
-          { path: "role", select: "roleTitle" },
-        ]);
-
-      return res.status(200).json(users);
-    }
-
-    const users = await User.find({
-      company: company,
-      isActive: status === "true",
-    })
-      .select("-password")
-      .populate([
-        { path: "reportsTo", select: "_id roleTitle" },
-        { path: "departments", select: "name" },
-        { path: "company", select: "name" },
-        { path: "role", select: "roleTitle" },
-      ])
-      .sort({ startDate: 1 })
-      .lean()
-      .exec();
-
-    if (!users) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json(users);
+    return res.status(200).json(payload);
   } catch (error) {
     next(error);
   }
@@ -545,7 +556,7 @@ const fetchSingleUser = async (req, res) => {
     // const policies = await Agreements.find({ user: user._id }).lean();
     // const policyMap = policies.reduce((acc, policy) => {
     //   if (policy?.name) acc[policy.name] = policy;
-     const policies = await Agreements.find({ user: user._id })
+    const policies = await Agreements.find({ user: user._id })
       .sort({ updatedAt: -1, createdAt: -1 })
       .lean();
     const policyMap = policies.reduce((acc, policy) => {
@@ -588,7 +599,7 @@ const fetchSingleUser = async (req, res) => {
       attendanceSource: user?.attendanceSource || "",
       // leavePolicy: policyMap?.["Leave Policy"]?.url || "",
       // holidayPolicy: policyMap?.["Holiday Policy"]?.url || "",
-       leavePolicy:
+      leavePolicy:
         policyMap?.["Leave Policy"]?.url ||
         policyMap?.["Leave Policy"]?.type ||
         "",
@@ -636,7 +647,7 @@ const fetchSingleUser = async (req, res) => {
       tdsCalculationBasedOn:
         user.payrollInformation?.tdsCalculationBasedOn || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
-         plainPassword: user.plainPassword || "",
+      plainPassword: user.plainPassword || "",
     };
 
     res.status(200).json(formattedUser);
@@ -692,7 +703,7 @@ const updatePassword = async (req, res, next) => {
     // Find the user by ID and update the password
     const updatedUser = await User.findByIdAndUpdate(
       { _id: user },
-       { $set: { password: hashedPassword, plainPassword: newPassword } }, // Update the password field
+      { $set: { password: hashedPassword, plainPassword: newPassword } }, // Update the password field
       // { $set: { password: hashedPassword } }, // Update the password field
       { new: true, runValidators: true }, // Return the updated document and enforce validation
     )
@@ -926,7 +937,10 @@ const updateProfile = async (req, res, next) => {
           };
 
           const updateQuery = agreement.url
-            ? { $set: { ...updateDoc, url: agreement.url }, $unset: { type: 1 } }
+            ? {
+                $set: { ...updateDoc, url: agreement.url },
+                $unset: { type: 1 },
+              }
             : {
                 $set: { ...updateDoc, type: agreement.type },
                 $unset: { url: 1 },
@@ -934,7 +948,7 @@ const updateProfile = async (req, res, next) => {
           await Agreements.findOneAndUpdate(
             { user: targetUser._id, name: agreement.name },
             // { $set: agreement },
-             updateQuery,
+            updateQuery,
             { upsert: true, new: true, setDefaultsOnInsert: true },
           );
         }),
@@ -1061,12 +1075,9 @@ const bulkInsertUsers = async (req, res, next) => {
                   ? roleMap.get(row["Reports To (Role ID)"].trim())
                   : null;
 
-                 // console.log("reportsToId", reportsToId);
+                // console.log("reportsToId", reportsToId);
                 const defaultPassword = "xyz@123";
-                const hashedPassword = await bcrypt.hash(
-                  defaultPassword,
-                  10,
-                );
+                const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
                 const userObj = {
                   empId: row["Emp ID"],
@@ -1347,24 +1358,34 @@ const updateEmployeePasswordByEmpId = async (req, res, next) => {
     const user = await User.findOne({ empId: empid });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const isCurrentValid = await bcrypt.compare(currentPassword || "", user.password || "");
+    const isCurrentValid = await bcrypt.compare(
+      currentPassword || "",
+      user.password || "",
+    );
     if (!isCurrentValid) {
       return res.status(400).json({ message: "Invalid current password" });
     }
 
     if (newPassword !== confirmPassword) {
-      return res.status(400).json({ message: "New password and confirm password do not match" });
+      return res
+        .status(400)
+        .json({ message: "New password and confirm password do not match" });
     }
 
     if (!newPassword || newPassword.length < 8) {
-      return res.status(400).json({ message: "Password should be at least 8 characters long" });
+      return res
+        .status(400)
+        .json({ message: "Password should be at least 8 characters long" });
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
     user.plainPassword = newPassword;
     await user.save();
 
-    return res.status(200).json({ message: "Password updated successfully", plainPassword: user.plainPassword });
+    return res.status(200).json({
+      message: "Password updated successfully",
+      plainPassword: user.plainPassword,
+    });
   } catch (error) {
     next(error);
   }
