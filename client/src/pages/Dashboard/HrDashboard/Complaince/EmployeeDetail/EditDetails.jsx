@@ -561,6 +561,7 @@ const EditDetails = () => {
         gender: formData?.gender || "",
         dob: formData?.dob || "",
         employeeID: formData?.employeeID || "",
+        email: formData?.email || "",
         phone: formData?.mobilePhone || "",
         startDate: formData?.startDate || "",
         workLocation: formData?.workLocation || "",
@@ -1237,6 +1238,7 @@ const EditDetails = () => {
                         "leavePolicy",
                         "holidayPolicy",
                         "status",
+                        "email",
                       ].map((fieldKey) => (
                         <div key={fieldKey}>
                           {isEditing ? (
@@ -1257,6 +1259,13 @@ const EditDetails = () => {
                                       Inactive
                                     </MenuItem>
                                   </TextField>
+                                  ) : fieldKey === "email" ? ( 
+                                  <TextField
+                                    {...field}
+                                    size="small"
+                                    label="Email"
+                                    fullWidth
+                                  />    
                                 ) : fieldKey === "workSchedulePolicy" ? (
                                   <TextField
                                     {...field}
