@@ -280,11 +280,11 @@ const TasksDashboard = () => {
 
         return `
       <div style="padding: 10px; font-family: Poppins-Regular; font-size: 13px;">
-        <div style="margin : 10px 0"><strong>Month:</strong> ${month}</div>
-        <div><strong>Total Tasks:</strong> ${counts.total}</div>
-        <div><strong>Completed:</strong> ${counts.completed}</div>
+        <div style="margin : 10px 0"><strong>Month :</strong> ${month}</div>
+        <div><strong>Total Tasks :</strong> ${counts.total}</div>
+        <div><strong>Completed :</strong> ${counts.completed}</div>
         <hr style="margin : 10px 0" />
-        <div><strong>Remaining:</strong> ${counts.remaining}</div>
+        <div><strong>Pending :</strong> ${counts.remaining}</div>
       </div>
     `;
       },
