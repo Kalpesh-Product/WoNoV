@@ -790,7 +790,7 @@ const HrDashboard = () => {
             </div>
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
             <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div style="width:100px ">Remaining KPA</div>
+              <div style="width:100px ">Pending KPA</div>
               <div style="width:"100%" ">:</div>
               <div style="width:"100%" ">${remaining}</div>
             </div>
@@ -892,7 +892,7 @@ const HrDashboard = () => {
             </div>
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
             <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div style="width:100px ">Remaining tasks</div>
+              <div style="width:100px ">Pending tasks</div>
               <div style="width:"100%" ">:</div>
               <div style="width:"100%" ">${remaining}</div>
             </div>

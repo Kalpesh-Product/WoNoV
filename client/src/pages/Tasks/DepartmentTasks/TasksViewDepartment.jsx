@@ -58,6 +58,9 @@ const TasksViewDepartment = () => {
   );
   const currentUserId = auth?.user?._id;
   const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle || "") || [];
+  const isMasterOrSuperAdmin = roleTitles.some(
+    (roleTitle) => roleTitle === "Master Admin" || roleTitle === "Super Admin",
+  );
   const isDepartmentAdmin = roleTitles.some(
     (roleTitle) =>
       roleTitle.endsWith("Admin") &&
@@ -65,6 +68,7 @@ const TasksViewDepartment = () => {
       roleTitle !== "Super Admin",
   );
   const canViewAssignedSummary = isEmployee || isDepartmentAdmin;
+  const canViewDepartmentWidePending = isDepartmentAdmin || isMasterOrSuperAdmin;
 
   // Check if the selected department is in user's list
   const isUserDepartment = auth?.user?.departments?.some(
@@ -411,6 +415,42 @@ const TasksViewDepartment = () => {
     [departmentKra, departmentMemberMap],
   );
 
+  const departmentWidePendingTasks = useMemo(
+    () =>
+      (departmentWideTasks || [])
+        .filter(
+          (item) =>
+            item?.taskType === "Department" &&
+            item?.status !== "Completed" &&
+            String(item?.department || "").toLowerCase() ===
+              String(department || "").toLowerCase(),
+        )
+        .map((item, index) => ({
+          srno: index + 1,
+          id: item._id,
+          taskName: item.taskName,
+          description: item.description,
+          assignedDate: item.assignedDate,
+          status: item.status,
+          dueDate: item.dueDate,
+          dueTime: item.dueTime,
+          assignToId: Array.isArray(item.assignedTo)
+            ? item.assignedTo?.[0]?._id
+            : item.assignedTo?._id || "",
+          locationId: item.location?.building?._id || "",
+          unitId: item.location?._id || "",
+          location: item.location,
+          unitNo: item.location?.unitNo || "N/A",
+          assignedBy:
+            item.assignedBy?.firstName || item.assignedBy?.lastName
+              ? `${item.assignedBy?.firstName || ""} ${item.assignedBy?.lastName || ""}`.trim()
+              : item.assignedBy || "-",
+          assignedTo: formatAssignedTo(item.assignedTo),
+          rawAssignedTo: item.assignedTo,
+        })),
+    [departmentWideTasks, department, departmentMemberMap],
+  );
+
   const completedDepartmentTasks = useMemo(
     () =>
       completedTasksFetchPending
@@ -476,6 +516,10 @@ const TasksViewDepartment = () => {
     pendingDepartmentTasks,
     completedDepartmentTasks,
   ]);
+
+  const visiblePendingTasks = canViewDepartmentWidePending
+    ? departmentWidePendingTasks
+    : pendingDepartmentTasks;
 
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
@@ -752,7 +796,7 @@ const TasksViewDepartment = () => {
                     setOpenModal(true);
                   }}
                   tableTitle=""
-                  data={pendingDepartmentTasks}
+                  data={visiblePendingTasks}
                   dateColumn={"assignedDate"}
                   columns={departmentColumns}
                   hideTitle
