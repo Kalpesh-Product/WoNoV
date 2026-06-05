@@ -3,6 +3,7 @@ const Unit = require("../../models/locations/Unit");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const mongoose = require("mongoose");
+const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
 
 const DELETED_MEMBER_VIEW_ROLES = new Set(["master admin", "super admin"]);
 
@@ -223,6 +224,77 @@ const fetchCoworkingClientReportService = async ({
   });
 };
 
+const fetchVirtualOfficeClientsReportService = async ({
+  dateFilter,
+  query = {},
+} = {}) => {
+  const filter = { ...query };
+
+  if (dateFilter?.termStartDate) {
+    filter.termStartDate = dateFilter.termStartDate;
+  }
+
+  const populateOptions = [
+    {
+      path: "unit",
+      select: "_id unitName unitNo cabinDesks openDesks",
+      populate: {
+        path: "building",
+        select: "_id buildingName fullAddress",
+      },
+    },
+  ];
+
+  const clients = await VirtualOfficeClient.find(filter)
+    .populate(populateOptions)
+    .lean()
+    .exec();
+
+  return clients || [];
+};
+
+const fetchCoworkingMembersReportService = async ({
+  company,
+  dateFilter,
+  user,
+} = {}) => {
+  const filter = {};
+
+  if (company) {
+    filter.company = company;
+  }
+
+  // Adjust the field according to your schema
+  if (dateFilter?.dateOfJoining) {
+    filter.dateOfJoining = dateFilter.dateOfJoining;
+  }
+
+  const members = await CoworkingMembers.find(filter)
+    .populate([
+      {
+        path: "client",
+        select: "clientName unit",
+        populate: {
+          path: "unit",
+          select: "unitNo",
+        },
+      },
+    ])
+    .select(
+      "employeeName email gender mobileNo phone dob dateOfJoining biometricStatus isActive isDeleted client unit",
+    )
+    .lean()
+    .exec();
+
+  const visibleMembers = filterVisibleMembers(members, {
+    user,
+  });
+
+  return visibleMembers || [];
+};
+
 module.exports = {
   fetchCoworkingClientReportService,
+  fetchVirtualOfficeClientsReportService,
+  fetchCoworkingMembersReportService,
 };
