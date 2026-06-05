@@ -1,4 +1,11 @@
-import { MenuItem, TextField } from "@mui/material";
+import {
+  Checkbox,
+  IconButton,
+  InputAdornment,
+  ListItemText,
+  MenuItem,
+  TextField,
+} from "@mui/material";
 import { DesktopDatePicker } from "@mui/x-date-pickers";
 import React, { useEffect, useMemo, useState } from "react";
 import PrimaryButton from "../../../../../components/PrimaryButton";
@@ -14,10 +21,11 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useSelector } from "react-redux";
 import useAuth from "../../../../../hooks/useAuth";
 import { PERMISSIONS } from "../../../../../constants/permissions";
-import { Checkbox, ListItemText } from "@mui/material";
+//import { Checkbox, ListItemText } from "@mui/material";
 import { City, State } from "country-state-city";
 import { LuImageUp } from "react-icons/lu";
 import MuiModal from "../../../../../components/MuiModal";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 dayjs.extend(customParseFormat);
 
 
@@ -130,6 +138,12 @@ const EditDetails = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+    const [visiblePasswords, setVisiblePasswords] = useState({
+    password: false,
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
   const [policyPreview, setPolicyPreview] = useState({
     open: false,
     url: "",
@@ -209,7 +223,29 @@ const EditDetails = () => {
   const closePolicyPreview = () => {
     setPolicyPreview({ open: false, url: "", title: "" });
   };
+const togglePasswordVisibility = (fieldName) => {
+    setVisiblePasswords((prev) => ({
+      ...prev,
+      [fieldName]: !prev[fieldName],
+    }));
+  };
 
+  const getPasswordInputProps = (fieldName, label, disabled = false) => ({
+    readOnly: fieldName === "password",
+    endAdornment: (
+      <InputAdornment position="end">
+        <IconButton
+          aria-label={`${visiblePasswords[fieldName] ? "Hide" : "Show"} ${label}`}
+          edge="end"
+          disabled={disabled}
+          onClick={() => togglePasswordVisibility(fieldName)}
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          {visiblePasswords[fieldName] ? <VisibilityOff /> : <Visibility />}
+        </IconButton>
+      </InputAdornment>
+    ),
+  });
   const uploadPolicyAgreement = async (file, agreementName) => {
     if (!(file instanceof File)) return "";
 
@@ -1670,12 +1706,14 @@ const EditDetails = () => {
                       label="Password"
                       fullWidth
                       disabled
+                      type={visiblePasswords.password ? "text" : "password"}
                       value={
                         watch("plainPassword") ||
                         transformEmployeeData?.plainPassword ||
                         ""
                       }
-                      InputProps={{ readOnly: true }}
+                      // InputProps={{ readOnly: true }}
+                        InputProps={getPasswordInputProps("password", "Password")}
                     />
                   ) : (
                     <div className="py-2 flex justify-between items-center gap-2">
@@ -1725,7 +1763,16 @@ const EditDetails = () => {
                           size="small"
                           label="Current Password *"
                           fullWidth
-                          type="password"
+                          // type="password"
+                                                    type={
+                            visiblePasswords.currentPassword
+                              ? "text"
+                              : "password"
+                          }
+                          InputProps={getPasswordInputProps(
+                            "currentPassword",
+                            "Current Password",
+                          )}
                         />
                       )}
                     />
@@ -1743,8 +1790,16 @@ const EditDetails = () => {
                           size="small"
                           label="New Password *"
                           fullWidth
-                          type="password"
+                          // type="password"
+                                                    type={
+                            visiblePasswords.newPassword ? "text" : "password"
+                          }
                           disabled={!isPasswordVerified}
+                          InputProps={getPasswordInputProps(
+                            "newPassword",
+                            "New Password",
+                            !isPasswordVerified,
+                          )}
                         />
                       )}
                     />
@@ -1757,8 +1812,18 @@ const EditDetails = () => {
                           size="small"
                           label="Confirm Password *"
                           fullWidth
-                          type="password"
+                          // type="password"
+                           type={
+                            visiblePasswords.confirmPassword
+                              ? "text"
+                              : "password"
+                          }
                           disabled={!isPasswordVerified}
+                          InputProps={getPasswordInputProps(
+                            "confirmPassword",
+                            "Confirm Password",
+                            !isPasswordVerified,
+                          )}
                         />
                       )}
                     />
