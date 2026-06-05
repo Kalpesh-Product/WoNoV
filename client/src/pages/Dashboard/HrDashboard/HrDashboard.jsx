@@ -545,6 +545,9 @@ const HrDashboard = () => {
 
     return filteredTasks;
   }
+
+  const isDepartmentTask = (task) => task?.taskType === "Department";
+
   const tasksForSelectedYear = getTasksForSelectedFiscalYear(
     departmentTasks,
     selectedFiscalYear
@@ -604,6 +607,8 @@ const HrDashboard = () => {
   if (Array.isArray(tasksOverallRedux)) {
     tasksOverallRedux.forEach((dept) => {
       dept.tasks?.forEach((task) => {
+        if (!isDepartmentTask(task)) return;
+
         const [day, month, year] = task.assignedDate.split("-").map(Number);
         const dateObj = new Date(year, month - 1, day);
         const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
@@ -705,8 +710,10 @@ const HrDashboard = () => {
           dispatch(setSelectedMonth(clickedMonth));
 
           const selectedMonthTasks = [];
-          tasksRawData.forEach((dept) => {
+          tasksOverallRedux.forEach((dept) => {
             dept.tasks.forEach((task) => {
+              if (!isDepartmentTask(task)) return;
+
               const [day, month, year] = task.assignedDate
                 .split("-")
                 .map(Number);
