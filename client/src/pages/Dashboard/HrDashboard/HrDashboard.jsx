@@ -545,6 +545,9 @@ const HrDashboard = () => {
 
     return filteredTasks;
   }
+
+  const isDepartmentTask = (task) => task?.taskType === "Department";
+
   const tasksForSelectedYear = getTasksForSelectedFiscalYear(
     departmentTasks,
     selectedFiscalYear
@@ -604,6 +607,8 @@ const HrDashboard = () => {
   if (Array.isArray(tasksOverallRedux)) {
     tasksOverallRedux.forEach((dept) => {
       dept.tasks?.forEach((task) => {
+        if (!isDepartmentTask(task)) return;
+
         const [day, month, year] = task.assignedDate.split("-").map(Number);
         const dateObj = new Date(year, month - 1, day);
         const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
@@ -705,8 +710,10 @@ const HrDashboard = () => {
           dispatch(setSelectedMonth(clickedMonth));
 
           const selectedMonthTasks = [];
-          tasksRawData.forEach((dept) => {
+          tasksOverallRedux.forEach((dept) => {
             dept.tasks.forEach((task) => {
+              if (!isDepartmentTask(task)) return;
+
               const [day, month, year] = task.assignedDate
                 .split("-")
                 .map(Number);
@@ -783,7 +790,7 @@ const HrDashboard = () => {
             </div>
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
             <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div style="width:100px ">Remaining KPA</div>
+              <div style="width:100px ">Pending KPA</div>
               <div style="width:"100%" ">:</div>
               <div style="width:"100%" ">${remaining}</div>
             </div>
@@ -885,7 +892,7 @@ const HrDashboard = () => {
             </div>
             <hr style="margin: 6px 0; border-top: 1px solid #ddd"/>
             <div style="display:flex ; justify-content:space-between ; width:"100%" ">
-              <div style="width:100px ">Remaining tasks</div>
+              <div style="width:100px ">Pending tasks</div>
               <div style="width:"100%" ">:</div>
               <div style="width:"100%" ">${remaining}</div>
             </div>

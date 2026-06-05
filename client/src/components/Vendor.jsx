@@ -85,6 +85,7 @@ const Vendor = () => {
       queryClient.invalidateQueries({
         queryKey: ["vendors", department._id],
       });
+      navigate("..", { relative: "path" });
     },
     onError: function (data) {
       if (!department) {
@@ -209,7 +210,7 @@ const Vendor = () => {
                       />
                     )}
                   />
-                  <Controller
+                  {/* <Controller
                     name="country"
                     control={control}
                     defaultValue=""
@@ -264,7 +265,68 @@ const Vendor = () => {
                         ))}
                       </Select>
                     )}
-                  />
+                  /> */}
+                  <Controller
+                  name="country"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Country is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      {...field}
+                      fullWidth
+                      displayEmpty
+                      onChange={(e) => {
+                        const selectedCountryName = e.target.value;
+                        const matchedCountry = countries.find(
+                          (country) => country.name === selectedCountryName
+                        );
+                        field.onChange(selectedCountryName);
+                        handleCountryChange(matchedCountry?.isoCode || "");
+                      }}
+                      size="small"
+                      error={!!error}>
+                      <MenuItem value="">Select Country</MenuItem>
+                      {countries.map((country) => (
+                        <MenuItem
+                          key={country.isoCode}
+                          value={country.name}>
+                          {country.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name="state"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "State is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <Select
+                      {...field}
+                      fullWidth
+                      displayEmpty
+                      onChange={(e) => {
+                        const selectedStateName = e.target.value;
+                        const matchedState = states.find(
+                          (state) => state.name === selectedStateName
+                        );
+                        field.onChange(selectedStateName);
+                        handleStateChange(matchedState?.isoCode || "");
+                      }}
+                      size="small"
+                      disabled={!selectedCountry}
+                      error={!!error}>
+                      <MenuItem value="">Select State</MenuItem>
+                      {states.map((state) => (
+                        <MenuItem key={state.isoCode} value={state.name}>
+                          {state.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
                   <Controller
                     name="city"
                     control={control}

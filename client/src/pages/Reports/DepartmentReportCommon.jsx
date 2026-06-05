@@ -15,6 +15,7 @@ import { downloadCsv } from "../../utils/downloadCsv";
 import { queryClient } from "../../main";
 import useAuth from "../../hooks/useAuth";
 import useUserPermissions from "../../hooks/useUserPermissions";
+import { Task } from "@mui/icons-material";
 
 const REPORT_MODULE_MAP = {
   ticket: {
@@ -43,6 +44,18 @@ const REPORT_MODULE_MAP = {
     module: "Asset",
     reportType: "app",
     permission: "reports_assets",
+  },
+  task: {
+    title: "Task Report",
+    module: "Task",
+    reportType: "app",
+    permission: "reports_tasks",
+  },
+  performance: {
+    title: "Performance Report",
+    module: "Performance",
+    reportType: "app",
+    permission: "reports_performance",
   },
 };
 
