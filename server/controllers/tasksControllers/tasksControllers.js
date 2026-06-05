@@ -1,4 +1,7 @@
-const { fetchDeptTaskReportService } = require("../../services/reports/task");
+const {
+  fetchDeptTaskReportService,
+  fetchMyTasksReportService,
+} = require("../../services/reports/task");
 const { default: mongoose } = require("mongoose");
 const User = require("../../models/hr/UserData");
 const Task = require("../../models/tasks/Task");
@@ -555,7 +558,7 @@ async function getTasks(req, res) {
 }
 
 const getMyTasks = async (req, res) => {
-  const payload = await fetchDeptTaskReportService({
+  const payload = await fetchMyTasksReportService({
     departmentId: req.body?.department,
     departments: req.body?.departments || req?.departments || [],
     roles: req?.roles || [],
