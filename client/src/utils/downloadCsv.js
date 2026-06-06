@@ -12,7 +12,8 @@ const EXCLUDED_FIELD_PATTERNS = [
   /sqft/,
   /openDesks/,
   /cabinDesks/,
-  /company/,
+  /^company$/,
+  /\.company$/,
   /^__v$/,
   /\.__v$/,
 ];
