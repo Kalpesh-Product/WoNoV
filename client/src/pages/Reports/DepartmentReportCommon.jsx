@@ -426,9 +426,155 @@ const DepartmentReportCommon = () => {
     return rows.length ? rows : [parentFields];
   };
 
+  const mergeTicketCsvFields = (rows = []) => {
+    if (normalizedModuleKey !== "ticket") return rows;
+
+    return rows.map((row) => {
+      const fromDepartment = Array.isArray(row?.raisedBy?.departments)
+        ? row.raisedBy.departments
+            .map((department) => department?.name || "")
+            .filter(Boolean)
+            .join(", ")
+        : String(row?.["raisedBy.departments"] || "").trim();
+      const raisedByFirstName = String(
+        row?.raisedBy?.firstName || row?.["raisedBy.firstName"] || "",
+      ).trim();
+      const raisedByLastName = String(
+        row?.raisedBy?.lastName || row?.["raisedBy.lastName"] || "",
+      ).trim();
+      const raisedByName = [raisedByFirstName, raisedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const rejectedByFirstName = String(
+        row?.reject?.rejectedBy?.firstName ||
+          row?.["reject.rejectedBy.firstName"] ||
+          "",
+      ).trim();
+      const rejectedByLastName = String(
+        row?.reject?.rejectedBy?.lastName ||
+          row?.["reject.rejectedBy.lastName"] ||
+          "",
+      ).trim();
+      const rejectedByName = [rejectedByFirstName, rejectedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const acceptedByFirstName = String(
+        row?.acceptedBy?.firstName || row?.["acceptedBy.firstName"] || "",
+      ).trim();
+      const acceptedByLastName = String(
+        row?.acceptedBy?.lastName || row?.["acceptedBy.lastName"] || "",
+      ).trim();
+      const acceptedByName = [acceptedByFirstName, acceptedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const closedByFirstName = String(
+        row?.closedBy?.firstName || row?.["closedBy.firstName"] || "",
+      ).trim();
+      const closedByLastName = String(
+        row?.closedBy?.lastName || row?.["closedBy.lastName"] || "",
+      ).trim();
+      const closedByName = [closedByFirstName, closedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const rejectReason = String(
+        row?.reject?.reason || row?.["reject.reason"] || "",
+      ).trim();
+      const rejectAt = row?.reject?.rejectedAt || row?.["reject.rejectedAt"] || "";
+
+      const nextRow = { ...row };
+
+      if (raisedByName) {
+        nextRow.raisedBy = raisedByName;
+      }
+
+      if (fromDepartment) {
+        nextRow.fromDepartment = fromDepartment;
+      }
+
+      if (rejectedByName) {
+        nextRow.rejectedBy = rejectedByName;
+      }
+
+      if (acceptedByName) {
+        nextRow.acceptedBy = acceptedByName;
+      }
+
+      if (closedByName) {
+        nextRow.closedBy = closedByName;
+      }
+
+      if (rejectReason) {
+        nextRow.rejectReason = rejectReason;
+      }
+
+      if (rejectAt) {
+        nextRow.rejectAt = rejectAt;
+      }
+
+      if (row?.ticket) {
+        nextRow.ticketTitle = row.ticket;
+      }
+
+      const raisedToDepartmentName = String(
+        row?.raisedToDepartment?.name || row?.["raisedToDepartment.name"] || "",
+      ).trim();
+
+      if (raisedToDepartmentName) {
+        nextRow.raisedToDepartment = raisedToDepartmentName;
+      }
+
+      delete nextRow["raisedBy.firstName"];
+      delete nextRow["raisedBy.lastName"];
+      delete nextRow["raisedBy.departments"];
+      delete nextRow["acceptedBy.firstName"];
+      delete nextRow["acceptedBy.lastName"];
+      delete nextRow["closedBy.firstName"];
+      delete nextRow["closedBy.lastName"];
+      delete nextRow["raisedToDepartment.name"];
+      delete nextRow.image;
+      delete nextRow["image.url"];
+      delete nextRow["image.filename"];
+      delete nextRow["image.path"];
+      delete nextRow["image.mimetype"];
+      delete nextRow.ticket;
+      delete nextRow["reject.reason"];
+      delete nextRow["reject.rejectedAt"];
+      delete nextRow["reject.rejectedBy"];
+      delete nextRow["reject.rejectedBy.firstName"];
+      delete nextRow["reject.rejectedBy.lastName"];
+      delete nextRow.reject;
+
+      return nextRow;
+    });
+  };
+
+  const appendReportSerialNumbers = (reportData) => {
+    const rows = Array.isArray(reportData)
+      ? reportData
+      : normalizeReportRows(reportData);
+    const normalizedRows = mergeTicketCsvFields(rows);
+
+    return normalizedRows.map((row, index) => {
+      if (normalizedModuleKey === "ticket" && row?.ticketTitle) {
+        const { ticketTitle, ...restRow } = row;
+
+        return {
+          "Sr.No": index + 1,
+          ticketTitle,
+          ...restRow,
+        };
+      }
+
+      return {
+        "Sr.No": index + 1,
+        ...row,
+      };
+    });
+  };
+
   const triggerDataDownload = (reportData, reportName) => {
     return downloadCsv({
-      data: reportData,
+      data: appendReportSerialNumbers(reportData),
       fileName: reportName,
     });
   };
