@@ -476,6 +476,66 @@ const DepartmentReportCommon = () => {
       const closedByName = [closedByFirstName, closedByLastName]
         .filter(Boolean)
         .join(" ");
+      const assignToName = Array.isArray(row?.assignedTo)
+        ? row.assignedTo
+            .map((assignment) =>
+              [
+                assignment?.assignee?.firstName ||
+                  assignment?.firstName ||
+                  assignment?.["assignee.firstName"],
+                assignment?.assignee?.lastName ||
+                  assignment?.lastName ||
+                  assignment?.["assignee.lastName"],
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .trim(),
+            )
+            .filter(Boolean)
+            .join(", ")
+        : [
+            row?.assignedTo?.assignee?.firstName ||
+              row?.assignedTo?.firstName ||
+              row?.["assignedTo.assignee.firstName"] ||
+              row?.["assignedTo.firstName"],
+            row?.assignedTo?.assignee?.lastName ||
+              row?.assignedTo?.lastName ||
+              row?.["assignedTo.assignee.lastName"] ||
+              row?.["assignedTo.lastName"],
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+      const escalatedToDepartmentName = Array.isArray(row?.escalatedTo)
+        ? row.escalatedTo
+            .map((escalation) =>
+              String(
+                escalation?.raisedToDepartment?.name ||
+                  escalation?.["raisedToDepartment.name"] ||
+                  "",
+              ).trim(),
+            )
+            .filter(Boolean)
+            .join(", ")
+        : String(
+            row?.escalatedTo?.raisedToDepartment?.name ||
+              row?.["escalatedTo.raisedToDepartment.name"] ||
+              "",
+          ).trim();
+      const escalatedStatus = Array.isArray(row?.escalatedTo)
+        ? row.escalatedTo
+            .map((escalation) => String(escalation?.status || "").trim())
+            .filter(Boolean)
+            .join(", ")
+        : String(
+            row?.escalatedTo?.status || row?.["escalatedTo.status"] || "",
+          ).trim();
+      const escalatedRaisedAt = Array.isArray(row?.escalatedTo)
+        ? row.escalatedTo
+            .map((escalation) => escalation?.createdAt || "")
+            .filter(Boolean)
+            .join(", ")
+        : row?.escalatedTo?.createdAt || row?.["escalatedTo.createdAt"] || "";
       const rejectReason = String(
         row?.reject?.reason || row?.["reject.reason"] || "",
       ).trim();
@@ -501,6 +561,10 @@ const DepartmentReportCommon = () => {
 
       if (closedByName) {
         nextRow.closedBy = closedByName;
+      }
+
+      if (assignToName) {
+        nextRow.assignedTo = assignToName;
       }
 
       if (rejectReason) {
@@ -530,7 +594,34 @@ const DepartmentReportCommon = () => {
       delete nextRow["acceptedBy.lastName"];
       delete nextRow["closedBy.firstName"];
       delete nextRow["closedBy.lastName"];
+      delete nextRow["assignedTo.assignee"];
+      delete nextRow["assignedTo.assignee.firstName"];
+      delete nextRow["assignedTo.assignee.lastName"];
+      delete nextRow["assignedTo.assignedAt"];
+      delete nextRow["assignedTo.firstName"];
+      delete nextRow["assignedTo.lastName"];
+      delete nextRow["escalatedTo.raisedToDepartment"];
+      delete nextRow["escalatedTo.raisedToDepartment.name"];
+      delete nextRow["escalatedTo.status"];
+      delete nextRow["escalatedTo.createdAt"];
+      delete nextRow.escalatedTo;
+
+      if (escalatedToDepartmentName) {
+        nextRow.escalatedTo = escalatedToDepartmentName;
+      }
+
+      if (escalatedStatus) {
+        nextRow.escalatedStatus = escalatedStatus;
+      }
+
+      if (escalatedRaisedAt) {
+        nextRow.raisedAt = escalatedRaisedAt;
+      }
+
       delete nextRow["raisedToDepartment.name"];
+      delete nextRow.assignees;
+      delete nextRow["assignees.firstName"];
+      delete nextRow["assignees.lastName"];
       delete nextRow.image;
       delete nextRow["image.url"];
       delete nextRow["image.filename"];
