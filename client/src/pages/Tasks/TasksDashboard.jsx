@@ -194,7 +194,7 @@ const TasksDashboard = () => {
   );
 
 
-    const myTasksQuery = useQuery({
+  const myTasksQuery = useQuery({
     queryKey: ["dashboardMyTasks"],
     queryFn: async () => {
       const response = await axios.get("/api/tasks/my-tasks");
@@ -203,6 +203,16 @@ const TasksDashboard = () => {
   });
 
   const myTasks = myTasksQuery.isLoading ? [] : myTasksQuery.data || [];
+  const currentUserId = auth?.user?._id;
+  const visibleMyTasks = myTasks.filter((task) => {
+    const ownerId =
+      task?.assignedBy?._id ||
+      task?.assignedBy?.id ||
+      task?.assignedBy ||
+      "";
+
+    return String(ownerId) === String(currentUserId);
+  });
 
 
   useEffect(() => {
@@ -270,11 +280,11 @@ const TasksDashboard = () => {
 
         return `
       <div style="padding: 10px; font-family: Poppins-Regular; font-size: 13px;">
-        <div style="margin : 10px 0"><strong>Month:</strong> ${month}</div>
-        <div><strong>Total Tasks:</strong> ${counts.total}</div>
-        <div><strong>Completed:</strong> ${counts.completed}</div>
+        <div style="margin : 10px 0"><strong>Month :</strong> ${month}</div>
+        <div><strong>Total Tasks :</strong> ${counts.total}</div>
+        <div><strong>Completed :</strong> ${counts.completed}</div>
         <hr style="margin : 10px 0" />
-        <div><strong>Remaining:</strong> ${counts.remaining}</div>
+        <div><strong>Pending :</strong> ${counts.remaining}</div>
       </div>
     `;
       },
@@ -772,13 +782,13 @@ const TasksDashboard = () => {
   
   const getTaskCardCount = (dataType) => {
     if (dataType === "my-all") {
-      return myTasks.length;
+      return visibleMyTasks.length;
     }
     if (dataType === "my-pending") {
-      return myTasks.filter((task) => task.status === "Pending").length;
+      return visibleMyTasks.filter((task) => task.status === "Pending").length;
     }
     if (dataType === "my-completed") {
-      return myTasks.filter((task) => task.status === "Completed").length;
+      return visibleMyTasks.filter((task) => task.status === "Completed").length;
     }
     if (dataType === "all") {
        return isSuperAdminView
