@@ -1,3 +1,4 @@
+const Attendance = require("../../models/hr/Attendance");
 const Leave = require("../../models/hr/Leaves");
 const UserData = require("../../models/hr/UserData");
 
@@ -178,7 +179,209 @@ const fetchLeavesReportService = async ({ company, dateFilter } = {}) => {
   return leaves || [];
 };
 
+const fetchAttendanceReportService = async ({ company, dateFilter } = {}) => {
+  const matchStage = {
+    "user.isActive": true,
+  };
+
+  if (dateFilter?.inTime) {
+    matchStage.inTime = dateFilter.inTime;
+  }
+
+  const attendances = await Attendance.aggregate([
+    {
+      $lookup: {
+        from: "userdatas",
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    { $unwind: "$user" },
+    { $match: matchStage },
+
+    // ── Step 0: normalize breaks to always be an array ────────────────────
+    {
+      $addFields: {
+        breaks: {
+          $cond: {
+            if: { $isArray: "$breaks" },
+            then: "$breaks",
+            else: [],
+          },
+        },
+      },
+    },
+
+    // ── Step 1: compute each break's duration in seconds ──────────────────
+    {
+      $addFields: {
+        breaks: {
+          $map: {
+            input: "$breaks",
+            as: "brk",
+            in: {
+              startBreak: "$$brk.startBreak",
+              endBreak: "$$brk.endBreak",
+              durationSecs: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $ifNull: ["$$brk.startBreak", false] },
+                      { $ifNull: ["$$brk.endBreak", false] },
+                    ],
+                  },
+                  then: {
+                    $floor: {
+                      $divide: [
+                        { $subtract: ["$$brk.endBreak", "$$brk.startBreak"] },
+                        1000,
+                      ],
+                    },
+                  },
+                  else: 0,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    // ── Step 2: sum break durations & count valid pairs ───────────────────
+    {
+      $addFields: {
+        totalBreakSecs: {
+          $sum: {
+            $map: {
+              input: "$breaks",
+              as: "brk",
+              in: {
+                $cond: [
+                  {
+                    $and: [
+                      { $ifNull: ["$$brk.startBreak", false] },
+                      { $ifNull: ["$$brk.endBreak", false] },
+                    ],
+                  },
+                  "$$brk.durationSecs",
+                  0,
+                ],
+              },
+            },
+          },
+        },
+        breakCount: {
+          $size: {
+            $filter: {
+              input: "$breaks", // ✅ always an array now due to Step 0
+              as: "brk",
+              cond: {
+                $and: [
+                  { $ifNull: ["$$brk.startBreak", false] },
+                  { $ifNull: ["$$brk.endBreak", false] },
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+
+    // ── Step 3: compute workDuration in seconds ───────────────────────────
+    {
+      $addFields: {
+        workSecs: {
+          $cond: {
+            if: {
+              $and: [
+                { $ifNull: ["$inTime", false] },
+                { $ifNull: ["$outTime", false] },
+              ],
+            },
+            then: {
+              $max: [
+                0,
+                {
+                  $subtract: [
+                    {
+                      $floor: {
+                        $divide: [{ $subtract: ["$outTime", "$inTime"] }, 1000],
+                      },
+                    },
+                    "$totalBreakSecs",
+                  ],
+                },
+              ],
+            },
+            else: null,
+          },
+        },
+      },
+    },
+
+    // ── Step 4: keep only selected user fields ────────────────────────────
+    {
+      $replaceRoot: {
+        newRoot: {
+          $mergeObjects: [
+            "$$ROOT",
+            {
+              user: {
+                firstName: "$user.firstName",
+                lastName: "$user.lastName",
+                empId: "$user.empId",
+              },
+            },
+          ],
+        },
+      },
+    },
+  ]);
+
+  const formatDuration = (totalSecs) => {
+    if (totalSecs === null || totalSecs === undefined) return "-";
+    const secs = Math.floor(totalSecs);
+    if (secs < 60) return `${secs}s`;
+    if (secs < 3600) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    return `${h}h ${m}m`;
+  };
+
+  const formatClockTime = (date) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatted = attendances.map((att, idx) => {
+    const result = {
+      ...att,
+      breakDuration: formatDuration(att.totalBreakSecs),
+      workDuration: formatDuration(att.workSecs),
+      breakCount: att.breakCount ?? 0,
+      breaks:
+        att.breaks?.map((brk) => ({
+          startBreak: formatClockTime(brk.startBreak),
+          endBreak: formatClockTime(brk.endBreak),
+          durationSecs: brk.durationSecs,
+        })) ?? [],
+    };
+
+    delete result.totalBreakSecs;
+    delete result.workSecs;
+
+    return result;
+  });
+  return formatted;
+};
+
 module.exports = {
   fetchUsersReportService,
   fetchLeavesReportService,
+  fetchAttendanceReportService,
 };

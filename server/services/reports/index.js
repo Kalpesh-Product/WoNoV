@@ -23,6 +23,7 @@ const {
 const {
   fetchUsersReportService,
   fetchLeavesReportService,
+  fetchAttendanceReportService,
 } = require("./employees");
 const normalizeReportIdentifier = (value = "") =>
   value
@@ -84,6 +85,10 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
+  attendance: createReportService(fetchAttendanceReportService, {
+    dateField: "inTime",
+  }),
+
   leaves: createReportService(fetchLeavesReportService, {
     dateField: "fromDate",
   }),
