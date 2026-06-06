@@ -136,7 +136,6 @@ const getReports = async (req, res, next) => {
       query.module = module;
     }
 
-    console.log("report type query", query);
     const reports = await Report.find(query)
       .populate("departmentId", "name")
       .sort({ createdAt: -1 });

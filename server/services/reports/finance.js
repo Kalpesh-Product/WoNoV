@@ -42,7 +42,7 @@ const fetchBudgetVoucherService = async ({ dateFilter, departmentId }) => {
   return { allBudgets };
 };
 
-const mapBudgetBaseFields = (budget = {}) => {
+const mapBudgetBaseFields = (budget = {}, isReport) => {
   const projectedAmount = budget?.particulars?.length
     ? budget.particulars.reduce(
         (acc, curr) => acc + (curr.particularAmount || 0),
@@ -50,6 +50,7 @@ const mapBudgetBaseFields = (budget = {}) => {
       )
     : budget.projectedAmount || 0;
 
+  console.log("building", budget);
   return {
     department: budget?.department?.name || "-",
     expanseName: budget?.expanseName || "-",
@@ -59,10 +60,11 @@ const mapBudgetBaseFields = (budget = {}) => {
       paymentType: budget?.paymentType || "-",
     }),
     actualAmount: budget?.actualAmount ?? "-",
+    building: budget?.unit?.building?.buildingName,
     unit: budget?.unit?.unitName || "-",
     unitNo: budget?.unit?.unitNo || "-",
     dueDate: budget?.dueDate || null,
-    invoiceAttached: budget?.invoiceAttached ?? false,
+    ...(!isReport && { invoiceAttached: budget?.invoiceAttached ?? false }),
     invoiceName: budget?.invoice?.name || "-",
     invoiceFile: budget?.invoice?.link || "-",
     invoiceDate: budget?.invoice?.date || null,
@@ -77,6 +79,7 @@ const fetchBudgetService = async ({
   departmentId,
   roles,
   isElectricity,
+  isReport = false,
 }) => {
   const query = { expanseType: { $ne: "Reimbursement" } };
 
@@ -107,7 +110,9 @@ const fetchBudgetService = async ({
     .lean()
     .exec();
 
-  return { allBudgets: budgets.map(mapBudgetBaseFields) };
+  return {
+    allBudgets: budgets.map((budget) => mapBudgetBaseFields(budget, isReport)),
+  };
 };
 
 const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {

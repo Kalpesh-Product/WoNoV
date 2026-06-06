@@ -109,11 +109,11 @@ const ManageTicketsHome = () => {
                       <div>{ticketSummary.open}</div>
                     </div>
                     <div className="flex gap-1 justify-center items-center uppercase bg-[#fce8e3] text-sm text-[#d96b4f] font-pmedium px-3 py-1.5 rounded-lg border border-[#f3b7a8]">
-                      <div>Close :</div>
+                      <div>Closed :</div>
                       <div>{ticketSummary.closed}</div>
                     </div>
                     <div className="flex gap-1 justify-center items-center uppercase bg-[#FFECC5] text-sm text-[#CC8400] font-pmedium px-3 py-1.5 rounded-lg border border-[#F6D48F]">
-                      <div>Reject :</div>
+                      <div>Rejected :</div>
                       <div>{ticketSummary.rejected}</div>
                     </div>
                   </div>
