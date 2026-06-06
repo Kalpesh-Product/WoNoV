@@ -1,3 +1,4 @@
+const Leave = require("../../models/hr/Leaves");
 const UserData = require("../../models/hr/UserData");
 
 const fetchUsersReportService = async ({
@@ -54,6 +55,130 @@ const fetchUsersReportService = async ({
   return transformedUsers || [];
 };
 
+const fetchLeavesReportService = async ({ company, dateFilter } = {}) => {
+  const matchStage = {
+    "takenBy.isActive": true,
+  };
+
+  if (dateFilter?.fromDate) {
+    matchStage.fromDate = dateFilter.fromDate;
+  }
+
+  const leaves = await Leave.aggregate([
+    {
+      $lookup: {
+        from: "userdatas",
+        localField: "takenBy",
+        foreignField: "_id",
+        as: "takenBy",
+      },
+    },
+    { $unwind: "$takenBy" },
+    { $match: matchStage },
+
+    {
+      $lookup: {
+        from: "userdatas",
+        localField: "addedBy",
+        foreignField: "_id",
+        as: "addedBy",
+      },
+    },
+    { $unwind: { path: "$addedBy", preserveNullAndEmptyArrays: true } },
+
+    {
+      $lookup: {
+        from: "userdatas",
+        localField: "approvedBy",
+        foreignField: "_id",
+        as: "approvedBy",
+      },
+    },
+    { $unwind: { path: "$approvedBy", preserveNullAndEmptyArrays: true } },
+
+    {
+      $lookup: {
+        from: "userdatas",
+        localField: "rejectedBy",
+        foreignField: "_id",
+        as: "rejectedBy",
+      },
+    },
+    { $unwind: { path: "$rejectedBy", preserveNullAndEmptyArrays: true } },
+    {
+      $addFields: {
+        hours: {
+          $cond: {
+            if: { $eq: ["$leavePeriod", "Multiple"] },
+            then: {
+              $concat: [
+                {
+                  $toString: {
+                    $floor: { $divide: ["$hours", 9] },
+                  },
+                },
+                " days",
+              ],
+            },
+            else: {
+              $concat: [{ $toString: "$hours" }, " hrs"],
+            },
+          },
+        },
+      },
+    },
+    {
+      $replaceRoot: {
+        newRoot: {
+          $mergeObjects: [
+            "$$ROOT",
+            {
+              takenBy: {
+                firstName: "$takenBy.firstName",
+                lastName: "$takenBy.lastName",
+                empId: "$takenBy.empId",
+              },
+              addedBy: {
+                $cond: {
+                  if: { $ifNull: ["$addedBy._id", false] },
+                  then: {
+                    firstName: "$addedBy.firstName",
+                    lastName: "$addedBy.lastName",
+                  },
+                  else: null,
+                },
+              },
+              approvedBy: {
+                $cond: {
+                  if: { $ifNull: ["$approvedBy._id", false] },
+                  then: {
+                    firstName: "$approvedBy.firstName",
+                    lastName: "$approvedBy.lastName",
+                  },
+                  else: null,
+                },
+              },
+              rejectedBy: {
+                $cond: {
+                  if: { $ifNull: ["$rejectedBy._id", false] },
+                  then: {
+                    firstName: "$rejectedBy.firstName",
+                    lastName: "$rejectedBy.lastName",
+                  },
+                  else: null,
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+  ]);
+
+  return leaves || [];
+};
+
 module.exports = {
   fetchUsersReportService,
+  fetchLeavesReportService,
 };

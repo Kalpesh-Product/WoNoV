@@ -20,7 +20,10 @@ const {
   fetchVirtualOfficeClientsReportService,
   fetchCoworkingMembersReportService,
 } = require("./client");
-const { fetchUsersReportService } = require("./employees");
+const {
+  fetchUsersReportService,
+  fetchLeavesReportService,
+} = require("./employees");
 const normalizeReportIdentifier = (value = "") =>
   value
     .trim()
@@ -81,6 +84,10 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
+  leaves: createReportService(fetchLeavesReportService, {
+    dateField: "fromDate",
+  }),
+
   employees: createReportService(fetchUsersReportService, {
     dateField: "startDate",
   }),
