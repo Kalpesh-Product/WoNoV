@@ -426,9 +426,20 @@ const DepartmentReportCommon = () => {
     return rows.length ? rows : [parentFields];
   };
 
+  const appendReportSerialNumbers = (reportData) => {
+    const rows = Array.isArray(reportData)
+      ? reportData
+      : normalizeReportRows(reportData);
+
+    return rows.map((row, index) => ({
+      "Sr.No": index + 1,
+      ...row,
+    }));
+  };
+
   const triggerDataDownload = (reportData, reportName) => {
     return downloadCsv({
-      data: reportData,
+      data: appendReportSerialNumbers(reportData),
       fileName: reportName,
     });
   };

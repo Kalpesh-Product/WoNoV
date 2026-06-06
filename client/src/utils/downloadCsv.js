@@ -60,8 +60,14 @@ const formatIfDate = (value) => {
   return parsed.isValid() ? parsed.format("DD-MM-YYYY") : value;
 };
 
-const toReadableHeader = (keyPath) =>
-  String(keyPath)
+const toReadableHeader = (keyPath) => {
+  const normalizedKeyPath = String(keyPath).trim();
+
+  if (/^sr\.?\s*no$/i.test(normalizedKeyPath)) {
+    return "Sr No";
+  }
+
+  return normalizedKeyPath
     .split(".")
     .map((segment) =>
       segment
@@ -72,6 +78,7 @@ const toReadableHeader = (keyPath) =>
         .replace(/^./, (char) => char.toUpperCase()),
     )
     .join(" - ");
+};
 
 const formatValue = (value, keyPath = "", hiddenFields = []) => {
   if (value === null || value === undefined) return "";
