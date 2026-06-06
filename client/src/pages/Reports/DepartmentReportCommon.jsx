@@ -548,11 +548,111 @@ const DepartmentReportCommon = () => {
     });
   };
 
-  const appendReportSerialNumbers = (reportData) => {
+  const mergeTaskCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "task") return rows;
+
+    const isMyTaskReport = String(reportName).trim().toLowerCase().includes("my task");
+
+    return rows.map((row) => {
+      const assignedByFirstName = String(
+        row?.assignedBy?.firstName || row?.["assignedBy.firstName"] || "",
+      ).trim();
+      const assignedByLastName = String(
+        row?.assignedBy?.lastName || row?.["assignedBy.lastName"] || "",
+      ).trim();
+      const assignedByName = [assignedByFirstName, assignedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const assignedToName = (() => {
+        if (Array.isArray(row?.assignedTo)) {
+          return row.assignedTo
+            .map((person) =>
+              [person?.firstName, person?.lastName].filter(Boolean).join(" ").trim(),
+            )
+            .filter(Boolean)
+            .join(", ");
+        }
+
+        if (row?.assignedTo && typeof row.assignedTo === "object") {
+          return [row.assignedTo.firstName, row.assignedTo.lastName]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+        }
+
+        const firstName = String(row?.["assignedTo.firstName"] || "").trim();
+        const lastName = String(row?.["assignedTo.lastName"] || "").trim();
+
+        return [firstName, lastName].filter(Boolean).join(" ").trim();
+      })();
+      const unitNo = String(
+        row?.location?.unitNo || row?.["location.unitNo"] || "",
+      ).trim();
+      const unitName = String(
+        row?.location?.unitName || row?.["location.unitName"] || "",
+      ).trim();
+      const buildingName = String(
+        row?.location?.building?.buildingName ||
+          row?.["location.building.buildingName"] ||
+          "",
+      ).trim();
+
+      if (!assignedByName && !assignedToName && !unitNo && !unitName && !buildingName) {
+        return row;
+      }
+
+      const nextRow = { ...row };
+
+      delete nextRow.isDeleted;
+
+      if (assignedByName) {
+        nextRow.assignedBy = assignedByName;
+      }
+
+      if (assignedToName) {
+        nextRow.assignedTo = assignedToName;
+      }
+
+      if (unitNo) {
+        nextRow.unitNo = unitNo;
+      }
+
+      if (unitName) {
+        nextRow.unitName = unitName;
+      }
+
+      if (buildingName) {
+        nextRow.buildingName = buildingName;
+      }
+
+      if (isMyTaskReport) {
+        delete nextRow.assignedTo;
+        delete nextRow["assignedTo.firstName"];
+        delete nextRow["assignedTo.lastName"];
+      }
+
+      delete nextRow.location;
+      delete nextRow["location.unitNo"];
+      delete nextRow["location.unitName"];
+      delete nextRow["location.building"];
+      delete nextRow["location.building.buildingName"];
+      delete nextRow["assignedBy.firstName"];
+      delete nextRow["assignedBy.lastName"];
+      delete nextRow["location.building._id"];
+      delete nextRow["location._id"];
+
+      return nextRow;
+    });
+  };
+
+  const appendReportSerialNumbers = (reportData, reportName = "") => {
     const rows = Array.isArray(reportData)
       ? reportData
       : normalizeReportRows(reportData);
-    const normalizedRows = mergeTicketCsvFields(rows);
+    const normalizedRows = mergeTaskCsvFields(
+      mergeTicketCsvFields(rows),
+      reportName,
+    );
 
     return normalizedRows.map((row, index) => {
       if (normalizedModuleKey === "ticket" && row?.ticketTitle) {
@@ -574,7 +674,7 @@ const DepartmentReportCommon = () => {
 
   const triggerDataDownload = (reportData, reportName) => {
     return downloadCsv({
-      data: appendReportSerialNumbers(reportData),
+      data: appendReportSerialNumbers(reportData, reportName),
       fileName: reportName,
     });
   };
