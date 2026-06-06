@@ -467,6 +467,7 @@ const TasksViewDepartment = () => {
               dueTime: item.dueTime,
               location: item.location,
               unitNo: item.location?.unitNo || "N/A",
+              buildingName: item.location?.building?.buildingName || "N/A",
               completedDate: item.completedDate,
               completedDateLabel: humanDate(item.completedDate),
               completedTime: item.completedDate,
@@ -703,6 +704,7 @@ const TasksViewDepartment = () => {
       ),
     },
     // { headerName: "Assigned Time", field: "assignedDate" },
+    {headerName: "Added By", field: "assignedBy", flex:1,hide: true,},
     { headerName: "Assign To", field: "assignedTo", flex:1, },
     { headerName: "Description", field: "description", hide: true },
     { headerName: "Assigned Date", field: "assignedDate", hide: true },
@@ -716,10 +718,17 @@ const TasksViewDepartment = () => {
       flex:1,
     },
     {
+      headerName: "Building Name",
+      field: "buildingName",
+      flex:1,
+      hide: true,
+    },
+    {
       headerName: "Completed Time",
       field: "completedTime",
       flex:1,
     },
+    {headerName: "Status", field: "status", hide: true },
 
     // {
     //   field: "status",

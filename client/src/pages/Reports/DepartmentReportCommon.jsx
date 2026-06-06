@@ -426,9 +426,346 @@ const DepartmentReportCommon = () => {
     return rows.length ? rows : [parentFields];
   };
 
+  const mergeTicketCsvFields = (rows = []) => {
+    if (normalizedModuleKey !== "ticket") return rows;
+
+    return rows.map((row) => {
+      const fromDepartment = Array.isArray(row?.raisedBy?.departments)
+        ? row.raisedBy.departments
+            .map((department) => department?.name || "")
+            .filter(Boolean)
+            .join(", ")
+        : String(row?.["raisedBy.departments"] || "").trim();
+      const raisedByFirstName = String(
+        row?.raisedBy?.firstName || row?.["raisedBy.firstName"] || "",
+      ).trim();
+      const raisedByLastName = String(
+        row?.raisedBy?.lastName || row?.["raisedBy.lastName"] || "",
+      ).trim();
+      const raisedByName = [raisedByFirstName, raisedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const rejectedByFirstName = String(
+        row?.reject?.rejectedBy?.firstName ||
+          row?.["reject.rejectedBy.firstName"] ||
+          "",
+      ).trim();
+      const rejectedByLastName = String(
+        row?.reject?.rejectedBy?.lastName ||
+          row?.["reject.rejectedBy.lastName"] ||
+          "",
+      ).trim();
+      const rejectedByName = [rejectedByFirstName, rejectedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const acceptedByFirstName = String(
+        row?.acceptedBy?.firstName || row?.["acceptedBy.firstName"] || "",
+      ).trim();
+      const acceptedByLastName = String(
+        row?.acceptedBy?.lastName || row?.["acceptedBy.lastName"] || "",
+      ).trim();
+      const acceptedByName = [acceptedByFirstName, acceptedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const closedByFirstName = String(
+        row?.closedBy?.firstName || row?.["closedBy.firstName"] || "",
+      ).trim();
+      const closedByLastName = String(
+        row?.closedBy?.lastName || row?.["closedBy.lastName"] || "",
+      ).trim();
+      const closedByName = [closedByFirstName, closedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const assignToName = Array.isArray(row?.assignedTo)
+        ? row.assignedTo
+            .map((assignment) =>
+              [
+                assignment?.assignee?.firstName ||
+                  assignment?.firstName ||
+                  assignment?.["assignee.firstName"],
+                assignment?.assignee?.lastName ||
+                  assignment?.lastName ||
+                  assignment?.["assignee.lastName"],
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .trim(),
+            )
+            .filter(Boolean)
+            .join(", ")
+        : [
+            row?.assignedTo?.assignee?.firstName ||
+              row?.assignedTo?.firstName ||
+              row?.["assignedTo.assignee.firstName"] ||
+              row?.["assignedTo.firstName"],
+            row?.assignedTo?.assignee?.lastName ||
+              row?.assignedTo?.lastName ||
+              row?.["assignedTo.assignee.lastName"] ||
+              row?.["assignedTo.lastName"],
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+      const escalatedToDepartmentName = Array.isArray(row?.escalatedTo)
+        ? row.escalatedTo
+            .map((escalation) =>
+              String(
+                escalation?.raisedToDepartment?.name ||
+                  escalation?.["raisedToDepartment.name"] ||
+                  "",
+              ).trim(),
+            )
+            .filter(Boolean)
+            .join(", ")
+        : String(
+            row?.escalatedTo?.raisedToDepartment?.name ||
+              row?.["escalatedTo.raisedToDepartment.name"] ||
+              "",
+          ).trim();
+      const escalatedStatus = Array.isArray(row?.escalatedTo)
+        ? row.escalatedTo
+            .map((escalation) => String(escalation?.status || "").trim())
+            .filter(Boolean)
+            .join(", ")
+        : String(
+            row?.escalatedTo?.status || row?.["escalatedTo.status"] || "",
+          ).trim();
+      const escalatedRaisedAt = Array.isArray(row?.escalatedTo)
+        ? row.escalatedTo
+            .map((escalation) => escalation?.createdAt || "")
+            .filter(Boolean)
+            .join(", ")
+        : row?.escalatedTo?.createdAt || row?.["escalatedTo.createdAt"] || "";
+      const rejectReason = String(
+        row?.reject?.reason || row?.["reject.reason"] || "",
+      ).trim();
+      const rejectAt = row?.reject?.rejectedAt || row?.["reject.rejectedAt"] || "";
+
+      const nextRow = { ...row };
+
+      if (raisedByName) {
+        nextRow.raisedBy = raisedByName;
+      }
+
+      if (fromDepartment) {
+        nextRow.fromDepartment = fromDepartment;
+      }
+
+      if (rejectedByName) {
+        nextRow.rejectedBy = rejectedByName;
+      }
+
+      if (acceptedByName) {
+        nextRow.acceptedBy = acceptedByName;
+      }
+
+      if (closedByName) {
+        nextRow.closedBy = closedByName;
+      }
+
+      if (assignToName) {
+        nextRow.assignedTo = assignToName;
+      }
+
+      if (rejectReason) {
+        nextRow.rejectReason = rejectReason;
+      }
+
+      if (rejectAt) {
+        nextRow.rejectAt = rejectAt;
+      }
+
+      if (row?.ticket) {
+        nextRow.ticketTitle = row.ticket;
+      }
+
+      const raisedToDepartmentName = String(
+        row?.raisedToDepartment?.name || row?.["raisedToDepartment.name"] || "",
+      ).trim();
+
+      if (raisedToDepartmentName) {
+        nextRow.raisedToDepartment = raisedToDepartmentName;
+      }
+
+      delete nextRow["raisedBy.firstName"];
+      delete nextRow["raisedBy.lastName"];
+      delete nextRow["raisedBy.departments"];
+      delete nextRow["acceptedBy.firstName"];
+      delete nextRow["acceptedBy.lastName"];
+      delete nextRow["closedBy.firstName"];
+      delete nextRow["closedBy.lastName"];
+      delete nextRow["assignedTo.assignee"];
+      delete nextRow["assignedTo.assignee.firstName"];
+      delete nextRow["assignedTo.assignee.lastName"];
+      delete nextRow["assignedTo.assignedAt"];
+      delete nextRow["assignedTo.firstName"];
+      delete nextRow["assignedTo.lastName"];
+      delete nextRow["escalatedTo.raisedToDepartment"];
+      delete nextRow["escalatedTo.raisedToDepartment.name"];
+      delete nextRow["escalatedTo.status"];
+      delete nextRow["escalatedTo.createdAt"];
+      delete nextRow.escalatedTo;
+
+      if (escalatedToDepartmentName) {
+        nextRow.escalatedTo = escalatedToDepartmentName;
+      }
+
+      if (escalatedStatus) {
+        nextRow.escalatedStatus = escalatedStatus;
+      }
+
+      if (escalatedRaisedAt) {
+        nextRow.raisedAt = escalatedRaisedAt;
+      }
+
+      delete nextRow["raisedToDepartment.name"];
+      delete nextRow.assignees;
+      delete nextRow["assignees.firstName"];
+      delete nextRow["assignees.lastName"];
+      delete nextRow.image;
+      delete nextRow["image.url"];
+      delete nextRow["image.filename"];
+      delete nextRow["image.path"];
+      delete nextRow["image.mimetype"];
+      delete nextRow.ticket;
+      delete nextRow["reject.reason"];
+      delete nextRow["reject.rejectedAt"];
+      delete nextRow["reject.rejectedBy"];
+      delete nextRow["reject.rejectedBy.firstName"];
+      delete nextRow["reject.rejectedBy.lastName"];
+      delete nextRow.reject;
+
+      return nextRow;
+    });
+  };
+
+  const mergeTaskCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "task") return rows;
+
+    const isMyTaskReport = String(reportName).trim().toLowerCase().includes("my task");
+
+    return rows.map((row) => {
+      const assignedByFirstName = String(
+        row?.assignedBy?.firstName || row?.["assignedBy.firstName"] || "",
+      ).trim();
+      const assignedByLastName = String(
+        row?.assignedBy?.lastName || row?.["assignedBy.lastName"] || "",
+      ).trim();
+      const assignedByName = [assignedByFirstName, assignedByLastName]
+        .filter(Boolean)
+        .join(" ");
+      const assignedToName = (() => {
+        if (Array.isArray(row?.assignedTo)) {
+          return row.assignedTo
+            .map((person) =>
+              [person?.firstName, person?.lastName].filter(Boolean).join(" ").trim(),
+            )
+            .filter(Boolean)
+            .join(", ");
+        }
+
+        if (row?.assignedTo && typeof row.assignedTo === "object") {
+          return [row.assignedTo.firstName, row.assignedTo.lastName]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+        }
+
+        const firstName = String(row?.["assignedTo.firstName"] || "").trim();
+        const lastName = String(row?.["assignedTo.lastName"] || "").trim();
+
+        return [firstName, lastName].filter(Boolean).join(" ").trim();
+      })();
+      const unitNo = String(
+        row?.location?.unitNo || row?.["location.unitNo"] || "",
+      ).trim();
+      const unitName = String(
+        row?.location?.unitName || row?.["location.unitName"] || "",
+      ).trim();
+      const buildingName = String(
+        row?.location?.building?.buildingName ||
+          row?.["location.building.buildingName"] ||
+          "",
+      ).trim();
+
+      if (!assignedByName && !assignedToName && !unitNo && !unitName && !buildingName) {
+        return row;
+      }
+
+      const nextRow = { ...row };
+
+      delete nextRow.isDeleted;
+
+      if (assignedByName) {
+        nextRow.assignedBy = assignedByName;
+      }
+
+      if (assignedToName) {
+        nextRow.assignedTo = assignedToName;
+      }
+
+      if (unitNo) {
+        nextRow.unitNo = unitNo;
+      }
+
+      if (unitName) {
+        nextRow.unitName = unitName;
+      }
+
+      if (buildingName) {
+        nextRow.buildingName = buildingName;
+      }
+
+      if (isMyTaskReport) {
+        delete nextRow.assignedTo;
+        delete nextRow["assignedTo.firstName"];
+        delete nextRow["assignedTo.lastName"];
+      }
+
+      delete nextRow.location;
+      delete nextRow["location.unitNo"];
+      delete nextRow["location.unitName"];
+      delete nextRow["location.building"];
+      delete nextRow["location.building.buildingName"];
+      delete nextRow["assignedBy.firstName"];
+      delete nextRow["assignedBy.lastName"];
+      delete nextRow["location.building._id"];
+      delete nextRow["location._id"];
+
+      return nextRow;
+    });
+  };
+
+  const appendReportSerialNumbers = (reportData, reportName = "") => {
+    const rows = Array.isArray(reportData)
+      ? reportData
+      : normalizeReportRows(reportData);
+    const normalizedRows = mergeTaskCsvFields(
+      mergeTicketCsvFields(rows),
+      reportName,
+    );
+
+    return normalizedRows.map((row, index) => {
+      if (normalizedModuleKey === "ticket" && row?.ticketTitle) {
+        const { ticketTitle, ...restRow } = row;
+
+        return {
+          "Sr.No": index + 1,
+          ticketTitle,
+          ...restRow,
+        };
+      }
+
+      return {
+        "Sr.No": index + 1,
+        ...row,
+      };
+    });
+  };
+
   const triggerDataDownload = (reportData, reportName) => {
     return downloadCsv({
-      data: reportData,
+      data: appendReportSerialNumbers(reportData, reportName),
       fileName: reportName,
     });
   };

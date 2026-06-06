@@ -418,6 +418,7 @@ const DailyTasks = () => {
       headerName: "Completed Time",
       field: "completedTime",
     },
+    {headerName: "Status", field: "status", hide: true },
     // {
     //   field: "status",
     //   headerName: "Status",
