@@ -1,5 +1,3 @@
-const Attendance = require("../../models/hr/Attendance");
-const Leaves = require("../../models/hr/Leaves");
 const UserData = require("../../models/hr/UserData");
 
 const fetchUsersReportService = async ({
@@ -56,46 +54,6 @@ const fetchUsersReportService = async ({
   return transformedUsers || [];
 };
 
-const fetchAttendanceReportService = async ({ company, dateFilter } = {}) => {
-  const filter = {};
-
-  if (dateFilter?.inTime) {
-    filter.inTime = dateFilter.inTime;
-  }
-
-  console.log("attendance filter", filter);
-  const attendances = await Attendance.find(filter)
-    .populate({
-      path: "user",
-      select: "firstName lastName empId",
-    })
-    .lean()
-    .exec();
-
-  return attendances || [];
-};
-
-const fetchLeavesReportService = async ({ company, dateFilter } = {}) => {
-  const filter = {};
-
-  if (dateFilter?.fromDate) {
-    filter.fromDate = dateFilter.fromDate;
-  }
-
-  console.log("leaves filter", filter);
-  const leaves = await Leaves.find(filter)
-    .populate({
-      path: "takenBy",
-      select: "firstName lastName empId",
-    })
-    .lean()
-    .exec();
-
-  return leaves || [];
-};
-
 module.exports = {
   fetchUsersReportService,
-  fetchAttendanceReportService,
-  fetchLeavesReportService,
 };
