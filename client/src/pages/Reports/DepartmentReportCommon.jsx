@@ -1093,6 +1093,65 @@ const DepartmentReportCommon = () => {
     });
   };
 
+  const mergePerformanceCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "performance") return rows;
+
+    const normalizedReportName = String(reportName).trim().toLowerCase();
+    const isIndividualKpaReport =
+      normalizedReportName.includes("individual kpa report");
+    const isDepartmentKpaReport =
+      normalizedReportName.includes("department kpa report") ||
+      normalizedReportName.includes("departments kpa report");
+    const isIndividualKraReport =
+      normalizedReportName.includes("individual kra report");
+    const isDepartmentKraReport =
+      normalizedReportName.includes("department kra report") ||
+      normalizedReportName.includes("departments kra report");
+
+    if (
+      !isIndividualKpaReport &&
+      !isDepartmentKpaReport &&
+      !isIndividualKraReport &&
+      !isDepartmentKraReport
+    ) {
+      return rows;
+    }
+
+    const formatPerformanceTime = (value) => {
+      const formattedTime = humanTime(value);
+
+      if (
+        !formattedTime ||
+        formattedTime === "Invalid date" ||
+        formattedTime === "â€”"
+      ) {
+        return "";
+      }
+
+      return formattedTime;
+    };
+
+    return rows.map((row) => {
+      const nextRow = { ...row };
+      const formattedDueTime = formatPerformanceTime(
+        row?.dueDate || row?.["dueDate"],
+      );
+      const formattedCompletedTime = formatPerformanceTime(
+        row?.completionDate || row?.["completionDate"],
+      );
+
+      if (formattedDueTime) {
+        nextRow.dueTime = formattedDueTime;
+      }
+
+      if (formattedCompletedTime) {
+        nextRow.completedTime = formattedCompletedTime;
+      }
+
+      return nextRow;
+    });
+  };
+
   const appendReportSerialNumbers = (reportData, reportName = "") => {
     const rows = Array.isArray(reportData)
       ? reportData
@@ -1100,14 +1159,69 @@ const DepartmentReportCommon = () => {
     const normalizedRows = mergeVisitorCsvFields(
       mergeAssetCsvFields(
         mergeMeetingCsvFields(
-          mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+          mergePerformanceCsvFields(
+            mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+            reportName,
+          ),
         ),
       ),
     );
 
+    const reorderTimeColumns = (inputRow) => {
+      const entries = Object.entries(inputRow || {});
+      const reorderedEntries = [];
+      const dueTimeValue = inputRow?.dueTime;
+      const completedTimeValue = inputRow?.completedTime;
+      let dueTimeInserted = false;
+      let completedTimeInserted = false;
+
+      entries.forEach(([key, value]) => {
+        if (key === "dueTime" || key === "completedTime") {
+          return;
+        }
+
+        reorderedEntries.push([key, value]);
+
+        if (key === "dueDate" && !dueTimeInserted && dueTimeValue !== undefined) {
+          reorderedEntries.push(["dueTime", dueTimeValue]);
+          dueTimeInserted = true;
+        }
+
+        if (
+          (key === "completedDate" || key === "completionDate") &&
+          !completedTimeInserted &&
+          completedTimeValue !== undefined
+        ) {
+          reorderedEntries.push(["completedTime", completedTimeValue]);
+          completedTimeInserted = true;
+        }
+      });
+
+      if (!dueTimeInserted && dueTimeValue !== undefined) {
+        reorderedEntries.push(["dueTime", dueTimeValue]);
+      }
+
+      if (!completedTimeInserted && completedTimeValue !== undefined) {
+        reorderedEntries.push(["completedTime", completedTimeValue]);
+      }
+
+      return Object.fromEntries(reorderedEntries);
+    };
+
     return normalizedRows.map((row, index) => {
+      const sanitizedRow = {
+        ...row,
+        dueTime:
+          row?.dueTime === "â€”" || row?.dueTime === "—" ? "" : row?.dueTime,
+        completedTime:
+          row?.completedTime === "â€”" || row?.completedTime === "—"
+            ? ""
+            : row?.completedTime,
+      };
+      const orderedRow = reorderTimeColumns(sanitizedRow);
+
       if (normalizedModuleKey === "ticket" && row?.ticketTitle) {
-        const { ticketTitle, ...restRow } = row;
+        const { ticketTitle, ...restRow } = orderedRow;
 
         return {
           "Sr.No": index + 1,
@@ -1118,15 +1232,40 @@ const DepartmentReportCommon = () => {
 
       return {
         "Sr.No": index + 1,
-        ...row,
+        ...orderedRow,
       };
     });
   };
 
   const triggerDataDownload = (reportData, reportName) => {
+    const normalizedReportName = String(reportName || "").trim().toLowerCase();
+    const hiddenFields = [];
+
+    if (
+      normalizedModuleKey === "performance" &&
+      (normalizedReportName.includes("individual kpa report") ||
+        normalizedReportName.includes("individual kra report") ||
+        normalizedReportName.includes("department kpa report") ||
+        normalizedReportName.includes("departments kpa report") ||
+        normalizedReportName.includes("department kra report") ||
+        normalizedReportName.includes("departments kra report"))
+    ) {
+      hiddenFields.push("roleTaskId");
+    }
+
+    if (
+      normalizedModuleKey === "performance" &&
+      (normalizedReportName.includes("individual kra report") ||
+        normalizedReportName.includes("department kra report") ||
+        normalizedReportName.includes("departments kra report"))
+    ) {
+      hiddenFields.push("kpaDuration");
+    }
+
     return downloadCsv({
       data: appendReportSerialNumbers(reportData, reportName),
       fileName: reportName,
+      hiddenFields,
     });
   };
 
