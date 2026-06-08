@@ -329,6 +329,53 @@ const DepartmentReportCommon = () => {
   // };
 
   const flattenObject = (obj, prefix = "") => {
+    const formatParticularEntry = (item) => {
+      if (!item || typeof item !== "object") return "";
+
+      const parts = [];
+
+      if (
+        item.particularName !== undefined &&
+        item.particularName !== null &&
+        item.particularName !== ""
+      ) {
+        parts.push(`Particular Name:${item.particularName}`);
+      }
+
+      if (
+        item.particularAmount !== undefined &&
+        item.particularAmount !== null &&
+        item.particularAmount !== ""
+      ) {
+        parts.push(`Particular Amount:${item.particularAmount}`);
+      }
+
+      return parts.join(", ");
+    };
+
+    const formatParticularString = (value) => {
+      if (typeof value !== "string" || !value.includes("particularName")) {
+        return value;
+      }
+
+      const matches = value.match(/\{[^{}]*"particularName"[^{}]*\}/g);
+      if (!Array.isArray(matches) || !matches.length) {
+        return value;
+      }
+
+      const formatted = matches
+        .map((entry) => {
+          try {
+            return formatParticularEntry(JSON.parse(entry));
+          } catch {
+            return "";
+          }
+        })
+        .filter(Boolean);
+
+      return formatted.length ? formatted.join(" | ") : value;
+    };
+
     let result = {};
 
     Object.entries(obj || {}).forEach(([key, value]) => {
@@ -348,12 +395,19 @@ const DepartmentReportCommon = () => {
         else if (typeof value[0] === "object") {
           result[nextKey] = value
             .map((item) => {
+              if (item && typeof item === "object") {
+                const formattedParticular = formatParticularEntry(item);
+                if (formattedParticular) {
+                  return formattedParticular;
+                }
+              }
+
               return (
                 item.employeeName ||
                 item.firstName ||
                 item.name ||
                 item.email ||
-                JSON.stringify(item)
+                formatParticularString(JSON.stringify(item))
               );
             })
             .join(" | ");
@@ -372,7 +426,8 @@ const DepartmentReportCommon = () => {
 
       // Primitive
       else {
-        result[nextKey] = value;
+        result[nextKey] =
+          typeof value === "string" ? formatParticularString(value) : value;
       }
     });
 
