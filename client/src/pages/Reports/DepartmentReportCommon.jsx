@@ -9,6 +9,7 @@ import { MdCalendarToday } from "react-icons/md";
 import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
+import humanTime from "../../utils/humanTime";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { downloadCsv } from "../../utils/downloadCsv";
@@ -698,6 +699,12 @@ const DepartmentReportCommon = () => {
     if (normalizedModuleKey !== "task") return rows;
 
     const isMyTaskReport = String(reportName).trim().toLowerCase().includes("my task");
+    const formatTaskTime = (value) => {
+      if (!value) return value;
+
+      const formattedTime = humanTime(value);
+      return formattedTime === "Invalid date" ? value : formattedTime;
+    };
 
     return rows.map((row) => {
       const assignedByFirstName = String(
@@ -742,8 +749,18 @@ const DepartmentReportCommon = () => {
           row?.["location.building.buildingName"] ||
           "",
       ).trim();
+      const formattedDueTime = formatTaskTime(
+        row?.dueTime || row?.["dueTime"],
+      );
 
-      if (!assignedByName && !assignedToName && !unitNo && !unitName && !buildingName) {
+      if (
+        !assignedByName &&
+        !assignedToName &&
+        !unitNo &&
+        !unitName &&
+        !buildingName &&
+        !formattedDueTime
+      ) {
         return row;
       }
 
@@ -771,6 +788,10 @@ const DepartmentReportCommon = () => {
         nextRow.buildingName = buildingName;
       }
 
+      if (formattedDueTime) {
+        nextRow.dueTime = formattedDueTime;
+      }
+
       if (isMyTaskReport) {
         delete nextRow.assignedTo;
         delete nextRow["assignedTo.firstName"];
@@ -789,6 +810,24 @@ const DepartmentReportCommon = () => {
 
       return nextRow;
     });
+  };
+
+  const mergeMeetingCsvFields = (rows = []) => {
+    if (normalizedModuleKey !== "meeting") return rows;
+
+    const formatMeetingTime = (value) => {
+      if (!value) return value;
+
+      const formattedTime = humanTime(value);
+      return formattedTime === "Invalid date" ? value : formattedTime;
+    };
+
+    return rows.map((row) => ({
+      ...row,
+      startTime: formatMeetingTime(row?.startTime),
+      endTime: formatMeetingTime(row?.endTime),
+      extendTime: formatMeetingTime(row?.extendTime),
+    }));
   };
 
   const mergeVisitorCsvFields = (rows = []) => {
@@ -935,7 +974,9 @@ const DepartmentReportCommon = () => {
       : normalizeReportRows(reportData);
     const normalizedRows = mergeVisitorCsvFields(
       mergeAssetCsvFields(
-        mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+        mergeMeetingCsvFields(
+          mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+        ),
       ),
     );
 
