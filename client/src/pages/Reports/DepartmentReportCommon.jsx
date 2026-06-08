@@ -699,6 +699,10 @@ const DepartmentReportCommon = () => {
     if (normalizedModuleKey !== "task") return rows;
 
     const isMyTaskReport = String(reportName).trim().toLowerCase().includes("my task");
+    const isDepartmentTaskReport = String(reportName)
+      .trim()
+      .toLowerCase()
+      .includes("department task");
     const formatTaskTime = (value) => {
       if (!value) return value;
 
@@ -752,6 +756,10 @@ const DepartmentReportCommon = () => {
       const formattedDueTime = formatTaskTime(
         row?.dueTime || row?.["dueTime"],
       );
+      const formattedCompletedTime =
+        isMyTaskReport || isDepartmentTaskReport
+        ? formatTaskTime(row?.completedDate || row?.["completedDate"])
+        : "";
 
       if (
         !assignedByName &&
@@ -759,7 +767,8 @@ const DepartmentReportCommon = () => {
         !unitNo &&
         !unitName &&
         !buildingName &&
-        !formattedDueTime
+        !formattedDueTime &&
+        !formattedCompletedTime
       ) {
         return row;
       }
@@ -790,6 +799,10 @@ const DepartmentReportCommon = () => {
 
       if (formattedDueTime) {
         nextRow.dueTime = formattedDueTime;
+      }
+
+      if (formattedCompletedTime) {
+        nextRow.completedTime = formattedCompletedTime;
       }
 
       if (isMyTaskReport) {
