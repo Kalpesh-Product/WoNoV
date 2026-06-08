@@ -301,29 +301,72 @@ const mapVisitorReportFields = (visitor = {}) => ({
   notes: visitor.notes || "-",
 });
 
+// const fetchInternalVisitorsReportService = async ({
+//   company,
+//   dateFilter,
+// } = {}) => {
+//   const filter = {
+//     company: new mongoose.Types.ObjectId(company),
+//     visitorType: {
+//       $in: ["Walk In", "Scheduled"],
+//     },
+//   };
+
+//   if (dateFilter?.checkIn) {
+//     filter.checkIn = dateFilter.checkIn;
+//   }
+
+//   console.log("internal filter", filter);
+
+//   const visitors = await ExternalVisits.find(filter)
+//     .populate(populateVisitorFields)
+//     .lean()
+//     .exec();
+
+//   return visitors.map(mapVisitorReportFields);
+// };
+
 const fetchInternalVisitorsReportService = async ({
   company,
   dateFilter,
 } = {}) => {
   const filter = {
     company: new mongoose.Types.ObjectId(company),
-    visitorType: {
-      $in: ["Walk In", "Scheduled"],
-    },
+    visitorType: { $in: ["Walk In", "Scheduled"] },
+    ...(dateFilter?.checkIn && { checkIn: dateFilter.checkIn }),
   };
-
-  if (dateFilter?.checkIn) {
-    filter.checkIn = dateFilter.checkIn;
-  }
 
   console.log("internal filter", filter);
 
-  const visitors = await ExternalVisits.find(filter)
-    .populate(populateVisitorFields)
+  const visits = await ExternalVisits.find(filter)
+    .populate([
+      {
+        path: "visitorId",
+        select:
+          "firstName middleName lastName email gender phoneNumber city state sector visitorRoles brandName registeredClientCompany",
+      },
+      { path: "toMeet", select: "firstName lastName email" },
+      { path: "clientToMeet", select: "employeeName email" },
+      { path: "toMeetCompany", select: "clientName companyName name" },
+      { path: "checkedInBy", select: "firstName lastName" },
+      { path: "checkedOutBy", select: "firstName lastName" },
+      { path: "department", select: "name" },
+      {
+        path: "unit",
+        select: "unitNo unitName",
+        populate: { path: "building", select: "buildingName" },
+      },
+      { path: "meeting" },
+    ])
     .lean()
     .exec();
 
-  return visitors.map(mapVisitorReportFields);
+  return visits.map((visit) =>
+    mapVisitorReportFields({
+      ...visit.visitorId, // personal fields from Visitor
+      ...visit, // ExternalVisit fields override (checkIn, checkOut, amounts, visitorType, etc.)
+    }),
+  );
 };
 
 const fetchClientVisitorsReportService = async ({
@@ -341,7 +384,7 @@ const fetchClientVisitorsReportService = async ({
     filter.checkIn = dateFilter.checkIn;
   }
 
-  console.log("internal filter", filter);
+  console.log("external filter", filter);
 
   const visitors = await ExternalVisits.find(filter)
     .populate(populateVisitorFields)

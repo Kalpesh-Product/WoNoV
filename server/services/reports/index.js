@@ -93,14 +93,6 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
-  visitor: createReportService(fetchInternalVisitorsReportService, {
-    dateField: "checkIn",
-  }),
-
-  client: createReportService(fetchClientVisitorsReportService, {
-    dateField: "checkIn",
-  }),
-
   attendance: createReportService(fetchAttendanceReportService, {
     dateField: "inTime",
   }),
@@ -190,9 +182,12 @@ const reportServiceRegistry = {
     dateField: "startDate",
   }),
 
-  visitor: createReportService(fetchVisitorReportService, {
+  visitor: createReportService(fetchInternalVisitorsReportService, {
     dateField: "checkIn",
-    contextKeys: ["departmentId", "company"],
+  }),
+
+  client: createReportService(fetchClientVisitorsReportService, {
+    dateField: "checkIn",
   }),
 
   ticket: createReportService(fetchTicketReportService, {
