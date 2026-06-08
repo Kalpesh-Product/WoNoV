@@ -7,7 +7,10 @@ const {
   fetchDeptTaskReportService,
   fetchMyTasksReportService,
 } = require("./task");
-const { fetchAssetReportService } = require("./asset");
+const {
+  fetchAssetReportService,
+  fetchAssignedAssetReportService,
+} = require("./asset");
 const { fetchMeetingReportService } = require("./meeting");
 const { fetchVisitorReportService } = require("./visitor");
 const { fetchCoworkingRevenueService } = require("./revenue");
@@ -166,7 +169,7 @@ const reportServiceRegistry = {
     dateField: "assignedDate",
   }),
 
-  asset: createReportService(fetchAssetReportService, {
+  asset: createReportService(fetchAssignedAssetReportService, {
     dateField: "createdAt",
     contextKeys: [...COMMON_REPORT_CONTEXT_KEYS, "query"],
   }),
