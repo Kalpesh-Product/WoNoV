@@ -736,13 +736,152 @@ const DepartmentReportCommon = () => {
     });
   };
 
+  const mergeVisitorCsvFields = (rows = []) => {
+    if (normalizedModuleKey !== "visitor") return rows;
+
+    return rows.map((row) => {
+      const nextRow = { ...row };
+
+      // delete nextRow.externalVisits;
+      // delete nextRow["externalVisits.checkIn"];
+      // delete nextRow["externalVisits.checkOut"];
+      // delete nextRow["externalVisits.dateOfVisit"];
+      // delete nextRow["externalVisits.visitorId"];
+      // delete nextRow["externalVisits.company"];
+      // delete nextRow["externalVisits._id"];
+
+      return nextRow;
+    });
+  };
+
+  const mergeAssetCsvFields = (rows = []) => {
+    if (normalizedModuleKey !== "asset") return rows;
+
+    return rows.map((row) => {
+      const nextRow = { ...row };
+      const categoryName = String(
+        row?.category?.categoryName || row?.["category.categoryName"] || "",
+      ).trim();
+
+      if (categoryName) {
+        nextRow.category = categoryName;
+      }
+
+      if (row?.assetId) {
+        nextRow.assetNo = row.assetId;
+      }
+
+      if (row?.name) {
+        nextRow.assetName = row.name;
+      }
+
+      if (row?.warranty !== undefined && row?.warranty !== null && row?.warranty !== "") {
+        nextRow.warrantyMonth = row.warranty;
+      }
+
+      const addedByName = [
+        row?.createdBy?.firstName || row?.["createdBy.firstName"] || auth?.user?.firstName,
+        row?.createdBy?.lastName || row?.["createdBy.lastName"] || auth?.user?.lastName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const fallbackAddedBy =
+        addedByName ||
+        row?.createdBy?.name ||
+        row?.["createdBy.name"] ||
+        auth?.user?.name ||
+        "";
+
+      if (fallbackAddedBy) {
+        nextRow.addedBy = fallbackAddedBy;
+      }
+
+      if (row?.createdAt) {
+        nextRow.addedAt = row.createdAt;
+      }
+
+      nextRow.quantity =
+        Number.isFinite(Number(row?.quantity)) && Number(row?.quantity) > 0
+          ? Number(row.quantity)
+          : 1;
+
+      const subCategoryName = String(
+        row?.subCategory?.subCategoryName || row?.["subCategory.subCategoryName"] || "",
+      ).trim();
+
+      if (subCategoryName) {
+        nextRow.subCategory = subCategoryName;
+      }
+
+      const unitNo = String(
+        row?.location?.unitNo || row?.["location.unitNo"] || "",
+      ).trim();
+      const unitName = String(
+        row?.location?.unitName || row?.["location.unitName"] || "",
+      ).trim();
+      const buildingName = String(
+        row?.location?.building?.buildingName ||
+          row?.["location.building.buildingName"] ||
+          "",
+      ).trim();
+
+      if (unitNo) {
+        nextRow.unitNo = unitNo;
+      }
+
+      if (unitName) {
+        nextRow.unitName = unitName;
+      }
+
+      if (buildingName) {
+        nextRow.buildingName = buildingName;
+      }
+
+      if (nextRow.assignedAsset && typeof nextRow.assignedAsset === "object") {
+        nextRow.assignedAsset = { ...nextRow.assignedAsset };
+        delete nextRow.assignedAsset.asset;
+      }
+
+      if (nextRow.vendor && typeof nextRow.vendor === "object") {
+        nextRow.vendor = { ...nextRow.vendor };
+        delete nextRow.vendor.departmentId;
+      }
+
+      delete nextRow["category._id"];
+      delete nextRow["category.categoryName"];
+      delete nextRow.createdAt;
+      delete nextRow["createdBy.firstName"];
+      delete nextRow["createdBy.lastName"];
+      delete nextRow["createdBy.name"];
+      delete nextRow.location;
+      delete nextRow["location._id"];
+      delete nextRow["location.unitNo"];
+      delete nextRow["location.unitName"];
+      delete nextRow["location.building"];
+      delete nextRow["location.building._id"];
+      delete nextRow["location.building.buildingName"];
+      delete nextRow["subCategory._id"];
+      delete nextRow["subCategory.subCategoryName"];
+      delete nextRow.assetId;
+      delete nextRow.name;
+      delete nextRow.warranty;
+      delete nextRow.departmentAssetId;
+      delete nextRow["vendor.departmentId.name"];
+      delete nextRow["assignedAsset.asset"];
+
+      return nextRow;
+    });
+  };
+
   const appendReportSerialNumbers = (reportData, reportName = "") => {
     const rows = Array.isArray(reportData)
       ? reportData
       : normalizeReportRows(reportData);
-    const normalizedRows = mergeTaskCsvFields(
-      mergeTicketCsvFields(rows),
-      reportName,
+    const normalizedRows = mergeVisitorCsvFields(
+      mergeAssetCsvFields(
+        mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+      ),
     );
 
     return normalizedRows.map((row, index) => {
