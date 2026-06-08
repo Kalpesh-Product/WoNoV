@@ -77,6 +77,7 @@ const createReportService =
 const createPerformanceReportService = (type) =>
   createReportService(fetchPerformanceReportService, {
     dateField: "assignedDate",
+    staticParams: { isReport: true, type },
   });
 
 /**
