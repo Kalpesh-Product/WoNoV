@@ -98,7 +98,7 @@ const fetchAssetReportService = async ({
           populate: [
             {
               path: "assignee",
-              select: "employeeName email",
+              select: "firstName lastName",
             },
             {
               path: "fromDepartment",
@@ -107,6 +107,18 @@ const fetchAssetReportService = async ({
             {
               path: "toDepartment",
               select: "name",
+            },
+            {
+              path: "approvedBy",
+              select: "firstName lastName",
+            },
+            {
+              path: "location",
+              select: "unitNo unitName",
+              populate: {
+                path: "building",
+                select: "buildingName",
+              },
             },
           ],
         },
