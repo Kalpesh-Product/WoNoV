@@ -1002,8 +1002,12 @@ const DepartmentReportCommon = () => {
           nextRow.assignedAsset.assignedBy = assignedAssetAssignedByName;
         }
 
+        // if (assignedAssetRejectededByName) {
+        //   nextRow.assignedAsset.rejectededBy = assignedAssetRejectededByName;
+        // }
         if (assignedAssetRejectededByName) {
-          nextRow.assignedAsset.rejectededBy = assignedAssetRejectededByName;
+          nextRow.assignedAsset["Rejected By"] = assignedAssetRejectededByName;
+          delete nextRow.assignedAsset.rejectededBy;
         }
 
         if (assignedAssetAssigneeName) {
