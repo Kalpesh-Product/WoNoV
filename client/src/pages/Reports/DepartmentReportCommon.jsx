@@ -853,6 +853,43 @@ const DepartmentReportCommon = () => {
 
     return rows.map((row) => {
       const nextRow = { ...row };
+      const assignedAssetApprovedByName = [
+        row?.assignedAsset?.approvedBy?.firstName ||
+          row?.["assignedAsset.approvedBy.firstName"] ||
+          "",
+        row?.assignedAsset?.approvedBy?.lastName ||
+          row?.["assignedAsset.approvedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const assignedAssetAssigneeName = [
+        row?.assignedAsset?.assignee?.firstName ||
+          row?.["assignedAsset.assignee.firstName"] ||
+          "",
+        row?.assignedAsset?.assignee?.lastName ||
+          row?.["assignedAsset.assignee.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const assignedAssetUnitNo = String(
+        row?.assignedAsset?.location?.unitNo ||
+          row?.["assignedAsset.location.unitNo"] ||
+          "",
+      ).trim();
+      const assignedAssetUnitName = String(
+        row?.assignedAsset?.location?.unitName ||
+          row?.["assignedAsset.location.unitName"] ||
+          "",
+      ).trim();
+      const assignedAssetBuildingName = String(
+        row?.assignedAsset?.location?.building?.buildingName ||
+          row?.["assignedAsset.location.building.buildingName"] ||
+          "",
+      ).trim();
       const categoryName = String(
         row?.category?.categoryName || row?.["category.categoryName"] || "",
       ).trim();
@@ -935,6 +972,28 @@ const DepartmentReportCommon = () => {
       if (nextRow.assignedAsset && typeof nextRow.assignedAsset === "object") {
         nextRow.assignedAsset = { ...nextRow.assignedAsset };
         delete nextRow.assignedAsset.asset;
+
+        if (assignedAssetApprovedByName) {
+          nextRow.assignedAsset.approvedBy = assignedAssetApprovedByName;
+        }
+
+        if (assignedAssetAssigneeName) {
+          nextRow.assignedAsset.assignee = assignedAssetAssigneeName;
+        }
+
+        if (assignedAssetUnitNo) {
+          nextRow.assignedAsset.unitNo = assignedAssetUnitNo;
+        }
+
+        if (assignedAssetUnitName) {
+          nextRow.assignedAsset.unitName = assignedAssetUnitName;
+        }
+
+        if (assignedAssetBuildingName) {
+          nextRow.assignedAsset.buildingName = assignedAssetBuildingName;
+        }
+
+        delete nextRow.assignedAsset.location;
       }
 
       if (nextRow.vendor && typeof nextRow.vendor === "object") {
@@ -963,6 +1022,14 @@ const DepartmentReportCommon = () => {
       delete nextRow.departmentAssetId;
       delete nextRow["vendor.departmentId.name"];
       delete nextRow["assignedAsset.asset"];
+      delete nextRow["assignedAsset.approvedBy.firstName"];
+      delete nextRow["assignedAsset.approvedBy.lastName"];
+      delete nextRow["assignedAsset.assignee.firstName"];
+      delete nextRow["assignedAsset.assignee.lastName"];
+      delete nextRow["assignedAsset.location.unitNo"];
+      delete nextRow["assignedAsset.location.unitName"];
+      delete nextRow["assignedAsset.location.building"];
+      delete nextRow["assignedAsset.location.building.buildingName"];
 
       return nextRow;
     });
