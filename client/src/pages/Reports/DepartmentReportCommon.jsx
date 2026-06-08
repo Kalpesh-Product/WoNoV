@@ -9,6 +9,7 @@ import { MdCalendarToday } from "react-icons/md";
 import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
+import humanTime from "../../utils/humanTime";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { downloadCsv } from "../../utils/downloadCsv";
@@ -329,6 +330,53 @@ const DepartmentReportCommon = () => {
   // };
 
   const flattenObject = (obj, prefix = "") => {
+    const formatParticularEntry = (item) => {
+      if (!item || typeof item !== "object") return "";
+
+      const parts = [];
+
+      if (
+        item.particularName !== undefined &&
+        item.particularName !== null &&
+        item.particularName !== ""
+      ) {
+        parts.push(`Particular Name:${item.particularName}`);
+      }
+
+      if (
+        item.particularAmount !== undefined &&
+        item.particularAmount !== null &&
+        item.particularAmount !== ""
+      ) {
+        parts.push(`Particular Amount:${item.particularAmount}`);
+      }
+
+      return parts.join(", ");
+    };
+
+    const formatParticularString = (value) => {
+      if (typeof value !== "string" || !value.includes("particularName")) {
+        return value;
+      }
+
+      const matches = value.match(/\{[^{}]*"particularName"[^{}]*\}/g);
+      if (!Array.isArray(matches) || !matches.length) {
+        return value;
+      }
+
+      const formatted = matches
+        .map((entry) => {
+          try {
+            return formatParticularEntry(JSON.parse(entry));
+          } catch {
+            return "";
+          }
+        })
+        .filter(Boolean);
+
+      return formatted.length ? formatted.join(" | ") : value;
+    };
+
     let result = {};
 
     Object.entries(obj || {}).forEach(([key, value]) => {
@@ -348,12 +396,19 @@ const DepartmentReportCommon = () => {
         else if (typeof value[0] === "object") {
           result[nextKey] = value
             .map((item) => {
+              if (item && typeof item === "object") {
+                const formattedParticular = formatParticularEntry(item);
+                if (formattedParticular) {
+                  return formattedParticular;
+                }
+              }
+
               return (
                 item.employeeName ||
                 item.firstName ||
                 item.name ||
                 item.email ||
-                JSON.stringify(item)
+                formatParticularString(JSON.stringify(item))
               );
             })
             .join(" | ");
@@ -372,7 +427,8 @@ const DepartmentReportCommon = () => {
 
       // Primitive
       else {
-        result[nextKey] = value;
+        result[nextKey] =
+          typeof value === "string" ? formatParticularString(value) : value;
       }
     });
 
@@ -643,6 +699,12 @@ const DepartmentReportCommon = () => {
     if (normalizedModuleKey !== "task") return rows;
 
     const isMyTaskReport = String(reportName).trim().toLowerCase().includes("my task");
+    const formatTaskTime = (value) => {
+      if (!value) return value;
+
+      const formattedTime = humanTime(value);
+      return formattedTime === "Invalid date" ? value : formattedTime;
+    };
 
     return rows.map((row) => {
       const assignedByFirstName = String(
@@ -687,8 +749,18 @@ const DepartmentReportCommon = () => {
           row?.["location.building.buildingName"] ||
           "",
       ).trim();
+      const formattedDueTime = formatTaskTime(
+        row?.dueTime || row?.["dueTime"],
+      );
 
-      if (!assignedByName && !assignedToName && !unitNo && !unitName && !buildingName) {
+      if (
+        !assignedByName &&
+        !assignedToName &&
+        !unitNo &&
+        !unitName &&
+        !buildingName &&
+        !formattedDueTime
+      ) {
         return row;
       }
 
@@ -716,6 +788,10 @@ const DepartmentReportCommon = () => {
         nextRow.buildingName = buildingName;
       }
 
+      if (formattedDueTime) {
+        nextRow.dueTime = formattedDueTime;
+      }
+
       if (isMyTaskReport) {
         delete nextRow.assignedTo;
         delete nextRow["assignedTo.firstName"];
@@ -734,6 +810,24 @@ const DepartmentReportCommon = () => {
 
       return nextRow;
     });
+  };
+
+  const mergeMeetingCsvFields = (rows = []) => {
+    if (normalizedModuleKey !== "meeting") return rows;
+
+    const formatMeetingTime = (value) => {
+      if (!value) return value;
+
+      const formattedTime = humanTime(value);
+      return formattedTime === "Invalid date" ? value : formattedTime;
+    };
+
+    return rows.map((row) => ({
+      ...row,
+      startTime: formatMeetingTime(row?.startTime),
+      endTime: formatMeetingTime(row?.endTime),
+      extendTime: formatMeetingTime(row?.extendTime),
+    }));
   };
 
   const mergeVisitorCsvFields = (rows = []) => {
@@ -759,6 +853,65 @@ const DepartmentReportCommon = () => {
 
     return rows.map((row) => {
       const nextRow = { ...row };
+       const assignedAssetApprovedByName = [
+        row?.assignedAsset?.approvedBy?.firstName ||
+          row?.["assignedAsset.approvedBy.firstName"] ||
+          "",
+        row?.assignedAsset?.approvedBy?.lastName ||
+          row?.["assignedAsset.approvedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+       const assignedAssetAssignedByName = [
+        row?.assignedAsset?.assignedBy?.firstName ||
+          row?.["assignedAsset.assignedBy.firstName"] ||
+          "",
+        row?.assignedAsset?.assignedBy?.lastName ||
+          row?.["assignedAsset.assignedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();  
+      const assignedAssetRejectededByName = [
+        row?.assignedAsset?.rejectededBy?.firstName ||
+          row?.["assignedAsset.rejectededBy.firstName"] ||
+          "",
+        row?.assignedAsset?.rejectededBy?.lastName ||
+          row?.["assignedAsset.rejectededBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const assignedAssetAssigneeName = [
+        row?.assignedAsset?.assignee?.firstName ||
+          row?.["assignedAsset.assignee.firstName"] ||
+          "",
+        row?.assignedAsset?.assignee?.lastName ||
+          row?.["assignedAsset.assignee.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const assignedAssetUnitNo = String(
+        row?.assignedAsset?.location?.unitNo ||
+          row?.["assignedAsset.location.unitNo"] ||
+          "",
+      ).trim();
+      const assignedAssetUnitName = String(
+        row?.assignedAsset?.location?.unitName ||
+          row?.["assignedAsset.location.unitName"] ||
+          "",
+      ).trim();
+      const assignedAssetBuildingName = String(
+        row?.assignedAsset?.location?.building?.buildingName ||
+          row?.["assignedAsset.location.building.buildingName"] ||
+          "",
+      ).trim();
       const categoryName = String(
         row?.category?.categoryName || row?.["category.categoryName"] || "",
       ).trim();
@@ -841,6 +994,47 @@ const DepartmentReportCommon = () => {
       if (nextRow.assignedAsset && typeof nextRow.assignedAsset === "object") {
         nextRow.assignedAsset = { ...nextRow.assignedAsset };
         delete nextRow.assignedAsset.asset;
+
+        if (assignedAssetApprovedByName) {
+          nextRow.assignedAsset.approvedBy = assignedAssetApprovedByName;
+        }
+         if (assignedAssetAssignedByName) {
+          nextRow.assignedAsset.assignedBy = assignedAssetAssignedByName;
+        }
+
+        // if (assignedAssetRejectededByName) {
+        //   nextRow.assignedAsset.rejectededBy = assignedAssetRejectededByName;
+        // }
+        if (assignedAssetRejectededByName) {
+          nextRow.assignedAsset["Rejected By"] = assignedAssetRejectededByName;
+          delete nextRow.assignedAsset.rejectededBy;
+        }
+
+        if (assignedAssetAssigneeName) {
+          nextRow.assignedAsset.assignee = assignedAssetAssigneeName;
+        }
+
+        if (assignedAssetUnitNo) {
+          nextRow.assignedAsset.unitNo = assignedAssetUnitNo;
+        }
+
+        if (assignedAssetUnitName) {
+          nextRow.assignedAsset.unitName = assignedAssetUnitName;
+        }
+
+        if (assignedAssetBuildingName) {
+          nextRow.assignedAsset.buildingName = assignedAssetBuildingName;
+        }
+
+        delete nextRow.assignedAsset.location;
+      }
+
+      if (
+        nextRow.assignedAsset === null ||
+        nextRow.assignedAsset === undefined ||
+        typeof nextRow.assignedAsset !== "object"
+      ) {
+        delete nextRow.assignedAsset;
       }
 
       if (nextRow.vendor && typeof nextRow.vendor === "object") {
@@ -869,6 +1063,18 @@ const DepartmentReportCommon = () => {
       delete nextRow.departmentAssetId;
       delete nextRow["vendor.departmentId.name"];
       delete nextRow["assignedAsset.asset"];
+      delete nextRow["assignedAsset.approvedBy.firstName"];
+      delete nextRow["assignedAsset.approvedBy.lastName"];
+      delete nextRow["assignedAsset.assignedBy.firstName"];
+      delete nextRow["assignedAsset.assignedBy.lastName"];
+      delete nextRow["assignedAsset.rejectededBy.firstName"];
+      delete nextRow["assignedAsset.rejectededBy.lastName"];
+      delete nextRow["assignedAsset.assignee.firstName"];
+      delete nextRow["assignedAsset.assignee.lastName"];
+      delete nextRow["assignedAsset.location.unitNo"];
+      delete nextRow["assignedAsset.location.unitName"];
+      delete nextRow["assignedAsset.location.building"];
+      delete nextRow["assignedAsset.location.building.buildingName"];
 
       return nextRow;
     });
@@ -880,7 +1086,9 @@ const DepartmentReportCommon = () => {
       : normalizeReportRows(reportData);
     const normalizedRows = mergeVisitorCsvFields(
       mergeAssetCsvFields(
-        mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+        mergeMeetingCsvFields(
+          mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+        ),
       ),
     );
 
