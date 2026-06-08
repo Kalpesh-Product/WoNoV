@@ -358,7 +358,6 @@ const fetchAssignedAssetReportService = async ({
     const assets = await Asset.find(assetFilter)
       .populate([
         { path: "department", select: "name" },
-        { path: "vendor", populate: { path: "departmentId", select: "name" } },
         {
           path: "subCategory",
           select: "subCategoryName",
