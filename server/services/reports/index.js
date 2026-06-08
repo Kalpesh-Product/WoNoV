@@ -7,9 +7,16 @@ const {
   fetchDeptTaskReportService,
   fetchMyTasksReportService,
 } = require("./task");
-const { fetchAssetReportService } = require("./asset");
+const {
+  fetchAssetReportService,
+  fetchAssignedAssetReportService,
+} = require("./asset");
 const { fetchMeetingReportService } = require("./meeting");
-const { fetchVisitorReportService } = require("./visitor");
+const {
+  fetchVisitorReportService,
+  fetchInternalVisitorsReportService,
+  fetchClientVisitorsReportService,
+} = require("./visitor");
 const { fetchCoworkingRevenueService } = require("./revenue");
 
 const { fetchMeetingRevenueReportService } = require("./revenue");
@@ -77,6 +84,7 @@ const createReportService =
 const createPerformanceReportService = (type) =>
   createReportService(fetchPerformanceReportService, {
     dateField: "assignedDate",
+    staticParams: { isReport: true, type },
   });
 
 /**
@@ -165,7 +173,7 @@ const reportServiceRegistry = {
     dateField: "assignedDate",
   }),
 
-  asset: createReportService(fetchAssetReportService, {
+  asset: createReportService(fetchAssignedAssetReportService, {
     dateField: "createdAt",
     contextKeys: [...COMMON_REPORT_CONTEXT_KEYS, "query"],
   }),
@@ -174,9 +182,12 @@ const reportServiceRegistry = {
     dateField: "startDate",
   }),
 
-  visitor: createReportService(fetchVisitorReportService, {
+  visitor: createReportService(fetchInternalVisitorsReportService, {
     dateField: "checkIn",
-    contextKeys: ["departmentId", "company"],
+  }),
+
+  client: createReportService(fetchClientVisitorsReportService, {
+    dateField: "checkIn",
   }),
 
   ticket: createReportService(fetchTicketReportService, {
