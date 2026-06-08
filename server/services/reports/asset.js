@@ -407,17 +407,22 @@ const fetchAssignedAssetReportService = async ({
     // Attach assignment to each asset
     const result = assets.map((asset) => {
       const assignment = assignMap[asset._id.toString()] || null;
-      // return {
-      //   ...asset,
-      //   assignedAsset: assignment,
-      // };
+
+      const assignmentState = assignment
+        ? assignment.status === "Approved"
+          ? "Assigned"
+          : assignment.status === "Pending"
+            ? "Pending"
+            : assignment.status === "Rejected"
+              ? "Rejected"
+              : "Available"
+        : "Available";
+
       return {
         ...asset,
-
         category: asset?.subCategory?.category?.categoryName || "-",
-
         subCategory: asset?.subCategory?.subCategoryName || "-",
-
+        assignmentState,
         assignedAsset: assignment,
       };
     });
