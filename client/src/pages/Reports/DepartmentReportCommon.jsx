@@ -996,6 +996,14 @@ const DepartmentReportCommon = () => {
         delete nextRow.assignedAsset.location;
       }
 
+      if (
+        nextRow.assignedAsset === null ||
+        nextRow.assignedAsset === undefined ||
+        typeof nextRow.assignedAsset !== "object"
+      ) {
+        delete nextRow.assignedAsset;
+      }
+
       if (nextRow.vendor && typeof nextRow.vendor === "object") {
         nextRow.vendor = { ...nextRow.vendor };
         delete nextRow.vendor.departmentId;
