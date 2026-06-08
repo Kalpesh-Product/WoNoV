@@ -853,12 +853,34 @@ const DepartmentReportCommon = () => {
 
     return rows.map((row) => {
       const nextRow = { ...row };
-      const assignedAssetApprovedByName = [
+       const assignedAssetApprovedByName = [
         row?.assignedAsset?.approvedBy?.firstName ||
           row?.["assignedAsset.approvedBy.firstName"] ||
           "",
         row?.assignedAsset?.approvedBy?.lastName ||
           row?.["assignedAsset.approvedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+       const assignedAssetAssignedByName = [
+        row?.assignedAsset?.assignedBy?.firstName ||
+          row?.["assignedAsset.assignedBy.firstName"] ||
+          "",
+        row?.assignedAsset?.assignedBy?.lastName ||
+          row?.["assignedAsset.assignedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();  
+      const assignedAssetRejectededByName = [
+        row?.assignedAsset?.rejectededBy?.firstName ||
+          row?.["assignedAsset.rejectededBy.firstName"] ||
+          "",
+        row?.assignedAsset?.rejectededBy?.lastName ||
+          row?.["assignedAsset.rejectededBy.lastName"] ||
           "",
       ]
         .filter(Boolean)
@@ -976,6 +998,13 @@ const DepartmentReportCommon = () => {
         if (assignedAssetApprovedByName) {
           nextRow.assignedAsset.approvedBy = assignedAssetApprovedByName;
         }
+         if (assignedAssetAssignedByName) {
+          nextRow.assignedAsset.assignedBy = assignedAssetAssignedByName;
+        }
+
+        if (assignedAssetRejectededByName) {
+          nextRow.assignedAsset.rejectededBy = assignedAssetRejectededByName;
+        }
 
         if (assignedAssetAssigneeName) {
           nextRow.assignedAsset.assignee = assignedAssetAssigneeName;
@@ -1032,6 +1061,10 @@ const DepartmentReportCommon = () => {
       delete nextRow["assignedAsset.asset"];
       delete nextRow["assignedAsset.approvedBy.firstName"];
       delete nextRow["assignedAsset.approvedBy.lastName"];
+      delete nextRow["assignedAsset.assignedBy.firstName"];
+      delete nextRow["assignedAsset.assignedBy.lastName"];
+      delete nextRow["assignedAsset.rejectededBy.firstName"];
+      delete nextRow["assignedAsset.rejectededBy.lastName"];
       delete nextRow["assignedAsset.assignee.firstName"];
       delete nextRow["assignedAsset.assignee.lastName"];
       delete nextRow["assignedAsset.location.unitNo"];
