@@ -742,13 +742,13 @@ const DepartmentReportCommon = () => {
     return rows.map((row) => {
       const nextRow = { ...row };
 
-      delete nextRow.externalVisits;
-      delete nextRow["externalVisits.checkIn"];
-      delete nextRow["externalVisits.checkOut"];
-      delete nextRow["externalVisits.dateOfVisit"];
-      delete nextRow["externalVisits.visitorId"];
-      delete nextRow["externalVisits.company"];
-      delete nextRow["externalVisits._id"];
+      // delete nextRow.externalVisits;
+      // delete nextRow["externalVisits.checkIn"];
+      // delete nextRow["externalVisits.checkOut"];
+      // delete nextRow["externalVisits.dateOfVisit"];
+      // delete nextRow["externalVisits.visitorId"];
+      // delete nextRow["externalVisits.company"];
+      // delete nextRow["externalVisits._id"];
 
       return nextRow;
     });
