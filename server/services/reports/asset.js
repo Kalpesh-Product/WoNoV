@@ -315,7 +315,6 @@ const fetchAssignedAssetReportService = async ({
   const defaultQuery = {
     assigned: null,
     departmentId: null,
-    vendorId: null,
     sortBy: null,
     order: null,
   };
@@ -368,6 +367,7 @@ const fetchAssignedAssetReportService = async ({
           select: "unitNo unitName",
           populate: { path: "building", select: "buildingName" },
         },
+        { path: "vendor", select: "name companyName" },
       ])
       .select("-company")
       .sort({ [sortField]: sortOrder })
@@ -407,8 +407,17 @@ const fetchAssignedAssetReportService = async ({
     // Attach assignment to each asset
     const result = assets.map((asset) => {
       const assignment = assignMap[asset._id.toString()] || null;
+      // return {
+      //   ...asset,
+      //   assignedAsset: assignment,
+      // };
       return {
         ...asset,
+
+        category: asset?.subCategory?.category?.categoryName || "-",
+
+        subCategory: asset?.subCategory?.subCategoryName || "-",
+
         assignedAsset: assignment,
       };
     });
