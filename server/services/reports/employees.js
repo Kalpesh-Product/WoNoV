@@ -14,7 +14,6 @@ const fetchUsersReportService = async ({
     throw new Error("Status must be true/false");
   }
 
-  console.log("isREport", isReport);
   const filter = {
     company,
     isActive: status === "true",

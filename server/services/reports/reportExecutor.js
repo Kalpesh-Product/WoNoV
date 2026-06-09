@@ -13,7 +13,6 @@ async function executeReport({
 }) {
   const reportService = resolveReportService(report);
 
-  console.log("Executing report with parameters:", report);
   if (!reportService) {
     throw new Error(
       `Unsupported report: ${report?.reportName || "unknown"}, ensure the reportKey is registered in reportServiceRegistry`,
