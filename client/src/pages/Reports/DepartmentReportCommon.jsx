@@ -848,14 +848,110 @@ const DepartmentReportCommon = () => {
 
     return rows.map((row) => {
       const nextRow = { ...row };
+      const checkedInByName = [
+        row?.checkedInBy?.firstName || row?.["checkedInBy.firstName"] || "",
+        row?.checkedInBy?.lastName || row?.["checkedInBy.lastName"] || "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const checkedOutByName = [
+        row?.checkedOutBy?.firstName || row?.["checkedOutBy.firstName"] || "",
+        row?.checkedOutBy?.lastName || row?.["checkedOutBy.lastName"] || "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const toMeetName = [
+        row?.toMeet?.firstName || row?.["toMeet.firstName"] || "",
+        row?.toMeet?.lastName || row?.["toMeet.lastName"] || "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const toMeetCompanyClientName = String(
+        row?.["toMeetCompany.clientName"] ||
+          row?.toMeetCompany?.clientName ||
+          row?.toMeetCompany?.companyName ||
+          row?.toMeetCompany?.name ||
+          row?.toMeetCompany ||
+          "",
+      ).trim();
+      const clientToMeetEmployeeName = String(
+        row?.["clientToMeet.employeeName"] ||
+          row?.clientToMeet?.employeeName ||
+          row?.clientToMeet ||
+          "",
+      ).trim();
+      const departmentName = String(
+        row?.["department.name"] || row?.department?.name || row?.department || "",
+      ).trim();
+      const unitNo = String(
+        row?.["unit.unitNo"] || row?.unit?.unitNo || row?.unitNo || "",
+      ).trim();
+      const unitName = String(
+        row?.["unit.unitName"] || row?.unit?.unitName || row?.unitName || "",
+      ).trim();
+      const buildingName = String(
+        row?.["unit.building.buildingName"] ||
+          row?.unit?.building?.buildingName ||
+          row?.building?.buildingName ||
+          row?.buildingName ||
+          "",
+      ).trim();
 
-      // delete nextRow.externalVisits;
-      // delete nextRow["externalVisits.checkIn"];
-      // delete nextRow["externalVisits.checkOut"];
-      // delete nextRow["externalVisits.dateOfVisit"];
-      // delete nextRow["externalVisits.visitorId"];
-      // delete nextRow["externalVisits.company"];
-      // delete nextRow["externalVisits._id"];
+      if (checkedInByName) {
+        nextRow.checkedInBy = checkedInByName;
+      }
+
+      if (checkedOutByName) {
+        nextRow.checkedOutBy = checkedOutByName;
+      }
+
+      if (toMeetName) {
+        nextRow.toMeet = toMeetName;
+      }
+
+      if (toMeetCompanyClientName) {
+        nextRow["toMeetCompany.clientName"] = toMeetCompanyClientName;
+      }
+
+      if (clientToMeetEmployeeName) {
+        nextRow["clientToMeet.employeeName"] = clientToMeetEmployeeName;
+      }
+
+      if (departmentName) {
+        nextRow["department.name"] = departmentName;
+      }
+
+      if (unitNo) {
+        nextRow.unitNo = unitNo;
+      }
+
+      if (unitName) {
+        nextRow.unitName = unitName;
+      }
+
+      if (buildingName) {
+        nextRow.buildingName = buildingName;
+      }
+
+      delete nextRow["checkedInBy.firstName"];
+      delete nextRow["checkedInBy.lastName"];
+      delete nextRow["checkedOutBy.firstName"];
+      delete nextRow["checkedOutBy.lastName"];
+      delete nextRow["toMeet.firstName"];
+      delete nextRow["toMeet.lastName"];
+      delete nextRow["unit.unitNo"];
+      delete nextRow["unit.unitName"];
+      delete nextRow["unit.building.buildingName"];
+      delete nextRow.toMeetCompany;
+      delete nextRow.clientToMeet;
+      delete nextRow.meeting;
+      delete nextRow.department;
+      
+
+    
 
       return nextRow;
     });
@@ -1260,6 +1356,23 @@ const DepartmentReportCommon = () => {
         normalizedReportName.includes("departments kra report"))
     ) {
       hiddenFields.push("kpaDuration");
+    }
+
+    if (normalizedModuleKey === "visitor") {
+      hiddenFields.push(
+        /^toMeetCompany$/,
+        /^toMeetCompany\.companyName$/,
+        /^toMeetCompany\.name$/,
+        /^clientToMeet$/,
+        /^clientToMeet\.email$/,
+        /^meeting$/,
+        /^department$/,
+        /^unit$/,
+        /^unit\.unitNo$/,
+        /^unit\.unitName$/,
+        /^unit\.building$/,
+        /^unit\.building\.buildingName$/,
+      );
     }
 
     return downloadCsv({
