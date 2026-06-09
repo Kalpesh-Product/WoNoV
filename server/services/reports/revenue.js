@@ -8,6 +8,7 @@ const fetchCoworkingRevenueService = async ({
   query,
   company,
   isReport = false,
+  type,
 }) => {
   try {
     const filter = { company };
@@ -18,7 +19,6 @@ const fetchCoworkingRevenueService = async ({
       filter.rentDate = dateFilter.rentDate;
     }
 
-    console.log("fetchCoworkingRevenueService filter", dateFilter);
     const revenues = await CoworkingRevenue.find(filter).lean().exec();
 
     const MONTHS_SHORT = [
@@ -76,9 +76,16 @@ const fetchCoworkingRevenueService = async ({
 
     const transformedData = Array.from(monthlyMap.values());
 
-    console.log("isReport", isReport);
     if (isReport) {
-      return transformedData.flatMap((month) => month.clients);
+      let result = transformedData.flatMap((month) => month.clients);
+      if (type === "collection") {
+        return result.map((client) => ({
+          clientName: client.clientName,
+          revenue: client.revenue,
+          rentDate: client.rentDate,
+          status: client.rentStatus,
+        }));
+      } else return result;
     }
 
     return transformedData;

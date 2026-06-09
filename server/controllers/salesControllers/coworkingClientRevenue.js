@@ -203,6 +203,7 @@ const getRevenues = async (req, res, next) => {
   try {
     const result = await fetchCoworkingRevenueService({
       query: req.query,
+      company: req.company,
     });
 
     return res.status(200).json(result);
