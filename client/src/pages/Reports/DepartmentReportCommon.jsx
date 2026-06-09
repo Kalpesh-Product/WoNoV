@@ -17,6 +17,19 @@ import { queryClient } from "../../main";
 import useAuth from "../../hooks/useAuth";
 import useUserPermissions from "../../hooks/useUserPermissions";
 import { Task } from "@mui/icons-material";
+import { State } from "country-state-city";
+
+const getStateName = (stateValue) => {
+  if (!stateValue) return stateValue;
+
+  const normalizedStateValue = String(stateValue).trim();
+  const state = State.getStateByCodeAndCountry(
+    normalizedStateValue.toUpperCase(),
+    "IN",
+  );
+
+  return state?.name || normalizedStateValue;
+};
 
 const REPORT_MODULE_MAP = {
   ticket: {
@@ -899,6 +912,7 @@ const DepartmentReportCommon = () => {
           row?.buildingName ||
           "",
       ).trim();
+      const stateName = getStateName(row?.state);
 
       if (checkedInByName) {
         nextRow.checkedInBy = checkedInByName;
@@ -934,6 +948,10 @@ const DepartmentReportCommon = () => {
 
       if (buildingName) {
         nextRow.buildingName = buildingName;
+      }
+
+      if (stateName) {
+        nextRow.state = stateName;
       }
 
       delete nextRow["checkedInBy.firstName"];
