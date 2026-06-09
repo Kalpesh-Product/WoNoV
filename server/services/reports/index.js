@@ -68,16 +68,13 @@ const buildReportDateFilter = (dateFilter, field) =>
 const createReportService =
   (
     service,
-    {
-      dateField,
-      contextKeys = COMMON_REPORT_CONTEXT_KEYS,
-      staticParams = { isReport: true },
-    },
+    { dateField, contextKeys = COMMON_REPORT_CONTEXT_KEYS, staticParams = {} },
   ) =>
   async (context = {}) =>
     service({
       ...pickContext(context, contextKeys),
       dateFilter: buildReportDateFilter(context.dateFilter, dateField),
+      isReport: true,
       ...staticParams,
     });
 
@@ -157,6 +154,11 @@ const reportServiceRegistry = {
     dateField: "rentDate",
   }),
 
+  collection: createReportService(fetchCoworkingRevenueService, {
+    dateField: "rentDate",
+    staticParams: { type: "collection" },
+  }),
+
   "meeting-revenue": createReportService(fetchMeetingRevenueReportService, {
     dateField: "date",
   }),
@@ -195,9 +197,27 @@ const reportServiceRegistry = {
     contextKeys: ["departmentId", "roles", "departments"],
   }),
 
-  budget: createReportService(fetchBudgetService, {
+  "department-budget": createReportService(fetchBudgetService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "dept" },
+  }),
+  "overall-budget": createReportService(fetchBudgetService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "overall" },
+  }),
+
+  "department-voucher": createReportService(fetchVoucherService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "dept" },
+  }),
+
+  "overall-voucher": createReportService(fetchVoucherService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "overall" },
   }),
 
   "electricity-expense": createReportService(fetchBudgetService, {
@@ -206,19 +226,12 @@ const reportServiceRegistry = {
     staticParams: { isElectricity: true },
   }),
 
-  voucher: createReportService(fetchVoucherService, {
-    dateField: "dueDate",
-    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
-  }),
-
   vendor: createReportService(fetchVendorReportService, {
     dateField: "onboardingDate",
   }),
 };
 
 const resolveReportService = (reportMeta = {}) => {
-  console.log;
-  ("Resolving report service for reportMeta:", reportMeta);
   const key = normalizeReportIdentifier(reportMeta.reportKey || "");
   const name = normalizeReportIdentifier(reportMeta.reportName || "");
 
