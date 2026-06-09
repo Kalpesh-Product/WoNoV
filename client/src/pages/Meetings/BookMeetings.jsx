@@ -252,7 +252,8 @@ const BookMeetings = () => {
 
   const myMeetingsColumn = [
     { field: "id", headerName: "Sr No" },
-    { field: "agenda", headerName: "Agenda", flex: 1 },
+    {field: "subject", headerName: "Title", flex: 1},
+    //{ field: "agenda", headerName: "Agenda", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "roomName", headerName: "Room Name" },
     { field: "buildingName", headerName: "Building Name" },
@@ -699,6 +700,10 @@ const BookMeetings = () => {
         >
           {selectedMeeting ? (
             <div className="w-full grid grid-cols-1 gap-4">
+              <DetalisFormatted
+                title="Title"
+                detail={selectedMeeting?.subject || "N/A"}
+              />
               <DetalisFormatted
                 title="Agenda"
                 detail={selectedMeeting?.agenda || "N/A"}

@@ -346,6 +346,7 @@ const BiometricAccessMembers = () => {
             visibleMembers.map((item, index) => ({
                 ...item,
                 srNo: index + 1,
+                clientName: selectedClient?.clientName || "",
                 email: item.email || "-",
                 phone: item.mobileNo || item.phone || "-",
                 status:
@@ -371,8 +372,11 @@ const BiometricAccessMembers = () => {
 
     const columns = [
         { field: "srNo", headerName: "SR No" },
+        { field: "clientName", headerName: "Company Name", flex: 1,hide:true },
         { field: "employeeName", headerName: "Member Name", flex: 1 },
+        {field:"gender", headerName: "Gender",hide:true},
         { field: "email", headerName: "Email", flex: 1 },
+        {field: "dob", headerName: "DOB",hide:true, cellRenderer: (params) => params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-"},
         { field: "phone", headerName: "Phone No", flex: 1 },
         {
             field: "biometricStatus",
