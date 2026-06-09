@@ -98,7 +98,7 @@ const fetchAssetReportService = async ({
           populate: [
             {
               path: "assignee",
-              select: "employeeName email",
+              select: "firstName lastName",
             },
             {
               path: "fromDepartment",
@@ -107,6 +107,26 @@ const fetchAssetReportService = async ({
             {
               path: "toDepartment",
               select: "name",
+            },
+            {
+              path: "approvedBy",
+              select: "firstName lastName",
+            },
+            {
+              path: "assignedBy",
+              select: "firstName lastName",
+            },
+            {
+              path: "rejectededBy",
+              select: "firstName lastName",
+            },
+            {
+              path: "location",
+              select: "unitNo unitName",
+              populate: {
+                path: "building",
+                select: "buildingName",
+              },
             },
           ],
         },
@@ -260,6 +280,16 @@ const fetchAssetReportService = async ({
 
         // Assignment
         assignedAsset: asset.assignedAsset || null,
+        // Assignment
+        // assignedAsset: asset.assignedAsset
+        //   ? (() => {
+        //       const { rejectededBy, ...rest } = asset.assignedAsset;
+        //       return {
+        //         ...rest,
+        //         rejectedBy: rejectededBy,
+        //       };
+        //     })()
+        //   : null,
 
         // Asset Image
         assetImage: asset.assetImage || null,
@@ -275,6 +305,135 @@ const fetchAssetReportService = async ({
   }
 };
 
+const fetchAssignedAssetReportService = async ({
+  dateFilter,
+  departments: departmentIds = [],
+  company,
+  user: loggedInUser,
+  query,
+}) => {
+  const defaultQuery = {
+    assigned: null,
+    departmentId: null,
+    sortBy: null,
+    order: null,
+  };
+
+  query = query && Object.keys(query).length ? query : defaultQuery;
+
+  try {
+    const user = await UserData.findById(loggedInUser)
+      .populate("departments")
+      .lean()
+      .exec();
+
+    if (!user) throw new Error("User not found");
+
+    const userDepartments = departmentIds?.length
+      ? departmentIds
+      : user.departments || [];
+    const isTopManagement = userDepartments.some(
+      (dept) => dept.name === "Top Management",
+    );
+    const userDepartmentIds = userDepartments.map((dept) => dept._id);
+
+    const { assigned, departmentId, vendorId, sortBy, order } = query;
+
+    // Build asset filter
+    const assetFilter = {
+      company: user.company,
+      ...(dateFilter?.createdAt && { createdAt: dateFilter.createdAt }),
+      ...(!isTopManagement && { department: { $in: userDepartmentIds } }),
+      ...(departmentId && { department: departmentId }),
+      ...(vendorId && { vendor: vendorId }),
+      ...(assigned === "true" && { assignedTo: { $ne: null } }),
+      ...(assigned === "false" && { assignedTo: null }),
+    };
+
+    const sortField = sortBy || "purchaseDate";
+    const sortOrder = order === "desc" ? -1 : 1;
+
+    // Fetch assets
+    const assets = await Asset.find(assetFilter)
+      .populate([
+        { path: "department", select: "name" },
+        {
+          path: "subCategory",
+          select: "subCategoryName",
+          populate: { path: "category", select: "categoryName" },
+        },
+        {
+          path: "location",
+          select: "unitNo unitName",
+          populate: { path: "building", select: "buildingName" },
+        },
+        { path: "vendor", select: "name companyName" },
+      ])
+      .select("-company")
+      .sort({ [sortField]: sortOrder })
+      .lean()
+      .exec();
+
+    if (!assets.length) return [];
+
+    // Fetch latest AssignAsset record for each asset in one query
+    const assetIds = assets.map((a) => a._id);
+
+    const assignRecords = await AssignAsset.find({ asset: { $in: assetIds } })
+      .sort({ createdAt: -1 })
+      .populate([
+        { path: "assignee", select: "firstName lastName" },
+        { path: "fromDepartment", select: "name" },
+        { path: "toDepartment", select: "name" },
+        { path: "approvedBy", select: "firstName lastName" },
+        { path: "assignedBy", select: "firstName lastName" },
+        { path: "rejectededBy", select: "firstName lastName" },
+        {
+          path: "location",
+          select: "unitNo unitName",
+          populate: { path: "building", select: "buildingName" },
+        },
+      ])
+      .lean()
+      .exec();
+
+    // Map: assetId -> latest AssignAsset record
+    const assignMap = {};
+    for (const record of assignRecords) {
+      const key = record.asset?.toString();
+      if (!assignMap[key]) assignMap[key] = record; // first = latest due to sort
+    }
+
+    // Attach assignment to each asset
+    const result = assets.map((asset) => {
+      const assignment = assignMap[asset._id.toString()] || null;
+
+      const assignmentState = assignment
+        ? assignment.status === "Approved"
+          ? "Assigned"
+          : assignment.status === "Pending"
+            ? "Pending"
+            : assignment.status === "Rejected"
+              ? "Rejected"
+              : "Available"
+        : "Available";
+
+      return {
+        ...asset,
+        category: asset?.subCategory?.category?.categoryName || "-",
+        subCategory: asset?.subCategory?.subCategoryName || "-",
+        assignmentState,
+        assignedAsset: assignment,
+      };
+    });
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
+
 module.exports = {
   fetchAssetReportService,
+  fetchAssignedAssetReportService,
 };

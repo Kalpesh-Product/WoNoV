@@ -9,7 +9,7 @@ import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { CircularProgress, Popover } from "@mui/material";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { DateRangePicker } from "react-date-range";
 import { MdCalendarToday } from "react-icons/md";
@@ -81,6 +81,19 @@ const DepartmentTasks = () => {
       queryFn: fetchDepartments,
     });
 
+  const taskSummary = useMemo(
+    () =>
+      fetchedDepartments.reduce(
+        (summary, item) => ({
+          total: summary.total + (Number(item?.totalTasks) || 0),
+          pending: summary.pending + (Number(item?.pendingTasks) || 0),
+          completed: summary.completed + (Number(item?.completedTasks) || 0),
+        }),
+        { total: 0, pending: 0, completed: 0 }
+      ),
+    [fetchedDepartments]
+  );
+
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100 },
     {
@@ -120,10 +133,24 @@ const DepartmentTasks = () => {
               <div className="w-full pb-3">
                 
                 {/* Heading */}
-                <div className="flex justify-start">
+                <div className="flex justify-between items-center gap-3 flex-wrap">
                   <span className="text-title text-primary font-pmedium uppercase">
                     ACTIVE DEPARTMENT WISE TASKS
                   </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
+                      <div>Total :</div>
+                      <div>{taskSummary.total}</div>
+                    </div>
+                    <div className="flex gap-1 justify-center items-center uppercase bg-[#d8f0df] text-sm text-[#16784d] font-pmedium px-3 py-1.5 rounded-lg border border-[#a9ddba]">
+                      <div>Completed :</div>
+                      <div>{taskSummary.completed}</div>
+                    </div>
+                    <div className="flex gap-1 justify-center items-center uppercase bg-[#fce8e3] text-sm text-[#d96b4f] font-pmedium px-3 py-1.5 rounded-lg border border-[#f3b7a8]">
+                      <div>Pending :</div>
+                      <div>{taskSummary.pending}</div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Calendar (Below Heading) */}

@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import StatusChip from "../../../../components/StatusChip";
 
 const PendingApprovalsBudget = () => {
   const navigate = useNavigate();
@@ -119,6 +120,7 @@ const PendingApprovalsBudget = () => {
       headerName: "Due Date",
       valueFormatter: (params) => humanDate(params.value),
     },
+    { field: "status", headerName: "Approval Status", width: 150, cellRenderer: (params) => <StatusChip status={params.value} />},
     {
       field: "actions",
       headerName: "Actions",

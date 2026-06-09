@@ -766,37 +766,67 @@ export const PERMISSIONS = {
   },
   REPORTS_FINANCE: {
     value: "reports_finance",
-    title: "FINANCE REPORTS",
+    title: "FINANCE",
+    type: "read",
+  },
+   REPORTS_HR: {
+    value: "reports_hr",
+    title: "HR",
+    type: "read",
+  },
+  REPORTS_ADMINISTRATION: {
+    value: "reports_administration",
+    title: "ADMIN",
+    type: "read",
+  },
+  REPORTS_SALES: {
+    value: "reports_sales",
+    title: "SALES",
+    type: "read",
+  },
+  REPORTS_MAINTENANCE: {
+    value: "reports_maintenance",
+    title: "MAINTENANCE",
+    type: "read",
+  },
+  REPORTS_IT: {
+    value: "reports_it",
+    title: "IT",
+    type: "read",
+  },
+  REPORTS_TECH: {
+    value: "reports_tech",
+    title: "TECH",
     type: "read",
   },
   REPORTS_TICKETS: {
     value: "reports_tickets",
-    title: "TICKET REPORTS",
+    title: "TICKET",
     type: "read",
   },
   REPORTS_MEETINGS: {
     value: "reports_meetings",
-    title: "MEETING REPORTS",
+    title: "MEETING",
     type: "read",
   },
   REPORTS_VISITORS: {
     value: "reports_visitors",
-    title: "VISITOR REPORTS",
+    title: "VISITOR",
     type: "read",
   },
   REPORTS_ASSETS: {
     value: "reports_assets",
-    title: "ASSET REPORTS",
+    title: "ASSET",
     type: "read",
   },
   REPORTS_TASKS: {
     value: "reports_tasks",
-    title: "TASK REPORTS",
+    title: "TASK",
     type: "read",
   },
   REPORTS_PERFORMANCE: {
     value: "reports_performance",
-    title: "PERFORMANCE REPORTS",
+    title: "PERFORMANCE",
     type: "read",
   },
 

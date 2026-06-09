@@ -1,8 +1,10 @@
 import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../constants/permissions";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useUserPermissions from "../../hooks/useUserPermissions";
-import useAuth from "../../hooks/useAuth";
+//import useAuth from "../../hooks/useAuth";
 
 const staticReportModules = [
   {
@@ -45,30 +47,69 @@ const staticReportModules = [
 
 const ReportsSection = () => {
   const navigate = useNavigate();
+  const axios = useAxiosPrivate();
   const { permissions } = useUserPermissions();
-  const { auth } = useAuth();
-  const userDepartments = useMemo(() => {
-    if (!Array.isArray(auth?.user?.departments)) return [];
 
-    return auth.user.departments
-      .filter((dept) => dept?._id && dept?.name)
-      .filter(
-        (dept, index, arr) =>
-          arr.findIndex((candidate) => candidate?._id === dept?._id) === index,
-      );
-  }, [auth?.user?.departments]);
-
-  const departmentCards = userDepartments.map((department) => {
-    const moduleKey = String(department.name).trim().toLowerCase();
-    const encodedDepartmentId = encodeURIComponent(String(department._id));
-
-    return {
-      title: String(department.name).toUpperCase(),
-      subtitle: `${department.name} Reports`,
-      route: `../reports-section/${moduleKey}?departmentId=${encodedDepartmentId}`,
-      permission: null,
-    };
+  const { data: departments = [] } = useQuery({
+    queryKey: ["report-departments"],
+    queryFn: async () => {
+      const response = await axios.get("/api/departments/get-departments");
+      return Array.isArray(response?.data) ? response.data : [];
+    },
   });
+
+  const departmentCards = useMemo(() => {
+    if (!Array.isArray(departments)) return [];
+
+    return departments
+      .filter((department) => department?.name && department?.isActive !== false)
+      .filter(
+        (department, index, arr) =>
+          arr.findIndex(
+            (candidate) =>
+              String(candidate?.name || "")
+                .trim()
+                .toLowerCase() ===
+              String(department?.name || "")
+                .trim()
+                .toLowerCase(),
+          ) === index,
+      )
+      .map((department) => {
+        const departmentName = String(department.name).trim();
+        const moduleKey = departmentName.toLowerCase();
+
+        return {
+          title: departmentName.toUpperCase(),
+          subtitle: `${departmentName} Reports`,
+          route: `../reports-section/${moduleKey}`,
+          permission: `reports_${moduleKey.replace(/\s+/g, "_")}`,
+        };
+      });
+  }, [departments]);
+  // const { permissions } = useUserPermissions();
+  // const { auth } = useAuth();
+  // const userDepartments = useMemo(() => {
+  //   if (!Array.isArray(auth?.user?.departments)) return [];
+
+  //   return auth.user.departments
+  //     .filter((dept) => dept?._id && dept?.name)
+  //     .filter(
+  //       (dept, index, arr) =>
+  //         arr.findIndex((candidate) => candidate?._id === dept?._id) === index,
+  //     );
+  // }, [auth?.user?.departments]);
+
+  // const departmentCards = userDepartments.map((department) => {
+  //   const moduleKey = String(department.name).trim().toLowerCase();
+
+  //   return {
+  //     title: String(department.name).toUpperCase(),
+  //     subtitle: `${department.name} Reports`,
+  //     route: `../reports-section/${moduleKey}`,
+  //     permission: null,
+  //   };
+  // });
 
   const allModules = [...departmentCards, ...staticReportModules];
 

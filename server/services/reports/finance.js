@@ -42,7 +42,7 @@ const fetchBudgetVoucherService = async ({ dateFilter, departmentId }) => {
   return { allBudgets };
 };
 
-const mapBudgetBaseFields = (budget = {}) => {
+const mapBudgetBaseFields = (budget = {}, isReport) => {
   const projectedAmount = budget?.particulars?.length
     ? budget.particulars.reduce(
         (acc, curr) => acc + (curr.particularAmount || 0),
@@ -50,27 +50,37 @@ const mapBudgetBaseFields = (budget = {}) => {
       )
     : budget.projectedAmount || 0;
 
+  console.log("building", budget);
   return {
     department: budget?.department?.name || "-",
     expanseName: budget?.expanseName || "-",
     expanseType: budget?.expanseType || "-",
-    paymentType: budget?.paymentType || "-",
-    projectedAmount,
+    ...(budget?.expanseType !== "Reimbursement" && {
+      projectedAmount: budget?.projectedAmount,
+      paymentType: budget?.paymentType || "-",
+    }),
     actualAmount: budget?.actualAmount ?? "-",
+    building: budget?.unit?.building?.buildingName,
     unit: budget?.unit?.unitName || "-",
     unitNo: budget?.unit?.unitNo || "-",
     dueDate: budget?.dueDate || null,
-    isExtraBudget: budget?.isExtraBudget ?? false,
-    invoiceAttached: budget?.invoiceAttached ?? false,
+    ...(!isReport && { invoiceAttached: budget?.invoiceAttached ?? false }),
     invoiceName: budget?.invoice?.name || "-",
+    invoiceFile: budget?.invoice?.link || "-",
     invoiceDate: budget?.invoice?.date || null,
+    isExtraBudget: budget?.isExtraBudget ?? false,
     approvalStatus: budget?.status || "-",
     paidStatus: budget?.isPaid || "-",
-    invoiceFile: budget?.invoice?.link || "-",
   };
 };
 
-const fetchBudgetService = async ({ dateFilter, departmentId, roles }) => {
+const fetchBudgetService = async ({
+  dateFilter,
+  departmentId,
+  roles,
+  isElectricity,
+  isReport = false,
+}) => {
   const query = { expanseType: { $ne: "Reimbursement" } };
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
@@ -78,6 +88,10 @@ const fetchBudgetService = async ({ dateFilter, departmentId, roles }) => {
   const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
   if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
     query.department = departmentId;
+  }
+
+  if (isElectricity) {
+    query.expanseType = "ELECTRICITY";
   }
 
   const budgets = await Budget.find(query)
@@ -96,7 +110,9 @@ const fetchBudgetService = async ({ dateFilter, departmentId, roles }) => {
     .lean()
     .exec();
 
-  return { allBudgets: budgets.map(mapBudgetBaseFields) };
+  return {
+    allBudgets: budgets.map((budget) => mapBudgetBaseFields(budget, isReport)),
+  };
 };
 
 const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
@@ -133,6 +149,15 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
 
   const vouchers = budgets.map((budget) => {
     const base = mapBudgetBaseFields(budget);
+    const totalAmountVoucher = budget.particulars.reduce(
+      (acc, curr) => acc + curr.particularAmount,
+      0,
+    );
+    const totalAmountFinance = budget.finance.particulars.reduce(
+      (acc, curr) => acc + curr.particularAmount,
+      0,
+    );
+
     return {
       ...base,
       gstin: budget?.gstIn || "-",
@@ -141,22 +166,24 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
       emergencyApproval: budget?.emergencyApproval ?? false,
       budgetApproval: budget?.budgetApproval ?? false,
       l1Approval: budget?.l1Approval ?? false,
-      financeSrNo: budget?.finance?.fSrNo || budget?.srNo || "-",
       modeOfPayment: budget?.finance?.modeOfPayment || "-",
       chequeNo: budget?.finance?.chequeNo || "-",
       chequeDate: budget?.finance?.chequeDate || null,
       advanceAmount: budget?.finance?.advanceAmount ?? "-",
       approvedAt: budget?.finance?.approvedAt || null,
       expectedDateInvoice: budget?.finance?.expectedDateInvoice || null,
-      financeParticulars: budget?.finance?.particulars || [],
+      voucherSrNo: budget?.srNo || "-",
       voucherName: budget?.voucher?.name || "-",
       voucherDate: budget?.voucher?.date || null,
+      voucherParticulars: budget?.particulars || [],
+      totalAmountVoucher,
       voucherFile: budget?.voucher?.link || "-",
-      voucherSrNo: budget?.srNo || "-",
+      financeSrNo: budget?.finance?.fSrNo || budget?.srNo || "-",
       financeVoucherName: budget?.finance?.voucher?.name || "-",
       financeVoucherDate: budget?.finance?.voucher?.date || null,
+      financeParticulars: budget?.finance?.particulars || [],
+      totalAmountFinance,
       financeVoucherFile: budget?.finance?.voucher?.link || "-",
-      financeVoucherSrNo: budget?.finance?.fSrNo || "-",
     };
   });
 

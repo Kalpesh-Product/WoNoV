@@ -18,7 +18,7 @@ import {
 } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
@@ -49,6 +49,17 @@ const DailyTasks = () => {
   const { auth } = useAuth();
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const myTaskDepartmentId = currentDepartmentId || deptId;
+  const currentUserId = auth?.user?._id;
+  const isCurrentUserTaskOwner = (task) => {
+    const ownerId =
+      task?.assignedBy?._id ||
+      task?.assignedBy?.id ||
+      task?.assignedBy ||
+      "";
+
+    return String(ownerId) === String(currentUserId);
+  };
   useEffect(() => {
     if (!deptId) {
       dispatch(setSelectedDepartment(currentDepartmentId));
@@ -100,7 +111,7 @@ const DailyTasks = () => {
         endDate: data.endDate,
         dueTime: data.dueTime,
         description: data.description,
-        department: deptId,
+        department: myTaskDepartmentId,
         taskType: "Self",
       });
       return response.data;
@@ -407,6 +418,7 @@ const DailyTasks = () => {
       headerName: "Completed Time",
       field: "completedTime",
     },
+    {headerName: "Status", field: "status", hide: true },
     // {
     //   field: "status",
     //   headerName: "Status",
@@ -468,15 +480,101 @@ const DailyTasks = () => {
         status: item.status,
       }));
 
+  const visiblePendingTasks = useMemo(
+    () =>
+      Array.isArray(departmentKra)
+        ? departmentKra.filter((item) => isCurrentUserTaskOwner(item))
+        : [],
+    [departmentKra, currentUserId],
+  );
+
+  const visibleCompletedEntries = useMemo(
+    () =>
+      Array.isArray(completedEntries)
+        ? completedEntries.filter((item) => isCurrentUserTaskOwner(item))
+        : [],
+    [completedEntries, currentUserId],
+  );
+
+  const visibleCompletedData = useMemo(
+    () =>
+      visibleCompletedEntries.map((item, index) => ({
+        srno: index + 1,
+        mongoId: item._id,
+        taskList: item.taskName,
+        department: item.department?.name,
+        description: item.description,
+        completedBy: item.completedBy,
+        assignedBy: item.assignedBy.firstName + " " + item.assignedBy.lastName,
+        assignedDate: item.assignedDate,
+        dueDate: item.dueDate,
+        dueTime: item.dueTime,
+        completedDate: item.completedDate,
+        completedTime: item.completedDate,
+        completedDateTime: `${humanDate(item.completedDate)}, ${humanTime(
+          item.completedDate,
+        )}`,
+        status: item.status,
+      })),
+    [visibleCompletedEntries],
+  );
+
+  const pendingOnlyTasks = useMemo(
+    () =>
+      visiblePendingTasks.filter(
+        (item) => String(item?.status || "").toLowerCase() !== "completed",
+      ),
+    [visiblePendingTasks],
+  );
+
+  const myTaskSummary = useMemo(
+    () => {
+      const uniqueTaskIds = new Set([
+        ...pendingOnlyTasks.map((item) => String(item?._id || item?.id || "")),
+        ...visibleCompletedEntries.map((item) =>
+          String(item?._id || item?.id || ""),
+        ),
+      ]);
+
+      return {
+        pending: pendingOnlyTasks.length,
+        completed: visibleCompletedEntries.length,
+        total: Array.from(uniqueTaskIds).filter(Boolean).length,
+      };
+    },
+    [pendingOnlyTasks, visibleCompletedEntries],
+  );
+
   return (
     <>
       <div className="flex flex-col gap-4">
         <PageFrame>
           <WidgetSection padding layout={1}>
+            <div className="w-full pb-3">
+              <div className="flex justify-between items-center gap-3 flex-wrap">
+                <span className="text-title text-primary font-pmedium uppercase">
+                  MY TASKS
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
+                    <div>Total :</div>
+                    <div>{myTaskSummary.total}</div>
+                  </div>
+                  <div className="flex gap-1 justify-center items-center uppercase bg-[#fce8e3] text-sm text-[#d96b4f] font-pmedium px-3 py-1.5 rounded-lg border border-[#f3b7a8]">
+                    <div>Pending :</div>
+                    <div>{myTaskSummary.pending}</div>
+                  </div>
+                  <div className="flex gap-1 justify-center items-center uppercase bg-[#d8f0df] text-sm text-[#16784d] font-pmedium px-3 py-1.5 rounded-lg border border-[#a9ddba]">
+                    <div>Completed :</div>
+                    <div>{myTaskSummary.completed}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <YearWiseTable
-              key={departmentKra.length}
+              key={pendingOnlyTasks.length}
               checkbox
-              tableTitle={`MY TASKS`}
+              tableTitle={""}
               buttonTitle={"Add Task"}
               handleSubmit={() => {
                 reset(taskFormDefaultValues);
@@ -484,8 +582,7 @@ const DailyTasks = () => {
                 setOpenModal(true);
               }}
               data={[
-                ...departmentKra
-                  .filter((item) => item.status !== "Completed")
+                ...pendingOnlyTasks
                   .map((item, index) => ({
                     srno: index + 1,
                     id: item._id,
@@ -509,9 +606,9 @@ const DailyTasks = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 exportData={true}
-                key={completedEntries.length}
+                key={visibleCompletedData.length}
                 tableTitle={`MY COMPLETED TASKS`}
-                data={completedData}
+                data={visibleCompletedData}
                 dateColumn={"completionDate"}
                 columns={completedColumns}
               />

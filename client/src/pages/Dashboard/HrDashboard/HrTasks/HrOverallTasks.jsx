@@ -111,6 +111,8 @@ const HrOverallTasks = () => {
     return tasksRawData.flatMap((dept) =>
       dept.tasks
         .filter((task) => {
+          if (task.taskType !== "Department") return false;
+
           const [day, m, y] = task.assignedDate.split("-").map(Number);
           const taskMonth =
             calendarMonths[(new Date(y, m - 1, day).getMonth() + 9) % 12];

@@ -56,6 +56,19 @@ const TasksViewDepartment = () => {
   const isEmployee = auth?.user?.role?.some((role) =>
     role?.roleTitle?.toLowerCase().includes("employee"),
   );
+  const currentUserId = auth?.user?._id;
+  const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle || "") || [];
+  const isMasterOrSuperAdmin = roleTitles.some(
+    (roleTitle) => roleTitle === "Master Admin" || roleTitle === "Super Admin",
+  );
+  const isDepartmentAdmin = roleTitles.some(
+    (roleTitle) =>
+      roleTitle.endsWith("Admin") &&
+      roleTitle !== "Master Admin" &&
+      roleTitle !== "Super Admin",
+  );
+  const canViewAssignedSummary = isEmployee || isDepartmentAdmin;
+  const canViewDepartmentWidePending = isDepartmentAdmin || isMasterOrSuperAdmin;
 
   // Check if the selected department is in user's list
   const isUserDepartment = auth?.user?.departments?.some(
@@ -78,6 +91,15 @@ const TasksViewDepartment = () => {
   });
 
   const showCheckBox = allowedDept;
+
+  const refreshDepartmentTaskQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
+    queryClient.invalidateQueries({ queryKey: ["fetchedCompletedTasks"] });
+    queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsTasks"] });
+    queryClient.invalidateQueries({ queryKey: ["departmentWideTasksSummary"] });
+    queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    queryClient.invalidateQueries({ queryKey: ["tasks-summary"] });
+  };
 
   const {
     handleSubmit: submitDailyKra,
@@ -172,7 +194,7 @@ const TasksViewDepartment = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
+      refreshDepartmentTaskQueries();
       toast.success(data.message || "KRA Added");
       setOpenModal(false);
       reset(); // clear out old junk after closing
@@ -210,13 +232,7 @@ const TasksViewDepartment = () => {
         return response.data;
       },
       onSuccess: (data) => {
-        queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
-        queryClient.invalidateQueries({
-          queryKey: ["fetchedDepartmentsTasks"],
-        });
-        queryClient.invalidateQueries({ queryKey: ["fetchedCompletedTasks"] });
-        queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        queryClient.invalidateQueries({ queryKey: ["tasks-summary"] });
+        refreshDepartmentTaskQueries();
         toast.success(data.message || "Task deleted");
       },
       onError: (error) => {
@@ -233,9 +249,7 @@ const TasksViewDepartment = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
-      queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsTasks"] });
-      queryClient.invalidateQueries({ queryKey: ["fetchedCompletedTasks"] });
+      refreshDepartmentTaskQueries();
       toast.success(data.message || "DATA UPDATED");
     },
     onError: (error) => {
@@ -250,7 +264,7 @@ const TasksViewDepartment = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
+      refreshDepartmentTaskQueries();
       toast.success(data.message || "Task updated");
       setOpenModal(false);
       reset();
@@ -285,6 +299,14 @@ const TasksViewDepartment = () => {
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
     queryKey: ["fetchedTasks"],
     queryFn: fetchDepartments,
+  });
+
+  const { data: departmentWideTasks = [] } = useQuery({
+    queryKey: ["departmentWideTasksSummary"],
+    queryFn: async () => {
+      const response = await axios.get("/api/tasks/get-all-tasks");
+      return Array.isArray(response.data) ? response.data : [];
+    },
   });
 
   const { data: completedTasks = [], isLoading: completedTasksFetchPending } =
@@ -345,6 +367,160 @@ const TasksViewDepartment = () => {
 
     return formattedNames.length > 0 ? formattedNames.join(", ") : "-";
   };
+
+  const isTaskAssignedToCurrentUser = (assignedTo) => {
+    if (!currentUserId || !assignedTo) return false;
+
+    if (typeof assignedTo === "string") {
+      return assignedTo === currentUserId;
+    }
+
+    if (Array.isArray(assignedTo)) {
+      return assignedTo.some((member) => {
+        if (typeof member === "string") return member === currentUserId;
+        return member?._id === currentUserId || member?.id === currentUserId;
+      });
+    }
+
+    return assignedTo?._id === currentUserId || assignedTo?.id === currentUserId;
+  };
+
+  const pendingDepartmentTasks = useMemo(
+    () =>
+      (departmentKra || [])
+        .filter(
+          (item) =>
+            item.taskType === "Department" && item.status !== "Completed",
+        )
+        .map((item, index) => ({
+          srno: index + 1,
+          id: item._id,
+          taskName: item.taskName,
+          description: item.description,
+          assignedDate: item.assignedDate,
+          status: item.status,
+          dueDate: item.dueDate,
+          dueTime: item.dueTime,
+          assignToId: Array.isArray(item.assignedTo)
+            ? item.assignedTo?.[0]?._id
+            : item.assignedTo?._id || "",
+          locationId: item.location?.building?._id || "",
+          unitId: item.location?._id || "",
+          location: item.location,
+          unitNo: item.location?.unitNo || "N/A",
+          assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
+          assignedTo: formatAssignedTo(item.assignedTo),
+          rawAssignedTo: item.assignedTo,
+        })),
+    [departmentKra, departmentMemberMap],
+  );
+
+  const departmentWidePendingTasks = useMemo(
+    () =>
+      (departmentWideTasks || [])
+        .filter(
+          (item) =>
+            item?.taskType === "Department" &&
+            item?.status !== "Completed" &&
+            String(item?.department || "").toLowerCase() ===
+              String(department || "").toLowerCase(),
+        )
+        .map((item, index) => ({
+          srno: index + 1,
+          id: item._id,
+          taskName: item.taskName,
+          description: item.description,
+          assignedDate: item.assignedDate,
+          status: item.status,
+          dueDate: item.dueDate,
+          dueTime: item.dueTime,
+          assignToId: Array.isArray(item.assignedTo)
+            ? item.assignedTo?.[0]?._id
+            : item.assignedTo?._id || "",
+          locationId: item.location?.building?._id || "",
+          unitId: item.location?._id || "",
+          location: item.location,
+          unitNo: item.location?.unitNo || "N/A",
+          assignedBy:
+            item.assignedBy?.firstName || item.assignedBy?.lastName
+              ? `${item.assignedBy?.firstName || ""} ${item.assignedBy?.lastName || ""}`.trim()
+              : item.assignedBy || "-",
+          assignedTo: formatAssignedTo(item.assignedTo),
+          rawAssignedTo: item.assignedTo,
+        })),
+    [departmentWideTasks, department, departmentMemberMap],
+  );
+
+  const completedDepartmentTasks = useMemo(
+    () =>
+      completedTasksFetchPending
+        ? []
+        : completedTasks
+            .filter((item) => item.taskType === "Department")
+            .map((item) => ({
+              id: item._id,
+              taskName: item.taskName,
+              completedBy: item.completedBy,
+              assignedDate: item.assignedDate,
+              description: item.description,
+              dueDate: item.dueDate,
+              dueTime: item.dueTime,
+              location: item.location,
+              unitNo: item.location?.unitNo || "N/A",
+              buildingName: item.location?.building?.buildingName || "N/A",
+              completedDate: item.completedDate,
+              completedDateLabel: humanDate(item.completedDate),
+              completedTime: item.completedDate,
+              assignedTo: formatAssignedTo(item.assignedTo),
+              rawAssignedTo: item.assignedTo,
+              assignedBy:
+                item.assignedBy?.firstName || item.assignedBy?.lastName
+                  ? `${item.assignedBy?.firstName || ""} ${item.assignedBy?.lastName || ""}`.trim()
+                  : item.assignedBy || "-",
+              status: item.status,
+            })),
+    [completedTasks, completedTasksFetchPending, departmentMemberMap],
+  );
+
+  const taskSummary = useMemo(() => {
+    const departmentWideDepartmentTasks = (departmentWideTasks || []).filter(
+      (item) =>
+        item?.taskType === "Department" &&
+        String(item?.department || "").toLowerCase() ===
+          String(department || "").toLowerCase(),
+    );
+
+    const departmentWideCompletedTasks = departmentWideDepartmentTasks.filter(
+      (task) => task?.status === "Completed",
+    );
+
+    const departmentWidePendingTasks = departmentWideDepartmentTasks.filter(
+      (task) => task?.status !== "Completed",
+    );
+
+    const assignedCount = canViewAssignedSummary
+      ? [...pendingDepartmentTasks, ...completedDepartmentTasks].filter((task) =>
+          isTaskAssignedToCurrentUser(task.rawAssignedTo),
+        ).length
+      : 0;
+
+    return {
+      total: departmentWideDepartmentTasks.length,
+      completed: departmentWideCompletedTasks.length,
+      pending: departmentWidePendingTasks.length,
+      assigned: assignedCount,
+    };
+  }, [
+    canViewAssignedSummary,
+    department,
+    departmentWideTasks,
+    pendingDepartmentTasks,
+    completedDepartmentTasks,
+  ]);
+
+  const visiblePendingTasks = canViewDepartmentWidePending
+    ? departmentWidePendingTasks
+    : pendingDepartmentTasks;
 
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
@@ -528,6 +704,7 @@ const TasksViewDepartment = () => {
       ),
     },
     // { headerName: "Assigned Time", field: "assignedDate" },
+    {headerName: "Added By", field: "assignedBy", flex:1,hide: true,},
     { headerName: "Assign To", field: "assignedTo", flex:1, },
     { headerName: "Description", field: "description", hide: true },
     { headerName: "Assigned Date", field: "assignedDate", hide: true },
@@ -541,10 +718,17 @@ const TasksViewDepartment = () => {
       flex:1,
     },
     {
+      headerName: "Building Name",
+      field: "buildingName",
+      flex:1,
+      hide: true,
+    },
+    {
       headerName: "Completed Time",
       field: "completedTime",
       flex:1,
     },
+    {headerName: "Status", field: "status", hide: true },
 
     // {
     //   field: "status",
@@ -584,43 +768,47 @@ const TasksViewDepartment = () => {
           <div>
             {!departmentLoading ? (
               <WidgetSection padding layout={1}>
+                <div className="w-full pb-3">
+                  <div className="flex justify-between items-center gap-3 flex-wrap">
+                    <span className="text-title text-primary font-pmedium uppercase">
+                      {department} DEPARTMENT TASKS
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
+                        <div>Total :</div>
+                        <div>{taskSummary.total}</div>
+                      </div>
+                      <div className="flex gap-1 justify-center items-center uppercase bg-[#d8f0df] text-sm text-[#16784d] font-pmedium px-3 py-1.5 rounded-lg border border-[#a9ddba]">
+                        <div>Completed :</div>
+                        <div>{taskSummary.completed}</div>
+                      </div>
+                      <div className="flex gap-1 justify-center items-center uppercase bg-[#fce8e3] text-sm text-[#d96b4f] font-pmedium px-3 py-1.5 rounded-lg border border-[#f3b7a8]">
+                        <div>Pending :</div>
+                        <div>{taskSummary.pending}</div>
+                      </div>
+                      {canViewAssignedSummary && (
+                        <div className="flex gap-1 justify-center items-center uppercase bg-[#FFECC5] text-sm text-[#CC8400] font-pmedium px-3 py-1.5 rounded-lg border border-[#F6D48F]">
+                          <div>Assigned :</div>
+                          <div>{taskSummary.assigned}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 <YearWiseTable
                   checkbox={showCheckBox}
-                  buttonTitle={hasAccess ? "Add Task" : undefined}
+                  buttonTitle={hasAccess && !isEmployee ? "Add Task" : undefined}
                   buttonDisabled={isEmployee}
                   handleSubmit={() => {
                     reset();
                     setModalMode("add-task");
                     setOpenModal(true);
                   }}
-                  tableTitle={`${department} DEPARTMENT TASKS`}
-                  data={(departmentKra || [])
-                    .filter(
-                      (item) =>
-                        item.taskType === "Department" &&
-                        item.status !== "Completed",
-                    )
-                    .map((item, index) => ({
-                      srno: index + 1,
-                      id: item._id,
-                      taskName: item.taskName,
-                      description: item.description,
-                      assignedDate: item.assignedDate,
-                      status: item.status,
-                      dueDate: item.dueDate,
-                      dueTime: item.dueTime,
-                      assignToId: Array.isArray(item.assignedTo)
-                        ? item.assignedTo?.[0]?._id
-                        : item.assignedTo?._id || "",
-                      locationId: item.location?.building?._id || "",
-                      unitId: item.location?._id || "",
-                      location: item.location,
-                      unitNo: item.location?.unitNo || "N/A",
-                      assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
-                      assignedTo: formatAssignedTo(item.assignedTo),
-                    }))}
+                  tableTitle=""
+                  data={visiblePendingTasks}
                   dateColumn={"assignedDate"}
                   columns={departmentColumns}
+                  hideTitle
                 />
               </WidgetSection>
             ) : (
@@ -638,34 +826,7 @@ const TasksViewDepartment = () => {
                 <YearWiseTable
                   tableTitle={`COMPLETED TASK`}
                   exportData={true}
-                  data={
-                    completedTasksFetchPending
-                      ? []
-                      : completedTasks
-                        .filter((item) => item.taskType === "Department")
-                        .map((item, index) => ({
-                          id: item._id,
-                          taskName: item.taskName,
-                          completedBy: item.completedBy,
-                          assignedDate: item.assignedDate,
-                          description: item.description,
-                          dueDate: item.dueDate,
-                          dueTime: item.dueTime,
-                          location: item.location,
-                          unitNo: item.location?.unitNo || "N/A",
-                          completedDate: item.completedDate,
-                          completedDateLabel: humanDate(item.completedDate),
-                          completedTime: item.completedDate,
-                          assignedTo: formatAssignedTo(item.assignedTo),
-                          assignedBy:
-                            item.assignedBy?.firstName ||
-                              item.assignedBy?.lastName
-                              ? `${item.assignedBy?.firstName || ""} ${item.assignedBy?.lastName || ""
-                                }`.trim()
-                              : item.assignedBy || "-",
-                          status: item.status,
-                        }))
-                  }
+                  data={completedDepartmentTasks}
                   dateColumn={"completedDate"}
                   columns={completedColumns}
                 />

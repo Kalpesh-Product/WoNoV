@@ -157,7 +157,7 @@ const BudgetPage = () => {
               flex: 1,
             },
             { field: "dueDate", headerName: "Due Date", flex: 1 },
-            { field: "status", headerName: "Status", flex: 1 },
+            { field: "status", headerName: "Approval Status", flex: 1 },
           ],
         },
       };
