@@ -50,7 +50,6 @@ const mapBudgetBaseFields = (budget = {}, isReport) => {
       )
     : budget.projectedAmount || 0;
 
-  console.log("building", budget);
   return {
     department: budget?.department?.name || "-",
     expanseName: budget?.expanseName || "-",
@@ -64,7 +63,6 @@ const mapBudgetBaseFields = (budget = {}, isReport) => {
     unit: budget?.unit?.unitName || "-",
     unitNo: budget?.unit?.unitNo || "-",
     dueDate: budget?.dueDate || null,
-    ...(!isReport && { invoiceAttached: budget?.invoiceAttached ?? false }),
     invoiceName: budget?.invoice?.name || "-",
     invoiceFile: budget?.invoice?.link || "-",
     invoiceDate: budget?.invoice?.date || null,
@@ -80,13 +78,18 @@ const fetchBudgetService = async ({
   roles,
   isElectricity,
   isReport = false,
+  type,
 }) => {
   const query = { expanseType: { $ne: "Reimbursement" } };
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
-  const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
-  if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
+  // const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
+  // if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
+  //   query.department = departmentId;
+  // }
+
+  if (type !== "overall") {
     query.department = departmentId;
   }
 
@@ -115,7 +118,12 @@ const fetchBudgetService = async ({
   };
 };
 
-const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
+const fetchVoucherService = async ({
+  dateFilter,
+  departmentId,
+  roles,
+  type,
+}) => {
   const query = {
     $or: [
       { "finance.voucher.link": { $exists: true, $ne: "" } },
@@ -123,9 +131,13 @@ const fetchVoucherService = async ({ dateFilter, departmentId, roles }) => {
     ],
   };
 
-  const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
+  // const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
 
-  if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
+  // if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
+  //   query.department = departmentId;
+  // }
+
+  if (type !== "overall") {
     query.department = departmentId;
   }
 

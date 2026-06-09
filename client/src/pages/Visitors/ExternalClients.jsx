@@ -22,6 +22,19 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import useAuth from "../../hooks/useAuth";
 import UploadFileInput from "../../components/UploadFileInput";
 import humanDate from "../../utils/humanDateForamt";
+import { State } from "country-state-city";
+
+const getStateName = (stateValue) => {
+  if (!stateValue) return "N/A";
+
+  const normalizedStateValue = String(stateValue).trim();
+  const state = State.getStateByCodeAndCountry(
+    normalizedStateValue.toUpperCase(),
+    "IN",
+  );
+
+  return state?.name || normalizedStateValue;
+};
 
 const ExternalClients = ({
   tableTitle = "External Clients",
@@ -912,7 +925,7 @@ const ExternalClients = ({
                   visitorCompany: item.visitorCompany || "N/A",
                   // visitorType: latestVisit?.visitorType || item.visitorType,
                   gender: item?.gender || "N/A",
-                  state: item?.state || item?.hoState || "N/A",
+                  state: getStateName(item?.state || item?.hoState),
                   city: item?.city || item?.hoCity || "N/A",
                   sector: item?.sector || "N/A",
                   gstNumber: item?.gstNumber || "N/A",
@@ -1124,7 +1137,8 @@ const ExternalClients = ({
                   <>
                     <DetalisFormatted
                       title="State"
-                      detail={selectedVisitor.state}
+                      detail={getStateName(selectedVisitor.state)}
+                      // detail={selectedVisitor.state}
                     />
                     <DetalisFormatted
                       title="City"

@@ -17,6 +17,19 @@ import { queryClient } from "../../main";
 import useAuth from "../../hooks/useAuth";
 import useUserPermissions from "../../hooks/useUserPermissions";
 import { Task } from "@mui/icons-material";
+import { State } from "country-state-city";
+
+const getStateName = (stateValue) => {
+  if (!stateValue) return stateValue;
+
+  const normalizedStateValue = String(stateValue).trim();
+  const state = State.getStateByCodeAndCountry(
+    normalizedStateValue.toUpperCase(),
+    "IN",
+  );
+
+  return state?.name || normalizedStateValue;
+};
 
 const REPORT_MODULE_MAP = {
   ticket: {
@@ -699,6 +712,10 @@ const DepartmentReportCommon = () => {
     if (normalizedModuleKey !== "task") return rows;
 
     const isMyTaskReport = String(reportName).trim().toLowerCase().includes("my task");
+    const isDepartmentTaskReport = String(reportName)
+      .trim()
+      .toLowerCase()
+      .includes("department task");
     const formatTaskTime = (value) => {
       if (!value) return value;
 
@@ -752,6 +769,10 @@ const DepartmentReportCommon = () => {
       const formattedDueTime = formatTaskTime(
         row?.dueTime || row?.["dueTime"],
       );
+      const formattedCompletedTime =
+        isMyTaskReport || isDepartmentTaskReport
+        ? formatTaskTime(row?.completedDate || row?.["completedDate"])
+        : "";
 
       if (
         !assignedByName &&
@@ -759,7 +780,8 @@ const DepartmentReportCommon = () => {
         !unitNo &&
         !unitName &&
         !buildingName &&
-        !formattedDueTime
+        !formattedDueTime &&
+        !formattedCompletedTime
       ) {
         return row;
       }
@@ -790,6 +812,10 @@ const DepartmentReportCommon = () => {
 
       if (formattedDueTime) {
         nextRow.dueTime = formattedDueTime;
+      }
+
+      if (formattedCompletedTime) {
+        nextRow.completedTime = formattedCompletedTime;
       }
 
       if (isMyTaskReport) {
@@ -835,14 +861,115 @@ const DepartmentReportCommon = () => {
 
     return rows.map((row) => {
       const nextRow = { ...row };
+      const checkedInByName = [
+        row?.checkedInBy?.firstName || row?.["checkedInBy.firstName"] || "",
+        row?.checkedInBy?.lastName || row?.["checkedInBy.lastName"] || "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const checkedOutByName = [
+        row?.checkedOutBy?.firstName || row?.["checkedOutBy.firstName"] || "",
+        row?.checkedOutBy?.lastName || row?.["checkedOutBy.lastName"] || "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const toMeetName = [
+        row?.toMeet?.firstName || row?.["toMeet.firstName"] || "",
+        row?.toMeet?.lastName || row?.["toMeet.lastName"] || "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const toMeetCompanyClientName = String(
+        row?.["toMeetCompany.clientName"] ||
+          row?.toMeetCompany?.clientName ||
+          row?.toMeetCompany?.companyName ||
+          row?.toMeetCompany?.name ||
+          row?.toMeetCompany ||
+          "",
+      ).trim();
+      const clientToMeetEmployeeName = String(
+        row?.["clientToMeet.employeeName"] ||
+          row?.clientToMeet?.employeeName ||
+          row?.clientToMeet ||
+          "",
+      ).trim();
+      const departmentName = String(
+        row?.["department.name"] || row?.department?.name || row?.department || "",
+      ).trim();
+      const unitNo = String(
+        row?.["unit.unitNo"] || row?.unit?.unitNo || row?.unitNo || "",
+      ).trim();
+      const unitName = String(
+        row?.["unit.unitName"] || row?.unit?.unitName || row?.unitName || "",
+      ).trim();
+      const buildingName = String(
+        row?.["unit.building.buildingName"] ||
+          row?.unit?.building?.buildingName ||
+          row?.building?.buildingName ||
+          row?.buildingName ||
+          "",
+      ).trim();
+      const stateName = getStateName(row?.state);
 
-      // delete nextRow.externalVisits;
-      // delete nextRow["externalVisits.checkIn"];
-      // delete nextRow["externalVisits.checkOut"];
-      // delete nextRow["externalVisits.dateOfVisit"];
-      // delete nextRow["externalVisits.visitorId"];
-      // delete nextRow["externalVisits.company"];
-      // delete nextRow["externalVisits._id"];
+      if (checkedInByName) {
+        nextRow.checkedInBy = checkedInByName;
+      }
+
+      if (checkedOutByName) {
+        nextRow.checkedOutBy = checkedOutByName;
+      }
+
+      if (toMeetName) {
+        nextRow.toMeet = toMeetName;
+      }
+
+      if (toMeetCompanyClientName) {
+        nextRow["toMeetCompany.clientName"] = toMeetCompanyClientName;
+      }
+
+      if (clientToMeetEmployeeName) {
+        nextRow["clientToMeet.employeeName"] = clientToMeetEmployeeName;
+      }
+
+      if (departmentName) {
+        nextRow["department.name"] = departmentName;
+      }
+
+      if (unitNo) {
+        nextRow.unitNo = unitNo;
+      }
+
+      if (unitName) {
+        nextRow.unitName = unitName;
+      }
+
+      if (buildingName) {
+        nextRow.buildingName = buildingName;
+      }
+
+      if (stateName) {
+        nextRow.state = stateName;
+      }
+
+      delete nextRow["checkedInBy.firstName"];
+      delete nextRow["checkedInBy.lastName"];
+      delete nextRow["checkedOutBy.firstName"];
+      delete nextRow["checkedOutBy.lastName"];
+      delete nextRow["toMeet.firstName"];
+      delete nextRow["toMeet.lastName"];
+      delete nextRow["unit.unitNo"];
+      delete nextRow["unit.unitName"];
+      delete nextRow["unit.building.buildingName"];
+      delete nextRow.toMeetCompany;
+      delete nextRow.clientToMeet;
+      delete nextRow.meeting;
+      delete nextRow.department;
+      
+
+    
 
       return nextRow;
     });
@@ -1080,6 +1207,65 @@ const DepartmentReportCommon = () => {
     });
   };
 
+  const mergePerformanceCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "performance") return rows;
+
+    const normalizedReportName = String(reportName).trim().toLowerCase();
+    const isIndividualKpaReport =
+      normalizedReportName.includes("individual kpa report");
+    const isDepartmentKpaReport =
+      normalizedReportName.includes("department kpa report") ||
+      normalizedReportName.includes("departments kpa report");
+    const isIndividualKraReport =
+      normalizedReportName.includes("individual kra report");
+    const isDepartmentKraReport =
+      normalizedReportName.includes("department kra report") ||
+      normalizedReportName.includes("departments kra report");
+
+    if (
+      !isIndividualKpaReport &&
+      !isDepartmentKpaReport &&
+      !isIndividualKraReport &&
+      !isDepartmentKraReport
+    ) {
+      return rows;
+    }
+
+    const formatPerformanceTime = (value) => {
+      const formattedTime = humanTime(value);
+
+      if (
+        !formattedTime ||
+        formattedTime === "Invalid date" ||
+        formattedTime === "â€”"
+      ) {
+        return "";
+      }
+
+      return formattedTime;
+    };
+
+    return rows.map((row) => {
+      const nextRow = { ...row };
+      const formattedDueTime = formatPerformanceTime(
+        row?.dueDate || row?.["dueDate"],
+      );
+      const formattedCompletedTime = formatPerformanceTime(
+        row?.completionDate || row?.["completionDate"],
+      );
+
+      if (formattedDueTime) {
+        nextRow.dueTime = formattedDueTime;
+      }
+
+      if (formattedCompletedTime) {
+        nextRow.completedTime = formattedCompletedTime;
+      }
+
+      return nextRow;
+    });
+  };
+
   const appendReportSerialNumbers = (reportData, reportName = "") => {
     const rows = Array.isArray(reportData)
       ? reportData
@@ -1087,14 +1273,69 @@ const DepartmentReportCommon = () => {
     const normalizedRows = mergeVisitorCsvFields(
       mergeAssetCsvFields(
         mergeMeetingCsvFields(
-          mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+          mergePerformanceCsvFields(
+            mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+            reportName,
+          ),
         ),
       ),
     );
 
+    const reorderTimeColumns = (inputRow) => {
+      const entries = Object.entries(inputRow || {});
+      const reorderedEntries = [];
+      const dueTimeValue = inputRow?.dueTime;
+      const completedTimeValue = inputRow?.completedTime;
+      let dueTimeInserted = false;
+      let completedTimeInserted = false;
+
+      entries.forEach(([key, value]) => {
+        if (key === "dueTime" || key === "completedTime") {
+          return;
+        }
+
+        reorderedEntries.push([key, value]);
+
+        if (key === "dueDate" && !dueTimeInserted && dueTimeValue !== undefined) {
+          reorderedEntries.push(["dueTime", dueTimeValue]);
+          dueTimeInserted = true;
+        }
+
+        if (
+          (key === "completedDate" || key === "completionDate") &&
+          !completedTimeInserted &&
+          completedTimeValue !== undefined
+        ) {
+          reorderedEntries.push(["completedTime", completedTimeValue]);
+          completedTimeInserted = true;
+        }
+      });
+
+      if (!dueTimeInserted && dueTimeValue !== undefined) {
+        reorderedEntries.push(["dueTime", dueTimeValue]);
+      }
+
+      if (!completedTimeInserted && completedTimeValue !== undefined) {
+        reorderedEntries.push(["completedTime", completedTimeValue]);
+      }
+
+      return Object.fromEntries(reorderedEntries);
+    };
+
     return normalizedRows.map((row, index) => {
+      const sanitizedRow = {
+        ...row,
+        dueTime:
+          row?.dueTime === "â€”" || row?.dueTime === "—" ? "" : row?.dueTime,
+        completedTime:
+          row?.completedTime === "â€”" || row?.completedTime === "—"
+            ? ""
+            : row?.completedTime,
+      };
+      const orderedRow = reorderTimeColumns(sanitizedRow);
+
       if (normalizedModuleKey === "ticket" && row?.ticketTitle) {
-        const { ticketTitle, ...restRow } = row;
+        const { ticketTitle, ...restRow } = orderedRow;
 
         return {
           "Sr.No": index + 1,
@@ -1105,15 +1346,57 @@ const DepartmentReportCommon = () => {
 
       return {
         "Sr.No": index + 1,
-        ...row,
+        ...orderedRow,
       };
     });
   };
 
   const triggerDataDownload = (reportData, reportName) => {
+    const normalizedReportName = String(reportName || "").trim().toLowerCase();
+    const hiddenFields = [];
+
+    if (
+      normalizedModuleKey === "performance" &&
+      (normalizedReportName.includes("individual kpa report") ||
+        normalizedReportName.includes("individual kra report") ||
+        normalizedReportName.includes("department kpa report") ||
+        normalizedReportName.includes("departments kpa report") ||
+        normalizedReportName.includes("department kra report") ||
+        normalizedReportName.includes("departments kra report"))
+    ) {
+      hiddenFields.push("roleTaskId");
+    }
+
+    if (
+      normalizedModuleKey === "performance" &&
+      (normalizedReportName.includes("individual kra report") ||
+        normalizedReportName.includes("department kra report") ||
+        normalizedReportName.includes("departments kra report"))
+    ) {
+      hiddenFields.push("kpaDuration");
+    }
+
+    if (normalizedModuleKey === "visitor") {
+      hiddenFields.push(
+        /^toMeetCompany$/,
+        /^toMeetCompany\.companyName$/,
+        /^toMeetCompany\.name$/,
+        /^clientToMeet$/,
+        /^clientToMeet\.email$/,
+        /^meeting$/,
+        /^department$/,
+        /^unit$/,
+        /^unit\.unitNo$/,
+        /^unit\.unitName$/,
+        /^unit\.building$/,
+        /^unit\.building\.buildingName$/,
+      );
+    }
+
     return downloadCsv({
       data: appendReportSerialNumbers(reportData, reportName),
       fileName: reportName,
+      hiddenFields,
     });
   };
 
