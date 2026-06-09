@@ -80,6 +80,27 @@ const toReadableHeader = (keyPath) => {
     .join(" - ");
 };
 
+const shouldOmitParentHeader = (header, allHeaders = []) => {
+  const normalizedHeader = String(header || "").trim();
+  const readableHeader = toReadableHeader(normalizedHeader);
+
+  return allHeaders.some((candidateHeader) => {
+    const normalizedCandidateHeader = String(candidateHeader || "").trim();
+
+    if (!normalizedCandidateHeader || normalizedCandidateHeader === normalizedHeader) {
+      return false;
+    }
+
+    if (normalizedCandidateHeader.startsWith(`${normalizedHeader}.`)) {
+      return true;
+    }
+
+    return toReadableHeader(normalizedCandidateHeader).startsWith(
+      `${readableHeader} - `,
+    );
+  });
+};
+
 const formatValue = (value, keyPath = "", hiddenFields = []) => {
   if (value === null || value === undefined) return "";
 
@@ -223,7 +244,11 @@ export const downloadCsv = ({
 
   const headers = [
     ...new Set(normalizedRows.flatMap((row) => Object.keys(row))),
-  ].filter((header) => !isExcludedHeader(header, hiddenFields));
+  ].filter(
+    (header, _, allHeaders) =>
+      !isExcludedHeader(header, hiddenFields) &&
+      !shouldOmitParentHeader(header, allHeaders),
+  );
 
   if (!headers.length) return false;
 
