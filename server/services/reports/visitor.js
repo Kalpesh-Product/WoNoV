@@ -327,10 +327,9 @@ const fetchInternalVisitorsReportService = async ({
         select: "unitNo unitName",
         populate: { path: "building", select: "buildingName" },
       },
-      // { path: "meeting" },
     ])
     .select(
-      "-amount -discount -gstAmount -totalAmount -paymentStatus -paymentVerification -paymentMode -paymentProof -notes -legacyVisitorEntryId -visitorRoles -visitorFlag",
+      "-amount -discount -gstAmount -totalAmount -paymentStatus -paymentVerification -paymentMode -paymentProof -notes -legacyVisitorEntryId -visitorRoles -visitorFlag -meeting",
     )
     .lean()
     .exec();
@@ -390,7 +389,7 @@ const fetchClientVisitorsReportService = async ({
       },
     ])
     .select(
-      "-notes -legacyVisitorEntryId -toMeet -clientToMeet -toMeetCompany -scheduledDate -scheduledStartTime -scheduledEndTime -visitorRoles -visitorFlag -visitorCompany -department",
+      "-notes -legacyVisitorEntryId -toMeet -clientToMeet -toMeetCompany -scheduledDate -scheduledStartTime -scheduledEndTime -visitorRoles -visitorFlag -visitorCompany -department -meeting",
     )
     .lean()
     .exec();
