@@ -33,6 +33,7 @@ const fetchUsersReportService = async ({
     { path: "departments", select: "name" },
     { path: "company", select: "name" },
     { path: "role", select: "roleTitle" },
+    { path: "agreements", select: "name url isActive type" },
   ];
 
   const users = await UserData.find(filter)
@@ -47,9 +48,33 @@ const fetchUsersReportService = async ({
       return user;
     }
 
-    const { clockInDetails, refreshToken, permissions, ...rest } = user;
+    const {
+      clockInDetails,
+      refreshToken,
+      permissions,
+      jobDescription,
+      creditsUsed,
+      attendanceSource,
+      assignedAsset,
+      agreements = [],
+      ...rest
+    } = user;
 
-    return rest;
+    const workSchedulePolicy =
+      agreements.find((a) => a.name === "Work Schedule Policy")?.type || "";
+
+    const leavePolicy =
+      agreements.find((a) => a.name === "Leave Policy")?.url || "";
+
+    const holidayPolicy =
+      agreements.find((a) => a.name === "Holiday Policy")?.url || "";
+
+    return {
+      ...rest,
+      workSchedulePolicy,
+      leavePolicy,
+      holidayPolicy,
+    };
   });
 
   return transformedUsers || [];

@@ -6,6 +6,8 @@ require("./locations/Building");
 require("./hr/UserData");
 require("./roles/Roles");
 
+//Agreements
+require("./hr/Agreements");
 //Finance
 require("./budget/Budget");
 
