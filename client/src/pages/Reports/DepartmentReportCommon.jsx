@@ -974,6 +974,131 @@ const DepartmentReportCommon = () => {
       return nextRow;
     });
   };
+//  const mergeHrCsvFields = (rows = []) => {
+//     if (normalizedModuleKey !== "hr") return rows;
+
+//     return rows.map((row) => {
+//       const nextRow = { ...row };
+//       const userName = [
+//         row?.user?.firstName || row?.["user.firstName"] || "",
+//         row?.user?.lastName || row?.["user.lastName"] || "",
+//       ]
+//         .filter(Boolean)
+//         .join(" ")
+//         .trim();
+
+//      if (userName) {
+//         nextRow.userName = userName;
+//       }
+   
+//       delete nextRow["user.firstName"];
+//       delete nextRow["user.lastName"];
+//      return nextRow;
+//     });
+//   }; 
+
+// const mergeHrCsvFields = (rows = []) => {
+//   if (normalizedModuleKey !== "hr") return rows;
+
+//   return rows.map((row) => {
+//     const nextRow = { ...row };
+
+//     const userFirstName = String(
+//       row?.user?.firstName || row?.["user.firstName"] || "",
+//     ).trim();
+
+//     const userLastName = String(
+//       row?.user?.lastName || row?.["user.lastName"] || "",
+//     ).trim();
+
+//     const userName = [userFirstName, userLastName]
+//       .filter(Boolean)
+//       .join(" ")
+//       .trim();
+
+//     const userEmpId = String(
+//       row?.user?.empId || row?.["user.empId"] || "",
+//     ).trim();
+
+//     if (userName) {
+//       nextRow.userName = userName;
+//     }
+
+//     if (userEmpId) {
+//       nextRow.empId = userEmpId;
+//     }
+
+//     delete nextRow.user;
+//     delete nextRow["user.firstName"];
+//     delete nextRow["user.lastName"];
+//     delete nextRow["user.empId"];
+
+//     return nextRow;
+//   });
+// };
+
+const mergeHrCsvFields = (rows = []) => {
+  if (normalizedModuleKey !== "hr") return rows;
+
+  const formatHrTime = (value) => {
+    if (!value) return "";
+
+    const formattedTime = humanTime(value);
+
+    if (!formattedTime || formattedTime === "Invalid date") {
+      return value;
+    }
+
+    return formattedTime;
+  };
+
+  return rows.map((row) => {
+    const nextRow = { ...row };
+
+    const userFirstName = String(
+      row?.user?.firstName || row?.["user.firstName"] || "",
+    ).trim();
+
+    const userLastName = String(
+      row?.user?.lastName || row?.["user.lastName"] || "",
+    ).trim();
+
+    const userName = [userFirstName, userLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    const userEmpId = String(
+      row?.user?.empId || row?.["user.empId"] || "",
+    ).trim();
+
+    const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
+    const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
+
+    if (userName) {
+      nextRow.userName = userName;
+    }
+
+    if (userEmpId) {
+      nextRow.empId = userEmpId;
+    }
+
+    if (formattedInTime) {
+      nextRow.inTime = formattedInTime;
+    }
+
+    if (formattedOutTime) {
+      nextRow.outTime = formattedOutTime;
+    }
+
+    delete nextRow.user;
+    delete nextRow["user.firstName"];
+    delete nextRow["user.lastName"];
+    delete nextRow["user.empId"];
+
+    return nextRow;
+  });
+};
 
   const mergeAssetCsvFields = (rows = []) => {
     if (normalizedModuleKey !== "asset") return rows;
@@ -1270,14 +1395,16 @@ const DepartmentReportCommon = () => {
     const rows = Array.isArray(reportData)
       ? reportData
       : normalizeReportRows(reportData);
-    const normalizedRows = mergeVisitorCsvFields(
-      mergeAssetCsvFields(
-        mergeMeetingCsvFields(
-          mergePerformanceCsvFields(
-            mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
-            reportName,
+    const normalizedRows = mergeHrCsvFields(
+      mergeVisitorCsvFields(
+        mergeAssetCsvFields(
+          mergeMeetingCsvFields(
+            mergePerformanceCsvFields(
+              mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+              reportName,
           ),
         ),
+      ),
       ),
     );
 
