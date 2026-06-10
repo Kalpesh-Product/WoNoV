@@ -67,7 +67,7 @@ const userDataSchema = new mongoose.Schema(
 
       minlength: 8,
     },
-      plainPassword: {
+    plainPassword: {
       type: String,
       default: "",
     },
@@ -289,7 +289,17 @@ const userDataSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
+
+userDataSchema.virtual("agreements", {
+  ref: "agreements",
+  localField: "_id",
+  foreignField: "user",
+});
 
 const UserData = mongoose.model("UserData", userDataSchema);
 module.exports = UserData;

@@ -76,25 +76,28 @@ const fetchBudgetService = async ({
   dateFilter,
   departmentId,
   roles,
-  isElectricity,
-  isReport = false,
   type,
+  isReport = false,
 }) => {
   const query = { expanseType: { $ne: "Reimbursement" } };
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
-  // const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
-  // if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
-  //   query.department = departmentId;
-  // }
-
   if (type !== "overall") {
     query.department = departmentId;
   }
 
-  if (isElectricity) {
-    query.expanseType = "ELECTRICITY";
+  if (type) {
+    const typeValue =
+      type === "electricity"
+        ? "ELECTRICITY"
+        : type === "statutory"
+          ? "statutory payments"
+          : "";
+
+    if (typeValue) {
+      query.expanseType = { $regex: typeValue, $options: "i" };
+    }
   }
 
   const budgets = await Budget.find(query)
@@ -130,12 +133,6 @@ const fetchVoucherService = async ({
       { "voucher.link": { $exists: true, $ne: "" } },
     ],
   };
-
-  // const FINANCE_DEPT_ID = "6798bab0e469e809084e249a";
-
-  // if (!isSameId(departmentId, FINANCE_DEPT_ID)) {
-  //   query.department = departmentId;
-  // }
 
   if (type !== "overall") {
     query.department = departmentId;
