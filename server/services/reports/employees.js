@@ -53,7 +53,7 @@ const fetchUsersReportService = async ({
       refreshToken,
       permissions,
       jobDescription,
-      creditsUsed,
+      credits,
       attendanceSource,
       assignedAsset,
       agreements = [],
