@@ -974,6 +974,221 @@ const DepartmentReportCommon = () => {
       return nextRow;
     });
   };
+//  const mergeHrCsvFields = (rows = []) => {
+//     if (normalizedModuleKey !== "hr") return rows;
+
+//     return rows.map((row) => {
+//       const nextRow = { ...row };
+//       const userName = [
+//         row?.user?.firstName || row?.["user.firstName"] || "",
+//         row?.user?.lastName || row?.["user.lastName"] || "",
+//       ]
+//         .filter(Boolean)
+//         .join(" ")
+//         .trim();
+
+//      if (userName) {
+//         nextRow.userName = userName;
+//       }
+   
+//       delete nextRow["user.firstName"];
+//       delete nextRow["user.lastName"];
+//      return nextRow;
+//     });
+//   }; 
+
+// const mergeHrCsvFields = (rows = []) => {
+//   if (normalizedModuleKey !== "hr") return rows;
+
+//   return rows.map((row) => {
+//     const nextRow = { ...row };
+
+//     const userFirstName = String(
+//       row?.user?.firstName || row?.["user.firstName"] || "",
+//     ).trim();
+
+//     const userLastName = String(
+//       row?.user?.lastName || row?.["user.lastName"] || "",
+//     ).trim();
+
+//     const userName = [userFirstName, userLastName]
+//       .filter(Boolean)
+//       .join(" ")
+//       .trim();
+
+//     const userEmpId = String(
+//       row?.user?.empId || row?.["user.empId"] || "",
+//     ).trim();
+
+//     if (userName) {
+//       nextRow.userName = userName;
+//     }
+
+//     if (userEmpId) {
+//       nextRow.empId = userEmpId;
+//     }
+
+//     delete nextRow.user;
+//     delete nextRow["user.firstName"];
+//     delete nextRow["user.lastName"];
+//     delete nextRow["user.empId"];
+
+//     return nextRow;
+//   });
+// };
+
+const mergeHrCsvFields = (rows = []) => {
+  if (normalizedModuleKey !== "hr") return rows;
+
+  const formatHrTime = (value) => {
+    if (!value) return "";
+
+    const formattedTime = humanTime(value);
+
+    if (!formattedTime || formattedTime === "Invalid date") {
+      return value;
+    }
+
+    return formattedTime;
+  };
+
+  return rows.map((row) => {
+    const nextRow = { ...row };
+
+    const userFirstName = String(
+      row?.user?.firstName || row?.["user.firstName"] || "",
+    ).trim();
+
+    const userLastName = String(
+      row?.user?.lastName || row?.["user.lastName"] || "",
+    ).trim();
+
+    const userName = [userFirstName, userLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    const userEmpId = String(
+      row?.user?.empId || row?.["user.empId"] || "",
+    ).trim();
+
+     const addedByFirstName = String(
+      row?.addedBy?.firstName || row?.["addedBy.firstName"] || "",
+    ).trim();
+
+    const addedByLastName = String(
+      row?.addedBy?.lastName || row?.["addedBy.lastName"] || "",
+    ).trim();
+
+    const addedByName = [addedByFirstName, addedByLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    const takenByFirstName = String(
+      row?.takenBy?.firstName || row?.["takenBy.firstName"] || "",
+    ).trim();
+
+    const takenByLastName = String(
+      row?.takenBy?.lastName || row?.["takenBy.lastName"] || "",
+    ).trim();
+
+    const takenByName = [takenByFirstName, takenByLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    const takenByEmpId = String(
+      row?.takenBy?.empId || row?.["takenBy.empId"] || "",
+    ).trim();
+
+    const approvByFirstName = String(
+      row?.approvedBy?.firstName || row?.["approvedBy.firstName"] || "",
+    ).trim();
+
+    const approvByLastName = String(
+      row?.approvedBy?.lastName || row?.["approvedBy.lastName"] || "",
+    ).trim();
+
+    const approvedByName = [approvByFirstName, approvByLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    const rejectedByFirstName = String(
+      row?.rejectedBy?.firstName || row?.["rejectedBy.firstName"] || "",
+    ).trim();
+
+    const rejectedByLastName = String(
+      row?.rejectedBy?.lastName || row?.["rejectedBy.lastName"] || "",
+    ).trim();
+
+    const rejectedByName = [rejectedByFirstName, rejectedByLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
+    const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
+
+    if (userName) {
+      nextRow.userName = userName;
+    }
+
+    if (userEmpId) {
+      nextRow.empId = userEmpId;
+    }
+
+    if(addedByName) {
+      nextRow.addedByName = addedByName;
+    }
+
+    if(takenByName) {
+      nextRow.takenByName = takenByName;
+    }
+
+    if(takenByEmpId) {
+      nextRow.takenByEmpId = takenByEmpId;
+    }
+
+    if(approvedByName) {
+      nextRow.approvedByName = approvedByName;
+    }
+
+    if(rejectedByName) {
+      nextRow.rejectedByName = rejectedByName;
+    }
+
+    if (formattedInTime) {
+      nextRow.inTime = formattedInTime;
+    }
+
+    if (formattedOutTime) {
+      nextRow.outTime = formattedOutTime;
+    }
+
+    delete nextRow.user;
+    delete nextRow["user.firstName"];
+    delete nextRow["user.lastName"];
+    delete nextRow["user.empId"];
+    delete nextRow.addedBy;
+    delete nextRow["addedBy.firstName"];
+    delete nextRow["addedBy.lastName"];
+    delete nextRow.takenBy;
+    delete nextRow["takenBy.firstName"];
+    delete nextRow["takenBy.lastName"];
+    delete nextRow["takenBy.empId"];
+    delete nextRow.approvedBy;
+    delete nextRow["approvedBy.firstName"];
+    delete nextRow["approvedBy.lastName"];
+    delete nextRow.rejectedBy;
+    delete nextRow["rejectedBy.firstName"];
+    delete nextRow["rejectedBy.lastName"];
+
+
+    return nextRow;
+  });
+};
 
   const mergeAssetCsvFields = (rows = []) => {
     if (normalizedModuleKey !== "asset") return rows;
@@ -1270,14 +1485,16 @@ const DepartmentReportCommon = () => {
     const rows = Array.isArray(reportData)
       ? reportData
       : normalizeReportRows(reportData);
-    const normalizedRows = mergeVisitorCsvFields(
-      mergeAssetCsvFields(
-        mergeMeetingCsvFields(
-          mergePerformanceCsvFields(
-            mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
-            reportName,
+    const normalizedRows = mergeHrCsvFields(
+      mergeVisitorCsvFields(
+        mergeAssetCsvFields(
+          mergeMeetingCsvFields(
+            mergePerformanceCsvFields(
+              mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+              reportName,
           ),
         ),
+      ),
       ),
     );
 

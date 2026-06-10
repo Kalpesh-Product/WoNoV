@@ -180,8 +180,14 @@ const reportServiceRegistry = {
     contextKeys: [...COMMON_REPORT_CONTEXT_KEYS, "query"],
   }),
 
-  meeting: createReportService(fetchMeetingReportService, {
+  "internal-meeting": createReportService(fetchMeetingReportService, {
     dateField: "startDate",
+    staticParams: { type: "internal" },
+  }),
+
+  "external-meeting": createReportService(fetchMeetingReportService, {
+    dateField: "startDate",
+    staticParams: { type: "external" },
   }),
 
   visitor: createReportService(fetchInternalVisitorsReportService, {
@@ -223,7 +229,13 @@ const reportServiceRegistry = {
   "electricity-expense": createReportService(fetchBudgetService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
-    staticParams: { isElectricity: true },
+    staticParams: { type: "electricity" },
+  }),
+
+  statutory: createReportService(fetchBudgetService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "statutory" },
   }),
 
   vendor: createReportService(fetchVendorReportService, {

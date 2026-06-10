@@ -45,3 +45,14 @@ if (process.env.USE_QUEUE === "true") {
 }
 
 module.exports = queueEvents;
+
+/*
+Redis connection
+Bullboard
+RedisInsight
+queue connection
+worker connection
+Queuevents
+report registry
+service files
+*/
