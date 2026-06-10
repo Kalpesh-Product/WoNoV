@@ -1072,6 +1072,62 @@ const mergeHrCsvFields = (rows = []) => {
       row?.user?.empId || row?.["user.empId"] || "",
     ).trim();
 
+     const addedByFirstName = String(
+      row?.addedBy?.firstName || row?.["addedBy.firstName"] || "",
+    ).trim();
+
+    const addedByLastName = String(
+      row?.addedBy?.lastName || row?.["addedBy.lastName"] || "",
+    ).trim();
+
+    const addedByName = [addedByFirstName, addedByLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    const takenByFirstName = String(
+      row?.takenBy?.firstName || row?.["takenBy.firstName"] || "",
+    ).trim();
+
+    const takenByLastName = String(
+      row?.takenBy?.lastName || row?.["takenBy.lastName"] || "",
+    ).trim();
+
+    const takenByName = [takenByFirstName, takenByLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    const takenByEmpId = String(
+      row?.takenBy?.empId || row?.["takenBy.empId"] || "",
+    ).trim();
+
+    const approvByFirstName = String(
+      row?.approvedBy?.firstName || row?.["approvedBy.firstName"] || "",
+    ).trim();
+
+    const approvByLastName = String(
+      row?.approvedBy?.lastName || row?.["approvedBy.lastName"] || "",
+    ).trim();
+
+    const approvedByName = [approvByFirstName, approvByLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    const rejectedByFirstName = String(
+      row?.rejectedBy?.firstName || row?.["rejectedBy.firstName"] || "",
+    ).trim();
+
+    const rejectedByLastName = String(
+      row?.rejectedBy?.lastName || row?.["rejectedBy.lastName"] || "",
+    ).trim();
+
+    const rejectedByName = [rejectedByFirstName, rejectedByLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
     const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
     const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
 
@@ -1081,6 +1137,26 @@ const mergeHrCsvFields = (rows = []) => {
 
     if (userEmpId) {
       nextRow.empId = userEmpId;
+    }
+
+    if(addedByName) {
+      nextRow.addedByName = addedByName;
+    }
+
+    if(takenByName) {
+      nextRow.takenByName = takenByName;
+    }
+
+    if(takenByEmpId) {
+      nextRow.takenByEmpId = takenByEmpId;
+    }
+
+    if(approvedByName) {
+      nextRow.approvedByName = approvedByName;
+    }
+
+    if(rejectedByName) {
+      nextRow.rejectedByName = rejectedByName;
     }
 
     if (formattedInTime) {
@@ -1095,6 +1171,20 @@ const mergeHrCsvFields = (rows = []) => {
     delete nextRow["user.firstName"];
     delete nextRow["user.lastName"];
     delete nextRow["user.empId"];
+    delete nextRow.addedBy;
+    delete nextRow["addedBy.firstName"];
+    delete nextRow["addedBy.lastName"];
+    delete nextRow.takenBy;
+    delete nextRow["takenBy.firstName"];
+    delete nextRow["takenBy.lastName"];
+    delete nextRow["takenBy.empId"];
+    delete nextRow.approvedBy;
+    delete nextRow["approvedBy.firstName"];
+    delete nextRow["approvedBy.lastName"];
+    delete nextRow.rejectedBy;
+    delete nextRow["rejectedBy.firstName"];
+    delete nextRow["rejectedBy.lastName"];
+
 
     return nextRow;
   });
