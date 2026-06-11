@@ -63,9 +63,11 @@ const fetchCoworkingClientReportService = async ({
   query = {},
   dateFilter,
   user,
+  isReport = false,
 }) => {
   const { coworkingclientid, unitId, active } = query;
 
+  console.log("report clients", isReport);
   if (
     coworkingclientid &&
     !mongoose.Types.ObjectId.isValid(coworkingclientid)
@@ -212,14 +214,41 @@ const fetchCoworkingClientReportService = async ({
   return allEntities.map((entity) => {
     const entityId = entity?._id?.toString();
 
+    const {
+      meetingCreditBalanceHistory,
+      service,
+      documents,
+      lastManualCreditResetAt,
+      isHost,
+      unit,
+      ...restEntity
+    } = entity;
+
+    const { fullAddress, ...buildingRest } = unit?.building || {};
+
     return {
-      ...entity,
+      ...restEntity,
       memberCount: entityId ? memberCountByClientId[entityId] || 0 : 0,
-      members: visibleMembers.filter(
-        (member) =>
-          member.client &&
-          member.client._id.toString() === entity._id.toString(),
-      ),
+      ...(!isReport && {
+        members: visibleMembers.filter(
+          (member) =>
+            member.client &&
+            member.client._id.toString() === entity._id.toString(),
+        ),
+        meetingCreditBalanceHistory,
+        service,
+        lastManualCreditResetAt,
+        documents,
+        isHost,
+      }),
+      unit: {
+        building: {
+          ...buildingRest,
+          ...(!isReport && { fullAddress }),
+        },
+        unitNo: unit?.unitNo,
+        unitName: unit?.unitName,
+      },
     };
   });
 };
