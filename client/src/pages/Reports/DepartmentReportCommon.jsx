@@ -974,68 +974,6 @@ const DepartmentReportCommon = () => {
       return nextRow;
     });
   };
-//  const mergeHrCsvFields = (rows = []) => {
-//     if (normalizedModuleKey !== "hr") return rows;
-
-//     return rows.map((row) => {
-//       const nextRow = { ...row };
-//       const userName = [
-//         row?.user?.firstName || row?.["user.firstName"] || "",
-//         row?.user?.lastName || row?.["user.lastName"] || "",
-//       ]
-//         .filter(Boolean)
-//         .join(" ")
-//         .trim();
-
-//      if (userName) {
-//         nextRow.userName = userName;
-//       }
-   
-//       delete nextRow["user.firstName"];
-//       delete nextRow["user.lastName"];
-//      return nextRow;
-//     });
-//   }; 
-
-// const mergeHrCsvFields = (rows = []) => {
-//   if (normalizedModuleKey !== "hr") return rows;
-
-//   return rows.map((row) => {
-//     const nextRow = { ...row };
-
-//     const userFirstName = String(
-//       row?.user?.firstName || row?.["user.firstName"] || "",
-//     ).trim();
-
-//     const userLastName = String(
-//       row?.user?.lastName || row?.["user.lastName"] || "",
-//     ).trim();
-
-//     const userName = [userFirstName, userLastName]
-//       .filter(Boolean)
-//       .join(" ")
-//       .trim();
-
-//     const userEmpId = String(
-//       row?.user?.empId || row?.["user.empId"] || "",
-//     ).trim();
-
-//     if (userName) {
-//       nextRow.userName = userName;
-//     }
-
-//     if (userEmpId) {
-//       nextRow.empId = userEmpId;
-//     }
-
-//     delete nextRow.user;
-//     delete nextRow["user.firstName"];
-//     delete nextRow["user.lastName"];
-//     delete nextRow["user.empId"];
-
-//     return nextRow;
-//   });
-// };
 
 const mergeHrCsvFields = (rows = []) => {
   if (normalizedModuleKey !== "hr") return rows;
