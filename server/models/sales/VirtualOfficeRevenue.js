@@ -66,6 +66,9 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+virtualOfficeRevenueSchema.index({ company: 1 });
+// virtualOfficeRevenueSchema.index({ company: 1, rentDate: 1 });
+
 const VirtualOfficeRevenue = mongoose.model(
   "VirtualOfficeRevenue",
   virtualOfficeRevenueSchema,

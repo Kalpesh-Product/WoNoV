@@ -11,11 +11,17 @@ require("./hr/Agreements");
 //Finance
 require("./budget/Budget");
 
+//Revenue
+require("./sales/CoworkingRevenue");
+require("./sales/AlternateRevenue");
+require("./sales/MeetingRevenue");
+require("./sales/VirtualOfficeRevenue");
+require("./sales/WorkationRevenue");
+
 //Client
 require("./sales/ClientService");
 require("./sales/CoworkingClient");
 require("./sales/CoworkingMembers");
-require("./sales/MeetingRevenue");
 
 //Tickets
 require("./tickets/Tickets");

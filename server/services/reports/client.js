@@ -221,6 +221,7 @@ const fetchCoworkingClientReportService = async ({
       lastManualCreditResetAt,
       isHost,
       unit,
+      building,
       ...restEntity
     } = entity;
 
@@ -240,6 +241,7 @@ const fetchCoworkingClientReportService = async ({
         lastManualCreditResetAt,
         documents,
         isHost,
+        building,
       }),
       unit: {
         building: {
@@ -256,6 +258,7 @@ const fetchCoworkingClientReportService = async ({
 const fetchVirtualOfficeClientsReportService = async ({
   dateFilter,
   query = {},
+  isReport = false,
 } = {}) => {
   const filter = { ...query };
 
@@ -278,6 +281,28 @@ const fetchVirtualOfficeClientsReportService = async ({
     .populate(populateOptions)
     .lean()
     .exec();
+
+  if (isReport) {
+    return (clients || []).map((client) => {
+      const { service, cabinTotal, openTotal, rentStatus, ...restClient } =
+        client;
+
+      return {
+        ...restClient,
+        unit: restClient.unit
+          ? {
+              ...restClient.unit,
+              building: restClient.unit.building
+                ? {
+                    _id: restClient.unit.building._id,
+                    buildingName: restClient.unit.building.buildingName,
+                  }
+                : restClient.unit.building,
+            }
+          : restClient.unit,
+      };
+    });
+  }
 
   return clients || [];
 };

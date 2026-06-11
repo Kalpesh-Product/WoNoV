@@ -1,5 +1,10 @@
 const buildDateFilter = require("../../utils/dateFilter");
-const { fetchBudgetService, fetchVoucherService } = require("./finance");
+const {
+  fetchBudgetService,
+  fetchVoucherService,
+  fetchBudgetVoucherService,
+  fetchProfitLossReportService,
+} = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
 const { fetchVendorReportService } = require("./vendor");
 const { fetchPerformanceReportService } = require("./performance");
@@ -47,7 +52,12 @@ const COMMON_REPORT_CONTEXT_KEYS = [
   "company",
   "user",
 ];
-const FINANCE_REPORT_CONTEXT_KEYS = ["departments", "departmentId", "roles"];
+const FINANCE_REPORT_CONTEXT_KEYS = [
+  "departments",
+  "departmentId",
+  "roles",
+  "company",
+];
 
 const pickContext = (context = {}, keys = []) =>
   keys.reduce((params, key) => {
@@ -102,16 +112,16 @@ const reportServiceRegistry = {
     dateField: "startDate",
   }),
 
-  "external-clients": createReportService(fetchVisitorReportService, {
+  "external-clients": createReportService(fetchClientVisitorsReportService, {
     dateField: "checkIn",
     contextKeys: ["departmentId", "company"],
-    staticParams: { isMeeting: true },
+    staticParams: { type: "meeting" },
   }),
 
-  "open-desk-clients": createReportService(fetchVisitorReportService, {
+  "open-desk-clients": createReportService(fetchClientVisitorsReportService, {
     dateField: "checkIn",
     contextKeys: ["departmentId", "company"],
-    staticParams: { isOpendDesk: true },
+    staticParams: { type: "open-desk" },
   }),
 
   "virtual-office-clients": createReportService(
@@ -196,6 +206,7 @@ const reportServiceRegistry = {
 
   client: createReportService(fetchClientVisitorsReportService, {
     dateField: "checkIn",
+    staticParams: { type: "client" },
   }),
 
   ticket: createReportService(fetchTicketReportService, {
@@ -208,10 +219,26 @@ const reportServiceRegistry = {
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
     staticParams: { type: "dept" },
   }),
+
   "overall-budget": createReportService(fetchBudgetService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
     staticParams: { type: "overall" },
+  }),
+
+  "total-monthly-profit-loss": createReportService(
+    fetchProfitLossReportService,
+    {
+      dateField: "dueDate",
+      contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+      staticParams: { type: "p&l" },
+    },
+  ),
+
+  payouts: createReportService(fetchBudgetVoucherService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "payout" },
   }),
 
   "department-voucher": createReportService(fetchVoucherService, {

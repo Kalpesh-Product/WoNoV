@@ -64,13 +64,13 @@ const fetchCoworkingRevenueService = async ({
         occupation: item.occupation,
         revenue: item.revenue,
         totalTerm: item.totalTerm,
-        dueTerm: item.dueTerm,
+        ...(!isReport && { dueTerm: item.dueTerm }),
         rentDate: item.rentDate,
         rentStatus: item.rentStatus,
-        pastDueDate: item.pastDueDate,
+        ...(!isReport && { pastDueDate: item.pastDueDate }),
         annualIncrement: item.annualIncrement,
         nextIncrementDate: item.nextIncrementDate,
-        serviceName: item.service?.serviceName,
+        ...(!isReport && { serviceName: item.service?.serviceName }),
       });
     });
 
@@ -275,16 +275,22 @@ const fetchVirtualOfficeRevenueReportService = async ({
   user,
   query,
   params,
+  isReport = false,
 }) => {
-  let filter = {};
+  let filter = { company };
 
   if (dateFilter) {
     filter.rentDate = dateFilter.rentDate;
   }
+
   const revenues = await VirtualOfficeRevenue.find(filter)
     .populate([{ path: "client", select: "clientName" }])
     .lean()
     .exec();
+
+  if (isReport) {
+    return revenues.map(({ pastDueDate, ...item }) => item);
+  }
 
   return revenues;
 };

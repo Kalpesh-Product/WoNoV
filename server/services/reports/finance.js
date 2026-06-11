@@ -1,27 +1,60 @@
 // services/budget.service.js
 const User = require("../../models/hr/UserData");
 const Budget = require("../../models/budget/Budget");
+const MeetingRevenue = require("../../models/sales/MeetingRevenue");
+const AlternateRevenue = require("../../models/sales/AlternateRevenue");
+const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
+const WorkationRevenue = require("../../models/sales/WorkationRevenue");
+const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+const dayjs = require("dayjs");
 
-const isSameId = (a, b) => String(a) === String(b);
+const fetchBudgetVoucherService = async ({
+  company,
+  dateFilter,
+  departmentId,
+  type = "",
+}) => {
+  const query = { company };
 
-const fetchBudgetVoucherService = async ({ dateFilter, departmentId }) => {
-  const query = {};
-
-  if (departmentId) {
+  console.log("type", type);
+  console.log("departmentId", departmentId);
+  if (departmentId && type !== "payout") {
     query.department = departmentId;
   }
 
   if (dateFilter) {
     query.dueDate = dateFilter.dueDate;
   }
+  console.log("budget voucher query", query);
 
-  const budgets = await Budget.find(query)
+  let budgetQuery = Budget.find(query);
+
+  if (type === "payout") {
+    budgetQuery = budgetQuery
+      .select(
+        "expanseName expanseType actualAmount dueDate status department unit",
+      )
+      .populate([
+        { path: "department", select: "name" },
+        { path: "unit", select: "unitNo" },
+      ]);
+  }
+
+  const budgets = await budgetQuery
     .populate([
       { path: "department", select: "name" },
       { path: "unit", populate: { path: "building", model: "Building" } },
     ])
     .lean()
     .exec();
+
+  // const budgets = await Budget.find(query)
+  //   .populate([
+  //     { path: "department", select: "name" },
+  //     { path: "unit", populate: { path: "building", model: "Building" } },
+  //   ])
+  //   .lean()
+  //   .exec();
 
   const allBudgets = budgets.map((budget) => {
     if (budget?.particulars?.length) {
@@ -77,9 +110,10 @@ const fetchBudgetService = async ({
   departmentId,
   roles,
   type,
+  company,
   isReport = false,
 }) => {
-  const query = { expanseType: { $ne: "Reimbursement" } };
+  const query = { expanseType: { $ne: "Reimbursement" }, company };
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
@@ -100,6 +134,7 @@ const fetchBudgetService = async ({
     }
   }
 
+  console.log("budget query report", query);
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },
@@ -199,8 +234,180 @@ const fetchVoucherService = async ({
   return { allBudgets: vouchers };
 };
 
+const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
+
+// income = revenue || totalAmount || invoiceAmount || taxableAmount || 0
+const incomeValueExpr = {
+  $ifNull: [
+    "$revenue",
+    {
+      $ifNull: [
+        "$totalAmount",
+        {
+          $ifNull: ["$invoiceAmount", { $ifNull: ["$taxableAmount", 0] }],
+        },
+      ],
+    },
+  ],
+};
+
+const expenseValueExpr = { $ifNull: ["$actualAmount", 0] };
+
+// Extracts a { $gte, $lte } range regardless of how buildDateFilter nested it
+// Handles: { $gte, $lte } directly, OR { dueDate: { $gte, $lte } }
+const extractDateRange = (dateFilter = {}) => {
+  if (!dateFilter || typeof dateFilter !== "object") return null;
+  if (dateFilter.$gte || dateFilter.$lte) return dateFilter;
+
+  const nested = Object.values(dateFilter).find(
+    (v) => v && typeof v === "object" && (v.$gte || v.$lte),
+  );
+  return nested || null;
+};
+
+// Generates ["Jan-26", "Feb-26", "Mar-26", "Apr-26", "May-26"] style month list
+const generateMonthRange = (range) => {
+  if (!range || (!range.$gte && !range.$lte)) return null;
+
+  const start = dayjs(range.$gte || range.$lte).startOf("month");
+  const end = dayjs(range.$lte || range.$gte).startOf("month");
+
+  const months = [];
+  let cursor = start;
+  while (cursor.isBefore(end) || cursor.isSame(end)) {
+    months.push(cursor.format("MMM-YY"));
+    cursor = cursor.add(1, "month");
+  }
+  return months;
+};
+
+const monthlyAggregate = (Model, dateField, valueExpr, company, dateRange) => {
+  const match = { company };
+
+  if (dateRange && (dateRange.$gte || dateRange.$lte)) {
+    match[dateField] = dateRange;
+  }
+
+  return Model.aggregate([
+    { $match: match },
+    {
+      $project: {
+        monthKey: {
+          $concat: [
+            { $dateToString: { format: "%b", date: `$${dateField}` } },
+            "-",
+            {
+              $substr: [
+                { $dateToString: { format: "%Y", date: `$${dateField}` } },
+                2,
+                2,
+              ],
+            },
+          ],
+        },
+        amount: valueExpr,
+      },
+    },
+    { $group: { _id: "$monthKey", total: { $sum: "$amount" } } },
+  ]);
+};
+
+const fetchProfitLossReportService = async ({ company, dateFilter }) => {
+  const dateRange = extractDateRange(dateFilter);
+
+  const [
+    meetingRevenue,
+    alternateRevenue,
+    virtualOfficeRevenue,
+    workationRevenue,
+    coworkingRevenue,
+    expense,
+  ] = await Promise.all([
+    monthlyAggregate(
+      MeetingRevenue,
+      "date",
+      incomeValueExpr,
+      company,
+      dateRange,
+    ),
+    monthlyAggregate(
+      AlternateRevenue,
+      "invoiceCreationDate",
+      incomeValueExpr,
+      company,
+      dateRange,
+    ),
+    monthlyAggregate(
+      VirtualOfficeRevenue,
+      "rentDate",
+      incomeValueExpr,
+      company,
+      dateRange,
+    ),
+    monthlyAggregate(
+      WorkationRevenue,
+      "date",
+      incomeValueExpr,
+      company,
+      dateRange,
+    ),
+    monthlyAggregate(
+      CoworkingRevenue,
+      "rentDate",
+      incomeValueExpr,
+      company,
+      dateRange,
+    ),
+    monthlyAggregate(Budget, "dueDate", expenseValueExpr, company, dateRange),
+  ]);
+
+  // Merge income sources
+  const incomeMap = {};
+  [
+    meetingRevenue,
+    alternateRevenue,
+    virtualOfficeRevenue,
+    workationRevenue,
+    coworkingRevenue,
+  ].forEach((sourceArr) => {
+    sourceArr.forEach(({ _id: month, total }) => {
+      if (excludedMonths.includes(month)) return;
+      incomeMap[month] = (incomeMap[month] || 0) + total;
+    });
+  });
+
+  // Build expense map
+  const expenseMap = {};
+  expense.forEach(({ _id: month, total }) => {
+    if (excludedMonths.includes(month)) return;
+    expenseMap[month] = (expenseMap[month] || 0) + total;
+  });
+
+  // Months to display: prefer the requested date range, fall back to
+  // whatever months actually have data if no range was supplied
+  const allMonths =
+    generateMonthRange(dateRange) ||
+    Array.from(
+      new Set([...Object.keys(incomeMap), ...Object.keys(expenseMap)]),
+    );
+
+  return allMonths
+    .filter((month) => !excludedMonths.includes(month))
+    .map((month) => {
+      const income = incomeMap[month] || 0;
+      const expenseTotal = expenseMap[month] || 0;
+      return {
+        month,
+        income,
+        expense: expenseTotal,
+        pnl: income - expenseTotal,
+      };
+    });
+};
+
 module.exports = {
   fetchBudgetVoucherService,
   fetchBudgetService,
   fetchVoucherService,
+  fetchProfitLossReportService,
 };

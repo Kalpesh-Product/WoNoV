@@ -65,8 +65,10 @@ const unitSchema = new mongoose.Schema(
       ref: "UserData",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+unitSchema.index({ company: 1 });
 
 const Unit = mongoose.model("Unit", unitSchema);
 module.exports = Unit;
