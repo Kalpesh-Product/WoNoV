@@ -1088,14 +1088,38 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
  const mergeSalesCsvFields = (rows = [], reportName = "") => {
   if (normalizedModuleKey !== "sales") return rows;
 
-  const normalizedReportName = String(reportName).trim().toLowerCase();
-   const shouldAddSalesUnitFields =
-    normalizedReportName.includes("coworking clients report") ||
-    normalizedReportName.includes("virtual office clients report");
-
-  const isOpenDeskClientsReport = normalizedReportName.includes(
-    "open desk clients report",
+  const normalizedReportName = String(reportName)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-report$/, "");
+  const hasSalesLocationFields = rows.some(
+    (row) =>
+      row?.unit ||
+      row?.location ||
+      row?.building ||
+      row?.["unit.unitNo"] ||
+      row?.["unit.unitName"] ||
+      row?.["unit.building.buildingName"] ||
+      row?.["location.unitNo"] ||
+      row?.["location.unitName"] ||
+      row?.["location.building.buildingName"] ||
+      row?.["building.buildingName"] ||
+      row?.unitNo ||
+      row?.unitName ||
+      row?.buildingName,
   );
+  const isCoworkingOrVirtualOfficeClientsReport =
+    normalizedReportName.includes("coworking-clients") ||
+    normalizedReportName.includes("virtual-office-clients");
+  const shouldAddSalesUnitFields =
+    hasSalesLocationFields || isCoworkingOrVirtualOfficeClientsReport;
+
+  const isOpenDeskClientsReport =
+    normalizedReportName.includes("open-desk-clients") ||
+    normalizedReportName.includes("open-desk-client") ||
+    normalizedReportName.includes("open-desk");
 
     if (!shouldAddSalesUnitFields && !isOpenDeskClientsReport) return rows;
 
@@ -1106,17 +1130,37 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       nextRow = mergeVisitorLikeCsvFields(nextRow);
     }
      if (shouldAddSalesUnitFields) {
-      const unitNo = row?.["unit.unitNo"] || row?.unit?.unitNo || row?.unitNo || "";
-      const unitName =
-        row?.["unit.unitName"] || row?.unit?.unitName || row?.unitName || "";
-      const buildingName =
+      const unitNo = String(
+        row?.["unit.unitNo"] ||
+          row?.unit?.unitNo ||
+          row?.["location.unitNo"] ||
+          row?.location?.unitNo ||
+          row?.unitNo ||
+          "",
+      ).trim();
+      const unitName = String(
+        row?.["unit.unitName"] ||
+          row?.unit?.unitName ||
+          row?.["location.unitName"] ||
+          row?.location?.unitName ||
+          row?.unitName ||
+          "",
+      ).trim();
+      const buildingName = String(
         row?.["unit.building.buildingName"] ||
-        row?.unit?.building?.buildingName ||
-        row?.buildingName ||
-        "";
+          row?.unit?.building?.buildingName ||
+          row?.["location.building.buildingName"] ||
+          row?.location?.building?.buildingName ||
+          row?.["building.buildingName"] ||
+          row?.building?.buildingName ||
+          row?.buildingName ||
+          "",
+      ).trim();
 
-      nextRow["Cabin Desk"] = row?.cabinDesks ?? "";
-      nextRow["Open Desk"] = row?.openDesks ?? "";
+      if (isCoworkingOrVirtualOfficeClientsReport) {
+        nextRow["Cabin Desk"] = row?.cabinDesks ?? "";
+        nextRow["Open Desk"] = row?.openDesks ?? "";
+      }
       nextRow["Unit No"] = unitNo;
       nextRow["Unit Name"] = unitName;
       nextRow["Building Name"] = buildingName;
@@ -1130,6 +1174,12 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       delete nextRow["unit.unitNo"];
       delete nextRow["unit.unitName"];
       delete nextRow["unit.building.buildingName"];
+      delete nextRow.location;
+      delete nextRow["location.unitNo"];
+      delete nextRow["location.unitName"];
+      delete nextRow["location.building"];
+      delete nextRow["location.building.buildingName"];
+      delete nextRow["building.buildingName"];
 
       return nextRow;
     });
