@@ -30,6 +30,7 @@ const COLLECTION_FIELD_NAMES = new Set([
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]*)?$/;
 const MONGO_ID_REGEX = /^[a-f0-9]{24}$/i;
+const EMPTY_EXPORT_VALUES = new Set(["NA", "N/A", "NAN", "NULL", "UNDEFINED"]);
 
 const matchesHiddenField = (header, hiddenField) => {
   if (hiddenField instanceof RegExp) return hiddenField.test(header);
@@ -49,6 +50,23 @@ const isExcludedHeader = (header, hiddenFields = []) =>
 
 const isMongoId = (value) =>
   typeof value === "string" && MONGO_ID_REGEX.test(value.trim());
+
+const hasLeadingZeroNumericString = (value) =>
+  typeof value === "string" && /^0\d+$/.test(value.trim());
+
+const shouldHideEmptyExportValue = (value) => {
+  if (value === null || value === undefined) return true;
+
+  if (typeof value === "number") {
+    return Number.isNaN(value);
+  }
+
+  if (typeof value === "string") {
+    return EMPTY_EXPORT_VALUES.has(value.trim().toUpperCase());
+  }
+
+  return false;
+};
 
 const formatIfDate = (value) => {
   if (typeof value !== "string") return value;
@@ -102,7 +120,7 @@ const shouldOmitParentHeader = (header, allHeaders = []) => {
 };
 
 const formatValue = (value, keyPath = "", hiddenFields = []) => {
-  if (value === null || value === undefined) return "";
+  if (shouldHideEmptyExportValue(value)) return "";
 
   if (Array.isArray(value)) {
     return value
@@ -141,6 +159,10 @@ const formatValue = (value, keyPath = "", hiddenFields = []) => {
 
 const escapeCsvValue = (value) => {
   const formatted = formatValue(value);
+
+  if (hasLeadingZeroNumericString(formatted)) {
+    return `="${formatted.trim().replace(/"/g, '""')}"`;
+  }
 
   return formatted ? `"${formatted.replace(/"/g, '""')}"` : "";
 };

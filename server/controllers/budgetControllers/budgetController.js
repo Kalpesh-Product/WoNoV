@@ -499,10 +499,10 @@ const updateBudget = async (req, res, next) => {
 const fetchBudget = async (req, res, next) => {
   try {
     const { departmentId } = req.query;
-    const { user } = req;
+    const { company } = req;
 
     const result = await fetchBudgetVoucherService({
-      userId: user,
+      company: company,
       departmentId,
     });
 

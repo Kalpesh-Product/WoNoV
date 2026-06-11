@@ -17,16 +17,28 @@ import { queryClient } from "../../main";
 import useAuth from "../../hooks/useAuth";
 import useUserPermissions from "../../hooks/useUserPermissions";
 import { Task } from "@mui/icons-material";
-import { State } from "country-state-city";
+import { Country, State } from "country-state-city";
 
-const getStateName = (stateValue) => {
+const getCountryName = (countryValue) => {
+  if (!countryValue) return countryValue;
+
+  const normalizedCountryValue = String(countryValue).trim();
+  const country = Country.getCountryByCode(normalizedCountryValue.toUpperCase());
+
+  return country?.name || normalizedCountryValue;
+};
+
+const getStateName = (stateValue, countryValue = "IN") => {
   if (!stateValue) return stateValue;
 
   const normalizedStateValue = String(stateValue).trim();
-  const state = State.getStateByCodeAndCountry(
-    normalizedStateValue.toUpperCase(),
-    "IN",
-  );
+ const normalizedCountryValue = String(countryValue || "IN")
+    .trim()
+    .toUpperCase();
+  const stateCode = normalizedStateValue.toUpperCase();
+  const state =
+    State.getStateByCodeAndCountry(stateCode, normalizedCountryValue) ||
+    State.getStateByCodeAndCountry(stateCode, "IN");
 
   return state?.name || normalizedStateValue;
 };
@@ -856,186 +868,323 @@ const DepartmentReportCommon = () => {
     }));
   };
 
-  const mergeVisitorCsvFields = (rows = []) => {
-    if (normalizedModuleKey !== "visitor") return rows;
+const mergeVisitorLikeCsvFields = (row = {}) => {
+  const nextRow = { ...row };
 
-    return rows.map((row) => {
-      const nextRow = { ...row };
-      const checkedInByName = [
-        row?.checkedInBy?.firstName || row?.["checkedInBy.firstName"] || "",
-        row?.checkedInBy?.lastName || row?.["checkedInBy.lastName"] || "",
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-      const checkedOutByName = [
-        row?.checkedOutBy?.firstName || row?.["checkedOutBy.firstName"] || "",
-        row?.checkedOutBy?.lastName || row?.["checkedOutBy.lastName"] || "",
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-      const toMeetName = [
-        row?.toMeet?.firstName || row?.["toMeet.firstName"] || "",
-        row?.toMeet?.lastName || row?.["toMeet.lastName"] || "",
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-      const toMeetCompanyClientName = String(
-        row?.["toMeetCompany.clientName"] ||
-          row?.toMeetCompany?.clientName ||
-          row?.toMeetCompany?.companyName ||
-          row?.toMeetCompany?.name ||
-          row?.toMeetCompany ||
-          "",
-      ).trim();
-      const clientToMeetEmployeeName = String(
-        row?.["clientToMeet.employeeName"] ||
-          row?.clientToMeet?.employeeName ||
-          row?.clientToMeet ||
-          "",
-      ).trim();
-      const departmentName = String(
-        row?.["department.name"] || row?.department?.name || row?.department || "",
-      ).trim();
+  const checkedInByName = [
+    row?.checkedInBy?.firstName || row?.["checkedInBy.firstName"] || "",
+    row?.checkedInBy?.lastName || row?.["checkedInBy.lastName"] || "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  const checkedOutByName = [
+    row?.checkedOutBy?.firstName || row?.["checkedOutBy.firstName"] || "",
+    row?.checkedOutBy?.lastName || row?.["checkedOutBy.lastName"] || "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  const toMeetName = [
+    row?.toMeet?.firstName || row?.["toMeet.firstName"] || "",
+    row?.toMeet?.lastName || row?.["toMeet.lastName"] || "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  const toMeetCompanyClientName = String(
+    row?.["toMeetCompany.clientName"] ||
+      row?.toMeetCompany?.clientName ||
+      row?.toMeetCompany?.companyName ||
+      row?.toMeetCompany?.name ||
+      row?.toMeetCompany ||
+      "",
+  ).trim();
+
+  const clientToMeetEmployeeName = String(
+    row?.["clientToMeet.employeeName"] ||
+      row?.clientToMeet?.employeeName ||
+      row?.clientToMeet ||
+      "",
+  ).trim();
+
+  const departmentName = String(
+    row?.["department.name"] || row?.department?.name || row?.department || "",
+  ).trim();
+
+  const unitNo = String(
+    row?.["unit.unitNo"] || row?.unit?.unitNo || row?.unitNo || "",
+  ).trim();
+
+  const unitName = String(
+    row?.["unit.unitName"] || row?.unit?.unitName || row?.unitName || "",
+  ).trim();
+
+  const buildingName = String(
+    row?.["unit.building.buildingName"] ||
+      row?.unit?.building?.buildingName ||
+      row?.building?.buildingName ||
+      row?.buildingName ||
+      "",
+  ).trim();
+
+  const stateName = getStateName(row?.state);
+
+  if (checkedInByName) nextRow.checkedInBy = checkedInByName;
+  if (checkedOutByName) nextRow.checkedOutBy = checkedOutByName;
+  if (toMeetName) nextRow.toMeet = toMeetName;
+
+  if (toMeetCompanyClientName) {
+    nextRow["toMeetCompany.clientName"] = toMeetCompanyClientName;
+  }
+
+  if (clientToMeetEmployeeName) {
+    nextRow["clientToMeet.employeeName"] = clientToMeetEmployeeName;
+  }
+
+  if (departmentName) {
+    nextRow["department.name"] = departmentName;
+  }
+
+  if (unitNo) nextRow.unitNo = unitNo;
+  if (unitName) nextRow.unitName = unitName;
+  if (buildingName) nextRow.buildingName = buildingName;
+  if (stateName) nextRow.state = stateName;
+
+  delete nextRow["checkedInBy.firstName"];
+  delete nextRow["checkedInBy.lastName"];
+  delete nextRow["checkedOutBy.firstName"];
+  delete nextRow["checkedOutBy.lastName"];
+  delete nextRow["toMeet.firstName"];
+  delete nextRow["toMeet.lastName"];
+  delete nextRow["unit.unitNo"];
+  delete nextRow["unit.unitName"];
+  delete nextRow["unit.building.buildingName"];
+  delete nextRow.toMeetCompany;
+  delete nextRow.clientToMeet;
+  delete nextRow.meeting;
+  delete nextRow.department;
+
+  return nextRow;
+};
+
+ const mergeVisitorCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "visitor") return rows;
+        return rows.map(mergeVisitorLikeCsvFields);
+    // return rows.map((row) => {
+    //   const nextRow = { ...row };
+    //   const checkedInByName = [
+    //     row?.checkedInBy?.firstName || row?.["checkedInBy.firstName"] || "",
+    //     row?.checkedInBy?.lastName || row?.["checkedInBy.lastName"] || "",
+    //   ]
+    //     .filter(Boolean)
+    //     .join(" ")
+    //     .trim();
+    //   const checkedOutByName = [
+    //     row?.checkedOutBy?.firstName || row?.["checkedOutBy.firstName"] || "",
+    //     row?.checkedOutBy?.lastName || row?.["checkedOutBy.lastName"] || "",
+    //   ]
+    //     .filter(Boolean)
+    //     .join(" ")
+    //     .trim();
+    //   const toMeetName = [
+    //     row?.toMeet?.firstName || row?.["toMeet.firstName"] || "",
+    //     row?.toMeet?.lastName || row?.["toMeet.lastName"] || "",
+    //   ]
+    //     .filter(Boolean)
+    //     .join(" ")
+    //     .trim();
+    //   const toMeetCompanyClientName = String(
+    //     row?.["toMeetCompany.clientName"] ||
+    //       row?.toMeetCompany?.clientName ||
+    //       row?.toMeetCompany?.companyName ||
+    //       row?.toMeetCompany?.name ||
+    //       row?.toMeetCompany ||
+    //       "",
+    //   ).trim();
+    //   const clientToMeetEmployeeName = String(
+    //     row?.["clientToMeet.employeeName"] ||
+    //       row?.clientToMeet?.employeeName ||
+    //       row?.clientToMeet ||
+    //       "",
+    //   ).trim();
+    //   const departmentName = String(
+    //     row?.["department.name"] || row?.department?.name || row?.department || "",
+    //   ).trim();
+    //   const unitNo = String(
+    //     row?.["unit.unitNo"] || row?.unit?.unitNo || row?.unitNo || "",
+    //   ).trim();
+    //   const unitName = String(
+    //     row?.["unit.unitName"] || row?.unit?.unitName || row?.unitName || "",
+    //   ).trim();
+    //   const buildingName = String(
+    //     row?.["unit.building.buildingName"] ||
+    //       row?.unit?.building?.buildingName ||
+    //       row?.building?.buildingName ||
+    //       row?.buildingName ||
+    //       "",
+    //   ).trim();
+    //   const stateName = getStateName(row?.state);
+
+    //   if (checkedInByName) {
+    //     nextRow.checkedInBy = checkedInByName;
+    //   }
+
+    //   if (checkedOutByName) {
+    //     nextRow.checkedOutBy = checkedOutByName;
+    //   }
+
+    //   if (toMeetName) {
+    //     nextRow.toMeet = toMeetName;
+    //   }
+
+    //   if (toMeetCompanyClientName) {
+    //     nextRow["toMeetCompany.clientName"] = toMeetCompanyClientName;
+    //   }
+
+    //   if (clientToMeetEmployeeName) {
+    //     nextRow["clientToMeet.employeeName"] = clientToMeetEmployeeName;
+    //   }
+
+    //   if (departmentName) {
+    //     nextRow["department.name"] = departmentName;
+    //   }
+
+    //   if (unitNo) {
+    //     nextRow.unitNo = unitNo;
+    //   }
+
+    //   if (unitName) {
+    //     nextRow.unitName = unitName;
+    //   }
+
+    //   if (buildingName) {
+    //     nextRow.buildingName = buildingName;
+    //   }
+
+    //   if (stateName) {
+    //     nextRow.state = stateName;
+    //   }
+
+    //   delete nextRow["checkedInBy.firstName"];
+    //   delete nextRow["checkedInBy.lastName"];
+    //   delete nextRow["checkedOutBy.firstName"];
+    //   delete nextRow["checkedOutBy.lastName"];
+    //   delete nextRow["toMeet.firstName"];
+    //   delete nextRow["toMeet.lastName"];
+    //   delete nextRow["unit.unitNo"];
+    //   delete nextRow["unit.unitName"];
+    //   delete nextRow["unit.building.buildingName"];
+    //   delete nextRow.toMeetCompany;
+    //   delete nextRow.clientToMeet;
+    //   delete nextRow.meeting;
+    //   delete nextRow.department;
+    //   return nextRow;
+    // });
+  };
+ const mergeSalesCsvFields = (rows = [], reportName = "") => {
+  if (normalizedModuleKey !== "sales") return rows;
+
+  const normalizedReportName = String(reportName)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-report$/, "");
+  const hasSalesLocationFields = rows.some(
+    (row) =>
+      row?.unit ||
+      row?.location ||
+      row?.building ||
+      row?.["unit.unitNo"] ||
+      row?.["unit.unitName"] ||
+      row?.["unit.building.buildingName"] ||
+      row?.["location.unitNo"] ||
+      row?.["location.unitName"] ||
+      row?.["location.building.buildingName"] ||
+      row?.["building.buildingName"] ||
+      row?.unitNo ||
+      row?.unitName ||
+      row?.buildingName,
+  );
+  const isCoworkingOrVirtualOfficeClientsReport =
+    normalizedReportName.includes("coworking-clients") ||
+    normalizedReportName.includes("virtual-office-clients");
+  const shouldAddSalesUnitFields =
+    hasSalesLocationFields || isCoworkingOrVirtualOfficeClientsReport;
+
+  const isOpenDeskClientsReport =
+    normalizedReportName.includes("open-desk-clients") ||
+    normalizedReportName.includes("open-desk-client") ||
+    normalizedReportName.includes("open-desk");
+
+    if (!shouldAddSalesUnitFields && !isOpenDeskClientsReport) return rows;
+
+  return rows.map((row) => {
+    let nextRow = { ...row };
+
+    if (isOpenDeskClientsReport) {
+      nextRow = mergeVisitorLikeCsvFields(nextRow);
+    }
+     if (shouldAddSalesUnitFields) {
       const unitNo = String(
-        row?.["unit.unitNo"] || row?.unit?.unitNo || row?.unitNo || "",
+        row?.["unit.unitNo"] ||
+          row?.unit?.unitNo ||
+          row?.["location.unitNo"] ||
+          row?.location?.unitNo ||
+          row?.unitNo ||
+          "",
       ).trim();
       const unitName = String(
-        row?.["unit.unitName"] || row?.unit?.unitName || row?.unitName || "",
+        row?.["unit.unitName"] ||
+          row?.unit?.unitName ||
+          row?.["location.unitName"] ||
+          row?.location?.unitName ||
+          row?.unitName ||
+          "",
       ).trim();
       const buildingName = String(
         row?.["unit.building.buildingName"] ||
           row?.unit?.building?.buildingName ||
+          row?.["location.building.buildingName"] ||
+          row?.location?.building?.buildingName ||
+          row?.["building.buildingName"] ||
           row?.building?.buildingName ||
           row?.buildingName ||
           "",
       ).trim();
-      const stateName = getStateName(row?.state);
 
-      if (checkedInByName) {
-        nextRow.checkedInBy = checkedInByName;
+      if (isCoworkingOrVirtualOfficeClientsReport) {
+        nextRow["Cabin Desk"] = row?.cabinDesks ?? "";
+        nextRow["Open Desk"] = row?.openDesks ?? "";
       }
+      nextRow["Unit No"] = unitNo;
+      nextRow["Unit Name"] = unitName;
+      nextRow["Building Name"] = buildingName;
+     }
 
-      if (checkedOutByName) {
-        nextRow.checkedOutBy = checkedOutByName;
-      }
-
-      if (toMeetName) {
-        nextRow.toMeet = toMeetName;
-      }
-
-      if (toMeetCompanyClientName) {
-        nextRow["toMeetCompany.clientName"] = toMeetCompanyClientName;
-      }
-
-      if (clientToMeetEmployeeName) {
-        nextRow["clientToMeet.employeeName"] = clientToMeetEmployeeName;
-      }
-
-      if (departmentName) {
-        nextRow["department.name"] = departmentName;
-      }
-
-      if (unitNo) {
-        nextRow.unitNo = unitNo;
-      }
-
-      if (unitName) {
-        nextRow.unitName = unitName;
-      }
-
-      if (buildingName) {
-        nextRow.buildingName = buildingName;
-      }
-
-      if (stateName) {
-        nextRow.state = stateName;
-      }
-
-      delete nextRow["checkedInBy.firstName"];
-      delete nextRow["checkedInBy.lastName"];
-      delete nextRow["checkedOutBy.firstName"];
-      delete nextRow["checkedOutBy.lastName"];
-      delete nextRow["toMeet.firstName"];
-      delete nextRow["toMeet.lastName"];
+      delete nextRow.unit;
+      delete nextRow.building;
+      delete nextRow.unitNo;
+      delete nextRow.unitName;
+      delete nextRow.buildingName;
       delete nextRow["unit.unitNo"];
       delete nextRow["unit.unitName"];
       delete nextRow["unit.building.buildingName"];
-      delete nextRow.toMeetCompany;
-      delete nextRow.clientToMeet;
-      delete nextRow.meeting;
-      delete nextRow.department;
-      
-
-    
+      delete nextRow.location;
+      delete nextRow["location.unitNo"];
+      delete nextRow["location.unitName"];
+      delete nextRow["location.building"];
+      delete nextRow["location.building.buildingName"];
+      delete nextRow["building.buildingName"];
 
       return nextRow;
     });
   };
-//  const mergeHrCsvFields = (rows = []) => {
-//     if (normalizedModuleKey !== "hr") return rows;
 
-//     return rows.map((row) => {
-//       const nextRow = { ...row };
-//       const userName = [
-//         row?.user?.firstName || row?.["user.firstName"] || "",
-//         row?.user?.lastName || row?.["user.lastName"] || "",
-//       ]
-//         .filter(Boolean)
-//         .join(" ")
-//         .trim();
-
-//      if (userName) {
-//         nextRow.userName = userName;
-//       }
-   
-//       delete nextRow["user.firstName"];
-//       delete nextRow["user.lastName"];
-//      return nextRow;
-//     });
-//   }; 
-
-// const mergeHrCsvFields = (rows = []) => {
-//   if (normalizedModuleKey !== "hr") return rows;
-
-//   return rows.map((row) => {
-//     const nextRow = { ...row };
-
-//     const userFirstName = String(
-//       row?.user?.firstName || row?.["user.firstName"] || "",
-//     ).trim();
-
-//     const userLastName = String(
-//       row?.user?.lastName || row?.["user.lastName"] || "",
-//     ).trim();
-
-//     const userName = [userFirstName, userLastName]
-//       .filter(Boolean)
-//       .join(" ")
-//       .trim();
-
-//     const userEmpId = String(
-//       row?.user?.empId || row?.["user.empId"] || "",
-//     ).trim();
-
-//     if (userName) {
-//       nextRow.userName = userName;
-//     }
-
-//     if (userEmpId) {
-//       nextRow.empId = userEmpId;
-//     }
-
-//     delete nextRow.user;
-//     delete nextRow["user.firstName"];
-//     delete nextRow["user.lastName"];
-//     delete nextRow["user.empId"];
-
-//     return nextRow;
-//   });
-// };
 
 const mergeHrCsvFields = (rows = []) => {
   if (normalizedModuleKey !== "hr") return rows;
@@ -1051,6 +1200,23 @@ const mergeHrCsvFields = (rows = []) => {
 
     return formattedTime;
   };
+
+  const formatHrNamedValues = (value, nameKey) => {
+    const values = Array.isArray(value) ? value : value ? [value] : [];
+
+    return values
+      .map((item) => {
+        if (item && typeof item === "object") {
+          return item?.[nameKey] || "";
+        }
+
+        return item || "";
+      })
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+      .join(", ");
+  };
+
 
   return rows.map((row) => {
     const nextRow = { ...row };
@@ -1130,6 +1296,83 @@ const mergeHrCsvFields = (rows = []) => {
 
     const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
     const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
+    //     const homeAddressCountry = String(
+    //   row?.homeAddress?.country || row?.["homeAddress.country"] || "",
+    // ).trim();
+    // const homeAddressState = String(
+    //   row?.homeAddress?.state || row?.["homeAddress.state"] || "",
+    // ).trim();
+    // const homeAddressCountryName = getCountryName(homeAddressCountry);
+    // const homeAddressStateName = getStateName(
+    //   homeAddressState,
+    //   homeAddressCountry,
+    // );
+
+    // if (row?.homeAddress && typeof row.homeAddress === "object") {
+    //   nextRow.homeAddress = {
+    //     ...row.homeAddress,
+    //     country: homeAddressCountryName,
+    //     state: homeAddressStateName,
+    //   };
+    // } else {
+    //   if (homeAddressCountryName) {
+    //     nextRow["homeAddress.country"] = homeAddressCountryName;
+    //   }
+
+    //   if (homeAddressStateName) {
+    //     nextRow["homeAddress.state"] = homeAddressStateName;
+    //   }
+    // }
+
+     const homeAddressCountry = String(
+      row?.homeAddress?.country || row?.["homeAddress.country"] || "",
+    ).trim();
+    const homeAddressState = String(
+      row?.homeAddress?.state || row?.["homeAddress.state"] || "",
+    ).trim();
+    const homeAddressCountryName = getCountryName(homeAddressCountry);
+    const homeAddressStateName = getStateName(
+      homeAddressState,
+      homeAddressCountry,
+    );
+    const departmentNames = formatHrNamedValues(
+      row?.departments ?? row?.["departments.name"],
+      "name",
+    );
+    const roleTitles = formatHrNamedValues(
+      row?.role ?? row?.["role.roleTitle"],
+      "roleTitle",
+    );
+
+    if (
+      row?.departments !== undefined ||
+      row?.["departments.name"] !== undefined
+    ) {
+      nextRow.departments = departmentNames;
+    }
+
+    if (row?.role !== undefined || row?.["role.roleTitle"] !== undefined) {
+      nextRow.role = roleTitles;
+    }
+
+    delete nextRow["departments.name"];
+    delete nextRow["role.roleTitle"];
+
+    if (row?.homeAddress && typeof row.homeAddress === "object") {
+      nextRow.homeAddress = {
+        ...row.homeAddress,
+        country: homeAddressCountryName,
+        state: homeAddressStateName,
+      };
+    } else {
+      if (homeAddressCountryName) {
+        nextRow["homeAddress.country"] = homeAddressCountryName;
+      }
+
+      if (homeAddressStateName) {
+        nextRow["homeAddress.state"] = homeAddressStateName;
+      }
+    }
 
     if (userName) {
       nextRow.userName = userName;
@@ -1487,14 +1730,17 @@ const mergeHrCsvFields = (rows = []) => {
       : normalizeReportRows(reportData);
     const normalizedRows = mergeHrCsvFields(
       mergeVisitorCsvFields(
-        mergeAssetCsvFields(
-          mergeMeetingCsvFields(
-            mergePerformanceCsvFields(
-              mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
-              reportName,
+        mergeSalesCsvFields(
+          mergeAssetCsvFields(
+            mergeMeetingCsvFields(
+              mergePerformanceCsvFields(
+                mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+                reportName,
+              ),
+            ),
           ),
+          reportName,
         ),
-      ),
       ),
     );
 

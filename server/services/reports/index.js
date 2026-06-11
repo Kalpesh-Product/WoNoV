@@ -1,5 +1,10 @@
 const buildDateFilter = require("../../utils/dateFilter");
-const { fetchBudgetService, fetchVoucherService } = require("./finance");
+const {
+  fetchBudgetService,
+  fetchVoucherService,
+  fetchBudgetVoucherService,
+  fetchProfitLossReportService,
+} = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
 const { fetchVendorReportService } = require("./vendor");
 const { fetchPerformanceReportService } = require("./performance");
@@ -47,7 +52,12 @@ const COMMON_REPORT_CONTEXT_KEYS = [
   "company",
   "user",
 ];
-const FINANCE_REPORT_CONTEXT_KEYS = ["departments", "departmentId", "roles"];
+const FINANCE_REPORT_CONTEXT_KEYS = [
+  "departments",
+  "departmentId",
+  "roles",
+  "company",
+];
 
 const pickContext = (context = {}, keys = []) =>
   keys.reduce((params, key) => {
@@ -208,10 +218,26 @@ const reportServiceRegistry = {
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
     staticParams: { type: "dept" },
   }),
+
   "overall-budget": createReportService(fetchBudgetService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
     staticParams: { type: "overall" },
+  }),
+
+  "total-monthly-profit-loss": createReportService(
+    fetchProfitLossReportService,
+    {
+      dateField: "dueDate",
+      contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+      staticParams: { type: "p&l" },
+    },
+  ),
+
+  payouts: createReportService(fetchBudgetVoucherService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "payout" },
   }),
 
   "department-voucher": createReportService(fetchVoucherService, {

@@ -64,13 +64,13 @@ const fetchCoworkingRevenueService = async ({
         occupation: item.occupation,
         revenue: item.revenue,
         totalTerm: item.totalTerm,
-        dueTerm: item.dueTerm,
+        ...(!isReport && { dueTerm: item.dueTerm }),
         rentDate: item.rentDate,
         rentStatus: item.rentStatus,
-        pastDueDate: item.pastDueDate,
+        ...(!isReport && { pastDueDate: item.pastDueDate }),
         annualIncrement: item.annualIncrement,
         nextIncrementDate: item.nextIncrementDate,
-        serviceName: item.service?.serviceName,
+        ...(!isReport && { serviceName: item.service?.serviceName }),
       });
     });
 
