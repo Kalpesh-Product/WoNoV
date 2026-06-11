@@ -361,12 +361,24 @@ const fetchInternalVisitorsReportService = async ({
 const fetchClientVisitorsReportService = async ({
   company,
   dateFilter,
+  type,
 } = {}) => {
   const filter = {
     company: new mongoose.Types.ObjectId(company),
-    visitorType: {
-      $in: ["Meeting", "Full-Day Pass", "Half-Day Pass"],
-    },
+    visitorType:
+      type === "client"
+        ? {
+            $in: ["Meeting", "Full-Day Pass", "Half-Day Pass"],
+          }
+        : type === "meeting"
+          ? {
+              $in: ["Meeting"],
+            }
+          : type === "open-desk"
+            ? {
+                $in: ["Full-Day Pass", "Half-Day Pass"],
+              }
+            : {},
   };
 
   if (dateFilter?.checkIn) {

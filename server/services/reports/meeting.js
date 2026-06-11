@@ -190,7 +190,22 @@ const fetchMeetingReportService = async ({
     });
 
     if (isReport) {
-      return transformedMeetings.map((meeting) => {
+      const meetingTypeFilter = String(type || "")
+        .trim()
+        .toLowerCase();
+
+      const typeFilteredMeetings = ["internal", "external"].includes(
+        meetingTypeFilter,
+      )
+        ? filteredMeetings.filter(
+            (meeting) =>
+              String(meeting?.meetingType || "")
+                .trim()
+                .toLowerCase() === meetingTypeFilter,
+          )
+        : filteredMeetings;
+
+      return typeFilteredMeetings.map((meeting) => {
         const effectiveEndTime = getEffectiveEndTime(meeting);
         const client =
           meeting?.company?.companyName ||
