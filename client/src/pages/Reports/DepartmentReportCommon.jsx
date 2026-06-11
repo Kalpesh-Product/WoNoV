@@ -991,9 +991,12 @@ const DepartmentReportCommon = () => {
 
     const normalizedReportName = String(reportName).trim().toLowerCase();
 
-    if (!normalizedReportName.includes("coworking clients report")) {
-      return rows;
-    }
+    if (
+    !normalizedReportName.includes("coworking clients report") &&
+    !normalizedReportName.includes("virtual office clients report")
+  ) {
+    return rows;
+  }
 
     return rows.map((row) => {
       const nextRow = { ...row };
