@@ -17,16 +17,28 @@ import { queryClient } from "../../main";
 import useAuth from "../../hooks/useAuth";
 import useUserPermissions from "../../hooks/useUserPermissions";
 import { Task } from "@mui/icons-material";
-import { State } from "country-state-city";
+import { Country, State } from "country-state-city";
 
-const getStateName = (stateValue) => {
+const getCountryName = (countryValue) => {
+  if (!countryValue) return countryValue;
+
+  const normalizedCountryValue = String(countryValue).trim();
+  const country = Country.getCountryByCode(normalizedCountryValue.toUpperCase());
+
+  return country?.name || normalizedCountryValue;
+};
+
+const getStateName = (stateValue, countryValue = "IN") => {
   if (!stateValue) return stateValue;
 
   const normalizedStateValue = String(stateValue).trim();
-  const state = State.getStateByCodeAndCountry(
-    normalizedStateValue.toUpperCase(),
-    "IN",
-  );
+ const normalizedCountryValue = String(countryValue || "IN")
+    .trim()
+    .toUpperCase();
+  const stateCode = normalizedStateValue.toUpperCase();
+  const state =
+    State.getStateByCodeAndCountry(stateCode, normalizedCountryValue) ||
+    State.getStateByCodeAndCountry(stateCode, "IN");
 
   return state?.name || normalizedStateValue;
 };
@@ -974,7 +986,6 @@ const DepartmentReportCommon = () => {
       return nextRow;
     });
   };
-
 const mergeHrCsvFields = (rows = []) => {
   if (normalizedModuleKey !== "hr") return rows;
 
@@ -989,6 +1000,23 @@ const mergeHrCsvFields = (rows = []) => {
 
     return formattedTime;
   };
+
+  const formatHrNamedValues = (value, nameKey) => {
+    const values = Array.isArray(value) ? value : value ? [value] : [];
+
+    return values
+      .map((item) => {
+        if (item && typeof item === "object") {
+          return item?.[nameKey] || "";
+        }
+
+        return item || "";
+      })
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+      .join(", ");
+  };
+
 
   return rows.map((row) => {
     const nextRow = { ...row };
@@ -1068,6 +1096,83 @@ const mergeHrCsvFields = (rows = []) => {
 
     const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
     const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
+    //     const homeAddressCountry = String(
+    //   row?.homeAddress?.country || row?.["homeAddress.country"] || "",
+    // ).trim();
+    // const homeAddressState = String(
+    //   row?.homeAddress?.state || row?.["homeAddress.state"] || "",
+    // ).trim();
+    // const homeAddressCountryName = getCountryName(homeAddressCountry);
+    // const homeAddressStateName = getStateName(
+    //   homeAddressState,
+    //   homeAddressCountry,
+    // );
+
+    // if (row?.homeAddress && typeof row.homeAddress === "object") {
+    //   nextRow.homeAddress = {
+    //     ...row.homeAddress,
+    //     country: homeAddressCountryName,
+    //     state: homeAddressStateName,
+    //   };
+    // } else {
+    //   if (homeAddressCountryName) {
+    //     nextRow["homeAddress.country"] = homeAddressCountryName;
+    //   }
+
+    //   if (homeAddressStateName) {
+    //     nextRow["homeAddress.state"] = homeAddressStateName;
+    //   }
+    // }
+
+     const homeAddressCountry = String(
+      row?.homeAddress?.country || row?.["homeAddress.country"] || "",
+    ).trim();
+    const homeAddressState = String(
+      row?.homeAddress?.state || row?.["homeAddress.state"] || "",
+    ).trim();
+    const homeAddressCountryName = getCountryName(homeAddressCountry);
+    const homeAddressStateName = getStateName(
+      homeAddressState,
+      homeAddressCountry,
+    );
+    const departmentNames = formatHrNamedValues(
+      row?.departments ?? row?.["departments.name"],
+      "name",
+    );
+    const roleTitles = formatHrNamedValues(
+      row?.role ?? row?.["role.roleTitle"],
+      "roleTitle",
+    );
+
+    if (
+      row?.departments !== undefined ||
+      row?.["departments.name"] !== undefined
+    ) {
+      nextRow.departments = departmentNames;
+    }
+
+    if (row?.role !== undefined || row?.["role.roleTitle"] !== undefined) {
+      nextRow.role = roleTitles;
+    }
+
+    delete nextRow["departments.name"];
+    delete nextRow["role.roleTitle"];
+
+    if (row?.homeAddress && typeof row.homeAddress === "object") {
+      nextRow.homeAddress = {
+        ...row.homeAddress,
+        country: homeAddressCountryName,
+        state: homeAddressStateName,
+      };
+    } else {
+      if (homeAddressCountryName) {
+        nextRow["homeAddress.country"] = homeAddressCountryName;
+      }
+
+      if (homeAddressStateName) {
+        nextRow["homeAddress.state"] = homeAddressStateName;
+      }
+    }
 
     if (userName) {
       nextRow.userName = userName;
