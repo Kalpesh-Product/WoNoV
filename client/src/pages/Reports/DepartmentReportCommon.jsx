@@ -1121,12 +1121,20 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
     normalizedReportName.includes("open-desk-client") ||
     normalizedReportName.includes("open-desk");
 
-    if (!shouldAddSalesUnitFields && !isOpenDeskClientsReport) return rows;
+   const isExternalClientsReport =
+    normalizedReportName.includes("external-clients") ||
+    normalizedReportName.includes("external-client");
+
+  const shouldMergeVisitorLikeFields =
+    isOpenDeskClientsReport || isExternalClientsReport;
+
+  if (!shouldAddSalesUnitFields && !shouldMergeVisitorLikeFields) return rows;  
+
 
   return rows.map((row) => {
     let nextRow = { ...row };
 
-    if (isOpenDeskClientsReport) {
+      if (shouldMergeVisitorLikeFields) {
       nextRow = mergeVisitorLikeCsvFields(nextRow);
     }
      if (shouldAddSalesUnitFields) {
