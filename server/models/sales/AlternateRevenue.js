@@ -36,9 +36,12 @@ const alternateRevenueSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // Optional: Adds createdAt and updatedAt fields
+    timestamps: true,
   },
 );
+
+alternateRevenueSchema.index({ company: 1 });
+// alternateRevenueSchema.index({ company: 1, invoiceCreationDate: 1 });
 
 const AlternateRevenue = mongoose.model(
   "AlternateRevenue",

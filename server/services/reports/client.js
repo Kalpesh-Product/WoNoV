@@ -221,6 +221,7 @@ const fetchCoworkingClientReportService = async ({
       lastManualCreditResetAt,
       isHost,
       unit,
+      building,
       ...restEntity
     } = entity;
 
@@ -240,6 +241,7 @@ const fetchCoworkingClientReportService = async ({
         lastManualCreditResetAt,
         documents,
         isHost,
+        building,
       }),
       unit: {
         building: {

@@ -60,6 +60,9 @@ const coworkingClientRevenue = new mongoose.Schema(
   { timestamps: true },
 );
 
+coworkingClientRevenue.index({ company: 1 });
+// coworkingClientRevenue.index({ company: 1, rentDate: 1 });
+
 const CoworkingRevenue = mongoose.model(
   "CoworkingClientRevenue",
   coworkingClientRevenue,

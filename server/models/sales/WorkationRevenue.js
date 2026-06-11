@@ -41,6 +41,9 @@ const workationRevenueSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+workationRevenueSchema.index({ company: 1 });
+// workationRevenueSchema.index({ company: 1, date: 1 });
+
 const WorkationRevenue = mongoose.model(
   "WorkationRevenue",
   workationRevenueSchema,

@@ -72,6 +72,9 @@ const meetingClientRevenueSchema = new mongoose.Schema(
   },
 );
 
+meetingClientRevenueSchema.index({ company: 1 });
+// meetingClientRevenueSchema.index({ company: 1, date: 1 });
+
 const MeetingRevenue = mongoose.model(
   "MeetingClientRevenue",
   meetingClientRevenueSchema,
