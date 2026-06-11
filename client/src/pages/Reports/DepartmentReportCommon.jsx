@@ -986,6 +986,44 @@ const DepartmentReportCommon = () => {
       return nextRow;
     });
   };
+  const mergeSalesCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "sales") return rows;
+
+    const normalizedReportName = String(reportName).trim().toLowerCase();
+
+    if (!normalizedReportName.includes("coworking clients report")) {
+      return rows;
+    }
+
+    return rows.map((row) => {
+      const nextRow = { ...row };
+      const unitNo = row?.["unit.unitNo"] || row?.unit?.unitNo || row?.unitNo || "";
+      const unitName =
+        row?.["unit.unitName"] || row?.unit?.unitName || row?.unitName || "";
+      const buildingName =
+        row?.["unit.building.buildingName"] ||
+        row?.unit?.building?.buildingName ||
+        row?.buildingName ||
+        "";
+
+      nextRow["Cabin Desk"] = row?.cabinDesks ?? "";
+      nextRow["Open Desk"] = row?.openDesks ?? "";
+      nextRow["Unit No"] = unitNo;
+      nextRow["Unit Name"] = unitName;
+      nextRow["Building Name"] = buildingName;
+
+      delete nextRow.unit;
+      delete nextRow.building;
+      delete nextRow.unitNo;
+      delete nextRow.unitName;
+      delete nextRow.buildingName;
+      delete nextRow["unit.unitNo"];
+      delete nextRow["unit.unitName"];
+      delete nextRow["unit.building.buildingName"];
+
+      return nextRow;
+    });
+  };
 const mergeHrCsvFields = (rows = []) => {
   if (normalizedModuleKey !== "hr") return rows;
 
@@ -1530,14 +1568,17 @@ const mergeHrCsvFields = (rows = []) => {
       : normalizeReportRows(reportData);
     const normalizedRows = mergeHrCsvFields(
       mergeVisitorCsvFields(
-        mergeAssetCsvFields(
-          mergeMeetingCsvFields(
-            mergePerformanceCsvFields(
-              mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
-              reportName,
+        mergeSalesCsvFields(
+          mergeAssetCsvFields(
+            mergeMeetingCsvFields(
+              mergePerformanceCsvFields(
+                mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+                reportName,
+              ),
+            ),
           ),
+          reportName,
         ),
-      ),
       ),
     );
 
