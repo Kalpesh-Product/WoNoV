@@ -51,6 +51,9 @@ const isExcludedHeader = (header, hiddenFields = []) =>
 const isMongoId = (value) =>
   typeof value === "string" && MONGO_ID_REGEX.test(value.trim());
 
+const hasLeadingZeroNumericString = (value) =>
+  typeof value === "string" && /^0\d+$/.test(value.trim());
+
 const shouldHideEmptyExportValue = (value) => {
   if (value === null || value === undefined) return true;
 
@@ -156,6 +159,10 @@ const formatValue = (value, keyPath = "", hiddenFields = []) => {
 
 const escapeCsvValue = (value) => {
   const formatted = formatValue(value);
+
+  if (hasLeadingZeroNumericString(formatted)) {
+    return `="${formatted.trim().replace(/"/g, '""')}"`;
+  }
 
   return formatted ? `"${formatted.replace(/"/g, '""')}"` : "";
 };
