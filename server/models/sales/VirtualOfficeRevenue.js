@@ -30,7 +30,7 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
       // required: true,
     },
     dueTerm: {
-      type: Number, // Assuming in months
+      type: Date, // Assuming in months
       // required: true,
     },
     rentDate: {
