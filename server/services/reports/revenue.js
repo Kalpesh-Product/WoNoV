@@ -275,16 +275,24 @@ const fetchVirtualOfficeRevenueReportService = async ({
   user,
   query,
   params,
+  isReport = false,
 }) => {
-  let filter = {};
+  let filter = { company };
 
   if (dateFilter) {
     filter.rentDate = dateFilter.rentDate;
   }
+
   const revenues = await VirtualOfficeRevenue.find(filter)
     .populate([{ path: "client", select: "clientName" }])
     .lean()
     .exec();
+
+  if (isReport) {
+    return revenues.map(
+      ({ pastDueDate, unitNo, unitName, buildingName, ...item }) => item,
+    );
+  }
 
   return revenues;
 };

@@ -112,16 +112,16 @@ const reportServiceRegistry = {
     dateField: "startDate",
   }),
 
-  "external-clients": createReportService(fetchVisitorReportService, {
+  "external-clients": createReportService(fetchClientVisitorsReportService, {
     dateField: "checkIn",
     contextKeys: ["departmentId", "company"],
-    staticParams: { isMeeting: true },
+    staticParams: { type: "meeting" },
   }),
 
-  "open-desk-clients": createReportService(fetchVisitorReportService, {
+  "open-desk-clients": createReportService(fetchClientVisitorsReportService, {
     dateField: "checkIn",
     contextKeys: ["departmentId", "company"],
-    staticParams: { isOpendDesk: true },
+    staticParams: { type: "open-desk" },
   }),
 
   "virtual-office-clients": createReportService(
@@ -206,6 +206,7 @@ const reportServiceRegistry = {
 
   client: createReportService(fetchClientVisitorsReportService, {
     dateField: "checkIn",
+    staticParams: { type: "client" },
   }),
 
   ticket: createReportService(fetchTicketReportService, {

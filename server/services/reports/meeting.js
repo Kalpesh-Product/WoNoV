@@ -190,7 +190,22 @@ const fetchMeetingReportService = async ({
     });
 
     if (isReport) {
-      return transformedMeetings.map((meeting) => {
+      const meetingTypeFilter = String(type || "")
+        .trim()
+        .toLowerCase();
+
+      const typeFilteredMeetings = ["internal", "external"].includes(
+        meetingTypeFilter,
+      )
+        ? filteredMeetings.filter(
+            (meeting) =>
+              String(meeting?.meetingType || "")
+                .trim()
+                .toLowerCase() === meetingTypeFilter,
+          )
+        : filteredMeetings;
+
+      return typeFilteredMeetings.map((meeting) => {
         const effectiveEndTime = getEffectiveEndTime(meeting);
         const client =
           meeting?.company?.companyName ||
@@ -198,12 +213,12 @@ const fetchMeetingReportService = async ({
           meeting.companyName ||
           meeting.externalClient ||
           "N/A";
-
         return {
           client,
           bookedBy:
             formatPersonName(meeting.bookedBy) ||
             meeting.clientBookedBy?.employeeName ||
+            formatPersonName(meeting.externalBookedBy) ||
             "Unknown",
           buildingName: meeting.location?.building?.buildingName,
           roomName: meeting.roomName,
@@ -216,13 +231,15 @@ const fetchMeetingReportService = async ({
           startTime: meeting.startTime,
           endTime: effectiveEndTime,
           housekeepingStatus: meeting.housekeepingStatus,
+          ...(type === "internal" && {
+            department: (meeting?.bookedBy?.departments || [])
+              .map((dept) => dept?.name)
+              .filter(Boolean)
+              .join(", "),
+          }),
           companyName: client,
-          participants: formatParticipants(meeting.participants),
-          receptionist: meeting.receptionist,
-          department: (meeting.department || [])
-            .map((dept) => dept?.name)
-            .filter(Boolean)
-            .join(", "),
+          participants: formatParticipants(participants),
+          receptionist: formatPersonName(meeting.receptionist),
           location: meeting.location?.unitNo,
           meetingStatus: meeting.meetingStatus,
           ...(type === "external" && {

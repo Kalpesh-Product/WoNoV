@@ -124,7 +124,7 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
           taxableAmount: parseAmount(taxableAmount) || 0,
           revenue: parseAmount(revenue) || 0,
           totalTerm: parseInt(totalTerm) || 0,
-          dueTerm: parseInt(dueTerm) || 0,
+          dueTerm: dueTerm ? new Date(dueTerm) : null,
           rentDate: rentDate ? new Date(rentDate) : null,
           rentStatus: rentStatus?.trim(),
           pastDueDate: pastDueDate ? new Date(pastDueDate) : null,

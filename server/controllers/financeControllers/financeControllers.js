@@ -17,78 +17,6 @@ const { createLog } = require("../../utils/moduleLogs");
 const { default: mongoose } = require("mongoose");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 
-const getIncomeAndExpanse = async (req, res, next) => {
-  try {
-    const company = req.company;
-
-    const [
-      budgets,
-      meetingRevenue,
-      alternateRevenues,
-      virtualOfficeRevenues,
-      workationRevenues,
-      coworkingRevenues,
-      units,
-    ] = await Promise.all([
-      Budget.find({ company, status: "Approved" })
-        .populate([
-          {
-            path: "unit",
-            populate: {
-              path: "building",
-              select: "buildingName",
-              model: "Building",
-            },
-          },
-          { path: "department", select: "name" },
-        ])
-        .lean()
-        .exec(),
-      MeetingRevenue.find({ company }).lean().exec(),
-      AlternateRevenues.find({ company }).lean().exec(),
-      VirtualOfficeRevenues.find({ company }).lean().exec(),
-      WorkationRevenues.find({ company }).lean().exec(),
-      CoworkingRevenue.find({ company }).lean().exec(),
-      Unit.find({ company })
-        .populate([{ path: "building", select: "buildingName" }])
-        .lean()
-        .exec(),
-    ]);
-
-    const response = [
-      {
-        expense: [...budgets],
-      },
-      {
-        income: {
-          meetingRevenue: [
-            ...meetingRevenue.map((m) => ({ ...m, status: "paid" })),
-          ],
-          alternateRevenues: [
-            ...alternateRevenues.map((m) => ({ ...m, status: "paid" })),
-          ],
-          virtualOfficeRevenues: [
-            ...virtualOfficeRevenues.map((m) => ({ ...m, status: "paid" })),
-          ],
-          workationRevenues: [
-            ...workationRevenues.map((m) => ({ ...m, status: "paid" })),
-          ],
-          coworkingRevenues: [
-            ...coworkingRevenues.map((m) => ({ ...m, status: "paid" })),
-          ],
-        },
-      },
-      {
-        units: [...units],
-      },
-    ];
-
-    return res.status(200).json({ response });
-  } catch (error) {
-    next(error);
-  }
-};
-
 // const getIncomeAndExpanse = async (req, res, next) => {
 //   try {
 //     const company = req.company;
@@ -103,33 +31,28 @@ const getIncomeAndExpanse = async (req, res, next) => {
 //       units,
 //     ] = await Promise.all([
 //       Budget.find({ company, status: "Approved" })
-//         .select("dueDate actualAmount projectedAmount")
+//         .populate([
+//           {
+//             path: "unit",
+//             populate: {
+//               path: "building",
+//               select: "buildingName",
+//               model: "Building",
+//             },
+//           },
+//           { path: "department", select: "name" },
+//         ])
 //         .lean()
 //         .exec(),
-
-//       MeetingRevenue.find({ company }).select("date taxable").lean().exec(),
-
-//       AlternateRevenues.find({ company })
-//         .select("invoiceCreationDate taxableAmount")
+//       MeetingRevenue.find({ company }).lean().exec(),
+//       AlternateRevenues.find({ company }).lean().exec(),
+//       VirtualOfficeRevenues.find({ company }).lean().exec(),
+//       WorkationRevenues.find({ company }).lean().exec(),
+//       CoworkingRevenue.find({ company }).lean().exec(),
+//       Unit.find({ company })
+//         .populate([{ path: "building", select: "buildingName" }])
 //         .lean()
 //         .exec(),
-
-//       VirtualOfficeRevenues.find({ company })
-//         .select("rentDate taxableAmount revenue")
-//         .lean()
-//         .exec(),
-
-//       WorkationRevenues.find({ company })
-//         .select("date taxableAmount")
-//         .lean()
-//         .exec(),
-
-//       CoworkingRevenue.find({ company })
-//         .select("rentDate revenue")
-//         .lean()
-//         .exec(),
-
-//       Unit.find({ company }).select("sqft").lean().exec(),
 //     ]);
 
 //     const response = [
@@ -165,6 +88,83 @@ const getIncomeAndExpanse = async (req, res, next) => {
 //     next(error);
 //   }
 // };
+
+const getIncomeAndExpanse = async (req, res, next) => {
+  try {
+    const company = req.company;
+
+    const [
+      budgets,
+      meetingRevenue,
+      alternateRevenues,
+      virtualOfficeRevenues,
+      workationRevenues,
+      coworkingRevenues,
+      units,
+    ] = await Promise.all([
+      Budget.find({ company, status: "Approved" })
+        .select("dueDate actualAmount projectedAmount")
+        .lean()
+        .exec(),
+
+      MeetingRevenue.find({ company }).select("date taxable").lean().exec(),
+
+      AlternateRevenues.find({ company })
+        .select("invoiceCreationDate taxableAmount")
+        .lean()
+        .exec(),
+
+      VirtualOfficeRevenues.find({ company })
+        .select("rentDate taxableAmount revenue")
+        .lean()
+        .exec(),
+
+      WorkationRevenues.find({ company })
+        .select("date taxableAmount")
+        .lean()
+        .exec(),
+
+      CoworkingRevenue.find({ company })
+        .select("rentDate revenue")
+        .lean()
+        .exec(),
+
+      Unit.find({ company }).select("sqft").lean().exec(),
+    ]);
+
+    const response = [
+      {
+        expense: [...budgets],
+      },
+      {
+        income: {
+          meetingRevenue: [
+            ...meetingRevenue.map((m) => ({ ...m, status: "paid" })),
+          ],
+          alternateRevenues: [
+            ...alternateRevenues.map((m) => ({ ...m, status: "paid" })),
+          ],
+          virtualOfficeRevenues: [
+            ...virtualOfficeRevenues.map((m) => ({ ...m, status: "paid" })),
+          ],
+          workationRevenues: [
+            ...workationRevenues.map((m) => ({ ...m, status: "paid" })),
+          ],
+          coworkingRevenues: [
+            ...coworkingRevenues.map((m) => ({ ...m, status: "paid" })),
+          ],
+        },
+      },
+      {
+        units: [...units],
+      },
+    ];
+
+    return res.status(200).json({ response });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const uploadClientInvoice = async (req, res, next) => {
   const logPath = "finance/FinanceLog";
