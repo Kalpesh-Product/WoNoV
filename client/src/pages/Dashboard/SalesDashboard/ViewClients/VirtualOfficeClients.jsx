@@ -9,6 +9,48 @@ import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import { toast } from "sonner";
 
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const getCalendarDateInUtc = (value) => {
+  const date = new Date(value);
+  const dateParts =
+    typeof value === "string" && value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (dateParts) {
+    return Date.UTC(
+      Number(dateParts[1]),
+      Number(dateParts[2]) - 1,
+      Number(dateParts[3]),
+    );
+  }
+
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const calculateAgreementExpiry = (startDate, endDate) => {
+  const startDay = getCalendarDateInUtc(startDate);
+  const endDay = getCalendarDateInUtc(endDate);
+
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDay) ||
+    Number.isNaN(endDay) ||
+    endDay < startDay
+  ) {
+    return "-";
+  }
+
+  const today = getCalendarDateInUtc(new Date());
+  const totalDays = Math.round((endDay - startDay) / MILLISECONDS_PER_DAY);
+  const remainingDays = Math.min(
+    totalDays,
+    Math.max(0, Math.round((endDay - today) / MILLISECONDS_PER_DAY)),
+  );
+
+  return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
+};
+
 const VirtualOfficeClients = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -31,14 +73,18 @@ const VirtualOfficeClients = () => {
   const verticalData = isLoading
     ? []
     : data.virtualOfficeClients?.map((item, index) => ({
-      ...item,
-      srNo: index + 1,
-      totalTerm: item.totalTerm || 0,
-      isActive:
-        typeof item?.isActive === "boolean"
-          ? item.isActive
-          : Boolean(item?.clientStatus),
-    })) || [];
+        ...item,
+        srNo: index + 1,
+        totalTerm: item.totalTerm || 0,
+        agreementExpiry: calculateAgreementExpiry(
+          item.termStartDate || item.startDate,
+          item.termEnd || item.endDate,
+        ),
+        isActive:
+          typeof item?.isActive === "boolean"
+            ? item.isActive
+            : Boolean(item?.clientStatus),
+      })) || [];
 
   const { mutate: updateClientStatus, isPending: isStatusUpdating } = useMutation({
     mutationFn: async ({ id, isActive }) => {
@@ -106,6 +152,7 @@ const VirtualOfficeClients = () => {
       ),
     },
     { field: "totalTerm", headerName: "Total Term" },
+    { field: "agreementExpiry", headerName: "Agreement Expiry" },
     {
       field: "rentStatus",
       headerName: "Status",
