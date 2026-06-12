@@ -852,6 +852,49 @@ export const PERMISSIONS = {
     type: "read",
   },
 
+   FINANCE_REVENUE_MIX_BAG: {
+    value: "finance_revenue_mix_bag_card",
+    title: "FINANCE REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue",
+  },
+  FINANCE_TOTAL_REVENUE: {
+    value: "finance_mix_bag_revenue_total_revenue_tab",
+    title: "FINANCE TOTAL REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/total-revenue",
+  },
+  FINANCE_COWORKING_REVENUE: {
+    value: "finance_mix_bag_revenue_coworking_tab",
+    title: "FINANCE COWORKING REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/co-working",
+  },
+  FINANCE_MEETINGS_REVENUE: {
+    value: "finance_mix_bag_revenue_meetings_tab",
+    title: "FINANCE MEETINGS REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/meetings",
+  },
+  FINANCE_VIRTUAL_OFFICE_REVENUE: {
+    value: "finance_mix_bag_revenue_virtual_office_tab",
+    title: "FINANCE VIRTUAL OFFICE REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/virtual-office",
+  },
+  FINANCE_WORKATIONS_REVENUE: {
+    value: "finance_mix_bag_revenue_workations_tab",
+    title: "FINANCE WORKATIONS REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/workation",
+  },
+  FINANCE_ALT_REVENUE: {
+    value: "finance_mix_bag_revenue_alt_revenue_tab",
+    title: "FINANCE ALT REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/alt-revenue",
+  },
+
   FINANCE_DIRECTORS_COMPANY_KYC_MIX_BAG: {
     value: "finance_directors_company_kyc",
     title: "FINANCE DIRECTORS COMPANY KYC",
