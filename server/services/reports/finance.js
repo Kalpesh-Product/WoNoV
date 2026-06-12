@@ -7,6 +7,11 @@ const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const fetchBudgetVoucherService = async ({
   company,
@@ -264,30 +269,29 @@ const extractDateRange = (dateFilter = {}) => {
 };
 
 // Generates ["Jan-26", "Feb-26", "Mar-26", "Apr-26", "May-26"] style month list
+
 const generateMonthRange = (range) => {
   if (!range || (!range.$gte && !range.$lte)) return null;
 
-  const start = dayjs(range.$gte || range.$lte).startOf("month");
-  const end = dayjs(range.$lte || range.$gte).startOf("month");
+  const start = dayjs
+    .utc(range.$gte || range.$lte)
+    .tz("Asia/Kolkata")
+    .startOf("month");
+  const end = dayjs
+    .utc(range.$lte || range.$gte)
+    .tz("Asia/Kolkata")
+    .startOf("month");
 
   const months = [];
   let cursor = start;
+
   while (cursor.isBefore(end) || cursor.isSame(end)) {
     months.push(cursor.format("MMM-YY"));
     cursor = cursor.add(1, "month");
   }
+
   return months;
 };
-
-// const monthlyAggregate = (
-//   Model,
-//   dateField,
-//   valueExpr,
-//   company,
-//   dateRange,
-//   type = "",
-// ) => {
-//   const match = { company };
 
 const monthlyAggregate = (
   Model,
@@ -295,9 +299,13 @@ const monthlyAggregate = (
   valueExpr,
   company,
   dateRange,
-  additionalMatch = {},
+  type = "",
 ) => {
-  const match = { company, ...additionalMatch };
+  const match = { company };
+
+  if (type === "budget") {
+    match.status = "Approved";
+  }
 
   if (dateRange && (dateRange.$gte || dateRange.$lte)) {
     match[dateField] = dateRange;
@@ -309,11 +317,23 @@ const monthlyAggregate = (
       $project: {
         monthKey: {
           $concat: [
-            { $dateToString: { format: "%b", date: `$${dateField}` } },
+            {
+              $dateToString: {
+                format: "%b",
+                date: `$${dateField}`,
+                timezone: "Asia/Kolkata",
+              },
+            },
             "-",
             {
               $substr: [
-                { $dateToString: { format: "%Y", date: `$${dateField}` } },
+                {
+                  $dateToString: {
+                    format: "%Y",
+                    date: `$${dateField}`,
+                    timezone: "Asia/Kolkata",
+                  },
+                },
                 2,
                 2,
               ],
@@ -323,13 +343,10 @@ const monthlyAggregate = (
         amount: valueExpr,
       },
     },
-    // { $group: { _id: "$monthKey", total: { $sum: "$amount" } } },
     {
       $group: {
         _id: "$monthKey",
         total: { $sum: "$amount" },
-        totalEntries: { $sum: 1 },
-        values: { $push: "$amount" },
       },
     },
   ]);
