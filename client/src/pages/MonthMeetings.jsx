@@ -21,51 +21,79 @@ const MonthMeetings = () => {
     setSelectedMeeting(originalMeeting || meeting);
   };
 
+  const EMPTY_DISPLAY_VALUES = new Set([
+    "",
+    "na",
+    "n/a",
+    "null",
+    "undefined",
+    "unknown",
+    "invalid date",
+    "invalid time",
+  ]);
+
+  const sanitizeDisplayValue = (value, fallback = "") => {
+    if (value === null || value === undefined) return fallback;
+    if (typeof value !== "string") return value;
+
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return fallback;
+
+    return EMPTY_DISPLAY_VALUES.has(trimmedValue.toLowerCase())
+      ? fallback
+      : trimmedValue;
+  };
+
   const getDisplayDuration = (meeting) => {
     const startTime = meeting?.startTime;
     const endTime = meeting?.endTime;
 
-    if (!startTime || !endTime) return meeting?.duration || "N/A";
+    if (!startTime || !endTime) {
+      return sanitizeDisplayValue(meeting?.duration);
+    }
 
     const durationInMinutes = dayjs(endTime).diff(dayjs(startTime), "minute");
 
     if (!Number.isFinite(durationInMinutes) || durationInMinutes < 0) {
-      return meeting?.duration || "N/A";
+      return sanitizeDisplayValue(meeting?.duration);
     }
 
     return `${durationInMinutes}min`;
   };
 
   const getPersonDisplayName = (person) => {
-    if (!person) return "N/A";
-    if (typeof person === "string") return person;
+    if (!person) return "";
+    if (typeof person === "string") return sanitizeDisplayValue(person);
 
-    return (
+    return sanitizeDisplayValue(
       person.employeeName ||
       [person.firstName, person.middleName, person.lastName]
         .filter(Boolean)
         .join(" ") ||
-      person.name ||
-      "N/A"
+      person.name
     );
   };
 
   const getDepartmentDisplayName = (department) => {
-    if (!department) return "Unknown";
-    if (typeof department === "string") return department;
+    if (!department) return "";
+    if (typeof department === "string") return sanitizeDisplayValue(department);
     if (Array.isArray(department)) {
-      return department.map((item) => item?.name || item).filter(Boolean).join(", ") || "Unknown";
+      return sanitizeDisplayValue(
+        department.map((item) => item?.name || item).filter(Boolean).join(", ")
+      );
     }
 
-    return department.name || "Unknown";
+    return sanitizeDisplayValue(department.name);
   };
 
-  const getCompanyDisplayName = (meeting, fallback = "N/A") =>
-    meeting?.client ||
-    meeting?.externalClient ||
-    meeting?.companyName ||
-    meeting?.company?.companyName ||
-    fallback;
+  const getCompanyDisplayName = (meeting, fallback = "") =>
+    sanitizeDisplayValue(
+      meeting?.client ||
+      meeting?.externalClient ||
+      meeting?.companyName ||
+      meeting?.company?.companyName,
+      fallback
+    );
 
 
   const statusColors = {
@@ -81,12 +109,42 @@ const MonthMeetings = () => {
   };
 
   const getParticipantDisplayName = (participant = {}) => {
-    if (typeof participant === "string") return participant;
-    if (participant?.employeeName) return participant.employeeName;
+    if (typeof participant === "string") {
+      return sanitizeDisplayValue(participant);
+    }
+    if (!participant || typeof participant !== "object") return "";
 
-    return [participant?.firstName, participant?.middleName, participant?.lastName]
-      .filter(Boolean)
-      .join(" ");
+    const directName = sanitizeDisplayValue(
+      participant?.employeeName ||
+      participant?.name ||
+      participant?.fullName ||
+      participant?.userName
+    );
+    if (directName) return directName;
+
+    const combinedName = sanitizeDisplayValue(
+      [
+        participant?.firstName,
+        participant?.middleName,
+        participant?.lastName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+    );
+    if (combinedName) return combinedName;
+
+    return sanitizeDisplayValue(
+      participant?.user?.employeeName ||
+      participant?.user?.name ||
+      participant?.user?.fullName ||
+      [
+        participant?.user?.firstName,
+        participant?.user?.middleName,
+        participant?.user?.lastName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+    );
   };
 
   const formatParticipantsForExport = (participants = []) =>
@@ -95,13 +153,20 @@ const MonthMeetings = () => {
       .filter(Boolean)
       .join(", ");
 
+  const formatMeetingDate = (value) => {
+    if (!value) return "";
+    const parsedDate = dayjs(value);
+    return parsedDate.isValid() ? parsedDate.format("DD-MM-YYYY") : "";
+  };
+
 
   const columns = [
     { field: "srNo", headerName: "Sr No" },
+    { field: "meetingType", headerName: "Type"},
     { field: "roomName", headerName: "Room Name" },
-    { field: "startDate", headerName: "Date" },
-    { field: "startTime", headerName: "Start Time" },
-    { field: "endTime", headerName: "End Time" },
+    { field: "meetingDay", headerName: "Date" },
+    { field: "meetingStart", headerName: "Start Time" },
+    { field: "meetingEnd", headerName: "End Time" },
     {
       field: "meetingStatus",
       headerName: "Meeting Status",
@@ -133,6 +198,7 @@ const MonthMeetings = () => {
             <AvatarGroup max={4}>
               {participants?.map((participant, index) => {
                 const participantName = getParticipantDisplayName(participant);
+                if (!participantName) return null;
                 return (
                   <Avatar
                     key={index}
@@ -152,7 +218,6 @@ const MonthMeetings = () => {
     { field: "subject", headerName: "Title", hide: true },
     { field: "agenda", headerName: "Agenda", hide: true },
     { field: "durationDisplay", headerName: "Duration", hide: true },
-    { field: "meetingType", headerName: "Type", hide: true },
     { field: "companyDisplay", headerName: "Company", hide: true },
     { field: "bookedByDisplay", headerName: "Booked By", hide: true },
     { field: "receptionistDisplay", headerName: "Receptionist", hide: true },
@@ -201,38 +266,45 @@ const MonthMeetings = () => {
         : [],
       participants: formatParticipantsForExport(meeting.participants),
 
-      startDate: !isNaN(parsedStartDate)
+      meetingDay: !isNaN(parsedStartDate)
         ? dayjs(parsedStartDate).format("DD-MM-YYYY")
-        : "Invalid Date",
+        : "",
 
-      startTime: !isNaN(parsedStartTime)
+      meetingStart: !isNaN(parsedStartTime)
         ? new Intl.DateTimeFormat("en-GB", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
         }).format(parsedStartTime).toUpperCase()  // AM/PM uppercase
-        : "Invalid Time",
+        : "",
 
-      endTime: !isNaN(parsedEndTime)
+      meetingEnd: !isNaN(parsedEndTime)
         ? new Intl.DateTimeFormat("en-GB", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
         }).format(parsedEndTime).toUpperCase()
-        : "Invalid Time",
+        : "",
 
-      clientCompanyName:
-        meeting.client || meeting.externalClient || "BIZ Nest",
-          durationDisplay: getDisplayDuration(meeting),
+      clientCompanyName: getCompanyDisplayName(meeting, "BIZ Nest"),
+      durationDisplay: getDisplayDuration(meeting),
       companyDisplay: getCompanyDisplayName(meeting),
       bookedByDisplay: getPersonDisplayName(meeting.bookedBy),
       receptionistDisplay: getPersonDisplayName(meeting.receptionist),
       departmentDisplay: getDepartmentDisplayName(meeting.department),
       locationDisplay:
         meeting.location?.unitNo || meeting.location?.unitName
-          ? `${meeting.location?.unitNo || "N/A"} (${meeting.location?.unitName || "N/A"})`
-          : "N/A",
-      buildingDisplay: meeting.location?.building?.buildingName || "N/A",
+          ? sanitizeDisplayValue(
+              `${sanitizeDisplayValue(meeting.location?.unitNo) || ""}${
+                sanitizeDisplayValue(meeting.location?.unitName)
+                  ? ` (${sanitizeDisplayValue(meeting.location?.unitName)})`
+                  : ""
+              }`
+            )
+          : "",
+      buildingDisplay: sanitizeDisplayValue(
+        meeting.location?.building?.buildingName
+      ),
 
       srNo: index + 1,
     };
@@ -267,7 +339,7 @@ const MonthMeetings = () => {
             />
             <DetalisFormatted
               title="Date"
-              detail={selectedMeeting?.date || "N/A"}
+              detail={formatMeetingDate(selectedMeeting?.date)}
             />
             <DetalisFormatted
               title="Time"
@@ -300,7 +372,7 @@ const MonthMeetings = () => {
                 selectedMeeting.participants
                   ?.map(getParticipantDisplayName)
                   .filter(Boolean)
-                  .join(", ") || "N/A"
+                  .join(", ")
               }
             />
             <DetalisFormatted
