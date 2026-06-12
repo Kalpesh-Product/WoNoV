@@ -70,7 +70,10 @@ const fetchMeetingReportService = async ({
           populate: { path: "departments", select: "name" },
         },
         { path: "client", select: "clientName" },
-        { path: "externalClient", select: "registeredClientCompany" },
+        {
+          path: "externalClient",
+          select: "registeredClientCompany visitorCompany",
+        },
         // { path: "externalClient", select: "companyName pocName mobileNumber" },
         { path: "internalParticipants", select: "firstName lastName email" },
         { path: "clientParticipants", select: "employeeName email" },
@@ -207,12 +210,23 @@ const fetchMeetingReportService = async ({
 
       return typeFilteredMeetings.map((meeting) => {
         const effectiveEndTime = getEffectiveEndTime(meeting);
-        const client =
-          meeting?.company?.companyName ||
-          meeting.client ||
-          meeting.companyName ||
-          meeting.externalClient ||
-          "N/A";
+
+        const participants =
+          meetingTypeFilter === "external"
+            ? meeting.externalParticipants || []
+            : [
+                ...(meeting.internalParticipants || []),
+                ...(meeting.clientParticipants || []),
+              ];
+
+        const client = meeting.client
+          ? meeting?.client?.clientName
+          : meeting?.externalClient
+            ? meeting?.externalClient?.visitorCompany
+            : meeting.meetingType === "Internal"
+              ? "BIZ Nest"
+              : null;
+
         return {
           client,
           bookedBy:
@@ -226,7 +240,8 @@ const fetchMeetingReportService = async ({
           // meetingType: meeting.meetingType,
           subject: meeting.subject,
           agenda: meeting.agenda,
-          date: meeting.date,
+          startDate: meeting.startDate,
+          endDate: meeting.endDate,
           duration: formatDuration(meeting.startTime, effectiveEndTime),
           startTime: meeting.startTime,
           endTime: effectiveEndTime,
@@ -237,12 +252,14 @@ const fetchMeetingReportService = async ({
               .filter(Boolean)
               .join(", "),
           }),
-          companyName: client,
+
           participants: formatParticipants(participants),
           receptionist: formatPersonName(meeting.receptionist),
           location: meeting.location?.unitNo,
           meetingStatus: meeting.meetingStatus,
           ...(type === "external" && {
+            registeredClientCompany:
+              meeting?.externalClient?.registeredClientCompany,
             paymentAmount: meeting.paymentAmount ?? 0,
             paymnetDiscountAmount: meeting.discountAmount ?? 0,
             paymentMode: meeting.paymentMode,

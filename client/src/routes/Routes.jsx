@@ -670,6 +670,36 @@ export const routes = createBrowserRouter([
                         path: "mix-bag",
                         element: <MixBag />,
                       },
+                       {
+                        path: "mix-bag/revenue",
+                        element: <TotalRevenueLayout />,
+                        children: [
+                          {
+                            path: "total-revenue",
+                            element: <TotalRevenue />,
+                          },
+                          {
+                            path: "co-working",
+                            element: <CoWorking />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <MeetingRevenue />,
+                          },
+                          {
+                            path: "virtual-office",
+                            element: <VirtualOffice />,
+                          },
+                          {
+                            path: "workation",
+                            element: <Workations />,
+                          },
+                          {
+                            path: "alt-revenue",
+                            element: <AltRevenues />,
+                          },
+                        ],
+                      },
                       {
                         path: "mix-bag/manage-meetings",
                         element: <ManageMeetingsFinanceLayout />,

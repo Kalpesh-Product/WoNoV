@@ -7,6 +7,11 @@ const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const fetchBudgetVoucherService = async ({
   company,
@@ -236,18 +241,16 @@ const fetchVoucherService = async ({
 
 const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
 
-// income = revenue || totalAmount || invoiceAmount || taxableAmount || 0
-const incomeValueExpr = {
-  $ifNull: [
-    "$revenue",
-    {
-      $ifNull: [
-        "$totalAmount",
-        {
-          $ifNull: ["$invoiceAmount", { $ifNull: ["$taxableAmount", 0] }],
-        },
-      ],
-    },
+// Keep report income aligned with the Overall Profit Loss dashboard, which
+// reports taxable/net income where that field is available.
+const meetingIncomeValueExpr = { $ifNull: ["$taxable", 0] };
+const taxableIncomeValueExpr = { $ifNull: ["$taxableAmount", 0] };
+const revenueIncomeValueExpr = { $ifNull: ["$revenue", 0] };
+const virtualOfficeIncomeValueExpr = {
+  $cond: [
+    { $ne: [{ $ifNull: ["$taxableAmount", 0] }, 0] },
+    "$taxableAmount",
+    { $ifNull: ["$revenue", 0] },
   ],
 };
 
@@ -266,23 +269,43 @@ const extractDateRange = (dateFilter = {}) => {
 };
 
 // Generates ["Jan-26", "Feb-26", "Mar-26", "Apr-26", "May-26"] style month list
+
 const generateMonthRange = (range) => {
   if (!range || (!range.$gte && !range.$lte)) return null;
 
-  const start = dayjs(range.$gte || range.$lte).startOf("month");
-  const end = dayjs(range.$lte || range.$gte).startOf("month");
+  const start = dayjs
+    .utc(range.$gte || range.$lte)
+    .tz("Asia/Kolkata")
+    .startOf("month");
+  const end = dayjs
+    .utc(range.$lte || range.$gte)
+    .tz("Asia/Kolkata")
+    .startOf("month");
 
   const months = [];
   let cursor = start;
+
   while (cursor.isBefore(end) || cursor.isSame(end)) {
     months.push(cursor.format("MMM-YY"));
     cursor = cursor.add(1, "month");
   }
+
   return months;
 };
 
-const monthlyAggregate = (Model, dateField, valueExpr, company, dateRange) => {
+const monthlyAggregate = (
+  Model,
+  dateField,
+  valueExpr,
+  company,
+  dateRange,
+  type = "",
+) => {
   const match = { company };
+
+  if (type === "budget") {
+    match.status = "Approved";
+  }
 
   if (dateRange && (dateRange.$gte || dateRange.$lte)) {
     match[dateField] = dateRange;
@@ -294,11 +317,23 @@ const monthlyAggregate = (Model, dateField, valueExpr, company, dateRange) => {
       $project: {
         monthKey: {
           $concat: [
-            { $dateToString: { format: "%b", date: `$${dateField}` } },
+            {
+              $dateToString: {
+                format: "%b",
+                date: `$${dateField}`,
+                timezone: "Asia/Kolkata",
+              },
+            },
             "-",
             {
               $substr: [
-                { $dateToString: { format: "%Y", date: `$${dateField}` } },
+                {
+                  $dateToString: {
+                    format: "%Y",
+                    date: `$${dateField}`,
+                    timezone: "Asia/Kolkata",
+                  },
+                },
                 2,
                 2,
               ],
@@ -308,8 +343,30 @@ const monthlyAggregate = (Model, dateField, valueExpr, company, dateRange) => {
         amount: valueExpr,
       },
     },
-    { $group: { _id: "$monthKey", total: { $sum: "$amount" } } },
+    {
+      $group: {
+        _id: "$monthKey",
+        total: { $sum: "$amount" },
+      },
+    },
   ]);
+};
+
+const logProfitLossSourceCalculation = (source, monthlyData) => {
+  const includedMonthlyData = monthlyData.filter(
+    ({ _id: month }) => !excludedMonths.includes(month),
+  );
+
+  console.log(`[ProfitLossReport] ${source} calculation`, {
+    totalEntries: includedMonthlyData.reduce(
+      (sum, { totalEntries = 0 }) => sum + totalEntries,
+      0,
+    ),
+    values: includedMonthlyData.flatMap(({ _id: month, values = [] }) =>
+      values.map((value) => ({ month, value })),
+    ),
+    total: includedMonthlyData.reduce((sum, { total = 0 }) => sum + total, 0),
+  });
 };
 
 const fetchProfitLossReportService = async ({ company, dateFilter }) => {
@@ -326,40 +383,53 @@ const fetchProfitLossReportService = async ({ company, dateFilter }) => {
     monthlyAggregate(
       MeetingRevenue,
       "date",
-      incomeValueExpr,
+      meetingIncomeValueExpr,
       company,
       dateRange,
     ),
     monthlyAggregate(
       AlternateRevenue,
       "invoiceCreationDate",
-      incomeValueExpr,
+      taxableIncomeValueExpr,
       company,
       dateRange,
     ),
     monthlyAggregate(
       VirtualOfficeRevenue,
       "rentDate",
-      incomeValueExpr,
+      virtualOfficeIncomeValueExpr,
       company,
       dateRange,
     ),
     monthlyAggregate(
       WorkationRevenue,
       "date",
-      incomeValueExpr,
+      taxableIncomeValueExpr,
       company,
       dateRange,
     ),
     monthlyAggregate(
       CoworkingRevenue,
       "rentDate",
-      incomeValueExpr,
+      revenueIncomeValueExpr,
       company,
       dateRange,
     ),
-    monthlyAggregate(Budget, "dueDate", expenseValueExpr, company, dateRange),
+    monthlyAggregate(Budget, "dueDate", expenseValueExpr, company, dateRange, {
+      status: "Approved",
+    }),
   ]);
+
+  [
+    ["Meeting revenue", meetingRevenue],
+    ["Alternate revenue", alternateRevenue],
+    ["Virtual office revenue", virtualOfficeRevenue],
+    ["Workation revenue", workationRevenue],
+    ["Coworking revenue", coworkingRevenue],
+    ["Approved budget expense", expense],
+  ].forEach(([source, monthlyData]) =>
+    logProfitLossSourceCalculation(source, monthlyData),
+  );
 
   // Merge income sources
   const incomeMap = {};
