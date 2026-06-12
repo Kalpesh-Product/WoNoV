@@ -236,18 +236,16 @@ const fetchVoucherService = async ({
 
 const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
 
-// income = revenue || totalAmount || invoiceAmount || taxableAmount || 0
-const incomeValueExpr = {
-  $ifNull: [
-    "$revenue",
-    {
-      $ifNull: [
-        "$totalAmount",
-        {
-          $ifNull: ["$invoiceAmount", { $ifNull: ["$taxableAmount", 0] }],
-        },
-      ],
-    },
+// Keep report income aligned with the Overall Profit Loss dashboard, which
+// reports taxable/net income where that field is available.
+const meetingIncomeValueExpr = { $ifNull: ["$taxable", 0] };
+const taxableIncomeValueExpr = { $ifNull: ["$taxableAmount", 0] };
+const revenueIncomeValueExpr = { $ifNull: ["$revenue", 0] };
+const virtualOfficeIncomeValueExpr = {
+  $cond: [
+    { $ne: [{ $ifNull: ["$taxableAmount", 0] }, 0] },
+    "$taxableAmount",
+    { $ifNull: ["$revenue", 0] },
   ],
 };
 
@@ -281,8 +279,25 @@ const generateMonthRange = (range) => {
   return months;
 };
 
-const monthlyAggregate = (Model, dateField, valueExpr, company, dateRange) => {
-  const match = { company };
+// const monthlyAggregate = (
+//   Model,
+//   dateField,
+//   valueExpr,
+//   company,
+//   dateRange,
+//   type = "",
+// ) => {
+//   const match = { company };
+
+const monthlyAggregate = (
+  Model,
+  dateField,
+  valueExpr,
+  company,
+  dateRange,
+  additionalMatch = {},
+) => {
+  const match = { company, ...additionalMatch };
 
   if (dateRange && (dateRange.$gte || dateRange.$lte)) {
     match[dateField] = dateRange;
@@ -308,8 +323,33 @@ const monthlyAggregate = (Model, dateField, valueExpr, company, dateRange) => {
         amount: valueExpr,
       },
     },
-    { $group: { _id: "$monthKey", total: { $sum: "$amount" } } },
+    // { $group: { _id: "$monthKey", total: { $sum: "$amount" } } },
+    {
+      $group: {
+        _id: "$monthKey",
+        total: { $sum: "$amount" },
+        totalEntries: { $sum: 1 },
+        values: { $push: "$amount" },
+      },
+    },
   ]);
+};
+
+const logProfitLossSourceCalculation = (source, monthlyData) => {
+  const includedMonthlyData = monthlyData.filter(
+    ({ _id: month }) => !excludedMonths.includes(month),
+  );
+
+  console.log(`[ProfitLossReport] ${source} calculation`, {
+    totalEntries: includedMonthlyData.reduce(
+      (sum, { totalEntries = 0 }) => sum + totalEntries,
+      0,
+    ),
+    values: includedMonthlyData.flatMap(({ _id: month, values = [] }) =>
+      values.map((value) => ({ month, value })),
+    ),
+    total: includedMonthlyData.reduce((sum, { total = 0 }) => sum + total, 0),
+  });
 };
 
 const fetchProfitLossReportService = async ({ company, dateFilter }) => {
@@ -326,40 +366,53 @@ const fetchProfitLossReportService = async ({ company, dateFilter }) => {
     monthlyAggregate(
       MeetingRevenue,
       "date",
-      incomeValueExpr,
+      meetingIncomeValueExpr,
       company,
       dateRange,
     ),
     monthlyAggregate(
       AlternateRevenue,
       "invoiceCreationDate",
-      incomeValueExpr,
+      taxableIncomeValueExpr,
       company,
       dateRange,
     ),
     monthlyAggregate(
       VirtualOfficeRevenue,
       "rentDate",
-      incomeValueExpr,
+      virtualOfficeIncomeValueExpr,
       company,
       dateRange,
     ),
     monthlyAggregate(
       WorkationRevenue,
       "date",
-      incomeValueExpr,
+      taxableIncomeValueExpr,
       company,
       dateRange,
     ),
     monthlyAggregate(
       CoworkingRevenue,
       "rentDate",
-      incomeValueExpr,
+      revenueIncomeValueExpr,
       company,
       dateRange,
     ),
-    monthlyAggregate(Budget, "dueDate", expenseValueExpr, company, dateRange),
+    monthlyAggregate(Budget, "dueDate", expenseValueExpr, company, dateRange, {
+      status: "Approved",
+    }),
   ]);
+
+  [
+    ["Meeting revenue", meetingRevenue],
+    ["Alternate revenue", alternateRevenue],
+    ["Virtual office revenue", virtualOfficeRevenue],
+    ["Workation revenue", workationRevenue],
+    ["Coworking revenue", coworkingRevenue],
+    ["Approved budget expense", expense],
+  ].forEach(([source, monthlyData]) =>
+    logProfitLossSourceCalculation(source, monthlyData),
+  );
 
   // Merge income sources
   const incomeMap = {};
