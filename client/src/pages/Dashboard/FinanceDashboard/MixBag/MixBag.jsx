@@ -12,7 +12,12 @@ const MixBag = () => {
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const routes = [
-      {
+     {
+      title: "Revenue",
+      route: "/app/dashboard/finance-dashboard/mix-bag/revenue",
+      permission: PERMISSIONS.FINANCE_REVENUE_MIX_BAG.value,
+    },
+    {
       title: "Manage Meetings",
       route: "/app/dashboard/finance-dashboard/mix-bag/manage-meetings",
       permission: PERMISSIONS.FINANCE_MANAGE_MEETINGS_MIX_BAG.value,
