@@ -289,7 +289,9 @@ const fetchVirtualOfficeRevenueReportService = async ({
     .exec();
 
   if (isReport) {
-    return revenues.map(({ pastDueDate, ...item }) => item);
+    return revenues.map(
+      ({ pastDueDate, unitNo, unitName, buildingName, ...item }) => item,
+    );
   }
 
   return revenues;
