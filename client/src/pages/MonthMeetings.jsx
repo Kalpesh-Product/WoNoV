@@ -81,12 +81,19 @@ const MonthMeetings = () => {
   };
 
   const getParticipantDisplayName = (participant = {}) => {
+    if (typeof participant === "string") return participant;
     if (participant?.employeeName) return participant.employeeName;
 
     return [participant?.firstName, participant?.middleName, participant?.lastName]
       .filter(Boolean)
       .join(" ");
   };
+
+  const formatParticipantsForExport = (participants = []) =>
+    (Array.isArray(participants) ? participants : [])
+      .map(getParticipantDisplayName)
+      .filter(Boolean)
+      .join(", ");
 
 
   const columns = [
@@ -118,8 +125,8 @@ const MonthMeetings = () => {
       field: "participants",
       headerName: "Participants",
       cellRenderer: (params) => {
-        const participants = Array.isArray(params.data?.participants)
-          ? params.data?.participants
+        const participants = Array.isArray(params.data?.participantsData)
+          ? params.data?.participantsData
           : [];
         return (
           <div className="flex justify-start items-center">
@@ -189,6 +196,10 @@ const MonthMeetings = () => {
 
     return {
       ...meeting,
+      participantsData: Array.isArray(meeting.participants)
+        ? meeting.participants
+        : [],
+      participants: formatParticipantsForExport(meeting.participants),
 
       startDate: !isNaN(parsedStartDate)
         ? dayjs(parsedStartDate).format("DD-MM-YYYY")
