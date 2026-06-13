@@ -3,6 +3,9 @@ const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const WorkationClients = require("../../models/sales/WorkationClients");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const {
+  fetchWorkationRevenueReportService,
+} = require("../../services/reports/revenue");
 const createWorkationRevenue = async (req, res, next) => {
   try {
     const {
@@ -39,13 +42,9 @@ const createWorkationRevenue = async (req, res, next) => {
 const getWorkationRevenues = async (req, res, next) => {
   try {
     const company = req.company;
+    const payload = await fetchWorkationRevenueReportService({ company });
 
-    const revenues = await WorkationRevenue.find({ company })
-      .populate("client")
-      .lean()
-      .exec();
-
-    res.status(200).json(revenues);
+    return res.status(200).json(payload);
   } catch (error) {
     next(error);
   }
