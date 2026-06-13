@@ -1085,6 +1085,48 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
     //   return nextRow;
     // });
   };
+
+  const mergeFinanceCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "finance") return rows;
+
+    const normalizedReportName = String(reportName)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
+      .replace(/-report$/, "");
+
+    const isOpenDeskClientsReport =
+      normalizedReportName.includes("open-desk-clients") ||
+      normalizedReportName.includes("open-desk-client") ||
+      normalizedReportName.includes("open-desk");
+
+    const isExternalClientsReport =
+      normalizedReportName.includes("external-clients") ||
+      normalizedReportName.includes("external-client");
+
+    const shouldMergeVisitorLikeFields =
+      isOpenDeskClientsReport || isExternalClientsReport;
+
+    if (!shouldMergeVisitorLikeFields) return rows;
+
+    return rows.map((row) => {
+      const nextRow = mergeVisitorLikeCsvFields(row);
+
+      delete nextRow.unit;
+      delete nextRow.building;
+      delete nextRow.location;
+      delete nextRow["unit.unitNo"];
+      delete nextRow["unit.unitName"];
+      delete nextRow["unit.building.buildingName"];
+      delete nextRow["location.unitNo"];
+      delete nextRow["location.unitName"];
+      delete nextRow["location.building.buildingName"];
+
+      return nextRow;
+    });
+  };
+
  const mergeSalesCsvFields = (rows = [], reportName = "") => {
   if (normalizedModuleKey !== "sales") return rows;
 
@@ -1749,14 +1791,17 @@ const mergeHrCsvFields = (rows = []) => {
       : normalizeReportRows(reportData);
     const normalizedRows = mergeHrCsvFields(
       mergeVisitorCsvFields(
-        mergeSalesCsvFields(
-          mergeAssetCsvFields(
-            mergeMeetingCsvFields(
-              mergePerformanceCsvFields(
-                mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
-                reportName,
+        mergeFinanceCsvFields(
+          mergeSalesCsvFields(
+            mergeAssetCsvFields(
+              mergeMeetingCsvFields(
+                mergePerformanceCsvFields(
+                  mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+                  reportName,
+                ),
               ),
             ),
+            reportName,
           ),
           reportName,
         ),
