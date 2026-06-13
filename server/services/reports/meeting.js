@@ -226,7 +226,7 @@ const fetchMeetingReportService = async ({
         const client = meeting.client
           ? meeting?.client?.clientName
           : meeting?.externalClient
-            ? meeting?.externalClient?.visitorCompany
+            ? meeting?.externalClient?.registeredClientCompany
             : meeting.meetingType === "Internal"
               ? "BIZ Nest"
               : null;
@@ -260,8 +260,6 @@ const fetchMeetingReportService = async ({
           location: meeting.bookedRoom?.location,
           meetingStatus: meeting.status,
           ...(type === "external" && {
-            registeredClientCompany:
-              meeting?.externalClient?.registeredClientCompany,
             paymentAmount: meeting.paymentAmount ?? 0,
             paymentDiscountAmount: meeting.discountAmount ?? 0,
             paymentMode: meeting.paymentMode,
