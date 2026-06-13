@@ -1116,6 +1116,9 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
   const isVirtualOfficeClientsReport = normalizedReportName.includes(
     "virtual-office-clients",
   );
+  const isVirtualOfficeRevenueReport = normalizedReportName.includes(
+    "virtual-office-revenue",
+  );
   const shouldAddSalesUnitFields =
     hasSalesLocationFields || isCoworkingOrVirtualOfficeClientsReport;
 
@@ -1175,9 +1178,11 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       if (isVirtualOfficeClientsReport) {
         nextRow["Total Term"] = row?.totalTerm ?? row?.["totalTerm"] ?? "";
       }
-      nextRow["Unit No"] = unitNo;
-      nextRow["Unit Name"] = unitName;
-      nextRow["Building Name"] = buildingName;
+      if (!isVirtualOfficeRevenueReport) {
+        nextRow["Unit No"] = unitNo;
+        nextRow["Unit Name"] = unitName;
+        nextRow["Building Name"] = buildingName;
+      }
      }
 
       delete nextRow.unit;
