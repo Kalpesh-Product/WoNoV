@@ -21,6 +21,7 @@ require("./sales/WorkationRevenue");
 //Client
 require("./sales/ClientService");
 require("./sales/CoworkingClient");
+require("./sales/WorkationClients");
 require("./sales/CoworkingMembers");
 
 //Tickets

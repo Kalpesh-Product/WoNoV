@@ -4,6 +4,7 @@ const CoworkingClient = require("../../models/sales/CoworkingClient");
 const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const mongoose = require("mongoose");
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
+const WorkationClient = require("../../models/sales/WorkationClients");
 
 const DELETED_MEMBER_VIEW_ROLES = new Set(["master admin", "super admin"]);
 
@@ -67,7 +68,6 @@ const fetchCoworkingClientReportService = async ({
 }) => {
   const { coworkingclientid, unitId, active } = query;
 
-  console.log("report clients", isReport);
   if (
     coworkingclientid &&
     !mongoose.Types.ObjectId.isValid(coworkingclientid)
@@ -152,7 +152,7 @@ const fetchCoworkingClientReportService = async ({
     }
   }
 
-  const allEntities = [...hostCompanyData, ...clients];
+  const allEntities = [...(isReport ? [] : hostCompanyData), ...clients];
 
   if (!allEntities.length) {
     return [];
@@ -284,8 +284,15 @@ const fetchVirtualOfficeClientsReportService = async ({
 
   if (isReport) {
     return (clients || []).map((client) => {
-      const { service, cabinTotal, openTotal, rentStatus, ...restClient } =
-        client;
+      const {
+        service,
+        cabinTotal,
+        openTotal,
+        rentStatus,
+        perDeskMeetingCredits,
+        totalMeetingCredits,
+        ...restClient
+      } = client;
 
       return {
         ...restClient,
@@ -303,6 +310,21 @@ const fetchVirtualOfficeClientsReportService = async ({
       };
     });
   }
+
+  return clients || [];
+};
+
+const fetchWorkationClientsReportService = async ({
+  dateFilter,
+  query = {},
+  isReport = false,
+} = {}) => {
+  let filter = {};
+  if (dateFilter?.startDate) {
+    filter.startDate = dateFilter.startDate;
+  }
+
+  const clients = await WorkationClient.find(filter).lean().exec();
 
   return clients || [];
 };
@@ -351,4 +373,5 @@ module.exports = {
   fetchCoworkingClientReportService,
   fetchVirtualOfficeClientsReportService,
   fetchCoworkingMembersReportService,
+  fetchWorkationClientsReportService,
 };

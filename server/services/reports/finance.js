@@ -93,6 +93,7 @@ const fetchBudgetVoucherService = async ({
   dateFilter,
   departmentId,
   type = "",
+  isReport,
 }) => {
   const query = { company };
 
@@ -102,6 +103,10 @@ const fetchBudgetVoucherService = async ({
 
   if (dateFilter) {
     query.dueDate = dateFilter.dueDate;
+  }
+
+  if (type === "payout") {
+    query.status = "Approved";
   }
 
   const isPayout = type === "payout";
@@ -154,10 +159,19 @@ const fetchBudgetVoucherService = async ({
     return budget;
   });
 
+  if (isReport) {
+    console.log("type", type);
+    return {
+      allBudgets: budgets.map((budget) =>
+        mapBudgetBaseFields(budget, isReport, type),
+      ),
+    };
+  }
+
   return { allBudgets };
 };
 
-const mapBudgetBaseFields = (budget = {}, isReport) => {
+const mapBudgetBaseFields = (budget = {}, isReport = false, type = "") => {
   const projectedAmount = budget?.particulars?.length
     ? budget.particulars.reduce(
         (acc, curr) => acc + (curr.particularAmount || 0),
@@ -165,25 +179,29 @@ const mapBudgetBaseFields = (budget = {}, isReport) => {
       )
     : budget.projectedAmount || 0;
 
+  console.log("mapped type", type);
   return {
     department: budget?.department?.name || "-",
     expanseName: budget?.expanseName || "-",
     expanseType: budget?.expanseType || "-",
-    ...(budget?.expanseType !== "Reimbursement" && {
-      projectedAmount: budget?.projectedAmount,
-      paymentType: budget?.paymentType || "-",
-    }),
+    ...(budget?.expanseType !== "Reimbursement" &&
+      type !== "payout" && {
+        projectedAmount: budget?.projectedAmount,
+        paymentType: budget?.paymentType || "-",
+      }),
     actualAmount: budget?.actualAmount ?? "-",
-    building: budget?.unit?.building?.buildingName,
-    unit: budget?.unit?.unitName || "-",
     unitNo: budget?.unit?.unitNo || "-",
     dueDate: budget?.dueDate || null,
-    invoiceName: budget?.invoice?.name || "-",
-    invoiceFile: budget?.invoice?.link || "-",
-    invoiceDate: budget?.invoice?.date || null,
-    isExtraBudget: budget?.isExtraBudget ?? false,
-    approvalStatus: budget?.status || "-",
     paidStatus: budget?.isPaid || "-",
+    ...(type !== "payout" && {
+      building: budget?.unit?.building?.buildingName,
+      unit: budget?.unit?.unitName || "-",
+      invoiceName: budget?.invoice?.name || "-",
+      invoiceFile: budget?.invoice?.link || "-",
+      invoiceDate: budget?.invoice?.date || null,
+      isExtraBudget: budget?.isExtraBudget ?? false,
+      approvalStatus: budget?.status || "-",
+    }),
   };
 };
 

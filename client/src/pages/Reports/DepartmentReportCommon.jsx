@@ -1085,6 +1085,94 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
     //   return nextRow;
     // });
   };
+
+  const mergeFinanceCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "finance") return rows;
+
+    const normalizedReportName = String(reportName)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
+      .replace(/-report$/, "");
+
+    const isOpenDeskClientsReport =
+      normalizedReportName.includes("open-desk-clients") ||
+      normalizedReportName.includes("open-desk-client") ||
+      normalizedReportName.includes("open-desk");
+
+    const isExternalClientsReport =
+      normalizedReportName.includes("external-clients") ||
+      normalizedReportName.includes("external-client");
+
+    const isPayoutsReport = normalizedReportName.includes("payouts");
+
+    const shouldMergeVisitorLikeFields =
+      isOpenDeskClientsReport || isExternalClientsReport;
+
+    const shouldAddFinanceUnitFields = isPayoutsReport;
+
+    if (!shouldMergeVisitorLikeFields && !shouldAddFinanceUnitFields) return rows;
+
+    return rows.map((row) => {
+      let nextRow = shouldMergeVisitorLikeFields
+        ? mergeVisitorLikeCsvFields(row)
+        : { ...row };
+
+      if (shouldAddFinanceUnitFields) {
+        const unitNo = String(
+          row?.["unit.unitNo"] ||
+            row?.unit?.unitNo ||
+            row?.["location.unitNo"] ||
+            row?.location?.unitNo ||
+            row?.unitNo ||
+            "",
+        ).trim();
+        const unitName = String(
+          row?.["unit.unitName"] ||
+            row?.unit?.unitName ||
+            row?.["location.unitName"] ||
+            row?.location?.unitName ||
+            row?.unitName ||
+            "",
+        ).trim();
+        const buildingName = String(
+          row?.["unit.building.buildingName"] ||
+            row?.unit?.building?.buildingName ||
+            row?.["location.building.buildingName"] ||
+            row?.location?.building?.buildingName ||
+            row?.["building.buildingName"] ||
+            row?.building?.buildingName ||
+            row?.buildingName ||
+            "",
+        ).trim();
+
+        nextRow["Unit No"] = unitNo;
+        nextRow["Unit Name"] = unitName;
+        nextRow["Building Name"] = buildingName;
+      }
+
+      delete nextRow.unit;
+      delete nextRow.building;
+      delete nextRow.location;
+      delete nextRow["unit.unitNo"];
+      delete nextRow["unit.unitName"];
+      delete nextRow["unit.building.buildingName"];
+      delete nextRow["building.buildingName"];
+      delete nextRow["location.unitNo"];
+      delete nextRow["location.unitName"];
+      delete nextRow["location.building.buildingName"];
+
+      if (shouldAddFinanceUnitFields) {
+        delete nextRow.unitNo;
+        delete nextRow.unitName;
+        delete nextRow.buildingName;
+      }
+
+      return nextRow;
+    });
+  };
+
  const mergeSalesCsvFields = (rows = [], reportName = "") => {
   if (normalizedModuleKey !== "sales") return rows;
 
@@ -1664,7 +1752,7 @@ const mergeHrCsvFields = (rows = []) => {
       delete nextRow.assetId;
       delete nextRow.name;
       delete nextRow.warranty;
-      delete nextRow.departmentAssetId;
+     // delete nextRow.departmentAssetId;
       delete nextRow["vendor.departmentId.name"];
       delete nextRow["assignedAsset.asset"];
       delete nextRow["assignedAsset.approvedBy.firstName"];
@@ -1749,14 +1837,17 @@ const mergeHrCsvFields = (rows = []) => {
       : normalizeReportRows(reportData);
     const normalizedRows = mergeHrCsvFields(
       mergeVisitorCsvFields(
-        mergeSalesCsvFields(
-          mergeAssetCsvFields(
-            mergeMeetingCsvFields(
-              mergePerformanceCsvFields(
-                mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
-                reportName,
+        mergeFinanceCsvFields(
+          mergeSalesCsvFields(
+            mergeAssetCsvFields(
+              mergeMeetingCsvFields(
+                mergePerformanceCsvFields(
+                  mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+                  reportName,
+                ),
               ),
             ),
+            reportName,
           ),
           reportName,
         ),

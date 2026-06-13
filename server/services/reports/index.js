@@ -22,7 +22,10 @@ const {
   fetchInternalVisitorsReportService,
   fetchClientVisitorsReportService,
 } = require("./visitor");
-const { fetchCoworkingRevenueService } = require("./revenue");
+const {
+  fetchCoworkingRevenueService,
+  fetchWorkationRevenueReportService,
+} = require("./revenue");
 
 const { fetchMeetingRevenueReportService } = require("./revenue");
 const { fetchAlternateRevenueReportService } = require("./revenue");
@@ -31,6 +34,7 @@ const {
   fetchCoworkingClientReportService,
   fetchVirtualOfficeClientsReportService,
   fetchCoworkingMembersReportService,
+  fetchWorkationClientsReportService,
 } = require("./client");
 const {
   fetchUsersReportService,
@@ -155,6 +159,10 @@ const reportServiceRegistry = {
       dateField: "rentDate",
     },
   ),
+
+  "workation-clients": createReportService(fetchWorkationClientsReportService, {
+    dateField: "startDate",
+  }),
 
   "alternate-revenue": createReportService(fetchAlternateRevenueReportService, {
     dateField: "invoiceCreationDate",

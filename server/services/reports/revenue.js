@@ -2,6 +2,7 @@ const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
+const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 
 const fetchCoworkingRevenueService = async ({
   dateFilter,
@@ -153,7 +154,6 @@ const fetchAlternateRevenueReportService = async ({
       invoiceCreationDate: item.invoiceCreationDate,
       invoicePaidDate: item.invoicePaidDate,
       gst: item.gst,
-      status: item.status || "Paid",
     });
   });
 
@@ -238,7 +238,7 @@ const fetchMeetingRevenueReportService = async ({
       gst: item.gst,
       status: item.status,
       totalAmount: item.totalAmount,
-      date: item.date,
+      // date: item.date,
       paymentDate: item.paymentDate,
       meetingRoomName: item.meetingRoomName,
       remarks: item.remarks || "",
@@ -297,9 +297,29 @@ const fetchVirtualOfficeRevenueReportService = async ({
   return revenues;
 };
 
+const fetchWorkationRevenueReportService = async ({
+  company,
+  isReport = false,
+}) => {
+  const revenues = await WorkationRevenue.find({ company })
+    .populate("client")
+    .lean()
+    .exec();
+
+  if (isReport) {
+    return revenues.map((rev) => {
+      const { nameOfClient, ...rest } = rev;
+      return rest;
+    });
+  }
+
+  return revenues;
+};
+
 module.exports = {
   fetchCoworkingRevenueService,
   fetchMeetingRevenueReportService,
   fetchAlternateRevenueReportService,
   fetchVirtualOfficeRevenueReportService,
+  fetchWorkationRevenueReportService,
 };
