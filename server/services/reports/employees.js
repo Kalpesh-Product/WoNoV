@@ -37,7 +37,7 @@ const fetchUsersReportService = async ({
   ];
 
   const users = await UserData.find(filter)
-    .select("-password")
+    .select("-password -plainPassword")
     .populate(populateOptions)
     .sort({ startDate: 1 })
     .lean()
@@ -382,6 +382,14 @@ const fetchAttendanceReportService = async ({ company, dateFilter } = {}) => {
     });
   };
 
+  const formatBreakDuration = (totalSecs) => {
+    if (totalSecs === null || totalSecs === undefined) return "-";
+    const secs = Math.floor(totalSecs);
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}m ${s}s`;
+  };
+
   const formatted = attendances.map((att, idx) => {
     const result = {
       ...att,
@@ -392,7 +400,7 @@ const fetchAttendanceReportService = async ({ company, dateFilter } = {}) => {
         att.breaks?.map((brk) => ({
           startBreak: formatClockTime(brk.startBreak),
           endBreak: formatClockTime(brk.endBreak),
-          durationSecs: brk.durationSecs,
+          durationSecs: formatBreakDuration(brk.durationSecs),
         })) ?? [],
     };
 
