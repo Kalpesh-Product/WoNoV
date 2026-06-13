@@ -13,6 +13,81 @@ const timezone = require("dayjs/plugin/timezone");
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+// const fetchBudgetVoucherService = async ({
+//   company,
+//   dateFilter,
+//   departmentId,
+//   type = "",
+// }) => {
+//   const query = { company };
+
+//   console.log("type", type);
+//   console.log("departmentId", departmentId);
+//   if (departmentId && type !== "payout") {
+//     query.department = departmentId;
+//   }
+
+//   if (dateFilter) {
+//     query.dueDate = dateFilter.dueDate;
+//   }
+//   console.log("budget voucher query", query);
+
+//   let budgetQuery = Budget.find(query);
+
+//   if (type === "payout") {
+//     budgetQuery = budgetQuery
+//       .select(
+//         "expanseName expanseType actualAmount dueDate status department unit",
+//       )
+//       .populate([
+//         { path: "department", select: "name" },
+//         { path: "unit", select: "unitNo unitName" },
+//       ]);
+//   }
+
+//   const budgets = await budgetQuery
+//     .populate([
+//       { path: "department", select: "name" },
+//       {
+//         path: "unit",
+//         select: "unitNo unitName",
+//         populate: {
+//           path: "building",
+//           select: "buildingName",
+//           model: "Building",
+//         },
+//       },
+//     ])
+//     .lean()
+//     .exec();
+
+//   // const budgets = await Budget.find(query)
+//   //   .populate([
+//   //     { path: "department", select: "name" },
+//   //     { path: "unit", populate: { path: "building", model: "Building" } },
+//   //   ])
+//   //   .lean()
+//   //   .exec();
+
+//   const allBudgets = budgets.map((budget) => {
+//     if (budget?.particulars?.length) {
+//       const projectedAmount = budget.particulars.reduce(
+//         (acc, curr) => acc + curr.particularAmount,
+//         0,
+//       );
+
+//       return {
+//         ...budget,
+//         projectedAmount,
+//       };
+//     }
+
+//     return budget;
+//   });
+
+//   return { allBudgets };
+// };
+
 const fetchBudgetVoucherService = async ({
   company,
   dateFilter,
@@ -21,8 +96,6 @@ const fetchBudgetVoucherService = async ({
 }) => {
   const query = { company };
 
-  console.log("type", type);
-  console.log("departmentId", departmentId);
   if (departmentId && type !== "payout") {
     query.department = departmentId;
   }
@@ -30,41 +103,45 @@ const fetchBudgetVoucherService = async ({
   if (dateFilter) {
     query.dueDate = dateFilter.dueDate;
   }
-  console.log("budget voucher query", query);
+
+  const isPayout = type === "payout";
 
   let budgetQuery = Budget.find(query);
 
-  if (type === "payout") {
-    budgetQuery = budgetQuery
-      .select(
-        "expanseName expanseType actualAmount dueDate status department unit",
-      )
-      .populate([
-        { path: "department", select: "name" },
-        { path: "unit", select: "unitNo" },
-      ]);
+  if (isPayout) {
+    budgetQuery = budgetQuery;
   }
 
-  const budgets = await budgetQuery
-    .populate([
-      { path: "department", select: "name" },
-      { path: "unit", populate: { path: "building", model: "Building" } },
-    ])
-    .lean()
-    .exec();
+  const populateOptions = isPayout
+    ? [
+        { path: "department", select: "name" },
+        {
+          path: "unit",
+          select: "unitNo unitName",
+          populate: {
+            path: "building",
+            select: "buildingName",
+            model: "Building",
+          },
+        },
+      ]
+    : [
+        { path: "department", select: "name" },
+        {
+          path: "unit",
+          populate: {
+            path: "building",
+            model: "Building",
+          },
+        },
+      ];
 
-  // const budgets = await Budget.find(query)
-  //   .populate([
-  //     { path: "department", select: "name" },
-  //     { path: "unit", populate: { path: "building", model: "Building" } },
-  //   ])
-  //   .lean()
-  //   .exec();
+  const budgets = await budgetQuery.populate(populateOptions).lean().exec();
 
   const allBudgets = budgets.map((budget) => {
     if (budget?.particulars?.length) {
       const projectedAmount = budget.particulars.reduce(
-        (acc, curr) => acc + curr.particularAmount,
+        (acc, curr) => acc + (curr.particularAmount || 0),
         0,
       );
 
