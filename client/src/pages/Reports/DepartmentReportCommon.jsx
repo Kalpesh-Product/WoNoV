@@ -1664,7 +1664,7 @@ const mergeHrCsvFields = (rows = []) => {
       delete nextRow.assetId;
       delete nextRow.name;
       delete nextRow.warranty;
-      delete nextRow.departmentAssetId;
+     // delete nextRow.departmentAssetId;
       delete nextRow["vendor.departmentId.name"];
       delete nextRow["assignedAsset.asset"];
       delete nextRow["assignedAsset.approvedBy.firstName"];
