@@ -211,6 +211,10 @@ const fetchMeetingReportService = async ({
       return typeFilteredMeetings.map((meeting) => {
         const effectiveEndTime = getEffectiveEndTime(meeting);
 
+        const meetingReviews = reviews.find(
+          (review) => review.meeting?.toString() === meeting._id?.toString(),
+        );
+
         const participants =
           meetingTypeFilter === "external"
             ? meeting.externalParticipants || []
@@ -234,9 +238,7 @@ const fetchMeetingReportService = async ({
             meeting.clientBookedBy?.employeeName ||
             formatPersonName(meeting.externalBookedBy) ||
             "Unknown",
-          buildingName: meeting.location?.building?.buildingName,
-          roomName: meeting.roomName,
-          unitName: meeting.location?.unitName,
+          roomName: meeting.bookedRoom?.name,
           // meetingType: meeting.meetingType,
           subject: meeting.subject,
           agenda: meeting.agenda,
@@ -245,7 +247,7 @@ const fetchMeetingReportService = async ({
           duration: formatDuration(meeting.startTime, effectiveEndTime),
           startTime: meeting.startTime,
           endTime: effectiveEndTime,
-          housekeepingStatus: meeting.housekeepingStatus,
+          housekeepingStatus: meeting.houeskeepingStatus,
           ...(type === "internal" && {
             department: (meeting?.bookedBy?.departments || [])
               .map((dept) => dept?.name)
@@ -255,13 +257,13 @@ const fetchMeetingReportService = async ({
 
           participants: formatParticipants(participants),
           receptionist: formatPersonName(meeting.receptionist),
-          location: meeting.location?.unitNo,
-          meetingStatus: meeting.meetingStatus,
+          location: meeting.bookedRoom?.location,
+          meetingStatus: meeting.status,
           ...(type === "external" && {
             registeredClientCompany:
               meeting?.externalClient?.registeredClientCompany,
             paymentAmount: meeting.paymentAmount ?? 0,
-            paymnetDiscountAmount: meeting.discountAmount ?? 0,
+            paymentDiscountAmount: meeting.discountAmount ?? 0,
             paymentMode: meeting.paymentMode,
             paymentStatus: meeting.paymentStatus,
             paymentVerification: meeting.paymentVerification,

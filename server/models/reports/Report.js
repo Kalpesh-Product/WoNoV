@@ -3,11 +3,18 @@ const mongoose = require("mongoose");
 const ReportSchema = new mongoose.Schema(
   {
     module: String,
+    multiModules: [{ type: String }],
     reportKey: {
       type: String,
       unique: true,
     },
     reportName: String,
+    departments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Department",
+      },
+    ],
     departmentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
