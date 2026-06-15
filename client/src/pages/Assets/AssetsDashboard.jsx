@@ -31,10 +31,24 @@ import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
 import humanDate from "../../utils/humanDateForamt";
 import { PERMISSIONS } from "../../constants/permissions";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import {
+  setSelectedDepartment,
+  setSelectedDepartmentName,
+} from "../../redux/slices/assetsSlice";
 
 const AssetsDashboard = () => {
   const { auth } = useAuth();
   const departments = auth.user.departments;
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const currentDepartmentId = auth.user?.departments?.[0]?._id;
+  const currentDepartmentName = auth.user?.departments?.[0]?.name;
+  const roleTitles = auth?.user?.role?.map((item) => item?.roleTitle) || [];
+  const isGlobalAssetsUser = roleTitles.some((roleTitle) =>
+    ["Master Admin", "Super Admin"].includes(roleTitle),
+  );
 
   const axios = useAxiosPrivate();
   //-----------------------MAIN API CALL------------------------------------//
@@ -114,6 +128,24 @@ const AssetsDashboard = () => {
     (card) => !card.permission || userPermissions.includes(card.permission),
   );
   //---------- Nav Cards ---------//
+
+  const handleOwnedAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/view-assets", {
+        state: { assetOwnershipType: "Owned" },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
+      {
+        state: { assetOwnershipType: "Owned" },
+      },
+    );
+  };
 
   const isTopManagement = departments.some(
     (dept) => dept.name === "Top Management",
@@ -604,6 +636,8 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={totalOwnedAssets}
             description={"Assets Owned"}
+            route={"/app/assets/view-assets"}
+            onClick={handleOwnedAssetsClick}
           />
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (

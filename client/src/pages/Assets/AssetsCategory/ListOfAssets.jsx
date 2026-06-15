@@ -30,7 +30,7 @@ import { queryClient } from "../../../main";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import StatusChip from "../../../components/StatusChip";
 
 const ListOfAssets = () => {
@@ -43,6 +43,8 @@ const ListOfAssets = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
   const navigate = useNavigate();
+  const location = useLocation();
+  const assetOwnershipTypeFilter = location.state?.assetOwnershipType;
 
   //---------------------Forms----------------------//
   const {
@@ -142,7 +144,7 @@ const ListOfAssets = () => {
 
   //-----------------------API----------------------//
   const { data: assetsList = [], isPending: isAssetsListPending } = useQuery({
-    queryKey: ["assetsList"],
+    queryKey: ["assetsList", departmentId],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -560,7 +562,13 @@ const ListOfAssets = () => {
   const tableData =
     isAssetsListPending || !Array.isArray(assetsList)
       ? []
-      : assetsList.map((item) => {
+      : assetsList
+          .filter((item) =>
+            assetOwnershipTypeFilter
+              ? item?.ownershipType === assetOwnershipTypeFilter
+              : true,
+          )
+          .map((item) => {
           return {
             ...item,
             assetMongoId: item?.asset?._id,

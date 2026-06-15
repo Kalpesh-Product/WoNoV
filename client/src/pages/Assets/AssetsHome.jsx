@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../components/AgTable";
 import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   setSelectedDepartment,
@@ -17,9 +17,19 @@ const AssetsHome = () => {
   const { auth } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
   console.log("id in parent : ", currentDepartmentId);
   const currentDepartment = auth.user?.departments?.[0]?.name;
+  const assetOwnershipType = location.state?.assetOwnershipType;
+  const getFilteredAssets = (assets = []) =>
+    assetOwnershipType
+      ? assets.filter((item) => item?.ownershipType === assetOwnershipType)
+      : assets;
+  const roleTitles = auth?.user?.role?.map((item) => item?.roleTitle) || [];
+  const isGlobalAssetsUser = roleTitles.some((roleTitle) =>
+    ["Master Admin", "Super Admin"].includes(roleTitle),
+  );
 
   useTopDepartment({
     additionalTopUserIds: [
@@ -28,9 +38,18 @@ const AssetsHome = () => {
       "681a10b13fc9dc666ede401c",
     ], //Mac//Kashif//Nigel
     onNotTop: () => {
+      if (isGlobalAssetsUser) return;
+
       dispatch(setSelectedDepartment(currentDepartmentId));
       dispatch(setSelectedDepartmentName(currentDepartment));
-      navigate(`/app/assets/view-assets/${currentDepartment}`);
+      navigate(
+        assetOwnershipType
+          ? `/app/assets/view-assets/${currentDepartment}/list-of-assets`
+          : `/app/assets/view-assets/${currentDepartment}`,
+        {
+          state: assetOwnershipType ? { assetOwnershipType } : null,
+        },
+      );
     },
   });
 
@@ -50,9 +69,12 @@ const AssetsHome = () => {
 
   const assetsRaw = isLoading || !Array.isArray(departmentAssets)
     ? []
-    : departmentAssets.flatMap((item) => item?.assets || []);
+    : departmentAssets.flatMap((item) => getFilteredAssets(item?.assets || []));
   console.log("flat : ", assetsRaw);
-  const totalAssetValue = assetsRaw.reduce((sum, item) => sum + (item?.price || 0), 0);
+  const totalAssetValue = assetsRaw.reduce(
+    (sum, item) => sum + (Number(item?.price) || 0),
+    0,
+  );
   console.log("flat : ", totalAssetValue);
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100 },
@@ -67,7 +89,14 @@ const AssetsHome = () => {
             onClick={() => {
               dispatch(setSelectedDepartment(params.data?.departmentId));
               dispatch(setSelectedDepartmentName(params.value));
-              navigate(`/app/assets/view-assets/${params.value}`);
+              navigate(
+                assetOwnershipType
+                  ? `/app/assets/view-assets/${params.value}/list-of-assets`
+                  : `/app/assets/view-assets/${params.value}`,
+                {
+                  state: assetOwnershipType ? { assetOwnershipType } : null,
+                },
+              );
             }}
             className="text-primary font-pregular hover:underline cursor-pointer"
           >
@@ -91,8 +120,11 @@ const AssetsHome = () => {
   const tableData = isLoading || !Array.isArray(departmentAssets)
     ? []
     : departmentAssets.map((item, index) => {
-        const assets = item?.assets || [];
-        const assetValue = assets.reduce((sum, a) => sum + (a?.price || 0), 0);
+        const assets = getFilteredAssets(item?.assets || []);
+        const assetValue = assets.reduce(
+          (sum, a) => sum + (Number(a?.price) || 0),
+          0,
+        );
         return {
           ...item,
           srNo: index + 1,
