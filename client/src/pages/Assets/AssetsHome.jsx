@@ -22,6 +22,7 @@ const AssetsHome = () => {
   console.log("id in parent : ", currentDepartmentId);
   const currentDepartment = auth.user?.departments?.[0]?.name;
   const assetOwnershipType = location.state?.assetOwnershipType;
+  const assetTargetTab = location.state?.assetTargetTab;
   const getFilteredAssets = (assets = []) =>
     assetOwnershipType
       ? assets.filter((item) => item?.ownershipType === assetOwnershipType)
@@ -45,9 +46,14 @@ const AssetsHome = () => {
       navigate(
         assetOwnershipType
           ? `/app/assets/view-assets/${currentDepartment}/list-of-assets`
+          : assetTargetTab
+            ? `/app/assets/view-assets/${currentDepartment}/${assetTargetTab}`
           : `/app/assets/view-assets/${currentDepartment}`,
         {
-          state: assetOwnershipType ? { assetOwnershipType } : null,
+          state:
+            assetOwnershipType || assetTargetTab
+              ? { assetOwnershipType, assetTargetTab }
+              : null,
         },
       );
     },
@@ -92,9 +98,14 @@ const AssetsHome = () => {
               navigate(
                 assetOwnershipType
                   ? `/app/assets/view-assets/${params.value}/list-of-assets`
+                  : assetTargetTab
+                    ? `/app/assets/view-assets/${params.value}/${assetTargetTab}`
                   : `/app/assets/view-assets/${params.value}`,
                 {
-                  state: assetOwnershipType ? { assetOwnershipType } : null,
+                  state:
+                    assetOwnershipType || assetTargetTab
+                      ? { assetOwnershipType, assetTargetTab }
+                      : null,
                 },
               );
             }}

@@ -67,10 +67,14 @@ const AssetsDashboard = () => {
 
   const { data: departmentCategories, isLoading: isCategoriesLoading } =
     useQuery({
-      queryKey: ["categories"],
+      queryKey: ["categories", isGlobalAssetsUser ? "all" : currentDepartmentId],
       queryFn: async () => {
         try {
-          const response = await axios.get(`/api/category/get-category`);
+          const response = await axios.get(
+            isGlobalAssetsUser
+              ? `/api/category/get-category`
+              : `/api/category/get-category?departmentId=${currentDepartmentId}`,
+          );
           return response.data;
         } catch (error) {
           console.error(error.message);
@@ -79,10 +83,17 @@ const AssetsDashboard = () => {
     });
  const { data: assetSubCategories, isLoading: isSubCategoriesLoading } =
     useQuery({
-      queryKey: ["assetSubCategories"],
+      queryKey: [
+        "assetSubCategories",
+        isGlobalAssetsUser ? "all" : currentDepartmentId,
+      ],
       queryFn: async () => {
         try {
-          const response = await axios.get("/api/assets/get-subcategory");
+          const response = await axios.get(
+            isGlobalAssetsUser
+              ? "/api/assets/get-subcategory"
+              : `/api/assets/get-subcategory?departmentId=${currentDepartmentId}`,
+          );
           return response.data;
         } catch (error) {
           console.error(error.message);
@@ -143,6 +154,24 @@ const AssetsDashboard = () => {
       `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
       {
         state: { assetOwnershipType: "Owned" },
+      },
+    );
+  };
+
+  const handleAssetTabClick = (assetTargetTab) => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/view-assets", {
+        state: { assetTargetTab },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      `/app/assets/view-assets/${currentDepartmentName}/${assetTargetTab}`,
+      {
+        state: { assetTargetTab },
       },
     );
   };
@@ -645,6 +674,8 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={totalCategories}
             description={"Assets Categories"}
+            route={"/app/assets/view-assets"}
+            onClick={() => handleAssetTabClick("assets-categories")}
           />
         ),
        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_SUB_CATEGORIES.value) && (
@@ -652,6 +683,8 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={totalSubCategories}
             description={"Assets Sub-Categories"}
+            route={"/app/assets/view-assets"}
+            onClick={() => handleAssetTabClick("assets-sub-categories")}
           />
         ),
       ],
@@ -662,11 +695,12 @@ const AssetsDashboard = () => {
       //   userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) ? 3 : 1,
         layout: 3,
       widgets: [
-           userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
           <DataCard
             title={"Total"}
             data={`INR ${inrFormat(totalAssetsPrice)}`}
             description={"Assets Value"}
+            route={"/app/assets/view-assets"}
           />
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) && (
