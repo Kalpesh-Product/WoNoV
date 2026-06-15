@@ -219,7 +219,9 @@ const AssetsDashboard = () => {
 
   const handleUnassignedAssetsClick = () => {
     if (isGlobalAssetsUser) {
-      navigate("/app/assets/manage-assets");
+      navigate("/app/assets/manage-assets", {
+        state: { assetViewFilter: "available" },
+      });
       return;
     }
 
@@ -227,6 +229,9 @@ const AssetsDashboard = () => {
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
       `/app/assets/manage-assets/${currentDepartmentName}/assign-assets`,
+      {
+        state: { assetViewFilter: "available" },
+      },
     );
   };
 
@@ -256,13 +261,29 @@ const AssetsDashboard = () => {
       .filter((dept) => dept?.assets && Array.isArray(dept.assets))
       .flatMap((dept) => dept.assets);
 
+  const activeAssets = totalAssets.filter((asset) => {
+    const normalizedStatus = String(asset?.status ?? "").trim().toLowerCase();
+    if (normalizedStatus) return normalizedStatus === "active";
+    return asset?.isActive === true;
+  });
+
+  const availableAssets = activeAssets.filter((asset) => {
+    const assignmentState = String(asset?.assignmentState ?? "")
+      .trim()
+      .toLowerCase();
+
+    if (assignmentState) return assignmentState === "available";
+    return !asset?.isAssigned;
+  });
+
   const totalOwnedAssets = totalAssets.filter((asset) => {
     return asset.ownershipType === "Owned";
   }).length;
   const totalAssignedAssets = isAssignedAssetsLoading
     ? 0
     : assignedAssetsInUse.length;
-  const totalUnassignedAssets = totalAssets.length - totalAssignedAssets;
+  const totalUnassignedAssets = availableAssets.length;
+  const totalAssetAvailabilityBase = totalAssignedAssets + totalUnassignedAssets;
 
   const totalAssetsUnderMaintenance = totalAssets.filter(
     (asset) => asset.isUnderMaintenance,
@@ -278,12 +299,12 @@ const AssetsDashboard = () => {
   const assetAvailabilityData = [
     {
       label: "Assigned Assets",
-      value: totalAssets.length > 0 ? ((totalAssignedAssets / totalAssets.length) * 100).toFixed(1) : 0,
+      value: totalAssetAvailabilityBase > 0 ? ((totalAssignedAssets / totalAssetAvailabilityBase) * 100).toFixed(1) : 0,
       count: totalAssignedAssets,
     },
     {
       label: "Unassigned Assets",
-      value: totalAssets.length > 0 ? ((totalUnassignedAssets / totalAssets.length) * 100).toFixed(1) : 0,
+      value: totalAssetAvailabilityBase > 0 ? ((totalUnassignedAssets / totalAssetAvailabilityBase) * 100).toFixed(1) : 0,
       count: totalUnassignedAssets,
     },
   ];
