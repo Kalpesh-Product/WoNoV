@@ -346,7 +346,7 @@ async function filterSupportTickets(user, roles, userDepartments, companyId) {
       );
     }
 
-     filteredTickets = filteredTickets.filter(
+    filteredTickets = filteredTickets.filter(
       (ticket) => ticket?.ticket && ticket.ticket.status !== "Closed",
     );
 
@@ -483,13 +483,13 @@ async function filterCloseTickets(user, roles, userDepartments, companyId) {
           $and: [
             { status: "Closed" },
             { raisedToDepartment: { $in: userDepartments } },
-            { acceptedBy: user },
+            // { acceptedBy: user },
           ],
         },
         {
           $and: [
             { status: "Closed" },
-            { assignees: [user] },
+            // { assignees: [user] },
             { raisedToDepartment: { $in: userDepartments } },
           ],
         },

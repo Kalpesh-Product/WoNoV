@@ -122,7 +122,7 @@ const fetchBudgetVoucherService = async ({
         { path: "department", select: "name" },
         {
           path: "unit",
-          select: "unitNo unitName",
+          select: "unitNo unitName building",
           populate: {
             path: "building",
             select: "buildingName",
@@ -179,7 +179,6 @@ const mapBudgetBaseFields = (budget = {}, isReport = false, type = "") => {
       )
     : budget.projectedAmount || 0;
 
-  console.log("mapped type", type);
   return {
     department: budget?.department?.name || "-",
     expanseName: budget?.expanseName || "-",
@@ -191,11 +190,11 @@ const mapBudgetBaseFields = (budget = {}, isReport = false, type = "") => {
       }),
     actualAmount: budget?.actualAmount ?? "-",
     unitNo: budget?.unit?.unitNo || "-",
+    unit: budget?.unit?.unitName || "-",
+    building: budget?.unit?.building?.buildingName,
     dueDate: budget?.dueDate || null,
     paidStatus: budget?.isPaid || "-",
     ...(type !== "payout" && {
-      building: budget?.unit?.building?.buildingName,
-      unit: budget?.unit?.unitName || "-",
       invoiceName: budget?.invoice?.name || "-",
       invoiceFile: budget?.invoice?.link || "-",
       invoiceDate: budget?.invoice?.date || null,
