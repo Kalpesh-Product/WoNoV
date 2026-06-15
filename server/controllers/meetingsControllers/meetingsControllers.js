@@ -26,6 +26,7 @@ const Role = require("../../models/roles/Roles");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
 const { handleDocumentUpload } = require("../../config/s3Config");
 const { resetMeetingCreditsIfNeeded } = require("../../utils/resetCredits");
+const ExternalVisits = require("../../models/visitor/ExternalVisits");
 
 const recalculateAndUpdatePayment = ({
   meeting,
@@ -449,7 +450,12 @@ const getAvaliableUsers = async (req, res, next) => {
 
     const start = new Date(startTime);
     const end = new Date(endTime);
-    const cancelledStatuses = ["Cancelled", "Canceled", "cancelled", "canceled"];
+    const cancelledStatuses = [
+      "Cancelled",
+      "Canceled",
+      "cancelled",
+      "canceled",
+    ];
 
     const meetings = await Meeting.find({
       company: req.company,
@@ -1762,23 +1768,111 @@ const updateMeeting = async (req, res, next) => {
       );
     }
 
-    const updatedVisitor = await Visitor.findOneAndUpdate(
-      {
-        clientCompany: updatedMeeting.externalClient.clientCompany,
-      },
-      {
-        meeting: updatedMeeting._id,
-      },
-    );
+    const visitorId = updatedMeeting.externalClient?._id;
 
-    if (!updatedVisitor) {
+    if (!visitorId) {
       throw new CustomError(
-        "Failed to update visitor meeting reference",
+        "External client not found on meeting",
         logPath,
         logAction,
         logSourceKey,
       );
     }
+
+    const visitorPaymentUpdate = {
+      meeting: updatedMeeting._id,
+      amount: Number(resolvedBaseAmount ?? paymentBaseAmount ?? taxable ?? 0),
+      discount: Number(discountAmount ?? 0),
+      gstAmount: Number(resolvedGstAmount ?? paymentGstAmount ?? gst ?? 0),
+      totalAmount: Number(updatedMeeting.paymentAmount || paymentAmount || 0),
+      paymentStatus: paymentStatus === "Paid",
+      paymentMode,
+      paymentProof: updatedMeeting.paymentProof?.link
+        ? {
+            url: updatedMeeting.paymentProof.link,
+            id: updatedMeeting.paymentProof.id,
+          }
+        : undefined,
+    };
+
+    Object.keys(visitorPaymentUpdate).forEach((key) => {
+      if (visitorPaymentUpdate[key] === undefined) {
+        delete visitorPaymentUpdate[key];
+      }
+    });
+
+    const updatedVisitor = await Visitor.findByIdAndUpdate(
+      visitorId,
+      {
+        $set: visitorPaymentUpdate,
+      },
+      { new: true },
+    );
+
+    if (!updatedVisitor) {
+      throw new CustomError(
+        "Failed to update visitor payment details",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    let updatedExternalVisit = await ExternalVisits.findOneAndUpdate(
+      {
+        visitorId,
+        company,
+        meeting: updatedMeeting._id,
+      },
+      {
+        $set: visitorPaymentUpdate,
+      },
+      { new: true },
+    );
+
+    if (!updatedExternalVisit) {
+      updatedExternalVisit = await ExternalVisits.findOneAndUpdate(
+        {
+          visitorId,
+          company,
+          visitorType: "Meeting",
+        },
+        {
+          $set: visitorPaymentUpdate,
+        },
+        {
+          new: true,
+          sort: { checkIn: -1 },
+        },
+      );
+    }
+
+    if (!updatedExternalVisit) {
+      throw new CustomError(
+        "Failed to update external visit payment details",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    // const updatedVisitor = await Visitor.findOneAndUpdate(
+    //   {
+    //     clientCompany: updatedMeeting.externalClient.clientCompany,
+    //   },
+    //   {
+    //     meeting: updatedMeeting._id,
+    //   },
+    // );
+
+    // if (!updatedVisitor) {
+    //   throw new CustomError(
+    //     "Failed to update visitor meeting reference",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
 
     return res.status(200).json({ message: "Meeting updated successfully" });
   } catch (error) {
