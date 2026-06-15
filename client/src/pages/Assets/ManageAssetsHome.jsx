@@ -84,6 +84,7 @@ const ManageAssetsHome = () => {
     { headerName: "In Use", field: "inUse" },
     { headerName: "Damaged", field: "damaged" },
     { headerName: "Under Maintenance", field: "underMaintenance" },
+    {headerName: "Extra", field: "extra"},
   ];
 
   const tableData = isLoading
@@ -102,6 +103,7 @@ const ManageAssetsHome = () => {
           damaged: assets.filter((a) => a.status === "Damaged").length, // if applicable
           underMaintenance: assets.filter((a) => a.isUnderMaintenance === true)
             .length,
+          extra: assets.filter((a) => a.isExtra === true).length,
         };
       });
 

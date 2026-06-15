@@ -375,6 +375,10 @@ const AssignAssets = () => {
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}
             />
             <DetalisFormatted
+              title={"Extra"}
+              detail={selectedAsset?.isExtra ? "Yes" : "No"}
+            />
+            <DetalisFormatted
               title={"Assigned"}
               detail={selectedAsset?.isAssigned ? "Yes" : "No"}
             />

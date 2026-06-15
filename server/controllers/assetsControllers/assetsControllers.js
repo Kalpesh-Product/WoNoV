@@ -478,6 +478,7 @@ const editAsset = async (req, res, next) => {
       name,
       isDamaged,
       isUnderMaintenance,
+      isExtra,
       purchaseDate,
       price,
       brand,
@@ -507,6 +508,7 @@ const editAsset = async (req, res, next) => {
     };
     const normalizedIsDamaged = normalizeBoolean(isDamaged);
     const normalizedIsUnderMaintenance = normalizeBoolean(isUnderMaintenance);
+    const normalizedIsExtra = normalizeBoolean(isExtra);
     const assetImageFile = req.files?.assetImage?.[0];
     const warrantyDocumentFile = req.files?.warrantyDocument?.[0];
 
@@ -674,6 +676,10 @@ const editAsset = async (req, res, next) => {
         normalizedIsUnderMaintenance !== undefined
           ? normalizedIsUnderMaintenance
           : foundAsset.isUnderMaintenance,
+      isExtra:
+        normalizedIsExtra !== undefined
+          ? normalizedIsExtra 
+          : foundAsset.isExtra,    
       warranty,
       warrantyDocument: warrantyDocInfo,
       brand: brand?.trim(),
