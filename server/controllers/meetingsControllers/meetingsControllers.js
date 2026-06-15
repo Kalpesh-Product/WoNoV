@@ -26,6 +26,7 @@ const Role = require("../../models/roles/Roles");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
 const { handleDocumentUpload } = require("../../config/s3Config");
 const { resetMeetingCreditsIfNeeded } = require("../../utils/resetCredits");
+const ExternalVisits = require("../../models/visitor/ExternalVisits");
 
 const recalculateAndUpdatePayment = ({
   meeting,
@@ -449,7 +450,12 @@ const getAvaliableUsers = async (req, res, next) => {
 
     const start = new Date(startTime);
     const end = new Date(endTime);
-    const cancelledStatuses = ["Cancelled", "Canceled", "cancelled", "canceled"];
+    const cancelledStatuses = [
+      "Cancelled",
+      "Canceled",
+      "cancelled",
+      "canceled",
+    ];
 
     const meetings = await Meeting.find({
       company: req.company,
@@ -1762,23 +1768,66 @@ const updateMeeting = async (req, res, next) => {
       );
     }
 
-    const updatedVisitor = await Visitor.findOneAndUpdate(
-      {
-        clientCompany: updatedMeeting.externalClient.clientCompany,
+    // const updatedVisitor = await Visitor.findOneAndUpdate(
+    //   {
+    //     clientCompany: updatedMeeting.externalClient.clientCompany,
+    //   },
+    //   {
+    //     meeting: updatedMeeting._id,
+    //   },
+    // );
+
+    // if (!updatedVisitor) {
+    //   throw new CustomError(
+    //     "Failed to update visitor meeting reference",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
+
+    const visitorPaymentDetails = {
+      meeting: updatedMeeting._id,
+      amount: updatedMeeting.paymentBaseAmount,
+      discount: updatedMeeting.discountAmount,
+      gstAmount: updatedMeeting.paymentGstAmount,
+      totalAmount: updatedMeeting.paymentAmount,
+      paymentMode: updatedMeeting.paymentMode,
+      paymentStatus: updatedMeeting.paymentStatus,
+      paymentProof: {
+        url: updatedMeeting.paymentProof?.link,
+        id: updatedMeeting.paymentProof?.id,
       },
-      {
-        meeting: updatedMeeting._id,
-      },
+    };
+
+    const updatedVisitor = await Visitor.findByIdAndUpdate(
+      updatedMeeting.externalClient._id,
+      visitorPaymentDetails,
+      { new: true },
     );
 
     if (!updatedVisitor) {
       throw new CustomError(
-        "Failed to update visitor meeting reference",
+        "Failed to update visitor payment details",
         logPath,
         logAction,
         logSourceKey,
       );
     }
+
+    await ExternalVisits.updateMany(
+      {
+        company,
+        $or: [
+          { meeting: updatedMeeting._id },
+          {
+            visitorId: updatedVisitor._id,
+            legacyVisitorEntryId: updatedVisitor._id,
+          },
+        ],
+      },
+      visitorPaymentDetails,
+    );
 
     return res.status(200).json({ message: "Meeting updated successfully" });
   } catch (error) {
