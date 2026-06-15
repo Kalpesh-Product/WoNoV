@@ -81,7 +81,7 @@ const AssetsDashboard = () => {
         }
       },
     });
- const { data: assetSubCategories, isLoading: isSubCategoriesLoading } =
+  const { data: assetSubCategories, isLoading: isSubCategoriesLoading } =
     useQuery({
       queryKey: [
         "assetSubCategories",
@@ -99,6 +99,32 @@ const AssetsDashboard = () => {
           console.error(error.message);
         }
       },
+    });
+  const { data: assignedAssetsInUse = [], isLoading: isAssignedAssetsLoading } =
+    useQuery({
+      queryKey: [
+        "assignedAssetsInUse",
+        isGlobalAssetsUser ? "all" : currentDepartmentId,
+      ],
+      queryFn: async () => {
+        try {
+          const queryParams = new URLSearchParams({ status: "Approved" });
+
+          if (!isGlobalAssetsUser && currentDepartmentId) {
+            queryParams.set("department", currentDepartmentId);
+          }
+
+          const response = await axios.get(
+            `/api/assets/get-asset-requests?${queryParams.toString()}`,
+          );
+
+          return Array.isArray(response.data) ? response.data : [];
+        } catch (error) {
+          console.error(error.message);
+          return [];
+        }
+      },
+      enabled: isGlobalAssetsUser || Boolean(currentDepartmentId),
     });
   //-----------------------MAIN API CALL------------------------------------//
   //---------- Nav Cards ---------//
@@ -176,6 +202,34 @@ const AssetsDashboard = () => {
     );
   };
 
+  const handleAssetsInUseClick = () => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/manage-assets", {
+        state: { assetViewFilter: "inUse" },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      `/app/assets/manage-assets/${currentDepartmentName}/assigned-assets`,
+    );
+  };
+
+  const handleUnassignedAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/manage-assets");
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      `/app/assets/manage-assets/${currentDepartmentName}/assign-assets`,
+    );
+  };
+
   const isTopManagement = departments.some(
     (dept) => dept.name === "Top Management",
   );
@@ -205,9 +259,9 @@ const AssetsDashboard = () => {
   const totalOwnedAssets = totalAssets.filter((asset) => {
     return asset.ownershipType === "Owned";
   }).length;
-  const totalAssignedAssets = totalAssets.filter(
-    (asset) => asset.isAssigned,
-  ).length;
+  const totalAssignedAssets = isAssignedAssetsLoading
+    ? 0
+    : assignedAssetsInUse.length;
   const totalUnassignedAssets = totalAssets.length - totalAssignedAssets;
 
   const totalAssetsUnderMaintenance = totalAssets.filter(
@@ -708,6 +762,12 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={totalAssignedAssets}
             description={"Assets In Use"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/manage-assets"
+                : `/app/assets/manage-assets/${currentDepartmentName}/assigned-assets`
+            }
+            onClick={handleAssetsInUseClick}
           />
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) && (
@@ -715,6 +775,12 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={totalUnassignedAssets}
             description={"Unassigned Assets"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/manage-assets"
+                : `/app/assets/manage-assets/${currentDepartmentName}/assign-assets`
+            }
+            onClick={handleUnassignedAssetsClick}
           />
         ),
               ],
