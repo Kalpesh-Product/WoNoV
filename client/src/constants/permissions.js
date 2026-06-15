@@ -76,10 +76,23 @@ export const PERMISSIONS = {
     title: "RECENTLY ADDED ASSETS",
     type: "read",
   },
+   ASSETS_TOTAL_ASSETS: {
+    value: "total_assets",
+    title: "TOTAL ASSETS",
+    type: "read",
+    route: "/app/assets/view-assets",
+  },
   ASSETS_ASSETS_OWNED: {
     value: "assets_owned",
     title: "ASSETS OWNED",
     type: "read",
+  route: "/app/assets/view-assets",
+  },
+  ASSETS_ASSETS_RENTAL: {
+    value: "assets_rental",
+    title: "ASSETS RENTAL",
+    type: "read",
+    route: "/app/assets/view-assets",
   },
   ASSETS_ASSET_VALUE: {
     value: "asset_value",

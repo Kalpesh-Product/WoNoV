@@ -184,6 +184,23 @@ const AssetsDashboard = () => {
     );
   };
 
+  const handleRentalAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/view-assets", {
+        state: { assetOwnershipType: "Rental" },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
+      { state: { assetOwnershipType: "Rental" } },
+    );
+  };
+
+
   const handleAssetTabClick = (assetTargetTab) => {
     if (isGlobalAssetsUser) {
       navigate("/app/assets/view-assets", {
@@ -332,6 +349,9 @@ const AssetsDashboard = () => {
 
   const totalOwnedAssets = totalAssets.filter((asset) => {
     return asset.ownershipType === "Owned";
+  }).length;
+   const totalRentalAssets = totalAssets.filter((asset) => {
+    return asset.ownershipType === "Rental";
   }).length;
   const totalAssignedAssets = isAssignedAssetsLoading
     ? 0
@@ -787,8 +807,16 @@ const AssetsDashboard = () => {
       // layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) &&
       //   userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) &&
       //   userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) ? 3 : 1,
-        layout: 3,
+        layout: 4,
       widgets: [
+           userPermissions.includes(PERMISSIONS.ASSETS_TOTAL_ASSETS.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalAssets.length}
+            description={"Total Assets"}
+            route={"/app/assets/view-assets"}
+          />
+        ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) && (
           <DataCard
             title={"Total"}
@@ -798,6 +826,28 @@ const AssetsDashboard = () => {
             onClick={handleOwnedAssetsClick}
           />
         ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_RENTAL.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalRentalAssets}
+            description={"Assets Rental"}
+            route={"/app/assets/view-assets"}
+            onClick={handleRentalAssetsClick}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
+          <DataCard
+            title={"Total"}
+            data={`INR ${inrFormat(totalAssetsPrice)}`}
+            description={"Assets Value"}
+            route={"/app/assets/view-assets"}
+          />
+        ),
+      ],
+    },
+    {
+       layout: 4,
+      widgets: [
         userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
           <DataCard
             title={"Total"}
@@ -807,29 +857,13 @@ const AssetsDashboard = () => {
             onClick={() => handleAssetTabClick("assets-categories")}
           />
         ),
-       userPermissions.includes(PERMISSIONS.ASSETS_ASSET_SUB_CATEGORIES.value) && (
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_SUB_CATEGORIES.value) && (
           <DataCard
             title={"Total"}
             data={totalSubCategories}
             description={"Assets Sub-Categories"}
             route={"/app/assets/view-assets"}
             onClick={() => handleAssetTabClick("assets-sub-categories")}
-          />
-        ),
-      ],
-    },
-    {
-      // layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) &&
-      //   userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) &&
-      //   userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) ? 3 : 1,
-        layout: 3,
-      widgets: [
-        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
-          <DataCard
-            title={"Total"}
-            data={`INR ${inrFormat(totalAssetsPrice)}`}
-            description={"Assets Value"}
-            route={"/app/assets/view-assets"}
           />
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) && (
