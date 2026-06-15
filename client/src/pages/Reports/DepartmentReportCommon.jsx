@@ -1105,56 +1105,30 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       normalizedReportName.includes("external-clients") ||
       normalizedReportName.includes("external-client");
 
-    const isPayoutsReport = normalizedReportName.includes("payouts");
-
     const shouldMergeVisitorLikeFields =
       isOpenDeskClientsReport || isExternalClientsReport;
 
-    const shouldAddFinanceUnitFields = isPayoutsReport;
-
-    if (!shouldMergeVisitorLikeFields && !shouldAddFinanceUnitFields) return rows;
+    if (!shouldMergeVisitorLikeFields) return rows;
 
     return rows.map((row) => {
-      let nextRow = shouldMergeVisitorLikeFields
-        ? mergeVisitorLikeCsvFields(row)
-        : { ...row };
+      const nextRow = mergeVisitorLikeCsvFields(row);
 
-      if (shouldAddFinanceUnitFields) {
-        const unitNo = String(
-          row?.["unit.unitNo"] ||
-            row?.unit?.unitNo ||
-            row?.["location.unitNo"] ||
-            row?.location?.unitNo ||
-            row?.unitNo ||
-            "",
-        ).trim();
-        const unitName = String(
-          row?.["unit.unitName"] ||
-            row?.unit?.unitName ||
-            row?.["location.unitName"] ||
-            row?.location?.unitName ||
-            row?.unitName ||
-            "",
-        ).trim();
-        const buildingName = String(
-          row?.["unit.building.buildingName"] ||
-            row?.unit?.building?.buildingName ||
-            row?.["location.building.buildingName"] ||
-            row?.location?.building?.buildingName ||
-            row?.["building.buildingName"] ||
-            row?.building?.buildingName ||
-            row?.buildingName ||
-            "",
-        ).trim();
-
-        nextRow["Unit No"] = unitNo;
-        nextRow["Unit Name"] = unitName;
-        nextRow["Building Name"] = buildingName;
+      if (isOpenDeskClientsReport && typeof nextRow.unit === "string") {
+        delete nextRow.unit;
       }
 
-      delete nextRow.unit;
-      delete nextRow.building;
-      delete nextRow.location;
+      if (nextRow.unit && typeof nextRow.unit === "object") {
+        delete nextRow.unit;
+      }
+
+      if (nextRow.building && typeof nextRow.building === "object") {
+        delete nextRow.building;
+      }
+
+      if (nextRow.location && typeof nextRow.location === "object") {
+        delete nextRow.location;
+      }
+
       delete nextRow["unit.unitNo"];
       delete nextRow["unit.unitName"];
       delete nextRow["unit.building.buildingName"];
@@ -1162,12 +1136,6 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       delete nextRow["location.unitNo"];
       delete nextRow["location.unitName"];
       delete nextRow["location.building.buildingName"];
-
-      if (shouldAddFinanceUnitFields) {
-        delete nextRow.unitNo;
-        delete nextRow.unitName;
-        delete nextRow.buildingName;
-      }
 
       return nextRow;
     });
@@ -1403,34 +1371,7 @@ const mergeHrCsvFields = (rows = []) => {
 
     const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
     const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
-    //     const homeAddressCountry = String(
-    //   row?.homeAddress?.country || row?.["homeAddress.country"] || "",
-    // ).trim();
-    // const homeAddressState = String(
-    //   row?.homeAddress?.state || row?.["homeAddress.state"] || "",
-    // ).trim();
-    // const homeAddressCountryName = getCountryName(homeAddressCountry);
-    // const homeAddressStateName = getStateName(
-    //   homeAddressState,
-    //   homeAddressCountry,
-    // );
-
-    // if (row?.homeAddress && typeof row.homeAddress === "object") {
-    //   nextRow.homeAddress = {
-    //     ...row.homeAddress,
-    //     country: homeAddressCountryName,
-    //     state: homeAddressStateName,
-    //   };
-    // } else {
-    //   if (homeAddressCountryName) {
-    //     nextRow["homeAddress.country"] = homeAddressCountryName;
-    //   }
-
-    //   if (homeAddressStateName) {
-    //     nextRow["homeAddress.state"] = homeAddressStateName;
-    //   }
-    // }
-
+   
      const homeAddressCountry = String(
       row?.homeAddress?.country || row?.["homeAddress.country"] || "",
     ).trim();
@@ -1964,6 +1905,13 @@ const mergeHrCsvFields = (rows = []) => {
         /^unit\.building$/,
         /^unit\.building\.buildingName$/,
       );
+    }
+
+    if (
+      normalizedModuleKey === "finance" &&
+      normalizedReportName.includes("open desk clients report")
+    ) {
+      hiddenFields.push(/^unit$/);
     }
 
     return downloadCsv({
