@@ -63,7 +63,18 @@ const AssetsDashboard = () => {
         }
       },
     });
-
+ const { data: assetSubCategories, isLoading: isSubCategoriesLoading } =
+    useQuery({
+      queryKey: ["assetSubCategories"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/assets/get-subcategory");
+          return response.data;
+        } catch (error) {
+          console.error(error.message);
+        }
+      },
+    });
   //-----------------------MAIN API CALL------------------------------------//
   //---------- Nav Cards ---------//
   const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -120,6 +131,10 @@ const AssetsDashboard = () => {
   const totalCategories = !isCategoriesLoading && Array.isArray(departmentCategories)
     ? departmentCategories.length
     : 0;
+  const totalSubCategories =
+    !isSubCategoriesLoading && Array.isArray(assetSubCategories)
+      ? assetSubCategories.length
+      : 0;  
   const totalAssets = (isDepartmentLoading || !Array.isArray(assetsDept))
     ? []
     : assetsDept
@@ -137,7 +152,8 @@ const AssetsDashboard = () => {
   const totalAssetsUnderMaintenance = totalAssets.filter(
     (asset) => asset.isUnderMaintenance,
   ).length;
-
+  const totalDamagedAssets = totalAssets.filter((asset) => asset.isDamaged).length;
+  const totalExtraAssets = totalAssets.filter((asset) => asset.isExtra).length;
   const totalAssetsPrice = totalAssets.reduce(
     (acc, asset) => acc + (asset?.price || 0),
     0,
@@ -578,9 +594,10 @@ const AssetsDashboard = () => {
       )),
     },
     {
-      layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) &&
-        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) &&
-        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) ? 3 : 1,
+      // layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) &&
+      //   userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) &&
+      //   userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) ? 3 : 1,
+        layout: 3,
       widgets: [
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) && (
           <DataCard
@@ -596,20 +613,28 @@ const AssetsDashboard = () => {
             description={"Assets Categories"}
           />
         ),
-        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
+       userPermissions.includes(PERMISSIONS.ASSETS_ASSET_SUB_CATEGORIES.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalSubCategories}
+            description={"Assets Sub-Categories"}
+          />
+        ),
+      ],
+    },
+    {
+      // layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) &&
+      //   userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) &&
+      //   userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) ? 3 : 1,
+        layout: 3,
+      widgets: [
+           userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
           <DataCard
             title={"Total"}
             data={`INR ${inrFormat(totalAssetsPrice)}`}
             description={"Assets Value"}
           />
         ),
-      ],
-    },
-    {
-      layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) &&
-        userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) &&
-        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) ? 3 : 1,
-      widgets: [
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) && (
           <DataCard
             title={"Total"}
@@ -624,11 +649,32 @@ const AssetsDashboard = () => {
             description={"Unassigned Assets"}
           />
         ),
+              ],
+    },
+    {
+      layout: 3,
+      widgets: [
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) && (
           <DataCard
             title={"Total"}
             data={totalAssetsUnderMaintenance}
             description={"Assets Under Maintenance"}
+          />
+        ),
+         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_DAMAGED.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalDamagedAssets}
+            description={"Assets Damaged"}
+            route={PERMISSIONS.ASSETS_ASSETS_DAMAGED.route}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_EXTRA.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalExtraAssets}
+            description={"Assets Extra"}
+            route={PERMISSIONS.ASSETS_ASSETS_EXTRA.route}
           />
         ),
       ],
