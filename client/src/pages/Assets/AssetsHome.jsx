@@ -23,10 +23,27 @@ const AssetsHome = () => {
   const currentDepartment = auth.user?.departments?.[0]?.name;
   const assetOwnershipType = location.state?.assetOwnershipType;
   const assetTargetTab = location.state?.assetTargetTab;
+  const assetStatusFilter = location.state?.assetStatusFilter;
   const getFilteredAssets = (assets = []) =>
-    assetOwnershipType
-      ? assets.filter((item) => item?.ownershipType === assetOwnershipType)
-      : assets;
+    assets.filter((item) => {
+      if (assetOwnershipType && item?.ownershipType !== assetOwnershipType) {
+        return false;
+      }
+
+      if (assetStatusFilter === "underMaintenance") {
+        return item?.isUnderMaintenance === true;
+      }
+
+      if (assetStatusFilter === "damaged") {
+        return item?.isDamaged === true;
+      }
+
+      if (assetStatusFilter === "extra") {
+        return item?.isExtra === true;
+      }
+
+      return true;
+    });
   const roleTitles = auth?.user?.role?.map((item) => item?.roleTitle) || [];
   const isGlobalAssetsUser = roleTitles.some((roleTitle) =>
     ["Master Admin", "Super Admin"].includes(roleTitle),
@@ -46,13 +63,15 @@ const AssetsHome = () => {
       navigate(
         assetOwnershipType
           ? `/app/assets/view-assets/${currentDepartment}/list-of-assets`
+          : assetStatusFilter
+            ? `/app/assets/view-assets/${currentDepartment}/list-of-assets`
           : assetTargetTab
             ? `/app/assets/view-assets/${currentDepartment}/${assetTargetTab}`
           : `/app/assets/view-assets/${currentDepartment}`,
         {
           state:
-            assetOwnershipType || assetTargetTab
-              ? { assetOwnershipType, assetTargetTab }
+            assetOwnershipType || assetTargetTab || assetStatusFilter
+              ? { assetOwnershipType, assetTargetTab, assetStatusFilter }
               : null,
         },
       );
@@ -98,13 +117,15 @@ const AssetsHome = () => {
               navigate(
                 assetOwnershipType
                   ? `/app/assets/view-assets/${params.value}/list-of-assets`
+                  : assetStatusFilter
+                    ? `/app/assets/view-assets/${params.value}/list-of-assets`
                   : assetTargetTab
                     ? `/app/assets/view-assets/${params.value}/${assetTargetTab}`
                   : `/app/assets/view-assets/${params.value}`,
                 {
                   state:
-                    assetOwnershipType || assetTargetTab
-                      ? { assetOwnershipType, assetTargetTab }
+                    assetOwnershipType || assetTargetTab || assetStatusFilter
+                      ? { assetOwnershipType, assetTargetTab, assetStatusFilter }
                       : null,
                 },
               );
@@ -144,7 +165,7 @@ const AssetsHome = () => {
           noOfAssets: assets.length || 0,
           value: assetValue || 0,
           inUse: assets.filter((a) => a.status === "Active").length,
-          damaged: assets.filter((a) => a.status === "Damaged").length, // if applicable
+          damaged: assets.filter((a) => a.isDamaged === true).length,
           underMaintenance: assets.filter((a) => a.isUnderMaintenance === true)
             .length,
           extra: assets.filter((a) => a.isExtra === true).length,

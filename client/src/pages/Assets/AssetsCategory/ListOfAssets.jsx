@@ -45,6 +45,7 @@ const ListOfAssets = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const assetOwnershipTypeFilter = location.state?.assetOwnershipType;
+  const assetStatusFilter = location.state?.assetStatusFilter;
 
   //---------------------Forms----------------------//
   const {
@@ -567,6 +568,15 @@ const ListOfAssets = () => {
             assetOwnershipTypeFilter
               ? item?.ownershipType === assetOwnershipTypeFilter
               : true,
+          )
+          .filter((item) =>
+            assetStatusFilter === "underMaintenance"
+              ? item?.isUnderMaintenance === true
+              : assetStatusFilter === "damaged"
+                ? item?.isDamaged === true
+                : assetStatusFilter === "extra"
+                  ? item?.isExtra === true
+                  : true,
           )
           .map((item) => {
           return {
