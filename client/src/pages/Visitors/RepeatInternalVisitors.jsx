@@ -292,6 +292,7 @@ const RepeatInternalVisitors = () => {
           ? data.toMeet || null
           : null,
       checkOut: hasCheckOut ? checkOut.toISOString() : null,
+      checkIn: checkIn.toISOString(), 
     });
   };
 
@@ -710,7 +711,7 @@ const RepeatInternalVisitors = () => {
                   <TimePicker
                     {...field}
                     label="Check-In Time"
-                    disabled
+                    //disabled
                     slotProps={{
                       textField: {
                         size: "small",
