@@ -1236,11 +1236,11 @@ const repeatInternalVisitor = async (req, res, next) => {
       }
     }
 
-    if (Number.isNaN(checkIn.getTime())) {
+    const checkInDate = new Date(checkIn);
+    if (Number.isNaN(checkInDate.getTime())) {
       return res.status(400).json({ message: "Invalid checkIn provided" });
     }
 
-    const checkInDate = new Date(checkIn);
     let checkOutDate = null;
 
     if (checkOut) {
