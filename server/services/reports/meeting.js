@@ -2,6 +2,7 @@ const Meeting = require("../../models/meetings/Meetings");
 const Review = require("../../models/meetings/Reviews");
 const UserData = require("../../models/hr/UserData");
 const { formatDuration } = require("../../utils/formatDateTime");
+const Company = require("../../models/hr/Company");
 
 const formatPersonName = (person) =>
   [person?.firstName, person?.lastName].filter(Boolean).join(" ");
@@ -69,7 +70,7 @@ const fetchMeetingReportService = async ({
           select: "firstName lastName departments",
           populate: { path: "departments", select: "name" },
         },
-        { path: "client", select: "clientName" },
+        { path: "client", select: "clientName meetingCreditBalance" },
         {
           path: "externalClient",
           select: "registeredClientCompany visitorCompany",
@@ -192,6 +193,8 @@ const fetchMeetingReportService = async ({
       };
     });
 
+    const hostCompany = await Company.findById(company);
+
     if (isReport) {
       const meetingTypeFilter = String(type || "")
         .trim()
@@ -226,7 +229,7 @@ const fetchMeetingReportService = async ({
         const client = meeting.client
           ? meeting?.client?.clientName
           : meeting?.externalClient
-            ? meeting?.externalClient?.visitorCompany
+            ? meeting?.externalClient?.registeredClientCompany
             : meeting.meetingType === "Internal"
               ? "BIZ Nest"
               : null;
@@ -248,20 +251,22 @@ const fetchMeetingReportService = async ({
           startTime: meeting.startTime,
           endTime: effectiveEndTime,
           housekeepingStatus: meeting.houeskeepingStatus,
-          ...(type === "internal" && {
+          ...(meetingTypeFilter === "internal" && {
             department: (meeting?.bookedBy?.departments || [])
               .map((dept) => dept?.name)
               .filter(Boolean)
               .join(", "),
+            creditsUsed: meeting.creditsUsed ?? 0,
+            remainingCredits: meeting.client
+              ? meeting.client?.meetingCreditBalance
+              : hostCompany.meetingCreditBalance,
           }),
 
           participants: formatParticipants(participants),
           receptionist: formatPersonName(meeting.receptionist),
           location: meeting.bookedRoom?.location,
           meetingStatus: meeting.status,
-          ...(type === "external" && {
-            registeredClientCompany:
-              meeting?.externalClient?.registeredClientCompany,
+          ...(meetingTypeFilter === "external" && {
             paymentAmount: meeting.paymentAmount ?? 0,
             paymentDiscountAmount: meeting.discountAmount ?? 0,
             paymentMode: meeting.paymentMode,

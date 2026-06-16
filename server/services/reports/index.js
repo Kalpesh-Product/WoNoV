@@ -172,6 +172,10 @@ const reportServiceRegistry = {
     dateField: "rentDate",
   }),
 
+  "workation-revenue": createReportService(fetchWorkationRevenueReportService, {
+    dateField: "date",
+  }),
+
   collection: createReportService(fetchCoworkingRevenueService, {
     dateField: "rentDate",
     staticParams: { type: "collection" },
