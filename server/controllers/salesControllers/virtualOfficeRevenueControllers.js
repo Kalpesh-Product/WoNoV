@@ -57,7 +57,8 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
 
 const getVirtualOfficeRevenue = async (req, res, next) => {
   try {
-    const payload = await fetchVirtualOfficeRevenueReportService({});
+    const { company } = req;
+    const payload = await fetchVirtualOfficeRevenueReportService({ company });
 
     return res.status(200).json(payload);
   } catch (error) {

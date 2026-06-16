@@ -38,11 +38,13 @@ const ManageAssetsHome = () => {
         isInUseView
           ? `/app/assets/manage-assets/${currentDepartment}/assigned-assets`
           : isAvailableView
-            ? `/app/assets/manage-assets/${currentDepartment}/assign-assets`
+            ? `/app/assets/manage-assets/${currentDepartment}/unassigned-assets`
           : `/app/assets/manage-assets/${currentDepartment}`,
-        isAvailableView
-          ? { state: { assetViewFilter: "available" } }
-          : undefined,
+        isInUseView
+          ? { state: { assetViewFilter: "inUse" } }
+          : isAvailableView
+            ? { state: { assetViewFilter: "available" } }
+            : undefined,
       );
     },
   });
@@ -236,11 +238,13 @@ const ManageAssetsHome = () => {
                 isInUseView
                   ? `/app/assets/manage-assets/${params.value}/assigned-assets`
                   : isAvailableView
-                    ? `/app/assets/manage-assets/${params.value}/assign-assets`
+                    ? `/app/assets/manage-assets/${params.value}/unassigned-assets`
                   : `/app/assets/manage-assets/${params.value}`,
-                isAvailableView
-                  ? { state: { assetViewFilter: "available" } }
-                  : undefined,
+                isInUseView
+                  ? { state: { assetViewFilter: "inUse" } }
+                  : isAvailableView
+                    ? { state: { assetViewFilter: "available" } }
+                    : undefined,
               );
             }}
             className="text-primary font-pregular hover:underline cursor-pointer"

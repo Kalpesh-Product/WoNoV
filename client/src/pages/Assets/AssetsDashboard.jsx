@@ -164,11 +164,15 @@ const AssetsDashboard = () => {
   const allowedCards = cardsConfig.filter(
     (card) => !card.permission || userPermissions.includes(card.permission),
   );
+    const encodedDepartmentName = encodeURIComponent(
+    (currentDepartmentName || "").trim(),
+  );
   //---------- Nav Cards ---------//
 
   const handleOwnedAssetsClick = () => {
     if (isGlobalAssetsUser) {
-      navigate("/app/assets/view-assets", {
+      // navigate("/app/assets/view-assets", {
+        navigate("/app/assets/view-assets/list-of-assets/assets-owned", {
         state: { assetOwnershipType: "Owned" },
       });
       return;
@@ -177,7 +181,8 @@ const AssetsDashboard = () => {
     dispatch(setSelectedDepartment(currentDepartmentId));
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
-      `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
+      // `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
+          `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-owned`,
       {
         state: { assetOwnershipType: "Owned" },
       },
@@ -186,7 +191,7 @@ const AssetsDashboard = () => {
 
   const handleRentalAssetsClick = () => {
     if (isGlobalAssetsUser) {
-      navigate("/app/assets/view-assets", {
+      navigate("/app/assets/view-assets/list-of-assets/assets-rental", {
         state: { assetOwnershipType: "Rental" },
       });
       return;
@@ -195,7 +200,7 @@ const AssetsDashboard = () => {
     dispatch(setSelectedDepartment(currentDepartmentId));
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
-      `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
+     `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-rental`,
       { state: { assetOwnershipType: "Rental" } },
     );
   };
@@ -219,18 +224,32 @@ const AssetsDashboard = () => {
     );
   };
 
+  const handleTotalAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/view-assets/list-of-assets/total-assets");
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(`/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/total-assets`);
+  };
+
   const handleUnderMaintenanceClick = () => {
     if (isGlobalAssetsUser) {
-      navigate("/app/assets/view-assets", {
-        state: { assetStatusFilter: "underMaintenance" },
-      });
+          navigate(
+        "/app/assets/view-assets/list-of-assets/assets-under-maintenance",
+        {
+          state: { assetStatusFilter: "underMaintenance" },
+        },
+      );
       return;
     }
 
     dispatch(setSelectedDepartment(currentDepartmentId));
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
-      `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
+       `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`,
       {
         state: { assetStatusFilter: "underMaintenance" },
       },
@@ -239,7 +258,7 @@ const AssetsDashboard = () => {
 
   const handleDamagedAssetsClick = () => {
     if (isGlobalAssetsUser) {
-      navigate("/app/assets/view-assets", {
+       navigate("/app/assets/view-assets/list-of-assets/assets-damaged", {
         state: { assetStatusFilter: "damaged" },
       });
       return;
@@ -248,7 +267,7 @@ const AssetsDashboard = () => {
     dispatch(setSelectedDepartment(currentDepartmentId));
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
-      `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
+        `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-damaged`,
       {
         state: { assetStatusFilter: "damaged" },
       },
@@ -257,7 +276,7 @@ const AssetsDashboard = () => {
 
   const handleExtraAssetsClick = () => {
     if (isGlobalAssetsUser) {
-      navigate("/app/assets/view-assets", {
+        navigate("/app/assets/view-assets/list-of-assets/assets-extra", {
         state: { assetStatusFilter: "extra" },
       });
       return;
@@ -266,7 +285,7 @@ const AssetsDashboard = () => {
     dispatch(setSelectedDepartment(currentDepartmentId));
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
-      `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
+        `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-extra`,
       {
         state: { assetStatusFilter: "extra" },
       },
@@ -285,6 +304,9 @@ const AssetsDashboard = () => {
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
       `/app/assets/manage-assets/${currentDepartmentName}/assigned-assets`,
+      {
+        state: { assetViewFilter: "inUse" },
+      },
     );
   };
 
@@ -299,7 +321,7 @@ const AssetsDashboard = () => {
     dispatch(setSelectedDepartment(currentDepartmentId));
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
-      `/app/assets/manage-assets/${currentDepartmentName}/assign-assets`,
+      `/app/assets/manage-assets/${currentDepartmentName}/unassigned-assets`,
       {
         state: { assetViewFilter: "available" },
       },
@@ -814,7 +836,12 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={totalAssets.length}
             description={"Total Assets"}
-            route={"/app/assets/view-assets"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/view-assets/list-of-assets/total-assets"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/total-assets`
+            }
+            onClick={handleTotalAssetsClick}
           />
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) && (
@@ -822,7 +849,12 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={totalOwnedAssets}
             description={"Assets Owned"}
-            route={"/app/assets/view-assets"}
+            // route={"/app/assets/view-assets"}
+             route={
+              isGlobalAssetsUser
+                ? "/app/assets/view-assets/list-of-assets/assets-owned"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-owned`
+            }
             onClick={handleOwnedAssetsClick}
           />
         ),
@@ -831,7 +863,11 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={totalRentalAssets}
             description={"Assets Rental"}
-            route={"/app/assets/view-assets"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/view-assets/list-of-assets/assets-rental"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-rental`
+            }
             onClick={handleRentalAssetsClick}
           />
         ),
@@ -904,8 +940,9 @@ const AssetsDashboard = () => {
             description={"Assets Under Maintenance"}
             route={
               isGlobalAssetsUser
-                ? "/app/assets/view-assets"
-                : `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`
+                ? "/app/assets/view-assets/list-of-assets/assets-under-maintenance"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`
+                // : `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`
             }
             onClick={handleUnderMaintenanceClick}
           />
@@ -917,8 +954,8 @@ const AssetsDashboard = () => {
             description={"Assets Damaged"}
             route={
               isGlobalAssetsUser
-                ? "/app/assets/view-assets"
-                : `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`
+               ? "/app/assets/view-assets/list-of-assets/assets-damaged"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-damaged`  
             }
             onClick={handleDamagedAssetsClick}
           />
@@ -930,8 +967,8 @@ const AssetsDashboard = () => {
             description={"Assets Extra"}
             route={
               isGlobalAssetsUser
-                ? "/app/assets/view-assets"
-                : `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`
+                ? "/app/assets/view-assets/list-of-assets/assets-extra"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-extra`
             }
             onClick={handleExtraAssetsClick}
           />

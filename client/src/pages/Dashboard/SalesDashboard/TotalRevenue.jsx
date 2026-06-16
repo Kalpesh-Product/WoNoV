@@ -4,14 +4,25 @@ import { inrFormat } from "../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentage";
 
+const VERTICAL_ROUTE_MAP = {
+  Meeting: "meetings",
+  Alternate: "alt-revenue",
+  "Virtual Office": "virtual-office",
+  Workation: "workation",
+  "Co-Working": "co-working",
+};
+
 const TotalRevenue = () => {
   const axios = useAxiosPrivate();
+   const location = useLocation();
+  const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState("2025-26");
 
   const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
@@ -25,12 +36,75 @@ const TotalRevenue = () => {
       }
     },
   });
+
+//  const [revenueBasePath] = location.pathname.split("/total-revenue");
+//   const safeRevenueBasePath = revenueBasePath || location.pathname;
+
+//   const handleVerticalNavigation = (vertical) => {
+//     const targetPath = VERTICAL_ROUTE_MAP[vertical];
+//     if (!targetPath) return;
+
+//     navigate(`${safeRevenueBasePath}/${targetPath}`, {
+//       state: { selectedVertical: vertical },
+//     });
+//   };
+
+//   const clickableCellClass =
+//     "w-full h-full text-left text-primary font-pmedium underline-offset-2 hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer";
+
+//   const verticalLinkRenderer = (params) => {
+//     const vertical = params.data?.vertical;
+//     if (!VERTICAL_ROUTE_MAP[vertical]) return params.value;
+
+//     return (
+//       <button
+//         type="button"
+//         className={clickableCellClass}
+//         onClick={() => handleVerticalNavigation(vertical)}
+//         aria-label={`Open ${vertical} revenue details`}
+//       >
+//         {params.value}
+//       </button>
+//     );
+//   };
+
+const [revenueBasePath] = location.pathname.split("/total-revenue");
+  const safeRevenueBasePath = revenueBasePath || location.pathname;
+
+  const handleVerticalNavigation = (vertical) => {
+    const targetPath = VERTICAL_ROUTE_MAP[vertical];
+    if (!targetPath) return;
+
+    navigate(`${safeRevenueBasePath}/${targetPath}`, {
+      state: { selectedVertical: vertical },
+    });
+  };
+
+  const clickableCellClass =
+    "m-0 h-full w-auto cursor-pointer border-none bg-transparent p-0 text-left font-preregular text-primary underline underline-offset-2 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
+
+  const verticalLinkRenderer = (params) => {
+    const vertical = params.data?.vertical;
+    if (!VERTICAL_ROUTE_MAP[vertical]) return params.value;
+
+    return (
+      <button
+        type="button"
+        className={clickableCellClass}
+        onClick={() => handleVerticalNavigation(vertical)}
+        aria-label={`Open ${vertical} revenue details`}
+      >
+        {params.value}
+      </button>
+    );
+  };
+
   const { data: simpleRevenue = [], isLoading: isSimpleRevenue } = useQuery({
     queryKey: ["completeRevenue"],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "/api/sales/simple-consolidated-revenue"
+          "/api/sales/simple-consolidated-revenue",
         );
         return response.data;
       } catch (error) {
@@ -68,12 +142,12 @@ const TotalRevenue = () => {
       ? []
       : totalRevenue.map((category) => {
         const value = category.data?.["2024-25"]?.[i] ?? 0;
-        return {
-          vertical: category.name,
-          revenue: inrFormat(value),
-          percentage: "100%",
-        };
-      });
+          return {
+            vertical: category.name,
+            revenue: inrFormat(value),
+            percentage: "100%",
+          };
+        });
 
     return {
       month: monthLabel,
@@ -204,9 +278,7 @@ const TotalRevenue = () => {
       .map(({ label, seriesName }) => {
         const seriesIndex = w.globals.seriesNames.indexOf(seriesName);
         const color =
-          seriesIndex >= 0
-            ? w.globals.colors[seriesIndex]
-            : "#6B7280";
+           seriesIndex >= 0 ? w.globals.colors[seriesIndex] : "#6B7280";
         const value = rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
         total += value;
 
@@ -228,8 +300,8 @@ const TotalRevenue = () => {
         ${rowsHtml}
         <hr style="margin-top: 6px;"/>
         <div style="text-align: right; font-weight: 600;">Total: INR ${total.toLocaleString(
-      "en-IN"
-    )}</div>
+      "en-IN",
+        )}</div>
       </div>
     `;
   };
@@ -303,7 +375,7 @@ const TotalRevenue = () => {
   const totalAnnualRevenue = useMemo(() => {
     return revenueByVertical.reduce(
       (sum, item) => sum + parseFloat(item.revenue.replace(/,/g, "")),
-      0
+      0,
     );
   }, [revenueByVertical]);
 
@@ -331,8 +403,18 @@ const TotalRevenue = () => {
         groupByKey="vertical" // 👈 we’ll use this to show 1 row per vertical
         columns={[
           { headerName: "Sr No", field: "srNo", flex: 1 },
-          { headerName: "Vertical", field: "vertical", flex: 1 },
-          { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
+         {
+            headerName: "Vertical",
+            field: "vertical",
+            flex: 1,
+            cellRenderer: verticalLinkRenderer,
+          },
+          {
+            headerName: "Revenue (INR)",
+            field: "revenue",
+            flex: 1,
+            //cellRenderer: verticalLinkRenderer,
+          },
         ]}
         amount={`INR ${inrFormat(totalAnnualRevenue)}`}
         data={unifiedRevenueData}
