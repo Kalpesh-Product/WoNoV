@@ -1132,6 +1132,7 @@ const repeatInternalVisitor = async (req, res, next) => {
       toMeet,
       clientToMeet,
       checkOut,
+      checkIn,
     } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(visitorId)) {
@@ -1235,7 +1236,11 @@ const repeatInternalVisitor = async (req, res, next) => {
       }
     }
 
-    const checkInDate = new Date();
+    if (Number.isNaN(checkIn.getTime())) {
+      return res.status(400).json({ message: "Invalid checkIn provided" });
+    }
+
+    const checkInDate = new Date(checkIn);
     let checkOutDate = null;
 
     if (checkOut) {
