@@ -30,8 +30,32 @@ import { queryClient } from "../../../main";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate , useParams } from "react-router-dom" ;
 import StatusChip from "../../../components/StatusChip";
+
+const assetCardRouteConfig = {
+  "assets-owned": {
+    ownershipType: "Owned",
+    tableTitle: "List of Assets - Owned Assets",
+  },
+  "assets-rental": {
+    ownershipType: "Rental",
+    tableTitle: "List of Assets - Rental Assets",
+  },
+  "assets-under-maintenance": {
+    statusFilter: "underMaintenance",
+    tableTitle: "List of Assets - Under Maintenance Assets",
+  },
+  "assets-damaged": {
+    statusFilter: "damaged",
+    tableTitle: "List of Assets - Damaged Assets",
+  },
+  "assets-extra": {
+    statusFilter: "extra",
+    tableTitle: "List of Assets - Extra Assets",
+  },
+};
+
 
 const ListOfAssets = () => {
   const { auth } = useAuth();
@@ -44,8 +68,18 @@ const ListOfAssets = () => {
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
   const navigate = useNavigate();
   const location = useLocation();
-  const assetOwnershipTypeFilter = location.state?.assetOwnershipType;
-  const assetStatusFilter = location.state?.assetStatusFilter;
+  // const assetOwnershipTypeFilter = location.state?.assetOwnershipType;
+  // const assetStatusFilter = location.state?.assetStatusFilter;
+   const { assetCard } = useParams();
+  const normalizedAssetCard = assetCard?.trim();
+  const selectedAssetCardConfig =
+    assetCardRouteConfig[normalizedAssetCard] || null;
+  const assetOwnershipTypeFilter =
+    selectedAssetCardConfig?.ownershipType || location.state?.assetOwnershipType;
+  const assetStatusFilter =
+    selectedAssetCardConfig?.statusFilter || location.state?.assetStatusFilter;
+  const isAssetCardRoute = Boolean(selectedAssetCardConfig);
+  const tableTitle = selectedAssetCardConfig?.tableTitle || "List of Assets";
 
   //---------------------Forms----------------------//
   const {
@@ -604,11 +638,18 @@ const ListOfAssets = () => {
       <YearWiseTable
         search={true}
        // dateColumn={"purchaseDate"}
-        tableTitle={"List of Assets"}
-        buttonTitle={"Add Asset"}
+        // tableTitle={"List of Assets"}
+        // buttonTitle={"Add Asset"}
+        // data={tableData}
+        // columns={assetColumns}
+        // handleSubmit={handleAddAsset}
+        tableTitle={tableTitle}
+        buttonTitle={isAssetCardRoute ? undefined : "Add Asset"}
         data={tableData}
         columns={assetColumns}
-        handleSubmit={handleAddAsset}
+        handleSubmit={isAssetCardRoute ? undefined : handleAddAsset}
+        exportData={isAssetCardRoute}
+        exportButtonTitle="Export"
       />
 
       <MuiModal
