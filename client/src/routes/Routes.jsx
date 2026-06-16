@@ -101,6 +101,7 @@ import AssetsMixBag from "../pages/Assets/AssetsMixBag";
 import AssignAssets from "../pages/Assets/ManageAssets/AssignAssets";
 import ManageAssets from "../pages/Assets/ManageAssets/ManageAssets";
 import AssignedAssets from "../pages/Assets/ManageAssets/AssignedAssets";
+import UnassignedAssets from "../pages/Assets/ManageAssets/UnassignedAssets";
 import Approvals from "../pages/Assets/ManageAssets/Approvals";
 import AssetReports from "../pages/Assets/Reports/AssetReports";
 import AssetsCategoriesLayout from "../pages/Assets/AssetsCategory/AssetsCategoriesLayout";
@@ -3204,8 +3205,12 @@ export const routes = createBrowserRouter([
                     element: <ManageAssets />,
                     children: [
                       {
-                        path: "assign-assets",
+                         path: "overall-asset",
                         element: <AssignAssets />,
+                      },
+                                            {
+                        path: "unassigned-assets",
+                        element: <UnassignedAssets />,
                       },
                       {
                         path: "assigned-assets",
@@ -3918,9 +3923,13 @@ export const routes = createBrowserRouter([
                     path: "manage-assets",
                     element: <ManageAssets />,
                     children: [
-                      {
-                        path: "assign-assets",
+                         {
+                        path: "overall-asset",
                         element: <AssignAssets />,
+                      },
+                      {
+                        path: "unassigned-assets",
+                        element: <UnassignedAssets />,
                       },
                       {
                         path: "assigned-assets",

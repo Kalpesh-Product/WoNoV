@@ -16,9 +16,14 @@ const ManageAssets = () => {
 
   const tabs = [
     {
-      label: "Assign Assets",
-      path: "assign-assets",
+      label: "Overall Asset",
+      path: "overall-asset",
       permission: PERMISSIONS.ASSETS_ASSIGN_ASSETS.value,
+    },
+    {
+      label: "Unassigned Asset",
+      path: "unassigned-assets",
+      permission: PERMISSIONS.ASSETS_UNASSIGNED_ASSET_TAB.value,
     },
     { label: "Assigned Assets", path: "assigned-assets", permission: PERMISSIONS.ASSETS_ASSIGNED_ASSETS.value },
     { label: "Approvals", path: "approvals", permission: PERMISSIONS.ASSETS_APPROVALS.value },
@@ -33,7 +38,7 @@ const ManageAssets = () => {
       assetViewFilter === "inUse"
         ? `${basePath}/assigned-assets`
         : assetViewFilter === "available"
-          ? `${basePath}/assign-assets`
+             ? `${basePath}/unassigned-assets`
           : null;
 
     if (expectedPath && location.pathname !== expectedPath) {
@@ -42,7 +47,7 @@ const ManageAssets = () => {
   }, [basePath, location.pathname, location.state, navigate]);
 
   return (
-    <TabLayout basePath={basePath} tabs={tabs} defaultTabPath="assign-assets" />
+     <TabLayout basePath={basePath} tabs={tabs} defaultTabPath="overall-asset" />
   );
 };
 
