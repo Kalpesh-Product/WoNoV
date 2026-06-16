@@ -321,7 +321,7 @@ const AssetsDashboard = () => {
     dispatch(setSelectedDepartment(currentDepartmentId));
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
-      `/app/assets/manage-assets/${currentDepartmentName}/unassigned-assets`,
+      `/app/assets/manage-assets/${currentDepartmentName}/assign-assets`,
       {
         state: { assetViewFilter: "available" },
       },

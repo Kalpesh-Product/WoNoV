@@ -3208,10 +3208,6 @@ export const routes = createBrowserRouter([
                         element: <AssignAssets />,
                       },
                       {
-                        path: "unassigned-assets",
-                        element: <AssignAssets />,
-                      },
-                      {
                         path: "assigned-assets",
                         element: <AssignedAssets />,
                       },

@@ -13,12 +13,11 @@ const ManageAssets = () => {
   );
   const departmentName = reduxDeptName || urlDept;
   const basePath = `/app/assets/manage-assets/${departmentName}`;
-  const isUnassignedRoute = location.pathname.includes("/unassigned-assets");
 
   const tabs = [
     {
-      label: isUnassignedRoute ? "Unassigned Assets" : "Assign Assets",
-      path: isUnassignedRoute ? "unassigned-assets" : "assign-assets",
+      label: "Assign Assets",
+      path: "assign-assets",
       permission: PERMISSIONS.ASSETS_ASSIGN_ASSETS.value,
     },
     { label: "Assigned Assets", path: "assigned-assets", permission: PERMISSIONS.ASSETS_ASSIGNED_ASSETS.value },
@@ -34,7 +33,7 @@ const ManageAssets = () => {
       assetViewFilter === "inUse"
         ? `${basePath}/assigned-assets`
         : assetViewFilter === "available"
-          ? `${basePath}/unassigned-assets`
+          ? `${basePath}/assign-assets`
           : null;
 
     if (expectedPath && location.pathname !== expectedPath) {

@@ -45,7 +45,6 @@ const AssignAssets = () => {
   const selectedUnit = watch("floor");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const isAvailableView = location.state?.assetViewFilter === "available";
-  const tableTitle = isAvailableView ? "Unassigned Assets" : "Assign Assets";
   //-----------------------API----------------------//
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ["employees"],
@@ -272,7 +271,7 @@ const AssignAssets = () => {
         <AgTable
           key={assetsList.length}
           search={true}
-          tableTitle={tableTitle}
+          tableTitle={"Assign Assets"}
           data={tableData}
           columns={assetsColumns}
         />

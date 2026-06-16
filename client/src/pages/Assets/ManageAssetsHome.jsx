@@ -38,7 +38,7 @@ const ManageAssetsHome = () => {
         isInUseView
           ? `/app/assets/manage-assets/${currentDepartment}/assigned-assets`
           : isAvailableView
-            ? `/app/assets/manage-assets/${currentDepartment}/unassigned-assets`
+            ? `/app/assets/manage-assets/${currentDepartment}/assign-assets`
           : `/app/assets/manage-assets/${currentDepartment}`,
         isInUseView
           ? { state: { assetViewFilter: "inUse" } }
@@ -238,7 +238,7 @@ const ManageAssetsHome = () => {
                 isInUseView
                   ? `/app/assets/manage-assets/${params.value}/assigned-assets`
                   : isAvailableView
-                    ? `/app/assets/manage-assets/${params.value}/unassigned-assets`
+                    ? `/app/assets/manage-assets/${params.value}/assign-assets`
                   : `/app/assets/manage-assets/${params.value}`,
                 isInUseView
                   ? { state: { assetViewFilter: "inUse" } }
