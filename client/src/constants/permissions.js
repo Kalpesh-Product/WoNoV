@@ -65,15 +65,34 @@ export const PERMISSIONS = {
     title: "ASSET CATEGORIES",
     type: "read",
   },
+   ASSETS_ASSET_SUB_CATEGORIES: {
+    value: "asset_sub_categories",
+    title: "ASSET SUB-CATEGORIES",
+    type: "read",
+    route: "/app/assets",
+  },
   ASSETS_RECENTLY_ADDED_ASSETS: {
     value: "recently_added_assets",
     title: "RECENTLY ADDED ASSETS",
     type: "read",
   },
+   ASSETS_TOTAL_ASSETS: {
+    value: "total_assets",
+    title: "TOTAL ASSETS",
+    type: "read",
+    route: "/app/assets/view-assets",
+  },
   ASSETS_ASSETS_OWNED: {
     value: "assets_owned",
     title: "ASSETS OWNED",
     type: "read",
+  route: "/app/assets/view-assets",
+  },
+  ASSETS_ASSETS_RENTAL: {
+    value: "assets_rental",
+    title: "ASSETS RENTAL",
+    type: "read",
+    route: "/app/assets/view-assets",
   },
   ASSETS_ASSET_VALUE: {
     value: "asset_value",
@@ -94,6 +113,18 @@ export const PERMISSIONS = {
     value: "assets_under_maintenance",
     title: "ASSETS UNDER MAINTENANCE",
     type: "read",
+  },
+   ASSETS_ASSETS_DAMAGED: {
+    value: "assets_damaged",
+    title: "ASSETS DAMAGED",
+    type: "read",
+    route: "/app/assets/view-assets",
+  },
+  ASSETS_ASSETS_EXTRA: {
+    value: "assets_extra",
+    title: "ASSETS EXTRA",
+    type: "read",
+    route: "/app/assets/view-assets",
   },
 
   // Tickets Module

@@ -109,6 +109,10 @@ const assetsSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isExtra: {
+      type: Boolean,
+      default: false,
+    },
     isAssigned: {
       type: Boolean,
       default: false,

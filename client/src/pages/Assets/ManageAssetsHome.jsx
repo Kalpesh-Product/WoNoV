@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../components/AgTable";
 import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   setSelectedDepartment,
@@ -17,9 +17,13 @@ const ManageAssetsHome = () => {
   const { auth } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
   console.log("id in parent : ", currentDepartmentId);
   const currentDepartment = auth.user?.departments?.[0]?.name;
+  const assetViewFilter = location.state?.assetViewFilter;
+  const isInUseView = assetViewFilter === "inUse";
+  const isAvailableView = assetViewFilter === "available";
 
   useTopDepartment({
     additionalTopUserIds: [
@@ -30,7 +34,16 @@ const ManageAssetsHome = () => {
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       dispatch(setSelectedDepartmentName(currentDepartment));
-      navigate(`/app/assets/manage-assets/${currentDepartment}`);
+      navigate(
+        isInUseView
+          ? `/app/assets/manage-assets/${currentDepartment}/assigned-assets`
+          : isAvailableView
+            ? `/app/assets/manage-assets/${currentDepartment}/assign-assets`
+          : `/app/assets/manage-assets/${currentDepartment}`,
+        isAvailableView
+          ? { state: { assetViewFilter: "available" } }
+          : undefined,
+      );
     },
   });
 
@@ -48,9 +61,162 @@ const ManageAssetsHome = () => {
     },
   });
 
-  const assetsRaw = isLoading
-    ? []
-    : departmentAssets.flatMap((item) => item.assets);
+  const { data: assignedAssetsInUse = [], isLoading: isAssignedAssetsLoading } =
+    useQuery({
+      queryKey: ["assignedAssetsInUse", "all"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            "/api/assets/get-asset-requests?status=Approved",
+          );
+
+          return Array.isArray(response.data) ? response.data : [];
+        } catch (error) {
+          console.log(error);
+          return [];
+        }
+      },
+      enabled: isInUseView,
+    });
+
+  const {
+    data: availableDepartmentAssets = [],
+    isLoading: isAvailableAssetsLoading,
+  } = useQuery({
+    queryKey: ["availableDepartmentAssets"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/assets/get-assets");
+        return Array.isArray(response.data) ? response.data : [];
+      } catch (error) {
+        console.log(error);
+        return [];
+      }
+    },
+    enabled: isAvailableView,
+  });
+
+  const isActiveAsset = (asset) => {
+    const normalizedStatus = String(asset?.status ?? "").trim().toLowerCase();
+    if (normalizedStatus) return normalizedStatus === "active";
+    return asset?.isActive === true;
+  };
+
+  const isAvailableAsset = (asset) => {
+    if (!isActiveAsset(asset)) return false;
+
+    const assignmentState = String(asset?.assignmentState ?? "")
+      .trim()
+      .toLowerCase();
+
+    if (assignmentState) return assignmentState === "available";
+    return !asset?.isAssigned;
+  };
+
+  const tableData =
+    isLoading ||
+    (isInUseView && isAssignedAssetsLoading) ||
+    (isAvailableView && isAvailableAssetsLoading)
+      ? []
+      : isInUseView
+        ? (Array.isArray(departmentAssets) ? departmentAssets : []).map(
+            (item, index) => {
+              const departmentAssignedAssets = assignedAssetsInUse.filter(
+                (request) => request?.fromDepartment?._id === item?._id,
+              );
+
+              const assignedAssetItems = departmentAssignedAssets
+                .map((request) => request?.asset)
+                .filter(Boolean);
+
+              const assetValue = assignedAssetItems.reduce(
+                (sum, asset) => sum + (Number(asset?.price) || 0),
+                0,
+              );
+
+              return {
+                ...item,
+                srNo: index + 1,
+                department: item.name || "N/A",
+                departmentId: item._id,
+                noOfAssets: departmentAssignedAssets.length,
+                value: assetValue,
+                inUse: departmentAssignedAssets.filter(
+                  (request) =>
+                    String(request?.asset?.status ?? "").trim().toLowerCase() ===
+                    "active",
+                ).length,
+                damaged: assignedAssetItems.filter((asset) => asset?.isDamaged)
+                  .length,
+                underMaintenance: assignedAssetItems.filter(
+                  (asset) => asset?.isUnderMaintenance === true,
+                ).length,
+                extra: assignedAssetItems.filter((asset) => asset?.isExtra === true)
+                  .length,
+              };
+            },
+          )
+        : isAvailableView
+          ? (Array.isArray(availableDepartmentAssets)
+              ? availableDepartmentAssets
+              : []
+            ).map((item, index) => {
+                const assets = Array.isArray(item?.assets) ? item.assets : [];
+                const availableAssets = assets.filter(isAvailableAsset);
+
+                const assetValue = availableAssets.reduce(
+                  (sum, asset) => sum + (Number(asset?.price) || 0),
+                  0,
+                );
+
+                return {
+                  ...item,
+                  srNo: index + 1,
+                  department: item.departmentName || "N/A",
+                  departmentId: item.departmentId,
+                  noOfAssets: availableAssets.length,
+                  value: assetValue,
+                  inUse: 0,
+                  damaged: availableAssets.filter((asset) => asset?.isDamaged)
+                    .length,
+                  underMaintenance: availableAssets.filter(
+                    (asset) => asset?.isUnderMaintenance === true,
+                  ).length,
+                  extra: availableAssets.filter((asset) => asset?.isExtra === true)
+                    .length,
+                };
+              },
+            )
+        : (Array.isArray(departmentAssets) ? departmentAssets : []).map(
+            (item, index) => {
+              const assets = item.assets;
+              const assetValue = assets.reduce((sum, a) => sum + a.price, 0);
+              return {
+                ...item,
+                srNo: index + 1,
+                department: item.name || "N/A",
+                departmentId: item._id,
+                noOfAssets: assets.length || 0,
+                value: assetValue || 0,
+                inUse: assets.filter((a) => a.status === "Active").length,
+                damaged: assets.filter((a) => a.status === "Damaged").length,
+                underMaintenance: assets.filter(
+                  (a) => a.isUnderMaintenance === true,
+                ).length,
+                extra: assets.filter((a) => a.isExtra === true).length,
+              };
+            },
+          );
+
+  const assetsRaw = isInUseView
+    ? assignedAssetsInUse.map((item) => item?.asset).filter(Boolean)
+    : isAvailableView
+      ? availableDepartmentAssets.flatMap((item) =>
+          (Array.isArray(item?.assets) ? item.assets : []).filter(isAvailableAsset),
+        )
+    : isLoading
+      ? []
+      : departmentAssets.flatMap((item) => item.assets);
 
   const totalAssetValue = assetsRaw.reduce((sum, item) => sum + item.price, 0);
   const departmentColumns = [
@@ -66,7 +232,16 @@ const ManageAssetsHome = () => {
             onClick={() => {
               dispatch(setSelectedDepartment(params.data?.departmentId));
               dispatch(setSelectedDepartmentName(params.value));
-              navigate(`/app/assets/manage-assets/${params.value}`);
+              navigate(
+                isInUseView
+                  ? `/app/assets/manage-assets/${params.value}/assigned-assets`
+                  : isAvailableView
+                    ? `/app/assets/manage-assets/${params.value}/assign-assets`
+                  : `/app/assets/manage-assets/${params.value}`,
+                isAvailableView
+                  ? { state: { assetViewFilter: "available" } }
+                  : undefined,
+              );
             }}
             className="text-primary font-pregular hover:underline cursor-pointer"
           >
@@ -84,26 +259,8 @@ const ManageAssetsHome = () => {
     { headerName: "In Use", field: "inUse" },
     { headerName: "Damaged", field: "damaged" },
     { headerName: "Under Maintenance", field: "underMaintenance" },
+    {headerName: "Extra", field: "extra"},
   ];
-
-  const tableData = isLoading
-    ? []
-    : departmentAssets.map((item, index) => {
-        const assets = item.assets;
-        const assetValue = assets.reduce((sum, a) => sum + a.price, 0);
-        return {
-          ...item,
-          srNo: index + 1,
-          department: item.name || "N/A",
-          departmentId: item._id,
-          noOfAssets: assets.length || 0,
-          value: assetValue || 0,
-          inUse: assets.filter((a) => a.status === "Active").length,
-          damaged: assets.filter((a) => a.status === "Damaged").length, // if applicable
-          underMaintenance: assets.filter((a) => a.isUnderMaintenance === true)
-            .length,
-        };
-      });
 
   return (
     <div className="flex flex-col gap-4 p-4">

@@ -439,12 +439,16 @@ const AssignedAssets = () => {
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}
             />
             <DetalisFormatted
-              title={"Revoked"}
-              detail={selectedAsset?.isRevoked ? "Yes" : "No"}
-            />
-            <DetalisFormatted
               title={"Under Maintenance"}
               detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Extra"}
+              detail={selectedAsset?.isExtra ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Revoked"}
+              detail={selectedAsset?.isRevoked ? "Yes" : "No"}
             />
           </div>
         )}
