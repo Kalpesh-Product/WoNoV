@@ -300,8 +300,15 @@ const fetchVirtualOfficeRevenueReportService = async ({
 const fetchWorkationRevenueReportService = async ({
   company,
   isReport = false,
+  dateFilter,
 }) => {
-  const revenues = await WorkationRevenue.find({ company })
+  let filter = {};
+
+  if (dateFilter) {
+    filter.date = dateFilter.date;
+  }
+
+  const revenues = await WorkationRevenue.find(filter)
     .populate("client")
     .lean()
     .exec();
