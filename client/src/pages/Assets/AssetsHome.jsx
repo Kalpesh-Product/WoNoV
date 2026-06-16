@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import AgTable from "../../components/AgTable";
 import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   setSelectedDepartment,
@@ -12,18 +12,56 @@ import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
 
+const assetCardRouteConfig = {
+  "total-assets": {
+    tableTitle: "Total - List Of Asset",
+  },
+  "assets-owned": {
+    ownershipType: "Owned",
+    tableTitle: "List of Assets - Owned Assets",
+  },
+  "assets-rental": {
+    ownershipType: "Rental",
+    tableTitle: "List of Assets - Rental Assets",
+  },
+  "assets-under-maintenance": {
+    statusFilter: "underMaintenance",
+    tableTitle: "List of Assets - Under Maintenance Assets",
+  },
+  "assets-damaged": {
+    statusFilter: "damaged",
+    tableTitle: "List of Assets - Damaged Assets",
+  },
+  "assets-extra": {
+    statusFilter: "extra",
+    tableTitle: "List of Assets - Extra Assets",
+  },
+};
+
 const AssetsHome = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const { assetCard } = useParams();
+  const normalizedAssetCard = assetCard?.trim();
+  const selectedAssetCardConfig =
+    assetCardRouteConfig[normalizedAssetCard] || null;
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
   console.log("id in parent : ", currentDepartmentId);
   const currentDepartment = auth.user?.departments?.[0]?.name;
-  const assetOwnershipType = location.state?.assetOwnershipType;
+  const assetOwnershipType =
+    selectedAssetCardConfig?.ownershipType || location.state?.assetOwnershipType;
   const assetTargetTab = location.state?.assetTargetTab;
-  const assetStatusFilter = location.state?.assetStatusFilter;
+  const assetStatusFilter =
+    selectedAssetCardConfig?.statusFilter || location.state?.assetStatusFilter;
+  const shouldOpenDepartmentListOfAssets = Boolean(selectedAssetCardConfig);
+  const buildDepartmentAssetsPath = (departmentName) => {
+    const encodedDepartment = encodeURIComponent((departmentName || "").trim());
+    const cardPath = normalizedAssetCard ? `/${normalizedAssetCard}` : "";
+    return `/app/assets/view-assets/${encodedDepartment}/list-of-assets${cardPath}`;
+  };
   const getFilteredAssets = (assets = []) =>
     assets.filter((item) => {
       if (assetOwnershipType && item?.ownershipType !== assetOwnershipType) {
@@ -48,6 +86,9 @@ const AssetsHome = () => {
   const isGlobalAssetsUser = roleTitles.some((roleTitle) =>
     ["Master Admin", "Super Admin"].includes(roleTitle),
   );
+  const tableTitle = isGlobalAssetsUser
+    ? "DEPARTMENT WISE ASSETS"
+    : selectedAssetCardConfig?.tableTitle || "DEPARTMENT WISE ASSETS";
 
   useTopDepartment({
     additionalTopUserIds: [
@@ -61,10 +102,15 @@ const AssetsHome = () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       dispatch(setSelectedDepartmentName(currentDepartment));
       navigate(
-        assetOwnershipType
-          ? `/app/assets/view-assets/${currentDepartment}/list-of-assets`
+        shouldOpenDepartmentListOfAssets
+          ? buildDepartmentAssetsPath(currentDepartment)
+          : assetOwnershipType
+          ? buildDepartmentAssetsPath(currentDepartment)
           : assetStatusFilter
-            ? `/app/assets/view-assets/${currentDepartment}/list-of-assets`
+            ? buildDepartmentAssetsPath(currentDepartment)
+          // ? `/app/assets/view-assets/${currentDepartment}/list-of-assets`
+          // : assetStatusFilter
+          //   ? `/app/assets/view-assets/${currentDepartment}/list-of-assets`
           : assetTargetTab
             ? `/app/assets/view-assets/${currentDepartment}/${assetTargetTab}`
           : `/app/assets/view-assets/${currentDepartment}`,
@@ -115,10 +161,15 @@ const AssetsHome = () => {
               dispatch(setSelectedDepartment(params.data?.departmentId));
               dispatch(setSelectedDepartmentName(params.value));
               navigate(
-                assetOwnershipType
-                  ? `/app/assets/view-assets/${params.value}/list-of-assets`
+                shouldOpenDepartmentListOfAssets
+                  ? buildDepartmentAssetsPath(params.value)
+                  : assetOwnershipType
+                  ? buildDepartmentAssetsPath(params.value)
                   : assetStatusFilter
-                    ? `/app/assets/view-assets/${params.value}/list-of-assets`
+                    ? buildDepartmentAssetsPath(params.value)
+                  // ? `/app/assets/view-assets/${params.value}/list-of-assets`
+                  // : assetStatusFilter
+                  //   ? `/app/assets/view-assets/${params.value}/list-of-assets`
                   : assetTargetTab
                     ? `/app/assets/view-assets/${params.value}/${assetTargetTab}`
                   : `/app/assets/view-assets/${params.value}`,
@@ -178,7 +229,8 @@ const AssetsHome = () => {
         layout={1}
         padding
         border
-        title={"DEPARTMENT WISE ASSETS"}
+        // title={"DEPARTMENT WISE ASSETS"}
+           title={tableTitle}
         TitleAmount={`TOTAL ASSET VALUE : INR ${
           inrFormat(totalAssetValue) || 0
         }`}
