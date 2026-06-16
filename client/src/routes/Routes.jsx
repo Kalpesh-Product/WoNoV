@@ -3162,7 +3162,7 @@ export const routes = createBrowserRouter([
                     path: "view-assets",
                     element: <AssetsHome />,
                   },
-                    {
+                  {
                     path: "view-assets/list-of-assets/:assetCard",
                     element: <AssetsHome />,
                   },
@@ -3205,6 +3205,10 @@ export const routes = createBrowserRouter([
                     children: [
                       {
                         path: "assign-assets",
+                        element: <AssignAssets />,
+                      },
+                      {
+                        path: "unassigned-assets",
                         element: <AssignAssets />,
                       },
                       {

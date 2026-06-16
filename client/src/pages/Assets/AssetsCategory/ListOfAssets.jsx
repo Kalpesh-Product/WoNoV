@@ -34,6 +34,9 @@ import { useLocation, useNavigate , useParams } from "react-router-dom" ;
 import StatusChip from "../../../components/StatusChip";
 
 const assetCardRouteConfig = {
+  "total-assets": {
+    tableTitle: "Total - List Of Asset",
+  },
   "assets-owned": {
     ownershipType: "Owned",
     tableTitle: "List of Assets - Owned Assets",
@@ -79,7 +82,11 @@ const ListOfAssets = () => {
   const assetStatusFilter =
     selectedAssetCardConfig?.statusFilter || location.state?.assetStatusFilter;
   const isAssetCardRoute = Boolean(selectedAssetCardConfig);
-  const tableTitle = selectedAssetCardConfig?.tableTitle || "List of Assets";
+  const isAssetCardView = isAssetCardRoute || Boolean(location.state?.assetListTitle);
+  const tableTitle =
+    selectedAssetCardConfig?.tableTitle ||
+    location.state?.assetListTitle ||
+    "List of Assets";
 
   //---------------------Forms----------------------//
   const {
@@ -644,11 +651,11 @@ const ListOfAssets = () => {
         // columns={assetColumns}
         // handleSubmit={handleAddAsset}
         tableTitle={tableTitle}
-        buttonTitle={isAssetCardRoute ? undefined : "Add Asset"}
+        buttonTitle={isAssetCardView ? undefined : "Add Asset"}
         data={tableData}
         columns={assetColumns}
-        handleSubmit={isAssetCardRoute ? undefined : handleAddAsset}
-        exportData={isAssetCardRoute}
+        handleSubmit={isAssetCardView ? undefined : handleAddAsset}
+        exportData={isAssetCardView}
         exportButtonTitle="Export"
       />
 

@@ -13,6 +13,9 @@ import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
 
 const assetCardRouteConfig = {
+  "total-assets": {
+    tableTitle: "Total - List Of Asset",
+  },
   "assets-owned": {
     ownershipType: "Owned",
     tableTitle: "List of Assets - Owned Assets",
@@ -53,8 +56,7 @@ const AssetsHome = () => {
   const assetTargetTab = location.state?.assetTargetTab;
   const assetStatusFilter =
     selectedAssetCardConfig?.statusFilter || location.state?.assetStatusFilter;
-  const tableTitle =
-    selectedAssetCardConfig?.tableTitle || "DEPARTMENT WISE ASSETS";
+  const shouldOpenDepartmentListOfAssets = Boolean(selectedAssetCardConfig);
   const buildDepartmentAssetsPath = (departmentName) => {
     const encodedDepartment = encodeURIComponent((departmentName || "").trim());
     const cardPath = normalizedAssetCard ? `/${normalizedAssetCard}` : "";
@@ -84,6 +86,9 @@ const AssetsHome = () => {
   const isGlobalAssetsUser = roleTitles.some((roleTitle) =>
     ["Master Admin", "Super Admin"].includes(roleTitle),
   );
+  const tableTitle = isGlobalAssetsUser
+    ? "DEPARTMENT WISE ASSETS"
+    : selectedAssetCardConfig?.tableTitle || "DEPARTMENT WISE ASSETS";
 
   useTopDepartment({
     additionalTopUserIds: [
@@ -97,7 +102,9 @@ const AssetsHome = () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       dispatch(setSelectedDepartmentName(currentDepartment));
       navigate(
-        assetOwnershipType
+        shouldOpenDepartmentListOfAssets
+          ? buildDepartmentAssetsPath(currentDepartment)
+          : assetOwnershipType
           ? buildDepartmentAssetsPath(currentDepartment)
           : assetStatusFilter
             ? buildDepartmentAssetsPath(currentDepartment)
@@ -154,7 +161,9 @@ const AssetsHome = () => {
               dispatch(setSelectedDepartment(params.data?.departmentId));
               dispatch(setSelectedDepartmentName(params.value));
               navigate(
-                assetOwnershipType
+                shouldOpenDepartmentListOfAssets
+                  ? buildDepartmentAssetsPath(params.value)
+                  : assetOwnershipType
                   ? buildDepartmentAssetsPath(params.value)
                   : assetStatusFilter
                     ? buildDepartmentAssetsPath(params.value)
