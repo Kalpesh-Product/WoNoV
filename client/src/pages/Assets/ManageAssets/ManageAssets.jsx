@@ -1,18 +1,21 @@
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import TabLayout from "../../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../../constants/permissions";
+import useAuth from "../../../hooks/useAuth";
 
 const ManageAssets = () => {
   const { department: urlDept } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { auth } = useAuth();
   const reduxDeptName = useSelector(
     (state) => state.assets.selectedDepartmentName
   );
   const departmentName = reduxDeptName || urlDept;
   const basePath = `/app/assets/manage-assets/${departmentName}`;
+  const userPermissions = auth?.user?.permissions?.permissions || [];
 
   const tabs = [
     {
@@ -29,10 +32,14 @@ const ManageAssets = () => {
     { label: "Approvals", path: "approvals", permission: PERMISSIONS.ASSETS_APPROVALS.value },
   ];
 
+  const isUnassignedAssetsCardAccessDenied =
+    location.state?.assetViewFilter === "available" &&
+    !userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSET_TAB.value);
+
   useEffect(() => {
     const assetViewFilter = location.state?.assetViewFilter;
 
-    if (!assetViewFilter) return;
+    if (!assetViewFilter || isUnassignedAssetsCardAccessDenied) return;
 
     const expectedPath =
       assetViewFilter === "inUse"
@@ -44,7 +51,11 @@ const ManageAssets = () => {
     if (expectedPath && location.pathname !== expectedPath) {
       navigate(location.pathname, { replace: true, state: null });
     }
-  }, [basePath, location.pathname, location.state, navigate]);
+  }, [basePath, isUnassignedAssetsCardAccessDenied, location.pathname, location.state, navigate]);
+
+  if (isUnassignedAssetsCardAccessDenied) {
+    return <Navigate to="/unauthorized" replace state={{ from: location }} />;
+  }
 
   return (
      <TabLayout basePath={basePath} tabs={tabs} defaultTabPath="overall-asset" />
