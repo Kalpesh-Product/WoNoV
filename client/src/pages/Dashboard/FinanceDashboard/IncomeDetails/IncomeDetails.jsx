@@ -4,6 +4,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
 import MonthWiseAgTable from "../../../../components/Tables/MonthWiseAgTable";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
@@ -11,14 +12,25 @@ import WidgetTable from "../../../../components/Tables/WidgetTable";
 import FyBarGraph from "../../../../components/graphs/FyBarGraph";
 import FyBarGraphPercentage from "../../../../components/graphs/FyBarGraphPercentage";
 
+const FINANCE_REVENUE_BASE_PATH =
+  "/app/dashboard/finance-dashboard/mix-bag/revenue";
+
+const VERTICAL_ROUTE_MAP = {
+  Meeting: "meetings",
+  "Alternate Revenue": "alt-revenue",
+  "Virtual Office": "virtual-office",
+  Workation: "workation",
+  Coworking: "co-working",
+};
 const IncomeDetails = () => {
   const axios = useAxiosPrivate();
+   const navigate = useNavigate();
   const { data: simpleRevenue = [], isLoading: isTotalLoading } = useQuery({
     queryKey: ["simpleRevenue"],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "/api/sales/simple-consolidated-revenue"
+          "/api/sales/simple-consolidated-revenue",
         );
         return response.data;
       } catch (error) {
@@ -88,9 +100,38 @@ const IncomeDetails = () => {
           revenue: Number(item?.[revenueKey]) || 0,
           date: item[validDateKey],
         };
-      })
+      }),
     );
   }, [simpleRevenue]);
+
+  const handleVerticalNavigation = (vertical) => {
+    const targetPath = VERTICAL_ROUTE_MAP[vertical];
+    if (!targetPath) return;
+
+    navigate(`${FINANCE_REVENUE_BASE_PATH}/${targetPath}`, {
+      state: { selectedVertical: vertical },
+    });
+  };
+
+  const clickableCellClass =
+    "m-0 h-full w-auto cursor-pointer border-none bg-transparent p-0 text-left font-pregular text-primary underline underline-offset-2 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
+
+  const verticalLinkRenderer = (params) => {
+    const vertical = params.data?.vertical;
+    if (!VERTICAL_ROUTE_MAP[vertical]) return params.value;
+
+    return (
+      <button
+        type="button"
+        className={clickableCellClass}
+        onClick={() => handleVerticalNavigation(vertical)}
+        aria-label={`Open ${vertical} income details`}
+      >
+        {params.value}
+      </button>
+    );
+  };
+
   const options = {
     colors: [
       "#1E3D73", // Dark Blue (Co-Working)
@@ -126,7 +167,13 @@ const IncomeDetails = () => {
         groupByKey="vertical" // ✅ triggers dynamic grouping by vertical
         columns={[
           { headerName: "Sr No", field: "srNo", flex: 1 },
-          { headerName: "Vertical", field: "vertical", flex: 1 },
+          //{ headerName: "Vertical", field: "vertical", flex: 1 },
+                    {
+            headerName: "Vertical",
+            field: "vertical",
+            flex: 1,
+            cellRenderer: verticalLinkRenderer,
+          },
           {
             headerName: "Revenue (INR)",
             field: "revenue",
