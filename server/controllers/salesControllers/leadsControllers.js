@@ -455,9 +455,23 @@ const updateCoworkingClientStatus = async (req, res, next) => {
 const getLeads = async (req, res, next) => {
   try {
     const { company } = req;
-    const leads = await Lead.find({ company }).populate(
-      "serviceCategory proposedLocations",
-    );
+    const leads = await Lead.find({ company }).populate([
+      {
+        path: "serviceCategory",
+        select: "serviceName",
+      },
+      {
+        path: "proposedLocations",
+        select: "unitNo unitName building",
+        model: "Unit",
+        populate: {
+          path: "building",
+          select: "buildingName",
+          model: "Building",
+        },
+      },
+    ]);
+
     if (!leads.length) {
       return res.status(404).json({ message: "No leads found" });
     }
