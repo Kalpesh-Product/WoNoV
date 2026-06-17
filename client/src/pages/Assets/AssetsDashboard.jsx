@@ -329,14 +329,11 @@ const AssetsDashboard = () => {
     );
   };
 
-  const isTopManagement = departments.some(
-    (dept) => dept.name === "Top Management",
-  );
   const deptNames = departments.map((dept) => dept.name);
 
   let assetsDept = Array.isArray(departmentAssets) ? departmentAssets : [];
 
-  if (!isTopManagement) {
+  if (!isGlobalAssetsUser) {
     assetsDept = assetsDept.filter((dept) =>
       deptNames.includes(dept.departmentName),
     );
@@ -611,10 +608,34 @@ const AssetsDashboard = () => {
 
   //Assets Value Graph
 
-  const getFiscalYearFromDate = (dateInput) => {
-    const date = new Date(dateInput);
+  const parseAssetPurchaseDate = (dateInput) => {
+    if (!dateInput) return null;
 
-    if (Number.isNaN(date.getTime())) return null;
+    if (dateInput instanceof Date) {
+      return Number.isNaN(dateInput.getTime()) ? null : dateInput;
+    }
+
+    const rawValue = String(dateInput).trim();
+    if (!rawValue) return null;
+
+    const directDate = new Date(rawValue);
+    if (!Number.isNaN(directDate.getTime())) {
+      return directDate;
+    }
+
+    const normalizedValue = rawValue.replace(/\//g, "-");
+    const [day, month, year] = normalizedValue.split("-").map(Number);
+
+    if (!day || !month || !year) return null;
+
+    const parsedDate = new Date(year, month - 1, day);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  };
+
+  const getFiscalYearFromDate = (dateInput) => {
+    const date = parseAssetPurchaseDate(dateInput);
+
+    if (!date) return null;
 
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -668,11 +689,12 @@ const AssetsDashboard = () => {
 
     assetsDept?.forEach((dept) => {
       dept.assets?.forEach((asset) => {
-        const fiscalYear = getFiscalYearFromDate(asset.purchaseDate);
+        const parsedPurchaseDate = parseAssetPurchaseDate(asset.purchaseDate);
+        const fiscalYear = getFiscalYearFromDate(parsedPurchaseDate);
 
         if (!fiscalYear || !initialStats[fiscalYear]) return;
 
-        const month = new Date(asset.purchaseDate).toLocaleString("en-US", {
+        const month = parsedPurchaseDate.toLocaleString("en-US", {
           month: "short",
           year: "2-digit",
         });
@@ -683,7 +705,7 @@ const AssetsDashboard = () => {
           return;
         }
 
-        const price = asset.price || 0;
+        const price = Number(asset?.price) || 0;
 
         initialStats[fiscalYear].totalAssetValues[monthKey] += price;
 
@@ -765,7 +787,7 @@ const AssetsDashboard = () => {
           <div style="padding-bottom: 5px; border-bottom: 1px solid gray; margin-bottom:10px">
             <strong>${month}</strong><br>
           </div>
-          Total Assets Value: INR ${inrFormat(total)}<br>
+          Total Assets Value: INR ${inrFormat(totalAssetsPrice)}<br>
           Asset Value Used: INR ${inrFormat(used)}<br>
           Under Maintenance: ${underMaintenance} <br>
           Assets Damaged: ${damaged}
@@ -792,8 +814,8 @@ const AssetsDashboard = () => {
   };
 
   const assetsValueGraph = {
-    titleAmount: `ASSET VALUE UTILIZATION (${selectedAssetValueFY})`,
-    title: "ASSET VALUE",
+    title: `ASSET VALUE UTILIZATION - ${selectedAssetValueFY}`,
+    titleAmount: `TOTAL ASSET VALUE : INR ${inrFormat(totalAssetsPrice)}`,
     data: assetUtilizationSeries,
     options: assetUtilizationOptions,
     onYearChange: setSelectedAssetValueFY,
@@ -806,8 +828,8 @@ const AssetsDashboard = () => {
       widgets: [
         userPermissions.includes(assetsValueGraph.permission) && (
           <YearlyGraph
-            titleAmount={assetsValueGraph.titleAmount}
             title={assetsValueGraph.title}
+            titleAmount={assetsValueGraph.titleAmount}
             data={assetsValueGraph.data}
             options={assetsValueGraph.options}
             onYearChange={assetsValueGraph.onYearChange}
