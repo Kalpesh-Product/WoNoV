@@ -34,6 +34,10 @@ const alternateRevenueSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    status: {
+      type: String,
+      default: "Unpaid",
+    },
   },
   {
     timestamps: true,

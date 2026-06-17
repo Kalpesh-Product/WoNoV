@@ -1,12 +1,13 @@
 const Task = require("../../models/tasks/Task");
 
-const isDepartmentAdmin = (roles) =>
-  roles.some(
-    (role) =>
-      typeof role === "string" &&
-      role.endsWith(" Admin") &&
-      !["Master Admin", "Super Admin"].includes(role),
-  );
+// const isDepartmentAdmin = (roles) =>
+//   roles.some(
+//     (role) =>
+//       typeof role === "string" &&
+//       role.endsWith(" Admin") &&
+//       !["Master Admin", "Super Admin"].includes(role),
+//)
+const { hasDepartmentAdminAccess, hasGlobalReportAccess } = require("./access");
 
 const fetchDeptTaskReportService = async ({
   dateFilter,
@@ -18,17 +19,21 @@ const fetchDeptTaskReportService = async ({
   isReport = false,
 }) => {
   try {
+    const hasGlobalAccess = hasGlobalReportAccess(roles);
+    const hasDepartmentAccess = hasDepartmentAdminAccess(roles);
+
     let dept = query ? query.dept : departments;
 
     const queryObj = {
       company,
       isDeleted: { $ne: true },
-      ...(!isDepartmentAdmin(roles) && { assignedTo: { $in: [user] } }),
-      ...(dept && {
-        department: { $in: departments },
-        taskType: "Department",
-      }),
-
+      ...(!hasGlobalAccess &&
+        !hasDepartmentAccess && { assignedTo: { $in: [user] } }),
+      ...(!hasGlobalAccess &&
+        dept && {
+          department: { $in: departments },
+        }),
+      taskType: "Department",
       ...(!isReport && {
         status: "Pending",
       }),
@@ -89,13 +94,18 @@ const fetchMyTasksReportService = async ({
   isReport = false,
 }) => {
   try {
+    const hasGlobalAccess = hasGlobalReportAccess(roles);
+    const hasDepartmentAccess = hasDepartmentAdminAccess(roles);
+
     let { flag } = query;
 
     const queryObj = {
       company,
       isDeleted: { $ne: true },
-      ...(!isDepartmentAdmin(roles) && { assignedBy: user }),
-      department: { $in: departments },
+      // ...(!isDepartmentAdmin(roles) && { assignedBy: user }),
+      // department: { $in: departments },
+      ...(!hasGlobalAccess && !hasDepartmentAccess && { assignedBy: user }),
+      ...(!hasGlobalAccess && { department: { $in: departments } }),
       taskType: "Self",
       ...(flag === "Pending" &&
         !isReport && {
