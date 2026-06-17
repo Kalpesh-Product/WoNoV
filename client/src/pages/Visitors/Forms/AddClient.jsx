@@ -124,16 +124,19 @@ const AddClient = () => {
   });
 
   //---------------------------------------Data processing----------------------------------------------------//
+  const getEmployeeDepartments = (employee) =>
+    Array.isArray(employee?.departments) ? employee.departments : [];
+
   const departmentMap = new Map();
   employees.forEach((employee) => {
-    employee.departments?.forEach((department) => {
+    getEmployeeDepartments(employee).forEach((department) => {
       departmentMap.set(department._id, department);
     });
   });
   const uniqueDepartments = Array.from(departmentMap.values());
 
   const departmentEmployees = employees.filter((item) =>
-    item.departments?.some((dept) => dept._id === selectedDepartment),
+    getEmployeeDepartments(item).some((dept) => dept._id === selectedDepartment),
   );
   //---------------------------------------Data processing----------------------------------------------------//
   const { mutate: addVisitor, isPending: isMutateVisitor } = useMutation({
