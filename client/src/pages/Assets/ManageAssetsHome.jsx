@@ -39,7 +39,7 @@ const ManageAssetsHome = () => {
           ? `/app/assets/manage-assets/${currentDepartment}/assigned-assets`
           : isAvailableView
             ? `/app/assets/manage-assets/${currentDepartment}/unassigned-assets`
-          : `/app/assets/manage-assets/${currentDepartment}`,
+            : `/app/assets/manage-assets/${currentDepartment}`,
         isInUseView
           ? { state: { assetViewFilter: "inUse" } }
           : isAvailableView

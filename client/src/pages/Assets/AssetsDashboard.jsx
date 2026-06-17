@@ -321,7 +321,8 @@ const AssetsDashboard = () => {
     dispatch(setSelectedDepartment(currentDepartmentId));
     dispatch(setSelectedDepartmentName(currentDepartmentName));
     navigate(
-      `/app/assets/manage-assets/${currentDepartmentName}/unassigned-assets`,
+      // `/app/assets/manage-assets/${currentDepartmentName}/assign-assets`,
+         `/app/assets/manage-assets/${currentDepartmentName}/unassigned-assets`,
       {
         state: { assetViewFilter: "available" },
       },
@@ -792,7 +793,7 @@ const AssetsDashboard = () => {
 
   const assetsValueGraph = {
     titleAmount: `ASSET VALUE UTILIZATION (${selectedAssetValueFY})`,
-    title: "Assets Value",
+    title: "ASSET VALUE",
     data: assetUtilizationSeries,
     options: assetUtilizationOptions,
     onYearChange: setSelectedAssetValueFY,
@@ -923,7 +924,7 @@ const AssetsDashboard = () => {
             route={
               isGlobalAssetsUser
                 ? "/app/assets/manage-assets"
-                : `/app/assets/manage-assets/${currentDepartmentName}/assign-assets`
+               : `/app/assets/manage-assets/${currentDepartmentName}/unassigned-assets`
             }
             onClick={handleUnassignedAssetsClick}
           />

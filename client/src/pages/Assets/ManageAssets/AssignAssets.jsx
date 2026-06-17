@@ -18,7 +18,7 @@ import StatusChip from "../../../components/StatusChip";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { useLocation } from "react-router-dom";
 
-const AssignAssets = () => {
+const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) => {
   const axios = useAxiosPrivate();
   const location = useLocation();
   const [openModal, setOpenModal] = useState(false);
@@ -44,8 +44,8 @@ const AssignAssets = () => {
   const selectedLocation = watch("building");
   const selectedUnit = watch("floor");
   const [selectedDepartment, setSelectedDepartment] = useState("");
-  const isAvailableView = location.state?.assetViewFilter === "available";
-  const tableTitle = isAvailableView ? "Unassigned Assets" : "Assign Assets";
+   const isAvailableView = availableOnly || location.state?.assetViewFilter === "available";
+  //const isAvailableView = location.state?.assetViewFilter === "available";
   //-----------------------API----------------------//
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ["employees"],
@@ -272,7 +272,8 @@ const AssignAssets = () => {
         <AgTable
           key={assetsList.length}
           search={true}
-          tableTitle={tableTitle}
+           tableTitle={tableTitle}
+          //tableTitle={"Assign Assets"}
           data={tableData}
           columns={assetsColumns}
         />

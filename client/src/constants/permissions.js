@@ -29,10 +29,11 @@ export const PERMISSIONS = {
     title: "PHYSICAL DIGITAL",
     type: "read",
   },
-  ASSETS_ASSIGN_ASSETS: {
+    ASSETS_ASSIGN_ASSETS: {
     value: "assign_assets",
-    title: "ASSIGN ASSETS",
+    title: "OVERALL ASSET",
     type: "read",
+    route: "/app/assets/manage-assets/overall-asset",
   },
   ASSETS_ASSIGNED_ASSETS: {
     value: "assigned_assets",
@@ -108,6 +109,12 @@ export const PERMISSIONS = {
     value: "unassigned_assets",
     title: "UNASSIGNED ASSETS",
     type: "read",
+  },
+   ASSETS_UNASSIGNED_ASSET_TAB: {
+    value: "unassigned_asset_tab",
+    title: "UNASSIGNED ASSET",
+    type: "read",
+    route: "/app/assets/manage-assets/unassigned-assets",
   },
   ASSETS_ASSETS_UNDER_MAINTENANCE: {
     value: "assets_under_maintenance",

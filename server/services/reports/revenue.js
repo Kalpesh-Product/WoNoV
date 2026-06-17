@@ -182,6 +182,10 @@ const fetchMeetingRevenueReportService = async ({
 }) => {
   const filter = {};
 
+  if (company) {
+    filter.company = company;
+  }
+
   if (dateFilter) {
     filter.date = dateFilter.date;
   }
@@ -238,7 +242,7 @@ const fetchMeetingRevenueReportService = async ({
       gst: item.gst,
       status: item.status,
       totalAmount: item.totalAmount,
-      // date: item.date,
+      date: item.date,
       paymentDate: item.paymentDate,
       meetingRoomName: item.meetingRoomName,
       remarks: item.remarks || "",

@@ -66,6 +66,7 @@ const updateMeetingRevenue = async (req, res, next) => {
 const getMeetingRevenue = async (req, res, next) => {
   try {
     const { id } = req.query || {};
+    const company = req.company;
 
     if (id) {
       const revenue = await MeetingRevenue.findOne({ _id: id, company });
@@ -78,7 +79,7 @@ const getMeetingRevenue = async (req, res, next) => {
       return res.status(200).json(revenue);
     }
 
-    const payload = await fetchMeetingRevenueReportService({});
+    const payload = await fetchMeetingRevenueReportService({ company });
     return res.status(200).json(payload);
   } catch (error) {
     next(error);
