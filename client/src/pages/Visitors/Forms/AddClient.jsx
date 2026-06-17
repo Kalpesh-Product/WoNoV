@@ -96,6 +96,21 @@ const AddClient = () => {
 
   const handleStateSelect = (stateCode) => {
     const city = City.getCitiesOfState("IN", stateCode);
+
+    if (
+      stateCode === "GA" &&
+      !city.some((item) => item.name?.toLowerCase() === "anjuna")
+    ) {
+      city.push({
+        name: "Anjuna",
+        countryCode: "IN",
+        stateCode: "GA",
+      });
+      city.sort((firstCity, secondCity) =>
+        (firstCity.name || "").localeCompare(secondCity.name || ""),
+      );
+    }
+
     setCities(city);
   };
   const { data: employees = [], isLoading } = useQuery({
