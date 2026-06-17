@@ -793,7 +793,7 @@ const AssetsDashboard = () => {
 
   const assetsValueGraph = {
     titleAmount: `ASSET VALUE UTILIZATION (${selectedAssetValueFY})`,
-    title: "Assets Value",
+    title: "ASSET VALUE",
     data: assetUtilizationSeries,
     options: assetUtilizationOptions,
     onYearChange: setSelectedAssetValueFY,
