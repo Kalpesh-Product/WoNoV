@@ -734,7 +734,6 @@ const AssetsDashboard = () => {
         }
 
         const price = Number(asset?.price) || 0;
-
         initialStats[fiscalYear].assetCounts[monthKey] += 1;
         initialStats[fiscalYear].totalAssetValues[monthKey] += price;
 
@@ -764,17 +763,15 @@ const AssetsDashboard = () => {
       name: fiscalYear,
       data: months.map((month) => {
         const total = monthlyAssetStatsByFY[fiscalYear]?.totalAssetValues[month] || 0;
-        const used = monthlyAssetStatsByFY[fiscalYear]?.usedAssetValues[month] || 0;
-        const utilization = total ? Number(((used / total) * 100).toFixed(2)) : 0;
-
-        if (total > 0 && utilization === 0) {
-          return 0.6;
-        }
-
-        return utilization;
+        return total ? Number((total / 100000).toFixed(2)) : 0;
       }),
     };
   });
+  const assetValueSeriesMax = Math.max(
+    5,
+    ...assetUtilizationSeries.flatMap((series) => series.data || []),
+  );
+  const assetValueYAxisMax = Math.ceil(assetValueSeriesMax);
   const getSelectedFyAssetValueByMonth = (month) => {
     if (!month) return 0;
 
@@ -794,7 +791,7 @@ const AssetsDashboard = () => {
     },
     yaxis: {
       min: 0,
-      max: 25,
+      max: assetValueYAxisMax,
       tickAmount: 5,
       title: {
         text: "Amount In Lakhs (INR)",
