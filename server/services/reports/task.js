@@ -43,10 +43,6 @@ const fetchDeptTaskReportService = async ({
       }),
     };
 
-    console.log("query obj", queryObj);
-    console.log("hasGlobalAccess", hasGlobalAccess);
-    console.log("hasDepartmentAccess", hasDepartmentAccess);
-
     const tasks = await Task.find(queryObj)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
