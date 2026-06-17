@@ -651,6 +651,10 @@ const AssetsDashboard = () => {
     return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
   };
 
+  const getAssetGraphDate = (asset) =>
+    parseAssetPurchaseDate(asset?.createdAt) ||
+    parseAssetPurchaseDate(asset?.purchaseDate);
+
   const getFiscalYearFromDate = (dateInput) => {
     const date = parseAssetPurchaseDate(dateInput);
 
@@ -685,9 +689,22 @@ const AssetsDashboard = () => {
   };
 
   const currentFiscalYear = getCurrentFiscalYear();
-  const currentStartYear = Number(currentFiscalYear.match(/\d{4}/)?.[0] || new Date().getFullYear());
-  const previousFiscalYear = `FY ${currentStartYear - 1}-${String(currentStartYear).slice(-2)}`;
-  const fiscalYears = [previousFiscalYear, currentFiscalYear];
+  const fiscalYears = useMemo(() => {
+    const fySet = new Set([currentFiscalYear]);
+
+    totalAssets.forEach((asset) => {
+      const fiscalYear = getFiscalYearFromDate(getAssetGraphDate(asset));
+      if (fiscalYear) {
+        fySet.add(fiscalYear);
+      }
+    });
+
+    return Array.from(fySet).sort((firstFy, secondFy) => {
+      const firstStartYear = Number(firstFy.match(/\d{4}/)?.[0] || 0);
+      const secondStartYear = Number(secondFy.match(/\d{4}/)?.[0] || 0);
+      return firstStartYear - secondStartYear;
+    });
+  }, [currentFiscalYear, totalAssets]);
 
   const [selectedAssetValueFY, setSelectedAssetValueFY] = useState(currentFiscalYear);
   const [visibleAssetTooltipMetrics, setVisibleAssetTooltipMetrics] = useState({
@@ -715,45 +732,43 @@ const AssetsDashboard = () => {
       return acc;
     }, {});
 
-    assetsDept?.forEach((dept) => {
-      dept.assets?.forEach((asset) => {
-        const parsedPurchaseDate = parseAssetPurchaseDate(asset.purchaseDate);
-        const fiscalYear = getFiscalYearFromDate(parsedPurchaseDate);
+    totalAssets.forEach((asset) => {
+      const parsedPurchaseDate = getAssetGraphDate(asset);
+      const fiscalYear = getFiscalYearFromDate(parsedPurchaseDate);
 
-        if (!fiscalYear || !initialStats[fiscalYear]) return;
+      if (!fiscalYear || !initialStats[fiscalYear]) return;
 
-        const month = parsedPurchaseDate.toLocaleString("en-US", {
-          month: "short",
-          year: "2-digit",
-        });
-
-        const monthKey = month.replace(" ", "-");
-
-        if (!initialStats[fiscalYear].totalAssetValues[monthKey] && initialStats[fiscalYear].totalAssetValues[monthKey] !== 0) {
-          return;
-        }
-
-        const price = Number(asset?.price) || 0;
-        initialStats[fiscalYear].assetCounts[monthKey] += 1;
-        initialStats[fiscalYear].totalAssetValues[monthKey] += price;
-
-        if (approvedAssignedAssetIds.has(String(asset?._id))) {
-          initialStats[fiscalYear].assetsInUse[monthKey] += 1;
-          initialStats[fiscalYear].usedAssetValues[monthKey] += price;
-        }
-
-        if (asset.isUnderMaintenance) {
-          initialStats[fiscalYear].assetsUnderMaintenance[monthKey] += 1;
-        }
-
-        if (asset.isDamaged) {
-          initialStats[fiscalYear].assetsDamaged[monthKey] += 1;
-        }
+      const month = parsedPurchaseDate.toLocaleString("en-US", {
+        month: "short",
+        year: "2-digit",
       });
+
+      const monthKey = month.replace(" ", "-");
+
+      if (!initialStats[fiscalYear].totalAssetValues[monthKey] && initialStats[fiscalYear].totalAssetValues[monthKey] !== 0) {
+        return;
+      }
+
+      const price = Number(asset?.price) || 0;
+      initialStats[fiscalYear].assetCounts[monthKey] += 1;
+      initialStats[fiscalYear].totalAssetValues[monthKey] += price;
+
+      if (approvedAssignedAssetIds.has(String(asset?._id))) {
+        initialStats[fiscalYear].assetsInUse[monthKey] += 1;
+        initialStats[fiscalYear].usedAssetValues[monthKey] += price;
+      }
+
+      if (asset.isUnderMaintenance) {
+        initialStats[fiscalYear].assetsUnderMaintenance[monthKey] += 1;
+      }
+
+      if (asset.isDamaged) {
+        initialStats[fiscalYear].assetsDamaged[monthKey] += 1;
+      }
     });
 
     return initialStats;
-  }, [assetsDept, approvedAssignedAssetIds, currentFiscalYear, previousFiscalYear]);
+  }, [approvedAssignedAssetIds, fiscalYears, totalAssets]);
 
   const assetUtilizationSeries = fiscalYears.map((fiscalYear) => {
     const months = monthlyAssetStatsByFY[fiscalYear]?.months || [];
