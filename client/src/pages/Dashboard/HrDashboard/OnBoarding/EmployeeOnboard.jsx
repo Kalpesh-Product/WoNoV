@@ -332,10 +332,33 @@ const EmployeeOnboard = () => {
   );
 
   const cityOptions = useMemo(
-    () =>
-      selectedCountryCode && selectedStateCode
-        ? City.getCitiesOfState(selectedCountryCode, selectedStateCode)
-        : [],
+    () => {
+      if (!selectedCountryCode || !selectedStateCode) {
+        return [];
+      }
+
+      const cityOptions = City.getCitiesOfState(
+        selectedCountryCode,
+        selectedStateCode,
+      );
+
+      if (
+        selectedCountryCode === "IN" &&
+        selectedStateCode === "GA" &&
+        !cityOptions.some((item) => item.name?.toLowerCase() === "anjuna")
+      ) {
+        cityOptions.push({
+          name: "Anjuna",
+          countryCode: "IN",
+          stateCode: "GA",
+        });
+        cityOptions.sort((firstCity, secondCity) =>
+          (firstCity.name || "").localeCompare(secondCity.name || ""),
+        );
+      }
+
+      return cityOptions;
+    },
     [selectedCountryCode, selectedStateCode],
   );
   const { data: rolesData = [] } = useQuery({

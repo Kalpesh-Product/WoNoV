@@ -101,8 +101,29 @@ const EditDetails = () => {
   });
   const selectedStateCode = watch("state");
   const cityOptions = useMemo(
-    () =>
-      selectedStateCode ? City.getCitiesOfState("IN", selectedStateCode) : [],
+    () => {
+      if (!selectedStateCode) {
+        return [];
+      }
+
+      const cityOptions = City.getCitiesOfState("IN", selectedStateCode);
+
+      if (
+        selectedStateCode === "GA" &&
+        !cityOptions.some((item) => item.name?.toLowerCase() === "anjuna")
+      ) {
+        cityOptions.push({
+          name: "Anjuna",
+          countryCode: "IN",
+          stateCode: "GA",
+        });
+        cityOptions.sort((firstCity, secondCity) =>
+          (firstCity.name || "").localeCompare(secondCity.name || ""),
+        );
+      }
+
+      return cityOptions;
+    },
     [selectedStateCode],
   );
 
@@ -795,12 +816,12 @@ const togglePasswordVisibility = (fieldName) => {
     : {
         ...employeeData,
         dob:
-          employeeData.dob && dayjs(employeeData.dob).isValid()
-            ? dayjs(employeeData.dob).format("DD MMM YYYY")
+          employeeData?.dob && dayjs(employeeData?.dob).isValid()
+            ? dayjs(employeeData?.dob).format("DD MMM YYYY")
             : "",
         startDate:
-          employeeData.startDate && dayjs(employeeData.startDate).isValid()
-            ? dayjs(employeeData.startDate).format("DD MMM YYYY")
+          employeeData?.startDate && dayjs(employeeData?.startDate).isValid()
+            ? dayjs(employeeData?.startDate).format("DD MMM YYYY")
             : "",
         status:
           employeeData?.status ||

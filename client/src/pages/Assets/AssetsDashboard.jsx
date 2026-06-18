@@ -329,14 +329,11 @@ const AssetsDashboard = () => {
     );
   };
 
-  const isTopManagement = departments.some(
-    (dept) => dept.name === "Top Management",
-  );
   const deptNames = departments.map((dept) => dept.name);
 
   let assetsDept = Array.isArray(departmentAssets) ? departmentAssets : [];
 
-  if (!isTopManagement) {
+  if (!isGlobalAssetsUser) {
     assetsDept = assetsDept.filter((dept) =>
       deptNames.includes(dept.departmentName),
     );
@@ -391,6 +388,14 @@ const AssetsDashboard = () => {
     (acc, asset) => acc + (asset?.price || 0),
     0,
   );
+  const approvedAssignedAssetIds = useMemo(() => {
+    return new Set(
+      (Array.isArray(assignedAssetsInUse) ? assignedAssetsInUse : [])
+        .map((request) => request?.asset?._id || request?.asset)
+        .filter(Boolean)
+        .map((id) => String(id)),
+    );
+  }, [assignedAssetsInUse]);
 
   // Assigned and Unassigned Assets Pie Chart
   const assetAvailabilityData = [
@@ -566,18 +571,19 @@ const AssetsDashboard = () => {
   };
 
   const assetColumns = [
-    { id: "srNo", label: "Sr No" },
-    { id: "assetId", label: "Asset Id" },
-    { id: "department", label: "Department" },
-    { id: "category", label: "Category" },
-    { id: "subCategory", label: "Sub-Category" },
-    { id: "brand", label: "Brand" },
+    { id: "srNo", label: "Sr No" ,width:150},
+    { id: "assetId", label: "Asset Id" ,flex:1},
+    { id: "department", label: "Department" ,flex:1},
+    { id: "category", label: "Category",flex:1 },
+    { id: "subCategory", label: "Sub-Category" ,flex:1},
+    { id: "brand", label: "Brand",flex:1},
     {
       id: "price",
       label: "Price (INR)",
+      flex:1
     },
-    { id: "purchaseDate", label: "Purchase Date" },
-    { id: "warranty", label: "Warranty (Months)" },
+    { id: "purchaseDate", label: "Purchase Date" ,flex:1},
+    { id: "warranty", label: "Warranty (Months)",align: "center",width:200},
   ];
 
   const recentAssets = isDepartmentLoading
@@ -611,10 +617,48 @@ const AssetsDashboard = () => {
 
   //Assets Value Graph
 
-  const getFiscalYearFromDate = (dateInput) => {
-    const date = new Date(dateInput);
+  const parseAssetPurchaseDate = (dateInput) => {
+    if (!dateInput) return null;
 
-    if (Number.isNaN(date.getTime())) return null;
+    if (dateInput instanceof Date) {
+      return Number.isNaN(dateInput.getTime()) ? null : dateInput;
+    }
+
+    const rawValue = String(dateInput).trim();
+    if (!rawValue) return null;
+
+    if (/^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/.test(rawValue)) {
+      const normalizedValue = rawValue.replace(/\//g, "-");
+      const [day, month, year] = normalizedValue.split("-").map(Number);
+
+      if (!day || !month || !year) return null;
+
+      const parsedDate = new Date(year, month - 1, day);
+      return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+    }
+
+    const directDate = new Date(rawValue);
+    if (!Number.isNaN(directDate.getTime())) {
+      return directDate;
+    }
+
+    const normalizedValue = rawValue.replace(/\//g, "-");
+    const [day, month, year] = normalizedValue.split("-").map(Number);
+
+    if (!day || !month || !year) return null;
+
+    const parsedDate = new Date(year, month - 1, day);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  };
+
+  const getAssetGraphDate = (asset) =>
+    parseAssetPurchaseDate(asset?.createdAt) ||
+    parseAssetPurchaseDate(asset?.purchaseDate);
+
+  const getFiscalYearFromDate = (dateInput) => {
+    const date = parseAssetPurchaseDate(dateInput);
+
+    if (!date) return null;
 
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -645,11 +689,31 @@ const AssetsDashboard = () => {
   };
 
   const currentFiscalYear = getCurrentFiscalYear();
-  const currentStartYear = Number(currentFiscalYear.match(/\d{4}/)?.[0] || new Date().getFullYear());
-  const previousFiscalYear = `FY ${currentStartYear - 1}-${String(currentStartYear).slice(-2)}`;
-  const fiscalYears = [previousFiscalYear, currentFiscalYear];
+  const fiscalYears = useMemo(() => {
+    const fySet = new Set([currentFiscalYear]);
+
+    totalAssets.forEach((asset) => {
+      const fiscalYear = getFiscalYearFromDate(getAssetGraphDate(asset));
+      if (fiscalYear) {
+        fySet.add(fiscalYear);
+      }
+    });
+
+    return Array.from(fySet).sort((firstFy, secondFy) => {
+      const firstStartYear = Number(firstFy.match(/\d{4}/)?.[0] || 0);
+      const secondStartYear = Number(secondFy.match(/\d{4}/)?.[0] || 0);
+      return firstStartYear - secondStartYear;
+    });
+  }, [currentFiscalYear, totalAssets]);
 
   const [selectedAssetValueFY, setSelectedAssetValueFY] = useState(currentFiscalYear);
+  const [visibleAssetTooltipMetrics, setVisibleAssetTooltipMetrics] = useState({
+    totalAssetValue: true,
+    assetCount: true,
+    assetInUse: true,
+    underMaintenance: true,
+    damaged: true,
+  });
 
   const monthlyAssetStatsByFY = useMemo(() => {
     const initialStats = fiscalYears.reduce((acc, fy) => {
@@ -657,6 +721,8 @@ const AssetsDashboard = () => {
 
       acc[fy] = {
         months,
+        assetCounts: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
+        assetsInUse: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
         totalAssetValues: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
         usedAssetValues: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
         assetsUnderMaintenance: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
@@ -666,43 +732,43 @@ const AssetsDashboard = () => {
       return acc;
     }, {});
 
-    assetsDept?.forEach((dept) => {
-      dept.assets?.forEach((asset) => {
-        const fiscalYear = getFiscalYearFromDate(asset.purchaseDate);
+    totalAssets.forEach((asset) => {
+      const parsedPurchaseDate = getAssetGraphDate(asset);
+      const fiscalYear = getFiscalYearFromDate(parsedPurchaseDate);
 
-        if (!fiscalYear || !initialStats[fiscalYear]) return;
+      if (!fiscalYear || !initialStats[fiscalYear]) return;
 
-        const month = new Date(asset.purchaseDate).toLocaleString("en-US", {
-          month: "short",
-          year: "2-digit",
-        });
-
-        const monthKey = month.replace(" ", "-");
-
-        if (!initialStats[fiscalYear].totalAssetValues[monthKey] && initialStats[fiscalYear].totalAssetValues[monthKey] !== 0) {
-          return;
-        }
-
-        const price = asset.price || 0;
-
-        initialStats[fiscalYear].totalAssetValues[monthKey] += price;
-
-        if (asset.isAssigned) {
-          initialStats[fiscalYear].usedAssetValues[monthKey] += price;
-        }
-
-        if (asset.isUnderMaintenance) {
-          initialStats[fiscalYear].assetsUnderMaintenance[monthKey] += 1;
-        }
-
-        if (asset.isDamaged) {
-          initialStats[fiscalYear].assetsDamaged[monthKey] += 1;
-        }
+      const month = parsedPurchaseDate.toLocaleString("en-US", {
+        month: "short",
+        year: "2-digit",
       });
+
+      const monthKey = month.replace(" ", "-");
+
+      if (!initialStats[fiscalYear].totalAssetValues[monthKey] && initialStats[fiscalYear].totalAssetValues[monthKey] !== 0) {
+        return;
+      }
+
+      const price = Number(asset?.price) || 0;
+      initialStats[fiscalYear].assetCounts[monthKey] += 1;
+      initialStats[fiscalYear].totalAssetValues[monthKey] += price;
+
+      if (approvedAssignedAssetIds.has(String(asset?._id))) {
+        initialStats[fiscalYear].assetsInUse[monthKey] += 1;
+        initialStats[fiscalYear].usedAssetValues[monthKey] += price;
+      }
+
+      if (asset.isUnderMaintenance) {
+        initialStats[fiscalYear].assetsUnderMaintenance[monthKey] += 1;
+      }
+
+      if (asset.isDamaged) {
+        initialStats[fiscalYear].assetsDamaged[monthKey] += 1;
+      }
     });
 
     return initialStats;
-  }, [assetsDept, currentFiscalYear, previousFiscalYear]);
+  }, [approvedAssignedAssetIds, fiscalYears, totalAssets]);
 
   const assetUtilizationSeries = fiscalYears.map((fiscalYear) => {
     const months = monthlyAssetStatsByFY[fiscalYear]?.months || [];
@@ -712,13 +778,22 @@ const AssetsDashboard = () => {
       name: fiscalYear,
       data: months.map((month) => {
         const total = monthlyAssetStatsByFY[fiscalYear]?.totalAssetValues[month] || 0;
-        const used = monthlyAssetStatsByFY[fiscalYear]?.usedAssetValues[month] || 0;
-
-        return total ? Number(((used / total) * 100).toFixed(2)) : 0;
+        return total ? Number((total / 100000).toFixed(2)) : 0;
       }),
     };
   });
+  const assetValueSeriesMax = Math.max(
+    5,
+    ...assetUtilizationSeries.flatMap((series) => series.data || []),
+  );
+  const assetValueYAxisMax = Math.ceil(assetValueSeriesMax);
+  const getSelectedFyAssetValueByMonth = (month) => {
+    if (!month) return 0;
 
+    return Number(
+      monthlyAssetStatsByFY[selectedAssetValueFY]?.totalAssetValues?.[month] || 0,
+    );
+  };
   // ApexCharts configuration
   const assetUtilizationOptions = {
     chart: {
@@ -730,20 +805,29 @@ const AssetsDashboard = () => {
       show: false,
     },
     yaxis: {
-      max: 100,
+      min: 0,
+      max: assetValueYAxisMax,
+      tickAmount: 5,
       title: {
-        text: "Utilization (%)",
+        text: "Amount In Lakhs (INR)",
       },
       labels: {
-        formatter: (value) => `${Math.round(value)}%`,
+        formatter: (value) => `${Math.round(value)}`,
       },
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => `${Math.round(val)}%`,
+      formatter: (_val, { dataPointIndex }) => {
+        const months = monthlyAssetStatsByFY[selectedAssetValueFY]?.months || [];
+        const month = months[dataPointIndex];
+        const total = getSelectedFyAssetValueByMonth(month);
+
+        return total ? inrFormat(total) : "";
+      },
+      offsetY: -20,
       style: {
         fontSize: "11px",
-        colors: ["#ffff"],
+        colors: ["#000"],
       },
     },
     tooltip: {
@@ -755,28 +839,58 @@ const AssetsDashboard = () => {
 
         if (!month) return "";
 
-        const total = monthlyAssetStatsByFY[selectedAssetValueFY]?.totalAssetValues[month] || 0;
-        const used = monthlyAssetStatsByFY[selectedAssetValueFY]?.usedAssetValues[month] || 0;
+        const assetCount = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetCounts[month] || 0;
+        const assetInUseCount = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetsInUse[month] || 0;
+        const total = getSelectedFyAssetValueByMonth(month);
         const underMaintenance = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetsUnderMaintenance[month] || 0;
         const damaged = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetsDamaged[month] || 0;
+        const tooltipRows = [
+          {
+            key: "totalAssetValue",
+            label: `Total Assets Value : <strong>INR ${inrFormat(total)}</strong>`,
+            color: "#26C6DA",
+          },
+          {
+            key: "assetCount",
+            label: `No of Asset : <strong>${assetCount}</strong>`,
+            color: "#42A5F5",
+          },
+          {
+            key: "assetInUse",
+            label: `Asset In Use : <strong>${assetInUseCount}</strong>`,
+            color: "#1E88E5",
+          },
+          {
+            key: "underMaintenance",
+            label: `Under Maintenance : <strong>${underMaintenance}</strong>`,
+            color: "#1565C0",
+          },
+          {
+            key: "damaged",
+            label: `Damaged : <strong>${damaged}</strong>`,
+            color: "#7986CB",
+          },
+        ].filter((row) => visibleAssetTooltipMetrics[row.key]);
 
         return `
-        <div style="padding: 10px; background: white; border-radius: 5px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);">
-          <div style="padding-bottom: 5px; border-bottom: 1px solid gray; margin-bottom:10px">
-            <strong>${month}</strong><br>
+        <div style="min-width: 235px; background: #fff; border: 1px solid #d7dbe3; border-radius: 4px; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12); overflow: hidden;">
+          <div class="apexcharts-tooltip-title" style="margin: 0; padding: 8px 10px; background: #eef1f5; border-bottom: 1px solid #d7dbe3; font-weight: 500;">
+            ${month}
           </div>
-          Total Assets Value: INR ${inrFormat(total)}<br>
-          Asset Value Used: INR ${inrFormat(used)}<br>
-          Under Maintenance: ${underMaintenance} <br>
-          Assets Damaged: ${damaged}
+          <div style="padding: 8px 10px; display: grid; gap: 6px;">
+            ${tooltipRows
+              .map(
+                (row) => `
+                  <div class="apexcharts-tooltip-series-group apexcharts-active" style="display: flex; align-items: center; margin: 0;">
+                    <span class="apexcharts-tooltip-marker" style="background-color: ${row.color}; width: 10px; height: 10px; min-width: 10px; min-height: 10px; margin-right: 8px; border-radius: 9999px;"></span>
+                    <span style="font-size: 12px; color: #1f2937; line-height: 1.4;">${row.label}</span>
+                  </div>
+                `,
+              )
+              .join("")}
+          </div>
         </div>
       `;
-      },
-      fixed: {
-        enabled: true,
-        position: "bottomRight",
-        offsetX: 0,
-        offsetY: -10,
       },
     },
     plotOptions: {
@@ -788,30 +902,72 @@ const AssetsDashboard = () => {
         columnWidth: "40%",
       },
     },
+    grid: {
+      padding: {
+        top: 34,
+        bottom: 28,
+      },
+    },
     colors: ["#3B82F6"],
   };
 
   const assetsValueGraph = {
-    titleAmount: `ASSET VALUE UTILIZATION (${selectedAssetValueFY})`,
-    title: "ASSET VALUE",
+    title: `ASSET VALUE UTILIZATION - ${selectedAssetValueFY}`,
+    titleAmount: `TOTAL ASSET VALUE : INR ${inrFormat(totalAssetsPrice)}`,
     data: assetUtilizationSeries,
     options: assetUtilizationOptions,
     onYearChange: setSelectedAssetValueFY,
     permission: PERMISSIONS.ASSETS_ASSET_VALUE_UTILIZATION.value,
   };
+  const assetLegendItems = [
+    { key: "totalAssetValue", label: "Total Assets Value", color: "#26C6DA" },
+    { key: "assetCount", label: "No of Asset", color: "#42A5F5" },
+    { key: "assetInUse", label: "Asset In Use", color: "#1E88E5" },
+    { key: "underMaintenance", label: "Under Maintenance", color: "#1565C0" },
+    { key: "damaged", label: "Damaged", color: "#7986CB" },
+  ];
 
   const meetingsWidgets = [
     {
       layout: 1,
       widgets: [
         userPermissions.includes(assetsValueGraph.permission) && (
-          <YearlyGraph
-            titleAmount={assetsValueGraph.titleAmount}
-            title={assetsValueGraph.title}
-            data={assetsValueGraph.data}
-            options={assetsValueGraph.options}
-            onYearChange={assetsValueGraph.onYearChange}
-          />
+          <div className="relative">
+            <div className="absolute left-1/2 top-[92px] z-10 flex w-full max-w-[760px] -translate-x-1/2 flex-wrap items-center justify-center gap-x-5 gap-y-3 px-6 text-xs text-slate-600">
+              {assetLegendItems.map((item) => {
+                const isVisible = visibleAssetTooltipMetrics[item.key];
+
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() =>
+                      setVisibleAssetTooltipMetrics((prev) => ({
+                        ...prev,
+                        [item.key]: !prev[item.key],
+                      }))
+                    }
+                    className={`flex items-center gap-2.5 whitespace-nowrap transition-opacity ${
+                      isVisible ? "opacity-100" : "opacity-40"
+                    }`}
+                  >
+                    <span
+                      className="inline-block h-[11px] w-[11px]"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <YearlyGraph
+              title={assetsValueGraph.title}
+              titleAmount={assetsValueGraph.titleAmount}
+              data={assetsValueGraph.data}
+              options={assetsValueGraph.options}
+              onYearChange={assetsValueGraph.onYearChange}
+            />
+          </div>
         )
       ],
     },
