@@ -20,26 +20,37 @@ const ViewClientInfo = () => {
   const location = useLocation();
   const selectedLead = location?.state?.selectedLead || null;
 
-  const [isEditing, setIsEditing] = useState(false);
+   const [isEditing, setIsEditing] = useState(Boolean(location?.state?.editMode));
 
-  const {
+ const {
     control,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors },
   } = useForm({
     mode: "onChange",
     defaultValues: {
+      dateOfContact: "",
       companyName: "",
+      serviceCategory: "",
+      leadStatus: "",
+      proposedLocations: "",
+      sector: "",
+      headOfficeLocation: "",
+      officeInGoa: "",
       pocName: "",
       designation: "",
       contactNumber: "",
       emailAddress: "",
-      leadStatus: "",
-      sector: "",
+      leadSource: "",
+      period: "",
+      openDesks: "",
+      cabinDesks: "",
+      totalDesks: "",
       serviceName: "",
       clientBudget: "",
-      dateOfContact: "",
+      startDate: "",
       lastFollowUpDate: "",
       remarksComments: "",
     },
@@ -48,18 +59,44 @@ const ViewClientInfo = () => {
   useEffect(() => {
     if (selectedLead) {
       reset({
+        dateOfContact: selectedLead?.dateOfContact || "",
         companyName: selectedLead?.companyName || "",
+        serviceCategory:
+          selectedLead?.serviceCategory?.serviceName || selectedLead?.serviceName || "",
+        leadStatus: selectedLead?.leadStatus || "",
+        proposedLocations:
+          selectedLead?.proposedLocations?.unitNo ||
+          selectedLead?.proposedLocations?.unitName ||
+          selectedLead?.proposedLocationsLabel ||
+          "",
+        sector: selectedLead?.sector || "",
+        headOfficeLocation: selectedLead?.headOfficeLocation || "",
+        officeInGoa:
+          selectedLead?.officeInGoa === true
+            ? "Yes"
+            : selectedLead?.officeInGoa === false
+            ? "No"
+            : selectedLead?.officeInGoa || "",
         pocName: selectedLead?.pocName || "",
         designation: selectedLead?.designation || "",
         contactNumber: selectedLead?.contactNumber || "",
         emailAddress: selectedLead?.emailAddress || "",
-        leadStatus: selectedLead?.leadStatus || "",
-        sector: selectedLead?.sector || "",
-        serviceName: selectedLead?.serviceName || "",
+        leadSource: selectedLead?.leadSource || "",
+        period: selectedLead?.period || "",
+        openDesks: selectedLead?.openDesks || 0,
+        cabinDesks: selectedLead?.cabinDesks || 0,
+        totalDesks: selectedLead?.totalDesks || 0,
         clientBudget: selectedLead?.clientBudget || "",
-        dateOfContact: selectedLead?.dateOfContact || "",
-        lastFollowUpDate: selectedLead?.lastFollowUpDate || "",
+        startDate: selectedLead?.startDate || "",
         remarksComments: selectedLead?.remarksComments || "",
+        lastFollowUpDate: selectedLead?.lastFollowUpDate || "",
+        // leadStatus: selectedLead?.leadStatus || "",
+        // sector: selectedLead?.sector || "",
+        // serviceName: selectedLead?.serviceName || "",
+        // clientBudget: selectedLead?.clientBudget || "",
+        // dateOfContact: selectedLead?.dateOfContact || "",
+        // lastFollowUpDate: selectedLead?.lastFollowUpDate || "",
+        // remarksComments: selectedLead?.remarksComments || "",
       });
     }
   }, [selectedLead, reset]);
@@ -73,12 +110,38 @@ const ViewClientInfo = () => {
   const handleReset = () => reset();
 
   const handleEditToggle = () => setIsEditing(!isEditing);
+  
+const getDisplayValue = (name, type) => {
+    const value = getValues(name);
+
+    if (name === "clientBudget") return `INR ${inrFormat(value || 0)}`;
+    if (type === "date") return value ? humanDate(value) : "—";
+    return value || "—";
+  };
 
   const fields = [
+    { name: "dateOfContact", label: "Date of Contact", type: "date" },
     {
       name: "companyName",
       label: "Company Name",
       rules: { validate: noOnlyWhitespace },
+    },
+     { name: "serviceCategory", label: "Service Category" },
+    {
+      name: "leadStatus",
+      label: "Lead Status",
+      type: "select",
+      options: ["Cold", "Mild", "Hot", "Closed", "HOT", "MILD", "COLD"],
+      rules: { required: "Lead Status is required" },
+    },
+    { name: "proposedLocations", label: "Proposed Locations" },
+    { name: "sector", label: "Sector" },
+    { name: "headOfficeLocation", label: "Head Office Location" },
+    {
+      name: "officeInGoa",
+      label: "Office In Goa",
+      type: "select",
+      options: ["Yes", "No"],
     },
     {
       name: "pocName",
@@ -96,26 +159,27 @@ const ViewClientInfo = () => {
       rules: { validate: isValidPhoneNumber },
     },
     { name: "emailAddress", label: "Email", rules: { validate: isValidEmail } },
-    {
-      name: "leadStatus",
-      label: "Lead Status",
-      type: "select",
-      options: ["HOT", "MILD", "COLD"],
-      rules: { required: "Lead Status is required" },
-    },
-    { name: "sector", label: "Sector" },
-    { name: "serviceName", label: "Service" },
+     { name: "leadSource", label: "Lead Source" },
+    { name: "period", label: "Period" },
+    { name: "openDesks", label: "Open Desks", inputType: "number" },
+    { name: "cabinDesks", label: "Cabin Desks", inputType: "number" },
+    { name: "totalDesks", label: "Total Desks", inputType: "number" },
     {
       name: "clientBudget",
       label: "Client Budget",
       inputType: "number",
     },
-    { name: "dateOfContact", label: "Date of Contact", type: "date" },
-    { name: "lastFollowUpDate", label: "Last Follow-up Date", type: "date" },
+   { name: "startDate", label: "Start Date", type: "date" },
     {
       name: "remarksComments",
       label: "Remarks",
       rules: { validate: noOnlyWhitespace },
+    },
+     {
+      name: "lastFollowUpDate",
+      label: "Last Follow-up Date",
+      type: "date",
+      // editOnly: true,
     },
   ];
 
@@ -144,7 +208,10 @@ const ViewClientInfo = () => {
         className="h-[60vh] overflow-y-auto"
       >
         <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4 p-4">
-          {fields.map(({ name, label, type, rules, options, inputType }) => (
+          {/* {fields.map(({ name, label, type, rules, options, inputType }) => ( */}
+            {fields
+            .filter(({ editOnly }) => isEditing || !editOnly)
+            .map(({ name, label, type, rules, options, inputType }) => (
             <div key={name}>
               {isEditing ? (
                 <Controller
@@ -213,11 +280,12 @@ const ViewClientInfo = () => {
                   <div>:</div>
                   <div className="w-full">
                     <span className="text-gray-500">
-                      {name === "clientBudget"
+                       {getDisplayValue(name, type)}
+                      {/* {name === "clientBudget"
                         ? `INR ${inrFormat(selectedLead?.[name] || 0)}`
                         : type === "date"
                         ? humanDate(selectedLead?.[name])
-                        : selectedLead?.[name] || "—"}
+                        : selectedLead?.[name] || "—"} */}
                     </span>
                   </div>
                 </div>

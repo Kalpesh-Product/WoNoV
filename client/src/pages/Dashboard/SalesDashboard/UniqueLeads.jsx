@@ -5,6 +5,8 @@ import {
   FormControl,
   InputLabel,
   TextField,
+   IconButton,
+  Menu,
 } from "@mui/material";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
@@ -20,10 +22,11 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
-import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
-import { MdOutlineRemove, MdOutlineRemoveRedEye } from "react-icons/md";
-import YearWiseTable from "../../../components/Tables/YearWiseTable";
+// import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
+// import { MdOutlineRemove, MdOutlineRemoveRedEye } from "react-icons/md";
+// import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import { MdMoreVert, MdOutlineRemoveRedEye } from "react-icons/md";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
@@ -37,7 +40,9 @@ const UniqueLeads = () => {
   const queryMonth = searchParams.get("month");
   const [modalOpen, setModalOpen] = useState(false);
   const [addLeadOpen, setAddLeadOpen] = useState(false);
-  const [selectedLead, setSelectedLead] = useState([]);
+   const [selectedLead, setSelectedLead] = useState(null);
+  const [actionAnchorEl, setActionAnchorEl] = useState(null);
+  const [actionLead, setActionLead] = useState(null);
 
   const {
     control,
@@ -106,7 +111,8 @@ const UniqueLeads = () => {
     queryKey: ["sales-services"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/services");
-      return response.data;
+      const filteredData = response?.data?.filter((service)=> service.isActive)
+      return filteredData;
     },
   });
 
@@ -158,7 +164,7 @@ const UniqueLeads = () => {
   const addLeadFields = [
     { name: "dateOfContact", label: "Date Of Contact", type: "datePicker" },
     { name: "companyName", label: "Company Name" },
-    { name: "serviceCategory", label: "Service Category", type: "select", options: services.map((service) => ({ value: service._id, label: service.serviceName })) },
+    { name: "serviceCategory", label: "Service Category", type: "select mul", options: services.map((service) => ({ value: service._id, label: service.serviceName })) },
     { name: "leadStatus", label: "Lead Status", type: "select", options: ["Cold", "Mild", "Hot", "Closed"].map((value) => ({ value, label: value })) },
     { name: "proposedLocations", label: "Proposed Locations", type: "select", options: units.map((unit) => ({ value: unit._id, label: unit.unitNo || unit.unitName || "Unit" })) },
     { name: "sector", label: "Sector" },
@@ -249,9 +255,9 @@ const UniqueLeads = () => {
       )}`
     );
   };
-  const handleViewTypeChange = (event) => {
-    setViewType(event.target.value);
-  };
+  // const handleViewTypeChange = (event) => {
+  //   setViewType(event.target.value);
+  // };
 
   const availableFinancialYears = useMemo(() => {
     const yearsSet = new Set();
@@ -348,14 +354,89 @@ const UniqueLeads = () => {
     return revenueMap;
   }, [leadsData]);
 
-  const handleViewClient = (lead) => {
-    const selectedLeadData = leadsData.find(
-      (item) => item.client === lead.companyname
+  // const handleViewClient = (lead) => {
+  //   const selectedLeadData = leadsData.find(
+  //     (item) => item.client === lead.companyname
+  //   );
+   const getOptionLabel = (value, fallback = "N/A") => {
+    if (!value) return fallback;
+    if (typeof value === "string" || typeof value === "number") return value;
+    return (
+      value.serviceName ||
+      value.unitNo ||
+      value.unitName ||
+      value.name ||
+      value.label ||
+      fallback
     );
 
-    setSelectedLead(selectedLeadData);
+    };
+
+  const formatBoolean = (value) => {
+    if (value === true || value === "true") return "Yes";
+    if (value === false || value === "false") return "No";
+    return value || "N/A";
+  };
+
+  const formatViewDetail = (lead, field, type) => {
+    const value = lead?.[field];
+    if (type === "date") return value ? humanDate(value) : "N/A";
+    if (type === "currency") return value || value === 0 ? `INR ${value}` : "N/A";
+    if (type === "boolean") return formatBoolean(value);
+    if (field === "serviceCategory") return getOptionLabel(value);
+    if (field === "proposedLocations") return getOptionLabel(value);
+    return value || "N/A";
+  };
+
+   const handleViewClient = (lead) => {
+    setSelectedLead(lead);
     setModalOpen(true);
   };
+
+   const handleActionMenuOpen = (event, lead) => {
+    setActionAnchorEl(event.currentTarget);
+    setActionLead(lead);
+  };
+
+  const handleActionMenuClose = () => {
+    setActionAnchorEl(null);
+    setActionLead(null);
+  };
+
+  const handleEditLead = () => {
+    if (!actionLead) return;
+    navigate(encodeURIComponent(actionLead.companyName || actionLead._id), {
+      state: {
+        selectedLead: actionLead,
+        editMode: true,
+      },
+    });
+    handleActionMenuClose();
+  };
+
+  const viewDetailFields = [
+    { label: "Date Of Contact", field: "dateOfContact", type: "date" },
+    { label: "Company Name", field: "companyName" },
+    { label: "Service Category", field: "serviceCategory" },
+    { label: "Lead Status", field: "leadStatus" },
+    { label: "Proposed Locations", field: "proposedLocations" },
+    { label: "Sector", field: "sector" },
+    { label: "Head Office Location", field: "headOfficeLocation" },
+    { label: "Office In Goa", field: "officeInGoa", type: "boolean" },
+    { label: "POC Name", field: "pocName" },
+    { label: "Designation", field: "designation" },
+    { label: "Contact Number", field: "contactNumber" },
+    { label: "Email Address", field: "emailAddress" },
+    { label: "Lead Source", field: "leadSource" },
+    { label: "Period", field: "period" },
+    { label: "Open Desks", field: "openDesks" },
+    { label: "Cabin Desks", field: "cabinDesks" },
+    { label: "Total Desks", field: "totalDesks" },
+    { label: "Client Budget", field: "clientBudget", type: "currency" },
+    { label: "Start Date", field: "startDate", type: "date" },
+    { label: "Remarks Comments", field: "remarksComments" },
+    { label: "Last Follow-up Date", field: "lastFollowUpDate", type: "date" },
+  ];
   // const graphData = [
   //   {
   //     name: "Leads",
@@ -421,17 +502,18 @@ const UniqueLeads = () => {
     "February",
     "March",
   ];
-  const availableMonths = useMemo(() => {
-    const uniqueMonths = new Set(
-      leadsData
-        .map((lead) => dayjs(lead.dateOfContact).format("MMMM"))
-        .filter((m) => m !== "Invalid Date")
-    );
+  // const availableMonths = useMemo(() => {
+  //   const uniqueMonths = new Set(
+  //     leadsData
+  //       .map((lead) => dayjs(lead.dateOfContact).format("MMMM"))
+  //       .filter((m) => m !== "Invalid Date")
+  //   );
 
-    return Array.from(uniqueMonths).sort(
-      (a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b)
-    );
-  }, [leadsData]);
+  //   return Array.from(uniqueMonths).sort(
+  //     (a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b)
+  //   );
+  // }, [leadsData]);
+
 
   const formatMonths = useMemo(() => {
     const fyMatch = selectedFY.match(/\d{4}/);
@@ -551,6 +633,7 @@ const UniqueLeads = () => {
           buttonTitle="Add Leads"
             handleClick={() => setAddLeadOpen(true)}
             data={filteredLeads.map((item, index) => ({
+              ...item,
               _id: item._id,
               srNo: index + 1,
               dateOfContact: item.dateOfContact,
@@ -562,6 +645,7 @@ const UniqueLeads = () => {
               leadStatus: item.leadStatus,
               sector: item.sector,
               serviceName: item.serviceCategory?.serviceName || "—",
+              proposedLocationsLabel: getOptionLabel(item.proposedLocations),
               clientBudget: item.clientBudget,
               startDate: item.startDate,
               lastFollowUpDate: item.lastFollowUpDate,
@@ -580,24 +664,25 @@ const UniqueLeads = () => {
                 headerName: "Company Name",
                 field: "companyName",
                 flex: 1,
-                cellRenderer: (params) => {
-                  const clientData = params.data;
-                  return (
-                    <span
-                      className="text-primary cursor-pointer underline"
-                      role="button"
-                      onClick={() => {
-                        navigate(params.value, {
-                          state: {
-                            selectedLead: params.data,
-                          },
-                        });
-                      }}
-                    >
-                      {params.value}
-                    </span>
-                  );
-                },
+                cellRenderer: (params) => <span>{params.value || "—"}</span>,
+                // cellRenderer: (params) => {
+                //   const clientData = params.data;
+                //   return (
+                //     <span
+                //       className="text-primary cursor-pointer underline"
+                //       role="button"
+                //       onClick={() => {
+                //         navigate(params.value, {
+                //           state: {
+                //             selectedLead: params.data,
+                //           },
+                //         });
+                //       }}
+                //     >
+                //       {params.value}
+                //     </span>
+                //   );
+                // },
               },
               { headerName: "POC Name", field: "pocName",flex: 1 },
               { headerName: "Designation", field: "designation",flex: 1,hide: true },
@@ -623,6 +708,32 @@ const UniqueLeads = () => {
                   params.value ? humanDate(params.value) : "—",
               },
               { headerName: "Remarks", field: "remarksComments", flex: 1,hide: true },
+                {
+                headerName: "Action",
+                field: "action",
+                flex:1,
+                pinned: "right",
+                suppressCsvExport: true,
+                suppressExcelExport: true,
+                cellRenderer: (params) => (
+                  <div className="flex items-center gap-2 h-full">
+                    <IconButton
+                      size="small"
+                      aria-label="View lead details"
+                      onClick={() => handleViewClient(params.data)}
+                    >
+                      <MdOutlineRemoveRedEye className="text-primary" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      aria-label="More lead options"
+                      onClick={(event) => handleActionMenuOpen(event, params.data)}
+                    >
+                      <MdMoreVert />
+                    </IconButton>
+                  </div>
+                ),
+              },
             ]}
             search={true}
             dateColumn="dateOfContact"
@@ -656,9 +767,10 @@ const UniqueLeads = () => {
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={"Lead details"}
+        // title={"Lead details"}
+        title={"View Leads Details"}
       >
-        <div className="flex flex-col gap-2">
+        {/* <div className="flex flex-col gap-2">
           {selectedLead ? (
             <>
               <DetalisFormatted
@@ -711,8 +823,28 @@ const UniqueLeads = () => {
           ) : (
             <div>No lead selected.</div>
           )}
-        </div>
+        </div> */}
+           {selectedLead ? (
+          <div className="grid grid-cols-1 gap-4">
+            {viewDetailFields.map(({ label, field, type }) => (
+               <DetalisFormatted
+                               key={field}
+                title={label}
+                detail={formatViewDetail(selectedLead, field, type)}
+                  />
+            ))}
+          </div>
+        ) : (
+          <div>No lead selected.</div>
+        )}
       </MuiModal>
+       <Menu
+        anchorEl={actionAnchorEl}
+        open={Boolean(actionAnchorEl)}
+        onClose={handleActionMenuClose}
+      >
+        <MenuItem onClick={handleEditLead}>Edit</MenuItem>
+      </Menu>
     </div>
   );
 };
