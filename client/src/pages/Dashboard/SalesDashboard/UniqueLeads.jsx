@@ -130,17 +130,47 @@ const UniqueLeads = () => {
     return response.data;
   };
 
+  const normalizeProposedLocationValue = (value) => {
+    if (Array.isArray(value)) {
+      return normalizeProposedLocationValue(value[0]);
+    }
+
+    if (value && typeof value === "object") {
+      return value._id || value.value || value.id || "";
+    }
+
+    return value || "";
+  };
+
+  const formatLeadDateValue = (value, { useCurrentTimeForToday = false } = {}) => {
+    if (!value) return "";
+
+    const selectedDate = dayjs(value);
+
+    if (useCurrentTimeForToday && selectedDate.isSame(dayjs(), "day")) {
+      const now = dayjs();
+      return selectedDate
+        .hour(now.hour())
+        .minute(now.minute())
+        .second(now.second())
+        .millisecond(now.millisecond())
+        .format();
+    }
+
+    return selectedDate.format("YYYY-MM-DD");
+  };
+
   const { mutate: createLead, isPending: isCreatingLead } = useMutation({
     mutationFn: async (formData) => {
       const payload = {
         ...formData,
-         dateOfContact: formData.dateOfContact
-          ? dayjs(formData.dateOfContact).format("YYYY-MM-DD")
-          : "",
-        startDate: formData.startDate
-          ? dayjs(formData.startDate).format("YYYY-MM-DD")
-          : "",
-        proposedLocations: formData.proposedLocations,
+         dateOfContact: formatLeadDateValue(formData.dateOfContact),
+        startDate: formatLeadDateValue(formData.startDate, {
+          useCurrentTimeForToday: true,
+        }),
+        proposedLocations: normalizeProposedLocationValue(
+          formData.proposedLocations
+        ),
         officeInGoa: formData.officeInGoa === "true",
         openDesks: Number(formData.openDesks || 0),
         cabinDesks: Number(formData.cabinDesks || 0),
@@ -360,6 +390,12 @@ const UniqueLeads = () => {
   //   );
    const getOptionLabel = (value, fallback = "N/A") => {
     if (!value) return fallback;
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => getOptionLabel(item, ""))
+        .filter(Boolean)
+        .join(", ") || fallback;
+    }
     if (typeof value === "string" || typeof value === "number") return value;
     return (
       value.serviceName ||
@@ -767,71 +803,16 @@ const UniqueLeads = () => {
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        // title={"Lead details"}
         title={"View Leads Details"}
       >
-        {/* <div className="flex flex-col gap-2">
-          {selectedLead ? (
-            <>
-              <DetalisFormatted
-                title="Company Name"
-                detail={selectedLead.companyName}
-                upperCase
-              />
-              <DetalisFormatted
-                title="POC Name"
-                detail={selectedLead.pocName}
-              />
-              <DetalisFormatted
-                title="Designation"
-                detail={selectedLead.designation || "—"}
-              />
-              <DetalisFormatted
-                title="Contact Number"
-                detail={selectedLead.contactNumber}
-              />
-              <DetalisFormatted
-                title="Email"
-                detail={selectedLead.emailAddress}
-              />
-              <DetalisFormatted
-                title="Lead Status"
-                detail={selectedLead.leadStatus}
-              />
-              <DetalisFormatted title="Sector" detail={selectedLead.sector} />
-              <DetalisFormatted
-                title="Service"
-                detail={selectedLead.serviceName}
-              />
-              <DetalisFormatted
-                title="Client Budget"
-                detail={`INR ${selectedLead.clientBudget}`}
-              />
-              <DetalisFormatted
-                title="Date of Contact"
-                detail={humanDate(selectedLead.dateOfContact)}
-              />
-              <DetalisFormatted
-                title="Last Follow-up Date"
-                detail={humanDate(selectedLead.lastFollowUpDate)}
-              />
-              <DetalisFormatted
-                title="Remarks"
-                detail={selectedLead.remarksComments || "—"}
-              />
-            </>
-          ) : (
-            <div>No lead selected.</div>
-          )}
-        </div> */}
-           {selectedLead ? (
+        {selectedLead ? (
           <div className="grid grid-cols-1 gap-4">
             {viewDetailFields.map(({ label, field, type }) => (
-               <DetalisFormatted
-                               key={field}
+              <DetalisFormatted
+                key={field}
                 title={label}
                 detail={formatViewDetail(selectedLead, field, type)}
-                  />
+              />
             ))}
           </div>
         ) : (
