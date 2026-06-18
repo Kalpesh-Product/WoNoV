@@ -164,7 +164,7 @@ const UniqueLeads = () => {
   const addLeadFields = [
     { name: "dateOfContact", label: "Date Of Contact", type: "datePicker" },
     { name: "companyName", label: "Company Name" },
-    { name: "serviceCategory", label: "Service Category", type: "select mul", options: services.map((service) => ({ value: service._id, label: service.serviceName })) },
+    { name: "serviceCategory", label: "Service Category", type: "select", options: services.map((service) => ({ value: service._id, label: service.serviceName })) },
     { name: "leadStatus", label: "Lead Status", type: "select", options: ["Cold", "Mild", "Hot", "Closed"].map((value) => ({ value, label: value })) },
     { name: "proposedLocations", label: "Proposed Locations", type: "select", options: units.map((unit) => ({ value: unit._id, label: unit.unitNo || unit.unitName || "Unit" })) },
     { name: "sector", label: "Sector" },
