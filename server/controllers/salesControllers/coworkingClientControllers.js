@@ -83,7 +83,9 @@ const createCoworkingClient = async (req, res, next) => {
         logSourceKey,
       );
     }
-    const unitExists = await Unit.findOne({ _id: unit });
+
+    const unitExists = await Unit.findById(unit).lean();
+
     if (!unitExists) {
       throw new CustomError(
         "Unit doesn't exist",
@@ -149,15 +151,27 @@ const createCoworkingClient = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid rent date" });
     }
 
-    const bookedDesks = cabinDesks + openDesks;
+    const normalizedCabinDesks = Number(cabinDesks ?? 0);
+    const normalizedOpenDesks = Number(openDesks ?? 0);
+    const normalizedRatePerOpenDesk = Number(ratePerOpenDesk);
+    const normalizedRatePerCabinDesk = Number(ratePerCabinDesk);
+    const normalizedAnnualIncrement = Number(annualIncrement);
+
+    const bookedDesks = normalizedCabinDesks + normalizedOpenDesks;
     if (
+      [
+        bookedDesks,
+        normalizedRatePerOpenDesk,
+        normalizedRatePerCabinDesk,
+        normalizedAnnualIncrement,
+      ].some((value) => Number.isNaN(value)) ||
       bookedDesks < 0 ||
-      ratePerOpenDesk < 0 ||
-      ratePerCabinDesk < 0 ||
-      annualIncrement < 0
+      normalizedRatePerOpenDesk < 0 ||
+      normalizedRatePerCabinDesk < 0 ||
+      normalizedAnnualIncrement < 0
     ) {
       throw new CustomError(
-        "Invalid numerical values",
+        "Value shouldn't be less than 0",
         logPath,
         logAction,
         logSourceKey,
@@ -185,12 +199,12 @@ const createCoworkingClient = async (req, res, next) => {
       building: unitExists.building,
       hoState,
       unit,
-      cabinDesks,
-      openDesks,
+      cabinDesks: normalizedCabinDesks,
+      openDesks: normalizedOpenDesks,
       totalDesks: bookedDesks,
-      ratePerOpenDesk,
-      ratePerCabinDesk,
-      annualIncrement,
+      ratePerOpenDesk: normalizedRatePerOpenDesk,
+      ratePerCabinDesk: normalizedRatePerCabinDesk,
+      annualIncrement: normalizedAnnualIncrement,
       perDeskMeetingCredits,
       totalMeetingCredits,
       meetingCreditBalance: Number(totalMeetingCredits) || 0,
