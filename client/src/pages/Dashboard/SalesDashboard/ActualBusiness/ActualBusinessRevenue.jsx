@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CircularProgress, MenuItem, TextField } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -9,6 +10,26 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
+
+const SALES_REVENUE_BASE_PATH = "/app/dashboard/sales-dashboard/revenue";
+
+const VERTICAL_ROUTE_MAP = {
+  Meeting: "meetings",
+  Meetings: "meetings",
+  Alternate: "alt-revenue",
+  "Alternate Revenue": "alt-revenue",
+  "Alternate Revenues": "alt-revenue",
+  "Alt. Revenue": "alt-revenue",
+  "Alt. Revenues": "alt-revenue",
+  "Virtual Office": "virtual-office",
+  "Virtual Offices": "virtual-office",
+  Workation: "workation",
+  Workations: "workation",
+  "Co-Working": "co-working",
+  "Co-Working Revenue": "co-working",
+  Coworking: "co-working",
+  "Co Working": "co-working",
+};
 
 const months = [
   "April",
@@ -67,8 +88,11 @@ const groupByMonth = (data) => {
 
 const ActualBusinessRevenue = () => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState(months[0]);
-  const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1].value);
+  const [selectedFY, setSelectedFY] = useState(
+    fyOptions[fyOptions.length - 1].value,
+  );
 
   const { data: totalRevenue = [], isLoading: isTotalRevenue } = useQuery({
     queryKey: ["totalRevenue"],
@@ -155,6 +179,36 @@ const ActualBusinessRevenue = () => {
     colors: ["#54C4A7", "#EB5C45"],
   };
 
+ const handleVerticalNavigation = (vertical) => {
+    const targetPath = VERTICAL_ROUTE_MAP[vertical];
+    if (!targetPath) return;
+
+    navigate(`${SALES_REVENUE_BASE_PATH}/${targetPath}`, {
+      state: { selectedVertical: vertical },
+    });
+  };
+
+  const clickableCellClass =
+    "m-0 h-full w-auto cursor-pointer border-none bg-transparent p-0 text-left font-pregular text-primary underline underline-offset-2 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2";
+
+  const verticalLinkRenderer = (params) => {
+    const vertical = params.data?.vertical;
+    if (!VERTICAL_ROUTE_MAP[vertical]) return params.value;
+
+    return (
+      <button
+        type="button"
+        className={clickableCellClass}
+        onClick={() => handleVerticalNavigation(vertical)}
+        aria-label={`Open ${vertical} revenue details`}
+      >
+        {params.value}
+      </button>
+    );
+  };
+
+
+
   const tableData = selectedMonthData.map((domain, index) => ({
     id: index + 1,
     vertical: domain.name,
@@ -171,7 +225,7 @@ const ActualBusinessRevenue = () => {
             title={"Vertical-wise Revenue"}
             titleLabel={`${selectedMonth} 2024`}
             TitleAmount={`INR ${inrFormat(
-              selectedMonthData.reduce((sum, d) => sum + d.revenue, 0)
+            selectedMonthData.reduce((sum, d) => sum + d.revenue, 0),
             )}`}
             border
           >
@@ -222,7 +276,7 @@ const ActualBusinessRevenue = () => {
             border
             title={`Vertical-wise Revenue Breakdown FY 2025-26`}
             TitleAmount={`INR ${inrFormat(
-              selectedMonthData.reduce((sum, d) => sum + d.revenue, 0)
+              selectedMonthData.reduce((sum, d) => sum + d.revenue, 0),
             )}`}
           >
             <AgTable
@@ -230,7 +284,13 @@ const ActualBusinessRevenue = () => {
               tableHeight={300}
               columns={[
                 { headerName: "Sr No", field: "id", width: 100 },
-                { headerName: "Vertical", field: "vertical", flex: 1 },
+                // { headerName: "Vertical", field: "vertical", flex: 1 },
+                 {
+                  headerName: "Vertical",
+                  field: "vertical",
+                  flex: 1,
+                  cellRenderer: verticalLinkRenderer,
+                },
                 { headerName: "Revenue (INR)", field: "revenue", width: 400 },
               ]}
               data={tableData}

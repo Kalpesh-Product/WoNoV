@@ -11,6 +11,43 @@ import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentage";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
 
+// const MeetingRevenue = () => {
+//   const axios = useAxiosPrivate();
+
+//   const {
+//     data: meetingsData = [],
+//     isLoading: isMeetingsLoading,
+//     isError,
+//     error,
+//   } = useQuery({
+//     queryKey: ["meetings-revenue"],
+//     queryFn: async () => {
+//       const response = await axios.get("/api/sales/get-meeting-revenue");
+//       return Array.isArray(response.data) ? response.data : [];
+//     },
+//   });
+
+//   const graphData = isMeetingsLoading
+//     ? []
+//     : meetingsData.flatMap((item) => item.revenue);
+
+//   const hasData = Array.isArray(meetingsData) && meetingsData.length > 0;
+
+const MONTH_INDEX_MAP = {
+  Jan: 0,
+  Feb: 1,
+  Mar: 2,
+  Apr: 3,
+  May: 4,
+  Jun: 5,
+  Jul: 6,
+  Aug: 7,
+  Sep: 8,
+  Oct: 9,
+  Nov: 10,
+  Dec: 11,
+};
+
 const MeetingRevenue = () => {
   const axios = useAxiosPrivate();
 
@@ -29,7 +66,26 @@ const MeetingRevenue = () => {
 
   const graphData = isMeetingsLoading
     ? []
-    : meetingsData.flatMap((item) => item.revenue);
+    : meetingsData
+        .map((item) => {
+          const [monthShort, yearShort] = String(item?.month || "").split("-");
+          const monthIndex = MONTH_INDEX_MAP[monthShort];
+          const fullYear = Number(`20${yearShort}`);
+
+          if (
+            monthIndex == null ||
+            !Number.isFinite(fullYear)
+          ) {
+            return null;
+          }
+
+          return {
+            date: new Date(fullYear, monthIndex, 1).toISOString(),
+            taxable: Number(item?.actual) || 0,
+            vertical: "Meeting",
+          };
+        })
+        .filter(Boolean);
 
   const hasData = Array.isArray(meetingsData) && meetingsData.length > 0;
 
@@ -131,8 +187,8 @@ const MeetingRevenue = () => {
                     ? value.toLocaleString("en-IN")
                     : `${value ?? ""}`,
               },
-              { headerName: "Date", field: "date" },
-              { headerName: "Payment Date", field: "paymentDate" },
+              //{ headerName: "Date", field: "date" },
+             { headerName: "Payment Date", field: "paymentDate" },
               { headerName: "Remarks", field: "remarks" },
               {
                 headerName: "Status",

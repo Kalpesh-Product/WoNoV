@@ -8,6 +8,48 @@ import { setClientData } from "../../../../redux/slices/salesSlice";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { Chip } from "@mui/material";
 
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const getCalendarDateInUtc = (value) => {
+  const date = new Date(value);
+  const dateParts =
+    typeof value === "string" && value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (dateParts) {
+    return Date.UTC(
+      Number(dateParts[1]),
+      Number(dateParts[2]) - 1,
+      Number(dateParts[3]),
+    );
+  }
+
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const calculateAgreementExpiry = (startDate, endDate) => {
+  const startDay = getCalendarDateInUtc(startDate);
+  const endDay = getCalendarDateInUtc(endDate);
+
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDay) ||
+    Number.isNaN(endDay) ||
+    endDay < startDay
+  ) {
+    return "-";
+  }
+
+  const today = getCalendarDateInUtc(new Date());
+  const totalDays = Math.round((endDay - startDay) / MILLISECONDS_PER_DAY);
+  const remainingDays = Math.min(
+    totalDays,
+    Math.max(0, Math.round((endDay - today) / MILLISECONDS_PER_DAY)),
+  );
+
+  return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
+};
+
 const CoWorkingClients = () => {
   const navigate = useNavigate();
   const clientsData = useSelector((state) => state.sales.clientsData);
@@ -93,6 +135,7 @@ const CoWorkingClients = () => {
       headerName: "Occupancy (%)",
       cellRenderer: (params) => `${params.value}%`,
     },
+    { field: "agreementExpiry", headerName: "Agreement Expiry" },
   ];
 
   const sortedClients = [...clientsData].sort((a, b) => {
@@ -125,6 +168,7 @@ const CoWorkingClients = () => {
       ((Number(item.openDesks || 0) + Number(item.cabinDesks)) / 589) *
       100
     ).toFixed(1),
+    agreementExpiry: calculateAgreementExpiry(item.startDate, item.endDate),
     // ratePerOpenDesk: item.ratePerOpenDesk,
     // ratePerCabinDesk: item.ratePerCabinDesk,
     // annualIncrement: item.annualIncrement,

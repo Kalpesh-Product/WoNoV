@@ -2,12 +2,14 @@ const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
+const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 
 const fetchCoworkingRevenueService = async ({
   dateFilter,
   query,
   company,
   isReport = false,
+  type,
 }) => {
   try {
     const filter = { company };
@@ -18,7 +20,6 @@ const fetchCoworkingRevenueService = async ({
       filter.rentDate = dateFilter.rentDate;
     }
 
-    console.log("fetchCoworkingRevenueService filter", dateFilter);
     const revenues = await CoworkingRevenue.find(filter).lean().exec();
 
     const MONTHS_SHORT = [
@@ -64,21 +65,28 @@ const fetchCoworkingRevenueService = async ({
         occupation: item.occupation,
         revenue: item.revenue,
         totalTerm: item.totalTerm,
-        dueTerm: item.dueTerm,
+        ...(!isReport && { dueTerm: item.dueTerm }),
         rentDate: item.rentDate,
         rentStatus: item.rentStatus,
-        pastDueDate: item.pastDueDate,
+        ...(!isReport && { pastDueDate: item.pastDueDate }),
         annualIncrement: item.annualIncrement,
         nextIncrementDate: item.nextIncrementDate,
-        serviceName: item.service?.serviceName,
+        ...(!isReport && { serviceName: item.service?.serviceName }),
       });
     });
 
     const transformedData = Array.from(monthlyMap.values());
 
-    console.log("isReport", isReport);
     if (isReport) {
-      return transformedData.flatMap((month) => month.clients);
+      let result = transformedData.flatMap((month) => month.clients);
+      if (type === "collection") {
+        return result.map((client) => ({
+          clientName: client.clientName,
+          revenue: client.revenue,
+          rentDate: client.rentDate,
+          status: client.rentStatus,
+        }));
+      } else return result;
     }
 
     return transformedData;
@@ -146,7 +154,7 @@ const fetchAlternateRevenueReportService = async ({
       invoiceCreationDate: item.invoiceCreationDate,
       invoicePaidDate: item.invoicePaidDate,
       gst: item.gst,
-      status: item.status || "Paid",
+      status: item.status || "Unpaid",
     });
   });
 
@@ -174,6 +182,10 @@ const fetchMeetingRevenueReportService = async ({
   isReport = false,
 }) => {
   const filter = {};
+
+  if (company) {
+    filter.company = company;
+  }
 
   if (dateFilter) {
     filter.date = dateFilter.date;
@@ -268,16 +280,50 @@ const fetchVirtualOfficeRevenueReportService = async ({
   user,
   query,
   params,
+  isReport = false,
 }) => {
-  let filter = {};
+  let filter = { company };
 
   if (dateFilter) {
     filter.rentDate = dateFilter.rentDate;
   }
+
   const revenues = await VirtualOfficeRevenue.find(filter)
     .populate([{ path: "client", select: "clientName" }])
     .lean()
     .exec();
+
+  if (isReport) {
+    return revenues.map(
+      ({ pastDueDate, unitNo, unitName, buildingName, ...item }) => item,
+    );
+  }
+
+  return revenues;
+};
+
+const fetchWorkationRevenueReportService = async ({
+  company,
+  isReport = false,
+  dateFilter,
+}) => {
+  let filter = {};
+
+  if (dateFilter) {
+    filter.date = dateFilter.date;
+  }
+
+  const revenues = await WorkationRevenue.find(filter)
+    .populate("client")
+    .lean()
+    .exec();
+
+  if (isReport) {
+    return revenues.map((rev) => {
+      const { nameOfClient, ...rest } = rev;
+      return rest;
+    });
+  }
 
   return revenues;
 };
@@ -287,4 +333,5 @@ module.exports = {
   fetchMeetingRevenueReportService,
   fetchAlternateRevenueReportService,
   fetchVirtualOfficeRevenueReportService,
+  fetchWorkationRevenueReportService,
 };

@@ -30,5 +30,7 @@ const agreementsSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+agreementsSchema.index({ user: 1 });
 const Agreements = mongoose.model("agreements", agreementsSchema);
 module.exports = Agreements;

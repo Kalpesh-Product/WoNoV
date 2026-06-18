@@ -84,7 +84,6 @@ const clientSchema = new mongoose.Schema(
     totalDesks: {
       type: Number,
     },
-
     ratePerOpenDesk: {
       type: Number,
     },

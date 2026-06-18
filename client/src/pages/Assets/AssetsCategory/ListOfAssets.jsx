@@ -30,8 +30,35 @@ import { queryClient } from "../../../main";
 import dayjs from "dayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate , useParams } from "react-router-dom" ;
 import StatusChip from "../../../components/StatusChip";
+
+const assetCardRouteConfig = {
+  "total-assets": {
+    tableTitle: "Total - List Of Asset",
+  },
+  "assets-owned": {
+    ownershipType: "Owned",
+    tableTitle: "List of Assets - Owned Assets",
+  },
+  "assets-rental": {
+    ownershipType: "Rental",
+    tableTitle: "List of Assets - Rental Assets",
+  },
+  "assets-under-maintenance": {
+    statusFilter: "underMaintenance",
+    tableTitle: "List of Assets - Under Maintenance Assets",
+  },
+  "assets-damaged": {
+    statusFilter: "damaged",
+    tableTitle: "List of Assets - Damaged Assets",
+  },
+  "assets-extra": {
+    statusFilter: "extra",
+    tableTitle: "List of Assets - Extra Assets",
+  },
+};
+
 
 const ListOfAssets = () => {
   const { auth } = useAuth();
@@ -43,6 +70,23 @@ const ListOfAssets = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
   const navigate = useNavigate();
+  const location = useLocation();
+  // const assetOwnershipTypeFilter = location.state?.assetOwnershipType;
+  // const assetStatusFilter = location.state?.assetStatusFilter;
+   const { assetCard } = useParams();
+  const normalizedAssetCard = assetCard?.trim();
+  const selectedAssetCardConfig =
+    assetCardRouteConfig[normalizedAssetCard] || null;
+  const assetOwnershipTypeFilter =
+    selectedAssetCardConfig?.ownershipType || location.state?.assetOwnershipType;
+  const assetStatusFilter =
+    selectedAssetCardConfig?.statusFilter || location.state?.assetStatusFilter;
+  const isAssetCardRoute = Boolean(selectedAssetCardConfig);
+  const isAssetCardView = isAssetCardRoute || Boolean(location.state?.assetListTitle);
+  const tableTitle =
+    selectedAssetCardConfig?.tableTitle ||
+    location.state?.assetListTitle ||
+    "List of Assets";
 
   //---------------------Forms----------------------//
   const {
@@ -121,6 +165,7 @@ const ListOfAssets = () => {
       floor: "",
       isDamaged: "",
       isUnderMaintenance: "",
+      isExtra: "",
       status: "",
       assetImage: null,
       warrantyDocument: null,
@@ -141,7 +186,7 @@ const ListOfAssets = () => {
 
   //-----------------------API----------------------//
   const { data: assetsList = [], isPending: isAssetsListPending } = useQuery({
-    queryKey: ["assetsList"],
+    queryKey: ["assetsList", departmentId],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -209,6 +254,7 @@ const ListOfAssets = () => {
       formData.append("secondaryId", data.secondaryId || "");
       formData.append("isDamaged", data.isDamaged);
       formData.append("isUnderMaintenance", data.isUnderMaintenance);
+      formData.append("isExtra", data.isExtra);
       formData.append("status", data.status);
       formData.append("purchaseDate", data.purchaseDate);
       formData.append("quantity", Number(data.quantity));
@@ -327,6 +373,10 @@ const ListOfAssets = () => {
           typeof selectedForEdit?.isUnderMaintenance === "boolean"
             ? String(selectedForEdit.isUnderMaintenance)
             : "",
+        isExtra:
+          typeof selectedForEdit?.isExtra === "boolean"
+            ? String(selectedForEdit.isExtra)
+            : "",    
         status: selectedForEdit?.status === "Active" ? "Active" : "Inactive",
         isDamaged:
           typeof selectedForEdit?.isDamaged === "boolean"
@@ -364,6 +414,7 @@ const ListOfAssets = () => {
       formData.append("status", data.status);
       formData.append("isDamaged", data.isDamaged);
       formData.append("isUnderMaintenance", data.isUnderMaintenance);
+      formData.append("isExtra", data.isExtra);
       formData.append("tangable", data.tangable);
       formData.append("locationId", data.locationId);
 
@@ -495,6 +546,10 @@ const ListOfAssets = () => {
       headerName: "Warranty Expiry Date",
       cellRenderer: (params) => humanDate(params.value),
     },
+    {
+      field: "addedBy",
+      headerName: "Added By",
+    },
     // {
     //   field: "rentedExpirationDate",
     //   headerName: "Rental Expiry Date",
@@ -549,7 +604,22 @@ const ListOfAssets = () => {
   const tableData =
     isAssetsListPending || !Array.isArray(assetsList)
       ? []
-      : assetsList.map((item) => {
+      : assetsList
+          .filter((item) =>
+            assetOwnershipTypeFilter
+              ? item?.ownershipType === assetOwnershipTypeFilter
+              : true,
+          )
+          .filter((item) =>
+            assetStatusFilter === "underMaintenance"
+              ? item?.isUnderMaintenance === true
+              : assetStatusFilter === "damaged"
+                ? item?.isDamaged === true
+                : assetStatusFilter === "extra"
+                  ? item?.isExtra === true
+                  : true,
+          )
+          .map((item) => {
           return {
             ...item,
             assetMongoId: item?.asset?._id,
@@ -560,6 +630,12 @@ const ListOfAssets = () => {
             category: item?.subCategory?.category?.categoryName || "N/A",
             building: item?.location?.building?.buildingName || "N/A",
             unit: item?.location?.unitNo || "N/A",
+            addedBy: item?.createdBy?.firstName
+              ? `${item.createdBy.firstName} ${item?.createdBy?.lastName || ""}`.trim()
+              : item?.createdBy?.name ||
+                (auth?.user?.firstName
+                  ? `${auth.user.firstName} ${auth?.user?.lastName || ""}`.trim()
+                  : auth?.user?.name || "N/A"),
           };
         });
   //-----------------------Table Data----------------------//
@@ -568,12 +644,19 @@ const ListOfAssets = () => {
     <PageFrame>
       <YearWiseTable
         search={true}
-        dateColumn={"purchaseDate"}
-        tableTitle={"List of Assets"}
-        buttonTitle={"Add Asset"}
+       // dateColumn={"purchaseDate"}
+        // tableTitle={"List of Assets"}
+        // buttonTitle={"Add Asset"}
+        // data={tableData}
+        // columns={assetColumns}
+        // handleSubmit={handleAddAsset}
+        tableTitle={tableTitle}
+        buttonTitle={isAssetCardView ? undefined : "Add Asset"}
         data={tableData}
         columns={assetColumns}
-        handleSubmit={handleAddAsset}
+        handleSubmit={isAssetCardView ? undefined : handleAddAsset}
+        exportData={isAssetCardView}
+        exportButtonTitle="Export"
       />
 
       <MuiModal
@@ -1064,6 +1147,7 @@ const ListOfAssets = () => {
                 isDamaged: data.isDamaged === "true" ? true : false,
                 isUnderMaintenance:
                   data.isUnderMaintenance === "true" ? true : false,
+                isExtra: data.isExtra === "true" ? true : false,  
               }),
             )}
             className="grid grid-cols-2 gap-4"
@@ -1368,6 +1452,27 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
+              <Controller
+              name="isExtra"
+              control={editControl}
+              rules={{ required: "Extra is required" }}
+              render={({ field }) => (
+                <TextField
+                  select
+                  {...field}
+                  size="small"
+                  fullWidth
+                  label="Extra"
+                  className="col-span-2"
+                >
+                  <MenuItem value="" disabled>
+                    <em>Select Extra</em>
+                  </MenuItem>
+                  <MenuItem value="true">Yes</MenuItem>
+                  <MenuItem value="false">No</MenuItem>
+                </TextField>
+              )}
+            />
 
             <Controller
               name="assetImage"
@@ -1525,21 +1630,33 @@ const ListOfAssets = () => {
               title={"Status"}
               detail={selectedAsset?.status || "N/A"}
             />
-
-            <DetalisFormatted
-              title={"Under Maintenance"}
-              detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
-            />
-
             <DetalisFormatted
               title={"Damaged"}
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}
             />
             <DetalisFormatted
+              title={"Under Maintenance"}
+              detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Extra"}
+              detail={selectedAsset?.isExtra ? "Yes" : "No"}
+            />
+            <DetalisFormatted
               title={"Assigned"}
               detail={selectedAsset?.isAssigned ? "Yes" : "No"}
             />
-
+              <DetalisFormatted
+              title={"Assigned Building"}
+              detail={
+                selectedAsset?.assignedAsset?.location?.building?.buildingName ||
+                "N/A"
+              }
+            />
+            <DetalisFormatted
+              title={"Assigned Unit"}
+              detail={selectedAsset?.assignedAsset?.location?.unitNo || "N/A"}
+            />
             <DetalisFormatted
               title={"Asset Image"}
               detail={

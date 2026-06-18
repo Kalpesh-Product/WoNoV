@@ -17,6 +17,78 @@ const { createLog } = require("../../utils/moduleLogs");
 const { default: mongoose } = require("mongoose");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 
+// const getIncomeAndExpanse = async (req, res, next) => {
+//   try {
+//     const company = req.company;
+
+//     const [
+//       budgets,
+//       meetingRevenue,
+//       alternateRevenues,
+//       virtualOfficeRevenues,
+//       workationRevenues,
+//       coworkingRevenues,
+//       units,
+//     ] = await Promise.all([
+//       Budget.find({ company, status: "Approved" })
+//         .populate([
+//           {
+//             path: "unit",
+//             populate: {
+//               path: "building",
+//               select: "buildingName",
+//               model: "Building",
+//             },
+//           },
+//           { path: "department", select: "name" },
+//         ])
+//         .lean()
+//         .exec(),
+//       MeetingRevenue.find({ company }).lean().exec(),
+//       AlternateRevenues.find({ company }).lean().exec(),
+//       VirtualOfficeRevenues.find({ company }).lean().exec(),
+//       WorkationRevenues.find({ company }).lean().exec(),
+//       CoworkingRevenue.find({ company }).lean().exec(),
+//       Unit.find({ company })
+//         .populate([{ path: "building", select: "buildingName" }])
+//         .lean()
+//         .exec(),
+//     ]);
+
+//     const response = [
+//       {
+//         expense: [...budgets],
+//       },
+//       {
+//         income: {
+//           meetingRevenue: [
+//             ...meetingRevenue.map((m) => ({ ...m, status: "paid" })),
+//           ],
+//           alternateRevenues: [
+//             ...alternateRevenues.map((m) => ({ ...m, status: "paid" })),
+//           ],
+//           virtualOfficeRevenues: [
+//             ...virtualOfficeRevenues.map((m) => ({ ...m, status: "paid" })),
+//           ],
+//           workationRevenues: [
+//             ...workationRevenues.map((m) => ({ ...m, status: "paid" })),
+//           ],
+//           coworkingRevenues: [
+//             ...coworkingRevenues.map((m) => ({ ...m, status: "paid" })),
+//           ],
+//         },
+//       },
+//       {
+//         units: [...units],
+//       },
+//     ];
+
+//     return res.status(200).json({ response });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const getIncomeAndExpanse = async (req, res, next) => {
   try {
     const company = req.company;
@@ -31,28 +103,33 @@ const getIncomeAndExpanse = async (req, res, next) => {
       units,
     ] = await Promise.all([
       Budget.find({ company, status: "Approved" })
-        .populate([
-          {
-            path: "unit",
-            populate: {
-              path: "building",
-              select: "buildingName",
-              model: "Building",
-            },
-          },
-          { path: "department", select: "name" },
-        ])
+        .select("dueDate actualAmount projectedAmount")
         .lean()
         .exec(),
-      MeetingRevenue.find({ company }).lean().exec(),
-      AlternateRevenues.find({ company }).lean().exec(),
-      VirtualOfficeRevenues.find({ company }).lean().exec(),
-      WorkationRevenues.find({ company }).lean().exec(),
-      CoworkingRevenue.find({ company }).lean().exec(),
-      Unit.find({ company })
-        .populate([{ path: "building", select: "buildingName" }])
+
+      MeetingRevenue.find({ company }).select("date taxable").lean().exec(),
+
+      AlternateRevenues.find({ company })
+        .select("invoiceCreationDate taxableAmount")
         .lean()
         .exec(),
+
+      VirtualOfficeRevenues.find({ company })
+        .select("rentDate taxableAmount revenue")
+        .lean()
+        .exec(),
+
+      WorkationRevenues.find({ company })
+        .select("date taxableAmount")
+        .lean()
+        .exec(),
+
+      CoworkingRevenue.find({ company })
+        .select("rentDate revenue")
+        .lean()
+        .exec(),
+
+      Unit.find({ company }).select("sqft").lean().exec(),
     ]);
 
     const response = [
@@ -109,7 +186,7 @@ const uploadClientInvoice = async (req, res, next) => {
         "Invalid client Id provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -118,7 +195,7 @@ const uploadClientInvoice = async (req, res, next) => {
         "Invalid file type. Allowed types: PDF, DOC, DOCX",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -129,7 +206,7 @@ const uploadClientInvoice = async (req, res, next) => {
         "Client not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -140,7 +217,7 @@ const uploadClientInvoice = async (req, res, next) => {
         "Company not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -151,7 +228,7 @@ const uploadClientInvoice = async (req, res, next) => {
     if (file.mimetype === "application/pdf") {
       const pdfDoc = await PDFDocument.load(file.buffer);
       pdfDoc.setTitle(
-        file.originalname ? file.originalname.split(".")[0] : "Untitled"
+        file.originalname ? file.originalname.split(".")[0] : "Untitled",
       );
       processedBuffer = await pdfDoc.save();
     }
@@ -159,7 +236,7 @@ const uploadClientInvoice = async (req, res, next) => {
     const response = await handleDocumentUpload(
       processedBuffer,
       `${foundCompany.companyName}/clients/${foundClient.clientName}/invoice`,
-      originalFilename
+      originalFilename,
     );
 
     if (!response.public_id) {
@@ -167,7 +244,7 @@ const uploadClientInvoice = async (req, res, next) => {
         "Failed to upload document",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -198,7 +275,7 @@ const uploadClientInvoice = async (req, res, next) => {
         "Failed to save invoice",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -227,7 +304,7 @@ const uploadClientInvoice = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -253,7 +330,7 @@ const uploadClientVoucher = async (req, res, next) => {
         "Invalid client Id provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -262,7 +339,7 @@ const uploadClientVoucher = async (req, res, next) => {
         "Invalid file type. Allowed types: PDF, DOC, DOCX",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -273,7 +350,7 @@ const uploadClientVoucher = async (req, res, next) => {
         "Client not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -284,7 +361,7 @@ const uploadClientVoucher = async (req, res, next) => {
         "Company not found",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -295,7 +372,7 @@ const uploadClientVoucher = async (req, res, next) => {
     if (file.mimetype === "application/pdf") {
       const pdfDoc = await PDFDocument.load(file.buffer);
       pdfDoc.setTitle(
-        file.originalname ? file.originalname.split(".")[0] : "Untitled"
+        file.originalname ? file.originalname.split(".")[0] : "Untitled",
       );
       processedBuffer = await pdfDoc.save();
     }
@@ -303,7 +380,7 @@ const uploadClientVoucher = async (req, res, next) => {
     const response = await handleDocumentUpload(
       processedBuffer,
       `${foundCompany.companyName}/clients/${foundClient.clientName}/voucher`,
-      originalFilename
+      originalFilename,
     );
 
     if (!response.public_id) {
@@ -311,7 +388,7 @@ const uploadClientVoucher = async (req, res, next) => {
         "Failed to upload document",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -342,7 +419,7 @@ const uploadClientVoucher = async (req, res, next) => {
         "Failed to save invoice",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -371,7 +448,7 @@ const uploadClientVoucher = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -408,7 +485,7 @@ const updatePaymentStatus = async (req, res, next) => {
     const updateInvoice = await Invoice.findByIdAndUpdate(
       { _id: invoiceId },
       { paymentStatus: true },
-      { new: true }
+      { new: true },
     );
 
     if (!updateInvoice) {
@@ -416,7 +493,7 @@ const updatePaymentStatus = async (req, res, next) => {
         "Failed to update payment status",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -438,7 +515,7 @@ const updatePaymentStatus = async (req, res, next) => {
     next(
       error instanceof CustomError
         ? error
-        : new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
     );
   }
 };

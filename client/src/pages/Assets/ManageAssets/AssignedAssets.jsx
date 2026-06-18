@@ -26,13 +26,19 @@ import { inrFormat } from "../../../utils/currencyFormat";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { useLocation } from "react-router-dom";
 
 const AssignedAssets = () => {
   const axios = useAxiosPrivate();
+  const location = useLocation();
   const [selectedAsset, setSelectedAsset] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  const isInUseView = location.state?.assetViewFilter === "inUse";
+  const tableTitle = isInUseView
+    ? "Assigned Assets - In Use"
+    : "Assigned Assets";
 
   const formatDateTime = (value) => {
     if (!value) return "N/A";
@@ -266,7 +272,7 @@ const AssignedAssets = () => {
         <AgTable
           key={assignedAssets.length}
           search={true}
-          tableTitle={"Assigned Assets"}
+          tableTitle={tableTitle}
           data={tableData}
           columns={assetsColumns}
         />
@@ -439,12 +445,16 @@ const AssignedAssets = () => {
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}
             />
             <DetalisFormatted
-              title={"Revoked"}
-              detail={selectedAsset?.isRevoked ? "Yes" : "No"}
-            />
-            <DetalisFormatted
               title={"Under Maintenance"}
               detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Extra"}
+              detail={selectedAsset?.isExtra ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Revoked"}
+              detail={selectedAsset?.isRevoked ? "Yes" : "No"}
             />
           </div>
         )}

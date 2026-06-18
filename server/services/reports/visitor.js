@@ -65,7 +65,6 @@ const fetchVisitorReportService = async ({
     //       }),
     //     }
 
-    console.log("filter", filter);
     switch (query) {
       case "department":
         visitors = await Visitor.aggregate([
@@ -301,31 +300,6 @@ const mapVisitorReportFields = (visitor = {}) => ({
   notes: visitor.notes || "-",
 });
 
-// const fetchInternalVisitorsReportService = async ({
-//   company,
-//   dateFilter,
-// } = {}) => {
-//   const filter = {
-//     company: new mongoose.Types.ObjectId(company),
-//     visitorType: {
-//       $in: ["Walk In", "Scheduled"],
-//     },
-//   };
-
-//   if (dateFilter?.checkIn) {
-//     filter.checkIn = dateFilter.checkIn;
-//   }
-
-//   console.log("internal filter", filter);
-
-//   const visitors = await ExternalVisits.find(filter)
-//     .populate(populateVisitorFields)
-//     .lean()
-//     .exec();
-
-//   return visitors.map(mapVisitorReportFields);
-// };
-
 const fetchInternalVisitorsReportService = async ({
   company,
   dateFilter,
@@ -336,17 +310,14 @@ const fetchInternalVisitorsReportService = async ({
     ...(dateFilter?.checkIn && { checkIn: dateFilter.checkIn }),
   };
 
-  console.log("internal filter", filter);
-
   const visits = await ExternalVisits.find(filter)
     .populate([
       {
         path: "visitorId",
-        select:
-          "firstName middleName lastName email gender phoneNumber city state sector visitorRoles brandName registeredClientCompany",
+        select: "firstName lastName email gender phoneNumber",
       },
-      { path: "toMeet", select: "firstName lastName email" },
-      { path: "clientToMeet", select: "employeeName email" },
+      { path: "toMeet", select: "firstName lastName" },
+      { path: "clientToMeet", select: "employeeName" },
       { path: "toMeetCompany", select: "clientName companyName name" },
       { path: "checkedInBy", select: "firstName lastName" },
       { path: "checkedOutBy", select: "firstName lastName" },
@@ -356,42 +327,107 @@ const fetchInternalVisitorsReportService = async ({
         select: "unitNo unitName",
         populate: { path: "building", select: "buildingName" },
       },
-      { path: "meeting" },
     ])
+    .select(
+      "-amount -discount -gstAmount -totalAmount -paymentStatus -paymentVerification -paymentMode -paymentProof -notes -legacyVisitorEntryId -visitorRoles -visitorFlag -meeting",
+    )
     .lean()
     .exec();
 
-  return visits.map((visit) =>
-    mapVisitorReportFields({
-      ...visit.visitorId, // personal fields from Visitor
-      ...visit, // ExternalVisit fields override (checkIn, checkOut, amounts, visitorType, etc.)
-    }),
-  );
+  return visits.map((visit) => {
+    const { visitorId, ...visitWithoutVisitorId } = visit;
+    const { checkIn, checkOut, ...merged } = {
+      ...visitorId,
+      ...visitWithoutVisitorId,
+    };
+    return {
+      ...merged,
+      checkInDate: checkIn
+        ? new Date(checkIn).toLocaleDateString("en-IN")
+        : null,
+      checkInTime: checkIn
+        ? new Date(checkIn).toLocaleTimeString("en-IN")
+        : null,
+      checkOutDate: checkOut
+        ? new Date(checkOut).toLocaleDateString("en-IN")
+        : null,
+      checkOutTime: checkOut
+        ? new Date(checkOut).toLocaleTimeString("en-IN")
+        : null,
+    };
+  });
 };
 
 const fetchClientVisitorsReportService = async ({
   company,
   dateFilter,
+  type,
 } = {}) => {
   const filter = {
     company: new mongoose.Types.ObjectId(company),
-    visitorType: {
-      $in: ["Meeting", "Full-Day Pass", "Half-Day Pass"],
-    },
+    visitorType:
+      type === "client"
+        ? {
+            $in: ["Meeting", "Full-Day Pass", "Half-Day Pass"],
+          }
+        : type === "meeting"
+          ? {
+              $in: ["Meeting"],
+            }
+          : type === "open-desk"
+            ? {
+                $in: ["Full-Day Pass", "Half-Day Pass"],
+              }
+            : {},
   };
 
   if (dateFilter?.checkIn) {
     filter.checkIn = dateFilter.checkIn;
   }
 
-  console.log("external filter", filter);
-
-  const visitors = await ExternalVisits.find(filter)
-    .populate(populateVisitorFields)
+  const visits = await ExternalVisits.find(filter)
+    .populate([
+      {
+        path: "visitorId",
+        select:
+          "firstName lastName email gender phoneNumber city state sector   brandName registeredClientCompany gstNumber gstFile panNumber panFile idProof otherFile",
+      },
+      { path: "checkedInBy", select: "firstName lastName" },
+      { path: "checkedOutBy", select: "firstName lastName" },
+      {
+        path: "unit",
+        select: "unitNo unitName",
+        populate: { path: "building", select: "buildingName" },
+      },
+    ])
+    .select(
+      "-notes -legacyVisitorEntryId -toMeet -clientToMeet -toMeetCompany -scheduledDate -scheduledStartTime -scheduledEndTime -visitorRoles -visitorFlag -visitorCompany -department -meeting",
+    )
     .lean()
     .exec();
 
-  return visitors.map(mapVisitorReportFields);
+  return visits.map((visit) => {
+    const { visitorId, ...visitWithoutVisitorId } = visit;
+    const { checkIn, checkOut, ...merged } = {
+      ...visitorId,
+      ...visitWithoutVisitorId,
+    };
+    return {
+      ...merged,
+      checkInDate: checkIn
+        ? new Date(checkIn).toLocaleDateString("en-IN")
+        : null,
+      checkInTime: checkIn
+        ? new Date(checkIn).toLocaleTimeString("en-IN")
+        : null,
+      checkOutDate: checkOut
+        ? new Date(checkOut).toLocaleDateString("en-IN")
+        : null,
+      checkOutTime: checkOut
+        ? new Date(checkOut).toLocaleTimeString("en-IN")
+        : null,
+    };
+  });
 };
 
 module.exports = {

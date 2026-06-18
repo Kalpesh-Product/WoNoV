@@ -101,6 +101,7 @@ import AssetsMixBag from "../pages/Assets/AssetsMixBag";
 import AssignAssets from "../pages/Assets/ManageAssets/AssignAssets";
 import ManageAssets from "../pages/Assets/ManageAssets/ManageAssets";
 import AssignedAssets from "../pages/Assets/ManageAssets/AssignedAssets";
+import UnassignedAssets from "../pages/Assets/ManageAssets/UnassignedAssets";
 import Approvals from "../pages/Assets/ManageAssets/Approvals";
 import AssetReports from "../pages/Assets/Reports/AssetReports";
 import AssetsCategoriesLayout from "../pages/Assets/AssetsCategory/AssetsCategoriesLayout";
@@ -669,6 +670,36 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag",
                         element: <MixBag />,
+                      },
+                       {
+                        path: "mix-bag/revenue",
+                        element: <TotalRevenueLayout />,
+                        children: [
+                          {
+                            path: "total-revenue",
+                            element: <TotalRevenue />,
+                          },
+                          {
+                            path: "co-working",
+                            element: <CoWorking />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <MeetingRevenue />,
+                          },
+                          {
+                            path: "virtual-office",
+                            element: <VirtualOffice />,
+                          },
+                          {
+                            path: "workation",
+                            element: <Workations />,
+                          },
+                          {
+                            path: "alt-revenue",
+                            element: <AltRevenues />,
+                          },
+                        ],
                       },
                       {
                         path: "mix-bag/manage-meetings",
@@ -3133,6 +3164,10 @@ export const routes = createBrowserRouter([
                     element: <AssetsHome />,
                   },
                   {
+                    path: "view-assets/list-of-assets/:assetCard",
+                    element: <AssetsHome />,
+                  },
+                  {
                     path: "view-assets/:department",
                     element: <AssetsCategoriesLayout />,
                     children: [
@@ -3147,7 +3182,17 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "list-of-assets",
-                        element: <ListOfAssets />,
+                        // element: <ListOfAssets />,
+                         children: [
+                          {
+                            index: true,
+                            element: <ListOfAssets />,
+                          },
+                          {
+                            path: ":assetCard",
+                            element: <ListOfAssets />,
+                          },
+                        ],
                       },
                     ],
                   },
@@ -3160,8 +3205,12 @@ export const routes = createBrowserRouter([
                     element: <ManageAssets />,
                     children: [
                       {
-                        path: "assign-assets",
+                         path: "overall-asset",
                         element: <AssignAssets />,
+                      },
+                                            {
+                        path: "unassigned-assets",
+                        element: <UnassignedAssets />,
                       },
                       {
                         path: "assigned-assets",
@@ -3874,9 +3923,13 @@ export const routes = createBrowserRouter([
                     path: "manage-assets",
                     element: <ManageAssets />,
                     children: [
-                      {
-                        path: "assign-assets",
+                         {
+                        path: "overall-asset",
                         element: <AssignAssets />,
+                      },
+                      {
+                        path: "unassigned-assets",
+                        element: <UnassignedAssets />,
                       },
                       {
                         path: "assigned-assets",

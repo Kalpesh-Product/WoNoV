@@ -6,14 +6,23 @@ require("./locations/Building");
 require("./hr/UserData");
 require("./roles/Roles");
 
+//Agreements
+require("./hr/Agreements");
 //Finance
 require("./budget/Budget");
+
+//Revenue
+require("./sales/CoworkingRevenue");
+require("./sales/AlternateRevenue");
+require("./sales/MeetingRevenue");
+require("./sales/VirtualOfficeRevenue");
+require("./sales/WorkationRevenue");
 
 //Client
 require("./sales/ClientService");
 require("./sales/CoworkingClient");
+require("./sales/WorkationClients");
 require("./sales/CoworkingMembers");
-require("./sales/MeetingRevenue");
 
 //Tickets
 require("./tickets/Tickets");

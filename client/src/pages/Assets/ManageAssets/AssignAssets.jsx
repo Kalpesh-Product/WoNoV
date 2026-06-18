@@ -16,9 +16,11 @@ import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import StatusChip from "../../../components/StatusChip";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { useLocation } from "react-router-dom";
 
-const AssignAssets = () => {
+const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) => {
   const axios = useAxiosPrivate();
+  const location = useLocation();
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const [selectedAsset, setSelectedAsset] = useState([]);
@@ -42,6 +44,8 @@ const AssignAssets = () => {
   const selectedLocation = watch("building");
   const selectedUnit = watch("floor");
   const [selectedDepartment, setSelectedDepartment] = useState("");
+   const isAvailableView = availableOnly || location.state?.assetViewFilter === "available";
+  //const isAvailableView = location.state?.assetViewFilter === "available";
   //-----------------------API----------------------//
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ["employees"],
@@ -229,8 +233,20 @@ const AssignAssets = () => {
     : assetsList
       .filter((item) => {
         const normalizedStatus = String(item?.status ?? "").trim().toLowerCase();
-        if (normalizedStatus) return normalizedStatus === "active";
-        return item?.isActive === true;
+        const isActive = normalizedStatus
+          ? normalizedStatus === "active"
+          : item?.isActive === true;
+
+        if (!isActive) return false;
+
+        if (!isAvailableView) return true;
+
+        const assignmentState = String(item?.assignmentState ?? "")
+          .trim()
+          .toLowerCase();
+
+        if (assignmentState) return assignmentState === "available";
+        return !item?.isAssigned;
       })
       .map((item, index) => ({
         ...item,
@@ -256,7 +272,8 @@ const AssignAssets = () => {
         <AgTable
           key={assetsList.length}
           search={true}
-          tableTitle={"Assign Assets"}
+           tableTitle={tableTitle}
+          //tableTitle={"Assign Assets"}
           data={tableData}
           columns={assetsColumns}
         />
@@ -373,6 +390,10 @@ const AssignAssets = () => {
              <DetalisFormatted
               title={"Damaged"}
               detail={selectedAsset?.isDamaged ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title={"Extra"}
+              detail={selectedAsset?.isExtra ? "Yes" : "No"}
             />
             <DetalisFormatted
               title={"Assigned"}

@@ -186,5 +186,8 @@ const budgetSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+budgetSchema.index({ company: 1, department: 1, dueDate: 1 });
+budgetSchema.index({ company: 1, status: 1 });
+
 const Budget = mongoose.model("Budget", budgetSchema);
 module.exports = Budget;

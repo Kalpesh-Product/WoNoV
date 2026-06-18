@@ -4,10 +4,13 @@ const workationClientSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  startDate: {
+    type: Date,
+  },
 });
 
 const WorkationClient = mongoose.model(
   "WorkationClient",
-  workationClientSchema
+  workationClientSchema,
 );
 module.exports = WorkationClient;

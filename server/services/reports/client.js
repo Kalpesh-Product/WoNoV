@@ -4,6 +4,7 @@ const CoworkingClient = require("../../models/sales/CoworkingClient");
 const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const mongoose = require("mongoose");
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
+const WorkationClient = require("../../models/sales/WorkationClients");
 
 const DELETED_MEMBER_VIEW_ROLES = new Set(["master admin", "super admin"]);
 
@@ -63,6 +64,7 @@ const fetchCoworkingClientReportService = async ({
   query = {},
   dateFilter,
   user,
+  isReport = false,
 }) => {
   const { coworkingclientid, unitId, active } = query;
 
@@ -150,7 +152,7 @@ const fetchCoworkingClientReportService = async ({
     }
   }
 
-  const allEntities = [...hostCompanyData, ...clients];
+  const allEntities = [...(isReport ? [] : hostCompanyData), ...clients];
 
   if (!allEntities.length) {
     return [];
@@ -212,14 +214,43 @@ const fetchCoworkingClientReportService = async ({
   return allEntities.map((entity) => {
     const entityId = entity?._id?.toString();
 
+    const {
+      meetingCreditBalanceHistory,
+      service,
+      documents,
+      lastManualCreditResetAt,
+      isHost,
+      unit,
+      building,
+      ...restEntity
+    } = entity;
+
+    const { fullAddress, ...buildingRest } = unit?.building || {};
+
     return {
-      ...entity,
+      ...restEntity,
       memberCount: entityId ? memberCountByClientId[entityId] || 0 : 0,
-      members: visibleMembers.filter(
-        (member) =>
-          member.client &&
-          member.client._id.toString() === entity._id.toString(),
-      ),
+      ...(!isReport && {
+        members: visibleMembers.filter(
+          (member) =>
+            member.client &&
+            member.client._id.toString() === entity._id.toString(),
+        ),
+        meetingCreditBalanceHistory,
+        service,
+        lastManualCreditResetAt,
+        documents,
+        isHost,
+        building,
+      }),
+      unit: {
+        building: {
+          ...buildingRest,
+          ...(!isReport && { fullAddress }),
+        },
+        unitNo: unit?.unitNo,
+        unitName: unit?.unitName,
+      },
     };
   });
 };
@@ -227,6 +258,7 @@ const fetchCoworkingClientReportService = async ({
 const fetchVirtualOfficeClientsReportService = async ({
   dateFilter,
   query = {},
+  isReport = false,
 } = {}) => {
   const filter = { ...query };
 
@@ -249,6 +281,50 @@ const fetchVirtualOfficeClientsReportService = async ({
     .populate(populateOptions)
     .lean()
     .exec();
+
+  if (isReport) {
+    return (clients || []).map((client) => {
+      const {
+        service,
+        cabinTotal,
+        openTotal,
+        rentStatus,
+        perDeskMeetingCredits,
+        totalMeetingCredits,
+        ...restClient
+      } = client;
+
+      return {
+        ...restClient,
+        unit: restClient.unit
+          ? {
+              ...restClient.unit,
+              building: restClient.unit.building
+                ? {
+                    _id: restClient.unit.building._id,
+                    buildingName: restClient.unit.building.buildingName,
+                  }
+                : restClient.unit.building,
+            }
+          : restClient.unit,
+      };
+    });
+  }
+
+  return clients || [];
+};
+
+const fetchWorkationClientsReportService = async ({
+  dateFilter,
+  query = {},
+  isReport = false,
+} = {}) => {
+  let filter = {};
+  if (dateFilter?.startDate) {
+    filter.startDate = dateFilter.startDate;
+  }
+
+  const clients = await WorkationClient.find(filter).lean().exec();
 
   return clients || [];
 };
@@ -297,4 +373,5 @@ module.exports = {
   fetchCoworkingClientReportService,
   fetchVirtualOfficeClientsReportService,
   fetchCoworkingMembersReportService,
+  fetchWorkationClientsReportService,
 };

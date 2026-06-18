@@ -116,16 +116,19 @@ const RepeatInternalVisitors = () => {
     enabled: !!selectedCompany && selectedCompany !== "6799f0cd6a01edbe1bc3fcea",
   });
 
+  const getEmployeeDepartments = (employee) =>
+    Array.isArray(employee?.departments) ? employee.departments : [];
+
   const departmentMap = new Map();
   employees.forEach((employee) => {
-    employee.departments?.forEach((department) => {
+    getEmployeeDepartments(employee).forEach((department) => {
       departmentMap.set(department._id, department);
     });
   });
   const uniqueDepartments = Array.from(departmentMap.values());
 
   const departmentEmployees = employees.filter((item) =>
-    item.departments?.some((dept) => dept._id === selectedDepartment),
+    getEmployeeDepartments(item).some((dept) => dept._id === selectedDepartment),
   );
 
   const { mutate, isPending: isUpdating } = useMutation({
@@ -264,12 +267,14 @@ const RepeatInternalVisitors = () => {
   };
 
   const submitRepeatVisitor = (data) => {
-    const checkIn = dayjs();
+    const parsedCheckIn = data.checkIn ? dayjs(data.checkIn) : null;
+    const hasCheckIn = !!parsedCheckIn?.isValid();
+    const checkIn = hasCheckIn ? parsedCheckIn : null;
     const parsedCheckOut = data.checkOut ? dayjs(data.checkOut) : null;
     const hasCheckOut = !!parsedCheckOut?.isValid();
     const checkOut = hasCheckOut ? parsedCheckOut : null;
 
-    if (hasCheckOut && checkOut.isBefore(checkIn)) {
+    if (hasCheckIn && hasCheckOut && checkOut.isBefore(checkIn)) {
       toast.error("Check-Out time cannot be before Check-In time.");
       return;
     }
@@ -292,6 +297,7 @@ const RepeatInternalVisitors = () => {
           ? data.toMeet || null
           : null,
       checkOut: hasCheckOut ? checkOut.toISOString() : null,
+      checkIn: hasCheckIn ? checkIn.toISOString() : null,
     });
   };
 
@@ -710,7 +716,7 @@ const RepeatInternalVisitors = () => {
                   <TimePicker
                     {...field}
                     label="Check-In Time"
-                    disabled
+                    //disabled
                     slotProps={{
                       textField: {
                         size: "small",

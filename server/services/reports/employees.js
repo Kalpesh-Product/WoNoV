@@ -14,7 +14,6 @@ const fetchUsersReportService = async ({
     throw new Error("Status must be true/false");
   }
 
-  console.log("isREport", isReport);
   const filter = {
     company,
     isActive: status === "true",
@@ -34,10 +33,11 @@ const fetchUsersReportService = async ({
     { path: "departments", select: "name" },
     { path: "company", select: "name" },
     { path: "role", select: "roleTitle" },
+    { path: "agreements", select: "name url isActive type" },
   ];
 
   const users = await UserData.find(filter)
-    .select("-password")
+    .select("-password -plainPassword")
     .populate(populateOptions)
     .sort({ startDate: 1 })
     .lean()
@@ -48,9 +48,33 @@ const fetchUsersReportService = async ({
       return user;
     }
 
-    const { clockInDetails, refreshToken, permissions, ...rest } = user;
+    const {
+      clockInDetails,
+      refreshToken,
+      permissions,
+      jobDescription,
+      credits,
+      attendanceSource,
+      assignedAsset,
+      agreements = [],
+      ...rest
+    } = user;
 
-    return rest;
+    const workSchedulePolicy =
+      agreements.find((a) => a.name === "Work Schedule Policy")?.type || "";
+
+    const leavePolicy =
+      agreements.find((a) => a.name === "Leave Policy")?.url || "";
+
+    const holidayPolicy =
+      agreements.find((a) => a.name === "Holiday Policy")?.url || "";
+
+    return {
+      ...rest,
+      workSchedulePolicy,
+      leavePolicy,
+      holidayPolicy,
+    };
   });
 
   return transformedUsers || [];
@@ -358,6 +382,14 @@ const fetchAttendanceReportService = async ({ company, dateFilter } = {}) => {
     });
   };
 
+  const formatBreakDuration = (totalSecs) => {
+    if (totalSecs === null || totalSecs === undefined) return "-";
+    const secs = Math.floor(totalSecs);
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}m ${s}s`;
+  };
+
   const formatted = attendances.map((att, idx) => {
     const result = {
       ...att,
@@ -368,7 +400,7 @@ const fetchAttendanceReportService = async ({ company, dateFilter } = {}) => {
         att.breaks?.map((brk) => ({
           startBreak: formatClockTime(brk.startBreak),
           endBreak: formatClockTime(brk.endBreak),
-          durationSecs: brk.durationSecs,
+          durationSecs: formatBreakDuration(brk.durationSecs),
         })) ?? [],
     };
 

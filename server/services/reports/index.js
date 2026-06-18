@@ -1,5 +1,10 @@
 const buildDateFilter = require("../../utils/dateFilter");
-const { fetchBudgetService, fetchVoucherService } = require("./finance");
+const {
+  fetchBudgetService,
+  fetchVoucherService,
+  fetchBudgetVoucherService,
+  fetchProfitLossReportService,
+} = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
 const { fetchVendorReportService } = require("./vendor");
 const { fetchPerformanceReportService } = require("./performance");
@@ -17,7 +22,10 @@ const {
   fetchInternalVisitorsReportService,
   fetchClientVisitorsReportService,
 } = require("./visitor");
-const { fetchCoworkingRevenueService } = require("./revenue");
+const {
+  fetchCoworkingRevenueService,
+  fetchWorkationRevenueReportService,
+} = require("./revenue");
 
 const { fetchMeetingRevenueReportService } = require("./revenue");
 const { fetchAlternateRevenueReportService } = require("./revenue");
@@ -26,6 +34,7 @@ const {
   fetchCoworkingClientReportService,
   fetchVirtualOfficeClientsReportService,
   fetchCoworkingMembersReportService,
+  fetchWorkationClientsReportService,
 } = require("./client");
 const {
   fetchUsersReportService,
@@ -47,7 +56,12 @@ const COMMON_REPORT_CONTEXT_KEYS = [
   "company",
   "user",
 ];
-const FINANCE_REPORT_CONTEXT_KEYS = ["departments", "departmentId", "roles"];
+const FINANCE_REPORT_CONTEXT_KEYS = [
+  "departments",
+  "departmentId",
+  "roles",
+  "company",
+];
 
 const pickContext = (context = {}, keys = []) =>
   keys.reduce((params, key) => {
@@ -68,16 +82,13 @@ const buildReportDateFilter = (dateFilter, field) =>
 const createReportService =
   (
     service,
-    {
-      dateField,
-      contextKeys = COMMON_REPORT_CONTEXT_KEYS,
-      staticParams = { isReport: true },
-    },
+    { dateField, contextKeys = COMMON_REPORT_CONTEXT_KEYS, staticParams = {} },
   ) =>
   async (context = {}) =>
     service({
       ...pickContext(context, contextKeys),
       dateFilter: buildReportDateFilter(context.dateFilter, dateField),
+      isReport: true,
       ...staticParams,
     });
 
@@ -105,16 +116,16 @@ const reportServiceRegistry = {
     dateField: "startDate",
   }),
 
-  "external-clients": createReportService(fetchVisitorReportService, {
+  "external-clients": createReportService(fetchClientVisitorsReportService, {
     dateField: "checkIn",
     contextKeys: ["departmentId", "company"],
-    staticParams: { isMeeting: true },
+    staticParams: { type: "meeting" },
   }),
 
-  "open-desk-clients": createReportService(fetchVisitorReportService, {
+  "open-desk-clients": createReportService(fetchClientVisitorsReportService, {
     dateField: "checkIn",
     contextKeys: ["departmentId", "company"],
-    staticParams: { isOpendDesk: true },
+    staticParams: { type: "open-desk" },
   }),
 
   "virtual-office-clients": createReportService(
@@ -149,12 +160,25 @@ const reportServiceRegistry = {
     },
   ),
 
+  "workation-clients": createReportService(fetchWorkationClientsReportService, {
+    dateField: "startDate",
+  }),
+
   "alternate-revenue": createReportService(fetchAlternateRevenueReportService, {
     dateField: "invoiceCreationDate",
   }),
 
   "coworking-revenue": createReportService(fetchCoworkingRevenueService, {
     dateField: "rentDate",
+  }),
+
+  "workation-revenue": createReportService(fetchWorkationRevenueReportService, {
+    dateField: "date",
+  }),
+
+  collection: createReportService(fetchCoworkingRevenueService, {
+    dateField: "rentDate",
+    staticParams: { type: "collection" },
   }),
 
   "meeting-revenue": createReportService(fetchMeetingRevenueReportService, {
@@ -178,8 +202,14 @@ const reportServiceRegistry = {
     contextKeys: [...COMMON_REPORT_CONTEXT_KEYS, "query"],
   }),
 
-  meeting: createReportService(fetchMeetingReportService, {
+  "internal-meeting": createReportService(fetchMeetingReportService, {
     dateField: "startDate",
+    staticParams: { type: "internal" },
+  }),
+
+  "external-meeting": createReportService(fetchMeetingReportService, {
+    dateField: "startDate",
+    staticParams: { type: "external" },
   }),
 
   visitor: createReportService(fetchInternalVisitorsReportService, {
@@ -188,6 +218,7 @@ const reportServiceRegistry = {
 
   client: createReportService(fetchClientVisitorsReportService, {
     dateField: "checkIn",
+    staticParams: { type: "client" },
   }),
 
   ticket: createReportService(fetchTicketReportService, {
@@ -195,20 +226,55 @@ const reportServiceRegistry = {
     contextKeys: ["departmentId", "roles", "departments"],
   }),
 
-  budget: createReportService(fetchBudgetService, {
+  "department-budget": createReportService(fetchBudgetService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "dept" },
+  }),
+
+  "overall-budget": createReportService(fetchBudgetService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "overall" },
+  }),
+
+  "total-monthly-profit-loss": createReportService(
+    fetchProfitLossReportService,
+    {
+      dateField: "dueDate",
+      contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+      staticParams: { type: "p&l" },
+    },
+  ),
+
+  payouts: createReportService(fetchBudgetVoucherService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "payout" },
+  }),
+
+  "department-voucher": createReportService(fetchVoucherService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "dept" },
+  }),
+
+  "overall-voucher": createReportService(fetchVoucherService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "overall" },
   }),
 
   "electricity-expense": createReportService(fetchBudgetService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
-    staticParams: { isElectricity: true },
+    staticParams: { type: "electricity" },
   }),
 
-  voucher: createReportService(fetchVoucherService, {
+  statutory: createReportService(fetchBudgetService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "statutory" },
   }),
 
   vendor: createReportService(fetchVendorReportService, {
@@ -217,8 +283,6 @@ const reportServiceRegistry = {
 };
 
 const resolveReportService = (reportMeta = {}) => {
-  console.log;
-  ("Resolving report service for reportMeta:", reportMeta);
   const key = normalizeReportIdentifier(reportMeta.reportKey || "");
   const name = normalizeReportIdentifier(reportMeta.reportName || "");
 

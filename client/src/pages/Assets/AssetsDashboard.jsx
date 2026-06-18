@@ -31,10 +31,24 @@ import useAuth from "../../hooks/useAuth";
 import { inrFormat } from "../../utils/currencyFormat";
 import humanDate from "../../utils/humanDateForamt";
 import { PERMISSIONS } from "../../constants/permissions";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import {
+  setSelectedDepartment,
+  setSelectedDepartmentName,
+} from "../../redux/slices/assetsSlice";
 
 const AssetsDashboard = () => {
   const { auth } = useAuth();
   const departments = auth.user.departments;
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const currentDepartmentId = auth.user?.departments?.[0]?._id;
+  const currentDepartmentName = auth.user?.departments?.[0]?.name;
+  const roleTitles = auth?.user?.role?.map((item) => item?.roleTitle) || [];
+  const isGlobalAssetsUser = roleTitles.some((roleTitle) =>
+    ["Master Admin", "Super Admin"].includes(roleTitle),
+  );
 
   const axios = useAxiosPrivate();
   //-----------------------MAIN API CALL------------------------------------//
@@ -53,17 +67,65 @@ const AssetsDashboard = () => {
 
   const { data: departmentCategories, isLoading: isCategoriesLoading } =
     useQuery({
-      queryKey: ["categories"],
+      queryKey: ["categories", isGlobalAssetsUser ? "all" : currentDepartmentId],
       queryFn: async () => {
         try {
-          const response = await axios.get(`/api/category/get-category`);
+          const response = await axios.get(
+            isGlobalAssetsUser
+              ? `/api/category/get-category`
+              : `/api/category/get-category?departmentId=${currentDepartmentId}`,
+          );
           return response.data;
         } catch (error) {
           console.error(error.message);
         }
       },
     });
+  const { data: assetSubCategories, isLoading: isSubCategoriesLoading } =
+    useQuery({
+      queryKey: [
+        "assetSubCategories",
+        isGlobalAssetsUser ? "all" : currentDepartmentId,
+      ],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            isGlobalAssetsUser
+              ? "/api/assets/get-subcategory"
+              : `/api/assets/get-subcategory?departmentId=${currentDepartmentId}`,
+          );
+          return response.data;
+        } catch (error) {
+          console.error(error.message);
+        }
+      },
+    });
+  const { data: assignedAssetsInUse = [], isLoading: isAssignedAssetsLoading } =
+    useQuery({
+      queryKey: [
+        "assignedAssetsInUse",
+        isGlobalAssetsUser ? "all" : currentDepartmentId,
+      ],
+      queryFn: async () => {
+        try {
+          const queryParams = new URLSearchParams({ status: "Approved" });
 
+          if (!isGlobalAssetsUser && currentDepartmentId) {
+            queryParams.set("department", currentDepartmentId);
+          }
+
+          const response = await axios.get(
+            `/api/assets/get-asset-requests?${queryParams.toString()}`,
+          );
+
+          return Array.isArray(response.data) ? response.data : [];
+        } catch (error) {
+          console.error(error.message);
+          return [];
+        }
+      },
+      enabled: isGlobalAssetsUser || Boolean(currentDepartmentId),
+    });
   //-----------------------MAIN API CALL------------------------------------//
   //---------- Nav Cards ---------//
   const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -102,16 +164,176 @@ const AssetsDashboard = () => {
   const allowedCards = cardsConfig.filter(
     (card) => !card.permission || userPermissions.includes(card.permission),
   );
+    const encodedDepartmentName = encodeURIComponent(
+    (currentDepartmentName || "").trim(),
+  );
   //---------- Nav Cards ---------//
 
-  const isTopManagement = departments.some(
-    (dept) => dept.name === "Top Management",
-  );
+  const handleOwnedAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+      // navigate("/app/assets/view-assets", {
+        navigate("/app/assets/view-assets/list-of-assets/assets-owned", {
+        state: { assetOwnershipType: "Owned" },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      // `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`,
+          `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-owned`,
+      {
+        state: { assetOwnershipType: "Owned" },
+      },
+    );
+  };
+
+  const handleRentalAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/view-assets/list-of-assets/assets-rental", {
+        state: { assetOwnershipType: "Rental" },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+     `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-rental`,
+      { state: { assetOwnershipType: "Rental" } },
+    );
+  };
+
+
+  const handleAssetTabClick = (assetTargetTab) => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/view-assets", {
+        state: { assetTargetTab },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      `/app/assets/view-assets/${currentDepartmentName}/${assetTargetTab}`,
+      {
+        state: { assetTargetTab },
+      },
+    );
+  };
+
+  const handleTotalAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/view-assets/list-of-assets/total-assets");
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(`/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/total-assets`);
+  };
+
+  const handleUnderMaintenanceClick = () => {
+    if (isGlobalAssetsUser) {
+          navigate(
+        "/app/assets/view-assets/list-of-assets/assets-under-maintenance",
+        {
+          state: { assetStatusFilter: "underMaintenance" },
+        },
+      );
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+       `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`,
+      {
+        state: { assetStatusFilter: "underMaintenance" },
+      },
+    );
+  };
+
+  const handleDamagedAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+       navigate("/app/assets/view-assets/list-of-assets/assets-damaged", {
+        state: { assetStatusFilter: "damaged" },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+        `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-damaged`,
+      {
+        state: { assetStatusFilter: "damaged" },
+      },
+    );
+  };
+
+  const handleExtraAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+        navigate("/app/assets/view-assets/list-of-assets/assets-extra", {
+        state: { assetStatusFilter: "extra" },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+        `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-extra`,
+      {
+        state: { assetStatusFilter: "extra" },
+      },
+    );
+  };
+
+  const handleAssetsInUseClick = () => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/manage-assets", {
+        state: { assetViewFilter: "inUse" },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      `/app/assets/manage-assets/${currentDepartmentName}/assigned-assets`,
+      {
+        state: { assetViewFilter: "inUse" },
+      },
+    );
+  };
+
+  const handleUnassignedAssetsClick = () => {
+    if (isGlobalAssetsUser) {
+      navigate("/app/assets/manage-assets", {
+        state: { assetViewFilter: "available" },
+      });
+      return;
+    }
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      // `/app/assets/manage-assets/${currentDepartmentName}/assign-assets`,
+         `/app/assets/manage-assets/${currentDepartmentName}/unassigned-assets`,
+      {
+        state: { assetViewFilter: "available" },
+      },
+    );
+  };
+
   const deptNames = departments.map((dept) => dept.name);
 
   let assetsDept = Array.isArray(departmentAssets) ? departmentAssets : [];
 
-  if (!isTopManagement) {
+  if (!isGlobalAssetsUser) {
     assetsDept = assetsDept.filter((dept) =>
       deptNames.includes(dept.departmentName),
     );
@@ -120,39 +342,71 @@ const AssetsDashboard = () => {
   const totalCategories = !isCategoriesLoading && Array.isArray(departmentCategories)
     ? departmentCategories.length
     : 0;
+  const totalSubCategories =
+    !isSubCategoriesLoading && Array.isArray(assetSubCategories)
+      ? assetSubCategories.length
+      : 0;  
   const totalAssets = (isDepartmentLoading || !Array.isArray(assetsDept))
     ? []
     : assetsDept
       .filter((dept) => dept?.assets && Array.isArray(dept.assets))
       .flatMap((dept) => dept.assets);
 
+  const activeAssets = totalAssets.filter((asset) => {
+    const normalizedStatus = String(asset?.status ?? "").trim().toLowerCase();
+    if (normalizedStatus) return normalizedStatus === "active";
+    return asset?.isActive === true;
+  });
+
+  const availableAssets = activeAssets.filter((asset) => {
+    const assignmentState = String(asset?.assignmentState ?? "")
+      .trim()
+      .toLowerCase();
+
+    if (assignmentState) return assignmentState === "available";
+    return !asset?.isAssigned;
+  });
+
   const totalOwnedAssets = totalAssets.filter((asset) => {
     return asset.ownershipType === "Owned";
   }).length;
-  const totalAssignedAssets = totalAssets.filter(
-    (asset) => asset.isAssigned,
-  ).length;
-  const totalUnassignedAssets = totalAssets.length - totalAssignedAssets;
+   const totalRentalAssets = totalAssets.filter((asset) => {
+    return asset.ownershipType === "Rental";
+  }).length;
+  const totalAssignedAssets = isAssignedAssetsLoading
+    ? 0
+    : assignedAssetsInUse.length;
+  const totalUnassignedAssets = availableAssets.length;
+  const totalAssetAvailabilityBase = totalAssignedAssets + totalUnassignedAssets;
 
   const totalAssetsUnderMaintenance = totalAssets.filter(
     (asset) => asset.isUnderMaintenance,
   ).length;
-
+  const totalDamagedAssets = totalAssets.filter((asset) => asset.isDamaged).length;
+  const totalExtraAssets = totalAssets.filter((asset) => asset.isExtra).length;
   const totalAssetsPrice = totalAssets.reduce(
     (acc, asset) => acc + (asset?.price || 0),
     0,
   );
+  const approvedAssignedAssetIds = useMemo(() => {
+    return new Set(
+      (Array.isArray(assignedAssetsInUse) ? assignedAssetsInUse : [])
+        .map((request) => request?.asset?._id || request?.asset)
+        .filter(Boolean)
+        .map((id) => String(id)),
+    );
+  }, [assignedAssetsInUse]);
 
   // Assigned and Unassigned Assets Pie Chart
   const assetAvailabilityData = [
     {
       label: "Assigned Assets",
-      value: totalAssets.length > 0 ? ((totalAssignedAssets / totalAssets.length) * 100).toFixed(1) : 0,
+      value: totalAssetAvailabilityBase > 0 ? ((totalAssignedAssets / totalAssetAvailabilityBase) * 100).toFixed(1) : 0,
       count: totalAssignedAssets,
     },
     {
       label: "Unassigned Assets",
-      value: totalAssets.length > 0 ? ((totalUnassignedAssets / totalAssets.length) * 100).toFixed(1) : 0,
+      value: totalAssetAvailabilityBase > 0 ? ((totalUnassignedAssets / totalAssetAvailabilityBase) * 100).toFixed(1) : 0,
       count: totalUnassignedAssets,
     },
   ];
@@ -317,18 +571,19 @@ const AssetsDashboard = () => {
   };
 
   const assetColumns = [
-    { id: "srNo", label: "Sr No" },
-    { id: "assetId", label: "Asset Id" },
-    { id: "department", label: "Department" },
-    { id: "category", label: "Category" },
-    { id: "subCategory", label: "Sub-Category" },
-    { id: "brand", label: "Brand" },
+    { id: "srNo", label: "Sr No" ,width:150},
+    { id: "assetId", label: "Asset Id" ,flex:1},
+    { id: "department", label: "Department" ,flex:1},
+    { id: "category", label: "Category",flex:1 },
+    { id: "subCategory", label: "Sub-Category" ,flex:1},
+    { id: "brand", label: "Brand",flex:1},
     {
       id: "price",
       label: "Price (INR)",
+      flex:1
     },
-    { id: "purchaseDate", label: "Purchase Date" },
-    { id: "warranty", label: "Warranty (Months)" },
+    { id: "purchaseDate", label: "Purchase Date" ,flex:1},
+    { id: "warranty", label: "Warranty (Months)",align: "center",width:200},
   ];
 
   const recentAssets = isDepartmentLoading
@@ -362,10 +617,48 @@ const AssetsDashboard = () => {
 
   //Assets Value Graph
 
-  const getFiscalYearFromDate = (dateInput) => {
-    const date = new Date(dateInput);
+  const parseAssetPurchaseDate = (dateInput) => {
+    if (!dateInput) return null;
 
-    if (Number.isNaN(date.getTime())) return null;
+    if (dateInput instanceof Date) {
+      return Number.isNaN(dateInput.getTime()) ? null : dateInput;
+    }
+
+    const rawValue = String(dateInput).trim();
+    if (!rawValue) return null;
+
+    if (/^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/.test(rawValue)) {
+      const normalizedValue = rawValue.replace(/\//g, "-");
+      const [day, month, year] = normalizedValue.split("-").map(Number);
+
+      if (!day || !month || !year) return null;
+
+      const parsedDate = new Date(year, month - 1, day);
+      return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+    }
+
+    const directDate = new Date(rawValue);
+    if (!Number.isNaN(directDate.getTime())) {
+      return directDate;
+    }
+
+    const normalizedValue = rawValue.replace(/\//g, "-");
+    const [day, month, year] = normalizedValue.split("-").map(Number);
+
+    if (!day || !month || !year) return null;
+
+    const parsedDate = new Date(year, month - 1, day);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  };
+
+  const getAssetGraphDate = (asset) =>
+    parseAssetPurchaseDate(asset?.createdAt) ||
+    parseAssetPurchaseDate(asset?.purchaseDate);
+
+  const getFiscalYearFromDate = (dateInput) => {
+    const date = parseAssetPurchaseDate(dateInput);
+
+    if (!date) return null;
 
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -396,11 +689,31 @@ const AssetsDashboard = () => {
   };
 
   const currentFiscalYear = getCurrentFiscalYear();
-  const currentStartYear = Number(currentFiscalYear.match(/\d{4}/)?.[0] || new Date().getFullYear());
-  const previousFiscalYear = `FY ${currentStartYear - 1}-${String(currentStartYear).slice(-2)}`;
-  const fiscalYears = [previousFiscalYear, currentFiscalYear];
+  const fiscalYears = useMemo(() => {
+    const fySet = new Set([currentFiscalYear]);
+
+    totalAssets.forEach((asset) => {
+      const fiscalYear = getFiscalYearFromDate(getAssetGraphDate(asset));
+      if (fiscalYear) {
+        fySet.add(fiscalYear);
+      }
+    });
+
+    return Array.from(fySet).sort((firstFy, secondFy) => {
+      const firstStartYear = Number(firstFy.match(/\d{4}/)?.[0] || 0);
+      const secondStartYear = Number(secondFy.match(/\d{4}/)?.[0] || 0);
+      return firstStartYear - secondStartYear;
+    });
+  }, [currentFiscalYear, totalAssets]);
 
   const [selectedAssetValueFY, setSelectedAssetValueFY] = useState(currentFiscalYear);
+  const [visibleAssetTooltipMetrics, setVisibleAssetTooltipMetrics] = useState({
+    totalAssetValue: true,
+    assetCount: true,
+    assetInUse: true,
+    underMaintenance: true,
+    damaged: true,
+  });
 
   const monthlyAssetStatsByFY = useMemo(() => {
     const initialStats = fiscalYears.reduce((acc, fy) => {
@@ -408,6 +721,8 @@ const AssetsDashboard = () => {
 
       acc[fy] = {
         months,
+        assetCounts: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
+        assetsInUse: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
         totalAssetValues: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
         usedAssetValues: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
         assetsUnderMaintenance: months.reduce((monthAcc, month) => ({ ...monthAcc, [month]: 0 }), {}),
@@ -417,43 +732,43 @@ const AssetsDashboard = () => {
       return acc;
     }, {});
 
-    assetsDept?.forEach((dept) => {
-      dept.assets?.forEach((asset) => {
-        const fiscalYear = getFiscalYearFromDate(asset.purchaseDate);
+    totalAssets.forEach((asset) => {
+      const parsedPurchaseDate = getAssetGraphDate(asset);
+      const fiscalYear = getFiscalYearFromDate(parsedPurchaseDate);
 
-        if (!fiscalYear || !initialStats[fiscalYear]) return;
+      if (!fiscalYear || !initialStats[fiscalYear]) return;
 
-        const month = new Date(asset.purchaseDate).toLocaleString("en-US", {
-          month: "short",
-          year: "2-digit",
-        });
-
-        const monthKey = month.replace(" ", "-");
-
-        if (!initialStats[fiscalYear].totalAssetValues[monthKey] && initialStats[fiscalYear].totalAssetValues[monthKey] !== 0) {
-          return;
-        }
-
-        const price = asset.price || 0;
-
-        initialStats[fiscalYear].totalAssetValues[monthKey] += price;
-
-        if (asset.isAssigned) {
-          initialStats[fiscalYear].usedAssetValues[monthKey] += price;
-        }
-
-        if (asset.isUnderMaintenance) {
-          initialStats[fiscalYear].assetsUnderMaintenance[monthKey] += 1;
-        }
-
-        if (asset.isDamaged) {
-          initialStats[fiscalYear].assetsDamaged[monthKey] += 1;
-        }
+      const month = parsedPurchaseDate.toLocaleString("en-US", {
+        month: "short",
+        year: "2-digit",
       });
+
+      const monthKey = month.replace(" ", "-");
+
+      if (!initialStats[fiscalYear].totalAssetValues[monthKey] && initialStats[fiscalYear].totalAssetValues[monthKey] !== 0) {
+        return;
+      }
+
+      const price = Number(asset?.price) || 0;
+      initialStats[fiscalYear].assetCounts[monthKey] += 1;
+      initialStats[fiscalYear].totalAssetValues[monthKey] += price;
+
+      if (approvedAssignedAssetIds.has(String(asset?._id))) {
+        initialStats[fiscalYear].assetsInUse[monthKey] += 1;
+        initialStats[fiscalYear].usedAssetValues[monthKey] += price;
+      }
+
+      if (asset.isUnderMaintenance) {
+        initialStats[fiscalYear].assetsUnderMaintenance[monthKey] += 1;
+      }
+
+      if (asset.isDamaged) {
+        initialStats[fiscalYear].assetsDamaged[monthKey] += 1;
+      }
     });
 
     return initialStats;
-  }, [assetsDept, currentFiscalYear, previousFiscalYear]);
+  }, [approvedAssignedAssetIds, fiscalYears, totalAssets]);
 
   const assetUtilizationSeries = fiscalYears.map((fiscalYear) => {
     const months = monthlyAssetStatsByFY[fiscalYear]?.months || [];
@@ -463,13 +778,22 @@ const AssetsDashboard = () => {
       name: fiscalYear,
       data: months.map((month) => {
         const total = monthlyAssetStatsByFY[fiscalYear]?.totalAssetValues[month] || 0;
-        const used = monthlyAssetStatsByFY[fiscalYear]?.usedAssetValues[month] || 0;
-
-        return total ? Number(((used / total) * 100).toFixed(2)) : 0;
+        return total ? Number((total / 100000).toFixed(2)) : 0;
       }),
     };
   });
+  const assetValueSeriesMax = Math.max(
+    5,
+    ...assetUtilizationSeries.flatMap((series) => series.data || []),
+  );
+  const assetValueYAxisMax = Math.ceil(assetValueSeriesMax);
+  const getSelectedFyAssetValueByMonth = (month) => {
+    if (!month) return 0;
 
+    return Number(
+      monthlyAssetStatsByFY[selectedAssetValueFY]?.totalAssetValues?.[month] || 0,
+    );
+  };
   // ApexCharts configuration
   const assetUtilizationOptions = {
     chart: {
@@ -481,20 +805,29 @@ const AssetsDashboard = () => {
       show: false,
     },
     yaxis: {
-      max: 100,
+      min: 0,
+      max: assetValueYAxisMax,
+      tickAmount: 5,
       title: {
-        text: "Utilization (%)",
+        text: "Amount In Lakhs (INR)",
       },
       labels: {
-        formatter: (value) => `${Math.round(value)}%`,
+        formatter: (value) => `${Math.round(value)}`,
       },
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => `${Math.round(val)}%`,
+      formatter: (_val, { dataPointIndex }) => {
+        const months = monthlyAssetStatsByFY[selectedAssetValueFY]?.months || [];
+        const month = months[dataPointIndex];
+        const total = getSelectedFyAssetValueByMonth(month);
+
+        return total ? inrFormat(total) : "";
+      },
+      offsetY: -20,
       style: {
         fontSize: "11px",
-        colors: ["#ffff"],
+        colors: ["#000"],
       },
     },
     tooltip: {
@@ -506,28 +839,58 @@ const AssetsDashboard = () => {
 
         if (!month) return "";
 
-        const total = monthlyAssetStatsByFY[selectedAssetValueFY]?.totalAssetValues[month] || 0;
-        const used = monthlyAssetStatsByFY[selectedAssetValueFY]?.usedAssetValues[month] || 0;
+        const assetCount = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetCounts[month] || 0;
+        const assetInUseCount = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetsInUse[month] || 0;
+        const total = getSelectedFyAssetValueByMonth(month);
         const underMaintenance = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetsUnderMaintenance[month] || 0;
         const damaged = monthlyAssetStatsByFY[selectedAssetValueFY]?.assetsDamaged[month] || 0;
+        const tooltipRows = [
+          {
+            key: "totalAssetValue",
+            label: `Total Assets Value : <strong>INR ${inrFormat(total)}</strong>`,
+            color: "#26C6DA",
+          },
+          {
+            key: "assetCount",
+            label: `No of Asset : <strong>${assetCount}</strong>`,
+            color: "#42A5F5",
+          },
+          {
+            key: "assetInUse",
+            label: `Asset In Use : <strong>${assetInUseCount}</strong>`,
+            color: "#1E88E5",
+          },
+          {
+            key: "underMaintenance",
+            label: `Under Maintenance : <strong>${underMaintenance}</strong>`,
+            color: "#1565C0",
+          },
+          {
+            key: "damaged",
+            label: `Damaged : <strong>${damaged}</strong>`,
+            color: "#7986CB",
+          },
+        ].filter((row) => visibleAssetTooltipMetrics[row.key]);
 
         return `
-        <div style="padding: 10px; background: white; border-radius: 5px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);">
-          <div style="padding-bottom: 5px; border-bottom: 1px solid gray; margin-bottom:10px">
-            <strong>${month}</strong><br>
+        <div style="min-width: 235px; background: #fff; border: 1px solid #d7dbe3; border-radius: 4px; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12); overflow: hidden;">
+          <div class="apexcharts-tooltip-title" style="margin: 0; padding: 8px 10px; background: #eef1f5; border-bottom: 1px solid #d7dbe3; font-weight: 500;">
+            ${month}
           </div>
-          Total Assets Value: INR ${inrFormat(total)}<br>
-          Asset Value Used: INR ${inrFormat(used)}<br>
-          Under Maintenance: ${underMaintenance} <br>
-          Assets Damaged: ${damaged}
+          <div style="padding: 8px 10px; display: grid; gap: 6px;">
+            ${tooltipRows
+              .map(
+                (row) => `
+                  <div class="apexcharts-tooltip-series-group apexcharts-active" style="display: flex; align-items: center; margin: 0;">
+                    <span class="apexcharts-tooltip-marker" style="background-color: ${row.color}; width: 10px; height: 10px; min-width: 10px; min-height: 10px; margin-right: 8px; border-radius: 9999px;"></span>
+                    <span style="font-size: 12px; color: #1f2937; line-height: 1.4;">${row.label}</span>
+                  </div>
+                `,
+              )
+              .join("")}
+          </div>
         </div>
       `;
-      },
-      fixed: {
-        enabled: true,
-        position: "bottomRight",
-        offsetX: 0,
-        offsetY: -10,
       },
     },
     plotOptions: {
@@ -539,30 +902,72 @@ const AssetsDashboard = () => {
         columnWidth: "40%",
       },
     },
+    grid: {
+      padding: {
+        top: 34,
+        bottom: 28,
+      },
+    },
     colors: ["#3B82F6"],
   };
 
   const assetsValueGraph = {
-    titleAmount: `ASSET VALUE UTILIZATION (${selectedAssetValueFY})`,
-    title: "Assets Value",
+    title: `ASSET VALUE UTILIZATION - ${selectedAssetValueFY}`,
+    titleAmount: `TOTAL ASSET VALUE : INR ${inrFormat(totalAssetsPrice)}`,
     data: assetUtilizationSeries,
     options: assetUtilizationOptions,
     onYearChange: setSelectedAssetValueFY,
     permission: PERMISSIONS.ASSETS_ASSET_VALUE_UTILIZATION.value,
   };
+  const assetLegendItems = [
+    { key: "totalAssetValue", label: "Total Assets Value", color: "#26C6DA" },
+    { key: "assetCount", label: "No of Asset", color: "#42A5F5" },
+    { key: "assetInUse", label: "Asset In Use", color: "#1E88E5" },
+    { key: "underMaintenance", label: "Under Maintenance", color: "#1565C0" },
+    { key: "damaged", label: "Damaged", color: "#7986CB" },
+  ];
 
   const meetingsWidgets = [
     {
       layout: 1,
       widgets: [
         userPermissions.includes(assetsValueGraph.permission) && (
-          <YearlyGraph
-            titleAmount={assetsValueGraph.titleAmount}
-            title={assetsValueGraph.title}
-            data={assetsValueGraph.data}
-            options={assetsValueGraph.options}
-            onYearChange={assetsValueGraph.onYearChange}
-          />
+          <div className="relative">
+            <div className="absolute left-1/2 top-[92px] z-10 flex w-full max-w-[760px] -translate-x-1/2 flex-wrap items-center justify-center gap-x-5 gap-y-3 px-6 text-xs text-slate-600">
+              {assetLegendItems.map((item) => {
+                const isVisible = visibleAssetTooltipMetrics[item.key];
+
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() =>
+                      setVisibleAssetTooltipMetrics((prev) => ({
+                        ...prev,
+                        [item.key]: !prev[item.key],
+                      }))
+                    }
+                    className={`flex items-center gap-2.5 whitespace-nowrap transition-opacity ${
+                      isVisible ? "opacity-100" : "opacity-40"
+                    }`}
+                  >
+                    <span
+                      className="inline-block h-[11px] w-[11px]"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <YearlyGraph
+              title={assetsValueGraph.title}
+              titleAmount={assetsValueGraph.titleAmount}
+              data={assetsValueGraph.data}
+              options={assetsValueGraph.options}
+              onYearChange={assetsValueGraph.onYearChange}
+            />
+          </div>
         )
       ],
     },
@@ -578,22 +983,49 @@ const AssetsDashboard = () => {
       )),
     },
     {
-      layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) &&
-        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) &&
-        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) ? 3 : 1,
+      // layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) &&
+      //   userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) &&
+      //   userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) ? 3 : 1,
+        layout: 4,
       widgets: [
+           userPermissions.includes(PERMISSIONS.ASSETS_TOTAL_ASSETS.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalAssets.length}
+            description={"Total Assets"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/view-assets/list-of-assets/total-assets"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/total-assets`
+            }
+            onClick={handleTotalAssetsClick}
+          />
+        ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) && (
           <DataCard
             title={"Total"}
             data={totalOwnedAssets}
             description={"Assets Owned"}
+            // route={"/app/assets/view-assets"}
+             route={
+              isGlobalAssetsUser
+                ? "/app/assets/view-assets/list-of-assets/assets-owned"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-owned`
+            }
+            onClick={handleOwnedAssetsClick}
           />
         ),
-        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_RENTAL.value) && (
           <DataCard
             title={"Total"}
-            data={totalCategories}
-            description={"Assets Categories"}
+            data={totalRentalAssets}
+            description={"Assets Rental"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/view-assets/list-of-assets/assets-rental"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-rental`
+            }
+            onClick={handleRentalAssetsClick}
           />
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
@@ -601,20 +1033,43 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={`INR ${inrFormat(totalAssetsPrice)}`}
             description={"Assets Value"}
+            route={"/app/assets/view-assets"}
           />
         ),
       ],
     },
     {
-      layout: userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) &&
-        userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) &&
-        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) ? 3 : 1,
+       layout: 4,
       widgets: [
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalCategories}
+            description={"Assets Categories"}
+            route={"/app/assets/view-assets"}
+            onClick={() => handleAssetTabClick("assets-categories")}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSET_SUB_CATEGORIES.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalSubCategories}
+            description={"Assets Sub-Categories"}
+            route={"/app/assets/view-assets"}
+            onClick={() => handleAssetTabClick("assets-sub-categories")}
+          />
+        ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) && (
           <DataCard
             title={"Total"}
             data={totalAssignedAssets}
             description={"Assets In Use"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/manage-assets"
+                : `/app/assets/manage-assets/${currentDepartmentName}/assigned-assets`
+            }
+            onClick={handleAssetsInUseClick}
           />
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) && (
@@ -622,13 +1077,57 @@ const AssetsDashboard = () => {
             title={"Total"}
             data={totalUnassignedAssets}
             description={"Unassigned Assets"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/manage-assets"
+               : `/app/assets/manage-assets/${currentDepartmentName}/unassigned-assets`
+            }
+            onClick={handleUnassignedAssetsClick}
           />
         ),
+              ],
+    },
+    {
+      layout: 3,
+      widgets: [
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) && (
           <DataCard
             title={"Total"}
             data={totalAssetsUnderMaintenance}
             description={"Assets Under Maintenance"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/view-assets/list-of-assets/assets-under-maintenance"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`
+                // : `/app/assets/view-assets/${currentDepartmentName}/list-of-assets`
+            }
+            onClick={handleUnderMaintenanceClick}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_DAMAGED.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalDamagedAssets}
+            description={"Assets Damaged"}
+            route={
+              isGlobalAssetsUser
+               ? "/app/assets/view-assets/list-of-assets/assets-damaged"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-damaged`  
+            }
+            onClick={handleDamagedAssetsClick}
+          />
+        ),
+        userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_EXTRA.value) && (
+          <DataCard
+            title={"Total"}
+            data={totalExtraAssets}
+            description={"Assets Extra"}
+            route={
+              isGlobalAssetsUser
+                ? "/app/assets/view-assets/list-of-assets/assets-extra"
+                : `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-extra`
+            }
+            onClick={handleExtraAssetsClick}
           />
         ),
       ],

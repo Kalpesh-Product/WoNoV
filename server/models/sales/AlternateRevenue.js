@@ -34,11 +34,18 @@ const alternateRevenueSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    status: {
+      type: String,
+      default: "Unpaid",
+    },
   },
   {
-    timestamps: true, // Optional: Adds createdAt and updatedAt fields
+    timestamps: true,
   },
 );
+
+alternateRevenueSchema.index({ company: 1 });
+// alternateRevenueSchema.index({ company: 1, invoiceCreationDate: 1 });
 
 const AlternateRevenue = mongoose.model(
   "AlternateRevenue",

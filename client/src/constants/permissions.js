@@ -29,10 +29,11 @@ export const PERMISSIONS = {
     title: "PHYSICAL DIGITAL",
     type: "read",
   },
-  ASSETS_ASSIGN_ASSETS: {
+    ASSETS_ASSIGN_ASSETS: {
     value: "assign_assets",
-    title: "ASSIGN ASSETS",
+    title: "OVERALL ASSET",
     type: "read",
+    route: "/app/assets/manage-assets/overall-asset",
   },
   ASSETS_ASSIGNED_ASSETS: {
     value: "assigned_assets",
@@ -65,15 +66,34 @@ export const PERMISSIONS = {
     title: "ASSET CATEGORIES",
     type: "read",
   },
+   ASSETS_ASSET_SUB_CATEGORIES: {
+    value: "asset_sub_categories",
+    title: "ASSET SUB-CATEGORIES",
+    type: "read",
+    route: "/app/assets",
+  },
   ASSETS_RECENTLY_ADDED_ASSETS: {
     value: "recently_added_assets",
     title: "RECENTLY ADDED ASSETS",
     type: "read",
   },
+   ASSETS_TOTAL_ASSETS: {
+    value: "total_assets",
+    title: "TOTAL ASSETS",
+    type: "read",
+    route: "/app/assets/view-assets",
+  },
   ASSETS_ASSETS_OWNED: {
     value: "assets_owned",
     title: "ASSETS OWNED",
     type: "read",
+  route: "/app/assets/view-assets",
+  },
+  ASSETS_ASSETS_RENTAL: {
+    value: "assets_rental",
+    title: "ASSETS RENTAL",
+    type: "read",
+    route: "/app/assets/view-assets",
   },
   ASSETS_ASSET_VALUE: {
     value: "asset_value",
@@ -90,10 +110,28 @@ export const PERMISSIONS = {
     title: "UNASSIGNED ASSETS",
     type: "read",
   },
+   ASSETS_UNASSIGNED_ASSET_TAB: {
+    value: "unassigned_asset_tab",
+    title: "UNASSIGNED ASSET",
+    type: "read",
+    route: "/app/assets/manage-assets/unassigned-assets",
+  },
   ASSETS_ASSETS_UNDER_MAINTENANCE: {
     value: "assets_under_maintenance",
     title: "ASSETS UNDER MAINTENANCE",
     type: "read",
+  },
+   ASSETS_ASSETS_DAMAGED: {
+    value: "assets_damaged",
+    title: "ASSETS DAMAGED",
+    type: "read",
+    route: "/app/assets/view-assets",
+  },
+  ASSETS_ASSETS_EXTRA: {
+    value: "assets_extra",
+    title: "ASSETS EXTRA",
+    type: "read",
+    route: "/app/assets/view-assets",
   },
 
   // Tickets Module
@@ -850,6 +888,49 @@ export const PERMISSIONS = {
     value: "finance_mix_bag_card",
     title: "FINANCE MIX BAG",
     type: "read",
+  },
+
+   FINANCE_REVENUE_MIX_BAG: {
+    value: "finance_revenue_mix_bag_card",
+    title: "FINANCE REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue",
+  },
+  FINANCE_TOTAL_REVENUE: {
+    value: "finance_mix_bag_revenue_total_revenue_tab",
+    title: "FINANCE TOTAL REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/total-revenue",
+  },
+  FINANCE_COWORKING_REVENUE: {
+    value: "finance_mix_bag_revenue_coworking_tab",
+    title: "FINANCE COWORKING REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/co-working",
+  },
+  FINANCE_MEETINGS_REVENUE: {
+    value: "finance_mix_bag_revenue_meetings_tab",
+    title: "FINANCE MEETINGS REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/meetings",
+  },
+  FINANCE_VIRTUAL_OFFICE_REVENUE: {
+    value: "finance_mix_bag_revenue_virtual_office_tab",
+    title: "FINANCE VIRTUAL OFFICE REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/virtual-office",
+  },
+  FINANCE_WORKATIONS_REVENUE: {
+    value: "finance_mix_bag_revenue_workations_tab",
+    title: "FINANCE WORKATIONS REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/workation",
+  },
+  FINANCE_ALT_REVENUE: {
+    value: "finance_mix_bag_revenue_alt_revenue_tab",
+    title: "FINANCE ALT REVENUE",
+    type: "read",
+    route: "/app/dashboard/finance-dashboard/mix-bag/revenue/alt-revenue",
   },
 
   FINANCE_DIRECTORS_COMPANY_KYC_MIX_BAG: {

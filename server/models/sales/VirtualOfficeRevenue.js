@@ -30,7 +30,7 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
       // required: true,
     },
     dueTerm: {
-      type: Number, // Assuming in months
+      type: Date, // Assuming in months
       // required: true,
     },
     rentDate: {
@@ -65,6 +65,9 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+virtualOfficeRevenueSchema.index({ company: 1 });
+// virtualOfficeRevenueSchema.index({ company: 1, rentDate: 1 });
 
 const VirtualOfficeRevenue = mongoose.model(
   "VirtualOfficeRevenue",
