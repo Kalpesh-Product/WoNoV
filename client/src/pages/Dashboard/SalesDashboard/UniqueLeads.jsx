@@ -5,8 +5,7 @@ import {
   FormControl,
   InputLabel,
   TextField,
-   IconButton,
-  Menu,
+  IconButton,
 } from "@mui/material";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
@@ -22,13 +21,29 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
 // import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 // import { MdOutlineRemove, MdOutlineRemoveRedEye } from "react-icons/md";
 // import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import DetalisFormatted from "../../../components/DetalisFormatted";
-import { MdMoreVert, MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
+const MONTH_ORDER = [
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+  "January",
+  "February",
+  "March",
+];
 
 const UniqueLeads = () => {
   const dispatch = useDispatch();
@@ -40,9 +55,7 @@ const UniqueLeads = () => {
   const queryMonth = searchParams.get("month");
   const [modalOpen, setModalOpen] = useState(false);
   const [addLeadOpen, setAddLeadOpen] = useState(false);
-   const [selectedLead, setSelectedLead] = useState(null);
-  const [actionAnchorEl, setActionAnchorEl] = useState(null);
-  const [actionLead, setActionLead] = useState(null);
+  const [selectedLead, setSelectedLead] = useState(null);
 
   const {
     control,
@@ -105,7 +118,7 @@ const UniqueLeads = () => {
     };
 
     fetchLeadsIfEmpty();
-  }, [leadsData, dispatch]);
+  }, [axios, leadsData, dispatch]);
 
    const { data: services = [], isLoading: isServicesLoading } = useQuery({
     queryKey: ["sales-services"],
@@ -232,6 +245,7 @@ const UniqueLeads = () => {
           return (
             <DatePicker
               label={label}
+              format="DD-MM-YYYY"
               value={field.value ? dayjs(field.value) : null}
               onChange={(value) => field.onChange(value)}
               slotProps={{
@@ -388,7 +402,9 @@ const UniqueLeads = () => {
   //   const selectedLeadData = leadsData.find(
   //     (item) => item.client === lead.companyname
   //   );
-   const getOptionLabel = (value, fallback = "N/A") => {
+  const EMPTY_VIEW_VALUE = "-";
+
+   const getOptionLabel = (value, fallback = EMPTY_VIEW_VALUE) => {
     if (!value) return fallback;
     if (Array.isArray(value)) {
       return value
@@ -411,43 +427,32 @@ const UniqueLeads = () => {
   const formatBoolean = (value) => {
     if (value === true || value === "true") return "Yes";
     if (value === false || value === "false") return "No";
-    return value || "N/A";
+    return value || EMPTY_VIEW_VALUE;
   };
 
   const formatViewDetail = (lead, field, type) => {
     const value = lead?.[field];
-    if (type === "date") return value ? humanDate(value) : "N/A";
-    if (type === "currency") return value || value === 0 ? `INR ${value}` : "N/A";
+    if (type === "date") return value ? humanDate(value) : EMPTY_VIEW_VALUE;
+    if (type === "currency") return value || value === 0 ? `INR ${value}` : EMPTY_VIEW_VALUE;
     if (type === "boolean") return formatBoolean(value);
-    if (field === "serviceCategory") return getOptionLabel(value);
-    if (field === "proposedLocations") return getOptionLabel(value);
-    return value || "N/A";
+    if (field === "serviceCategory") return getOptionLabel(value, EMPTY_VIEW_VALUE);
+    if (field === "proposedLocations") return getOptionLabel(value, EMPTY_VIEW_VALUE);
+    return value || EMPTY_VIEW_VALUE;
   };
 
-   const handleViewClient = (lead) => {
+  const handleViewClient = (lead) => {
     setSelectedLead(lead);
     setModalOpen(true);
   };
 
-   const handleActionMenuOpen = (event, lead) => {
-    setActionAnchorEl(event.currentTarget);
-    setActionLead(lead);
-  };
-
-  const handleActionMenuClose = () => {
-    setActionAnchorEl(null);
-    setActionLead(null);
-  };
-
-  const handleEditLead = () => {
-    if (!actionLead) return;
-    navigate(encodeURIComponent(actionLead.companyName || actionLead._id), {
+  const handleEditLead = (lead) => {
+    if (!lead) return;
+    navigate(encodeURIComponent(lead.companyName || lead._id), {
       state: {
-        selectedLead: actionLead,
+        selectedLead: lead,
         editMode: true,
       },
     });
-    handleActionMenuClose();
   };
 
   const viewDetailFields = [
@@ -524,20 +529,6 @@ const UniqueLeads = () => {
     colors: ["#00cdd1"],
   };
 
-  const monthOrder = [
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-    "January",
-    "February",
-    "March",
-  ];
   // const availableMonths = useMemo(() => {
   //   const uniqueMonths = new Set(
   //     leadsData
@@ -546,7 +537,7 @@ const UniqueLeads = () => {
   //   );
 
   //   return Array.from(uniqueMonths).sort(
-  //     (a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b)
+  //     (a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b)
   //   );
   // }, [leadsData]);
 
@@ -557,7 +548,7 @@ const UniqueLeads = () => {
 
     const fyStartYear = parseInt(fyMatch[0]);
 
-    return monthOrder.map((month, index) => {
+    return MONTH_ORDER.map((month, index) => {
       const actualMonthIndex = (index + 3) % 12;
       const actualYear = actualMonthIndex <= 2 ? fyStartYear + 1 : fyStartYear;
 
@@ -752,21 +743,24 @@ const UniqueLeads = () => {
                 suppressCsvExport: true,
                 suppressExcelExport: true,
                 cellRenderer: (params) => (
-                  <div className="flex items-center gap-2 h-full">
+                  <div className="flex items-center gap-1 h-full">
                     <IconButton
                       size="small"
                       aria-label="View lead details"
                       onClick={() => handleViewClient(params.data)}
+                      className="!text-[#5f6368] hover:!bg-[#f5f5f5]"
                     >
-                      <MdOutlineRemoveRedEye className="text-primary" />
+                      <MdOutlineRemoveRedEye size={20} />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      aria-label="More lead options"
-                      onClick={(event) => handleActionMenuOpen(event, params.data)}
-                    >
-                      <MdMoreVert />
-                    </IconButton>
+                    <ThreeDotMenu
+                      rowId={params.data?._id || params.data?.companyName}
+                      menuItems={[
+                        {
+                          label: "Edit",
+                          onClick: () => handleEditLead(params.data),
+                        },
+                      ]}
+                    />
                   </div>
                 ),
               },
@@ -819,13 +813,6 @@ const UniqueLeads = () => {
           <div>No lead selected.</div>
         )}
       </MuiModal>
-       <Menu
-        anchorEl={actionAnchorEl}
-        open={Boolean(actionAnchorEl)}
-        onClose={handleActionMenuClose}
-      >
-        <MenuItem onClick={handleEditLead}>Edit</MenuItem>
-      </Menu>
     </div>
   );
 };
