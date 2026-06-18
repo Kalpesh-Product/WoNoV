@@ -1,9 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { Select, MenuItem, FormControl, InputLabel } from "@mui/material";
+import {
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  TextField,
+} from "@mui/material";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { setLeadsData } from "../../../redux/slices/salesSlice";
 import humanDate from "../../../utils/humanDateForamt";
 import dayjs from "dayjs";
@@ -15,6 +24,8 @@ import CollapsibleTable from "../../../components/Tables/MuiCollapsibleTable";
 import { MdOutlineRemove, MdOutlineRemoveRedEye } from "react-icons/md";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const UniqueLeads = () => {
   const dispatch = useDispatch();
@@ -25,7 +36,51 @@ const UniqueLeads = () => {
   const [searchParams] = useSearchParams();
   const queryMonth = searchParams.get("month");
   const [modalOpen, setModalOpen] = useState(false);
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState([]);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      dateOfContact: "",
+      companyName: "",
+      serviceCategory: "",
+      leadStatus: "",
+      proposedLocations: "",
+      sector: "",
+      headOfficeLocation: "",
+      officeInGoa: "",
+      pocName: "",
+      designation: "",
+      contactNumber: "",
+      emailAddress: "",
+      leadSource: "",
+      period: "",
+      openDesks: 0,
+      cabinDesks: 0,
+      totalDesks: 0,
+      clientBudget: "",
+      startDate: "",
+      remarksComments: "",
+    },
+  });
+
+  const openDesksValue = useWatch({ control, name: "openDesks" });
+  const cabinDesksValue = useWatch({ control, name: "cabinDesks" });
+
+  useEffect(() => {
+    const openDesks = Number(openDesksValue || 0);
+    const cabinDesks = Number(cabinDesksValue || 0);
+    setValue("totalDesks", openDesks + cabinDesks, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [openDesksValue, cabinDesksValue, setValue]);
 
   const [selectedFY, setSelectedFY] = useState("FY 2025-26");
   const [selectedMonth, setSelectedMonth] = useState(queryMonth || "Apr-24");
@@ -46,6 +101,144 @@ const UniqueLeads = () => {
 
     fetchLeadsIfEmpty();
   }, [leadsData, dispatch]);
+
+   const { data: services = [], isLoading: isServicesLoading } = useQuery({
+    queryKey: ["sales-services"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/services");
+      return response.data;
+    },
+  });
+
+  const { data: units = [], isLoading: isUnitsLoading } = useQuery({
+    queryKey: ["lead-units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+      return response.data;
+    },
+  });
+
+  const fetchLeads = async () => {
+    const response = await axios.get("/api/sales/leads");
+    dispatch(setLeadsData(response.data));
+    return response.data;
+  };
+
+  const { mutate: createLead, isPending: isCreatingLead } = useMutation({
+    mutationFn: async (formData) => {
+      const payload = {
+        ...formData,
+         dateOfContact: formData.dateOfContact
+          ? dayjs(formData.dateOfContact).format("YYYY-MM-DD")
+          : "",
+        startDate: formData.startDate
+          ? dayjs(formData.startDate).format("YYYY-MM-DD")
+          : "",
+        proposedLocations: formData.proposedLocations,
+        officeInGoa: formData.officeInGoa === "true",
+        openDesks: Number(formData.openDesks || 0),
+        cabinDesks: Number(formData.cabinDesks || 0),
+        totalDesks: Number(formData.totalDesks || 0),
+        clientBudget: Number(formData.clientBudget || 0),
+      };
+      const response = await axios.post("/api/sales/create-lead", payload);
+      return response.data;
+    },
+    onSuccess: async (data) => {
+      toast.success(data?.message || "Lead created successfully");
+      reset();
+      setAddLeadOpen(false);
+      await fetchLeads();
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || error.message || "Failed to create lead");
+    },
+  });
+
+  const addLeadFields = [
+    { name: "dateOfContact", label: "Date Of Contact", type: "datePicker" },
+    { name: "companyName", label: "Company Name" },
+    { name: "serviceCategory", label: "Service Category", type: "select", options: services.map((service) => ({ value: service._id, label: service.serviceName })) },
+    { name: "leadStatus", label: "Lead Status", type: "select", options: ["Cold", "Mild", "Hot", "Closed"].map((value) => ({ value, label: value })) },
+    { name: "proposedLocations", label: "Proposed Locations", type: "select", options: units.map((unit) => ({ value: unit._id, label: unit.unitNo || unit.unitName || "Unit" })) },
+    { name: "sector", label: "Sector" },
+    { name: "headOfficeLocation", label: "Head Office Location" },
+    { name: "officeInGoa", label: "Office In Goa", type: "select", options: [{ value: "true", label: "Yes" }, { value: "false", label: "No" }] },
+    { name: "pocName", label: "POC Name" },
+    { name: "designation", label: "Designation" },
+    { name: "contactNumber", label: "Contact Number" },
+    { name: "emailAddress", label: "Email Address", type: "email" },
+    { name: "leadSource", label: "Lead Source" },
+    { name: "period", label: "Period" },
+    { name: "openDesks", label: "Open Desks", type: "number" },
+    { name: "cabinDesks", label: "Cabin Desks", type: "number" },
+    { name: "totalDesks", label: "Total Desks", type: "number", readOnly: true },
+    { name: "clientBudget", label: "Client Budget", type: "number" },
+    { name: "startDate", label: "Start Date", type: "datePicker" },
+    { name: "remarksComments", label: "Remarks Comments", required: false },
+  ];
+
+  const renderAddLeadField = ({
+    name,
+    label,
+    type = "text",
+    options,
+    required = true,
+    readOnly = false,
+  }) => (
+    <Controller
+      key={name}
+      name={name}
+      control={control}
+      rules={required ? { required: `${label} is required` } : {}}
+      render={({ field }) => {
+        if (type === "datePicker") {
+          return (
+            <DatePicker
+              label={label}
+              value={field.value ? dayjs(field.value) : null}
+              onChange={(value) => field.onChange(value)}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                  error: !!errors[name],
+                  helperText: errors[name]?.message,
+                },
+              }}
+            />
+          );
+        }
+
+        return (
+          <TextField
+            {...field}
+            select={type === "select"}
+            type={type === "select" ? undefined : type}
+            label={label}
+            size="small"
+            fullWidth
+            InputProps={readOnly ? { readOnly: true } : undefined}
+            error={!!errors[name]}
+            helperText={errors[name]?.message}
+          >
+            {type === "select" && [
+              <MenuItem value="" disabled key={`${name}-placeholder`}>
+                {isServicesLoading || isUnitsLoading
+                  ? "Loading..."
+                  : `Select ${label}`}
+              </MenuItem>,
+              ...(options || []).map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              )),
+            ]}
+          </TextField>
+        );
+      }}
+    />
+  );
 
   const handleMonthChange = (event) => {
     const newMonth = event.target.value;
@@ -355,6 +548,8 @@ const UniqueLeads = () => {
       >
         <div>
           <AgTable
+          buttonTitle="Add Leads"
+            handleClick={() => setAddLeadOpen(true)}
             data={filteredLeads.map((item, index) => ({
               _id: item._id,
               srNo: index + 1,
@@ -429,6 +624,7 @@ const UniqueLeads = () => {
               },
               { headerName: "Remarks", field: "remarksComments", flex: 1,hide: true },
             ]}
+            search={true}
             dateColumn="dateOfContact"
             initialMonth={selectedMonth}
             key="leads-table"
@@ -436,6 +632,27 @@ const UniqueLeads = () => {
           />
         </div>
       </WidgetSection>
+       <MuiModal
+        open={addLeadOpen}
+        onClose={() => setAddLeadOpen(false)}
+        title={"Add Leads"}
+        widthClass="w-4/5 max-w-5xl"
+      >
+        <form onSubmit={handleSubmit((data) => createLead(data))} className="flex flex-col gap-4">
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {addLeadFields.map(renderAddLeadField)}
+            </div>
+          </LocalizationProvider>
+          <PrimaryButton
+            title="Add Leads"
+            type="submit"
+            isLoading={isCreatingLead}
+            disabled={isCreatingLead}
+            className="w-full"
+          />
+        </form>
+      </MuiModal>
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
