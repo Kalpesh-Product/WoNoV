@@ -177,7 +177,8 @@ const editLead = async (req, res, next) => {
   const { user, ip, company } = req;
 
   try {
-    const { leadId } = req.params;
+   // const { leadId } = req.params;
+    const leadId = req.params.leadId || req.body.leadId;
 
     if (!mongoose.Types.ObjectId.isValid(leadId)) {
       throw new CustomError(

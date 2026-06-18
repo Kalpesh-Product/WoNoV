@@ -57,6 +57,20 @@ const UniqueLeads = () => {
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
 
+  useEffect(() => {
+    if (!selectedLead?._id || !Array.isArray(leadsData) || !leadsData.length) {
+      return;
+    }
+
+    const refreshedSelectedLead = leadsData.find(
+      (lead) => lead?._id === selectedLead._id,
+    );
+
+    if (refreshedSelectedLead) {
+      setSelectedLead(refreshedSelectedLead);
+    }
+  }, [leadsData, selectedLead]);
+
   const {
     control,
     handleSubmit,
