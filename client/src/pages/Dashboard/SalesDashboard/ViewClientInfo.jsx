@@ -4,6 +4,7 @@ import { MenuItem, TextField } from "@mui/material";
 import { useDispatch } from "react-redux";
 import { useLocation, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import PageFrame from "../../../components/Pages/PageFrame";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import humanDate from "../../../utils/humanDateForamt";
@@ -395,134 +396,149 @@ const ViewClientInfo = () => {
   ];
 
   if (isLeadLoading && !activeLead) {
-    return <div className="p-4 font-semibold">Loading client details...</div>;
+    return (
+      <div className="mx-4 mt-3">
+        <PageFrame>
+          <div className="p-4 font-semibold">Loading client details...</div>
+        </PageFrame>
+      </div>
+    );
   }
 
   if (!activeLead) {
     return (
-      <div className="p-4 text-red-500 font-semibold">
-        No client selected. Please go back and select a client.
+      <div className="mx-4 mt-3">
+        <PageFrame>
+          <div className="p-4 text-red-500 font-semibold">
+            No client selected. Please go back and select a client.
+          </div>
+        </PageFrame>
       </div>
     );
   }
 
   return (
-    <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4">
-      <div className="flex justify-between items-center">
-        <span className="text-subtitle font-pmedium text-primary">
-          Client Details
-        </span>
-        <PrimaryButton
-          handleSubmit={handleEditToggle}
-          title={isEditing ? "Cancel" : "Edit"}
-        />
-      </div>
-
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="h-[60vh] overflow-y-auto"
-      >
-        <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4 p-4">
-          {fields
-            .filter(({ editOnly }) => isEditing || !editOnly)
-            .map(({ name, label, type, rules, options = [], inputType, readOnly }) => (
-              <div key={name}>
-                {isEditing ? (
-                  <Controller
-                    name={name}
-                    control={control}
-                    rules={rules}
-                    render={({ field }) =>
-                      type === "date" ? (
-                        <DatePicker
-                          {...field}
-                          format="DD-MM-YYYY"
-                          value={
-                            field.value && dayjs(field.value).isValid()
-                              ? dayjs(field.value)
-                              : null
-                          }
-                          onChange={(date) =>
-                            field.onChange(date ? date.toISOString() : "")
-                          }
-                          slotProps={{
-                            textField: {
-                              size: "small",
-                              fullWidth: true,
-                              label,
-                              error: !!errors[name],
-                              helperText: errors[name]?.message,
-                            },
-                          }}
-                        />
-                      ) : type === "select" ? (
-                        <TextField
-                          {...field}
-                          select
-                          size="small"
-                          label={label}
-                          fullWidth
-                          error={!!errors[name]}
-                          helperText={errors[name]?.message}
-                        >
-                          {options.map((option) => (
-                            <MenuItem
-                              key={typeof option === "object" ? option.value : option}
-                              value={typeof option === "object" ? option.value : option}
-                            >
-                              {typeof option === "object" ? option.label : option}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      ) : (
-                        <TextField
-                          {...field}
-                          size="small"
-                          label={label}
-                          fullWidth
-                          type={inputType || "text"}
-                          InputProps={readOnly ? { readOnly: true } : undefined}
-                          error={!!errors[name]}
-                          helperText={errors[name]?.message}
-                        />
-                      )
-                    }
-                  />
-                ) : (
-                  <div className="py-2 flex justify-between items-start gap-2">
-                    <div className="w-[70%] justify-start flex">
-                      <span className="font-pmedium text-gray-600 text-content">
-                        {label}
-                      </span>
-                    </div>
-                    <div>:</div>
-                    <div className="w-full">
-                      <span className="text-gray-500">
-                        {getDisplayValue(name, type)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-        </div>
-
-        {isEditing && (
-          <div className="flex items-center justify-center gap-2 py-4">
+    <div className="mx-4 mt-3">
+      <PageFrame>
+        <div className="flex flex-col gap-5 px-4 py-3">
+          <div className="flex justify-between items-center">
+            <span className="text-subtitle font-pmedium text-primary">
+              Client Details
+            </span>
             <PrimaryButton
-              title="Submit"
-              handleSubmit={handleSubmit(onSubmit)}
-              isLoading={isUpdatingLead}
-              disabled={isUpdatingLead}
-            />
-            <SecondaryButton
-              title="Reset"
-              handleSubmit={handleReset}
-              disabled={isUpdatingLead}
+              handleSubmit={handleEditToggle}
+              title={isEditing ? "Cancel" : "Edit"}
             />
           </div>
-        )}
-      </form>
+          <div className="border-b-2 border-borderGray" />
+
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="h-[60vh] overflow-y-auto"
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-5 px-4 py-2">
+              {fields
+                .filter(({ editOnly }) => isEditing || !editOnly)
+                .map(({ name, label, type, rules, options = [], inputType, readOnly }) => (
+                  <div key={name}>
+                    {isEditing ? (
+                      <Controller
+                        name={name}
+                        control={control}
+                        rules={rules}
+                        render={({ field }) =>
+                          type === "date" ? (
+                            <DatePicker
+                              {...field}
+                              format="DD-MM-YYYY"
+                              value={
+                                field.value && dayjs(field.value).isValid()
+                                  ? dayjs(field.value)
+                                  : null
+                              }
+                              onChange={(date) =>
+                                field.onChange(date ? date.toISOString() : "")
+                              }
+                              slotProps={{
+                                textField: {
+                                  size: "small",
+                                  fullWidth: true,
+                                  label,
+                                  error: !!errors[name],
+                                  helperText: errors[name]?.message,
+                                },
+                              }}
+                            />
+                          ) : type === "select" ? (
+                            <TextField
+                              {...field}
+                              select
+                              size="small"
+                              label={label}
+                              fullWidth
+                              error={!!errors[name]}
+                              helperText={errors[name]?.message}
+                            >
+                              {options.map((option) => (
+                                <MenuItem
+                                  key={typeof option === "object" ? option.value : option}
+                                  value={typeof option === "object" ? option.value : option}
+                                >
+                                  {typeof option === "object" ? option.label : option}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          ) : (
+                            <TextField
+                              {...field}
+                              size="small"
+                              label={label}
+                              fullWidth
+                              type={inputType || "text"}
+                              InputProps={readOnly ? { readOnly: true } : undefined}
+                              error={!!errors[name]}
+                              helperText={errors[name]?.message}
+                            />
+                          )
+                        }
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[70%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            {label}
+                          </span>
+                        </div>
+                        <div>:</div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {getDisplayValue(name, type)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+
+            {isEditing && (
+              <div className="flex items-center justify-center gap-2 py-4">
+                <PrimaryButton
+                  title="Submit"
+                  handleSubmit={handleSubmit(onSubmit)}
+                  isLoading={isUpdatingLead}
+                  disabled={isUpdatingLead}
+                />
+                <SecondaryButton
+                  title="Reset"
+                  handleSubmit={handleReset}
+                  disabled={isUpdatingLead}
+                />
+              </div>
+            )}
+          </form>
+        </div>
+      </PageFrame>
     </div>
   );
 };
