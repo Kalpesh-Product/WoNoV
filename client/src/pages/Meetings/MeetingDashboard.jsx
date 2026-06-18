@@ -70,6 +70,16 @@ const MeetingDashboard = () => {
     refetchOnWindowFocus: true,
   });
 
+  const activeRoomsData = useMemo(
+    () => roomsData.filter((room) => room.isActive === true),
+    [roomsData],
+  );
+
+  const activeRoomNames = useMemo(
+    () => new Set(activeRoomsData.map((room) => room.name)),
+    [activeRoomsData],
+  );
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(dayjs());
@@ -534,19 +544,21 @@ const MeetingDashboard = () => {
   // Map: label → duration
   const monthMap = new Map();
 
-  meetingsData.forEach((meeting) => {
-    const date = new Date(meeting.date);
-    const label =
-      date.toLocaleString("default", { month: "short" }) +
-      "-" +
-      date.getFullYear().toString().slice(-2);
+  meetingsData
+    .filter((meeting) => activeRoomNames.has(meeting.roomName))
+    .forEach((meeting) => {
+      const date = new Date(meeting.date);
+      const label =
+        date.toLocaleString("default", { month: "short" }) +
+        "-" +
+        date.getFullYear().toString().slice(-2);
 
-    const durationMinutes = parseDuration(meeting.duration || "0m");
-    const durationHours = durationMinutes / 60;
+      const durationMinutes = parseDuration(meeting.duration || "0m");
+      const durationHours = durationMinutes / 60;
 
-    const current = monthMap.get(label) || 0;
-    monthMap.set(label, current + durationHours);
-  });
+      const current = monthMap.get(label) || 0;
+      monthMap.set(label, current + durationHours);
+    });
 
   const monthlyBookedHours = {};
   for (let label of fullMonthLabels) {
@@ -592,26 +604,12 @@ const MeetingDashboard = () => {
     const bookedHours = monthlyBookedHours[label];
     const workingDays = countWeekdaysInMonth(fullYear, monthIndex);
     const totalBookableHoursForMonth =
-      roomsData.length * WORKING_HOURS_PER_DAY * workingDays;
+      activeRoomsData.length * WORKING_HOURS_PER_DAY * workingDays;
 
     const utilizationPercent =
       totalBookableHoursForMonth > 0
         ? (bookedHours / totalBookableHoursForMonth) * 100
         : 0;
-
-    console.log("[MeetingDashboard][AvgUtilization][MonthCalc]", {
-      label,
-      monthAbbr,
-      fullYear,
-      monthIndex,
-      fyLabel,
-      totalRooms: roomsData.length,
-      WORKING_HOURS_PER_DAY,
-      workingDays,
-      bookedHours,
-      totalBookableHoursForMonth,
-      utilizationPercent,
-    });
 
     bookedHoursByFY.set(fyLabel, bookedHoursByFY.get(fyLabel) + bookedHours);
 
@@ -743,7 +741,7 @@ const MeetingDashboard = () => {
         // ✅ Same formula used in groupedDataMap
         const workingDays = countWeekdaysInMonth(fullYear, monthIndex);
         const totalAvailableHours =
-          roomsData.length * WORKING_HOURS_PER_DAY * workingDays;
+          activeRoomsData.length * WORKING_HOURS_PER_DAY * workingDays;
 
         // const calcHours = (buildingName) =>
         //   meetingsData
@@ -772,6 +770,7 @@ const MeetingDashboard = () => {
                 "-" +
                 date.getFullYear().toString().slice(-2);
               return (
+                activeRoomNames.has(m.roomName) &&
                 mLabel === monthLabel && // ✅ compare full label, not split parts
                 m.location?.building?.buildingName === buildingName
               );
@@ -832,7 +831,7 @@ const MeetingDashboard = () => {
       dayjs(meeting.date).isValid() &&
       dayjs(meeting.date).isSame(currentMonth, "month"),
   );
-const cancelledMeetingsInCurrentMonthCount = meetingsData.filter(
+  const cancelledMeetingsInCurrentMonthCount = meetingsData.filter(
     (meeting) =>
       meeting.meetingStatus === "Cancelled" &&
       dayjs(meeting.date).isValid() &&
@@ -1185,7 +1184,7 @@ const cancelledMeetingsInCurrentMonthCount = meetingsData.filter(
         .length,
       description: "Guest Bookings",
       route: "reports",
-      onClick: () => navigate("reports?source=guest-bookings"), 
+      onClick: () => navigate("reports?source=guest-bookings"),
       permission: PERMISSIONS.MEETINGS_GUEST_BOOKINGS.value,
     },
     {
@@ -1209,7 +1208,7 @@ const cancelledMeetingsInCurrentMonthCount = meetingsData.filter(
     {
       key: "hoursCancelled",
       title: "Total",
-       data: cancelledMeetingsInCurrentMonthCount || 0,
+      data: cancelledMeetingsInCurrentMonthCount || 0,
       // data:
       //   meetingsData
       //     .filter((item) => item.meetingStatus === "Cancelled")

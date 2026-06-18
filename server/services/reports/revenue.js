@@ -154,6 +154,7 @@ const fetchAlternateRevenueReportService = async ({
       invoiceCreationDate: item.invoiceCreationDate,
       invoicePaidDate: item.invoicePaidDate,
       gst: item.gst,
+      status: item.status || "Unpaid",
     });
   });
 

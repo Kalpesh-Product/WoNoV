@@ -2,6 +2,7 @@ const Asset = require("../../models/assets/Assets");
 const AssignAsset = require("../../models/assets/AssignAsset");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
+const { hasGlobalReportAccess } = require("./access");
 
 const fetchAssetReportService = async ({
   dateFilter,
@@ -310,6 +311,7 @@ const fetchAssignedAssetReportService = async ({
   departments: departmentIds = [],
   company,
   user: loggedInUser,
+  roles = [],
   query,
 }) => {
   const defaultQuery = {
@@ -332,9 +334,11 @@ const fetchAssignedAssetReportService = async ({
     const userDepartments = departmentIds?.length
       ? departmentIds
       : user.departments || [];
-    const isTopManagement = userDepartments.some(
-      (dept) => dept.name === "Top Management",
-    );
+
+    const isTopManagement =
+      hasGlobalReportAccess(roles) ||
+      userDepartments.some((dept) => dept.name === "Top Management");
+
     const userDepartmentIds = userDepartments.map((dept) => dept._id);
 
     const { assigned, departmentId, vendorId, sortBy, order } = query;
@@ -344,7 +348,7 @@ const fetchAssignedAssetReportService = async ({
       company: user.company,
       ...(dateFilter?.createdAt && { createdAt: dateFilter.createdAt }),
       ...(!isTopManagement && { department: { $in: userDepartmentIds } }),
-      ...(departmentId && { department: departmentId }),
+      ...(departmentId && !isTopManagement && { department: departmentId }),
       ...(vendorId && { vendor: vendorId }),
       ...(assigned === "true" && { assignedTo: { $ne: null } }),
       ...(assigned === "false" && { assignedTo: null }),
