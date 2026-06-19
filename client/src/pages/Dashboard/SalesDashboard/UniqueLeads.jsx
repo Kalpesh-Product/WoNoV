@@ -313,6 +313,7 @@ const UniqueLeads = () => {
       )}`
     );
   };
+
   // const handleViewTypeChange = (event) => {
   //   setViewType(event.target.value);
   // };
@@ -671,19 +672,25 @@ const UniqueLeads = () => {
       >
         <div>
           <AgTable
-          buttonTitle="Add Leads"
-            handleClick={() => setAddLeadOpen(true)}
             data={filteredLeads.map((item, index) => ({
               ...item,
               _id: item._id,
               srNo: index + 1,
               dateOfContact: item.dateOfContact,
               companyName: item.companyName,
+              serviceCategoryLabel: getOptionLabel(item.serviceCategory),
+              headOfficeLocation: item.headOfficeLocation,
+              officeInGoaLabel: formatBoolean(item.officeInGoa),
               pocName: item.pocName,
               designation: item.designation,
               contactNumber: item.contactNumber,
               emailAddress: item.emailAddress,
               leadStatus: item.leadStatus,
+              leadSource: item.leadSource,
+              period: item.period,
+              openDesks: item.openDesks,
+              cabinDesks: item.cabinDesks,
+              totalDesks: item.totalDesks,
               sector: item.sector,
               serviceName: item.serviceCategory?.serviceName || "—",
               proposedLocationsLabel: getOptionLabel(item.proposedLocations),
@@ -728,10 +735,18 @@ const UniqueLeads = () => {
               { headerName: "POC Name", field: "pocName",flex: 1 },
               { headerName: "Designation", field: "designation",flex: 1,hide: true },
               { headerName: "Contact Number", field: "contactNumber",flex: 1},
-              { headerName: "Email", field: "emailAddress", flex: 1 ,hide: true},
+              { headerName: "Email Address", field: "emailAddress", flex: 1 ,hide: true},
               { headerName: "Lead Status", field: "leadStatus" ,flex: 1},
               { headerName: "Sector", field: "sector",flex: 1,hide: true },
-              { headerName: "Service", field: "serviceName",flex: 1,hide: true },
+              { headerName: "Service Category", field: "serviceCategoryLabel",flex: 1,hide: true },
+              { headerName: "Proposed Locations", field: "proposedLocationsLabel", flex: 1, hide: true },
+              { headerName: "Head Office Location", field: "headOfficeLocation", flex: 1, hide: true },
+              { headerName: "Office In Goa", field: "officeInGoaLabel", flex: 1, hide: true },
+              { headerName: "Lead Source", field: "leadSource", flex: 1, hide: true },
+              { headerName: "Period", field: "period", flex: 1, hide: true },
+              { headerName: "Open Desks", field: "openDesks", flex: 1, hide: true },
+              { headerName: "Cabin Desks", field: "cabinDesks", flex: 1, hide: true },
+              { headerName: "Total Desks", field: "totalDesks", flex: 1, hide: true },
               {
                 headerName: "Client Budget",
                 field: "clientBudget",
@@ -748,7 +763,15 @@ const UniqueLeads = () => {
                 valueFormatter: (params) =>
                   params.value ? humanDate(params.value) : "—",
               },
-              { headerName: "Remarks", field: "remarksComments", flex: 1,hide: true },
+              {
+                headerName: "Start Date",
+                field: "startDate",
+                hide: true,
+                flex: 1,
+                valueFormatter: (params) =>
+                  params.value ? humanDate(params.value) : "â€”",
+              },
+              { headerName: "Remarks Comments", field: "remarksComments", flex: 1,hide: true },
                 {
                 headerName: "Action",
                 field: "action",
@@ -784,6 +807,13 @@ const UniqueLeads = () => {
             initialMonth={selectedMonth}
             key="leads-table"
             exportData
+            hideHeaderDivider
+            searchRowActions={
+              <PrimaryButton
+                title="Add Leads"
+                handleSubmit={() => setAddLeadOpen(true)}
+              />
+            }
           />
         </div>
       </WidgetSection>
