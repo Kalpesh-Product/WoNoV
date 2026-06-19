@@ -3406,6 +3406,12 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     access: "page",
   },
+  SIDEBAR_LOGS: {
+    value: "sidebar_logs",
+    title: "Logs",
+    type: "read",
+    access: "page",
+  },
 
   ACCESS_PERMISSIONS: {
     value: "access_permissions",
