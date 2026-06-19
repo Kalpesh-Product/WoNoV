@@ -12,6 +12,7 @@ import Access from "../pages/Access/Access";
 import AccessProfile from "../pages/Access/AccessProfile";
 import Notifications from "../pages/Notifications";
 import Chat from "../pages/Chat";
+import LogPage from "../pages/LogPage";
 import Profile from "../pages/Profile/Profile";
 
 //Reports Pages
@@ -462,7 +463,6 @@ import VirtualOfficeClientDetails from "../pages/Dashboard/SalesDashboard/ViewCl
 import VirtualOfficeClientDesks from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDesks";
 import VirtualOfficeClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientRevenue";
 import VirtualOfficeClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientMembers";
-import LogPage from "../pages/LogPage";
 import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
 import AccessPages from "../pages/Access/AccessPages";
 import ModulePermissions from "../pages/Access/ModulePermissions";
@@ -4115,7 +4115,13 @@ export const routes = createBrowserRouter([
       },
       {
         path: "secret-logs",
-        element: <LogPage />,
+          element: (
+          <PerformancePermissionRoute
+            element={<LogPage />}
+            permissions={[PERMISSIONS.SIDEBAR_LOGS]}
+          />
+        ),
+        //element: <LogPage />,
       },
       {
         path: "unauthorized",

@@ -12,13 +12,18 @@ const LogPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedLog, setselectedLog] = useState({});
   const { data, isLoading } = useQuery({
-    queryKey: ["log"],
+    queryKey: [" secret-logs"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/logs/get-logs");
-        return response.data;
+          return response.data || [ ]
+ ;
       } catch (error) {
-        console.error(error.response.data.message);
+        console . error (error?. response ?. data ?. message || error. message );
+        return [];
+      //   return response.data;
+      // } catch (error) {
+      //   console.error(error.response.data.message);
       }
     },
   });
@@ -73,10 +78,12 @@ const LogPage = () => {
   ];
   const tableData = isLoading
     ? []
-    : data.map((item) => ({
+    // : data.map((item) => ({
+      : (data || []) . map ( ( item ) => ({
         ...item,
         user: `${item.performedBy?.firstName} ${item.performedBy?.lastName}`,
-        path: item.path.split("/").splice(2).join(" > "),
+         path : item. path ?. split ( "/" ). splice ( 2 ). join ( " > " ) || "-",
+       // path: item.path.split("/").splice(2).join(" > "),
         createdAt: item.createdAt,
         payload: item.payload,
       }));

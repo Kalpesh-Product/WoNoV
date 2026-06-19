@@ -153,7 +153,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
      {
       name: "Logs",
       icon: <FaClipboardUser />,
-      route: "#",
+      route : " /app/secret-logs " ,
       permission: PERMISSIONS.SIDEBAR_LOGS.value,
     },
   ].filter((item) => canAccessSidebarItem(item.permission));
