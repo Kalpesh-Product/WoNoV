@@ -144,18 +144,6 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   ].filter((item) => canAccessSidebarItem(item.permission));
 
   const upcomingItems = [
-    //{
-      // name: "Reports",
-      // icon: <TbReportSearch />,
-      // route: "reports",
-      // permission: PERMISSIONS.SIDEBAR_REPORTS.value,
-    //},
-    // {
-    //   name: "Assets",
-    //   icon: <FaBoxesStacked />,
-    //   route: "assets",
-    //   permission: PERMISSIONS.SIDEBAR_ASSETS.value,
-    // },
     {
       name: "Chat",
       icon: <HiOutlineChatAlt2 />,
