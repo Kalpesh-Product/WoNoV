@@ -35,6 +35,79 @@ const LogPage = () => {
     setOpenModal(true);
   };
 
+  const isMongoIdSegment = (value) =>
+    typeof value === "string" && /^[a-f\d]{24}$/i.test(value);
+
+  const getReadableLogLabel = (value) => {
+    if (!value || typeof value !== "object") return null;
+
+    const fullName = [value.firstName, value.middleName, value.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    return (
+      fullName ||
+      value.name ||
+      value.title ||
+      value.label ||
+      value.departmentId ||
+      value.empId ||
+      value.email ||
+      null
+    );
+  };
+
+  const findPayloadLabelById = (payload, targetId) => {
+    if (!payload || typeof payload !== "object" || !targetId) return null;
+
+    for (const value of Object.values(payload)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item?._id?.toString?.() === targetId) {
+            const label = getReadableLogLabel(item);
+            if (label) return label;
+          }
+        }
+        continue;
+      }
+
+      if (value?._id?.toString?.() === targetId) {
+        const label = getReadableLogLabel(value);
+        if (label) return label;
+      }
+    }
+
+    return null;
+  };
+
+  const formatLogPath = (path, payload) => {
+    const cleanSegments = (path || "")
+      .split("/")
+      .filter(Boolean)
+      .slice(2)
+      .map((segment) => {
+        if (!isMongoIdSegment(segment)) return segment;
+        return findPayloadLabelById(payload, segment) || "-";
+      })
+      .filter(Boolean);
+
+    return cleanSegments.join(" > ") || "-";
+  };
+
+  const formatLogActivity = (action, path) => {
+    if (!action) return "-";
+    if (!isMongoIdSegment(action)) return action;
+
+    const fallbackActivity = (path || "")
+      .split("/")
+      .filter(Boolean)
+      .slice(2)
+      .find((segment) => !isMongoIdSegment(segment));
+
+    return fallbackActivity || "-";
+  };
+
   const columns = [
     {
       headerName: "Sr No",
@@ -44,7 +117,7 @@ const LogPage = () => {
     },
     {
       headerName: "Activity",
-      field: "action",
+      field: "activity",
       flex: 1,
     },
     {
@@ -97,8 +170,9 @@ const LogPage = () => {
     // : data.map((item) => ({
       : (data || []) . map ( ( item ) => ({
         ...item,
+        activity: formatLogActivity(item.action, item.path),
         user: `${item.performedBy?.firstName} ${item.performedBy?.lastName}`,
-         path : item. path ?. split ( "/" ). splice ( 2 ). join ( " > " ) || "-",
+         path : formatLogPath(item.path, item.payload),
        // path: item.path.split("/").splice(2).join(" > "),
         createdAt: item.createdAt,
         payload: item.payload,
@@ -118,8 +192,7 @@ const LogPage = () => {
       .replace(/^./, (str) => str.toUpperCase());
   };
 
-  const isMongoId = (value) =>
-    typeof value === "string" && /^[a-f\d]{24}$/i.test(value);
+  const isMongoId = (value) => isMongoIdSegment(value);
 
   // Enhanced filter for object fields
   // const shouldSkipField = (key, value) => {
