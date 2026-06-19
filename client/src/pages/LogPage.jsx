@@ -213,37 +213,91 @@ const LogPage = () => {
     return false;
   };
 
+  const formatNestedDisplayValue = (value, parentKey = "") => {
+    if (value === null || value === undefined || value === "") return "-";
+
+    if (Array.isArray(value)) {
+      const visibleItems = value.filter((item) => {
+        if (typeof item === "object" && item !== null) {
+          return Object.entries(item).some(
+            ([itemKey, itemValue]) => !shouldSkipField(itemKey, itemValue),
+          );
+        }
+        return !isMongoId(item);
+      });
+
+      if (!visibleItems.length) return "-";
+
+      return (
+        <ul className="list-disc list-inside">
+          {visibleItems.map((item, idx) => (
+            <li key={idx}>
+              {typeof item === "object" && item !== null
+                ? formatNestedDisplayValue(item, parentKey)
+                : formatNestedDisplayValue(item, parentKey)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    if (typeof value === "object") {
+      const entries = Object.entries(value).filter(
+        ([childKey, childValue]) => !shouldSkipField(childKey, childValue),
+      );
+
+      if (!entries.length) return "-";
+
+      return (
+        <div className="grid grid-cols-1 gap-1 text-sm max-w-md overflow-x-auto">
+          {entries.map(([childKey, childValue], idx) => {
+            const isImageField = childKey.toLowerCase().includes("image");
+            if (isImageField && childValue) {
+              const imageUrl =
+                typeof childValue === "string"
+                  ? childValue
+                  : childValue.url || null;
+
+              if (imageUrl) {
+                return (
+                  <div key={idx} className="flex flex-col gap-1">
+                    <span>{formatKey(childKey)}:</span>
+                    <img
+                      src={imageUrl}
+                      alt={childKey}
+                      className="h-24 w-24 rounded border object-cover"
+                    />
+                  </div>
+                );
+              }
+            }
+
+            return (
+              <div key={idx} className="flex gap-1 items-start">
+                <span className="whitespace-nowrap">{formatKey(childKey)}:</span>
+                <span className="break-words">
+                  {formatNestedDisplayValue(childValue, childKey)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (parentKey.toLowerCase().includes("date")) return humanDate(value);
+    if (parentKey.toLowerCase().includes("time")) return humanTime(value);
+
+    return String(value);
+  };
+
   const formatValue = (key, value) => {
     if (shouldSkipField(key, value)) return null;
     if (isMongoId(value)) return null;
 
     // Arrays
     if (Array.isArray(value)) {
-      const cleanList = value.filter(
-        (item) => !isMongoId(item) && typeof item !== "object",
-      );
-
-      const cleanedObjects = value
-        .filter((item) => typeof item === "object" && item !== null)
-        .map((obj) =>
-          Object.fromEntries(
-            Object.entries(obj).filter(([k, v]) => !shouldSkipField(k, v)),
-          ),
-        );
-
-      const finalList = [...cleanList, ...cleanedObjects].filter(Boolean);
-
-      if (finalList.length === 0) return "-";
-
-      return (
-        <ul className="list-disc list-inside">
-          {finalList.map((item, idx) => (
-            <li key={idx}>
-              {typeof item === "object" ? JSON.stringify(item) : item}
-            </li>
-          ))}
-        </ul>
-      );
+      return formatNestedDisplayValue(value, key);
     }
 
     // Objects
@@ -252,65 +306,9 @@ const LogPage = () => {
         ([subKey, subVal]) => !shouldSkipField(subKey, subVal),
       );
 
-      const hasImage = Object.keys(value).some((k) =>
-        k.toLowerCase().includes("image"),
-      );
+      if (!entries.length) return null;
 
-      if (entries.length === 0 && !hasImage) return null;
-
-      return (
-        <div className="grid grid-cols-1 gap-1 text-sm max-w-md overflow-x-auto">
-          {Object.entries(value).map(([innerKey, innerValue], idx) => {
-            if (shouldSkipField(innerKey, innerValue)) return null;
-
-            const isImageField = innerKey.toLowerCase().includes("image");
-            if (isImageField && innerValue) {
-              const imageUrl =
-                typeof innerValue === "string"
-                  ? innerValue
-                  : innerValue.url || null;
-
-              if (imageUrl) {
-                return (
-                  <div key={idx} className="flex flex-col gap-1">
-                    <span>{formatKey(innerKey)}:</span>
-                    <img
-                      src={imageUrl}
-                      alt={innerKey}
-                      className="h-24 w-24 rounded border object-cover"
-                    />
-                  </div>
-                );
-              }
-            }
-
-            if (
-              typeof innerValue !== "object" ||
-              innerValue === null ||
-              Array.isArray(innerValue)
-            ) {
-              let displayValue = innerValue;
-
-              if (innerKey.toLowerCase().includes("date")) {
-                displayValue = humanDate(innerValue);
-              } else if (innerKey.toLowerCase().includes("time")) {
-                displayValue = humanTime(innerValue);
-              }
-
-              return (
-                <div key={idx} className="flex gap-1 items-start">
-                  <span className="whitespace-nowrap">
-                    {formatKey(innerKey)}:
-                  </span>
-                  <span className="break-words">{displayValue ?? "-"}</span>
-                </div>
-              );
-            }
-
-            return null;
-          })}
-        </div>
-      );
+      return formatNestedDisplayValue(value, key);
     }
 
     // Top-level key formatting
