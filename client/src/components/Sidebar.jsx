@@ -29,6 +29,7 @@ import { TiTicket } from "react-icons/ti";
 import SeperatorUnderline from "./SeperatorUnderline";
 import { VscPersonAdd } from "react-icons/vsc";
 import { GrDocumentPerformance } from "react-icons/gr";
+import { FaClipboardUser } from "react-icons/fa6";
 import useAuth from "../hooks/useAuth";
 import { PERMISSIONS } from "../constants/permissions";
 
@@ -100,12 +101,20 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       route: "visitors",
       permission: PERMISSIONS.SIDEBAR_VISITORS.value,
     },
+    {
+     name: "Reports",
+      icon: <TbReportSearch />,
+      route: "reports",
+      permission: PERMISSIONS.SIDEBAR_REPORTS.value,
+    },
      ].filter((item) => canAccessSidebarItem(item.permission));
   // ].filter(
   //   (item) =>
   //     canAccessSidebarItem(item.permission) &&
   //     (item.route !== "visitors" || canAccessVisitorsByDepartment),
   // );
+
+
 
   const generalItems = [
     {
@@ -136,22 +145,16 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
 
   const upcomingItems = [
     {
-      name: "Reports",
-      icon: <TbReportSearch />,
-      route: "reports",
-      permission: PERMISSIONS.SIDEBAR_REPORTS.value,
-    },
-    // {
-    //   name: "Assets",
-    //   icon: <FaBoxesStacked />,
-    //   route: "assets",
-    //   permission: PERMISSIONS.SIDEBAR_ASSETS.value,
-    // },
-    {
       name: "Chat",
       icon: <HiOutlineChatAlt2 />,
       route: "#",
       permission: PERMISSIONS.SIDEBAR_CHAT.value,
+    },
+     {
+      name: "Logs",
+      icon: <FaClipboardUser />,
+      route: "secret-logs",
+      permission: PERMISSIONS.SIDEBAR_LOGS.value,
     },
   ].filter((item) => canAccessSidebarItem(item.permission));
 

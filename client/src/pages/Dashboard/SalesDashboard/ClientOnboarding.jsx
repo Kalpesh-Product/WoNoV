@@ -173,7 +173,8 @@ const ClientOnboarding = () => {
         reset();
       },
       onError: (error) => {
-        toast.error(error.message);
+        toast.error(error?.response?.data?.message ||
+          error?.message || "Failed to onboard client");
       },
     });
 
