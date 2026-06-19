@@ -3394,6 +3394,12 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     access: "page",
   },
+  SIDEBAR_PRINTOUTS: {
+    value: "sidebar_printouts",
+    title: "PRINTOUT",
+    type: "read",
+    access: "page",
+  },
   SIDEBAR_ASSETS: {
     value: "sidebar_assets",
     title: "ASSETS",
