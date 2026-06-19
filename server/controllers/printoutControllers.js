@@ -82,12 +82,20 @@ const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
     "printoutCount",
   ];
 
-  const isClient = company.toString() !== body.client.toString();
+  //   const isClient = company.toString() !== body.client.toString();
 
-  const clientModel = isClient ? "CoworkingClient" : "Company";
-  const requestedByModel = isClient ? "CoworkingMember" : "UserData";
+  //   const clientModel = isClient ? "CoworkingClient" : "Company";
+  //   const requestedByModel = isClient ? "CoworkingMember" : "UserData";
 
-  const payload = { clientModel, requestedByModel };
+  //   const payload = { clientModel, requestedByModel };
+
+  const payload = {};
+
+  if (body.client !== undefined && body.client !== null && body.client !== "") {
+    const isClient = company.toString() !== body.client.toString();
+    payload.clientModel = isClient ? "CoworkingClient" : "Company";
+    payload.requestedByModel = isClient ? "CoworkingMember" : "UserData";
+  }
 
   allowedFields.forEach((field) => {
     if (body[field] !== undefined) {
@@ -148,6 +156,8 @@ const addPrintout = async (req, res) => {
 const editPrintout = async (req, res) => {
   try {
     const { id } = req.params;
+    const { company } = req;
+
     if (!isValidObjectId(id)) {
       return res.status(400).json({ message: "Invalid printout ID provided" });
     }
