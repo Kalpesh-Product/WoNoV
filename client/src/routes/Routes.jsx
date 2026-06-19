@@ -2971,6 +2971,15 @@ export const routes = createBrowserRouter([
                 element: <Chat />,
               },
               {
+                path: "secret-logs",
+                element: (
+                  <PerformancePermissionRoute
+                    element={<LogPage />}
+                    permissions={[PERMISSIONS.SIDEBAR_LOGS]}
+                  />
+                ),
+              },
+              {
                 path: "profile",
                 element: <ProfileLayout />,
                 children: [
@@ -4112,16 +4121,6 @@ export const routes = createBrowserRouter([
             ],
           },
         ],
-      },
-      {
-        path: "secret-logs",
-          element: (
-          <PerformancePermissionRoute
-            element={<LogPage />}
-            permissions={[PERMISSIONS.SIDEBAR_LOGS]}
-          />
-        ),
-        //element: <LogPage />,
       },
       {
         path: "unauthorized",
