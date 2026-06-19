@@ -132,16 +132,15 @@ const LogPage = () => {
     },
     {
       headerName: "Date",
-      field: "createdAt",
+      field: "createdAtExport",
       flex: 1,
-      // cellRenderer: (params) => humanDate(params.value),
       valueFormatter: (params) => {
         if (!params.value) return "-";
-        return `${humanDate(params.value)}, ${humanTime(params.value)}`;
+        return params.value;
       },
       cellRenderer: (params) => {
-        if (!params.value) return "-";
-        return `${humanDate(params.value)}, ${humanTime(params.value)}`;
+        if (!params.data?.createdAt) return "-";
+        return `${humanDate(params.data.createdAt)}, ${humanTime(params.data.createdAt)}`;
       },
     },
        {
@@ -173,8 +172,10 @@ const LogPage = () => {
         activity: formatLogActivity(item.action, item.path),
         user: `${item.performedBy?.firstName} ${item.performedBy?.lastName}`,
          path : formatLogPath(item.path, item.payload),
-       // path: item.path.split("/").splice(2).join(" > "),
         createdAt: item.createdAt,
+        createdAtExport: item.createdAt
+          ? `${humanDate(item.createdAt)}, ${humanTime(item.createdAt)}`
+          : "-",
         payload: item.payload,
       }));
 
