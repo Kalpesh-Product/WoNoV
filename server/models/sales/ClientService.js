@@ -10,12 +10,16 @@ const clientServiceSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const ClientService = mongoose.model("ClientService", clientServiceSchema);
