@@ -20,7 +20,7 @@ const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
   const errors = [];
   const requiredFields = [
-    "timeTakenAt",
+    "takenAt",
     "unit",
     "client",
     "requestedBy",
@@ -53,10 +53,10 @@ const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
   );
 
   if (
-    payload.timeTakenAt !== undefined &&
-    isNaN(new Date(payload.timeTakenAt).getTime())
+    payload.takenAt !== undefined &&
+    isNaN(new Date(payload.takenAt).getTime())
   ) {
-    errors.push("Invalid timeTakenAt provided");
+    errors.push("Invalid takenAt provided");
   }
 
   if (payload.printoutCount !== undefined) {
@@ -72,7 +72,7 @@ const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
 const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
   const allowedFields = [
     "takenBy",
-    "timeTakenAt",
+    "takenAt",
     "unit",
     "client",
     "clientModel",
@@ -103,8 +103,8 @@ const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
     }
   });
 
-  if (payload.timeTakenAt !== undefined) {
-    payload.timeTakenAt = new Date(payload.timeTakenAt);
+  if (payload.takenAt !== undefined) {
+    payload.takenAt = new Date(payload.takenAt);
   }
   if (payload.printoutCount !== undefined) {
     payload.printoutCount = Number(payload.printoutCount);
@@ -249,13 +249,13 @@ const getPrintouts = async (req, res) => {
     });
 
     if (fromDate || toDate) {
-      filters.timeTakenAt = {};
+      filters.takenAt = {};
       if (fromDate) {
         const parsedFromDate = new Date(fromDate);
         if (isNaN(parsedFromDate.getTime())) {
           filterErrors.push("Invalid fromDate provided");
         } else {
-          filters.timeTakenAt.$gte = parsedFromDate;
+          filters.takenAt.$gte = parsedFromDate;
         }
       }
       if (toDate) {
@@ -263,11 +263,11 @@ const getPrintouts = async (req, res) => {
         if (isNaN(parsedToDate.getTime())) {
           filterErrors.push("Invalid toDate provided");
         } else {
-          filters.timeTakenAt.$lte = parsedToDate;
+          filters.takenAt.$lte = parsedToDate;
         }
       }
-      if (!Object.keys(filters.timeTakenAt).length) {
-        delete filters.timeTakenAt;
+      if (!Object.keys(filters.takenAt).length) {
+        delete filters.takenAt;
       }
     }
 
@@ -280,7 +280,7 @@ const getPrintouts = async (req, res) => {
 
     const printouts = await Printout.find(filters)
       .populate(populatePrintout)
-      .sort({ timeTakenAt: -1 })
+      .sort({ takenAt: -1 })
       .lean()
       .exec();
 
