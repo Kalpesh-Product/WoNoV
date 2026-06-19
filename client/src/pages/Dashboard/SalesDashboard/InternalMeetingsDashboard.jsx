@@ -143,8 +143,7 @@ const InternalMeetingsDashboard = () => {
 
         const internalMeetings = meetings.filter(
             (meeting) =>
-                meeting.meetingType === "Internal" &&
-                meeting.meetingStatus !== "Completed"
+                meeting.meetingType === "Internal"
         );
 
         return internalMeetings.map((meeting, index) => {
