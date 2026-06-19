@@ -6,6 +6,8 @@ import humanDate from "../utils/humanDateForamt";
 import humanTime from "../utils/humanTime";
 import DetalisFormatted from "../components/DetalisFormatted";
 import MuiModal from "../components/MuiModal";
+import PageFrame from "../components/Pages/PageFrame";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const LogPage = () => {
   const axios = useAxiosPrivate();
@@ -37,19 +39,13 @@ const LogPage = () => {
     {
       headerName: "Sr No",
       field: "srNo",
-      width: 80,
+      width: 100,
+      sort: "desc"
     },
     {
-      headerName: "Action",
+      headerName: "Activity",
       field: "action",
       flex: 1,
-      cellRenderer: (params) => (
-        <div role="button" onClick={() => handleViewlog(params.data.payload)}>
-          <span className="underline text-primary cursor-pointer">
-            {params.value}
-          </span>
-        </div>
-      ),
     },
     {
       headerName: "User",
@@ -74,6 +70,26 @@ const LogPage = () => {
         if (!params.value) return "-";
         return `${humanDate(params.value)}, ${humanTime(params.value)}`;
       },
+    },
+       {
+      headerName: "Actions",
+      field: "actions",
+      flex:1,
+      align: "left",
+      pinned:"right",
+      suppressCsvExport: true,
+      cellRenderer: (params) => (
+        <div className="flex items-center justify-center h-full">
+          <button
+            type="button"
+            aria-label="View log details"
+            onClick={() => handleViewlog(params.data.payload)}
+            className="text-[#5f6368] hover:text-primary"
+          >
+            <MdOutlineRemoveRedEye size={20} />
+          </button>
+        </div>
+      ),
     },
   ];
   const tableData = isLoading
@@ -232,45 +248,45 @@ const LogPage = () => {
 
   return (
     <div className="p-4">
-      <YearWiseTable
-        data={tableData || []}
-        columns={columns}
-        dateColumn="createdAt"
-        tableHeight={400}
-        tableTitle="Logs Table"
-        exportData={true}
-        search={true}
-      />
-      <MuiModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        title="View Log"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
-          {selectedLog &&
-            Object.entries(selectedLog).map(([key, value], index) => {
-              console.log("keys", key, "->", skipKeys.includes(key));
-              if (skipKeys.includes(key)) {
-                console.log("inside", key, "->", skipKeys.includes(key));
-                return null;
-              }
-              const formattedKey = formatKey(key);
-              const formattedValue = formatValue(key, value);
+      <PageFrame>
+        <YearWiseTable
+          data={tableData || []}
+          columns={columns}
+          dateColumn="createdAt"
+          tableHeight={400}
+          tableTitle="Logs Table"
+          exportData={true}
+          search={true}
+        />
+        <MuiModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          title="View Log"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            {selectedLog &&
+              Object.entries(selectedLog).map(([key, value], index) => {
+                console.log("keys", key, "->", skipKeys.includes(key));
+                if (skipKeys.includes(key)) {
+                  console.log("inside", key, "->", skipKeys.includes(key));
+                  return null;
+                }
+                const formattedKey = formatKey(key);
+                const formattedValue = formatValue(key, value);
 
-              // Skip rendering completely if key OR value is null
+                if (!formattedKey || formattedValue === null) return null;
 
-              if (!formattedKey || formattedValue === null) return null;
-
-              return (
-                <DetalisFormatted
-                  key={index}
-                  title={formattedKey}
-                  detail={formattedValue}
-                />
-              );
-            })}
-        </div>
-      </MuiModal>
+                return (
+                  <DetalisFormatted
+                    key={index}
+                    title={formattedKey}
+                    detail={formattedValue}
+                  />
+                );
+              })}
+          </div>
+        </MuiModal>
+      </PageFrame>
     </div>
   );
 };
