@@ -3408,7 +3408,7 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
   },
   SIDEBAR_LOGS: {
     value: "sidebar_logs",
-    title: "Logs",
+    title: "LOGS",
     type: "read",
     access: "page",
   },
