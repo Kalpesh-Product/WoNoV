@@ -111,7 +111,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
      {
      name: "Printout",
       icon: <IoPrintOutline />,
-      route: "#",
+      route : " printouts " ,
       permission: PERMISSIONS.SIDEBAR_PRINTOUTS.value,
     },
      ].filter((item) => canAccessSidebarItem(item.permission));

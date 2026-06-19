@@ -634,6 +634,26 @@ export const PERMISSIONS = {
     type: "read",
   },
 
+   // Printout Module
+  PRINTOUT_ADD_PRINTOUT: {
+    value: "printout_add_printout",
+    title: "ADD PRINTOUT",
+    type: "read",
+    route: "/app/printouts/add-printout",
+  },
+  PRINTOUT_MANAGE_PRINTOUT: {
+    value: "printout_manage_printout",
+    title: "MANAGE PRINTOUT",
+    type: "read",
+    route: "/app/printouts/manage-printout",
+  },
+  PRINTOUT_REPORT_PRINTOUT: {
+    value: "printout_report_printout",
+    title: "REPORT PRINTOUT",
+    type: "read",
+    route: "/app/printouts/report-printout",
+  },
+
   // Meetings Module
 
   //Meeting Graphs
