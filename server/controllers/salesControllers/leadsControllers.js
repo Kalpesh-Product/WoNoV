@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Lead = require("../../models/sales/Lead");
 const Unit = require("../../models/locations/Unit");
+const CustomError = require("../../utils/customErrorlogs");
+const { createLog } = require("../../utils/moduleLogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const fs = require("fs");
@@ -175,7 +177,8 @@ const editLead = async (req, res, next) => {
   const { user, ip, company } = req;
 
   try {
-    const { leadId } = req.params;
+   // const { leadId } = req.params;
+    const leadId = req.params.leadId || req.body.leadId;
 
     if (!mongoose.Types.ObjectId.isValid(leadId)) {
       throw new CustomError(
