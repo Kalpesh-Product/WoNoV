@@ -2,7 +2,6 @@ import { CgProfile } from "react-icons/cg";
 import { MdFormatListBulleted } from "react-icons/md";
 import { RiArchiveDrawerLine, RiPagesLine } from "react-icons/ri";
 import Card from "../../components/Card";
-import WidgetSection from "../../components/WidgetSection";
 import { PERMISSIONS } from "../../constants/permissions";
 import useAuth from "../../hooks/useAuth";
 
@@ -37,7 +36,15 @@ const PrintoutDashboard = () => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <WidgetSection title="Printout Dashboard" border layout={allowedCards.length}>
+      <div
+        className={`grid gap-4 ${
+          allowedCards.length <= 1
+            ? "grid-cols-1"
+            : allowedCards.length === 2
+              ? "grid-cols-1 md:grid-cols-2"
+              : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+        }`}
+      >
         {allowedCards.map((card) => (
           <Card
             key={card.title}
@@ -46,7 +53,7 @@ const PrintoutDashboard = () => {
             icon={card.icon || <CgProfile />}
           />
         ))}
-      </WidgetSection>
+      </div>
     </div>
   );
 };
