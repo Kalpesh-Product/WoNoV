@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import YearWiseTable from "../components/Tables/YearWiseTable";
 import humanDate from "../utils/humanDateForamt";
@@ -8,27 +8,48 @@ import DetalisFormatted from "../components/DetalisFormatted";
 import MuiModal from "../components/MuiModal";
 import PageFrame from "../components/Pages/PageFrame";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import dayjs from "dayjs";
 
 const LogPage = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
+  const [selectedLogDate, setSelectedLogDate] = useState(() =>
+    dayjs().startOf("day"),
+  );
+
+  const selectedLogDateKey = selectedLogDate.format("YYYY-MM-DD");
+  const selectedLogDateLabel = selectedLogDate.format("MMM D, YYYY");
+
   const [selectedLog, setselectedLog] = useState({});
   const { data, isLoading } = useQuery({
-    queryKey: [" secret-logs"],
+    queryKey: ["secret-logs", selectedLogDateKey],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/logs/get-logs");
-          return response.data || [ ]
- ;
+        // const response = await axios.get("/api/logs/get-logs");
+        const response = await axios.get("/api/logs/get-logs", {
+          params: {
+            fromDate: selectedLogDateKey,
+            toDate: selectedLogDateKey,
+          },
+        });
+        return response.data || [];
       } catch (error) {
-        console . error (error?. response ?. data ?. message || error. message );
+        console.error(error?.response?.data?.message || error.message);
         return [];
-      //   return response.data;
-      // } catch (error) {
-      //   console.error(error.response.data.message);
+        //   return response.data;
+        // } catch (error) {
+        //   console.error(error.response.data.message);
       }
     },
   });
+
+  const handlePreviousLogDay = useCallback(() => {
+    setSelectedLogDate((prevDate) => prevDate.subtract(1, "day"));
+  }, []);
+
+  const handleNextLogDay = useCallback(() => {
+    setSelectedLogDate((prevDate) => prevDate.add(1, "day"));
+  }, []);
 
   const handleViewlog = (data) => {
     setselectedLog(data);
@@ -113,7 +134,7 @@ const LogPage = () => {
       headerName: "Sr No",
       field: "srNo",
       width: 100,
-      sort: "desc"
+      sort: "desc",
     },
     {
       headerName: "Activity",
@@ -143,12 +164,12 @@ const LogPage = () => {
         return `${humanDate(params.data.createdAt)}, ${humanTime(params.data.createdAt)}`;
       },
     },
-       {
+    {
       headerName: "Actions",
       field: "actions",
-      flex:1,
+      flex: 1,
       align: "left",
-      pinned:"right",
+      pinned: "right",
       suppressCsvExport: true,
       cellRenderer: (params) => (
         <div className="flex items-center justify-center h-full">
@@ -166,12 +187,12 @@ const LogPage = () => {
   ];
   const tableData = isLoading
     ? []
-    // : data.map((item) => ({
-      : (data || []) . map ( ( item ) => ({
+    : // : data.map((item) => ({
+      (data || []).map((item) => ({
         ...item,
         activity: formatLogActivity(item.action, item.path),
         user: `${item.performedBy?.firstName} ${item.performedBy?.lastName}`,
-         path : formatLogPath(item.path, item.payload),
+        path: formatLogPath(item.path, item.payload),
         createdAt: item.createdAt,
         createdAtExport: item.createdAt
           ? `${humanDate(item.createdAt)}, ${humanTime(item.createdAt)}`
@@ -274,7 +295,9 @@ const LogPage = () => {
 
             return (
               <div key={idx} className="flex gap-1 items-start">
-                <span className="whitespace-nowrap">{formatKey(childKey)}:</span>
+                <span className="whitespace-nowrap">
+                  {formatKey(childKey)}:
+                </span>
                 <span className="break-words">
                   {formatNestedDisplayValue(childValue, childKey)}
                 </span>
@@ -329,6 +352,10 @@ const LogPage = () => {
           tableTitle="Logs Table"
           exportData={true}
           search={true}
+          showDateNavigator
+          selectedDateLabel={selectedLogDateLabel}
+          onPreviousDay={handlePreviousLogDay}
+          onNextDay={handleNextLogDay}
         />
         <MuiModal
           open={openModal}

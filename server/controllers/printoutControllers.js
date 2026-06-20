@@ -6,7 +6,7 @@ const clientModels = ["CoworkingClient", "Company"];
 const requestedByModels = ["CoworkingMember", "UserData"];
 const populatePrintout = [
   { path: "takenBy", select: "firstName lastName" },
-  { path: "location", select: "buildingName fullAddress" },
+  { path: "location", select: "buildingName" },
   {
     path: "unit",
     select: "unitName unitNo",
@@ -41,18 +41,23 @@ const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
     });
   }
 
-  ["takenBy", "location", "unit", "client", "requestedBy", "department"].forEach(
-    (field) => {
-      if (
-        payload[field] !== undefined &&
-        payload[field] !== null &&
-        payload[field] !== "" &&
-        !isValidObjectId(payload[field])
-      ) {
-        errors.push(`Invalid ${field} ID provided`);
-      }
-    },
-  );
+  [
+    "takenBy",
+    "location",
+    "unit",
+    "client",
+    "requestedBy",
+    "department",
+  ].forEach((field) => {
+    if (
+      payload[field] !== undefined &&
+      payload[field] !== null &&
+      payload[field] !== "" &&
+      !isValidObjectId(payload[field])
+    ) {
+      errors.push(`Invalid ${field} ID provided`);
+    }
+  });
 
   if (
     payload.takenAt !== undefined &&
@@ -83,14 +88,8 @@ const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
     "requestedBy",
     "department",
     "printoutCount",
+    "remark",
   ];
-
-  //   const isClient = company.toString() !== body.client.toString();
-
-  //   const clientModel = isClient ? "CoworkingClient" : "Company";
-  //   const requestedByModel = isClient ? "CoworkingMember" : "UserData";
-
-  //   const payload = { clientModel, requestedByModel };
 
   const payload = {};
 
@@ -231,8 +230,15 @@ const getPrintouts = async (req, res) => {
       });
     }
 
-    const {location, unit, client, requestedBy, department, fromDate, toDate } =
-      req.query;
+    const {
+      location,
+      unit,
+      client,
+      requestedBy,
+      department,
+      fromDate,
+      toDate,
+    } = req.query;
     const filters = {};
 
     const filterErrors = [];

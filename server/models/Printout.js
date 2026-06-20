@@ -12,7 +12,7 @@ const printoutSchema = new mongoose.Schema(
       required: true,
       default: Date.now,
     },
-     location: {
+    location: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Building",
       default: null,
@@ -51,6 +51,9 @@ const printoutSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 1,
+    },
+    remark: {
+      type: String,
     },
   },
   { timestamps: true },
