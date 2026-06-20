@@ -6,12 +6,13 @@ const clientModels = ["CoworkingClient", "Company"];
 const requestedByModels = ["CoworkingMember", "UserData"];
 const populatePrintout = [
   { path: "takenBy", select: "firstName lastName" },
+  { path: "location", select: "buildingName fullAddress" },
   {
     path: "unit",
     select: "unitName unitNo",
   },
-  { path: "client", select: "clientName" },
-  { path: "requestedBy", select: "employeeName" },
+  { path: "client", select: "clientName companyName name" },
+  { path: "requestedBy", select: "employeeName firstName lastName name email" },
   { path: "department", select: "departmentId name" },
 ];
 
@@ -21,6 +22,7 @@ const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
   const errors = [];
   const requiredFields = [
     "takenAt",
+    "location",
     "unit",
     "client",
     "requestedBy",
@@ -39,18 +41,23 @@ const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
     });
   }
 
-  ["takenBy", "unit", "client", "requestedBy", "department"].forEach(
-    (field) => {
-      if (
-        payload[field] !== undefined &&
-        payload[field] !== null &&
-        payload[field] !== "" &&
-        !isValidObjectId(payload[field])
-      ) {
-        errors.push(`Invalid ${field} ID provided`);
-      }
-    },
-  );
+  [
+    "takenBy",
+    "location",
+    "unit",
+    "client",
+    "requestedBy",
+    "department",
+  ].forEach((field) => {
+    if (
+      payload[field] !== undefined &&
+      payload[field] !== null &&
+      payload[field] !== "" &&
+      !isValidObjectId(payload[field])
+    ) {
+      errors.push(`Invalid ${field} ID provided`);
+    }
+  });
 
   if (
     payload.takenAt !== undefined &&
@@ -73,6 +80,7 @@ const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
   const allowedFields = [
     "takenBy",
     "takenAt",
+    "location",
     "unit",
     "client",
     "clientModel",
@@ -228,14 +236,20 @@ const getPrintouts = async (req, res) => {
       });
     }
 
-    const departmentIds = departments.map((dept) => dept._id);
-
-    const { unit, client, requestedBy, department, fromDate, toDate } =
-      req.query;
+    const {
+      location,
+      unit,
+      client,
+      requestedBy,
+      department,
+      fromDate,
+      toDate,
+    } = req.query;
     const filters = {};
 
     const filterErrors = [];
     [
+      ["location", location],
       ["unit", unit],
       ["client", client],
       ["requestedBy", requestedBy],

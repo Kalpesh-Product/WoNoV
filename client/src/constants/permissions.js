@@ -634,6 +634,26 @@ export const PERMISSIONS = {
     type: "read",
   },
 
+   // Printout Module
+  PRINTOUT_ADD_PRINTOUT: {
+    value: "printout_add_printout",
+    title: "ADD PRINTOUT",
+    type: "read",
+    route: "/app/printouts/add-printout",
+  },
+  PRINTOUT_MANAGE_PRINTOUT: {
+    value: "printout_manage_printout",
+    title: "MANAGE PRINTOUT",
+    type: "read",
+    route: "/app/printouts/manage-printout",
+  },
+  PRINTOUT_REPORT_PRINTOUT: {
+    value: "printout_report_printout",
+    title: "REPORT PRINTOUT",
+    type: "read",
+    route: "/app/printouts/report-printout",
+  },
+
   // Meetings Module
 
   //Meeting Graphs
@@ -3391,6 +3411,12 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
   SIDEBAR_REPORTS: {
     value: "sidebar_reports",
     title: "REPORTS",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_PRINTOUTS: {
+    value: "sidebar_printouts",
+    title: "PRINTOUT",
     type: "read",
     access: "page",
   },
