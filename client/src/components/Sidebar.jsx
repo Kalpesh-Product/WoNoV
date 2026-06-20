@@ -30,6 +30,7 @@ import SeperatorUnderline from "./SeperatorUnderline";
 import { VscPersonAdd } from "react-icons/vsc";
 import { GrDocumentPerformance } from "react-icons/gr";
 import { FaClipboardUser } from "react-icons/fa6";
+import { IoPrintOutline } from "react-icons/io5";
 import useAuth from "../hooks/useAuth";
 import { PERMISSIONS } from "../constants/permissions";
 
@@ -106,6 +107,12 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       icon: <TbReportSearch />,
       route: "reports",
       permission: PERMISSIONS.SIDEBAR_REPORTS.value,
+    },
+     {
+     name: "Printout",
+      icon: <IoPrintOutline />,
+      route: "printouts",
+      permission: PERMISSIONS.SIDEBAR_PRINTOUTS.value,
     },
      ].filter((item) => canAccessSidebarItem(item.permission));
   // ].filter(

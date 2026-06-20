@@ -195,6 +195,11 @@ import RepeatExternalCompaanies from "../pages/Visitors/RepeatExternalCompaanies
 import ConvertInternalVisitors from "../pages/Visitors/ConvertInternalVisitors";
 import RepeatInternalVisitors from "../pages/Visitors/RepeatInternalVisitors";
 import VisitorBulkUpload from "../pages/Visitors/VisitorSettings/VisitorBulkUpload";
+import PrintoutLayout from "../pages/Printout/PrintoutLayout";
+import PrintoutDashboard from "../pages/Printout/PrintoutDashboard";
+import AddPrintout from "../pages/Printout/AddPrintout";
+import ManagePrintout from "../pages/Printout/ManagePrintout";
+import ReportPrintout from "../pages/Printout/ReportPrintout";
 import ProfileLayout from "../pages/Profile/ProfileLayout";
 import MyProfile from "../pages/Profile/MyProfile";
 import ChangePassword from "../pages/Profile/ChangePassword";
@@ -3986,6 +3991,49 @@ export const routes = createBrowserRouter([
                         element: <AssetsBulkUpload />,
                       },
                     ],
+                  },
+                ],
+              },
+               {
+                path: "printouts",
+                element: <PrintoutLayout />,
+                children: [
+                  {
+                    path: "",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<PrintoutDashboard />}
+                        permissions={[PERMISSIONS.SIDEBAR_PRINTOUTS]}
+                      />
+                    ),
+                    index: true,
+                  },
+                  {
+                    path: "add-printout",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<AddPrintout />}
+                        permissions={[PERMISSIONS.PRINTOUT_ADD_PRINTOUT]}
+                      />
+                    ),
+                  },
+                  {
+                    path: "manage-printout",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<ManagePrintout />}
+                        permissions={[PERMISSIONS.PRINTOUT_MANAGE_PRINTOUT]}
+                      />
+                    ),
+                  },
+                  {
+                    path: "report-printout",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<ReportPrintout />}
+                        permissions={[PERMISSIONS.PRINTOUT_REPORT_PRINTOUT]}
+                      />
+                    ),
                   },
                 ],
               },

@@ -7,10 +7,15 @@ const printoutSchema = new mongoose.Schema(
       ref: "UserData",
       required: true,
     },
-    timeTakenAt: {
+    takenAt: {
       type: Date,
       required: true,
       default: Date.now,
+    },
+     location: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Building",
+      default: null,
     },
     unit: {
       type: mongoose.Schema.Types.ObjectId,
@@ -52,6 +57,7 @@ const printoutSchema = new mongoose.Schema(
 );
 
 printoutSchema.index({ timeTakenAt: -1 });
+printoutSchema.index({ location: 1, timeTakenAt: -1 });
 printoutSchema.index({ unit: 1, timeTakenAt: -1 });
 printoutSchema.index({ client: 1, timeTakenAt: -1 });
 printoutSchema.index({ requestedBy: 1, timeTakenAt: -1 });
