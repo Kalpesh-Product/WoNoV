@@ -641,18 +641,18 @@ const ManagePrintout = () => {
               name="printoutCount"
               control={control}
               rules={{
-                required: "Printout count is required",
-                min: { value: 1, message: "Printout count must be at least 1" },
+                required: "Quantity is required",
+                min: { value: 1, message: "Quantity must be at least 1" },
                 validate: (value) =>
                   Number.isInteger(Number(value)) ||
-                  "Printout count must be a whole number",
+                  "Quantity must be a whole number",
               }}
               render={({ field }) => (
                 <TextField
                   {...field}
                   size="small"
                   type="number"
-                  label="Printout Count"
+                  label="Quantity"
                   inputProps={{ min: 1, step: 1 }}
                   error={!!errors.printoutCount}
                   helperText={errors.printoutCount?.message}
