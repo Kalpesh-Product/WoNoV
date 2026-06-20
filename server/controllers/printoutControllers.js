@@ -6,7 +6,7 @@ const clientModels = ["CoworkingClient", "Company"];
 const requestedByModels = ["CoworkingMember", "UserData"];
 const populatePrintout = [
   { path: "takenBy", select: "firstName lastName" },
-  { path: "location", select: "buildingName fullAddress" },
+  { path: "location", select: "buildingName" },
   {
     path: "unit",
     select: "unitName unitNo",
