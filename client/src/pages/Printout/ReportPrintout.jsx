@@ -3,8 +3,10 @@ import { CircularProgress, Popover } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DateRangePicker } from "react-date-range";
-import { MdCalendarToday } from "react-icons/md";
+import { MdCalendarToday, MdOutlineRemoveRedEye } from "react-icons/md";
 import AgTable from "../../components/AgTable";
+import DetalisFormatted from "../../components/DetalisFormatted";
+import MuiModal from "../../components/MuiModal";
 import PageFrame from "../../components/Pages/PageFrame";
 import PrimaryButton from "../../components/PrimaryButton";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -48,6 +50,8 @@ const csvEscape = (value) => {
 
 const ReportPrintout = () => {
   const axios = useAxiosPrivate();
+  const [selectedPrintout, setSelectedPrintout] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [dateRange, setDateRange] = useState([
     {
       startDate: dayjs().startOf("month").toDate(),
@@ -86,6 +90,7 @@ const ReportPrintout = () => {
   const tableRows = useMemo(
     () =>
       filteredPrintouts.map((printout, index) => ({
+        rawPrintout: printout,
         srNo: index + 1,
         takenBy: getTableValue(getUserName(printout.takenBy)),
         takenAt: getTableValue(formatDateTime(printout.takenAt)),
@@ -109,7 +114,33 @@ const ReportPrintout = () => {
     { field: "requestedBy", headerName: "Person",flex:1},
     { field: "department", headerName: "Department",flex:1},
     { field: "printoutCount", headerName: "Quantity",flex:1},
+    // {
+    //   field: "actions",
+    //   headerName: "Action",
+    //   pinned: "right",
+    //   cellRenderer: ({ data }) => (
+    //     <div className="flex items-center gap-2">
+    //       <div
+    //         role="button"
+    //         onClick={() => openViewModal(data)}
+    //         className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
+    //       >
+    //         <MdOutlineRemoveRedEye />
+    //       </div>
+    //     </div>
+    //   ),
+    // },
   ];
+
+  const openViewModal = (row) => {
+    setSelectedPrintout(row?.rawPrintout || null);
+    setIsViewModalOpen(true);
+  };
+
+  const closeViewModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedPrintout(null);
+  };
 
   const handleOpenCalendar = (event) => {
     setAnchorEl(event.currentTarget);
@@ -210,6 +241,47 @@ const ReportPrintout = () => {
           ) : null}
         </div>
       </PageFrame>
+
+      <MuiModal
+        open={isViewModalOpen}
+        onClose={closeViewModal}
+        title="Printout Details"
+      >
+        <div className="flex flex-col gap-3">
+          <DetalisFormatted
+            title="Taken By"
+            detail={getUserName(selectedPrintout?.takenBy)}
+          />
+          <DetalisFormatted
+            title="Taken At"
+            detail={formatDateTime(selectedPrintout?.takenAt)}
+          />
+          <DetalisFormatted
+            title="Building"
+            detail={getLocationName(selectedPrintout?.location, selectedPrintout?.unit)}
+          />
+          <DetalisFormatted
+            title="Unit"
+            detail={getUnitName(selectedPrintout?.unit)}
+          />
+          <DetalisFormatted
+            title="Company"
+            detail={getCompanyName(selectedPrintout?.client)}
+          />
+          <DetalisFormatted
+            title="Person"
+            detail={getUserName(selectedPrintout?.requestedBy)}
+          />
+          <DetalisFormatted
+            title="Department"
+            detail={getDepartmentName(selectedPrintout?.department)}
+          />
+          <DetalisFormatted
+            title="Quantity"
+            detail={selectedPrintout?.printoutCount}
+          />
+        </div>
+      </MuiModal>
     </div>
   );
 };

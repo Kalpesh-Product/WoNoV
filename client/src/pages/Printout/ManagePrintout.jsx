@@ -311,19 +311,6 @@ const ManagePrintout = () => {
     setAnchorEl(null);
   };
 
-  const detailItems = selectedPrintout
-    ? [
-        ["Taken By", getUserName(selectedPrintout.takenBy)],
-        ["Taken At", formatDateTime(selectedPrintout.takenAt)],
-        ["Building", getLocationName(selectedPrintout.location, selectedPrintout.unit)],
-        ["Unit", getUnitName(selectedPrintout.unit)],
-        ["Company", getCompanyName(selectedPrintout.client)],
-        ["Person", getUserName(selectedPrintout.requestedBy)],
-        ["Department", getDepartmentName(selectedPrintout.department)],
-        ["Quantity", selectedPrintout.printoutCount],
-      ]
-    : [];
-
   const columns = [
     { field: "srNo", headerName: "Sr. No.", width: 110 },
     { field: "takenBy", headerName: "Taken By",flex:1},
@@ -426,9 +413,38 @@ const ManagePrintout = () => {
         title="Printout Details"
       >
         <div className="flex flex-col gap-3">
-          {detailItems.map(([title, detail]) => (
-            <DetalisFormatted key={title} title={title} detail={detail} />
-          ))}
+          <DetalisFormatted
+            title="Taken By"
+            detail={getUserName(selectedPrintout?.takenBy)}
+          />
+          <DetalisFormatted
+            title="Taken At"
+            detail={formatDateTime(selectedPrintout?.takenAt)}
+          />
+          <DetalisFormatted
+            title="Building"
+            detail={getLocationName(selectedPrintout?.location, selectedPrintout?.unit)}
+          />
+          <DetalisFormatted
+            title="Unit"
+            detail={getUnitName(selectedPrintout?.unit)}
+          />
+          <DetalisFormatted
+            title="Company"
+            detail={getCompanyName(selectedPrintout?.client)}
+          />
+          <DetalisFormatted
+            title="Person"
+            detail={getUserName(selectedPrintout?.requestedBy)}
+          />
+          <DetalisFormatted
+            title="Department"
+            detail={getDepartmentName(selectedPrintout?.department)}
+          />
+          <DetalisFormatted
+            title="Quantity"
+            detail={selectedPrintout?.printoutCount}
+          />
         </div>
       </MuiModal>
 
@@ -694,7 +710,7 @@ const ManagePrintout = () => {
           <div className="flex items-center justify-center gap-4 mt-6">
             <PrimaryButton
               type="submit"
-              title="Save Changes"
+              title="Save"
               isLoading={isUpdatingPrintout}
               disabled={isUpdatingPrintout}
             />
