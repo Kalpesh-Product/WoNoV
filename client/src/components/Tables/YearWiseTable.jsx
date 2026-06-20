@@ -50,13 +50,25 @@ const YearWiseTable = ({
   handleCustomExport,
   customExportDisabled = false,
   exportButtonTitle = "Export",
+  initialDateRange,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const today = useMemo(() => dayjs(), []);
 
-  const [dateRange, setDateRange] = useState([]);
+  // const [dateRange, setDateRange] = useState([]);
+  const [dateRange, setDateRange] = useState(() =>
+    initialDateRange
+      ? [
+          {
+            ...initialDateRange,
+            key: initialDateRange.key || "selection",
+          },
+        ]
+      : [],
+  );
+
   const [isUserChangedRange, setIsUserChangedRange] = useState(false);
   // Handle user-initiated date change
   const handleDateRangeChange = (item) => {
@@ -65,8 +77,18 @@ const YearWiseTable = ({
   };
 
   useEffect(() => {
-      if (!dateColumn || showDateNavigator || isUserChangedRange) return; // ✅ skip if user manually changed or parent controls date navigation
+    if (!dateColumn || showDateNavigator || isUserChangedRange) return; // ✅ skip if user manually changed or parent controls date navigation
     // if (!dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
+
+    if (initialDateRange) {
+      setDateRange([
+        {
+          ...initialDateRange,
+          key: initialDateRange.key || "selection",
+        },
+      ]);
+      return;
+    }
 
     if (!data.length) {
       setDateRange([]);
@@ -120,7 +142,14 @@ const YearWiseTable = ({
         key: "selection",
       },
     ]);
-     }, [data, dateColumn, isUserChangedRange, showDateNavigator, today]);
+  }, [
+    data,
+    dateColumn,
+    initialDateRange,
+    isUserChangedRange,
+    showDateNavigator,
+    today,
+  ]);
   // }, [data, dateColumn, isUserChangedRange, today]);
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -138,7 +167,13 @@ const YearWiseTable = ({
   }, [data, dateColumn]);
 
   const filteredData = useMemo(() => {
-        if (showDateNavigator || !dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
+    if (
+      showDateNavigator ||
+      !dateColumn ||
+      dateRange.length === 0 ||
+      !dateRange[0]
+    )
+      return data;
     //if (!dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
 
     const { startDate, endDate } = dateRange[0];
@@ -151,16 +186,16 @@ const YearWiseTable = ({
 
       return isWithinInterval(itemDate.toDate(), { start, end });
     });
-     }, [data, dateColumn, dateRange, showDateNavigator]);
+  }, [data, dateColumn, dateRange, showDateNavigator]);
   // }, [data, dateColumn, dateRange]);
 
-   useEffect(() => {
+  useEffect(() => {
     if (!onDateFilterChange) return;
     onDateFilterChange({
       isDateFilterActive: isUserChangedRange,
       filteredData,
-     selectedRange: dateRange[0] || null,
-      });
+      selectedRange: dateRange[0] || null,
+    });
   }, [dateRange, filteredData, isUserChangedRange, onDateFilterChange]);
 
   const rangeTotal = useMemo(() => {
@@ -281,7 +316,7 @@ const YearWiseTable = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
-<div className="w-full flex items-center justify-between gap-2">
+      <div className="w-full flex items-center justify-between gap-2">
         {tableTitle ? (
           <span className="text-title text-primary font-pmedium uppercase">
             {tableTitle}
@@ -345,7 +380,7 @@ const YearWiseTable = ({
               disabled={secondaryButtonDisabled}
             />
           )}
-           {middleButtonTitle && (
+          {middleButtonTitle && (
             <PrimaryButton
               title={middleButtonTitle}
               handleSubmit={handleMiddleSubmit}
@@ -381,36 +416,39 @@ const YearWiseTable = ({
         </div>
       </div>
       {/* {dateRange.length > 0 && dateRange[0] && ( */}
-      {!hideDateControls && !showDateNavigator && dateRange.length > 0 && dateRange[0] && (
-        <div className="flex justify-center items-center gap-2">
-          {/* Date information here */}
+      {!hideDateControls &&
+        !showDateNavigator &&
+        dateRange.length > 0 &&
+        dateRange[0] && (
+          <div className="flex justify-center items-center gap-2">
+            {/* Date information here */}
 
-          <div className="flex items-center gap-2  justify-center">
-            <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-              <span className="text-gray-600 text-content font-pregular">
-                {dateRange.length > 0 &&
-                  dateRange[0] &&
-                  dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
-              </span>{" "}
+            <div className="flex items-center gap-2  justify-center">
+              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRange.length > 0 &&
+                    dateRange[0] &&
+                    dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
+                </span>{" "}
+              </div>
+
+              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRange.length > 0 &&
+                    dateRange[0] &&
+                    dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
+                </span>
+              </div>
             </div>
-
-            <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-              <span className="text-gray-600 text-content font-pregular">
-                {dateRange.length > 0 &&
-                  dateRange[0] &&
-                  dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
-              </span>
+            <div
+              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+              onClick={handleOpenCalendar}
+            >
+              <MdCalendarToday size={19} />
             </div>
           </div>
-          <div
-            className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
-            onClick={handleOpenCalendar}
-          >
-            <MdCalendarToday size={19} />
-          </div>
-        </div>
-      )}
-       {!hideDateControls && showDateNavigator && (
+        )}
+      {!hideDateControls && showDateNavigator && (
         // <div className="flex justify-center items-center gap-2">
         //   <PrimaryButton title="<" handleSubmit={onPreviousDay} />
         //   <div className="px-6 py-1 rounded-md border-primary border-[1px] min-w-[170px] text-center">
@@ -421,29 +459,29 @@ const YearWiseTable = ({
         //   <PrimaryButton title=">" handleSubmit={onNextDay} />
         // </div>
         <div className="flex justify-center items-center gap-3">
-  {/* Previous Button */}
-  <button
-    onClick={onPreviousDay}
-    className="w-12 h-10 flex items-center justify-center rounded-xl bg-primary text-white text-2xl font-semibold hover:opacity-90 transition-all"
-  >
-    ‹
-  </button>
+          {/* Previous Button */}
+          <button
+            onClick={onPreviousDay}
+            className="w-12 h-10 flex items-center justify-center rounded-xl bg-primary text-white text-2xl font-semibold hover:opacity-90 transition-all"
+          >
+            ‹
+          </button>
 
-  {/* Date Box */}
-  <div className="px-4 py-1.5 rounded-lg border border-primary min-w-[140px] text-center bg-white">
-    <span className="text-gray-600 text-sm font-pregular">
-      {selectedDateLabel}
-    </span>
-  </div>
+          {/* Date Box */}
+          <div className="px-4 py-1.5 rounded-lg border border-primary min-w-[140px] text-center bg-white">
+            <span className="text-gray-600 text-sm font-pregular">
+              {selectedDateLabel}
+            </span>
+          </div>
 
-  {/* Next Button */}
-  <button
-    onClick={onNextDay}
-    className="w-12 h-10 flex items-center justify-center rounded-xl bg-primary text-white text-2xl font-semibold hover:opacity-90 transition-all"
-  >
-    ›
-  </button>
-</div>
+          {/* Next Button */}
+          <button
+            onClick={onNextDay}
+            className="w-12 h-10 flex items-center justify-center rounded-xl bg-primary text-white text-2xl font-semibold hover:opacity-90 transition-all"
+          >
+            ›
+          </button>
+        </div>
       )}
       {/* 
       <div className="px-6 py-1 rounded-md border-green-600 border-[1px] bg-green-50 text-green-800 font-semibold">

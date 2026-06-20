@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import YearWiseTable from "../components/Tables/YearWiseTable";
 import humanDate from "../utils/humanDateForamt";
@@ -8,27 +8,68 @@ import DetalisFormatted from "../components/DetalisFormatted";
 import MuiModal from "../components/MuiModal";
 import PageFrame from "../components/Pages/PageFrame";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import dayjs from "dayjs";
 
 const LogPage = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
+  const [logDateFilter, setLogDateFilter] = useState(() => ({
+    fromDate: dayjs().startOf("month").toDate(),
+    toDate: dayjs().endOf("month").toDate(),
+  }));
+
+  const initialLogDateRange = useMemo(
+    () => ({
+      startDate: logDateFilter.fromDate,
+      endDate: logDateFilter.toDate,
+      key: "selection",
+    }),
+    [logDateFilter.fromDate, logDateFilter.toDate],
+  );
+
   const [selectedLog, setselectedLog] = useState({});
   const { data, isLoading } = useQuery({
-    queryKey: [" secret-logs"],
+    queryKey: ["secret-logs", logDateFilter.fromDate, logDateFilter.toDate],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/logs/get-logs");
-          return response.data || [ ]
- ;
+        // const response = await axios.get("/api/logs/get-logs");
+        const response = await axios.get("/api/logs/get-logs", {
+          params: {
+            fromDate: dayjs(logDateFilter.fromDate).format("YYYY-MM-DD"),
+            toDate: dayjs(logDateFilter.toDate).format("YYYY-MM-DD"),
+          },
+        });
+        return response.data || [];
       } catch (error) {
-        console . error (error?. response ?. data ?. message || error. message );
+        console.error(error?.response?.data?.message || error.message);
         return [];
-      //   return response.data;
-      // } catch (error) {
-      //   console.error(error.response.data.message);
+        //   return response.data;
+        // } catch (error) {
+        //   console.error(error.response.data.message);
       }
     },
   });
+
+  const handleLogDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+
+    const nextFromDate = dayjs(selectedRange.startDate).startOf("day").toDate();
+    const nextToDate = dayjs(selectedRange.endDate).endOf("day").toDate();
+
+    setLogDateFilter((prev) => {
+      if (
+        dayjs(prev.fromDate).isSame(nextFromDate) &&
+        dayjs(prev.toDate).isSame(nextToDate)
+      ) {
+        return prev;
+      }
+
+      return {
+        fromDate: nextFromDate,
+        toDate: nextToDate,
+      };
+    });
+  }, []);
 
   const handleViewlog = (data) => {
     setselectedLog(data);
@@ -113,7 +154,7 @@ const LogPage = () => {
       headerName: "Sr No",
       field: "srNo",
       width: 100,
-      sort: "desc"
+      sort: "desc",
     },
     {
       headerName: "Activity",
@@ -143,12 +184,12 @@ const LogPage = () => {
         return `${humanDate(params.data.createdAt)}, ${humanTime(params.data.createdAt)}`;
       },
     },
-       {
+    {
       headerName: "Actions",
       field: "actions",
-      flex:1,
+      flex: 1,
       align: "left",
-      pinned:"right",
+      pinned: "right",
       suppressCsvExport: true,
       cellRenderer: (params) => (
         <div className="flex items-center justify-center h-full">
@@ -166,12 +207,12 @@ const LogPage = () => {
   ];
   const tableData = isLoading
     ? []
-    // : data.map((item) => ({
-      : (data || []) . map ( ( item ) => ({
+    : // : data.map((item) => ({
+      (data || []).map((item) => ({
         ...item,
         activity: formatLogActivity(item.action, item.path),
         user: `${item.performedBy?.firstName} ${item.performedBy?.lastName}`,
-         path : formatLogPath(item.path, item.payload),
+        path: formatLogPath(item.path, item.payload),
         createdAt: item.createdAt,
         createdAtExport: item.createdAt
           ? `${humanDate(item.createdAt)}, ${humanTime(item.createdAt)}`
@@ -274,7 +315,9 @@ const LogPage = () => {
 
             return (
               <div key={idx} className="flex gap-1 items-start">
-                <span className="whitespace-nowrap">{formatKey(childKey)}:</span>
+                <span className="whitespace-nowrap">
+                  {formatKey(childKey)}:
+                </span>
                 <span className="break-words">
                   {formatNestedDisplayValue(childValue, childKey)}
                 </span>
@@ -329,6 +372,8 @@ const LogPage = () => {
           tableTitle="Logs Table"
           exportData={true}
           search={true}
+          initialDateRange={initialLogDateRange}
+          onDateFilterChange={handleLogDateFilterChange}
         />
         <MuiModal
           open={openModal}

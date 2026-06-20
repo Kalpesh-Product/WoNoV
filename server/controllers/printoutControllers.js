@@ -228,6 +228,8 @@ const getPrintouts = async (req, res) => {
       });
     }
 
+    const departmentIds = departments.map((dept) => dept._id);
+
     const { unit, client, requestedBy, department, fromDate, toDate } =
       req.query;
     const filters = {};
