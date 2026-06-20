@@ -150,6 +150,7 @@ const AddPrintout = () => {
         requestedBy: formData.requestedBy,
         department: isBiznestClient ? formData.department || null : null,
         printoutCount: Number(formData.printoutCount),
+        remark: formData.remarks?.trim() || "",
       };
 
       const response = await axios.post("/api/printout", payload);

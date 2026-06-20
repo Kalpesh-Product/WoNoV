@@ -100,7 +100,7 @@ const ReportPrintout = () => {
         requestedBy: getTableValue(getUserName(printout.requestedBy)),
         department: getTableValue(getDepartmentName(printout.department)),
         printoutCount: printout.printoutCount,
-        remarks: getTableValue(printout?.remarks),
+        remarks: getTableValue(printout?.remark),
       })),
     [filteredPrintouts]
   );
@@ -284,7 +284,7 @@ const ReportPrintout = () => {
           />
           <DetalisFormatted
             title="Remarks"
-            detail={selectedPrintout?.remarks}
+            detail={selectedPrintout?.remark}
           />
         </div>
       </MuiModal>

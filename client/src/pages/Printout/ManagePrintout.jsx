@@ -216,7 +216,7 @@ const ManagePrintout = () => {
         requestedBy: getTableValue(getUserName(printout.requestedBy)),
         department: getTableValue(getDepartmentName(printout.department)),
         printoutCount: printout.printoutCount,
-        remarks: getTableValue(printout?.remarks),
+        remarks: getTableValue(printout?.remark),
       })),
     [filteredPrintouts]
   );
@@ -237,6 +237,7 @@ const ManagePrintout = () => {
         requestedBy: formData.requestedBy,
         department: isBiznestClient ? formData.department || null : null,
         printoutCount: Number(formData.printoutCount),
+        remark: formData.remarks?.trim() || "",
       };
 
       const response = await axios.patch(
@@ -279,7 +280,7 @@ const ManagePrintout = () => {
       requestedBy: getId(rawPrintout.requestedBy),
       department: getId(rawPrintout.department),
       printoutCount: rawPrintout.printoutCount || "",
-      remarks: rawPrintout.remarks || "",
+      remarks: rawPrintout.remark || "",
     });
     setIsEditModalOpen(true);
   };
@@ -451,7 +452,7 @@ const ManagePrintout = () => {
           />
           <DetalisFormatted
             title="Remarks"
-            detail={selectedPrintout?.remarks}
+            detail={selectedPrintout?.remark}
           />
         </div>
       </MuiModal>
