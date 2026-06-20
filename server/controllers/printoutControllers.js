@@ -11,8 +11,8 @@ const populatePrintout = [
     path: "unit",
     select: "unitName unitNo",
   },
-  { path: "client", select: "clientName" },
-  { path: "requestedBy", select: "employeeName" },
+  { path: "client", select: "clientName companyName name" },
+  { path: "requestedBy", select: "employeeName firstName lastName name email" },
   { path: "department", select: "departmentId name" },
 ];
 

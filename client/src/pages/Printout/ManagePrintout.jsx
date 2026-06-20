@@ -46,6 +46,13 @@ const formatDateTime = (value) =>
     ? dayjs(value).format("DD-MM-YYYY hh:mm A")
     : "—";
 
+const getTableValue = (value) => {
+  const normalizedValue = String(value ?? "").trim();
+  return ["-", "—", "–", "â€”", "Ã¢â‚¬â€"].includes(normalizedValue)
+    ? ""
+    : value;
+};
+
 const getEmployeeDepartments = (employee) =>
   Array.isArray(employee?.departments) ? employee.departments : [];
 
@@ -200,13 +207,13 @@ const ManagePrintout = () => {
       filteredPrintouts.map((printout, index) => ({
         rawPrintout: printout,
         srNo: index + 1,
-        takenBy: getUserName(printout.takenBy),
-        takenAt: formatDateTime(printout.takenAt),
-        location: getLocationName(printout.location, printout.unit),
-        unit: getUnitName(printout.unit),
-        client: getCompanyName(printout.client),
-        requestedBy: getUserName(printout.requestedBy),
-        department: getDepartmentName(printout.department),
+        takenBy: getTableValue(getUserName(printout.takenBy)),
+        takenAt: getTableValue(formatDateTime(printout.takenAt)),
+        location: getTableValue(getLocationName(printout.location, printout.unit)),
+        unit: getTableValue(getUnitName(printout.unit)),
+        client: getTableValue(getCompanyName(printout.client)),
+        requestedBy: getTableValue(getUserName(printout.requestedBy)),
+        department: getTableValue(getDepartmentName(printout.department)),
         printoutCount: printout.printoutCount,
       })),
     [filteredPrintouts]
@@ -216,7 +223,6 @@ const ManagePrintout = () => {
     mutationKey: ["updatePrintout"],
     mutationFn: async (formData) => {
       const payload = {
-        takenBy: formData.takenBy,
         takenAt: dayjs(formData.dateOfPrintout)
           .hour(dayjs(formData.timeOfPrintout).hour())
           .minute(dayjs(formData.timeOfPrintout).minute())
@@ -353,7 +359,7 @@ const ManagePrintout = () => {
     <div className="p-4">
       <PageFrame>
         <div className="flex flex-col gap-4 pb-4">
-          <div className="grid grid-cols-12 items-center w-full pb-4 border-b border-borderGray">
+          <div className="grid grid-cols-12 items-center w-full pb-4">
             <div className="col-span-12 md:col-span-4">
               <span className="text-title text-primary font-pmedium uppercase">
                 Manage Printout
@@ -433,35 +439,12 @@ const ManagePrintout = () => {
       >
         <form onSubmit={handleSubmit(updatePrintout)}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Controller
-              name="takenBy"
-              control={control}
-              rules={{ required: "Taken by is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  size="small"
-                  label="Taken By"
-                  error={!!errors.takenBy}
-                  helperText={errors.takenBy?.message}
-                  fullWidth
-                  disabled
-                >
-                  <MenuItem value="">Select Taken By</MenuItem>
-                  {isEmployeesLoading ? (
-                    <MenuItem disabled>
-                      <CircularProgress size={20} />
-                    </MenuItem>
-                  ) : (
-                    employees.map((employee) => (
-                      <MenuItem key={employee._id} value={employee._id}>
-                        {getUserName(employee)}
-                      </MenuItem>
-                    ))
-                  )}
-                </TextField>
-              )}
+            <TextField
+              size="small"
+              label="Taken By"
+              value={getUserName(selectedPrintout?.takenBy)}
+              fullWidth
+              disabled
             />
 
             <Controller

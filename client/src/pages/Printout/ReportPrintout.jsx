@@ -34,6 +34,13 @@ const formatDateTime = (value) =>
     ? dayjs(value).format("DD-MM-YYYY hh:mm A")
     : "—";
 
+const getTableValue = (value) => {
+  const normalizedValue = String(value ?? "").trim();
+  return ["-", "—", "–", "â€”", "Ã¢â‚¬â€"].includes(normalizedValue)
+    ? ""
+    : value;
+};
+
 const csvEscape = (value) => {
   const stringValue = value === null || value === undefined ? "" : String(value);
   return `"${stringValue.replace(/"/g, '""')}"`;
@@ -80,13 +87,13 @@ const ReportPrintout = () => {
     () =>
       filteredPrintouts.map((printout, index) => ({
         srNo: index + 1,
-        takenBy: getUserName(printout.takenBy),
-        takenAt: formatDateTime(printout.takenAt),
-        location: getLocationName(printout.location, printout.unit),
-        unit: getUnitName(printout.unit),
-        client: getCompanyName(printout.client),
-        requestedBy: getUserName(printout.requestedBy),
-        department: getDepartmentName(printout.department),
+        takenBy: getTableValue(getUserName(printout.takenBy)),
+        takenAt: getTableValue(formatDateTime(printout.takenAt)),
+        location: getTableValue(getLocationName(printout.location, printout.unit)),
+        unit: getTableValue(getUnitName(printout.unit)),
+        client: getTableValue(getCompanyName(printout.client)),
+        requestedBy: getTableValue(getUserName(printout.requestedBy)),
+        department: getTableValue(getDepartmentName(printout.department)),
         printoutCount: printout.printoutCount,
       })),
     [filteredPrintouts]
@@ -134,7 +141,7 @@ const ReportPrintout = () => {
     <div className="p-4">
       <PageFrame>
         <div className="flex flex-col gap-4 pb-4">
-          <div className="grid grid-cols-12 items-center w-full pb-4 border-b border-borderGray">
+          <div className="grid grid-cols-12 items-center w-full pb-4">
             <div className="col-span-12 md:col-span-4">
               <span className="text-title text-primary font-pmedium uppercase">
                 Printout Reports
