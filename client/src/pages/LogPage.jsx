@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import YearWiseTable from "../components/Tables/YearWiseTable";
 import humanDate from "../utils/humanDateForamt";
@@ -13,30 +13,23 @@ import dayjs from "dayjs";
 const LogPage = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
-  const [logDateFilter, setLogDateFilter] = useState(() => ({
-    fromDate: dayjs().startOf("month").toDate(),
-    toDate: dayjs().endOf("month").toDate(),
-  }));
-
-  const initialLogDateRange = useMemo(
-    () => ({
-      startDate: logDateFilter.fromDate,
-      endDate: logDateFilter.toDate,
-      key: "selection",
-    }),
-    [logDateFilter.fromDate, logDateFilter.toDate],
+  const [selectedLogDate, setSelectedLogDate] = useState(() =>
+    dayjs().startOf("day"),
   );
+
+  const selectedLogDateKey = selectedLogDate.format("YYYY-MM-DD");
+  const selectedLogDateLabel = selectedLogDate.format("MMM D, YYYY");
 
   const [selectedLog, setselectedLog] = useState({});
   const { data, isLoading } = useQuery({
-    queryKey: ["secret-logs", logDateFilter.fromDate, logDateFilter.toDate],
+    queryKey: ["secret-logs", selectedLogDateKey],
     queryFn: async () => {
       try {
         // const response = await axios.get("/api/logs/get-logs");
         const response = await axios.get("/api/logs/get-logs", {
           params: {
-            fromDate: dayjs(logDateFilter.fromDate).format("YYYY-MM-DD"),
-            toDate: dayjs(logDateFilter.toDate).format("YYYY-MM-DD"),
+            fromDate: selectedLogDateKey,
+            toDate: selectedLogDateKey,
           },
         });
         return response.data || [];
@@ -50,25 +43,12 @@ const LogPage = () => {
     },
   });
 
-  const handleLogDateFilterChange = useCallback(({ selectedRange }) => {
-    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+  const handlePreviousLogDay = useCallback(() => {
+    setSelectedLogDate((prevDate) => prevDate.subtract(1, "day"));
+  }, []);
 
-    const nextFromDate = dayjs(selectedRange.startDate).startOf("day").toDate();
-    const nextToDate = dayjs(selectedRange.endDate).endOf("day").toDate();
-
-    setLogDateFilter((prev) => {
-      if (
-        dayjs(prev.fromDate).isSame(nextFromDate) &&
-        dayjs(prev.toDate).isSame(nextToDate)
-      ) {
-        return prev;
-      }
-
-      return {
-        fromDate: nextFromDate,
-        toDate: nextToDate,
-      };
-    });
+  const handleNextLogDay = useCallback(() => {
+    setSelectedLogDate((prevDate) => prevDate.add(1, "day"));
   }, []);
 
   const handleViewlog = (data) => {
@@ -372,8 +352,10 @@ const LogPage = () => {
           tableTitle="Logs Table"
           exportData={true}
           search={true}
-          initialDateRange={initialLogDateRange}
-          onDateFilterChange={handleLogDateFilterChange}
+          showDateNavigator
+          selectedDateLabel={selectedLogDateLabel}
+          onPreviousDay={handlePreviousLogDay}
+          onNextDay={handleNextLogDay}
         />
         <MuiModal
           open={openModal}
