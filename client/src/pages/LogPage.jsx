@@ -331,6 +331,13 @@ const LogPage = () => {
 
       if (!entries.length) return null;
 
+      const readableLabel = getReadableLogLabel(value);
+      const hasOnlyReadableLabel = entries.every(([subKey]) =>
+        ["name", "title", "label", "empId", "email"].includes(subKey),
+      );
+
+      if (readableLabel && hasOnlyReadableLabel) return readableLabel;
+
       return formatNestedDisplayValue(value, key);
     }
 
