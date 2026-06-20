@@ -33,7 +33,7 @@ const getDepartmentName = (department) => department?.name || "—";
 
 const formatDateTime = (value) =>
   value && dayjs(value).isValid()
-    ? dayjs(value).format("DD-MM-YYYY hh:mm A")
+    ? dayjs(value).format("DD-MM-YYYY , hh:mm A")
     : "—";
 
 const getTableValue = (value) => {
