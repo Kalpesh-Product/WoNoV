@@ -7,7 +7,7 @@ const printoutSchema = new mongoose.Schema(
       ref: "UserData",
       required: true,
     },
-    timeTakenAt: {
+    takenAt: {
       type: Date,
       required: true,
       default: Date.now,
