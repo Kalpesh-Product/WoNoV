@@ -88,14 +88,8 @@ const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
     "requestedBy",
     "department",
     "printoutCount",
+    "remark",
   ];
-
-  //   const isClient = company.toString() !== body.client.toString();
-
-  //   const clientModel = isClient ? "CoworkingClient" : "Company";
-  //   const requestedByModel = isClient ? "CoworkingMember" : "UserData";
-
-  //   const payload = { clientModel, requestedByModel };
 
   const payload = {};
 
