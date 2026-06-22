@@ -197,7 +197,7 @@ const canViewClientWiseQuantity = userPermissions.includes(
       key: "clientWiseQuantity",
       chartType: "pie",
       title: "Overall",
-      titleLabel: "Client Wise Quantity",
+      titleLabel: "Client Wise Printout",
       data: clientWiseQuantityPieData,
       options: clientWiseQuantityPieOptions,
     },
@@ -255,13 +255,13 @@ const canViewClientWiseQuantity = userPermissions.includes(
           />
         ))}
       </div>
-     {printoutQuantityCharts.length > 0 && (
-        <div className="w-full flex-none overflow-hidden">
+       {printoutQuantityCharts.length > 0 && (
+        <div className="w-full flex-none overflow-visible">
           <div
-            className={`grid gap-4 ${
+            className={`grid items-stretch gap-4 ${
               printoutQuantityCharts.length <= 1
                 ? "grid-cols-1"
-                : "grid-cols-1 md:grid-cols-2"
+                : "grid-cols-1 xl:grid-cols-2"
             }`}
           >
             {printoutQuantityCharts.map((chart) => (
