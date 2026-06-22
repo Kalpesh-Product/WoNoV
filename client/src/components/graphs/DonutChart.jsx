@@ -51,12 +51,21 @@ const DonutChart = ({
       enabled: true,
       formatter: (val) => `${val.toFixed(0)}%`,
     },
-    tooltip: {
+    // tooltip: {
+    //   enabled: true,
+    //      custom: function ({ seriesIndex }) {
+    //     const fullLabel = chartData.labels[seriesIndex];
+    //     return `<div style="padding: 8px">
+    //               <strong>${fullLabel}</strong>
+     tooltip: {
       enabled: true,
-         custom: function ({ seriesIndex }) {
+      custom: function ({ seriesIndex }) {
         const fullLabel = chartData.labels[seriesIndex];
+        const tooltipDetail = tooltipValue?.[seriesIndex];
         return `<div style="padding: 8px">
-                  <strong>${fullLabel}</strong>
+                  <strong>${fullLabel}</strong>${
+                    tooltipDetail ? `<br/><span>${tooltipDetail}</span>` : ""
+                  }
                 </div>`;
       },
       y: {

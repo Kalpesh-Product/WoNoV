@@ -4000,12 +4000,19 @@ export const routes = createBrowserRouter([
                 children: [
                   {
                     path: "",
-                    element: (
-                      <PerformancePermissionRoute
-                        element={<PrintoutDashboard />}
-                        permissions={[PERMISSIONS.SIDEBAR_PRINTOUTS]}
-                      />
-                    ),
+                     element: <PrintoutDashboard />,
+                    // element: (
+                    //   <PerformancePermissionRoute
+                    //     element={<PrintoutDashboard />}
+                    //     permissions={[
+                    //       PERMISSIONS.SIDEBAR_PRINTOUTS,
+                    //       PERMISSIONS.PRINTOUT_MONTHLY_TOTAL_PRINTOUT,
+                    //       PERMISSIONS.PRINTOUT_ADD_PRINTOUT,
+                    //       PERMISSIONS.PRINTOUT_MANAGE_PRINTOUT,
+                    //       PERMISSIONS.PRINTOUT_REPORT_PRINTOUT,
+                    //     ]}
+                    //   />
+                    // ),
                     index: true,
                   },
                   {
