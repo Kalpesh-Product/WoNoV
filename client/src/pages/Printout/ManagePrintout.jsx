@@ -737,7 +737,7 @@ const ManagePrintout = () => {
                 <TextField
                   {...field}
                   size="small"
-                  label="Comments / Remarks"
+                  label="Comment / Remark"
                   fullWidth
                   multiline
                   //minRows={3}
