@@ -100,6 +100,7 @@ const ReportPrintout = () => {
         requestedBy: getTableValue(getUserName(printout.requestedBy)),
         department: getTableValue(getDepartmentName(printout.department)),
         printoutCount: printout.printoutCount,
+        remarks: getTableValue(printout?.remark),
       })),
     [filteredPrintouts]
   );
@@ -114,6 +115,7 @@ const ReportPrintout = () => {
     { field: "requestedBy", headerName: "Person",flex:1},
     { field: "department", headerName: "Department",flex:1},
     { field: "printoutCount", headerName: "Quantity",flex:1},
+    { field: "remarks", headerName: "Remarks", flex: 1 },
     // {
     //   field: "actions",
     //   headerName: "Action",
@@ -280,6 +282,10 @@ const ReportPrintout = () => {
             title="Quantity"
             detail={selectedPrintout?.printoutCount}
           />
+          <DetalisFormatted
+            title="Remarks"
+            detail={selectedPrintout?.remark}
+          />
         </div>
       </MuiModal>
     </div>
@@ -287,15 +293,3 @@ const ReportPrintout = () => {
 };
 
 export default ReportPrintout;
-
-
-// const ReportPrintout = () => {
-//   return (
-//     <div className="p-4">
-//       <h1 className="text-2xl font-semibold">Report Printout</h1>
-//       <p className="mt-2 text-gray-600">Report Printout Page</p>
-//     </div>
-//   );
-// };
-
-// export default ReportPrintout;
