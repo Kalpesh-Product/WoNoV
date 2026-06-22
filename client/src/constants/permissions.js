@@ -639,7 +639,7 @@ export const PERMISSIONS = {
     value: "printout_monthly_total_printout",
     title: "PRINTOUT MONTHLY TOTAL PRINTOUT",
     type: "read",
-    route: "/app/printouts",
+    //route: "/app/printouts",
   }, 
   PRINTOUT_ADD_PRINTOUT: {
     value: "printout_add_printout",

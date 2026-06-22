@@ -63,30 +63,33 @@ const PrintoutDashboard = () => {
       }),
     [printouts],
   );
+const canViewMonthlyTotalPrintout = userPermissions.includes(
+    PERMISSIONS.PRINTOUT_MONTHLY_TOTAL_PRINTOUT.value,
+  // const graphConfigs = [
+  //   {
+  //     key: "monthlyTotalPrintout",
+  //     data: printouts,
+  //     dateKey: "takenAt",
+  //     graphTitle: "MONTHLY TOTAL PRINTOUT",
+  //     permission: PERMISSIONS.PRINTOUT_MONTHLY_TOTAL_PRINTOUT.value,
+  //   },
+  // ];
 
-  const graphConfigs = [
-    {
-      key: "monthlyTotalPrintout",
-      data: printouts,
-      dateKey: "takenAt",
-      graphTitle: "MONTHLY TOTAL PRINTOUT",
-      permission: PERMISSIONS.PRINTOUT_MONTHLY_TOTAL_PRINTOUT.value,
-    },
-  ];
-
-  const allowedGraphs = graphConfigs.filter(
-    (graph) => !graph.permission || userPermissions.includes(graph.permission),
+  // const allowedGraphs = graphConfigs.filter(
+  //   (graph) => !graph.permission || userPermissions.includes(graph.permission),
   );
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-20">
-      {allowedGraphs.map((graph) => (
-        <div key={graph.key} className="w-full flex-none overflow-hidden">
+       {canViewMonthlyTotalPrintout && (
+        <div className="w-full flex-none overflow-hidden">
+      {/* {allowedGraphs.map((graph) => (
+        <div key={graph.key} className="w-full flex-none overflow-hidden"> */}
           <FyBarGraphCount
             data={printoutGraphData}
             dateKey="takenAt"
             groupKey="printoutLegend"
-            graphTitle={graph.graphTitle}
+            graphTitle="MONTHLY TOTAL PRINTOUT"
             chartOptions={{
               yaxis: {
                 title: { text: "Quantity" },
@@ -98,7 +101,7 @@ const PrintoutDashboard = () => {
             }}
           />
         </div>
-      ))}
+      )}
       <div
         className={`grid gap-4 ${
           allowedCards.length <= 1
