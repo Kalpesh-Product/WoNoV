@@ -387,7 +387,7 @@ const SqWiseData = () => {
           data={incomeExpenseData}
           options={incomeExpenseOptions}
           chartId={"bargraph-finance-income"}
-          title={"BIZNest FINANCE INCOME V/S EXPENSE"}
+          title={"BIZNest FINANCE INCOME Per Sq. ft."}
           TitleAmountGreen={`INR ${inrFormat(totalIncomeAmount)} `}
           TitleAmountRed={`INR ${inrFormat(totalExpense)}`}
           onYearChange={setSelectedFY}
