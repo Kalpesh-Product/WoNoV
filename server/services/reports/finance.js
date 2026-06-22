@@ -13,81 +13,6 @@ const timezone = require("dayjs/plugin/timezone");
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// const fetchBudgetVoucherService = async ({
-//   company,
-//   dateFilter,
-//   departmentId,
-//   type = "",
-// }) => {
-//   const query = { company };
-
-//   console.log("type", type);
-//   console.log("departmentId", departmentId);
-//   if (departmentId && type !== "payout") {
-//     query.department = departmentId;
-//   }
-
-//   if (dateFilter) {
-//     query.dueDate = dateFilter.dueDate;
-//   }
-//   console.log("budget voucher query", query);
-
-//   let budgetQuery = Budget.find(query);
-
-//   if (type === "payout") {
-//     budgetQuery = budgetQuery
-//       .select(
-//         "expanseName expanseType actualAmount dueDate status department unit",
-//       )
-//       .populate([
-//         { path: "department", select: "name" },
-//         { path: "unit", select: "unitNo unitName" },
-//       ]);
-//   }
-
-//   const budgets = await budgetQuery
-//     .populate([
-//       { path: "department", select: "name" },
-//       {
-//         path: "unit",
-//         select: "unitNo unitName",
-//         populate: {
-//           path: "building",
-//           select: "buildingName",
-//           model: "Building",
-//         },
-//       },
-//     ])
-//     .lean()
-//     .exec();
-
-//   // const budgets = await Budget.find(query)
-//   //   .populate([
-//   //     { path: "department", select: "name" },
-//   //     { path: "unit", populate: { path: "building", model: "Building" } },
-//   //   ])
-//   //   .lean()
-//   //   .exec();
-
-//   const allBudgets = budgets.map((budget) => {
-//     if (budget?.particulars?.length) {
-//       const projectedAmount = budget.particulars.reduce(
-//         (acc, curr) => acc + curr.particularAmount,
-//         0,
-//       );
-
-//       return {
-//         ...budget,
-//         projectedAmount,
-//       };
-//     }
-
-//     return budget;
-//   });
-
-//   return { allBudgets };
-// };
-
 const fetchBudgetVoucherService = async ({
   company,
   dateFilter,
@@ -97,7 +22,7 @@ const fetchBudgetVoucherService = async ({
 }) => {
   const query = { company };
 
-  if (departmentId && type !== "payout") {
+  if (departmentId && !["payout", "landlord-payments"].includes(type)) {
     query.department = departmentId;
   }
 
@@ -109,15 +34,19 @@ const fetchBudgetVoucherService = async ({
     query.status = "Approved";
   }
 
-  const isPayout = type === "payout";
+  if (type === "landlord-payments") {
+    query.expanseType = "Monthly Rent";
+  }
+
+  const isFilteredBudget = ["payout", "landlord-payments"].includes(type);
 
   let budgetQuery = Budget.find(query);
 
-  if (isPayout) {
+  if (isFilteredBudget) {
     budgetQuery = budgetQuery;
   }
 
-  const populateOptions = isPayout
+  const populateOptions = isFilteredBudget
     ? [
         { path: "department", select: "name" },
         {
@@ -160,7 +89,6 @@ const fetchBudgetVoucherService = async ({
   });
 
   if (isReport) {
-    console.log("type", type);
     return {
       allBudgets: budgets.map((budget) =>
         mapBudgetBaseFields(budget, isReport, type),
@@ -172,6 +100,7 @@ const fetchBudgetVoucherService = async ({
 };
 
 const mapBudgetBaseFields = (budget = {}, isReport = false, type = "") => {
+  const isFilteredBudget = ["payout", "landlord-payments"].includes(type);
   const projectedAmount = budget?.particulars?.length
     ? budget.particulars.reduce(
         (acc, curr) => acc + (curr.particularAmount || 0),
@@ -182,19 +111,22 @@ const mapBudgetBaseFields = (budget = {}, isReport = false, type = "") => {
   return {
     department: budget?.department?.name || "-",
     expanseName: budget?.expanseName || "-",
-    expanseType: budget?.expanseType || "-",
+    ...(type !== "landlord-payments" && {
+      expanseType: budget?.expanseType || "-",
+    }),
     ...(budget?.expanseType !== "Reimbursement" &&
-      type !== "payout" && {
-        projectedAmount: budget?.projectedAmount,
+      !isFilteredBudget && {
         paymentType: budget?.paymentType || "-",
       }),
+    ...(budget?.expanseType !== "Reimbursement" &&
+      type !== "payout" && { projectedAmount: budget?.projectedAmount }),
     actualAmount: budget?.actualAmount ?? "-",
     unitNo: budget?.unit?.unitNo || "-",
     unit: budget?.unit?.unitName || "-",
     building: budget?.unit?.building?.buildingName,
     dueDate: budget?.dueDate || null,
     paidStatus: budget?.isPaid || "-",
-    ...(type !== "payout" && {
+    ...(!isFilteredBudget && {
       invoiceName: budget?.invoice?.name || "-",
       invoiceFile: budget?.invoice?.link || "-",
       invoiceDate: budget?.invoice?.date || null,
@@ -233,7 +165,6 @@ const fetchBudgetService = async ({
     }
   }
 
-  console.log("budget query report", query);
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },
@@ -451,16 +382,16 @@ const logProfitLossSourceCalculation = (source, monthlyData) => {
     ({ _id: month }) => !excludedMonths.includes(month),
   );
 
-  console.log(`[ProfitLossReport] ${source} calculation`, {
-    totalEntries: includedMonthlyData.reduce(
-      (sum, { totalEntries = 0 }) => sum + totalEntries,
-      0,
-    ),
-    values: includedMonthlyData.flatMap(({ _id: month, values = [] }) =>
-      values.map((value) => ({ month, value })),
-    ),
-    total: includedMonthlyData.reduce((sum, { total = 0 }) => sum + total, 0),
-  });
+  // console.log(`[ProfitLossReport] ${source} calculation`, {
+  //   totalEntries: includedMonthlyData.reduce(
+  //     (sum, { totalEntries = 0 }) => sum + totalEntries,
+  //     0,
+  //   ),
+  //   values: includedMonthlyData.flatMap(({ _id: month, values = [] }) =>
+  //     values.map((value) => ({ month, value })),
+  //   ),
+  //   total: includedMonthlyData.reduce((sum, { total = 0 }) => sum + total, 0),
+  // });
 };
 
 const fetchProfitLossReportService = async ({ company, dateFilter }) => {
