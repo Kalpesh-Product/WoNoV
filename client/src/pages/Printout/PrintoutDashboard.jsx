@@ -244,7 +244,7 @@ const canViewClientWiseQuantity = userPermissions.includes(
             : allowedCards.length === 2
               ? "grid-cols-1 md:grid-cols-2"
               : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-        } relative z-10 mt-6 flex-none pb-10`}
+        } relative z-10 mt-4 flex-none pb-2`}
       >
         {allowedCards.map((card) => (
           <Card
@@ -257,7 +257,13 @@ const canViewClientWiseQuantity = userPermissions.includes(
       </div>
      {printoutQuantityCharts.length > 0 && (
         <div className="w-full flex-none overflow-hidden">
-          <WidgetSection layout={printoutQuantityCharts.length}>
+          <div
+            className={`grid gap-4 ${
+              printoutQuantityCharts.length <= 1
+                ? "grid-cols-1"
+                : "grid-cols-1 md:grid-cols-2"
+            }`}
+          >
             {printoutQuantityCharts.map((chart) => (
               <WidgetSection
                 key={chart.key}
@@ -284,7 +290,7 @@ const canViewClientWiseQuantity = userPermissions.includes(
                 )}
               </WidgetSection>
             ))}
-          </WidgetSection>
+          </div>
         </div>
       )}
     </div>
