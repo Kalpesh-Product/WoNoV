@@ -4,10 +4,13 @@ import { CgProfile } from "react-icons/cg";
 import { MdFormatListBulleted } from "react-icons/md";
 import { RiArchiveDrawerLine, RiPagesLine } from "react-icons/ri";
 import Card from "../../components/Card";
+import DonutChart from "../../components/graphs/DonutChart";
 import FyBarGraphCount from "../../components/graphs/FyBarGraphCount";
+import WidgetSection from "../../components/WidgetSection";
 import { PERMISSIONS } from "../../constants/permissions";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+const getUnitName = (unit) => unit?.unitNo || unit?.unitName || "—";
 
 const PrintoutDashboard = () => {
   const { auth } = useAuth();
@@ -63,8 +66,36 @@ const PrintoutDashboard = () => {
       }),
     [printouts],
   );
-const canViewMonthlyTotalPrintout = userPermissions.includes(
+const unitWisePrintoutData = useMemo(() => {
+    const unitQuantityMap = new Map();
+
+    printouts.forEach((printout) => {
+      const unitName = getUnitName(printout?.unit);
+      const quantity = Number(printout?.printoutCount);
+      const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 0;
+
+      unitQuantityMap.set(unitName, (unitQuantityMap.get(unitName) || 0) + safeQuantity);
+    });
+
+    return Array.from(unitQuantityMap, ([unit, quantity]) => ({
+      unit,
+      quantity,
+    }));
+  }, [printouts]);
+
+  const unitWisePrintoutLabels = unitWisePrintoutData.map((item) => item.unit);
+  const unitWisePrintoutSeries = unitWisePrintoutData.map((item) => item.quantity);
+  const unitWisePrintoutTooltip = unitWisePrintoutData.map(
+    (item) => `Quantity : ${item.quantity.toLocaleString("en-IN")}`,
+  );
+
+  const canViewMonthlyTotalPrintout = userPermissions.includes(
     PERMISSIONS.PRINTOUT_MONTHLY_TOTAL_PRINTOUT.value,
+     );
+
+  const canViewUnitWisePrintout = userPermissions.includes(
+    PERMISSIONS.PRINTOUT_UNIT_WISE_PRINTOUT.value,
+  );
   // const graphConfigs = [
   //   {
   //     key: "monthlyTotalPrintout",
@@ -77,14 +108,12 @@ const canViewMonthlyTotalPrintout = userPermissions.includes(
 
   // const allowedGraphs = graphConfigs.filter(
   //   (graph) => !graph.permission || userPermissions.includes(graph.permission),
-  );
+  //);
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-20">
        {canViewMonthlyTotalPrintout && (
         <div className="w-full flex-none overflow-hidden">
-      {/* {allowedGraphs.map((graph) => (
-        <div key={graph.key} className="w-full flex-none overflow-hidden"> */}
           <FyBarGraphCount
             data={printoutGraphData}
             dateKey="takenAt"
@@ -120,6 +149,23 @@ const canViewMonthlyTotalPrintout = userPermissions.includes(
           />
         ))}
       </div>
+       {canViewUnitWisePrintout && (
+        <div className="w-full flex-none overflow-hidden">
+          <WidgetSection
+            title="Overall Unit wise"
+            titleLabel="Printout"
+            border
+          >
+            <DonutChart
+              centerLabel="Quantity"
+              labels={unitWisePrintoutLabels}
+              colors={["#54C4A7", "#FFB946", "#FF4D4F", "#6A5ACD"]}
+              series={unitWisePrintoutSeries}
+              tooltipValue={unitWisePrintoutTooltip}
+            />
+          </WidgetSection>
+        </div>
+      )}
     </div>
   );
 };

@@ -640,7 +640,13 @@ export const PERMISSIONS = {
     title: "PRINTOUT MONTHLY TOTAL PRINTOUT",
     type: "read",
     //route: "/app/printouts",
-  }, 
+   },
+  PRINTOUT_UNIT_WISE_PRINTOUT: {
+    value: "printout_unit_wise_printout",
+    title: "PRINTOUT UNIT WISE PRINTOUT",
+    type: "read",
+  },  
+
   PRINTOUT_ADD_PRINTOUT: {
     value: "printout_add_printout",
     title: "ADD PRINTOUT",
