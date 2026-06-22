@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useEffect, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import MuiModal from "../../../../components/MuiModal";
@@ -118,6 +118,10 @@ const AverageProfitLoss = () => {
     setDynamicIncome(`INR ${inrFormat(incomeTotal)}`);
     setDynamicExpense(`INR ${inrFormat(expenseTotal)}`);
   };
+
+  useEffect(() => {
+  handleYearChange(selectedFY);
+}, [revenueExpenseData, selectedFY]);
 
   // Process each income item
   incomeSources.forEach((income) => {
@@ -392,7 +396,7 @@ const AverageProfitLoss = () => {
   };
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
-  const monthlyProfitLossData = yearCategories["FY 2025-26"].map(
+ const monthlyProfitLossData = (yearCategories[selectedFY] || []).map(
     (month, index) => {
       const income = incomeMap[month] || 0;
       const expense = expenseMap[month] || 0;
@@ -407,10 +411,11 @@ const AverageProfitLoss = () => {
       };
     },
   );
-  const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
-    const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
-    return sum + numericalPnL;
-  }, 0);
+const totalPnL = (yearCategories[selectedFY] || []).reduce((sum, month) => {
+  const income = incomeMap[month] || 0;
+  const expense = expenseMap[month] || 0;
+  return sum + (income - expense);
+}, 0);
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const techWidgets = [
@@ -450,7 +455,7 @@ const AverageProfitLoss = () => {
           <WidgetSection
             border
             TitleAmount={`P&L :  INR ${inrFormat(totalPnL)}`}
-            titleLabel={"FY 2025-26"}
+           titleLabel={selectedFY}
             title={`Total Monthly P&L`}
           >
             <AgTable
@@ -463,7 +468,7 @@ const AverageProfitLoss = () => {
         ) : (
           <WidgetSection title="Monthly P&L">
             <p className="text-center text-gray-500 py-8">
-              No data available for FY 2024–25
+             No data available for {selectedFY}
             </p>
           </WidgetSection>
         )}
