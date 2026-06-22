@@ -2,6 +2,10 @@ const Log = require("../models/Log");
 const modelMap = require("../config/modelMap");
 const mongoose = require("mongoose");
 
+const modelSelectMap = {
+  Department: "name",
+};
+
 const getDateFilter = (req) => {
   const fromDate = req.query.fromDate || req.body?.fromDate;
   const toDate = req.query.toDate || req.body?.toDate;
@@ -50,7 +54,14 @@ const getLogs = async (req, res, next) => {
 
           if (modelName && mongoose.isValidObjectId(value)) {
             const Model = mongoose.model(modelName);
-            populatedPayload[key] = await Model.findById(value).lean();
+            const selectFields = modelSelectMap[modelName];
+            const query = Model.findById(value);
+
+            if (selectFields) {
+              query.select(selectFields);
+            }
+
+            populatedPayload[key] = await query.lean();
           }
         }
 
