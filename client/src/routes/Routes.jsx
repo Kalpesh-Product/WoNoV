@@ -4003,7 +4003,13 @@ export const routes = createBrowserRouter([
                     element: (
                       <PerformancePermissionRoute
                         element={<PrintoutDashboard />}
-                        permissions={[PERMISSIONS.SIDEBAR_PRINTOUTS]}
+                        permissions={[
+                          PERMISSIONS.SIDEBAR_PRINTOUTS,
+                          PERMISSIONS.PRINTOUT_MONTHLY_TOTAL_PRINTOUT,
+                          PERMISSIONS.PRINTOUT_ADD_PRINTOUT,
+                          PERMISSIONS.PRINTOUT_MANAGE_PRINTOUT,
+                          PERMISSIONS.PRINTOUT_REPORT_PRINTOUT,
+                        ]}
                       />
                     ),
                     index: true,
