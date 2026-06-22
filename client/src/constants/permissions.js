@@ -645,7 +645,13 @@ export const PERMISSIONS = {
     value: "printout_unit_wise_printout",
     title: "PRINTOUT UNIT WISE PRINTOUT",
     type: "read",
-  },  
+  },
+  PRINTOUT_CLIENT_WISE_QUANTITY: {
+    value: "printout_client_wise_quantity",
+    title: "PRINTOUT CLIENT WISE QUANTITY",
+    type: "read",
+  },
+
 
   PRINTOUT_ADD_PRINTOUT: {
     value: "printout_add_printout",

@@ -5,12 +5,37 @@ import { MdFormatListBulleted } from "react-icons/md";
 import { RiArchiveDrawerLine, RiPagesLine } from "react-icons/ri";
 import Card from "../../components/Card";
 import DonutChart from "../../components/graphs/DonutChart";
+import PieChartMui from "../../components/graphs/PieChartMui";
 import FyBarGraphCount from "../../components/graphs/FyBarGraphCount";
 import WidgetSection from "../../components/WidgetSection";
 import { PERMISSIONS } from "../../constants/permissions";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 const getUnitName = (unit) => unit?.unitNo || unit?.unitName || "—";
+const getCompanyName = (company) =>
+  company?.clientName || company?.companyName || company?.name || "—";
+
+const getTopPrintoutQuantityData = (items, labelKey) => {
+  const sortedItems = [...items].sort((a, b) => b.quantity - a.quantity);
+
+  if (sortedItems.length <= 7) {
+    return sortedItems;
+  }
+
+  const topClients = sortedItems.slice(0, 6);
+  const othersQuantity = sortedItems
+    .slice(6)
+    .reduce((total, item) => total + item.quantity, 0);
+
+  return [
+    ...topClients,
+    {
+      [labelKey]: "Others",
+      quantity: othersQuantity,
+    },
+  ];
+};
+
 
 const PrintoutDashboard = () => {
   const { auth } = useAuth();
@@ -89,6 +114,62 @@ const unitWisePrintoutData = useMemo(() => {
     (item) => `Quantity : ${item.quantity.toLocaleString("en-IN")}`,
   );
 
+  const clientWiseQuantityData = useMemo(() => {
+    const clientQuantityMap = new Map();
+
+    printouts.forEach((printout) => {
+      const clientName = getCompanyName(printout?.client);
+      const quantity = Number(printout?.printoutCount);
+      const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 0;
+
+      clientQuantityMap.set(
+        clientName,
+        (clientQuantityMap.get(clientName) || 0) + safeQuantity,
+      );
+    });
+
+    const clientQuantities = Array.from(clientQuantityMap, ([client, quantity]) => ({
+      client,
+      quantity,
+    }));
+
+    return getTopPrintoutQuantityData(clientQuantities, "client");
+  }, [printouts]);
+
+  const clientWiseQuantityLabels = clientWiseQuantityData.map((item) => item.client);
+  const clientWiseQuantityPieData = clientWiseQuantityData.map((item) => ({
+    label: item.client,
+    value: item.quantity,
+  }));
+  const clientWiseQuantityPieOptions = {
+    labels: clientWiseQuantityLabels,
+    legend: {
+      position: "bottom",
+    },
+    tooltip: {
+      y: {
+        formatter: (val) => `Quantity : ${Number(val).toLocaleString("en-IN")}`,
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => `${val.toFixed(0)}%`,
+    },
+    chart: {
+      type: "pie",
+      fontFamily: "Poppins-Regular",
+    },
+    colors: [
+      "#FFB946",
+      "#54C4A7",
+      "#6A5ACD",
+      "#FF4D4F",
+      "#00C49F",
+      "#4BC0C0",
+      "#9966FF",
+    ],
+  };
+
   const canViewMonthlyTotalPrintout = userPermissions.includes(
     PERMISSIONS.PRINTOUT_MONTHLY_TOTAL_PRINTOUT.value,
      );
@@ -96,6 +177,31 @@ const unitWisePrintoutData = useMemo(() => {
   const canViewUnitWisePrintout = userPermissions.includes(
     PERMISSIONS.PRINTOUT_UNIT_WISE_PRINTOUT.value,
   );
+
+const canViewClientWiseQuantity = userPermissions.includes(
+    PERMISSIONS.PRINTOUT_CLIENT_WISE_QUANTITY.value,
+  );
+
+  const printoutQuantityCharts = [
+    canViewUnitWisePrintout && {
+      key: "unitWisePrintout",
+      chartType: "donut",
+      title: "Overall Unit wise",
+      titleLabel: "Printout",
+      labels: unitWisePrintoutLabels,
+      colors: ["#54C4A7", "#FFB946", "#FF4D4F", "#6A5ACD"],
+      series: unitWisePrintoutSeries,
+      tooltipValue: unitWisePrintoutTooltip,
+    },
+    canViewClientWiseQuantity && {
+      key: "clientWiseQuantity",
+      chartType: "pie",
+      title: "Overall",
+      titleLabel: "Client Wise Quantity",
+      data: clientWiseQuantityPieData,
+      options: clientWiseQuantityPieOptions,
+    },
+  ].filter(Boolean);
   // const graphConfigs = [
   //   {
   //     key: "monthlyTotalPrintout",
@@ -149,20 +255,35 @@ const unitWisePrintoutData = useMemo(() => {
           />
         ))}
       </div>
-       {canViewUnitWisePrintout && (
+     {printoutQuantityCharts.length > 0 && (
         <div className="w-full flex-none overflow-hidden">
-          <WidgetSection
-            title="Overall Unit wise"
-            titleLabel="Printout"
-            border
-          >
-            <DonutChart
-              centerLabel="Quantity"
-              labels={unitWisePrintoutLabels}
-              colors={["#54C4A7", "#FFB946", "#FF4D4F", "#6A5ACD"]}
-              series={unitWisePrintoutSeries}
-              tooltipValue={unitWisePrintoutTooltip}
-            />
+          <WidgetSection layout={printoutQuantityCharts.length}>
+            {printoutQuantityCharts.map((chart) => (
+              <WidgetSection
+                key={chart.key}
+                title={chart.title}
+                titleLabel={chart.titleLabel}
+                border
+              >
+                {chart.chartType === "pie" ? (
+                  <PieChartMui
+                    data={chart.data}
+                    options={chart.options}
+                    width={500}
+                    height={320}
+                    centerAlign
+                  />
+                ) : (
+                  <DonutChart
+                    centerLabel="Quantity"
+                    labels={chart.labels}
+                    colors={chart.colors}
+                    series={chart.series}
+                    tooltipValue={chart.tooltipValue}
+                  />
+                )}
+              </WidgetSection>
+            ))}
           </WidgetSection>
         </div>
       )}
