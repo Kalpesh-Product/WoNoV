@@ -6,6 +6,7 @@ const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+const Unit = require("../../models/locations/Unit");
 const dayjs = require("dayjs");
 const utc = require("dayjs/plugin/utc");
 const timezone = require("dayjs/plugin/timezone");
@@ -17,7 +18,7 @@ const fetchBudgetVoucherService = async ({
   company,
   dateFilter,
   departmentId,
-  type = "",
+  extraMatch = {},
   isReport,
 }) => {
   const query = { company };
@@ -324,13 +325,9 @@ const monthlyAggregate = (
   valueExpr,
   company,
   dateRange,
-  type = "",
+  extraMatch = {},
 ) => {
-  const match = { company };
-
-  if (type === "budget") {
-    match.status = "Approved";
-  }
+  const match = { company, ...extraMatch };
 
   if (dateRange && (dateRange.$gte || dateRange.$lte)) {
     match[dateField] = dateRange;
@@ -437,7 +434,7 @@ const fetchProfitLossReportService = async ({
   dateFilter,
   type = "",
 }) => {
-  const dateRange = extractDateRange(dateFilter);
+  const dateRange = type === "historical" ? null : extractDateRange(dateFilter);
 
   const [
     meetingRevenue,
@@ -446,6 +443,7 @@ const fetchProfitLossReportService = async ({
     workationRevenue,
     coworkingRevenue,
     expense,
+    sqftSummary,
   ] = await Promise.all([
     monthlyAggregate(
       MeetingRevenue,
@@ -485,7 +483,18 @@ const fetchProfitLossReportService = async ({
     monthlyAggregate(Budget, "dueDate", expenseValueExpr, company, dateRange, {
       status: "Approved",
     }),
+    Unit.aggregate([
+      { $match: { company } },
+      {
+        $group: {
+          _id: null,
+          totalSqft: { $sum: { $ifNull: ["$sqft", 0] } },
+        },
+      },
+    ]),
   ]);
+
+  const totalSqft = sqftSummary[0]?.totalSqft || 0;
 
   [
     ["Meeting revenue", meetingRevenue],
@@ -524,7 +533,6 @@ const fetchProfitLossReportService = async ({
   // whatever months actually have data if no range was supplied
 
   if (type === "historical") {
-    console.log("history", dateFilter);
     const historicalData = Object.entries(historicalPnlYearCategories).map(
       ([fiscalYear, months]) => {
         const income = months.reduce(
@@ -550,15 +558,15 @@ const fetchProfitLossReportService = async ({
         const expenseTotal = historicalPnlBaseExpenseData[index];
 
         return {
-          name: `FY ${2021 + index}-${2022 + index}`,
+          financialYear: `FY ${2021 + index}-${2022 + index}`,
           totalIncome: inrFormat(income),
           totalExpense: inrFormat(expenseTotal),
           totalProfitLoss: inrFormat(income - expenseTotal),
         };
       }),
       ...historicalData.map((item, index) => ({
-        srNo: historicalPnlBaseIncomeData.length + index + 1,
-        name: item.fiscalYear,
+        // srNo: historicalPnlBaseIncomeData.length + index + 1,
+        financialYear: item.fiscalYear,
         totalIncome: inrFormat(item.income),
         totalExpense: inrFormat(item.expense),
         totalProfitLoss: inrFormat(item.profitLoss),
@@ -572,18 +580,41 @@ const fetchProfitLossReportService = async ({
       new Set([...Object.keys(incomeMap), ...Object.keys(expenseMap)]),
     );
 
-  return allMonths
-    .filter((month) => !excludedMonths.includes(month))
-    .map((month) => {
+  // return allMonths
+  //   .filter((month) => !excludedMonths.includes(month))
+  //   .map((month) => {
+  const reportMonths = allMonths.filter(
+    (month) => !excludedMonths.includes(month),
+  );
+
+  if (type === "sqft") {
+    return reportMonths.map((month, index) => {
       const income = incomeMap[month] || 0;
-      const expenseTotal = expenseMap[month] || 0;
+      // const expenseTotal = expenseMap[month] || 0;
       return {
+        // month,
+        // income,
+        // expense: expenseTotal,
+        // pnl: income - expenseTotal,
+        id: index + 1,
         month,
-        income,
-        expense: expenseTotal,
-        pnl: income - expenseTotal,
+        income: inrFormat(income),
+        sqft: totalSqft,
+        perSqFt: totalSqft ? (income / totalSqft).toFixed(0) : "0",
       };
     });
+  }
+
+  return reportMonths.map((month) => {
+    const income = incomeMap[month] || 0;
+    const expenseTotal = expenseMap[month] || 0;
+    return {
+      month,
+      income,
+      expense: expenseTotal,
+      pnl: income - expenseTotal,
+    };
+  });
 };
 
 module.exports = {
