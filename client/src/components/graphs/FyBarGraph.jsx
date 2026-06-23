@@ -43,6 +43,7 @@ const FyBarGraph = ({
   valueKey = "revenue",
   chartOptions = {},
   graphTitle = "",
+  titleAmount,
   responsiveResize = true,
   chartId = "bargraph"
 }) => {
@@ -155,7 +156,7 @@ const FyBarGraph = ({
     <WidgetSection
       border
       title={`${graphTitle} ${selectedFY}`}
-      TitleAmount={`INR ${inrFormat(fyTotal)}`}
+      TitleAmount={titleAmount || `INR ${inrFormat(fyTotal)}`}
     >
       <div className="flex flex-col gap-4 rounded-md">
         <BarGraph

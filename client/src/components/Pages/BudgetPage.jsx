@@ -290,56 +290,144 @@ const BudgetPage = () => {
     ];
   }, [hrFinance]);
 
-  const maxExpenseValue = Math.max(
-    ...expenseRawSeries.flatMap((series) => series.data),
-  );
-  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+  const budgetGraphData = useMemo(() => {
+    const currentMonthStart = dayjs().startOf("month");
+
+    return (hrFinance || []).flatMap((item) => {
+      const dueDate = item?.dueDate;
+      const dueMonth = dayjs(dueDate);
+      const projectedAmount = Number(item?.projectedAmount || 0);
+      const actualAmount = Number(item?.actualAmount || 0);
+      const remainingProjectedAmount = Math.max(projectedAmount - actualAmount, 0);
+      const isPastMonth =
+        dueMonth.isValid() && dueMonth.startOf("month").isBefore(currentMonthStart);
+
+      const series = [
+        {
+          dueDate,
+          amount: actualAmount,
+          vertical: "Actual Amount",
+        },
+      ];
+
+      if (!isPastMonth) {
+        series.push({
+          dueDate,
+          amount: remainingProjectedAmount,
+          vertical: "Projected Amount",
+        });
+      }
+
+      return series;
+    });
+  }, [hrFinance]);
+
+  const { roundedMax, tickAmount } = useMemo(() => {
+    const monthlyTotals = budgetGraphData.reduce((acc, item) => {
+      const dueDate = item?.dueDate;
+      if (!dueDate) return acc;
+
+      const monthKey = dayjs(dueDate).format("YYYY-MM");
+      acc[monthKey] = (acc[monthKey] || 0) + Number(item?.amount || 0);
+      return acc;
+    }, {});
+
+    const maxExpenseValue = Math.max(...Object.values(monthlyTotals), 0);
+    if (maxExpenseValue <= 0) {
+      return { roundedMax: 10000, tickAmount: 5 };
+    }
+
+    const bufferedMax = maxExpenseValue * 1.1;
+    const roughStep = bufferedMax / 6;
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+    const normalizedStep = roughStep / magnitude;
+
+    let step = magnitude;
+    if (normalizedStep <= 1) step = magnitude;
+    else if (normalizedStep <= 2) step = 2 * magnitude;
+    else if (normalizedStep <= 5) step = 5 * magnitude;
+    else step = 10 * magnitude;
+
+    const safeRoundedMax = Math.ceil(bufferedMax / step) * step;
+
+    return {
+      roundedMax: safeRoundedMax,
+      tickAmount: Math.max(Math.round(safeRoundedMax / step), 1),
+    };
+  }, [budgetGraphData]);
 
   const expenseOptions = {
     chart: {
       type: "bar",
       toolbar: { show: false },
 
-      stacked: false,
+      stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
     },
-    colors: ["#54C4A7", "#EB5C45"],
+    colors: ["#54C4A7", "#C4C4C4"],
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "40%",
+        columnWidth: "48%",
         borderRadius: 5,
-        borderRadiusApplication: "none",
+        borderRadiusApplication: "end",
+        borderRadiusWhenStacked: "last",
         dataLabels: {
           position: "top",
+          total: {
+            enabled: true,
+            offsetY: -3,
+            style: {
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#000000",
+            },
+            formatter: (_, config) => {
+              const currentMonthLabel = dayjs().format("MMM-YY");
+              const monthLabel =
+                config?.w?.globals?.labels?.[config?.dataPointIndex];
+
+              if (monthLabel === currentMonthLabel) {
+                return "";
+              }
+
+              const total =
+                config?.w?.globals?.stackedSeriesTotals?.[
+                  config?.dataPointIndex
+                ] || 0;
+              return inrFormat(Number(total || 0));
+            },
+          },
         },
       },
     },
     dataLabels: {
-      enabled: true,
-      formatter: (val) => {
-        return inrFormat(val);
-      },
-
-      style: {
-        fontSize: "12px",
-        colors: ["#000"],
-      },
-      offsetY: -22,
+      enabled: false,
     },
 
     yaxis: {
       min: 0,
       max: roundedMax,
       title: { text: "Amount In Lakhs (INR)" },
-      // tickAmount: Math.ceil((roundedMax / 600000).toFixed(0)) ,
-      tickAmount: 4,
+      tickAmount,
       labels: {
-        formatter: (val) => `${val / 100000}`,
+        formatter: (val) => `${val / 10000}`,
       },
     },
     fill: {
       opacity: 1,
+    },
+    states: {
+      hover: {
+        filter: {
+          type: "none",
+        },
+      },
+      active: {
+        filter: {
+          type: "none",
+        },
+      },
     },
     legend: {
       show: true,
@@ -347,26 +435,11 @@ const BudgetPage = () => {
     },
 
     tooltip: {
-      enabled: false,
-      custom: function ({ series, seriesIndex, dataPointIndex }) {
-        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
-        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
-        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
-        //     </div>`;
-        return `
-              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-          
-                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                  <div><strong>Finance Expense:</strong></div>
-                  <div style="width: 10px;"></div>
-               <div style="text-align: left;">INR ${Math.round(
-                 rawData,
-               ).toLocaleString("en-IN")}</div>
-  
-                </div>
-       
-              </div>
-            `;
+      enabled: true,
+      shared: false,
+      intersect: true,
+      y: {
+        formatter: (value) => `INR ${inrFormat(Number(value || 0))}`,
       },
     },
   };
@@ -383,11 +456,12 @@ const BudgetPage = () => {
   return (
     <div className="flex flex-col gap-8">
       <FyBarGraph
-        data={hrFinance}
+        data={budgetGraphData}
         dateKey="dueDate"
-        valueKey="actualAmount"
+        valueKey="amount"
         chartOptions={expenseOptions}
         graphTitle={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
+        titleAmount={`INR ${inrFormat(totalUtilised)}`}
       />
 
       {canRequestBudget && (
