@@ -590,17 +590,14 @@ const fetchProfitLossReportService = async ({
   if (type === "sqft") {
     return reportMonths.map((month, index) => {
       const income = incomeMap[month] || 0;
-      // const expenseTotal = expenseMap[month] || 0;
+      const sqft = Number(totalSqft) || 0;
+
       return {
-        // month,
-        // income,
-        // expense: expenseTotal,
-        // pnl: income - expenseTotal,
         id: index + 1,
         month,
         income: inrFormat(income),
-        sqft: totalSqft,
-        perSqFt: totalSqft ? (income / totalSqft).toFixed(0) : "0",
+        sqft,
+        perSqFt: sqft ? (income / sqft).toFixed(0) : "0",
       };
     });
   }
