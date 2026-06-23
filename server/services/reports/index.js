@@ -253,6 +253,12 @@ const reportServiceRegistry = {
     staticParams: { type: "payout" },
   }),
 
+  "landlord-payments": createReportService(fetchBudgetVoucherService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "landlord-payments" },
+  }),
+
   "department-voucher": createReportService(fetchVoucherService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,

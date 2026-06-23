@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { CircularProgress, MenuItem, Popover, TextField } from "@mui/material";
-import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import {
+  DatePicker,
+  LocalizationProvider,
+  TimePicker,
+} from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -142,7 +146,7 @@ const ManagePrintout = () => {
       queryKey: ["clientMembers", selectedClient],
       queryFn: async () => {
         const response = await axios.get(
-          `/api/sales/co-working-client-members?clientId=${selectedClient}`
+          `/api/sales/co-working-client-members?clientId=${selectedClient}`,
         );
         return response.data;
       },
@@ -163,10 +167,10 @@ const ManagePrintout = () => {
     () =>
       employees.filter((employee) =>
         getEmployeeDepartments(employee).some(
-          (department) => department._id === selectedDepartment
-        )
+          (department) => department._id === selectedDepartment,
+        ),
       ),
-    [employees, selectedDepartment]
+    [employees, selectedDepartment],
   );
 
   const filteredClientCompanies = useMemo(() => {
@@ -210,7 +214,9 @@ const ManagePrintout = () => {
         srNo: index + 1,
         takenBy: getTableValue(getUserName(printout.takenBy)),
         takenAt: getTableValue(formatDateTime(printout.takenAt)),
-        location: getTableValue(getLocationName(printout.location, printout.unit)),
+        location: getTableValue(
+          getLocationName(printout.location, printout.unit),
+        ),
         unit: getTableValue(getUnitName(printout.unit)),
         client: getTableValue(getCompanyName(printout.client)),
         requestedBy: getTableValue(getUserName(printout.requestedBy)),
@@ -218,47 +224,50 @@ const ManagePrintout = () => {
         printoutCount: printout.printoutCount,
         remarks: getTableValue(printout?.remark),
       })),
-    [filteredPrintouts]
+    [filteredPrintouts],
   );
 
-  const { mutate: updatePrintout, isPending: isUpdatingPrintout } = useMutation({
-    mutationKey: ["updatePrintout"],
-    mutationFn: async (formData) => {
-      const payload = {
-        takenAt: dayjs(formData.dateOfPrintout)
-          .hour(dayjs(formData.timeOfPrintout).hour())
-          .minute(dayjs(formData.timeOfPrintout).minute())
-          .second(0)
-          .millisecond(0)
-          .toISOString(),
-        location: formData.location,
-        unit: formData.unit,
-        client: formData.client,
-        requestedBy: formData.requestedBy,
-        department: isBiznestClient ? formData.department || null : null,
-        printoutCount: Number(formData.printoutCount),
-        remark: formData.remarks?.trim() || "",
-      };
+  const { mutate: updatePrintout, isPending: isUpdatingPrintout } = useMutation(
+    {
+      mutationKey: ["updatePrintout"],
+      mutationFn: async (formData) => {
+        const payload = {
+          takenAt: dayjs(formData.dateOfPrintout)
+            .hour(dayjs(formData.timeOfPrintout).hour())
+            .minute(dayjs(formData.timeOfPrintout).minute())
+            .second(0)
+            .millisecond(0)
+            .toISOString(),
+          location: formData.location,
+          unit: formData.unit,
+          client: formData.client,
+          requestedBy: formData.requestedBy,
+          department: isBiznestClient ? formData.department || null : null,
+          printoutCount: Number(formData.printoutCount),
+          remark: formData.remarks?.trim() || "",
+        };
 
-      const response = await axios.patch(
-        `/api/printout/${selectedPrintout._id}`,
-        payload
-      );
-      return response.data;
+        const response = await axios.patch(
+          `/api/printout/${selectedPrintout._id}`,
+          payload,
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data?.message || "Printout updated successfully");
+        queryClient.invalidateQueries({ queryKey: ["printouts"] });
+        setIsEditModalOpen(false);
+        setSelectedPrintout(null);
+        reset(buildDefaultValues());
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            "An error occurred while updating printout",
+        );
+      },
     },
-    onSuccess: (data) => {
-      toast.success(data?.message || "Printout updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["printouts"] });
-      setIsEditModalOpen(false);
-      setSelectedPrintout(null);
-      reset(buildDefaultValues());
-    },
-    onError: (error) => {
-      toast.error(
-        error?.response?.data?.message || "An error occurred while updating printout"
-      );
-    },
-  });
+  );
 
   const openViewModal = (printout) => {
     setSelectedPrintout(printout.rawPrintout);
@@ -274,7 +283,8 @@ const ManagePrintout = () => {
       takenBy: getId(rawPrintout.takenBy),
       dateOfPrintout: takenAt.isValid() ? takenAt : dayjs(),
       timeOfPrintout: takenAt.isValid() ? takenAt : dayjs(),
-      location: getId(rawPrintout.location) || getId(rawPrintout.unit?.building),
+      location:
+        getId(rawPrintout.location) || getId(rawPrintout.unit?.building),
       unit: getId(rawPrintout.unit),
       client: getId(rawPrintout.client),
       requestedBy: getId(rawPrintout.requestedBy),
@@ -317,15 +327,15 @@ const ManagePrintout = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr. No.", width: 110 },
-    { field: "takenBy", headerName: "Taken By",flex:1},
-    { field: "takenAt", headerName: "Taken At",flex:1},
-    { field: "location", headerName: "Building",flex:1},
-    { field: "unit", headerName: "Unit",flex:1},
-    { field: "client", headerName: "Company",flex:1},
-    { field: "requestedBy", headerName: "Person",flex:1},
-    { field: "department", headerName: "Department",flex:1},
-    { field: "printoutCount", headerName: "Quantity",flex:1},
-    { field: "remarks", headerName: "Remarks", flex: 1},
+    { field: "takenBy", headerName: "Taken By", flex: 1 },
+    { field: "takenAt", headerName: "Taken At", flex: 1 },
+    { field: "location", headerName: "Building", flex: 1 },
+    { field: "unit", headerName: "Unit", flex: 1 },
+    { field: "client", headerName: "Company", flex: 1 },
+    { field: "requestedBy", headerName: "Person", flex: 1 },
+    { field: "department", headerName: "Department", flex: 1 },
+    { field: "printoutCount", headerName: "Quantity", flex: 1 },
+    { field: "remarks", headerName: "Remarks", flex: 1 },
     {
       field: "actions",
       headerName: "Action",
@@ -428,7 +438,10 @@ const ManagePrintout = () => {
           />
           <DetalisFormatted
             title="Building"
-            detail={getLocationName(selectedPrintout?.location, selectedPrintout?.unit)}
+            detail={getLocationName(
+              selectedPrintout?.location,
+              selectedPrintout?.unit,
+            )}
           />
           <DetalisFormatted
             title="Unit"
@@ -450,10 +463,7 @@ const ManagePrintout = () => {
             title="Quantity"
             detail={selectedPrintout?.printoutCount}
           />
-          <DetalisFormatted
-            title="Remarks"
-            detail={selectedPrintout?.remark}
-          />
+          <DetalisFormatted title="Remarks" detail={selectedPrintout?.remark} />
         </div>
       </MuiModal>
 
@@ -526,7 +536,9 @@ const ManagePrintout = () => {
                     </MenuItem>
                   ) : (
                     unitsData
-                      .filter((unit) => unit?.building?._id === selectedLocation)
+                      .filter(
+                        (unit) => unit?.building?._id === selectedLocation,
+                      )
                       .map((unit) => (
                         <MenuItem key={unit._id} value={unit._id}>
                           {getUnitName(unit)}
@@ -550,7 +562,9 @@ const ManagePrintout = () => {
                   error={!!errors.client}
                   helperText={errors.client?.message}
                   fullWidth
-                  onChange={(event) => handleClientChange(field, event.target.value)}
+                  onChange={(event) =>
+                    handleClientChange(field, event.target.value)
+                  }
                 >
                   <MenuItem value="">Select Company</MenuItem>
                   <MenuItem value={companyId}>BIZNest</MenuItem>
@@ -716,21 +730,21 @@ const ManagePrintout = () => {
             </LocalizationProvider>
 
             {/* <div className="md:col-span-2"> */}
-              <Controller
-                name="remarks"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    size="small"
-                    label="Remarks"
-                    fullWidth
-                    multiline
-                    //minRows={3}
-                  />
-                )}
-              />
-            </div>
+            <Controller
+              name="remarks"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Comment / Remark"
+                  fullWidth
+                  multiline
+                  //minRows={3}
+                />
+              )}
+            />
+          </div>
           {/* </div> */}
 
           <div className="flex items-center justify-center gap-4 mt-6">
