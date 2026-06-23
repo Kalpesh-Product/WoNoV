@@ -550,16 +550,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     list: { sx: { p: 0 } },
   }}
 >
-  {/* <MenuItem  (For edit with upload invoice button)
+ {/* (For edit & upload invoice button) */}
+  <MenuItem
     sx={{
-      justifyContent: "flex-start", // 👉 left side
+      justifyContent: "flex-start",
       fontWeight: 500,
       color: "#1E3D73",
       py: 1.1,
       borderBottom:
-        actionRow?.status === "Approved"
-          ? "1px solid #D1D5DB"
-          : "none",
+        actionRow?.status === "Approved" ? "1px solid #D1D5DB" : "none",
     }}
     onClick={() => {
       if (actionRow) {
@@ -569,9 +568,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     }}
   >
     Edit
-  </MenuItem> */}
+  </MenuItem>
 
-   {actionRow?.status !== "Approved" && (
+  
+
+  {/* For Only Edit Button  */}
+   {/* {actionRow?.status !== "Approved" && (
     <MenuItem
       sx={{
         justifyContent: "flex-start",
@@ -588,8 +590,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     >
       Edit
     </MenuItem>
-  )}
+  )} */}
 
+{/* For  Only Upload Invoice Button */}
   {actionRow?.status === "Approved" && (
     <MenuItem
       sx={{

@@ -243,9 +243,27 @@ const reportServiceRegistry = {
     {
       dateField: "dueDate",
       contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
-      staticParams: { type: "p&l" },
+      staticParams: { type: "total" },
     },
   ),
+
+  // "historical-profit-loss": createReportService(fetchProfitLossReportService, {
+  //   dateField: "dueDate",
+  //   contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+  //   staticParams: { type: "historical" },
+  // }),
+
+  historicalprofitloss: createReportService(fetchProfitLossReportService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "historical" },
+  }),
+
+  "expense-per-sqft": createReportService(fetchProfitLossReportService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "sqft" },
+  }),
 
   payouts: createReportService(fetchBudgetVoucherService, {
     dateField: "dueDate",
