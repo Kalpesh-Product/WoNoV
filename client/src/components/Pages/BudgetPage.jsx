@@ -291,35 +291,70 @@ const BudgetPage = () => {
   }, [hrFinance]);
 
   const budgetGraphData = useMemo(() => {
+    const currentMonthStart = dayjs().startOf("month");
+
     return (hrFinance || []).flatMap((item) => {
       const dueDate = item?.dueDate;
+      const dueMonth = dayjs(dueDate);
       const projectedAmount = Number(item?.projectedAmount || 0);
       const actualAmount = Number(item?.actualAmount || 0);
       const remainingProjectedAmount = Math.max(projectedAmount - actualAmount, 0);
+      const isPastMonth =
+        dueMonth.isValid() && dueMonth.startOf("month").isBefore(currentMonthStart);
 
-      return [
+      const series = [
         {
           dueDate,
           amount: actualAmount,
           vertical: "Actual Amount",
         },
-        {
+      ];
+
+      if (!isPastMonth) {
+        series.push({
           dueDate,
           amount: remainingProjectedAmount,
           vertical: "Projected Amount",
-        },
-      ];
+        });
+      }
+
+      return series;
     });
   }, [hrFinance]);
 
-  const maxExpenseValue = Math.max(
-    ...budgetGraphData.map((item) => Number(item?.amount || 0)),
-    0,
-  );
-  const roundedMax =
-    maxExpenseValue > 0
-      ? Math.max(Math.ceil((maxExpenseValue * 1.2) / 10000) * 10000, 10000)
-      : 10000;
+  const { roundedMax, tickAmount } = useMemo(() => {
+    const monthlyTotals = budgetGraphData.reduce((acc, item) => {
+      const dueDate = item?.dueDate;
+      if (!dueDate) return acc;
+
+      const monthKey = dayjs(dueDate).format("YYYY-MM");
+      acc[monthKey] = (acc[monthKey] || 0) + Number(item?.amount || 0);
+      return acc;
+    }, {});
+
+    const maxExpenseValue = Math.max(...Object.values(monthlyTotals), 0);
+    if (maxExpenseValue <= 0) {
+      return { roundedMax: 10000, tickAmount: 5 };
+    }
+
+    const bufferedMax = maxExpenseValue * 1.1;
+    const roughStep = bufferedMax / 6;
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+    const normalizedStep = roughStep / magnitude;
+
+    let step = magnitude;
+    if (normalizedStep <= 1) step = magnitude;
+    else if (normalizedStep <= 2) step = 2 * magnitude;
+    else if (normalizedStep <= 5) step = 5 * magnitude;
+    else step = 10 * magnitude;
+
+    const safeRoundedMax = Math.ceil(bufferedMax / step) * step;
+
+    return {
+      roundedMax: safeRoundedMax,
+      tickAmount: Math.max(Math.round(safeRoundedMax / step), 1),
+    };
+  }, [budgetGraphData]);
 
   const expenseOptions = {
     chart: {
@@ -339,27 +374,44 @@ const BudgetPage = () => {
         borderRadiusWhenStacked: "last",
         dataLabels: {
           position: "top",
+          total: {
+            enabled: true,
+            offsetY: -3,
+            style: {
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#000000",
+            },
+            formatter: (_, config) => {
+              const currentMonthLabel = dayjs().format("MMM-YY");
+              const monthLabel =
+                config?.w?.globals?.labels?.[config?.dataPointIndex];
+
+              if (monthLabel === currentMonthLabel) {
+                return "";
+              }
+
+              const total =
+                config?.w?.globals?.stackedSeriesTotals?.[
+                  config?.dataPointIndex
+                ] || 0;
+              return inrFormat(Number(total || 0));
+            },
+          },
         },
       },
     },
     dataLabels: {
       enabled: false,
-
-      style: {
-        fontSize: "12px",
-        colors: ["#000"],
-      },
-      offsetY: -22,
     },
 
     yaxis: {
       min: 0,
       max: roundedMax,
       title: { text: "Amount In Lakhs (INR)" },
-      // tickAmount: Math.ceil((roundedMax / 600000).toFixed(0)) ,
-      tickAmount: 4,
+      tickAmount,
       labels: {
-        formatter: (val) => `${val / 100000}`,
+        formatter: (val) => `${val / 10000}`,
       },
     },
     fill: {
