@@ -9,7 +9,7 @@ const EXCLUDED_FIELD_PATTERNS = [
   /^id$/,
   /createdAt/,
   /updatedAt/,
-  /sqft/,
+  // /sqft/,
   /openDesks/,
   /cabinDesks/,
   /^company$/,
@@ -105,7 +105,10 @@ const shouldOmitParentHeader = (header, allHeaders = []) => {
   return allHeaders.some((candidateHeader) => {
     const normalizedCandidateHeader = String(candidateHeader || "").trim();
 
-    if (!normalizedCandidateHeader || normalizedCandidateHeader === normalizedHeader) {
+    if (
+      !normalizedCandidateHeader ||
+      normalizedCandidateHeader === normalizedHeader
+    ) {
       return false;
     }
 
