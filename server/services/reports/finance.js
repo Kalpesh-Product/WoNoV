@@ -18,6 +18,7 @@ const fetchBudgetVoucherService = async ({
   company,
   dateFilter,
   departmentId,
+  type = "",
   extraMatch = {},
   isReport,
 }) => {
