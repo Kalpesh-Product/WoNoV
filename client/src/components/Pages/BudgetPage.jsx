@@ -290,36 +290,60 @@ const BudgetPage = () => {
     ];
   }, [hrFinance]);
 
+  const budgetGraphData = useMemo(() => {
+    return (hrFinance || []).flatMap((item) => {
+      const dueDate = item?.dueDate;
+      const projectedAmount = Number(item?.projectedAmount || 0);
+      const actualAmount = Number(item?.actualAmount || 0);
+      const remainingProjectedAmount = Math.max(projectedAmount - actualAmount, 0);
+
+      return [
+        {
+          dueDate,
+          amount: actualAmount,
+          vertical: "Actual Amount",
+        },
+        {
+          dueDate,
+          amount: remainingProjectedAmount,
+          vertical: "Projected Amount",
+        },
+      ];
+    });
+  }, [hrFinance]);
+
   const maxExpenseValue = Math.max(
-    ...expenseRawSeries.flatMap((series) => series.data),
+    ...budgetGraphData.map((item) => Number(item?.amount || 0)),
+    0,
   );
-  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+  const roundedMax =
+    maxExpenseValue > 0
+      ? Math.max(Math.ceil((maxExpenseValue * 1.2) / 10000) * 10000, 10000)
+      : 10000;
 
   const expenseOptions = {
     chart: {
       type: "bar",
       toolbar: { show: false },
 
-      stacked: false,
+      stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
     },
-    colors: ["#54C4A7", "#EB5C45"],
+    colors: ["#54C4A7", "#C4C4C4"],
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "40%",
+        columnWidth: "48%",
         borderRadius: 5,
-        borderRadiusApplication: "none",
+        borderRadiusApplication: "end",
+        borderRadiusWhenStacked: "last",
         dataLabels: {
           position: "top",
         },
       },
     },
     dataLabels: {
-      enabled: true,
-      formatter: (val) => {
-        return inrFormat(val);
-      },
+      enabled: false,
 
       style: {
         fontSize: "12px",
@@ -341,32 +365,29 @@ const BudgetPage = () => {
     fill: {
       opacity: 1,
     },
+    states: {
+      hover: {
+        filter: {
+          type: "none",
+        },
+      },
+      active: {
+        filter: {
+          type: "none",
+        },
+      },
+    },
     legend: {
       show: true,
       position: "top",
     },
 
     tooltip: {
-      enabled: false,
-      custom: function ({ series, seriesIndex, dataPointIndex }) {
-        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
-        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
-        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
-        //     </div>`;
-        return `
-              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-          
-                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                  <div><strong>Finance Expense:</strong></div>
-                  <div style="width: 10px;"></div>
-               <div style="text-align: left;">INR ${Math.round(
-                 rawData,
-               ).toLocaleString("en-IN")}</div>
-  
-                </div>
-       
-              </div>
-            `;
+      enabled: true,
+      shared: false,
+      intersect: true,
+      y: {
+        formatter: (value) => `INR ${inrFormat(Number(value || 0))}`,
       },
     },
   };
@@ -383,11 +404,12 @@ const BudgetPage = () => {
   return (
     <div className="flex flex-col gap-8">
       <FyBarGraph
-        data={hrFinance}
+        data={budgetGraphData}
         dateKey="dueDate"
-        valueKey="actualAmount"
+        valueKey="amount"
         chartOptions={expenseOptions}
         graphTitle={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
+        titleAmount={`INR ${inrFormat(totalUtilised)}`}
       />
 
       {canRequestBudget && (
