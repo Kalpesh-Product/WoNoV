@@ -247,7 +247,13 @@ const reportServiceRegistry = {
     },
   ),
 
-  "historical-profit-loss": createReportService(fetchProfitLossReportService, {
+  // "historical-profit-loss": createReportService(fetchProfitLossReportService, {
+  //   dateField: "dueDate",
+  //   contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+  //   staticParams: { type: "historical" },
+  // }),
+
+  historicalprofitloss: createReportService(fetchProfitLossReportService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
     staticParams: { type: "historical" },

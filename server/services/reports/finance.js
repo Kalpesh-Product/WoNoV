@@ -377,6 +377,44 @@ const monthlyAggregate = (
   ]);
 };
 
+const inrFormat = (money) =>
+  Number(money).toLocaleString("en-IN", {
+    maximumFractionDigits: 0,
+  });
+
+const historicalPnlYearCategories = {
+  "FY 2024-2025": [
+    "Apr-24",
+    "May-24",
+    "Jun-24",
+    "Jul-24",
+    "Aug-24",
+    "Sep-24",
+    "Oct-24",
+    "Nov-24",
+    "Dec-24",
+    "Jan-25",
+    "Feb-25",
+    "Mar-25",
+  ],
+  "FY 2025-2026": [
+    "Apr-25",
+    "May-25",
+    "Jun-25",
+    "Jul-25",
+    "Aug-25",
+    "Sep-25",
+    "Oct-25",
+    "Nov-25",
+    "Dec-25",
+    "Jan-26",
+    "Feb-26",
+    "Mar-26",
+  ],
+};
+
+const historicalPnlBaseIncomeData = [25174680, 31929380, 31929380];
+const historicalPnlBaseExpenseData = [24168780, 33899540, 33899540];
 const logProfitLossSourceCalculation = (source, monthlyData) => {
   const includedMonthlyData = monthlyData.filter(
     ({ _id: month }) => !excludedMonths.includes(month),
@@ -394,7 +432,11 @@ const logProfitLossSourceCalculation = (source, monthlyData) => {
   // });
 };
 
-const fetchProfitLossReportService = async ({ company, dateFilter }) => {
+const fetchProfitLossReportService = async ({
+  company,
+  dateFilter,
+  type = "",
+}) => {
   const dateRange = extractDateRange(dateFilter);
 
   const [
@@ -480,6 +522,50 @@ const fetchProfitLossReportService = async ({ company, dateFilter }) => {
 
   // Months to display: prefer the requested date range, fall back to
   // whatever months actually have data if no range was supplied
+
+  if (type === "historical") {
+    console.log("history", dateFilter);
+    const historicalData = Object.entries(historicalPnlYearCategories).map(
+      ([fiscalYear, months]) => {
+        const income = months.reduce(
+          (sum, month) => sum + (incomeMap[month] || 0),
+          0,
+        );
+        const expenseTotal = months.reduce(
+          (sum, month) => sum + (expenseMap[month] || 0),
+          0,
+        );
+
+        return {
+          fiscalYear,
+          income,
+          expense: expenseTotal,
+          profitLoss: income - expenseTotal,
+        };
+      },
+    );
+
+    return [
+      ...historicalPnlBaseIncomeData.map((income, index) => {
+        const expenseTotal = historicalPnlBaseExpenseData[index];
+
+        return {
+          name: `FY ${2021 + index}-${2022 + index}`,
+          totalIncome: inrFormat(income),
+          totalExpense: inrFormat(expenseTotal),
+          totalProfitLoss: inrFormat(income - expenseTotal),
+        };
+      }),
+      ...historicalData.map((item, index) => ({
+        srNo: historicalPnlBaseIncomeData.length + index + 1,
+        name: item.fiscalYear,
+        totalIncome: inrFormat(item.income),
+        totalExpense: inrFormat(item.expense),
+        totalProfitLoss: inrFormat(item.profitLoss),
+      })),
+    ];
+  }
+
   const allMonths =
     generateMonthRange(dateRange) ||
     Array.from(
