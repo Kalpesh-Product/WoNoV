@@ -109,9 +109,9 @@ const mapBudgetBaseFields = (budget = {}, isReport = false, type = "") => {
     : budget.projectedAmount || 0;
 
   return {
-    department: budget?.department?.name || "-",
     expanseName: budget?.expanseName || "-",
     ...(type !== "landlord-payments" && {
+      department: budget?.department?.name || "-",
       expanseType: budget?.expanseType || "-",
     }),
     ...(budget?.expanseType !== "Reimbursement" &&
