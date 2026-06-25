@@ -300,7 +300,7 @@ function validateArgs(args) {
   if (missing.length) {
     throw new Error(
       `Missing required argument(s): ${missing.join(", ")}\n` +
-        "Usage: node scripts/createReportCycle.js --name leads --controller controllers/salesControllers/leadsControllers.js --controllerFn getLeads --dateField dateOfContact",
+        "Usage: node scripts/reportAutomation.js --name leads --controller controllers/salesControllers/leadsControllers.js --controllerFn getLeads --dateField dateOfContact",
     );
   }
 }
