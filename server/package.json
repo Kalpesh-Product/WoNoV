@@ -12,8 +12,8 @@
     "dev:api": "nodemon server.js",
     "dev:worker": "nodemon workers/index.js",
     "scaffold:report": "node scripts/scaffoldReportAutomation.js",
-    "report-cycle:leads": "node scripts/createReportCycle.js --name leads --aliases unique-leads --serviceName fetchLeadReportService --serviceFile services/reports/lead.js --controller controllers/salesControllers/leadsControllers.js --controllerFn getLeads --dateField dateOfContact --contextKeys company,query --emptyMessage \"No leads found\"",
-    "report-cycle": "node scripts/createReportCycle.js"
+    "report-cycle:leads": "node scripts/reportAutomation.js --name leads --aliases unique-leads --serviceName fetchLeadReportService --serviceFile services/reports/lead.js --controller controllers/salesControllers/leadsControllers.js --controllerFn getLeads --dateField dateOfContact --contextKeys company,query --emptyMessage \"No leads found\"",
+    "report-cycle": "node scripts/reportAutomation.js"
   },
   "keywords": [],
   "author": "",
