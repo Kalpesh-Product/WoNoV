@@ -41,6 +41,7 @@ const {
   fetchLeavesReportService,
   fetchAttendanceReportService,
 } = require("./employees");
+const { fetchLeadReportService } = require("./lead");
 const normalizeReportIdentifier = (value = "") =>
   value
     .trim()
@@ -174,6 +175,10 @@ const reportServiceRegistry = {
 
   "workation-revenue": createReportService(fetchWorkationRevenueReportService, {
     dateField: "date",
+  }),
+
+  "unique-leads": createReportService(fetchLeadReportService, {
+    dateField: "dateOfContact",
   }),
 
   collection: createReportService(fetchCoworkingRevenueService, {
