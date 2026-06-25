@@ -17,6 +17,7 @@ require("./sales/AlternateRevenue");
 require("./sales/MeetingRevenue");
 require("./sales/VirtualOfficeRevenue");
 require("./sales/WorkationRevenue");
+require("./sales/Lead");
 
 //Client
 require("./sales/ClientService");
