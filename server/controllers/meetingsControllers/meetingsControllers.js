@@ -1996,6 +1996,7 @@ const updateMeetingDetails = async (req, res, next) => {
   try {
     const {
       meetingId,
+      date,
       startTime,
       endTime,
       internalParticipants,
@@ -2048,22 +2049,108 @@ const updateMeetingDetails = async (req, res, next) => {
       : meeting.externalClient;
 
     const currDate = new Date();
-    const startTimeObj = new Date(startTime);
-    const endTimeObj = new Date(endTime);
+    let startTimeObj = new Date(startTime);
+    let endTimeObj = new Date(endTime);
 
     if (isNaN(startTimeObj.getTime()) || isNaN(endTimeObj.getTime())) {
       return res.status(400).json({ message: "Invalid date/time format" });
     }
 
     const allowedRoles = ["Tech Admin", "Tech Employee"];
+    const adminTimingRoles = [
+      "Admin Admin",
+      "Admin Manager",
+      "Admin Employee",
+      "Administration Admin",
+      "Administration Manager",
+      "Administration Employee",
+    ];
+    const dateEditRoles = [
+      "Super Admin",
+      "Master Admin",
+      "Tech Admin",
+      "Tech Employee",
+    ];
+    const departmentNames =
+      req.user?.departments?.map((dept) => dept?.name?.trim()) || [];
     const isTech = roles?.some((r) => allowedRoles.includes(r));
+    const isAdminTimingUser =
+      roles?.some((r) => adminTimingRoles.includes(r)) ||
+      departmentNames.some((deptName) =>
+        ["Admin", "Administration"].includes(deptName),
+      );
+    const canEditMeetingDate = roles?.some((r) => dateEditRoles.includes(r));
+    const hasSpecialEditWindowAccess =
+      isAdminTimingUser || canEditMeetingDate;
+    const isAdminTimingRestrictedUser = isAdminTimingUser;
+    const meetingStartTime = new Date(meeting.startTime);
+    const meetingEndTime = new Date(meeting.endTime);
+    const isUpcoming = meetingStartTime > currDate;
+    const editWindowEndTime = new Date(meetingStartTime.getTime() + 30 * 60000);
+    const hasMeetingStarted = meetingStartTime <= currDate;
+    const isAdminTimingBufferExpired =
+      isAdminTimingRestrictedUser && currDate > editWindowEndTime;
+    const requestedDateObj = date ? new Date(date) : null;
 
-    const isUpcoming = meeting.startTime > currDate;
+    if (date && isNaN(requestedDateObj.getTime())) {
+      return res.status(400).json({ message: "Invalid meeting date format" });
+    }
 
-    if (!isTech && !isUpcoming) {
+    if (canEditMeetingDate && requestedDateObj) {
+      const normalizeDateTime = (selectedDate, sourceTime) => {
+        const normalizedDateTime = new Date(selectedDate);
+        const sourceDateTime = new Date(sourceTime);
+
+        normalizedDateTime.setHours(
+          sourceDateTime.getHours(),
+          sourceDateTime.getMinutes(),
+          sourceDateTime.getSeconds(),
+          sourceDateTime.getMilliseconds(),
+        );
+
+        return normalizedDateTime;
+      };
+
+      startTimeObj = normalizeDateTime(requestedDateObj, startTimeObj);
+      endTimeObj = normalizeDateTime(requestedDateObj, endTimeObj);
+    }
+
+    if (
+      !isTech &&
+      !isUpcoming &&
+      !hasSpecialEditWindowAccess
+    ) {
       return res.status(403).json({
         message: "You are not allowed to edit meeting timings to past time",
       });
+    }
+
+    if (isAdminTimingRestrictedUser && isAdminTimingBufferExpired) {
+      return res.status(403).json({
+        message:
+          "Meeting edit is allowed only until 30 minutes after the original start time",
+      });
+    }
+
+    if (
+      meeting.meetingType === "Internal" &&
+      isAdminTimingRestrictedUser
+    ) {
+      const allowedStartLowerBound = isAdminTimingBufferExpired
+        ? meetingStartTime
+        : new Date(meetingStartTime.getTime() - 30 * 60000);
+      const allowedEndLowerBound = isAdminTimingBufferExpired
+        ? meetingEndTime
+        : new Date(meetingEndTime.getTime() - 30 * 60000);
+      const isStartTimeInAllowedRange = startTimeObj >= allowedStartLowerBound;
+      const isEndTimeInAllowedRange = endTimeObj >= allowedEndLowerBound;
+
+      if (!isStartTimeInAllowedRange || !isEndTimeInAllowedRange) {
+        return res.status(403).json({
+          message:
+            "Meeting timing edits are allowed from 30 minutes before start time until 30 minutes after start time",
+        });
+      }
     }
 
     if (startTimeObj > endTimeObj) {
@@ -2075,8 +2162,8 @@ const updateMeetingDetails = async (req, res, next) => {
     const conflictingMeeting = await Meeting.findOne({
       _id: { $ne: meetingId },
       bookedRoom: meeting.bookedRoom._id,
-      startDate: { $lte: currDate },
-      endDate: { $gte: currDate },
+      startDate: { $lte: startTimeObj },
+      endDate: { $gte: startTimeObj },
       $or: [
         {
           $and: [
@@ -2251,6 +2338,12 @@ const updateMeetingDetails = async (req, res, next) => {
     // }
 
     const changes = {
+      ...(canEditMeetingDate && requestedDateObj
+        ? {
+            startDate: requestedDateObj,
+            endDate: requestedDateObj,
+          }
+        : {}),
       startTime: startTimeObj,
       endTime: endTimeObj,
       // creditsUsed: externalParticipants ? newCreditsUsed : 0,

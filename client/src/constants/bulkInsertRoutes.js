@@ -49,6 +49,36 @@ const bulkInsertRoutes = [
     ],
   },
   {
+    department: "6798bab0e469e809084e249a", // Finance Department
+    bulkInsertRoutes: [
+      {
+        name: "Alternate Revenue",
+        fileKey: "alternate-revenue",
+        route: "/api/sales/bulk-insert-alternate-revenue",
+      },
+      {
+        name: "Coworking Revenue",
+        fileKey: "coworking-revenues",
+        route: "/api/sales/bulk-insert-coworking-client-revenue",
+      },
+      {
+        name: "Virtual Office Revenue",
+        fileKey: "virtual-office-revenue",
+        route: "/api/sales/bulk-insert-virtual-office-revenue",
+      },
+      {
+        name: "Workation Revenues",
+        fileKey: "workation-revenue",
+        route: "/api/sales/bulk-insert-workation-revenue",
+      },
+      {
+        name: "Expense And Budget",
+        fileKey: "budgets",
+        route: "/api/budget/bulk-insert-budget/6798bab0e469e809084e249a",
+      },
+    ],
+  },
+  {
     department: "6798bacce469e809084e24a1", //sales Department
     bulkInsertRoutes: [
       {
