@@ -500,75 +500,118 @@ const buildUnitAvailabilityPayload = ({ unit, clients, visibleMembers }) => {
   };
 };
 
+// const fetchClientsOccupancyReportService = async ({
+//   company,
+//   roles,
+//   departments,
+// } = {}) => {
+//   const companyExists = await Company.findById(company).lean().exec();
+
+//   if (!companyExists) {
+//     return { payload: { message: "Company not found" } };
+//   }
+
+//   const clients = await CoworkingClient.find({ company, isActive: true })
+//     .populate({
+//       path: "unit",
+//       select:
+//         "unitName unitNo openDesks cabinDesks clearImage occupiedImage building",
+//       populate: { path: "building", select: "buildingName" },
+//     })
+//     .lean()
+//     .exec();
+
+//   const clientsWithUnits = clients.filter((client) => client?.unit?._id);
+
+//   if (!clientsWithUnits.length) {
+//     return { payload: [] };
+//   }
+
+//   const unitIds = [
+//     ...new Set(clientsWithUnits.map((client) => client.unit._id.toString())),
+//   ].map(toObjectId);
+
+//   const members = await CoworkingMembers.find({
+//     company,
+//     unit: { $in: unitIds },
+//   })
+//     .populate([
+//       {
+//         path: "client",
+//         select: "clientName cabinDesks openDesks isActive",
+//       },
+//       {
+//         path: "unit",
+//         select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
+//       },
+//     ])
+//     .lean()
+//     .exec();
+
+//   const visibleMembers = filterVisibleMembers(members, { roles, departments });
+
+//   const groupedByUnit = clientsWithUnits.reduce((acc, client) => {
+//     const unitId = client.unit._id.toString();
+
+//     if (!acc[unitId]) {
+//       acc[unitId] = {
+//         unit: client.unit,
+//         clients: [],
+//       };
+//     }
+
+//     acc[unitId].clients.push(client);
+//     return acc;
+//   }, {});
+
+//   const payload = Object.values(groupedByUnit).map(({ unit, clients }) =>
+//     buildUnitAvailabilityPayload({ unit, clients, visibleMembers }),
+//   );
+
+//   return { payload };
+// };
+
 const fetchClientsOccupancyReportService = async ({
   company,
-  roles,
-  departments,
+  dateFilter,
 } = {}) => {
-  const companyExists = await Company.findById(company).lean().exec();
+  const filter = {};
 
-  if (!companyExists) {
-    return { payload: { message: "Company not found" } };
+  if (company) {
+    filter.company = toObjectId(company);
   }
 
-  const clients = await CoworkingClient.find({ company, isActive: true })
-    .populate({
-      path: "unit",
-      select:
-        "unitName unitNo openDesks cabinDesks clearImage occupiedImage building",
-      populate: { path: "building", select: "buildingName" },
-    })
+  filter.isActive = true;
+
+  if (dateFilter?.startDate) {
+    filter.startDate = dateFilter.startDate;
+  }
+
+  const clients = await CoworkingClient.find(filter)
+    .select("clientName openDesks cabinDesks")
     .lean()
     .exec();
 
-  const clientsWithUnits = clients.filter((client) => client?.unit?._id);
+  const clientsWithOccupiedDesks = (clients || [])
+    .map((client) => ({
+      clientName: client.clientName || "-",
+      occupiedDesks:
+        (Number(client.openDesks) || 0) + (Number(client.cabinDesks) || 0),
+    }))
+    .sort((a, b) => b.occupiedDesks - a.occupiedDesks);
 
-  if (!clientsWithUnits.length) {
-    return { payload: [] };
-  }
-
-  const unitIds = [
-    ...new Set(clientsWithUnits.map((client) => client.unit._id.toString())),
-  ].map(toObjectId);
-
-  const members = await CoworkingMembers.find({
-    company,
-    unit: { $in: unitIds },
-  })
-    .populate([
-      {
-        path: "client",
-        select: "clientName cabinDesks openDesks isActive",
-      },
-      {
-        path: "unit",
-        select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
-      },
-    ])
-    .lean()
-    .exec();
-
-  const visibleMembers = filterVisibleMembers(members, { roles, departments });
-
-  const groupedByUnit = clientsWithUnits.reduce((acc, client) => {
-    const unitId = client.unit._id.toString();
-
-    if (!acc[unitId]) {
-      acc[unitId] = {
-        unit: client.unit,
-        clients: [],
-      };
-    }
-
-    acc[unitId].clients.push(client);
-    return acc;
-  }, {});
-
-  const payload = Object.values(groupedByUnit).map(({ unit, clients }) =>
-    buildUnitAvailabilityPayload({ unit, clients, visibleMembers }),
+  const totalOccupiedDesks = clientsWithOccupiedDesks.reduce(
+    (total, client) => total + client.occupiedDesks,
+    0,
   );
 
-  return { payload };
+  return clientsWithOccupiedDesks.map((client, index) => ({
+    "Client Name": client.clientName,
+    "Occupied Desks": client.occupiedDesks,
+    "Occupied %": totalOccupiedDesks
+      ? `${Math.round((client.occupiedDesks / totalOccupiedDesks) * 100)} %`
+      : "0 %",
+  }));
 };
 
 module.exports = {
