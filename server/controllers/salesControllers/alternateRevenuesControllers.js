@@ -58,7 +58,7 @@ const bulkInsertAlternateRevenue = async (req, res, next) => {
         .status(400)
         .json({ message: "Please provide a valid CSV file" });
     }
-    t;
+    // t;
     const records = [];
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
 
