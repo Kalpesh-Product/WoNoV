@@ -7,11 +7,33 @@ import WidgetSection from "../WidgetSection";
 import { inrFormat } from "../../utils/currencyFormat";
 import BarGraph from "./BarGraph";
 
+const getCurrentFinancialYearLabel = () => {
+  const today = dayjs();
+  const startYear = today.month() < 3 ? today.year() - 1 : today.year();
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
 const getFinancialYear = (dateStr) => {
   const date = dayjs(dateStr);
   if (!date.isValid()) return null;
   const year = date.month() < 3 ? date.year() - 1 : date.year();
   return `FY ${year}-${String((year + 1) % 100).padStart(2, "0")}`;
+};
+
+const shiftFinancialYear = (fyLabel, direction) => {
+  if (!fyLabel?.startsWith("FY")) {
+    return getCurrentFinancialYearLabel();
+  }
+
+  const [startYearStr] = fyLabel.replace("FY", "").trim().split("-");
+  const startYear = parseInt(startYearStr, 10);
+
+  if (Number.isNaN(startYear)) {
+    return getCurrentFinancialYearLabel();
+  }
+
+  const nextStartYear = startYear + direction;
+  return `FY ${nextStartYear}-${String((nextStartYear + 1) % 100).padStart(2, "0")}`;
 };
 
 const getMonthsWithYearLabels = (fyLabel) => {
@@ -44,26 +66,29 @@ const FyBarGraph = ({
   chartOptions = {},
   graphTitle = "",
   titleAmount,
+  selectedFY: controlledSelectedFY,
+  onSelectedFYChange,
   responsiveResize = true,
   chartId = "bargraph"
 }) => {
-  const fyOptions = useMemo(() => {
-    const yearsSet = new Set();
-    data.forEach((item) => {
-      const fy = getFinancialYear(item?.[dateKey]);
-      if (fy) yearsSet.add(fy);
-    });
-    return Array.from(yearsSet).sort();
-  }, [data, dateKey]);
+  const [internalSelectedFY, setInternalSelectedFY] = useState(
+    getCurrentFinancialYearLabel(),
+  );
+  const selectedFY = controlledSelectedFY ?? internalSelectedFY;
 
-  const [selectedFY, setSelectedFY] = useState("");
-  useEffect(() => {
-    if (fyOptions.length > 0 && !selectedFY) {
-      setSelectedFY(fyOptions[fyOptions.length - 1]);
+  const updateSelectedFY = (fy) => {
+    if (onSelectedFYChange) {
+      onSelectedFYChange(fy);
+      return;
     }
-  }, [fyOptions, selectedFY]);
+    setInternalSelectedFY(fy);
+  };
 
-  const currentIndex = fyOptions.indexOf(selectedFY);
+  useEffect(() => {
+    if (!selectedFY) {
+      updateSelectedFY(getCurrentFinancialYearLabel());
+    }
+  }, [selectedFY]);
 
   const monthsWithLabels = useMemo(() => {
     return getMonthsWithYearLabels(selectedFY);
@@ -144,14 +169,6 @@ const FyBarGraph = ({
     }, 0);
   }, [stackedSeries]);
 
-  if (fyOptions.length === 0) {
-    return (
-      <div className="text-center text-gray-500 py-10">
-        No valid financial year data available.
-      </div>
-    );
-  }
-
   return (
     <WidgetSection
       border
@@ -170,8 +187,7 @@ const FyBarGraph = ({
         <div className="flex justify-center items-center gap-4 mt-4">
           <SecondaryButton
             title={<MdNavigateBefore />}
-            disabled={currentIndex === 0}
-            handleSubmit={() => setSelectedFY(fyOptions[currentIndex - 1])}
+            handleSubmit={() => updateSelectedFY(shiftFinancialYear(selectedFY, -1))}
           />
 
           <span className="text-primary text-content font-semibold">
@@ -179,8 +195,7 @@ const FyBarGraph = ({
           </span>
 
           <SecondaryButton
-            disabled={currentIndex === fyOptions.length - 1}
-            handleSubmit={() => setSelectedFY(fyOptions[currentIndex + 1])}
+            handleSubmit={() => updateSelectedFY(shiftFinancialYear(selectedFY, 1))}
             title={<MdNavigateNext />}
           />
         </div>

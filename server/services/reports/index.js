@@ -36,6 +36,7 @@ const {
   fetchCoworkingMembersReportService,
   fetchWorkationClientsReportService,
   fetchInventoryBuildingUnitsReportService,
+  fetchClientsOccupancyReportService,
 } = require("./client");
 const {
   fetchUsersReportService,
@@ -107,6 +108,13 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
+  occupancydeskclientswisereport: createReportService(
+    fetchClientsOccupancyReportService,
+    {
+      dateField: "createdAt",
+      contextKeys: ["company", "roles", "departments"],
+    },
+  ),
   inventorybuildingunitwise: createReportService(
     fetchInventoryBuildingUnitsReportService,
     {
