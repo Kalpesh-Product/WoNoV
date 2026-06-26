@@ -2133,7 +2133,7 @@ const updateMeetingDetails = async (req, res, next) => {
     }
 
     if (
-      meeting.meetingType === "Internal" &&
+      ["Internal", "External"].includes(meeting.meetingType) &&
       isAdminTimingRestrictedUser
     ) {
       const allowedStartLowerBound = isAdminTimingBufferExpired

@@ -28,17 +28,20 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
-import { TimePicker } from "@mui/x-date-pickers";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import UploadFileInput from "../../components/UploadFileInput";
 import { inrFormat } from "../../utils/currencyFormat";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import useAuth from "../../hooks/useAuth";
 import { time } from "motion/react";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [checklists, setChecklists] = useState({});
@@ -49,9 +52,41 @@ const ExternalMeetingCLients = () => {
   const [submittedChecklists, setSubmittedChecklists] = useState({});
   const location = useLocation();
   const department = usePageDepartment();
+  const isTechDepartment = auth?.user?.departments?.some(
+    (dept) => dept._id === "6798ba9de469e809084e2494",
+  );
+  const departmentNames =
+    auth?.user?.departments?.map((dept) => dept?.name?.trim()) || [];
   const isFinance =
     department?.name?.toLowerCase().includes("finance") ||
     location.pathname.includes("finance-dashboard");
+  const [currentTime, setCurrentTime] = useState(() =>
+    dayjs().second(0).millisecond(0),
+  );
+  const adminTimingRoles = [
+    "Admin Admin",
+    "Admin Manager",
+    "Admin Employee",
+    "Administration Admin",
+    "Administration Manager",
+    "Administration Employee",
+  ];
+  const isAdminTimingUser =
+    roleTitles.some((roleTitle) => adminTimingRoles.includes(roleTitle)) ||
+    departmentNames.some((deptName) =>
+      ["Admin", "Administration"].includes(deptName),
+    );
+  const meetingDateEditRoles = [
+    "Super Admin",
+    "Master Admin",
+    "Tech Admin",
+    "Tech Employee",
+  ];
+  const canEditMeetingDate = roleTitles.some((roleTitle) =>
+    meetingDateEditRoles.includes(roleTitle),
+  );
+  const hasSpecialEditWindowAccess = isAdminTimingUser || canEditMeetingDate;
+  const isAdminTimingRestrictedUser = isAdminTimingUser;
   const shouldShowExportButton =
     location.pathname.includes(
       "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
@@ -94,6 +129,14 @@ const ExternalMeetingCLients = () => {
     { name: "Tissue placed on the table", checked: false },
   ];
   // const meetings = useSelector((state) => state.meetings?.data);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(dayjs().second(0).millisecond(0));
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   //-----------------------------Form--------------------------------//
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
@@ -174,9 +217,11 @@ const ExternalMeetingCLients = () => {
     control: editMeetingControl,
     reset: resetEditMeeting,
     setValue: setEditValue,
+    getValues: getEditValues,
     formState: { errors: editErrors },
   } = useForm({
     defaultValues: {
+      date: null,
       startTime: null,
       endTime: null,
     },
@@ -420,10 +465,67 @@ const ExternalMeetingCLients = () => {
 
   useEffect(() => {
     if (selectedMeeting) {
+      setEditValue("date", dayjs(new Date(selectedMeeting?.startTime)));
       setEditValue("startTime", dayjs(new Date(selectedMeeting?.startTime)));
       setEditValue("endTime", dayjs(new Date(selectedMeeting?.endTime)));
     }
   }, [selectedMeeting]);
+
+  const onEditSubmit = (data) => {
+    editMeeting({
+      ...data,
+      date: data.date ? dayjs(data.date).toISOString() : undefined,
+      startTime: data.startTime ? dayjs(data.startTime).toISOString() : null,
+      endTime: data.endTime ? dayjs(data.endTime).toISOString() : null,
+    });
+  };
+
+  const canEditMeeting = (meeting) => {
+    if (!meeting) return false;
+    if (
+      meeting.meetingStatus === "Cancelled" ||
+      meeting.meetingStatus === "Completed"
+    ) {
+      return false;
+    }
+
+    const meetingStart = dayjs(meeting.startTime);
+
+    if (meetingStart.isAfter(currentTime)) {
+      return true;
+    }
+
+    if (!hasSpecialEditWindowAccess) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const getEditTimeBounds = (meetingTime) => {
+    if (!meetingTime) return {};
+
+    const originalTime = dayjs(meetingTime);
+
+    if (isAdminTimingRestrictedUser) {
+      return {
+        minTime: isAdminTimingBufferExpired
+          ? originalTime
+          : originalTime.subtract(30, "minute"),
+      };
+    }
+
+    if (isTechDepartment) return {};
+
+    return {
+      minTime: originalTime,
+    };
+  };
+
+  const isAdminTimingBufferExpired =
+    isAdminTimingRestrictedUser &&
+    selectedMeeting?.startTime &&
+    currentTime.isAfter(dayjs(selectedMeeting.startTime).add(30, "minute"));
 
   //---------------------------------Event handlers----------------------------------------//
 
@@ -835,7 +937,7 @@ const ExternalMeetingCLients = () => {
                     onClick: () =>
                       handleOpenChecklistModal("update", params.data._id),
                   },
-                isUpcoming && {
+                canEditMeeting(params.data) && {
                   label: "Edit",
                   onClick: () => handleEditMeeting("edit", params.data),
                 },
@@ -1332,9 +1434,64 @@ const ExternalMeetingCLients = () => {
         {modalMode === "edit" && (
           <div>
             <form
-              onSubmit={handleEditMeetingSubmit((data) => editMeeting(data))}
+              onSubmit={handleEditMeetingSubmit(onEditSubmit)}
               className="grid grid-cols-2 gap-4"
             >
+              {canEditMeetingDate && (
+                <div className="col-span-2">
+                  <Controller
+                    name="date"
+                    control={editMeetingControl}
+                    rules={{
+                      required: "Date is required",
+                    }}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="Date"
+                        format="DD-MM-YYYY"
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!editErrors.date,
+                            helperText: editErrors.date?.message,
+                          },
+                        }}
+                        onChange={(value) => {
+                          field.onChange(value);
+
+                          if (!value) return;
+
+                          const nextDate = dayjs(value);
+                          const currentStart = getEditValues("startTime");
+                          const currentEnd = getEditValues("endTime");
+
+                          if (currentStart) {
+                            setEditValue(
+                              "startTime",
+                              dayjs(currentStart)
+                                .year(nextDate.year())
+                                .month(nextDate.month())
+                                .date(nextDate.date()),
+                            );
+                          }
+
+                          if (currentEnd) {
+                            setEditValue(
+                              "endTime",
+                              dayjs(currentEnd)
+                                .year(nextDate.year())
+                                .month(nextDate.month())
+                                .date(nextDate.date()),
+                            );
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </div>
+              )}
               <Controller
                 name="startTime"
                 control={editMeetingControl}
@@ -1344,6 +1501,7 @@ const ExternalMeetingCLients = () => {
                 render={({ field }) => (
                   <TimePicker
                     {...field}
+                    {...getEditTimeBounds(selectedMeeting?.startTime)}
                     slotProps={{
                       textField: {
                         size: "small",
@@ -1352,6 +1510,38 @@ const ExternalMeetingCLients = () => {
                       },
                     }}
                     label={"Start Time"}
+                    shouldDisableTime={(time, view) => {
+                      if (isAdminTimingBufferExpired) return true;
+                      if (canEditMeetingDate) return false;
+                      const startTime = selectedMeeting?.startTime;
+                      const timeValue = time.$d;
+
+                      if (!startTime) return false;
+
+                      const startDate = new Date(startTime);
+                      const thresholdDate =
+                        isAdminTimingRestrictedUser &&
+                        !isAdminTimingBufferExpired
+                          ? new Date(startDate.getTime() - 30 * 60000)
+                          : startDate;
+
+                      if (view === "hours") {
+                        return timeValue.getHours() < thresholdDate.getHours();
+                      }
+
+                      if (view === "minutes") {
+                        const selectedHour = field.value
+                          ? new Date(field.value).getHours()
+                          : null;
+
+                        return (
+                          selectedHour === thresholdDate.getHours() &&
+                          timeValue.getMinutes() < thresholdDate.getMinutes()
+                        );
+                      }
+
+                      return false;
+                    }}
                   />
                 )}
               />
@@ -1364,6 +1554,7 @@ const ExternalMeetingCLients = () => {
                 render={({ field }) => (
                   <TimePicker
                     {...field}
+                    {...getEditTimeBounds(selectedMeeting?.endTime)}
                     slotProps={{
                       textField: {
                         size: "small",
@@ -1372,9 +1563,48 @@ const ExternalMeetingCLients = () => {
                       },
                     }}
                     label={"End Time"}
+                    shouldDisableTime={(time, view) => {
+                      if (isAdminTimingBufferExpired) return true;
+                      if (canEditMeetingDate) return false;
+                      const endTime = selectedMeeting?.endTime;
+                      const timeValue = time.$d;
+
+                      if (!endTime) return false;
+
+                      const endDate = new Date(endTime);
+                      const thresholdDate =
+                        isAdminTimingRestrictedUser &&
+                        !isAdminTimingBufferExpired
+                          ? new Date(endDate.getTime() - 30 * 60000)
+                          : endDate;
+
+                      if (view === "hours") {
+                        return timeValue.getHours() < thresholdDate.getHours();
+                      }
+
+                      if (view === "minutes") {
+                        const selectedHour = field.value
+                          ? new Date(field.value).getHours()
+                          : null;
+
+                        return (
+                          selectedHour === thresholdDate.getHours() &&
+                          timeValue.getMinutes() < thresholdDate.getMinutes()
+                        );
+                      }
+
+                      return false;
+                    }}
                   />
                 )}
               />
+              {isAdminTimingBufferExpired && !editErrors.startTime?.message && (
+                <div className="col-span-2 -mt-2 text-[12px] text-[#d32f2f]">
+                  You have exceeded the 30 min buffer to Edit the timings.
+                  {" "}
+                  "Please Raise a Ticket" to fix
+                </div>
+              )}
 
               <PrimaryButton
                 title={"Update Meeting"}
