@@ -281,14 +281,10 @@ export default function BulkUpload() {
                   <UploadFileInput
                     onChange={field.onChange}
                     value={field.value}
-                    // allowedExtensions={["csv"]}
-                    // previewType="auto"
-                    // allowedExtensions={["pdf"]}
-                    // previewType="pdf"
-                    allowedExtensions={["xls", "xlsx"]}
+                    allowedExtensions={["csv"]}
                     previewType="none"
                     onInvalidFile={() =>
-                      toast.error("Only Excel files are allowed.")
+                      toast.error("Only CSV files are allowed.")
                     }
                   />
                 )}
