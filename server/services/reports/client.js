@@ -369,9 +369,88 @@ const fetchCoworkingMembersReportService = async ({
   return visibleMembers || [];
 };
 
+const DEFAULT_BUILDING_NAME = "Sunteck Kanaka";
+
+const toObjectId = (value) => new mongoose.Types.ObjectId(value);
+
+const fetchInventoryBuildingUnitsReportService = async ({
+  company,
+  buildingName = DEFAULT_BUILDING_NAME,
+}) => {
+  const companyExists = await Company.findById(company).lean().exec();
+
+  if (!companyExists) {
+    return { payload: { message: "Company not found" } };
+  }
+
+  const units = await Unit.find({
+    company,
+    isActive: true,
+    isOnlyBudget: false,
+  })
+    .populate({ path: "building", select: "_id buildingName fullAddress" })
+    .lean()
+    .exec();
+
+  const filteredUnits = units;
+
+  if (!filteredUnits.length) {
+    return { payload: [] };
+  }
+
+  const unitIds = filteredUnits.map((unit) => toObjectId(unit._id));
+
+  const occupancyData = await CoworkingClient.aggregate([
+    {
+      $match: {
+        company: toObjectId(company),
+        unit: { $in: unitIds },
+        isActive: true,
+      },
+    },
+    {
+      $group: {
+        _id: "$unit",
+        totalOccupiedDesks: {
+          $sum: { $add: ["$openDesks", "$cabinDesks"] },
+        },
+      },
+    },
+  ]);
+
+  const occupiedByUnit = occupancyData.reduce((acc, item) => {
+    if (item?._id) {
+      acc[item._id.toString()] = Number(item.totalOccupiedDesks) || 0;
+    }
+    return acc;
+  }, {});
+
+  const payload = filteredUnits.map((unit, index) => {
+    const unitId = unit._id?.toString?.() || String(unit._id);
+    const totalDesks =
+      (Number(unit.openDesks) || 0) + (Number(unit.cabinDesks) || 0);
+    const occupiedDesks = occupiedByUnit[unitId] || 0;
+
+    return {
+      unitNo: unit.unitNo,
+      unitName: unit.unitName,
+      buildingName: unit.building.buildingName,
+      sqft: unit.sqft || 0,
+      totalDesks,
+      openDesks: unit.openDesks || 0,
+      cabinDesks: unit.cabinDesks || 0,
+      occupiedDesks,
+      freeDesks: Math.max(totalDesks - occupiedDesks, 0),
+    };
+  });
+
+  return { payload };
+};
+
 module.exports = {
   fetchCoworkingClientReportService,
   fetchVirtualOfficeClientsReportService,
   fetchCoworkingMembersReportService,
   fetchWorkationClientsReportService,
+  fetchInventoryBuildingUnitsReportService,
 };
