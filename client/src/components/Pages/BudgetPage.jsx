@@ -20,6 +20,12 @@ import FyBarGraph from "../graphs/FyBarGraph";
 import { PERMISSIONS } from "../../constants/permissions";
 import useUserPermissions from "../../hooks/useUserPermissions";
 
+const getCurrentFinancialYearLabel = () => {
+  const today = dayjs();
+  const startYear = today.month() < 3 ? today.year() - 1 : today.year();
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
 const BudgetPage = () => {
   const axios = useAxiosPrivate();
   const { hasPermission } = useUserPermissions();
@@ -27,7 +33,9 @@ const BudgetPage = () => {
   const location = useLocation();
   const department = usePageDepartment();
   const queryClient = useQueryClient();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(
+    getCurrentFinancialYearLabel(),
+  );
  
   const requestBudgetPermissionByDepartment = {
     "6798bab0e469e809084e249a": PERMISSIONS.FINANCE_REQUEST_BUDGET_BUTTON.value,
@@ -244,50 +252,38 @@ const BudgetPage = () => {
   }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
-    // Initialize monthly buckets
-    const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM"),
-    );
+    const getFiscalYearStart = (date) =>
+      date.month() < 3 ? date.year() - 1 : date.year();
 
-    const fyData = {
-      "FY 2024-25": Array(12).fill(0),
-      "FY 2025-26": Array(12).fill(0),
-    };
+    const getFiscalYearLabel = (startYear) =>
+      `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+
+    const fyData = {};
 
     hrFinance.forEach((item) => {
       const date = dayjs(item.dueDate);
-      const year = date.year();
-      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
-
-      if (year === 2024 && monthIndex >= 3) {
-        // Apr 2024 to Dec 2024 (month 3 to 11)
-        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-      } else if (year === 2025) {
-        if (monthIndex <= 2) {
-          // Jan to Mar 2025 (months 0–2)
-          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-        } else if (monthIndex >= 3) {
-          // Apr 2025 to Dec 2025 (months 3–11)
-          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-        }
-      } else if (year === 2026 && monthIndex <= 2) {
-        // Jan to Mar 2026
-        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+      if (!date.isValid()) {
+        return;
       }
+
+      const fiscalYearStart = getFiscalYearStart(date);
+      const fiscalYearLabel = getFiscalYearLabel(fiscalYearStart);
+      const bucketIndex = date.month() >= 3 ? date.month() - 3 : date.month() + 9;
+
+      if (!fyData[fiscalYearLabel]) {
+        fyData[fiscalYearLabel] = Array(12).fill(0);
+      }
+
+      fyData[fiscalYearLabel][bucketIndex] += item.actualAmount || 0;
     });
 
-    return [
-      {
+    return Object.keys(fyData)
+      .sort()
+      .map((financialYear) => ({
         name: "total",
-        group: "FY 2024-25",
-        data: fyData["FY 2024-25"],
-      },
-      {
-        name: "total",
-        group: "FY 2025-26",
-        data: fyData["FY 2025-26"],
-      },
-    ];
+        group: financialYear,
+        data: fyData[financialYear],
+      }));
   }, [hrFinance]);
 
   const budgetGraphData = useMemo(() => {

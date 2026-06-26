@@ -1055,17 +1055,25 @@ const bulkInsertBudgets = async (req, res, next) => {
 
     const budgets = [];
     const invalidRows = [];
+    const invalidRowNos = [];
+    let rowNumber = 1;
     Readable.from(csvData)
       .pipe(csvParser())
       .on("data", (row) => {
+          rowNumber++;
         const projectedAmt = parseAmount(row["Projected Amount"]);
         const actualAmt = parseAmount(row["Actual Amount"]);
-        const month = new Date(row["Due Date"]);
+        const rawMonth = row["Month"];
+        const month = row["Due Date"] ? new Date(row["Due Date"]) : null ;
 
-        if (isNaN(projectedAmt) || isNaN(month.getTime())) {
-          invalidRows.push(row);
-          return;
-        }
+        console.log(`Project:${projectedAmt} || Month: ${month}`)
+       if (isNaN(projectedAmt) || (month && isNaN(month.getTime()))) {
+        invalidRowNos.push( rowNumber)
+  invalidRows.push({
+    row,
+  });
+  return;
+}
 
         budgets.push({
           company,
@@ -1107,9 +1115,13 @@ const bulkInsertBudgets = async (req, res, next) => {
       // })
       .on("end", async () => {
         if (invalidRows.length > 0) {
+
           return res.status(400).json({
             message: "Invalid rows found in CSV",
+            invalidRowNos,
+            rowNumberLen:invalidRowNos.length,
             invalidRows,
+            invalidRowsLen:invalidRows.length,
           });
         }
 
