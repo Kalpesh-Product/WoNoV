@@ -18,6 +18,96 @@ const emitter = require("../../utils/eventEmitter");
 const { parseAmount } = require("../../utils/parseAmount");
 const { fetchBudgetVoucherService } = require("../../services/reports/finance");
 
+const MONTH_NAME_TO_INDEX = {
+  jan: 0,
+  january: 0,
+  feb: 1,
+  february: 1,
+  mar: 2,
+  march: 2,
+  apr: 3,
+  april: 3,
+  may: 4,
+  jun: 5,
+  june: 5,
+  jul: 6,
+  july: 6,
+  aug: 7,
+  august: 7,
+  sep: 8,
+  sept: 8,
+  september: 8,
+  oct: 9,
+  october: 9,
+  nov: 10,
+  november: 10,
+  dec: 11,
+  december: 11,
+};
+
+const parseBudgetCsvDueDate = (row = {}) => {
+  const rawDueDate = row["Due Date"]?.trim?.();
+  if (rawDueDate) {
+    const dueDate = new Date(rawDueDate);
+    if (!isNaN(dueDate.getTime())) return dueDate;
+  }
+
+  const rawMonth = row["Month"]?.trim?.();
+  if (!rawMonth) return null;
+
+  const monthMatch = rawMonth.toLowerCase().match(/[a-z]+/);
+  const monthIndex = monthMatch ? MONTH_NAME_TO_INDEX[monthMatch[0]] : null;
+  if (monthIndex === null || monthIndex === undefined) return null;
+
+  const currentYear = new Date().getFullYear();
+  const yearMatch =
+    rawMonth.match(/\b(20\d{2}|19\d{2})\b/) ||
+    row["Year"]?.toString?.().match(/\b(20\d{2}|19\d{2})\b/) ||
+    row["Financial Year"]
+      ?.toString?.()
+      .match(/\b(20\d{2})\s*[-/]\s*(\d{2}|\d{4})\b/);
+
+  let year = yearMatch ? Number(yearMatch[1]) : currentYear;
+  if (yearMatch?.[2] && monthIndex <= 2) {
+    year = Number(
+      yearMatch[2].length === 2
+        ? `${year.toString().slice(0, 2)}${yearMatch[2]}`
+        : yearMatch[2],
+    );
+  }
+
+  return new Date(Date.UTC(year, monthIndex, 1));
+};
+
+const normalizeDepartmentName = (value = "") =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/\s+/g, " ");
+
+const getDepartmentAliases = (departmentName = "") => {
+  const normalizedName = normalizeDepartmentName(departmentName);
+  const aliases = new Set([normalizedName]);
+
+  if (normalizedName === "admin" || normalizedName === "administration") {
+    aliases.add("admin");
+    aliases.add("administration");
+  }
+
+  if (normalizedName === "maintance" || normalizedName === "maintenance") {
+    aliases.add("maintance");
+    aliases.add("maintenance");
+  }
+
+  if (normalizedName === "hr" || normalizedName === "human resources") {
+    aliases.add("hr");
+    aliases.add("human resources");
+  }
+
+  return [...aliases];
+};
+
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
   const logAction = "Request Budget";
@@ -1052,6 +1142,16 @@ const bulkInsertBudgets = async (req, res, next) => {
 
     const units = await Unit.find({ company }).lean();
     const unitsMap = new Map(units.map((u) => [u.unitNo, u._id]));
+    const departments = await Department.find({ isActive: true }).lean();
+    const departmentsMap = new Map();
+
+    departments.forEach((department) => {
+      getDepartmentAliases(department?.name).forEach((alias) => {
+        if (alias) {
+          departmentsMap.set(alias, department._id);
+        }
+      });
+    });
 
     const budgets = [];
     const invalidRows = [];
@@ -1063,28 +1163,48 @@ const bulkInsertBudgets = async (req, res, next) => {
           rowNumber++;
         const projectedAmt = parseAmount(row["Projected Amount"]);
         const actualAmt = parseAmount(row["Actual Amount"]);
-        const rawMonth = row["Month"];
-        const month = row["Due Date"] ? new Date(row["Due Date"]) : null ;
+//         const rawMonth = row["Month"];
+//         const month = row["Due Date"] ? new Date(row["Due Date"]) : null ;
 
-        console.log(`Project:${projectedAmt} || Month: ${month}`)
-       if (isNaN(projectedAmt) || (month && isNaN(month.getTime()))) {
-        invalidRowNos.push( rowNumber)
-  invalidRows.push({
-    row,
-  });
-  return;
-}
+//         console.log(`Project:${projectedAmt} || Month: ${month}`)
+//        if (isNaN(projectedAmt) || (month && isNaN(month.getTime()))) {
+//         invalidRowNos.push( rowNumber)
+//   invalidRows.push({
+//     row,
+//   });
+//   return;
+// }
+
+  const dueDate = parseBudgetCsvDueDate(row);
+        const departmentName = row["Department"]?.trim?.();
+        const resolvedDepartmentId = departmentName
+          ? departmentsMap.get(normalizeDepartmentName(departmentName))
+          : departmentId;
+
+        if (isNaN(projectedAmt) || !dueDate || !resolvedDepartmentId) {
+          invalidRowNos.push(rowNumber);
+          invalidRows.push({
+            row,
+            reason: !resolvedDepartmentId
+              ? `Department not found for row department "${departmentName || ""}"`
+              : !dueDate
+                ? "Due Date is invalid or missing"
+                : "Projected Amount is invalid",
+          });
+          return;
+        }
+
 
         budgets.push({
           company,
-          department: departmentId,
+          department: resolvedDepartmentId,
           expanseName: row["Expense Name"],
           projectedAmount: projectedAmt,
           actualAmount: actualAmt,
           unit: row["Unit"] ? (unitsMap.get(row["Unit"].trim()) ?? null) : null,
           status: row["Status"] || "Pending",
-          month,
-          dueDate: month,
+           month: dueDate,
+          dueDate,
           expanseType: row["Expanse Type"],
           category: row["Expanse Category"],
           isPaid: row["Status"] === "Approved" ? "Paid" : "Unpaid",
