@@ -5,6 +5,7 @@ const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const mongoose = require("mongoose");
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
 const WorkationClient = require("../../models/sales/WorkationClients");
+const { formatDate } = require("../../utils/formatDateTime");
 
 const DELETED_MEMBER_VIEW_ROLES = new Set(["master admin", "super admin"]);
 
@@ -369,9 +370,210 @@ const fetchCoworkingMembersReportService = async ({
   return visibleMembers || [];
 };
 
+const DEFAULT_BUILDING_NAME = "Sunteck Kanaka";
+
+const toObjectId = (value) => new mongoose.Types.ObjectId(value);
+
+const fetchInventoryBuildingUnitsReportService = async ({
+  company,
+  buildingName = DEFAULT_BUILDING_NAME,
+}) => {
+  const companyExists = await Company.findById(company).lean().exec();
+
+  if (!companyExists) {
+    return { payload: { message: "Company not found" } };
+  }
+
+  const units = await Unit.find({
+    company,
+    isActive: true,
+    isOnlyBudget: false,
+  })
+    .populate({ path: "building", select: "_id buildingName fullAddress" })
+    .lean()
+    .exec();
+
+  const filteredUnits = units;
+
+  if (!filteredUnits.length) {
+    return { payload: [] };
+  }
+
+  const unitIds = filteredUnits.map((unit) => toObjectId(unit._id));
+
+  const occupancyData = await CoworkingClient.aggregate([
+    {
+      $match: {
+        company: toObjectId(company),
+        unit: { $in: unitIds },
+        isActive: true,
+      },
+    },
+    {
+      $group: {
+        _id: "$unit",
+        totalOccupiedDesks: {
+          $sum: { $add: ["$openDesks", "$cabinDesks"] },
+        },
+      },
+    },
+  ]);
+
+  const occupiedByUnit = occupancyData.reduce((acc, item) => {
+    if (item?._id) {
+      acc[item._id.toString()] = Number(item.totalOccupiedDesks) || 0;
+    }
+    return acc;
+  }, {});
+
+  const payload = filteredUnits.map((unit, index) => {
+    const unitId = unit._id?.toString?.() || String(unit._id);
+    const totalDesks =
+      (Number(unit.openDesks) || 0) + (Number(unit.cabinDesks) || 0);
+    const occupiedDesks = occupiedByUnit[unitId] || 0;
+
+    return {
+      unitNo: unit.unitNo,
+      unitName: unit.unitName,
+      buildingName: unit.building.buildingName,
+      sqft: unit.sqft || 0,
+      totalDesks,
+      openDesks: unit.openDesks || 0,
+      cabinDesks: unit.cabinDesks || 0,
+      occupiedDesks,
+      freeDesks: Math.max(totalDesks - occupiedDesks, 0),
+    };
+  });
+
+  return { payload };
+};
+
+const getReferenceId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._id) return value._id.toString();
+  if (typeof value?.toString === "function") return value.toString();
+  return "";
+};
+
+const isSameReference = (left, right) =>
+  getReferenceId(left) === getReferenceId(right);
+
+const buildUnitAvailabilityPayload = ({ unit, clients, visibleMembers }) => {
+  const totalOccupiedDesks = clients.reduce(
+    (acc, client) => acc + ((client.openDesks || 0) + (client.cabinDesks || 0)),
+    0,
+  );
+
+  const totalDesks = (unit?.openDesks || 0) + (unit?.cabinDesks || 0);
+
+  return {
+    unitId: unit?._id,
+    unitNo: unit?.unitNo,
+    unitName: unit?.unitName,
+    buildingName: unit?.building?.buildingName,
+    clearImage: unit?.clearImage || null,
+    occupiedImage: unit?.occupiedImage || null,
+    totalDesks,
+    totalOccupiedDesks,
+    clientDetails: clients.map((client) => {
+      let transformedMembers = [];
+      const memberDetails = visibleMembers.find((member) =>
+        isSameReference(member?.client, client?._id),
+      );
+
+      if (memberDetails) {
+        transformedMembers = {
+          member: memberDetails.employeeName || "Unknown",
+          date: formatDate(memberDetails.dob),
+          email: memberDetails.email,
+          mobileNo: memberDetails.mobileNo,
+        };
+      }
+
+      return {
+        client: client.clientName,
+        occupiedDesks: (client.openDesks || 0) + (client.cabinDesks || 0),
+        memberDetails: transformedMembers,
+      };
+    }),
+  };
+};
+
+const fetchClientsOccupancyReportService = async ({
+  company,
+  dateFilter,
+} = {}) => {
+  const filter = {};
+
+  if (company) {
+    filter.company = toObjectId(company);
+  }
+
+  filter.isActive = true;
+
+  if (dateFilter?.startDate) {
+    filter.startDate = dateFilter.startDate;
+  }
+
+  const clients = await CoworkingClient.find(filter)
+    .select("clientName openDesks cabinDesks unit")
+    .populate({
+      path: "unit",
+      select: "unitName unitNo openDesks cabinDesks building",
+      populate: {
+        path: "building",
+        select: "buildingName",
+      },
+    })
+    .lean()
+    .exec();
+
+  const clientsWithOccupiedDesks = (clients || [])
+    .map((client) => {
+      const occupiedDesks =
+        (Number(client.openDesks) || 0) + (Number(client.cabinDesks) || 0);
+      const totalUnitDesks =
+        (Number(client.unit?.openDesks) || 0) +
+        (Number(client.unit?.cabinDesks) || 0);
+
+      return {
+        clientName: client.clientName || "-",
+        occupiedDesks,
+        occupiedPercent: totalUnitDesks
+          ? ((occupiedDesks / totalUnitDesks) * 100).toFixed(2)
+          : 0,
+        unitNo: client.unit?.unitNo || "-",
+        unitName: client.unit?.unitName || "-",
+        buildingName: client.unit?.building?.buildingName || "-",
+      };
+    })
+    .sort((a, b) => {
+      if (a.unitNo !== b.unitNo) {
+        return a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true });
+      }
+
+      return b.occupiedDesks - a.occupiedDesks;
+    });
+
+  return clientsWithOccupiedDesks.map((client) => ({
+    unitNo: client.unitNo,
+    unitName: client.unitName,
+    buildingName: client.buildingName,
+    "Client Name": client.clientName,
+    "Occupied Desks": client.occupiedDesks,
+    "Occupied %": `${client.occupiedPercent} %`,
+    // "Occupied %": totalOccupiedDesks
+    //   ? `${Math.round((client.occupiedDesks / totalOccupiedDesks) * 100)} %`
+    //   : "0 %",
+  }));
+};
+
 module.exports = {
   fetchCoworkingClientReportService,
   fetchVirtualOfficeClientsReportService,
   fetchCoworkingMembersReportService,
   fetchWorkationClientsReportService,
+  fetchInventoryBuildingUnitsReportService,
+  fetchClientsOccupancyReportService,
 };
