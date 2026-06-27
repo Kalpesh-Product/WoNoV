@@ -18,6 +18,37 @@ const emitter = require("../../utils/eventEmitter");
 const { parseAmount } = require("../../utils/parseAmount");
 const { fetchBudgetVoucherService } = require("../../services/reports/finance");
 
+const normalizeMonth = (value) => {
+  if (!value) return null;
+
+  return String(value).trim().slice(0, 3).toLowerCase();
+};
+
+const getMonthDate = (monthValue) => {
+  const normalizedMonth = normalizeMonth(monthValue);
+
+  const monthIndex = [
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct",
+    "nov",
+    "dec",
+  ].indexOf(normalizedMonth);
+
+  if (monthIndex === -1) return null;
+
+  const currentYear = new Date().getFullYear();
+
+  return new Date(Date.UTC(currentYear, monthIndex, 1));
+};
+
 const requestBudget = async (req, res, next) => {
   const logPath = "/budget/BudgetLog";
   const logAction = "Request Budget";
@@ -291,15 +322,6 @@ const requestBudget = async (req, res, next) => {
     const deptEmployees = await UserData.find({
       departments: { $in: departmentId },
     });
-
-    console.log(departmentId);
-    console.log(deptEmployees);
-
-    // const deptEmployees = await UserData.find({
-    //   departments: { $in: [department] },
-    // });
-
-    // const employeeIds = deptEmployees.map((emp) => emp._id);
 
     // * Emit notification event for task creation *
     emitter.emit("notification", {
@@ -1053,6 +1075,17 @@ const bulkInsertBudgets = async (req, res, next) => {
     const units = await Unit.find({ company }).lean();
     const unitsMap = new Map(units.map((u) => [u.unitNo, u._id]));
 
+    const departments = await Department.find().select("name").lean();
+
+    const normalize = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase();
+
+    const departmentMap = new Map(
+      departments.map((dept) => [normalize(dept.name), dept._id]),
+    );
+
     const budgets = [];
     const invalidRows = [];
     const invalidRowNos = [];
@@ -1060,68 +1093,62 @@ const bulkInsertBudgets = async (req, res, next) => {
     Readable.from(csvData)
       .pipe(csvParser())
       .on("data", (row) => {
-          rowNumber++;
+        rowNumber++;
         const projectedAmt = parseAmount(row["Projected Amount"]);
         const actualAmt = parseAmount(row["Actual Amount"]);
-        const rawMonth = row["Month"];
-        const month = row["Due Date"] ? new Date(row["Due Date"]) : null ;
 
-        console.log(`Project:${projectedAmt} || Month: ${month}`)
-       if (isNaN(projectedAmt) || (month && isNaN(month.getTime()))) {
-        invalidRowNos.push( rowNumber)
-  invalidRows.push({
-    row,
-  });
-  return;
-}
+        const rawDueDate = row["Due Date"]?.trim();
+        const rawMonth = row["Month"]?.trim();
+
+        const normalizedMonth = normalizeMonth(rawMonth);
+
+        const month = rawDueDate
+          ? new Date(rawDueDate)
+          : getMonthDate(normalizedMonth);
+
+        const department = departmentMap.get(normalize(row["Department"]));
+
+        if (
+          isNaN(projectedAmt) ||
+          (month && isNaN(month.getTime())) ||
+          !department
+        ) {
+          invalidRowNos.push(rowNumber);
+          invalidRows.push({
+            row,
+            reason: !department
+              ? `Invalid department: ${row["Department"]}`
+              : "Invalid amount or date",
+          });
+          return;
+        }
 
         budgets.push({
           company,
-          department: departmentId,
+          department,
           expanseName: row["Expense Name"],
           projectedAmount: projectedAmt,
           actualAmount: actualAmt,
           unit: row["Unit"] ? (unitsMap.get(row["Unit"].trim()) ?? null) : null,
-          status: row["Status"] || "Pending",
+          // status: row["Status"] || "Pending",
+          status: "Approved",
           month,
           dueDate: month,
           expanseType: row["Expanse Type"],
           category: row["Expanse Category"],
-          isPaid: row["Status"] === "Approved" ? "Paid" : "Unpaid",
+          // isPaid: row["Status"] === "Approved" ? "Paid" : "Unpaid",
+          isPaid: "Paid",
           isExtraBudget: false,
         });
       })
-      // .on("end", async () => {
-      //   if (budgets.length === 0) {
-      //     return res
-      //       .status(400)
-      //       .json({ success: false, message: "No valid budgets found in CSV" });
-      //   }
-
-      //   try {
-      //     await Budget.insertMany(budgets);
-      //     return res.status(201).json({
-      //       success: true,
-      //       message: "Budgets uploaded successfully",
-      //       uploadCount: budgets.length,
-      //       data: budgets,
-      //     });
-      //   } catch (dbErr) {
-      //     console.error(dbErr);
-      //     return res
-      //       .status(500)
-      //       .json({ success: false, message: dbErr.message });
-      //   }
-      // })
       .on("end", async () => {
         if (invalidRows.length > 0) {
-
           return res.status(400).json({
             message: "Invalid rows found in CSV",
             invalidRowNos,
-            rowNumberLen:invalidRowNos.length,
+            rowNumberLen: invalidRowNos.length,
             invalidRows,
-            invalidRowsLen:invalidRows.length,
+            invalidRowsLen: invalidRows.length,
           });
         }
 
