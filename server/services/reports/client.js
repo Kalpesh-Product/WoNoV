@@ -500,77 +500,6 @@ const buildUnitAvailabilityPayload = ({ unit, clients, visibleMembers }) => {
   };
 };
 
-// const fetchClientsOccupancyReportService = async ({
-//   company,
-//   roles,
-//   departments,
-// } = {}) => {
-//   const companyExists = await Company.findById(company).lean().exec();
-
-//   if (!companyExists) {
-//     return { payload: { message: "Company not found" } };
-//   }
-
-//   const clients = await CoworkingClient.find({ company, isActive: true })
-//     .populate({
-//       path: "unit",
-//       select:
-//         "unitName unitNo openDesks cabinDesks clearImage occupiedImage building",
-//       populate: { path: "building", select: "buildingName" },
-//     })
-//     .lean()
-//     .exec();
-
-//   const clientsWithUnits = clients.filter((client) => client?.unit?._id);
-
-//   if (!clientsWithUnits.length) {
-//     return { payload: [] };
-//   }
-
-//   const unitIds = [
-//     ...new Set(clientsWithUnits.map((client) => client.unit._id.toString())),
-//   ].map(toObjectId);
-
-//   const members = await CoworkingMembers.find({
-//     company,
-//     unit: { $in: unitIds },
-//   })
-//     .populate([
-//       {
-//         path: "client",
-//         select: "clientName cabinDesks openDesks isActive",
-//       },
-//       {
-//         path: "unit",
-//         select: "unitName unitNo openDesks cabinDesks clearImage occupiedImage",
-//       },
-//     ])
-//     .lean()
-//     .exec();
-
-//   const visibleMembers = filterVisibleMembers(members, { roles, departments });
-
-//   const groupedByUnit = clientsWithUnits.reduce((acc, client) => {
-//     const unitId = client.unit._id.toString();
-
-//     if (!acc[unitId]) {
-//       acc[unitId] = {
-//         unit: client.unit,
-//         clients: [],
-//       };
-//     }
-
-//     acc[unitId].clients.push(client);
-//     return acc;
-//   }, {});
-
-//   const payload = Object.values(groupedByUnit).map(({ unit, clients }) =>
-//     buildUnitAvailabilityPayload({ unit, clients, visibleMembers }),
-//   );
-
-//   return { payload };
-// };
-
 const fetchClientsOccupancyReportService = async ({
   company,
   dateFilter,
@@ -588,29 +517,55 @@ const fetchClientsOccupancyReportService = async ({
   }
 
   const clients = await CoworkingClient.find(filter)
-    .select("clientName openDesks cabinDesks")
+    .select("clientName openDesks cabinDesks unit")
+    .populate({
+      path: "unit",
+      select: "unitName unitNo openDesks cabinDesks building",
+      populate: {
+        path: "building",
+        select: "buildingName",
+      },
+    })
     .lean()
     .exec();
 
   const clientsWithOccupiedDesks = (clients || [])
-    .map((client) => ({
-      clientName: client.clientName || "-",
-      occupiedDesks:
-        (Number(client.openDesks) || 0) + (Number(client.cabinDesks) || 0),
-    }))
-    .sort((a, b) => b.occupiedDesks - a.occupiedDesks);
+    .map((client) => {
+      const occupiedDesks =
+        (Number(client.openDesks) || 0) + (Number(client.cabinDesks) || 0);
+      const totalUnitDesks =
+        (Number(client.unit?.openDesks) || 0) +
+        (Number(client.unit?.cabinDesks) || 0);
 
-  const totalOccupiedDesks = clientsWithOccupiedDesks.reduce(
-    (total, client) => total + client.occupiedDesks,
-    0,
-  );
+      return {
+        clientName: client.clientName || "-",
+        occupiedDesks,
+        occupiedPercent: totalUnitDesks
+          ? ((occupiedDesks / totalUnitDesks) * 100).toFixed(2)
+          : 0,
+        unitNo: client.unit?.unitNo || "-",
+        unitName: client.unit?.unitName || "-",
+        buildingName: client.unit?.building?.buildingName || "-",
+      };
+    })
+    .sort((a, b) => {
+      if (a.unitNo !== b.unitNo) {
+        return a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true });
+      }
 
-  return clientsWithOccupiedDesks.map((client, index) => ({
+      return b.occupiedDesks - a.occupiedDesks;
+    });
+
+  return clientsWithOccupiedDesks.map((client) => ({
+    unitNo: client.unitNo,
+    unitName: client.unitName,
+    buildingName: client.buildingName,
     "Client Name": client.clientName,
     "Occupied Desks": client.occupiedDesks,
-    "Occupied %": totalOccupiedDesks
-      ? `${Math.round((client.occupiedDesks / totalOccupiedDesks) * 100)} %`
-      : "0 %",
+    "Occupied %": `${client.occupiedPercent} %`,
+    // "Occupied %": totalOccupiedDesks
+    //   ? `${Math.round((client.occupiedDesks / totalOccupiedDesks) * 100)} %`
+    //   : "0 %",
   }));
 };
 
