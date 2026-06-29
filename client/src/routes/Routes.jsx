@@ -676,7 +676,7 @@ export const routes = createBrowserRouter([
                         path: "mix-bag",
                         element: <MixBag />,
                       },
-                       {
+                      {
                         path: "mix-bag/revenue",
                         element: <TotalRevenueLayout />,
                         children: [
@@ -2216,7 +2216,9 @@ export const routes = createBrowserRouter([
                             children: [
                               {
                                 index: true,
-                                element: <Navigate to="department-wise" replace />,
+                                element: (
+                                  <Navigate to="department-wise" replace />
+                                ),
                               },
                               {
                                 path: "department-wise",
@@ -2288,7 +2290,9 @@ export const routes = createBrowserRouter([
                             children: [
                               {
                                 index: true,
-                                element: <Navigate to="department-wise" replace />,
+                                element: (
+                                  <Navigate to="department-wise" replace />
+                                ),
                               },
                               {
                                 path: "department-wise",
@@ -2395,7 +2399,7 @@ export const routes = createBrowserRouter([
                           {
                             path: "department-KPA/:department",
                             // element: <HrDepartmentKPA />,
-                             element: <HrDepartmentKpaOverviewLayout />,
+                            element: <HrDepartmentKpaOverviewLayout />,
                             children: [
                               {
                                 path: "department-wise",
@@ -2463,7 +2467,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "department-KRA/:department",
-                             element: <HrDepartmentKraOverviewLayout />,
+                            element: <HrDepartmentKraOverviewLayout />,
                             children: [
                               {
                                 path: "department-wise",
@@ -2730,7 +2734,7 @@ export const routes = createBrowserRouter([
 
                           {
                             // path: "employee-list/:firstName/",
-                             path: "employee-list/",
+                            path: "employee-list/",
                             element: <EmployeeDetail />,
                             children: [
                               {
@@ -3197,7 +3201,7 @@ export const routes = createBrowserRouter([
                       {
                         path: "list-of-assets",
                         // element: <ListOfAssets />,
-                         children: [
+                        children: [
                           {
                             index: true,
                             element: <ListOfAssets />,
@@ -3219,10 +3223,10 @@ export const routes = createBrowserRouter([
                     element: <ManageAssets />,
                     children: [
                       {
-                         path: "overall-asset",
+                        path: "overall-asset",
                         element: <AssignAssets />,
                       },
-                                            {
+                      {
                         path: "unassigned-assets",
                         element: <UnassignedAssets />,
                       },
@@ -3937,7 +3941,7 @@ export const routes = createBrowserRouter([
                     path: "manage-assets",
                     element: <ManageAssets />,
                     children: [
-                         {
+                      {
                         path: "overall-asset",
                         element: <AssignAssets />,
                       },
@@ -3994,13 +3998,13 @@ export const routes = createBrowserRouter([
                   },
                 ],
               },
-               {
+              {
                 path: "printouts",
                 element: <PrintoutLayout />,
                 children: [
                   {
                     path: "",
-                     element: <PrintoutDashboard />,
+                    element: <PrintoutDashboard />,
                     // element: (
                     //   <PerformancePermissionRoute
                     //     element={<PrintoutDashboard />}
