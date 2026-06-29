@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import MuiModal from "../../../../components/MuiModal";
@@ -16,7 +16,12 @@ import { useNavigate } from "react-router-dom";
 const SqWiseData = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  const [selectedFY, setSelectedFY] = useState("FY 2025-26");
+  const getCurrentFinancialYearLabel = () => {
+    const today = dayjs();
+    const startYear = today.month() < 3 ? today.year() - 1 : today.year();
+    return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+  };
+  const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
   //-----------------API-----------------//
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
     useQuery({
@@ -52,36 +57,6 @@ const SqWiseData = () => {
 
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const monthWiseExpenses = {};
-  const yearCategories = {
-    "FY 2024-25": [
-      "Apr-24",
-      "May-24",
-      "Jun-24",
-      "Jul-24",
-      "Aug-24",
-      "Sep-24",
-      "Oct-24",
-      "Nov-24",
-      "Dec-24",
-      "Jan-25",
-      "Feb-25",
-      "Mar-25",
-    ],
-    "FY 2025-26": [
-      "Apr-25",
-      "May-25",
-      "Jun-25",
-      "Jul-25",
-      "Aug-25",
-      "Sep-25",
-      "Oct-25",
-      "Nov-25",
-      "Dec-25",
-      "Jan-26",
-      "Feb-26",
-      "Mar-26",
-    ],
-  };
 
   //-------INCOME-------//
   const monthWiseIncome = {};
@@ -97,6 +72,60 @@ const SqWiseData = () => {
       ...(income.coworkingRevenues || []),
     ];
   });
+
+  const testExpense = revenueExpenseData
+    .filter((item) => item.expense)
+    .flatMap((item) => item.expense);
+  const testIncome = revenueExpenseData.filter((item) => item.income);
+  const testUnits = revenueExpenseData
+    .filter((item) => item.units)
+    .flatMap((item) => item.units);
+
+  const yearCategories = useMemo(() => {
+    const getFinancialYearStart = (date) =>
+      date.month() < 3 ? date.year() - 1 : date.year();
+
+    const buildFinancialYearMonths = (startYear) => [
+      `Apr-${String(startYear).slice(-2)}`,
+      `May-${String(startYear).slice(-2)}`,
+      `Jun-${String(startYear).slice(-2)}`,
+      `Jul-${String(startYear).slice(-2)}`,
+      `Aug-${String(startYear).slice(-2)}`,
+      `Sep-${String(startYear).slice(-2)}`,
+      `Oct-${String(startYear).slice(-2)}`,
+      `Nov-${String(startYear).slice(-2)}`,
+      `Dec-${String(startYear).slice(-2)}`,
+      `Jan-${String(startYear + 1).slice(-2)}`,
+      `Feb-${String(startYear + 1).slice(-2)}`,
+      `Mar-${String(startYear + 1).slice(-2)}`,
+    ];
+
+    const fyStartYears = new Set([
+      getFinancialYearStart(dayjs()),
+    ]);
+
+    incomeSources.forEach((income) => {
+      const rawDate =
+        income.date || income.rentDate || income.invoiceCreationDate;
+      const parsedDate = dayjs(rawDate);
+      if (!parsedDate.isValid()) return;
+      fyStartYears.add(getFinancialYearStart(parsedDate));
+    });
+
+    testExpense.forEach((expense) => {
+      const parsedDate = dayjs(expense?.dueDate);
+      if (!parsedDate.isValid()) return;
+      fyStartYears.add(getFinancialYearStart(parsedDate));
+    });
+
+    return Array.from(fyStartYears)
+      .sort((a, b) => a - b)
+      .reduce((acc, startYear) => {
+        acc[`FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`] =
+          buildFinancialYearMonths(startYear);
+        return acc;
+      }, {});
+  }, [incomeSources, testExpense]);
 
   // Process each income item
   incomeSources.forEach((income) => {
@@ -132,38 +161,17 @@ const SqWiseData = () => {
     dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
   );
 
-  const incomeMap = {};
-  transformedIncomes.forEach((item) => {
-    incomeMap[item.month] = item.actualIncome;
-  });
-
-  const incomeData = Object.entries(yearCategories).map(
-    ([fiscalYear, months]) => ({
-      name: "Income",
-      group: fiscalYear,
-      data: months.map((month) => (incomeMap ? incomeMap[month] || 0 : 0)),
-    }),
-  );
-
-  console.log("income data : ", incomeData);
-
-  const lastMonthRawIncome = incomeData.filter(
-    (item) => item.group === "FY 2025-26",
-  );
-  const lastMonthDataIncome = lastMonthRawIncome.map(
-    (item) => item.data[item.data.length - 1],
-  );
+  const incomeMap = useMemo(() => {
+    const map = {};
+    transformedIncomes.forEach((item) => {
+      map[item.month] = item.actualIncome;
+    });
+    return map;
+  }, [transformedIncomes]);
 
   //-------INCOME-------//
 
   //------------------Expensedata----------------------//
-  const testExpense = revenueExpenseData
-    .filter((item) => item.expense)
-    .flatMap((item) => item.expense);
-  const testIncome = revenueExpenseData.filter((item) => item.income);
-  const testUnits = revenueExpenseData
-    .filter((item) => item.units)
-    .flatMap((item) => item.units);
   const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
   const totalExpense = testExpense.reduce(
     (sum, item) => (item.actualAmount || 0) + sum,
@@ -210,13 +218,41 @@ const SqWiseData = () => {
   );
 
   // Build map of month => actualExpense
-  const expenseMap = {};
-  sortedExpenses.forEach((item) => {
-    expenseMap[item.month] = item.actualExpense;
-  });
+  const expenseMap = useMemo(() => {
+    const map = {};
+    sortedExpenses.forEach((item) => {
+      map[item.month] = item.actualExpense;
+    });
+    return map;
+  }, [sortedExpenses]);
+
+  const visibleYearCategories = useMemo(() => {
+    return Object.entries(yearCategories).reduce((acc, [fiscalYear, months]) => {
+      const lastVisibleMonthIndex = months.reduce((latestIndex, month, index) => {
+        const hasIncome = Number(incomeMap[month] || 0) > 0;
+        const hasExpense = Number(expenseMap[month] || 0) > 0;
+        return hasIncome || hasExpense ? index : latestIndex;
+      }, -1);
+
+      acc[fiscalYear] =
+        lastVisibleMonthIndex >= 0
+          ? months.slice(0, lastVisibleMonthIndex + 1)
+          : [];
+
+      return acc;
+    }, {});
+  }, [yearCategories, incomeMap, expenseMap]);
+
+  const incomeData = Object.entries(visibleYearCategories).map(
+    ([fiscalYear, months]) => ({
+      name: "Income",
+      group: fiscalYear,
+      data: months.map((month) => (incomeMap ? incomeMap[month] || 0 : 0)),
+    }),
+  );
 
   // Generate expenseData for all fiscal years defined in `yearCategories`
-  const expenseData = Object.entries(yearCategories).map(
+  const expenseData = Object.entries(visibleYearCategories).map(
     ([fiscalYear, months]) => ({
       name: "Expense",
       group: fiscalYear,
@@ -361,7 +397,7 @@ const SqWiseData = () => {
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
 
-  const selectedFYMonths = yearCategories[selectedFY] || [];
+  const selectedFYMonths = visibleYearCategories[selectedFY] || [];
   const monthlyProfitLossData = selectedFYMonths.map((month, index) => {
     const income = incomeMap[month] || 0;
 

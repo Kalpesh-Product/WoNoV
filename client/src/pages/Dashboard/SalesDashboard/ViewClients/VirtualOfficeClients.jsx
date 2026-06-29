@@ -137,11 +137,11 @@ const VirtualOfficeClients = () => {
   //-------------------------Event Handlers-----------------------------//
   //-------------------------Table Data-----------------------------//
   const columns = [
-    { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "srNo", headerName: "Sr No", width: 150 },
     {
       field: "clientName",
       headerName: "Client Name",
-      flex: 1,
+      flex: 0.8,
       cellRenderer: (params) => (
         <span
           onClick={() => handleViewClient(params.data)}
@@ -151,12 +151,13 @@ const VirtualOfficeClients = () => {
         </span>
       ),
     },
-    { field: "totalTerm", headerName: "Total Term" },
-    { field: "agreementExpiry", headerName: "Agreement Expiry" },
+    { field: "totalTerm", headerName: "Total Term" ,flex:0.5},
+    { field: "agreementExpiry", headerName: "Agreement Expiry",flex:0.5},
     {
       field: "rentStatus",
       headerName: "Status",
       sort: "desc",
+      pinned:"right",
       cellRenderer: (params) => {
         const status = params.data?.isActive ? "Active" : "Inactive";
         return <StatusChip status={status} />;
@@ -165,6 +166,7 @@ const VirtualOfficeClients = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned:"right",
       cellRenderer: (params) => (
         <ThreeDotMenu
           rowId={params.data._id || params.data.srNo}
