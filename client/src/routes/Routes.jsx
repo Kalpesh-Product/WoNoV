@@ -694,7 +694,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "virtual-office",
-                            element: <VirtualOsffice />,
+                            element: <VirtualOffice />,
                           },
                           {
                             path: "workation",
