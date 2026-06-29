@@ -45,8 +45,9 @@ const getMonthDate = (monthValue) => {
   if (monthIndex === -1) return null;
 
   const currentYear = new Date().getFullYear();
+  const fiscalYear = monthIndex <= 2 ? currentYear + 1 : currentYear;
 
-  return new Date(Date.UTC(currentYear, monthIndex, 1));
+  return new Date(Date.UTC(fiscalYear, monthIndex, 1));
 };
 
 const requestBudget = async (req, res, next) => {

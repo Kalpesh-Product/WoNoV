@@ -72,7 +72,7 @@ const bulkInsertRoutes = [
         route: "/api/sales/bulk-insert-workation-revenue",
       },
       {
-        name: "Expense And Budget",
+        name: "Expenses And Budget",
         fileKey: "budgets",
         route: "/api/budget/bulk-insert-budget/6798bab0e469e809084e249a",
       },

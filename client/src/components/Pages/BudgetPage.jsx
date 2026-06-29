@@ -287,16 +287,11 @@ const BudgetPage = () => {
   }, [hrFinance]);
 
   const budgetGraphData = useMemo(() => {
-    const currentMonthStart = dayjs().startOf("month");
-
     return (hrFinance || []).flatMap((item) => {
       const dueDate = item?.dueDate;
-      const dueMonth = dayjs(dueDate);
       const projectedAmount = Number(item?.projectedAmount || 0);
       const actualAmount = Number(item?.actualAmount || 0);
       const remainingProjectedAmount = Math.max(projectedAmount - actualAmount, 0);
-      const isPastMonth =
-        dueMonth.isValid() && dueMonth.startOf("month").isBefore(currentMonthStart);
 
       const series = [
         {
@@ -306,7 +301,9 @@ const BudgetPage = () => {
         },
       ];
 
-      if (!isPastMonth) {
+      const shouldShowProjectedAmount = remainingProjectedAmount > 0;
+
+      if (shouldShowProjectedAmount) {
         series.push({
           dueDate,
           amount: remainingProjectedAmount,

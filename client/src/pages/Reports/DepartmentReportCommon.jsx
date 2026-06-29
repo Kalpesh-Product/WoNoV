@@ -1216,7 +1216,7 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
           row?.unitName ||
           "",
       ).trim();
-      const buildingName = String(
+     const buildingName = String(
         row?.["unit.building.buildingName"] ||
           row?.unit?.building?.buildingName ||
           row?.["location.building.buildingName"] ||
@@ -1226,10 +1226,20 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
           row?.buildingName ||
           "",
       ).trim();
+      const hoState = String(
+        row?.hoState || row?.["hoState"] || row?.["HO State"] || "",
+      ).trim();
+      const hoCountry = String(
+        row?.hoCountry || row?.["hoCountry"] || row?.["HO Country"] || "IN",
+      ).trim();
+      const hoStateName = getStateName(hoState, hoCountry);
 
       if (isCoworkingOrVirtualOfficeClientsReport) {
         nextRow["Cabin Desk"] = row?.cabinDesks ?? "";
         nextRow["Open Desk"] = row?.openDesks ?? "";
+        if (hoStateName) {
+          nextRow.hoState = hoStateName;
+        }
       }
       if (isVirtualOfficeClientsReport) {
         nextRow["Total Term"] = row?.totalTerm ?? row?.["totalTerm"] ?? "";
@@ -1246,6 +1256,16 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       delete nextRow.unitNo;
       delete nextRow.unitName;
       delete nextRow.buildingName;
+      delete nextRow.openDesk;
+      delete nextRow.openDesks;
+      delete nextRow.cabinDesk;
+      delete nextRow.cabinDesks;
+      delete nextRow.totalTerm;
+      delete nextRow["openDesk"];
+      delete nextRow["openDesks"];
+      delete nextRow["cabinDesk"];
+      delete nextRow["cabinDesks"];
+      delete nextRow["totalTerm"];
       delete nextRow["unit.unitNo"];
       delete nextRow["unit.unitName"];
       delete nextRow["unit.building.buildingName"];
