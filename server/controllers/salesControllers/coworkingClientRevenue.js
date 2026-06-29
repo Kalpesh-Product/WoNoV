@@ -270,7 +270,10 @@ const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
         clientMap.set(normalizeClientName(client.clientName), client._id);
       }
       if (client.clientInvoiceName) {
-        clientMap.set(normalizeClientName(client.clientInvoiceName), client._id);
+        clientMap.set(
+          normalizeClientName(client.clientInvoiceName),
+          client._id,
+        );
       }
     });
 
@@ -338,7 +341,7 @@ const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
           totalTerm: parsedTotalTerm,
           dueTerm: 0, // Optional: You can derive logic here if needed
           rentDate: rentDate ? new Date(rentDate) : null,
-          rentStatus: rentStatus?.trim().toLowerCase(),
+          rentStatus: rentStatus?.trim(),
           pastDueDate: pastDueDate ? new Date(pastDueDate) : null,
           annualIncrement: isNaN(parseFloat(annualIncrement))
             ? null

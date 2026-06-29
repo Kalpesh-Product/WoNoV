@@ -38,7 +38,6 @@ const parseValidDate = (value) => {
   return isNaN(date.getTime()) ? null : date;
 };
 
-
 const createVirtualOfficeRevenue = async (req, res, next) => {
   try {
     const {
@@ -123,7 +122,7 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
     //     client._id,
     //   ]),
     // );
-     const clientMap = new Map();
+    const clientMap = new Map();
 
     virtualOfficeClients.forEach((client) => {
       const clientId = client._id?.toString();
@@ -194,7 +193,7 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
         if (!clientId) {
           // missingClients.push(clientName);
           // return; // skip row, don’t break stream
-           if (clientName) {
+          if (clientName) {
             missingClients.push(clientName);
           }
           return;
@@ -208,14 +207,15 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
           taxableAmount: parseAmount(taxableAmount) || 0,
           revenue: parseAmount(revenue) || 0,
           totalTerm: parseInt(totalTerm) || 0,
-         dueTerm: parseValidDate(dueTerm),
-rentDate: parseValidDate(rentDate),
-          rentStatus: rentStatus?.trim(),
-        pastDueDate: parseValidDate(pastDueDate),
+          dueTerm: parseValidDate(dueTerm),
+          rentDate: parseValidDate(rentDate),
+          // rentStatus: rentStatus?.trim(),
+          rentStatus: "Paid",
+          pastDueDate: parseValidDate(pastDueDate),
           annualIncrement: isNaN(parseFloat(annualIncrement))
             ? null
             : parseFloat(annualIncrement),
-         nextIncrementDate: parseValidDate(nextIncrementDate),
+          nextIncrementDate: parseValidDate(nextIncrementDate),
         });
       })
       .on("end", async () => {
