@@ -25,6 +25,7 @@ const {
 const {
   fetchCoworkingRevenueService,
   fetchWorkationRevenueReportService,
+  fetchVerticalRevenueReportService,
 } = require("./revenue");
 
 const { fetchMeetingRevenueReportService } = require("./revenue");
@@ -108,11 +109,14 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
+  verticalwisetotalrevenuebreakup: async (context = {}) =>
+    fetchVerticalRevenueReportService({
+      dateFilter: context.dateFilter,
+    }),
   occupancydeskclientswisereport: createReportService(
     fetchClientsOccupancyReportService,
     {
       dateField: "createdAt",
-      contextKeys: ["company", "roles", "departments"],
     },
   ),
   inventorybuildingunitwise: createReportService(
