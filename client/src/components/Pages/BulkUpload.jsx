@@ -16,6 +16,7 @@ import UploadFileInput from "../UploadFileInput";
 import { toast } from "sonner";
 import humanDate from "../../utils/humanDateForamt";
 import bulkInsertRoutes from "../../constants/bulkInsertRoutes";
+import formatDateTime from "../../utils/formatDateTime";
 
 export default function BulkUpload() {
   const axios = useAxiosPrivate();
@@ -23,6 +24,8 @@ export default function BulkUpload() {
   const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("");
+  const [downloadedAtByTemplate, setDownloadedAtByTemplate] = useState({});
+  const [uploadedAtByTemplate, setUploadedAtByTemplate] = useState({});
 
   const canUploadDocuments = useMemo(() => {
     const allowedDepartmentIds = new Set([
@@ -126,6 +129,43 @@ export default function BulkUpload() {
     (item) => item.id === selectedDoc,
   );
 
+  const buildDownloadTimestamp = () => {
+    const now = new Date();
+    const pad = (value) => String(value).padStart(2, "0");
+
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+      now.getDate(),
+    )}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(
+      now.getSeconds(),
+    )}`;
+  };
+
+  const handleTemplateDownload = (template) => {
+    const originalUrl = template?.documentLink;
+    if (!originalUrl) {
+      toast.error("Template download link is not available.");
+      return;
+    }
+
+    const extension =
+      originalUrl?.split(".").pop()?.split("?")[0]?.toLowerCase() || "csv";
+    const safeTemplateName = String(template?.name || "bulk-upload-template")
+      .trim()
+      .replace(/[^a-z0-9_\- ]/gi, "_")
+      .replace(/\s+/g, "-");
+
+    const link = document.createElement("a");
+    link.href = originalUrl.replace("/upload/", "/upload/fl_attachment/");
+    link.download = `${safeTemplateName}-downloaded-${buildDownloadTimestamp()}.${extension}`;
+    setDownloadedAtByTemplate((prev) => ({
+      ...prev,
+      [template.id || template.documentLink || template.name]: new Date().toISOString(),
+    }));
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const { mutate: uploadDocument, isPending: isUploading } = useMutation({
     // mutationFn: async ({ file, documentName }) => {
     mutationFn: async ({ file }) => {
@@ -147,6 +187,10 @@ export default function BulkUpload() {
       return response.data;
     },
     onSuccess: (data) => {
+      setUploadedAtByTemplate((prev) => ({
+        ...prev,
+        [selectedTemplate?.id]: new Date().toISOString(),
+      }));
       toast.success(data.message || "DATA UPLOADED");
       setOpenModal(false);
       reset();
@@ -167,13 +211,23 @@ export default function BulkUpload() {
       .filter((template) => template.isActive === true)
       .map((template, index) => ({
         srNo: index + 1,
+        id: template._id || template.documentId || template.name,
         name: template.name,
         documentLink: template.documentLink,
         isActive: template.isActive ? "Active" : "Inactive",
-        date: humanDate(template.createdAt),
-        updatedAt: template.updatedAt,
+        date:
+          formatDateTime(
+            downloadedAtByTemplate[
+              template._id || template.documentId || template.name
+            ] || template.createdAt,
+          ) || humanDate(template.createdAt),
+        updatedAt: formatDateTime(
+          uploadedAtByTemplate[
+            template._id || template.documentId || template.name
+          ] || template.updatedAt,
+        ),
       }));
-  }, [departmentDocuments]);
+  }, [departmentDocuments, downloadedAtByTemplate, uploadedAtByTemplate]);
 
   const templateColumns = [
     {
@@ -226,7 +280,13 @@ export default function BulkUpload() {
       field: "documentLink",
       cellRenderer: (params) => (
         <div className="p-2">
-          <a href={params.data.documentLink}>
+          <a
+            href={params.data.documentLink}
+            onClick={(event) => {
+              event.preventDefault();
+              handleTemplateDownload(params.data);
+            }}
+          >
             <IoMdDownload size={20} />
           </a>
         </div>
