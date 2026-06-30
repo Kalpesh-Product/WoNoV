@@ -328,8 +328,14 @@ const fetchWorkationRevenueReportService = async ({
   return revenues;
 };
 
-const buildVerticalRevenueFilter = (company, dateFilter, dateField) => ({
+const buildVerticalRevenueFilter = (
+  company,
+  dateFilter,
+  dateField,
+  status,
+) => ({
   ...(company ? { company } : {}),
+  ...(status && { status }),
   ...(dateFilter?.startDate || dateFilter?.endDate
     ? {
         [dateField]: {
@@ -349,6 +355,7 @@ const sumRevenue = (records, amountField) =>
   );
 
 const fetchVerticalRevenueReportService = async ({ company, dateFilter }) => {
+  const status = "Paid";
   const [
     meetingRevenue,
     alternateRevenues,
@@ -356,7 +363,9 @@ const fetchVerticalRevenueReportService = async ({ company, dateFilter }) => {
     workationRevenues,
     coworkingRevenues,
   ] = await Promise.all([
-    MeetingRevenue.find(buildVerticalRevenueFilter(company, dateFilter, "date"))
+    MeetingRevenue.find(
+      buildVerticalRevenueFilter(company, dateFilter, "date", status),
+    )
       .select("taxable")
       .lean()
       .exec(),
