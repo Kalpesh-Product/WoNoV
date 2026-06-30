@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -45,14 +45,31 @@ const MONTH_ORDER = [
   "March",
 ];
 
+const getCurrentFinancialYearLabel = () => {
+  const today = dayjs();
+  const startYear = today.month() < 3 ? today.year() - 1 : today.year();
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
+const getCurrentFinancialMonthLabel = () => {
+  const currentMonthIndex = dayjs().month();
+  const financialMonthIndex =
+    currentMonthIndex >= 3 ? currentMonthIndex - 3 : currentMonthIndex + 9;
+  const financialYearStart =
+    currentMonthIndex >= 3 ? dayjs().year() : dayjs().year() - 1;
+  const actualYear =
+    financialMonthIndex <= 8 ? financialYearStart : financialYearStart + 1;
+  const actualMonthIndex = (financialMonthIndex + 3) % 12;
+
+  return dayjs(new Date(actualYear, actualMonthIndex)).format("MMM-YY");
+};
+
 const UniqueLeads = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
 
   const leadsData = useSelector((state) => state?.sales?.leadsData);
-  const [searchParams] = useSearchParams();
-  const queryMonth = searchParams.get("month");
   const [modalOpen, setModalOpen] = useState(false);
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
@@ -114,8 +131,10 @@ const UniqueLeads = () => {
     });
   }, [openDesksValue, cabinDesksValue, setValue]);
 
-  const [selectedFY, setSelectedFY] = useState("FY 2025-26");
-  const [selectedMonth, setSelectedMonth] = useState(queryMonth || "Apr-24");
+  const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
+  const [selectedMonth, setSelectedMonth] = useState(
+    getCurrentFinancialMonthLabel(),
+  );
 
   const [viewType, setViewType] = useState("month"); // 'month' or 'year'
 
@@ -319,7 +338,17 @@ const UniqueLeads = () => {
   // };
 
   const availableFinancialYears = useMemo(() => {
-    const yearsSet = new Set();
+    const yearsSet = new Set([getCurrentFinancialYearLabel()]);
+
+    const currentFyMatch = getCurrentFinancialYearLabel().match(/\d{4}/);
+    const currentStartYear = currentFyMatch ? parseInt(currentFyMatch[0], 10) : null;
+
+    if (currentStartYear) {
+      for (let offset = 1; offset <= 10; offset += 1) {
+        const startYear = currentStartYear + offset;
+        yearsSet.add(`FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`);
+      }
+    }
 
     leadsData.forEach((lead) => {
       const date = dayjs(lead.startDate);
@@ -625,9 +654,10 @@ const UniqueLeads = () => {
                 return;
               }
 
-              const defaultMonth = dayjs(
-                new Date(parseInt(startYear), 3)
-              ).format("MMM-YY");
+              const defaultMonth =
+                newFY === getCurrentFinancialYearLabel()
+                  ? getCurrentFinancialMonthLabel()
+                  : dayjs(new Date(parseInt(startYear), 3)).format("MMM-YY");
               setSelectedMonth(defaultMonth);
               navigate(
                 `/app/dashboard/sales-dashboard/unique-leads?month=${encodeURIComponent(

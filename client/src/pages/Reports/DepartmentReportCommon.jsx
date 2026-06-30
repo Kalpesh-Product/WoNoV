@@ -1169,14 +1169,48 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
   const isCoworkingOrVirtualOfficeClientsReport =
     normalizedReportName.includes("coworking-clients") ||
     normalizedReportName.includes("virtual-office-clients");
+  const hasDeskCountFields = rows.some(
+    (row) =>
+      row?.openDesks !== undefined ||
+      row?.cabinDesks !== undefined ||
+      row?.["openDesks"] !== undefined ||
+      row?.["cabinDesks"] !== undefined,
+  );
+  const isInventoryBuildingUnitwiseReport =
+    normalizedReportName.includes("inventorybuildingunitwise") ||
+    normalizedReportName.includes("inventory-building-unitwise") ||
+    normalizedReportName.includes("inventory-unitwise") ||
+    (normalizedReportName.includes("inventory") &&
+      normalizedReportName.includes("unitwise"));
+  const hasInventoryDeskSummaryFields = rows.some(
+    (row) =>
+      (row?.totalDesks !== undefined ||
+        row?.occupiedDesks !== undefined ||
+        row?.freeDesks !== undefined ||
+        row?.sqft !== undefined) &&
+      (row?.openDesks !== undefined ||
+        row?.cabinDesks !== undefined ||
+        row?.["openDesks"] !== undefined ||
+        row?.["cabinDesks"] !== undefined),
+  );
+  const shouldAddDeskColumns =
+    hasDeskCountFields &&
+    (isCoworkingOrVirtualOfficeClientsReport ||
+      isInventoryBuildingUnitwiseReport ||
+      hasInventoryDeskSummaryFields);
   const isVirtualOfficeClientsReport = normalizedReportName.includes(
     "virtual-office-clients",
   );
+  const isUniqueLeadsReport =
+    normalizedReportName.includes("unique-leads") ||
+    normalizedReportName.includes("unique-lead");
   const isVirtualOfficeRevenueReport = normalizedReportName.includes(
     "virtual-office-revenue",
   );
   const shouldAddSalesUnitFields =
-    hasSalesLocationFields || isCoworkingOrVirtualOfficeClientsReport;
+    hasSalesLocationFields ||
+    isCoworkingOrVirtualOfficeClientsReport ||
+    shouldAddDeskColumns;
 
   const isOpenDeskClientsReport =
     normalizedReportName.includes("open-desk-clients") ||
@@ -1199,7 +1233,7 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       if (shouldMergeVisitorLikeFields) {
       nextRow = mergeVisitorLikeCsvFields(nextRow);
     }
-     if (shouldAddSalesUnitFields) {
+     if (shouldAddSalesUnitFields || shouldAddDeskColumns) {
       const unitNo = String(
         row?.["unit.unitNo"] ||
           row?.unit?.unitNo ||
@@ -1234,9 +1268,11 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       ).trim();
       const hoStateName = getStateName(hoState, hoCountry);
 
-      if (isCoworkingOrVirtualOfficeClientsReport) {
+      if (shouldAddDeskColumns) {
         nextRow["Cabin Desk"] = row?.cabinDesks ?? "";
         nextRow["Open Desk"] = row?.openDesks ?? "";
+      }
+      if (isCoworkingOrVirtualOfficeClientsReport) {
         if (hoStateName) {
           nextRow.hoState = hoStateName;
         }
@@ -1244,7 +1280,7 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       if (isVirtualOfficeClientsReport) {
         nextRow["Total Term"] = row?.totalTerm ?? row?.["totalTerm"] ?? "";
       }
-      if (!isVirtualOfficeRevenueReport) {
+      if (!isVirtualOfficeRevenueReport && !isUniqueLeadsReport) {
         nextRow["Unit No"] = unitNo;
         nextRow["Unit Name"] = unitName;
         nextRow["Building Name"] = buildingName;

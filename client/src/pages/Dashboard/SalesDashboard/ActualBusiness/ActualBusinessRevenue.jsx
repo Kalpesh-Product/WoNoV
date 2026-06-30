@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CircularProgress, MenuItem, TextField } from "@mui/material";
@@ -89,10 +89,20 @@ const groupByMonth = (data) => {
 const ActualBusinessRevenue = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  const [selectedMonth, setSelectedMonth] = useState(months[0]);
-  const [selectedFY, setSelectedFY] = useState(
-    fyOptions[fyOptions.length - 1].value,
-  );
+  const getCurrentFinancialYearValue = () => {
+    const today = new Date();
+    const startYear =
+      today.getMonth() < 3 ? today.getFullYear() - 1 : today.getFullYear();
+    return `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+  };
+  const getCurrentFinancialMonth = () => {
+    const currentMonthIndex = new Date().getMonth();
+    const financialMonthIndex =
+      currentMonthIndex >= 3 ? currentMonthIndex - 3 : currentMonthIndex + 9;
+    return months[financialMonthIndex];
+  };
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentFinancialMonth());
+  const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearValue());
 
   const { data: totalRevenue = [], isLoading: isTotalRevenue } = useQuery({
     queryKey: ["totalRevenue"],
@@ -102,6 +112,45 @@ const ActualBusinessRevenue = () => {
     },
   });
 
+  const dynamicFyOptions = useMemo(() => {
+    const currentFinancialYearValue = getCurrentFinancialYearValue();
+    const currentStartYear = Number(
+      String(currentFinancialYearValue).split("-")[0],
+    );
+    const fyValues = new Set([currentFinancialYearValue]);
+
+    for (let offset = 1; offset <= 10; offset += 1) {
+      const startYear = currentStartYear + offset;
+      fyValues.add(
+        `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`,
+      );
+    }
+
+    (totalRevenue || []).forEach((item) => {
+      Object.keys(item?.data || {}).forEach((fyKey) => {
+        if (fyKey) {
+          fyValues.add(fyKey);
+        }
+      });
+    });
+
+    return Array.from(fyValues)
+      .sort()
+      .map((fyValue) => ({
+        value: fyValue,
+        label: `FY ${fyValue}`,
+      }));
+  }, [totalRevenue]);
+
+  useEffect(() => {
+    if (!dynamicFyOptions.some((fy) => fy.value === selectedFY)) {
+      setSelectedFY(
+        dynamicFyOptions[dynamicFyOptions.length - 1]?.value ||
+          getCurrentFinancialYearValue(),
+      );
+    }
+  }, [dynamicFyOptions, selectedFY]);
+
   const formattedData = transformRevenueData(totalRevenue, selectedFY);
 
   const groupedRevenue = groupByMonth(formattedData);
@@ -110,6 +159,14 @@ const ActualBusinessRevenue = () => {
 
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
+  };
+
+  const handleFinancialYearChange = (event) => {
+    const newFinancialYear = event.target.value;
+    setSelectedFY(newFinancialYear);
+    setSelectedMonth((currentMonth) =>
+      months.includes(currentMonth) ? currentMonth : getCurrentFinancialMonth(),
+    );
   };
 
   const currentIndex = months.findIndex((m) => m === selectedMonth);
@@ -216,6 +273,24 @@ const ActualBusinessRevenue = () => {
     clients: domain.clients || [],
   }));
 
+  const selectedMonthYearLabel = useMemo(() => {
+    const [startYearText, endYearSuffix] = String(selectedFY || "").split("-");
+    const startYear = Number(startYearText);
+    const endYear =
+      endYearSuffix !== undefined
+        ? 2000 + Number(endYearSuffix)
+        : startYear + 1;
+
+    if (!startYear || Number.isNaN(startYear) || Number.isNaN(endYear)) {
+      return selectedMonth;
+    }
+
+    const monthIndex = months.indexOf(selectedMonth);
+    const yearForMonth = monthIndex >= 0 && monthIndex <= 8 ? startYear : endYear;
+
+    return `${selectedMonth} ${yearForMonth}`;
+  }, [selectedFY, selectedMonth]);
+
   return (
     <div className="p-4 flex flex-col gap-4">
       {!isTotalRevenue ? (
@@ -223,7 +298,7 @@ const ActualBusinessRevenue = () => {
           <WidgetSection
             layout={1}
             title={"Vertical-wise Revenue"}
-            titleLabel={`${selectedMonth} 2024`}
+            titleLabel={selectedMonthYearLabel}
             TitleAmount={`INR ${inrFormat(
             selectedMonthData.reduce((sum, d) => sum + d.revenue, 0),
             )}`}
@@ -239,13 +314,13 @@ const ActualBusinessRevenue = () => {
                 size="small"
                 label="Financial Year"
                 value={selectedFY}
-                onChange={(e) => setSelectedFY(e.target.value)}
+                onChange={handleFinancialYearChange}
                 className="w-[160px]"
                 SelectProps={{
                   IconComponent: KeyboardArrowDownIcon,
                 }}
               >
-                {fyOptions.map((fy) => (
+                {dynamicFyOptions.map((fy) => (
                   <MenuItem key={fy.value} value={fy.value}>
                     {fy.label}
                   </MenuItem>
@@ -274,7 +349,7 @@ const ActualBusinessRevenue = () => {
 
           <WidgetSection
             border
-            title={`Vertical-wise Revenue Breakdown FY 2025-26`}
+            title={`Vertical-wise Revenue Breakdown FY ${selectedFY}`}
             TitleAmount={`INR ${inrFormat(
               selectedMonthData.reduce((sum, d) => sum + d.revenue, 0),
             )}`}
