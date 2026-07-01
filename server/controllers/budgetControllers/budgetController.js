@@ -24,6 +24,32 @@ const normalizeMonth = (value) => {
   return String(value).trim().slice(0, 3).toLowerCase();
 };
 
+// const getMonthDate = (monthValue) => {
+//   const normalizedMonth = normalizeMonth(monthValue);
+
+//   const monthIndex = [
+//     "jan",
+//     "feb",
+//     "mar",
+//     "apr",
+//     "may",
+//     "jun",
+//     "jul",
+//     "aug",
+//     "sep",
+//     "oct",
+//     "nov",
+//     "dec",
+//   ].indexOf(normalizedMonth);
+
+//   if (monthIndex === -1) return null;
+
+//   const currentYear = new Date().getFullYear();
+//   const fiscalYear = monthIndex <= 2 ? currentYear + 1 : currentYear;
+
+//   return new Date(Date.UTC(fiscalYear, monthIndex, 1));
+// };
+
 const getMonthDate = (monthValue) => {
   const normalizedMonth = normalizeMonth(monthValue);
 
@@ -47,7 +73,8 @@ const getMonthDate = (monthValue) => {
   const currentYear = new Date().getFullYear();
   const fiscalYear = monthIndex <= 2 ? currentYear + 1 : currentYear;
 
-  return new Date(Date.UTC(fiscalYear, monthIndex, 1));
+  // Last day of the month (UTC)
+  return new Date(Date.UTC(fiscalYear, monthIndex + 1, 0));
 };
 
 const requestBudget = async (req, res, next) => {
