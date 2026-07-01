@@ -7,6 +7,7 @@ const {
 const { PDFDocument } = require("pdf-lib");
 const path = require("path");
 const Department = require("../../models/Departments");
+const { mongoose } = require("mongoose");
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -185,8 +186,9 @@ const updateCompanyDocument = async (req, res, next) => {
         await handleDocumentDelete(targetDoc.documentId);
       }
 
-      const folderName = `${foundUser.company.companyName}/${uploadFolders[targetSection]
-        }`;
+      const folderName = `${foundUser.company.companyName}/${
+        uploadFolders[targetSection]
+      }`;
       const sanitizedFileName = file.originalname.replace(/\s+/g, "_");
 
       const response = await handleDocumentUpload(
@@ -316,8 +318,9 @@ const toggleCompanyDocumentStatus = async (req, res, next) => {
     }
 
     return res.status(200).json({
-      message: `Document ${newStatus ? "activated" : "deactivated"
-        } successfully`,
+      message: `Document ${
+        newStatus ? "activated" : "deactivated"
+      } successfully`,
     });
   } catch (error) {
     next(error);
@@ -459,8 +462,9 @@ const uploadDepartmentDocument = async (req, res, next) => {
     }
 
     return res.status(200).json({
-      message: `${type.toUpperCase()} uploaded successfully for ${department.department.name
-        } department`,
+      message: `${type.toUpperCase()} uploaded successfully for ${
+        department.department.name
+      } department`,
     });
   } catch (error) {
     next(error);
@@ -749,7 +753,8 @@ const addCompanyKyc = async (req, res, next) => {
 
       uploadResult = await handleDocumentUpload(
         buffer,
-        `${company.companyName
+        `${
+          company.companyName
         }/kyc/${type}/${nameOfDirector}/${documentName?.trim()}`,
         originalname,
       );
@@ -794,12 +799,19 @@ const addCompanyKyc = async (req, res, next) => {
 
 const updateCompanyKycDocument = async (req, res, next) => {
   try {
-    const { type, currentDocumentName, documentName, nameOfDirector } = req.body;
+    const { type, currentDocumentName, documentName, nameOfDirector } =
+      req.body;
     const companyId = req.company;
 
-    if (!companyId || !type || !currentDocumentName?.trim() || !documentName?.trim()) {
+    if (
+      !companyId ||
+      !type ||
+      !currentDocumentName?.trim() ||
+      !documentName?.trim()
+    ) {
       return res.status(400).json({
-        message: "companyId, type, currentDocumentName and documentName are required",
+        message:
+          "companyId, type, currentDocumentName and documentName are required",
       });
     }
 
@@ -813,7 +825,9 @@ const updateCompanyKycDocument = async (req, res, next) => {
 
     if (type === "companyKyc") {
       const kycDocs = company.kycDetails.companyKyc || [];
-      const existingDoc = kycDocs.find((doc) => doc.name === currentDocumentName);
+      const existingDoc = kycDocs.find(
+        (doc) => doc.name === currentDocumentName,
+      );
 
       if (!existingDoc) {
         return res.status(404).json({ message: "Document not found" });
@@ -913,9 +927,7 @@ const createCompanyKycEntry = async (req, res, next) => {
 
     if (type === "directorKyc") {
       if (!nameOfDirector || !nameOfDirector.trim()) {
-        return res
-          .status(400)
-          .json({ message: "Director name is required" });
+        return res.status(400).json({ message: "Director name is required" });
       }
 
       const trimmedName = nameOfDirector.trim();
@@ -967,7 +979,6 @@ const createCompanyKycEntry = async (req, res, next) => {
   }
 };
 
-
 const updateCompanyKycEntryName = async (req, res, next) => {
   try {
     const { type, currentName, name } = req.body;
@@ -991,7 +1002,11 @@ const updateCompanyKycEntryName = async (req, res, next) => {
     if (type === "companyKyc") {
       const currentCompanyLabel = company.companyName?.trim() || "Company";
 
-      if (trimmedCurrentName.toLowerCase() !== currentCompanyLabel.toLowerCase() && trimmedCurrentName.toLowerCase() !== "company") {
+      if (
+        trimmedCurrentName.toLowerCase() !==
+          currentCompanyLabel.toLowerCase() &&
+        trimmedCurrentName.toLowerCase() !== "company"
+      ) {
         return res.status(404).json({ message: "Company entry not found" });
       }
 
@@ -1010,7 +1025,9 @@ const updateCompanyKycEntryName = async (req, res, next) => {
     if (type === "directorKyc") {
       const directorEntries = company.kycDetails.directorKyc || [];
       const directorEntry = directorEntries.find(
-        (director) => director.nameOfDirector?.trim().toLowerCase() === trimmedCurrentName.toLowerCase(),
+        (director) =>
+          director.nameOfDirector?.trim().toLowerCase() ===
+          trimmedCurrentName.toLowerCase(),
       );
 
       if (!directorEntry) {
@@ -1018,8 +1035,11 @@ const updateCompanyKycEntryName = async (req, res, next) => {
       }
 
       const duplicateEntry = directorEntries.find(
-        (director) => director.nameOfDirector?.trim().toLowerCase() === trimmedName.toLowerCase()
-          && director.nameOfDirector?.trim().toLowerCase() !== trimmedCurrentName.toLowerCase(),
+        (director) =>
+          director.nameOfDirector?.trim().toLowerCase() ===
+            trimmedName.toLowerCase() &&
+          director.nameOfDirector?.trim().toLowerCase() !==
+            trimmedCurrentName.toLowerCase(),
       );
 
       if (duplicateEntry) {
@@ -1045,9 +1065,6 @@ const updateCompanyKycEntryName = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
 
 const getCompanyKyc = async (req, res, next) => {
   try {
@@ -1348,6 +1365,7 @@ const getDepartmentTemplates = async (req, res, next) => {
   try {
     const { departmentId } = req.params;
     const foundDepartment = await Department.findOne({ _id: departmentId })
+      .select("templates")
       .lean()
       .exec();
     if (!foundDepartment) {
@@ -1355,6 +1373,41 @@ const getDepartmentTemplates = async (req, res, next) => {
     }
     const templates = foundDepartment.templates;
     return res.status(200).json({ templates });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateDepartmentTemplateLastModifiedAt = async (req, res, next) => {
+  try {
+    const { departmentId, templateId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+      return res.status(400).json({ message: "Invalid department ID" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(templateId)) {
+      return res.status(400).json({ message: "Invalid template ID" });
+    }
+
+    const department = await Department.findById(departmentId);
+    if (!department) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    const template = department.templates.id(templateId);
+    if (!template) {
+      return res.status(404).json({ message: "Template not found" });
+    }
+
+    template.lastmodifiedAt = new Date();
+    await department.save({ validateBeforeSave: false });
+
+    return res.status(200).json({
+      message: "Template last modified date updated successfully",
+      lastmodifiedAt: template.lastmodifiedAt,
+      templateId: template._id,
+    });
   } catch (error) {
     next(error);
   }
@@ -1386,8 +1439,9 @@ const deleteDepartmentTemplate = async (req, res, next) => {
     await department.save({ validateBeforeSave: false });
 
     res.status(200).json({
-      message: `Template ${template.isActive ? "activated" : "deactivated"
-        } successfully`,
+      message: `Template ${
+        template.isActive ? "activated" : "deactivated"
+      } successfully`,
     });
   } catch (error) {
     next(error);
@@ -1439,6 +1493,7 @@ const updateDepartmentTemplate = async (req, res, next) => {
     template.documentLink = uploadedFile.secure_url;
     template.documentId = uploadedFile.public_id;
     template.updatedAt = new Date();
+    template.lastmodifiedAt = new Date();
 
     // Save updated department
     await department.save();
@@ -1472,4 +1527,5 @@ module.exports = {
   deleteDepartmentTemplate,
   updateCompanyKycEntryName,
   updateDepartmentTemplate,
+  updateDepartmentTemplateLastModifiedAt,
 };

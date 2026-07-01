@@ -45,6 +45,7 @@ const {
   deleteDepartmentTemplate,
   getDepartmentTemplates,
   updateDepartmentTemplate,
+  updateDepartmentTemplateLastModifiedAt,
 } = require("../controllers/companyControllers/documentControllers");
 
 const {
@@ -132,7 +133,11 @@ router.post(
 router.post("/create-kyc-entry", createCompanyKycEntry);
 router.patch("/update-kyc-entry-name", updateCompanyKycEntryName);
 router.post("/add-kyc-document", upload.single("kyc"), addCompanyKyc);
-router.patch("/update-kyc-document", upload.single("kyc"), updateCompanyKycDocument);
+router.patch(
+  "/update-kyc-document",
+  upload.single("kyc"),
+  updateCompanyKycDocument,
+);
 router.get("/get-kyc", getCompanyKyc);
 router.get("/get-compliance-documents", getComplianceDocuments);
 router.post(
@@ -198,6 +203,10 @@ router.post(
   "/upload-department-templates/:departmentId",
   upload.single("template"),
   handleDepartmentTemplateUpload,
+);
+router.patch(
+  "/department-templates/:departmentId/:templateId/lastmodified",
+  updateDepartmentTemplateLastModifiedAt,
 );
 router.get("/department-templates/:departmentId", getDepartmentTemplates);
 router.delete("/delete-department-templates", deleteDepartmentTemplate);

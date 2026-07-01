@@ -40,6 +40,10 @@ const departmentSchema = new mongoose.Schema({
         type: Date,
         default: null,
       },
+      lastmodifiedAt: {
+        type: Date,
+        default: null,
+      },
     },
   ],
   assetCategories: [
