@@ -38,7 +38,12 @@ const MeetingSettings = () => {
     defaultValues: {
       roomName: "",
       seats: 0,
+      perHourCredit: "",
       description: "",
+      location: "",
+      unit: "",
+      perHourPrice: "",
+      perHourGstPrice: "",
     },
   });
   const watchLocation = watch("location"); // 👈 Add this
@@ -59,10 +64,14 @@ const MeetingSettings = () => {
     defaultValues: {
       roomName: "",
       seats: 0,
+      perHourCredit: "",
       description: "",
       location: selectedRoom?.location?.building?._id,
+      unit: "",
       isActive: true,
       roomImage: null,
+      perHourPrice: "",
+      perHourGstPrice: "",
     },
   });
   const [editFile, setEditFile] = useState(null);
@@ -73,11 +82,14 @@ const MeetingSettings = () => {
       resetEditForm({
         roomName: selectedRoom.name ?? "",
         seats: selectedRoom.seats ?? "",
+        perHourCredit: selectedRoom.perHourCredit ?? "",
         description: selectedRoom.description ?? "",
         location: selectedRoom.location?.building?._id ?? "",
         unit: selectedRoom.location?._id ?? "",
         isActive: selectedRoom.isActive ?? "",
         roomImage: selectedRoom.image?.url ?? null,
+        perHourPrice: selectedRoom.perHourPrice ?? "",
+        perHourGstPrice: selectedRoom.perHourGstPrice ?? "",
       });
     }
   }, [selectedRoom, resetEditForm]);
@@ -87,9 +99,13 @@ const MeetingSettings = () => {
     resetEditForm({
       roomName: room.name,
       seats: room.seats,
+      perHourCredit: room.perHourCredit ?? "",
       description: room.description,
       location: room.location,
+      unit: room.location?._id ?? "",
       roomImage: room.image?.url ?? null,
+      perHourPrice: room.perHourPrice ?? "",
+      perHourGstPrice: room.perHourGstPrice ?? "",
     });
     setEditFile(null);
     setOpenEditModal(true);
@@ -127,8 +143,11 @@ const MeetingSettings = () => {
     const formData = new FormData();
     formData.append("name", data.roomName);
     formData.append("seats", data.seats);
+    formData.append("perHourCredit", data.perHourCredit);
     formData.append("description", data.description);
     formData.append("location", data.unit);
+    formData.append("perHourPrice", data.perHourPrice);
+    formData.append("perHourGstPrice", data.perHourGstPrice);
     formData.append("isActive", data.isActive === "false" ? false : true);
     if (data.roomImage instanceof File) {
       formData.append("room", data.roomImage);
@@ -191,8 +210,11 @@ const MeetingSettings = () => {
     const formData = new FormData();
     formData.append("name", data.roomName);
     formData.append("seats", data.seats);
+    formData.append("perHourCredit", data.perHourCredit);
     formData.append("description", data.description);
     formData.append("location", data.unit); // ✅ Use unit as location like Edit form
+    formData.append("perHourPrice", data.perHourPrice);
+    formData.append("perHourGstPrice", data.perHourGstPrice);
 
     if (selectedFile) {
       formData.append("room", selectedFile);
@@ -306,23 +328,39 @@ const MeetingSettings = () => {
                   />
                 )}
               />
-              <Controller
-                name="seats"
-                control={control}
-                rules={{ required: "Seats are required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Seats"
-                    variant="outlined"
-                    type="number"
-                    size="small"
-                    fullWidth
-                    error={!!errors.seats}
-                    helperText={errors?.seats?.message}
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Controller
+                  name="seats"
+                  control={control}
+                  rules={{ required: "Seats are required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Seats"
+                      variant="outlined"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!errors.seats}
+                      helperText={errors?.seats?.message}
+                    />
+                  )}
+                />
+                <Controller
+                  name="perHourCredit"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Credit"
+                      variant="outlined"
+                      type="number"
+                      size="small"
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
               <Controller
                 name="description"
                 control={control}
@@ -346,60 +384,92 @@ const MeetingSettings = () => {
                   />
                 )}
               />
-              <Controller
-                name="location"
-                control={control}
-                rules={{ required: "Location is required" }}
-                render={({ field }) => (
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>Location</InputLabel>
-                    <Select {...field} label="Work Location">
-                      <MenuItem value="">Select Location</MenuItem>
-                      {auth.user.company.workLocations.length > 0 ? (
-                        auth.user.company.workLocations.map((loc) => (
-                          <MenuItem key={loc._id} value={loc._id}>
-                            {loc.buildingName}
-                          </MenuItem>
-                        ))
-                      ) : (
-                        <MenuItem disabled>No Locations Available</MenuItem>
-                      )}
-                    </Select>
-                  </FormControl>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Controller
+                  name="location"
+                  control={control}
+                  rules={{ required: "Location is required" }}
+                  render={({ field }) => (
+                    <FormControl size="small" fullWidth>
+                      <InputLabel>Location</InputLabel>
+                      <Select {...field} label="Work Location">
+                        <MenuItem value="">Select Location</MenuItem>
+                        {auth.user.company.workLocations.length > 0 ? (
+                          auth.user.company.workLocations.map((loc) => (
+                            <MenuItem key={loc._id} value={loc._id}>
+                              {loc.buildingName}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <MenuItem disabled>No Locations Available</MenuItem>
+                        )}
+                      </Select>
+                    </FormControl>
+                  )}
+                />
 
-              <Controller
-                name="unit"
-                control={control}
-                rules={{ required: "Unit is required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    size="small"
-                    label="Select Unit"
-                    placeholder="ST 701 A"
-                  >
-                    <MenuItem value="" disabled>
-                      Select Unit
-                    </MenuItem>
-                    {isUnitsPending ? (
-                      <MenuItem disabled>
-                        <CircularProgress size={20} />
+                <Controller
+                  name="unit"
+                  control={control}
+                  rules={{ required: "Unit is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      size="small"
+                      label="Select Unit"
+                      placeholder="ST 701 A"
+                    >
+                      <MenuItem value="" disabled>
+                        Select Unit
                       </MenuItem>
-                    ) : (
-                      unitsData
-                        .filter((item) => item.building?._id === watchLocation)
-                        .map((item) => (
-                          <MenuItem key={item._id} value={item._id}>
-                            {item.unitNo}
-                          </MenuItem>
-                        ))
-                    )}
-                  </TextField>
-                )}
-              />
+                      {isUnitsPending ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={20} />
+                        </MenuItem>
+                      ) : (
+                        unitsData
+                          .filter((item) => item.building?._id === watchLocation)
+                          .map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.unitNo}
+                            </MenuItem>
+                          ))
+                      )}
+                    </TextField>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Controller
+                  name="perHourPrice"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Price"
+                      variant="outlined"
+                      type="number"
+                      size="small"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="perHourGstPrice"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="GST"
+                      variant="outlined"
+                      type="number"
+                      size="small"
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
 
               <Controller
                 name="roomImage"
@@ -474,21 +544,37 @@ const MeetingSettings = () => {
                   />
                 )}
               />
-              <Controller
-                name="seats"
-                control={editControl}
-                rules={{ required: "Seats are required" }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Seats"
-                    variant="outlined"
-                    size="small"
-                    type="number"
-                    fullWidth
-                  />
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Controller
+                  name="seats"
+                  control={editControl}
+                  rules={{ required: "Seats are required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Seats"
+                      variant="outlined"
+                      size="small"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="perHourCredit"
+                  control={editControl}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Credit"
+                      variant="outlined"
+                      size="small"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
               <Controller
                 name="description"
                 control={editControl}
@@ -510,57 +596,89 @@ const MeetingSettings = () => {
                   />
                 )}
               />
-              <Controller
-                name="location"
-                control={editControl}
-                render={({ field }) => (
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>Location</InputLabel>
-                    <Select {...field} label="Work Location">
-                      <MenuItem value="">Select Location</MenuItem>
-                      {auth.user.company.workLocations.length > 0 ? (
-                        auth.user.company.workLocations.map((loc) => (
-                          <MenuItem key={loc._id} value={loc._id}>
-                            {loc.buildingName}
-                          </MenuItem>
-                        ))
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Controller
+                  name="location"
+                  control={editControl}
+                  render={({ field }) => (
+                    <FormControl size="small" fullWidth>
+                      <InputLabel>Location</InputLabel>
+                      <Select {...field} label="Work Location">
+                        <MenuItem value="">Select Location</MenuItem>
+                        {auth.user.company.workLocations.length > 0 ? (
+                          auth.user.company.workLocations.map((loc) => (
+                            <MenuItem key={loc._id} value={loc._id}>
+                              {loc.buildingName}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <MenuItem disabled>No Locations Available</MenuItem>
+                        )}
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+                <Controller
+                  name="unit"
+                  control={editControl}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      size="small"
+                      label="Select Unit"
+                      placeholder="ST 701 A"
+                    >
+                      <MenuItem value="" disabled>
+                        Select Unit
+                      </MenuItem>
+                      {isUnitsPending ? (
+                        <>
+                          <CircularProgress />
+                        </>
                       ) : (
-                        <MenuItem disabled>No Locations Available</MenuItem>
+                        unitsData
+                          .filter((item) => item.building?._id === editLocation)
+                          .map((item) => (
+                            <MenuItem key={item._id} value={item._id}>
+                              {item.unitNo}
+                            </MenuItem>
+                          ))
                       )}
-                    </Select>
-                  </FormControl>
-                )}
-              />
-              <Controller
-                name="unit"
-                control={editControl}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    size="small"
-                    label="Select Unit"
-                    placeholder="ST 701 A"
-                  >
-                    <MenuItem value="" disabled>
-                      Select Unit
-                    </MenuItem>
-                    {isUnitsPending ? (
-                      <>
-                        <CircularProgress />
-                      </>
-                    ) : (
-                      unitsData
-                        .filter((item) => item.building?._id === editLocation)
-                        .map((item) => (
-                          <MenuItem key={item._id} value={item._id}>
-                            {item.unitNo}
-                          </MenuItem>
-                        ))
-                    )}
-                  </TextField>
-                )}
-              />
+                    </TextField>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Controller
+                  name="perHourPrice"
+                  control={editControl}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Price"
+                      variant="outlined"
+                      size="small"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="perHourGstPrice"
+                  control={editControl}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="GST"
+                      variant="outlined"
+                      size="small"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
+                />
+              </div>
               <Controller
                 name="roomImage"
                 control={editControl}
