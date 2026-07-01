@@ -6,6 +6,7 @@ const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+const Unit = require("../../models/locations/Unit");
 const dayjs = require("dayjs");
 const utc = require("dayjs/plugin/utc");
 const timezone = require("dayjs/plugin/timezone");
@@ -13,91 +14,17 @@ const timezone = require("dayjs/plugin/timezone");
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// const fetchBudgetVoucherService = async ({
-//   company,
-//   dateFilter,
-//   departmentId,
-//   type = "",
-// }) => {
-//   const query = { company };
-
-//   console.log("type", type);
-//   console.log("departmentId", departmentId);
-//   if (departmentId && type !== "payout") {
-//     query.department = departmentId;
-//   }
-
-//   if (dateFilter) {
-//     query.dueDate = dateFilter.dueDate;
-//   }
-//   console.log("budget voucher query", query);
-
-//   let budgetQuery = Budget.find(query);
-
-//   if (type === "payout") {
-//     budgetQuery = budgetQuery
-//       .select(
-//         "expanseName expanseType actualAmount dueDate status department unit",
-//       )
-//       .populate([
-//         { path: "department", select: "name" },
-//         { path: "unit", select: "unitNo unitName" },
-//       ]);
-//   }
-
-//   const budgets = await budgetQuery
-//     .populate([
-//       { path: "department", select: "name" },
-//       {
-//         path: "unit",
-//         select: "unitNo unitName",
-//         populate: {
-//           path: "building",
-//           select: "buildingName",
-//           model: "Building",
-//         },
-//       },
-//     ])
-//     .lean()
-//     .exec();
-
-//   // const budgets = await Budget.find(query)
-//   //   .populate([
-//   //     { path: "department", select: "name" },
-//   //     { path: "unit", populate: { path: "building", model: "Building" } },
-//   //   ])
-//   //   .lean()
-//   //   .exec();
-
-//   const allBudgets = budgets.map((budget) => {
-//     if (budget?.particulars?.length) {
-//       const projectedAmount = budget.particulars.reduce(
-//         (acc, curr) => acc + curr.particularAmount,
-//         0,
-//       );
-
-//       return {
-//         ...budget,
-//         projectedAmount,
-//       };
-//     }
-
-//     return budget;
-//   });
-
-//   return { allBudgets };
-// };
-
 const fetchBudgetVoucherService = async ({
   company,
   dateFilter,
   departmentId,
   type = "",
+  extraMatch = {},
   isReport,
 }) => {
   const query = { company };
 
-  if (departmentId && type !== "payout") {
+  if (departmentId && !["payout", "landlord-payments"].includes(type)) {
     query.department = departmentId;
   }
 
@@ -109,15 +36,19 @@ const fetchBudgetVoucherService = async ({
     query.status = "Approved";
   }
 
-  const isPayout = type === "payout";
+  if (type === "landlord-payments") {
+    query.expanseType = "Monthly Rent";
+  }
+
+  const isFilteredBudget = ["payout", "landlord-payments"].includes(type);
 
   let budgetQuery = Budget.find(query);
 
-  if (isPayout) {
+  if (isFilteredBudget) {
     budgetQuery = budgetQuery;
   }
 
-  const populateOptions = isPayout
+  const populateOptions = isFilteredBudget
     ? [
         { path: "department", select: "name" },
         {
@@ -160,7 +91,6 @@ const fetchBudgetVoucherService = async ({
   });
 
   if (isReport) {
-    console.log("type", type);
     return {
       allBudgets: budgets.map((budget) =>
         mapBudgetBaseFields(budget, isReport, type),
@@ -172,6 +102,7 @@ const fetchBudgetVoucherService = async ({
 };
 
 const mapBudgetBaseFields = (budget = {}, isReport = false, type = "") => {
+  const isFilteredBudget = ["payout", "landlord-payments"].includes(type);
   const projectedAmount = budget?.particulars?.length
     ? budget.particulars.reduce(
         (acc, curr) => acc + (curr.particularAmount || 0),
@@ -180,21 +111,24 @@ const mapBudgetBaseFields = (budget = {}, isReport = false, type = "") => {
     : budget.projectedAmount || 0;
 
   return {
-    department: budget?.department?.name || "-",
     expanseName: budget?.expanseName || "-",
-    expanseType: budget?.expanseType || "-",
+    ...(type !== "landlord-payments" && {
+      department: budget?.department?.name || "-",
+      expanseType: budget?.expanseType || "-",
+    }),
     ...(budget?.expanseType !== "Reimbursement" &&
-      type !== "payout" && {
-        projectedAmount: budget?.projectedAmount,
+      !isFilteredBudget && {
         paymentType: budget?.paymentType || "-",
       }),
+    ...(budget?.expanseType !== "Reimbursement" &&
+      type !== "payout" && { projectedAmount: budget?.projectedAmount }),
     actualAmount: budget?.actualAmount ?? "-",
     unitNo: budget?.unit?.unitNo || "-",
     unit: budget?.unit?.unitName || "-",
     building: budget?.unit?.building?.buildingName,
     dueDate: budget?.dueDate || null,
     paidStatus: budget?.isPaid || "-",
-    ...(type !== "payout" && {
+    ...(!isFilteredBudget && {
       invoiceName: budget?.invoice?.name || "-",
       invoiceFile: budget?.invoice?.link || "-",
       invoiceDate: budget?.invoice?.date || null,
@@ -233,7 +167,6 @@ const fetchBudgetService = async ({
     }
   }
 
-  console.log("budget query report", query);
   const budgets = await Budget.find(query)
     .populate([
       { path: "department", select: "name" },
@@ -393,13 +326,9 @@ const monthlyAggregate = (
   valueExpr,
   company,
   dateRange,
-  type = "",
+  extraMatch = {},
 ) => {
-  const match = { company };
-
-  if (type === "budget") {
-    match.status = "Approved";
-  }
+  const match = { company, ...extraMatch };
 
   if (dateRange && (dateRange.$gte || dateRange.$lte)) {
     match[dateField] = dateRange;
@@ -446,25 +375,67 @@ const monthlyAggregate = (
   ]);
 };
 
+const inrFormat = (money) =>
+  Number(money).toLocaleString("en-IN", {
+    maximumFractionDigits: 0,
+  });
+
+const historicalPnlYearCategories = {
+  "FY 2024-2025": [
+    "Apr-24",
+    "May-24",
+    "Jun-24",
+    "Jul-24",
+    "Aug-24",
+    "Sep-24",
+    "Oct-24",
+    "Nov-24",
+    "Dec-24",
+    "Jan-25",
+    "Feb-25",
+    "Mar-25",
+  ],
+  "FY 2025-2026": [
+    "Apr-25",
+    "May-25",
+    "Jun-25",
+    "Jul-25",
+    "Aug-25",
+    "Sep-25",
+    "Oct-25",
+    "Nov-25",
+    "Dec-25",
+    "Jan-26",
+    "Feb-26",
+    "Mar-26",
+  ],
+};
+
+const historicalPnlBaseIncomeData = [25174680, 31929380, 31929380];
+const historicalPnlBaseExpenseData = [24168780, 33899540, 33899540];
 const logProfitLossSourceCalculation = (source, monthlyData) => {
   const includedMonthlyData = monthlyData.filter(
     ({ _id: month }) => !excludedMonths.includes(month),
   );
 
-  console.log(`[ProfitLossReport] ${source} calculation`, {
-    totalEntries: includedMonthlyData.reduce(
-      (sum, { totalEntries = 0 }) => sum + totalEntries,
-      0,
-    ),
-    values: includedMonthlyData.flatMap(({ _id: month, values = [] }) =>
-      values.map((value) => ({ month, value })),
-    ),
-    total: includedMonthlyData.reduce((sum, { total = 0 }) => sum + total, 0),
-  });
+  // console.log(`[ProfitLossReport] ${source} calculation`, {
+  //   totalEntries: includedMonthlyData.reduce(
+  //     (sum, { totalEntries = 0 }) => sum + totalEntries,
+  //     0,
+  //   ),
+  //   values: includedMonthlyData.flatMap(({ _id: month, values = [] }) =>
+  //     values.map((value) => ({ month, value })),
+  //   ),
+  //   total: includedMonthlyData.reduce((sum, { total = 0 }) => sum + total, 0),
+  // });
 };
 
-const fetchProfitLossReportService = async ({ company, dateFilter }) => {
-  const dateRange = extractDateRange(dateFilter);
+const fetchProfitLossReportService = async ({
+  company,
+  dateFilter,
+  type = "",
+}) => {
+  const dateRange = type === "historical" ? null : extractDateRange(dateFilter);
 
   const [
     meetingRevenue,
@@ -473,6 +444,7 @@ const fetchProfitLossReportService = async ({ company, dateFilter }) => {
     workationRevenue,
     coworkingRevenue,
     expense,
+    sqftSummary,
   ] = await Promise.all([
     monthlyAggregate(
       MeetingRevenue,
@@ -512,7 +484,18 @@ const fetchProfitLossReportService = async ({ company, dateFilter }) => {
     monthlyAggregate(Budget, "dueDate", expenseValueExpr, company, dateRange, {
       status: "Approved",
     }),
+    Unit.aggregate([
+      { $match: { company } },
+      {
+        $group: {
+          _id: null,
+          totalSqft: { $sum: { $ifNull: ["$sqft", 0] } },
+        },
+      },
+    ]),
   ]);
+
+  const totalSqft = sqftSummary[0]?.totalSqft || 0;
 
   [
     ["Meeting revenue", meetingRevenue],
@@ -549,24 +532,87 @@ const fetchProfitLossReportService = async ({ company, dateFilter }) => {
 
   // Months to display: prefer the requested date range, fall back to
   // whatever months actually have data if no range was supplied
+
+  if (type === "historical") {
+    const historicalData = Object.entries(historicalPnlYearCategories).map(
+      ([fiscalYear, months]) => {
+        const income = months.reduce(
+          (sum, month) => sum + (incomeMap[month] || 0),
+          0,
+        );
+        const expenseTotal = months.reduce(
+          (sum, month) => sum + (expenseMap[month] || 0),
+          0,
+        );
+
+        return {
+          fiscalYear,
+          income,
+          expense: expenseTotal,
+          profitLoss: income - expenseTotal,
+        };
+      },
+    );
+
+    return [
+      ...historicalPnlBaseIncomeData.map((income, index) => {
+        const expenseTotal = historicalPnlBaseExpenseData[index];
+
+        return {
+          financialYear: `FY ${2021 + index}-${2022 + index}`,
+          totalIncome: inrFormat(income),
+          totalExpense: inrFormat(expenseTotal),
+          totalProfitLoss: inrFormat(income - expenseTotal),
+        };
+      }),
+      ...historicalData.map((item, index) => ({
+        // srNo: historicalPnlBaseIncomeData.length + index + 1,
+        financialYear: item.fiscalYear,
+        totalIncome: inrFormat(item.income),
+        totalExpense: inrFormat(item.expense),
+        totalProfitLoss: inrFormat(item.profitLoss),
+      })),
+    ];
+  }
+
   const allMonths =
     generateMonthRange(dateRange) ||
     Array.from(
       new Set([...Object.keys(incomeMap), ...Object.keys(expenseMap)]),
     );
 
-  return allMonths
-    .filter((month) => !excludedMonths.includes(month))
-    .map((month) => {
+  // return allMonths
+  //   .filter((month) => !excludedMonths.includes(month))
+  //   .map((month) => {
+  const reportMonths = allMonths.filter(
+    (month) => !excludedMonths.includes(month),
+  );
+
+  if (type === "sqft") {
+    return reportMonths.map((month, index) => {
       const income = incomeMap[month] || 0;
-      const expenseTotal = expenseMap[month] || 0;
+      const sqft = Number(totalSqft) || 0;
+
       return {
+        id: index + 1,
         month,
-        income,
-        expense: expenseTotal,
-        pnl: income - expenseTotal,
+        income: inrFormat(income),
+        sqft,
+        perSqFt: sqft ? (income / sqft).toFixed(0) : "0",
       };
     });
+  }
+
+  return reportMonths.map((month) => {
+    const income = incomeMap[month] || 0;
+    const expenseTotal = expenseMap[month] || 0;
+    return {
+      month,
+      income,
+      expense: expenseTotal,
+      pnl: income - expenseTotal,
+    };
+  });
 };
 
 module.exports = {

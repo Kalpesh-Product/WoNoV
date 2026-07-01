@@ -32,11 +32,12 @@ const alternateRevenueSchema = new mongoose.Schema(
     },
     invoicePaidDate: {
       type: Date,
-      required: true,
+      // required: true,
     },
     status: {
       type: String,
       default: "Unpaid",
+      enum: ["Paid", "Unpaid"],
     },
   },
   {

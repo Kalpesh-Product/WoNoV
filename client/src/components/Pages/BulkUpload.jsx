@@ -1,5 +1,6 @@
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import useAuth from "../../hooks/useAuth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import YearWiseTable from "../Tables/YearWiseTable";
 import AgTable from "../AgTable";
@@ -15,28 +16,62 @@ import UploadFileInput from "../UploadFileInput";
 import { toast } from "sonner";
 import humanDate from "../../utils/humanDateForamt";
 import bulkInsertRoutes from "../../constants/bulkInsertRoutes";
+import formatDateTime from "../../utils/formatDateTime";
 
 export default function BulkUpload() {
   const axios = useAxiosPrivate();
   const deptDetails = usePageDepartment();
+  const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("");
+  const [downloadedAtByTemplate, setDownloadedAtByTemplate] = useState({});
+  const [uploadedAtByTemplate, setUploadedAtByTemplate] = useState({});
 
-  const departmentFilter = bulkInsertRoutes?.find(
-    (item) => item.department === deptDetails?._id
-  );
-  const departmentDrop = departmentFilter?.bulkInsertRoutes;
-  console.log("drops : ", departmentDrop);
+  const canUploadDocuments = useMemo(() => {
+    const allowedDepartmentIds = new Set([
+      "6798ba9de469e809084e2494", // Tech
+      "6798bab0e469e809084e249a", // Finance
+    ]);
+    const allowedDepartmentNames = ["tech", "finance"];
+    const topManagementDepartmentId = "67b2cf85b9b6ed5cedeb9a2e"; // Top
+
+    const currentDepartmentName = deptDetails?.name?.toLowerCase() || "";
+    const isAllowedCurrentDepartment =
+      allowedDepartmentIds.has(deptDetails?._id) ||
+      allowedDepartmentNames.some((departmentName) =>
+        currentDepartmentName.includes(departmentName),
+      );
+
+    const isTopManagementUser = auth?.user?.departments?.some((department) => {
+      const departmentName = department?.name?.toLowerCase() || "";
+
+      return (
+        department?._id === topManagementDepartmentId ||
+        departmentName.includes("top management")
+      );
+    });
+
+    return isAllowedCurrentDepartment || isTopManagementUser;
+  }, [auth?.user?.departments, deptDetails?._id, deptDetails?.name]);
+
+  const departmentDrop = useMemo(() => {
+    const departmentFilter = bulkInsertRoutes?.find(
+      (item) => item.department === deptDetails?._id,
+    );
+
+    return departmentFilter?.bulkInsertRoutes || [];
+  }, [deptDetails?._id]);
 
   const { data: departmentDocuments = [], isPending: isTemplatesPending } =
     useQuery({
-      queryKey: ["department-templates"],
+      queryKey: ["department-templates", deptDetails?._id],
       queryFn: async () => {
         const response = await axios.get(
-          `/api/company/department-templates/${deptDetails._id}`
+          `/api/company/department-templates/${deptDetails._id}`,
         );
         return response.data;
       },
+      enabled: !!deptDetails?._id,
     });
   const {
     handleSubmit,
@@ -50,17 +85,101 @@ export default function BulkUpload() {
       documentName: "",
     },
   });
+
+  const normalizeTemplateName = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
   const selectedDoc = watch("documentName");
-  const selectedTemplate = departmentDrop?.find(
-    (item) => item.route === selectedDoc
+  const templateOptions = useMemo(() => {
+    if (!departmentDocuments?.templates?.length) return [];
+
+    return departmentDocuments.templates
+      .filter((template) => template.isActive !== false)
+      .map((template) => {
+        const templateName = template.name?.trim() || "Untitled Template";
+        // const routeConfig = departmentDrop.find(
+        //   (item) => item.name?.toLowerCase() === templateName.toLowerCase(),
+        // );
+        const normalizedTemplateName = normalizeTemplateName(templateName);
+        const routeConfig = departmentDrop.find((item) => {
+          const configuredNames = [item.name, ...(item.aliases || [])];
+
+          return configuredNames.some(
+            (configuredName) =>
+              normalizeTemplateName(configuredName) === normalizedTemplateName,
+          );
+        });
+
+        return {
+          id: template._id || template.documentId || templateName,
+          name: templateName,
+          route: routeConfig?.route,
+          fileKey: routeConfig?.fileKey,
+        };
+      });
+  }, [departmentDocuments, departmentDrop]);
+
+  const selectedTemplate = templateOptions.find(
+    (item) => item.id === selectedDoc,
   );
 
-  const { mutate: uploadDocument, isPending: isUploading } = useMutation({
-    mutationFn: async ({ file, documentName }) => {
-      const formData = new FormData();
-      formData.append(`${selectedTemplate?.fileKey}`, file);
+  const buildDownloadTimestamp = () => {
+    const now = new Date();
+    const pad = (value) => String(value).padStart(2, "0");
 
-      const response = await axios.post(`${selectedDoc}`, formData, {
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+      now.getDate(),
+    )}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(
+      now.getSeconds(),
+    )}`;
+  };
+
+  const handleTemplateDownload = (template) => {
+    const originalUrl = template?.documentLink;
+    if (!originalUrl) {
+      toast.error("Template download link is not available.");
+      return;
+    }
+
+    const extension =
+      originalUrl?.split(".").pop()?.split("?")[0]?.toLowerCase() || "csv";
+    const safeTemplateName = String(template?.name || "bulk-upload-template")
+      .trim()
+      .replace(/[^a-z0-9_\- ]/gi, "_")
+      .replace(/\s+/g, "-");
+
+    const link = document.createElement("a");
+    link.href = originalUrl.replace("/upload/", "/upload/fl_attachment/");
+    link.download = `${safeTemplateName}-downloaded-${buildDownloadTimestamp()}.${extension}`;
+    setDownloadedAtByTemplate((prev) => ({
+      ...prev,
+      [template.id || template.documentLink || template.name]: new Date().toISOString(),
+    }));
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const { mutate: uploadDocument, isPending: isUploading } = useMutation({
+    // mutationFn: async ({ file, documentName }) => {
+    mutationFn: async ({ file }) => {
+      if (!selectedTemplate?.route || !selectedTemplate?.fileKey) {
+        console.log("!selectedTemplate?.route", selectedTemplate?.route);
+        console.log("!selectedTemplate?.fileKey", selectedTemplate?.fileKey);
+        throw new Error(
+          "Bulk upload route is not configured for the selected template.",
+        );
+      }
+      const formData = new FormData();
+      formData.append(selectedTemplate.fileKey, file);
+
+      const response = await axios.post(selectedTemplate.route, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -68,27 +187,47 @@ export default function BulkUpload() {
       return response.data;
     },
     onSuccess: (data) => {
+      setUploadedAtByTemplate((prev) => ({
+        ...prev,
+        [selectedTemplate?.id]: new Date().toISOString(),
+      }));
       toast.success(data.message || "DATA UPLOADED");
       setOpenModal(false);
       reset();
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.message);
-      console.error(error);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to upload data.",
+      );
+      // console.error(error);
     },
   });
 
   const formattedTemplates = useMemo(() => {
     if (!departmentDocuments?.templates) return [];
-    return departmentDocuments.templates.map((template, index) => ({
-      srNo: index + 1,
-      name: template.name,
-      documentLink: template.documentLink,
-      isActive: template.isActive ? "Active" : "Inactive",
-      date: humanDate(template.createdAt),
-      updatedAt: template.updatedAt,
-    }));
-  }, [departmentDocuments]);
+    return departmentDocuments.templates
+      .filter((template) => template.isActive === true)
+      .map((template, index) => ({
+        srNo: index + 1,
+        id: template._id || template.documentId || template.name,
+        name: template.name,
+        documentLink: template.documentLink,
+        isActive: template.isActive ? "Active" : "Inactive",
+        date:
+          formatDateTime(
+            downloadedAtByTemplate[
+              template._id || template.documentId || template.name
+            ] || template.createdAt,
+          ) || humanDate(template.createdAt),
+        updatedAt: formatDateTime(
+          uploadedAtByTemplate[
+            template._id || template.documentId || template.name
+          ] || template.updatedAt,
+        ),
+      }));
+  }, [departmentDocuments, downloadedAtByTemplate, uploadedAtByTemplate]);
 
   const templateColumns = [
     {
@@ -141,7 +280,13 @@ export default function BulkUpload() {
       field: "documentLink",
       cellRenderer: (params) => (
         <div className="p-2">
-          <a href={params.data.documentLink}>
+          <a
+            href={params.data.documentLink}
+            onClick={(event) => {
+              event.preventDefault();
+              handleTemplateDownload(params.data);
+            }}
+          >
             <IoMdDownload size={20} />
           </a>
         </div>
@@ -162,7 +307,8 @@ export default function BulkUpload() {
             setModalMode("add");
             setOpenModal(true);
           }}
-          disabled
+          disabled={!canUploadDocuments}
+          // disabled
         />
       </PageFrame>
       <MuiModal
@@ -197,11 +343,16 @@ export default function BulkUpload() {
                     </MenuItem>
                     {isTemplatesPending
                       ? []
-                      : departmentDrop?.map((item) => (
-                        <MenuItem key={item.name} value={item.route}>
-                          {item.name}
-                        </MenuItem>
-                      ))}
+                      : // : departmentDrop?.map((item) => (
+                        //   <MenuItem key={item.name} value={item.route}>
+                        //     {item.name}
+                        //   </MenuItem>
+                        // ))}
+                        templateOptions.map((item) => (
+                          <MenuItem key={item.id} value={item.id}>
+                            {item.name}
+                          </MenuItem>
+                        ))}
                   </TextField>
                 )}
               />
@@ -213,12 +364,10 @@ export default function BulkUpload() {
                   <UploadFileInput
                     onChange={field.onChange}
                     value={field.value}
-                    // allowedExtensions={["csv"]}
-                    // previewType="auto"
-                    allowedExtensions={["pdf"]}
-                    previewType="pdf"
+                    allowedExtensions={["csv"]}
+                    previewType="none"
                     onInvalidFile={() =>
-                      toast.error("Only PDF files are allowed.")
+                      toast.error("Only CSV files are allowed.")
                     }
                   />
                 )}

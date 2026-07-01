@@ -328,10 +328,102 @@ const fetchWorkationRevenueReportService = async ({
   return revenues;
 };
 
+const buildVerticalRevenueFilter = (
+  company,
+  dateFilter,
+  dateField,
+  status,
+) => ({
+  ...(company ? { company } : {}),
+  ...(status && { status }),
+  ...(dateFilter?.startDate || dateFilter?.endDate
+    ? {
+        [dateField]: {
+          ...(dateFilter.startDate
+            ? { $gte: new Date(dateFilter.startDate) }
+            : {}),
+          ...(dateFilter.endDate ? { $lte: new Date(dateFilter.endDate) } : {}),
+        },
+      }
+    : {}),
+});
+
+const sumRevenue = (records, amountField) =>
+  records.reduce(
+    (total, item) => total + (Number(item?.[amountField]) || 0),
+    0,
+  );
+
+const fetchVerticalRevenueReportService = async ({ company, dateFilter }) => {
+  const status = "Paid";
+  const [
+    meetingRevenue,
+    alternateRevenues,
+    virtualOfficeRevenues,
+    workationRevenues,
+    coworkingRevenues,
+  ] = await Promise.all([
+    MeetingRevenue.find(
+      buildVerticalRevenueFilter(company, dateFilter, "date", status),
+    )
+      .select("taxable")
+      .lean()
+      .exec(),
+    AlternateRevenue.find(
+      buildVerticalRevenueFilter(company, dateFilter, "invoiceCreationDate"),
+    )
+      .select("taxableAmount")
+      .lean()
+      .exec(),
+    VirtualOfficeRevenue.find(
+      buildVerticalRevenueFilter(company, dateFilter, "rentDate"),
+    )
+      .select("taxableAmount")
+      .lean()
+      .exec(),
+    WorkationRevenue.find(
+      buildVerticalRevenueFilter(company, dateFilter, "date"),
+    )
+      .select("taxableAmount")
+      .lean()
+      .exec(),
+    CoworkingRevenue.find(
+      buildVerticalRevenueFilter(company, dateFilter, "rentDate"),
+    )
+      .select("revenue")
+      .lean()
+      .exec(),
+  ]);
+
+  return [
+    { vertical: "Meeting", revenue: sumRevenue(meetingRevenue, "taxable") },
+    {
+      vertical: "Alternate",
+      revenue: sumRevenue(alternateRevenues, "taxableAmount"),
+    },
+    {
+      vertical: "Virtual Office",
+      revenue: sumRevenue(virtualOfficeRevenues, "taxableAmount"),
+    },
+    {
+      vertical: "Workation",
+      revenue: sumRevenue(workationRevenues, "taxableAmount"),
+    },
+    {
+      vertical: "Co-Working",
+      revenue: sumRevenue(coworkingRevenues, "revenue"),
+    },
+  ].map((item, index) => ({
+    Vertical: item.vertical,
+    "Revenue (INR)": item.revenue,
+  }));
+};
+
 module.exports = {
   fetchCoworkingRevenueService,
   fetchMeetingRevenueReportService,
   fetchAlternateRevenueReportService,
   fetchVirtualOfficeRevenueReportService,
   fetchWorkationRevenueReportService,
+  fetchVerticalRevenueReportService,
 };

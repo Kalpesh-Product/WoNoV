@@ -634,6 +634,44 @@ export const PERMISSIONS = {
     type: "read",
   },
 
+   // Printout Module
+    PRINTOUT_MONTHLY_TOTAL_PRINTOUT: {
+    value: "printout_monthly_total_printout",
+    title: "PRINTOUT MONTHLY TOTAL PRINTOUT",
+    type: "read",
+    //route: "/app/printouts",
+   },
+  PRINTOUT_UNIT_WISE_PRINTOUT: {
+    value: "printout_unit_wise_printout",
+    title: "PRINTOUT UNIT WISE PRINTOUT",
+    type: "read",
+  },
+  PRINTOUT_CLIENT_WISE_QUANTITY: {
+    value: "printout_client_wise_quantity",
+    title: "PRINTOUT CLIENT WISE QUANTITY",
+    type: "read",
+  },
+
+
+  PRINTOUT_ADD_PRINTOUT: {
+    value: "printout_add_printout",
+    title: "ADD PRINTOUT",
+    type: "read",
+    route: "/app/printouts/add-printout",
+  },
+  PRINTOUT_MANAGE_PRINTOUT: {
+    value: "printout_manage_printout",
+    title: "MANAGE PRINTOUT",
+    type: "read",
+    route: "/app/printouts/manage-printout",
+  },
+  PRINTOUT_REPORT_PRINTOUT: {
+    value: "printout_report_printout",
+    title: "REPORT PRINTOUT",
+    type: "read",
+    route: "/app/printouts/report-printout",
+  },
+
   // Meetings Module
 
   //Meeting Graphs
@@ -3394,6 +3432,12 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     access: "page",
   },
+  SIDEBAR_PRINTOUTS: {
+    value: "sidebar_printouts",
+    title: "PRINTOUT",
+    type: "read",
+    access: "page",
+  },
   SIDEBAR_ASSETS: {
     value: "sidebar_assets",
     title: "ASSETS",
@@ -3403,6 +3447,12 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
   SIDEBAR_CHAT: {
     value: "sidebar_chat",
     title: "CHAT",
+    type: "read",
+    access: "page",
+  },
+  SIDEBAR_LOGS: {
+    value: "sidebar_logs",
+    title: "LOGS",
     type: "read",
     access: "page",
   },

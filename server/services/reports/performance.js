@@ -1,13 +1,14 @@
 const kraKpaRole = require("../../models/performances/kraKpaRole");
 const kraKpaTask = require("../../models/performances/kraKpaTask");
+const { hasDepartmentAdminAccess, hasGlobalReportAccess } = require("./access");
 
-const isDepartmentAdmin = (roles) =>
-  roles.some(
-    (role) =>
-      typeof role === "string" &&
-      role.endsWith(" Admin") &&
-      !["Master Admin", "Super Admin"].includes(role),
-  );
+// const isDepartmentAdmin = (roles) =>
+//   roles.some(
+//     (role) =>
+//       typeof role === "string" &&
+//       role.endsWith(" Admin") &&
+//       !["Master Admin", "Super Admin"].includes(role),
+//   );
 
 const REPORT_TYPE_CONFIG = {
   KPA: ["KPA"],
@@ -50,9 +51,12 @@ const fetchPerformanceReportService = async ({
   roles,
 }) => {
   try {
+    const hasGlobalAccess = hasGlobalReportAccess(roles);
+    const hasDepartmentAccess = hasDepartmentAdminAccess(roles);
+
     const dept = departmentId || departments?.[0];
 
-    if (!dept) {
+    if (!dept && !hasGlobalAccess) {
       throw new Error("Missing department ID");
     }
 
@@ -71,17 +75,15 @@ const fetchPerformanceReportService = async ({
 
     const baseRoleQuery = {
       company,
-      department: dept,
+      ...(dateFilter.assignedDate && { assignedDate: dateFilter.assignedDate }),
+      ...(dept && !hasGlobalAccess ? { department: dept } : {}),
       taskType: { $in: reportTaskTypes },
       isDeleted: { $ne: true },
       ...(isIndividualReport && dateFilter ? { ...dateFilter } : {}), //Add date filter only for individual reports as dept reports are recurring
-      ...(!isDepartmentAdmin(roles)
+      ...(!hasGlobalAccess && !hasDepartmentAccess
         ? { ...(isIndividualReport && user ? { assignTo: user } : {}) }
         : {}), // If not department admin, then filter by assignedTo for individual reports
     };
-
-    console.log("baseRoleQuery", baseRoleQuery);
-    console.log("user", user);
 
     const roleTasks = await kraKpaRole
       .find(baseRoleQuery)
@@ -123,7 +125,11 @@ const fetchPerformanceReportService = async ({
     completedTasksRaw.forEach((completion) => {
       const roleTaskId = completion?.task?._id?.toString();
       if (!roleTaskId) return;
-      if (completion?.task?.department?._id?.toString() !== dept.toString())
+      if (
+        dept &&
+        !hasGlobalAccess &&
+        completion?.task?.department?._id?.toString() !== dept.toString()
+      )
         return;
 
       completedByRoleTaskId.set(roleTaskId, completion);

@@ -38,7 +38,11 @@ const PieChartMui = ({
         style={centerAlign ? undefined : { width, height }}
       >
         {centerAlign ? (
-          <div style={{ width, height }}>
+          // <div style={{ width, height }}>
+             <div
+            className="w-full"
+            style={{ maxWidth: typeof width === "number" ? width : "100%", height }}
+          >
             <ReactApexChart
               key={chartKey}
               options={updatedOptions}

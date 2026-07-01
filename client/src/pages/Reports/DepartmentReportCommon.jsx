@@ -1169,14 +1169,48 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
   const isCoworkingOrVirtualOfficeClientsReport =
     normalizedReportName.includes("coworking-clients") ||
     normalizedReportName.includes("virtual-office-clients");
+  const hasDeskCountFields = rows.some(
+    (row) =>
+      row?.openDesks !== undefined ||
+      row?.cabinDesks !== undefined ||
+      row?.["openDesks"] !== undefined ||
+      row?.["cabinDesks"] !== undefined,
+  );
+  const isInventoryBuildingUnitwiseReport =
+    normalizedReportName.includes("inventorybuildingunitwise") ||
+    normalizedReportName.includes("inventory-building-unitwise") ||
+    normalizedReportName.includes("inventory-unitwise") ||
+    (normalizedReportName.includes("inventory") &&
+      normalizedReportName.includes("unitwise"));
+  const hasInventoryDeskSummaryFields = rows.some(
+    (row) =>
+      (row?.totalDesks !== undefined ||
+        row?.occupiedDesks !== undefined ||
+        row?.freeDesks !== undefined ||
+        row?.sqft !== undefined) &&
+      (row?.openDesks !== undefined ||
+        row?.cabinDesks !== undefined ||
+        row?.["openDesks"] !== undefined ||
+        row?.["cabinDesks"] !== undefined),
+  );
+  const shouldAddDeskColumns =
+    hasDeskCountFields &&
+    (isCoworkingOrVirtualOfficeClientsReport ||
+      isInventoryBuildingUnitwiseReport ||
+      hasInventoryDeskSummaryFields);
   const isVirtualOfficeClientsReport = normalizedReportName.includes(
     "virtual-office-clients",
   );
+  const isUniqueLeadsReport =
+    normalizedReportName.includes("unique-leads") ||
+    normalizedReportName.includes("unique-lead");
   const isVirtualOfficeRevenueReport = normalizedReportName.includes(
     "virtual-office-revenue",
   );
   const shouldAddSalesUnitFields =
-    hasSalesLocationFields || isCoworkingOrVirtualOfficeClientsReport;
+    hasSalesLocationFields ||
+    isCoworkingOrVirtualOfficeClientsReport ||
+    shouldAddDeskColumns;
 
   const isOpenDeskClientsReport =
     normalizedReportName.includes("open-desk-clients") ||
@@ -1199,7 +1233,7 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       if (shouldMergeVisitorLikeFields) {
       nextRow = mergeVisitorLikeCsvFields(nextRow);
     }
-     if (shouldAddSalesUnitFields) {
+     if (shouldAddSalesUnitFields || shouldAddDeskColumns) {
       const unitNo = String(
         row?.["unit.unitNo"] ||
           row?.unit?.unitNo ||
@@ -1216,7 +1250,7 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
           row?.unitName ||
           "",
       ).trim();
-      const buildingName = String(
+     const buildingName = String(
         row?.["unit.building.buildingName"] ||
           row?.unit?.building?.buildingName ||
           row?.["location.building.buildingName"] ||
@@ -1226,15 +1260,27 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
           row?.buildingName ||
           "",
       ).trim();
+      const hoState = String(
+        row?.hoState || row?.["hoState"] || row?.["HO State"] || "",
+      ).trim();
+      const hoCountry = String(
+        row?.hoCountry || row?.["hoCountry"] || row?.["HO Country"] || "IN",
+      ).trim();
+      const hoStateName = getStateName(hoState, hoCountry);
 
-      if (isCoworkingOrVirtualOfficeClientsReport) {
+      if (shouldAddDeskColumns) {
         nextRow["Cabin Desk"] = row?.cabinDesks ?? "";
         nextRow["Open Desk"] = row?.openDesks ?? "";
+      }
+      if (isCoworkingOrVirtualOfficeClientsReport) {
+        if (hoStateName) {
+          nextRow.hoState = hoStateName;
+        }
       }
       if (isVirtualOfficeClientsReport) {
         nextRow["Total Term"] = row?.totalTerm ?? row?.["totalTerm"] ?? "";
       }
-      if (!isVirtualOfficeRevenueReport) {
+      if (!isVirtualOfficeRevenueReport && !isUniqueLeadsReport) {
         nextRow["Unit No"] = unitNo;
         nextRow["Unit Name"] = unitName;
         nextRow["Building Name"] = buildingName;
@@ -1246,6 +1292,16 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
       delete nextRow.unitNo;
       delete nextRow.unitName;
       delete nextRow.buildingName;
+      delete nextRow.openDesk;
+      delete nextRow.openDesks;
+      delete nextRow.cabinDesk;
+      delete nextRow.cabinDesks;
+      delete nextRow.totalTerm;
+      delete nextRow["openDesk"];
+      delete nextRow["openDesks"];
+      delete nextRow["cabinDesk"];
+      delete nextRow["cabinDesks"];
+      delete nextRow["totalTerm"];
       delete nextRow["unit.unitNo"];
       delete nextRow["unit.unitName"];
       delete nextRow["unit.building.buildingName"];

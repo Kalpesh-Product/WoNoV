@@ -87,7 +87,7 @@ const CoWorkingClients = () => {
     }
   };
   const viewEmployeeColumns = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No",width:150 },
     {
       field: "clientName",
       headerName: "Client Name",
@@ -105,10 +105,20 @@ const CoWorkingClients = () => {
         </span>
       ),
     },
+    { field: "desks", headerName: "Desks", flex:0.5},
     {
+      field: "occupancy",
+      headerName: "Occupancy (%)",
+      flex: 0.5,
+      cellRenderer: (params) => `${params.value}%`,
+    },
+    { field: "agreementExpiry", headerName: "Agreement Expiry", flex: 0.5,},
+     {
       field: "status",
       headerName: "Status",
       sort: 'desc',
+      flex: 1,
+      pinned:"right",
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive";
         const statusColorMap = {
@@ -129,13 +139,6 @@ const CoWorkingClients = () => {
         );
       },
     },
-    { field: "desks", headerName: "Desks" },
-    {
-      field: "occupancy",
-      headerName: "Occupancy (%)",
-      cellRenderer: (params) => `${params.value}%`,
-    },
-    { field: "agreementExpiry", headerName: "Agreement Expiry" },
   ];
 
   const sortedClients = [...clientsData].sort((a, b) => {

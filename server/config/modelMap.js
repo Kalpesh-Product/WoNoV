@@ -53,7 +53,7 @@ const modelKeyGroups = {
   Building: ["buildingId"],
 
   //Company IDs
-  Company: ["departmentId"],
+  // Company: ["departmentId"],
 
   //Event IDs
   Event: ["id"],

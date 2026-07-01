@@ -25,6 +25,7 @@ const {
 const {
   fetchCoworkingRevenueService,
   fetchWorkationRevenueReportService,
+  fetchVerticalRevenueReportService,
 } = require("./revenue");
 
 const { fetchMeetingRevenueReportService } = require("./revenue");
@@ -35,12 +36,16 @@ const {
   fetchVirtualOfficeClientsReportService,
   fetchCoworkingMembersReportService,
   fetchWorkationClientsReportService,
+  fetchInventoryBuildingUnitsReportService,
+  fetchClientsOccupancyReportService,
 } = require("./client");
 const {
   fetchUsersReportService,
   fetchLeavesReportService,
   fetchAttendanceReportService,
 } = require("./employees");
+const { fetchLeadReportService } = require("./lead");
+const { fetchUnitReportService } = require("./unit");
 const normalizeReportIdentifier = (value = "") =>
   value
     .trim()
@@ -104,6 +109,27 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
+  verticalwisetotalrevenuebreakup: async (context = {}) =>
+    fetchVerticalRevenueReportService({
+      dateFilter: context.dateFilter,
+    }),
+  occupancydeskclientswisereport: createReportService(
+    fetchClientsOccupancyReportService,
+    {
+      dateField: "createdAt",
+    },
+  ),
+  inventorybuildingunitwise: createReportService(
+    fetchInventoryBuildingUnitsReportService,
+    {
+      dateField: "createdAt",
+    },
+  ),
+
+  unit: createReportService(fetchUnitReportService, {
+    dateField: "createdAt",
+  }),
+
   attendance: createReportService(fetchAttendanceReportService, {
     dateField: "inTime",
   }),
@@ -176,6 +202,10 @@ const reportServiceRegistry = {
     dateField: "date",
   }),
 
+  "unique-leads": createReportService(fetchLeadReportService, {
+    dateField: "dateOfContact",
+  }),
+
   collection: createReportService(fetchCoworkingRevenueService, {
     dateField: "rentDate",
     staticParams: { type: "collection" },
@@ -243,14 +273,38 @@ const reportServiceRegistry = {
     {
       dateField: "dueDate",
       contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
-      staticParams: { type: "p&l" },
+      staticParams: { type: "total" },
     },
   ),
+
+  // "historical-profit-loss": createReportService(fetchProfitLossReportService, {
+  //   dateField: "dueDate",
+  //   contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+  //   staticParams: { type: "historical" },
+  // }),
+
+  historicalprofitloss: createReportService(fetchProfitLossReportService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "historical" },
+  }),
+
+  "expense-per-sqft": createReportService(fetchProfitLossReportService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "sqft" },
+  }),
 
   payouts: createReportService(fetchBudgetVoucherService, {
     dateField: "dueDate",
     contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
     staticParams: { type: "payout" },
+  }),
+
+  "landlord-payments": createReportService(fetchBudgetVoucherService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "landlord-payments" },
   }),
 
   "department-voucher": createReportService(fetchVoucherService, {

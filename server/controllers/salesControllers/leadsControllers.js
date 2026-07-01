@@ -1,11 +1,14 @@
 const mongoose = require("mongoose");
 const Lead = require("../../models/sales/Lead");
 const Unit = require("../../models/locations/Unit");
+const CustomError = require("../../utils/customErrorlogs");
+const { createLog } = require("../../utils/moduleLogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const fs = require("fs");
 const path = require("path");
 const ClientService = require("../../models/sales/ClientService");
+const { fetchLeadReportService } = require("../../services/reports/lead");
 
 const createLead = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -175,7 +178,8 @@ const editLead = async (req, res, next) => {
   const { user, ip, company } = req;
 
   try {
-    const { leadId } = req.params;
+    // const { leadId } = req.params;
+    const leadId = req.params.leadId || req.body.leadId;
 
     if (!mongoose.Types.ObjectId.isValid(leadId)) {
       throw new CustomError(
@@ -452,30 +456,47 @@ const updateCoworkingClientStatus = async (req, res, next) => {
   }
 };
 
+// const getLeads = async (req, res, next) => {
+//   try {
+//     const { company } = req;
+//     const leads = await Lead.find({ company }).populate([
+//       {
+//         path: "serviceCategory",
+//         select: "serviceName",
+//       },
+//       {
+//         path: "proposedLocations",
+//         select: "unitNo unitName building",
+//         model: "Unit",
+//         populate: {
+//           path: "building",
+//           select: "buildingName",
+//           model: "Building",
+//         },
+//       },
+//     ]);
+
+//     if (!leads.length) {
+//       return res.status(404).json({ message: "No leads found" });
+//     }
+//     res.status(200).json(leads);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const getLeads = async (req, res, next) => {
   try {
-    const { company } = req;
-    const leads = await Lead.find({ company }).populate([
-      {
-        path: "serviceCategory",
-        select: "serviceName",
-      },
-      {
-        path: "proposedLocations",
-        select: "unitNo unitName building",
-        model: "Unit",
-        populate: {
-          path: "building",
-          select: "buildingName",
-          model: "Building",
-        },
-      },
-    ]);
+    const leads = await fetchLeadReportService({
+      company: req.company,
+      query: { ...req.query },
+    });
 
     if (!leads.length) {
       return res.status(404).json({ message: "No leads found" });
     }
-    res.status(200).json(leads);
+
+    return res.status(200).json(leads);
   } catch (error) {
     next(error);
   }

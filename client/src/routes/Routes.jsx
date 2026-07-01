@@ -12,6 +12,7 @@ import Access from "../pages/Access/Access";
 import AccessProfile from "../pages/Access/AccessProfile";
 import Notifications from "../pages/Notifications";
 import Chat from "../pages/Chat";
+import LogPage from "../pages/LogPage";
 import Profile from "../pages/Profile/Profile";
 
 //Reports Pages
@@ -194,6 +195,11 @@ import RepeatExternalCompaanies from "../pages/Visitors/RepeatExternalCompaanies
 import ConvertInternalVisitors from "../pages/Visitors/ConvertInternalVisitors";
 import RepeatInternalVisitors from "../pages/Visitors/RepeatInternalVisitors";
 import VisitorBulkUpload from "../pages/Visitors/VisitorSettings/VisitorBulkUpload";
+import PrintoutLayout from "../pages/Printout/PrintoutLayout";
+import PrintoutDashboard from "../pages/Printout/PrintoutDashboard";
+import AddPrintout from "../pages/Printout/AddPrintout";
+import ManagePrintout from "../pages/Printout/ManagePrintout";
+import ReportPrintout from "../pages/Printout/ReportPrintout";
 import ProfileLayout from "../pages/Profile/ProfileLayout";
 import MyProfile from "../pages/Profile/MyProfile";
 import ChangePassword from "../pages/Profile/ChangePassword";
@@ -462,7 +468,6 @@ import VirtualOfficeClientDetails from "../pages/Dashboard/SalesDashboard/ViewCl
 import VirtualOfficeClientDesks from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDesks";
 import VirtualOfficeClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientRevenue";
 import VirtualOfficeClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientMembers";
-import LogPage from "../pages/LogPage";
 import VirtualOfficeForm from "../pages/Dashboard/SalesDashboard/VirtualOfficeForm";
 import AccessPages from "../pages/Access/AccessPages";
 import ModulePermissions from "../pages/Access/ModulePermissions";
@@ -671,7 +676,7 @@ export const routes = createBrowserRouter([
                         path: "mix-bag",
                         element: <MixBag />,
                       },
-                       {
+                      {
                         path: "mix-bag/revenue",
                         element: <TotalRevenueLayout />,
                         children: [
@@ -2211,7 +2216,9 @@ export const routes = createBrowserRouter([
                             children: [
                               {
                                 index: true,
-                                element: <Navigate to="department-wise" replace />,
+                                element: (
+                                  <Navigate to="department-wise" replace />
+                                ),
                               },
                               {
                                 path: "department-wise",
@@ -2283,7 +2290,9 @@ export const routes = createBrowserRouter([
                             children: [
                               {
                                 index: true,
-                                element: <Navigate to="department-wise" replace />,
+                                element: (
+                                  <Navigate to="department-wise" replace />
+                                ),
                               },
                               {
                                 path: "department-wise",
@@ -2390,7 +2399,7 @@ export const routes = createBrowserRouter([
                           {
                             path: "department-KPA/:department",
                             // element: <HrDepartmentKPA />,
-                             element: <HrDepartmentKpaOverviewLayout />,
+                            element: <HrDepartmentKpaOverviewLayout />,
                             children: [
                               {
                                 path: "department-wise",
@@ -2458,7 +2467,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "department-KRA/:department",
-                             element: <HrDepartmentKraOverviewLayout />,
+                            element: <HrDepartmentKraOverviewLayout />,
                             children: [
                               {
                                 path: "department-wise",
@@ -2725,7 +2734,7 @@ export const routes = createBrowserRouter([
 
                           {
                             // path: "employee-list/:firstName/",
-                             path: "employee-list/",
+                            path: "employee-list/",
                             element: <EmployeeDetail />,
                             children: [
                               {
@@ -2971,6 +2980,15 @@ export const routes = createBrowserRouter([
                 element: <Chat />,
               },
               {
+                path: "secret-logs",
+                element: (
+                  <PerformancePermissionRoute
+                    element={<LogPage />}
+                    permissions={[PERMISSIONS.SIDEBAR_LOGS]}
+                  />
+                ),
+              },
+              {
                 path: "profile",
                 element: <ProfileLayout />,
                 children: [
@@ -3183,7 +3201,7 @@ export const routes = createBrowserRouter([
                       {
                         path: "list-of-assets",
                         // element: <ListOfAssets />,
-                         children: [
+                        children: [
                           {
                             index: true,
                             element: <ListOfAssets />,
@@ -3205,10 +3223,10 @@ export const routes = createBrowserRouter([
                     element: <ManageAssets />,
                     children: [
                       {
-                         path: "overall-asset",
+                        path: "overall-asset",
                         element: <AssignAssets />,
                       },
-                                            {
+                      {
                         path: "unassigned-assets",
                         element: <UnassignedAssets />,
                       },
@@ -3923,7 +3941,7 @@ export const routes = createBrowserRouter([
                     path: "manage-assets",
                     element: <ManageAssets />,
                     children: [
-                         {
+                      {
                         path: "overall-asset",
                         element: <AssignAssets />,
                       },
@@ -3977,6 +3995,56 @@ export const routes = createBrowserRouter([
                         element: <AssetsBulkUpload />,
                       },
                     ],
+                  },
+                ],
+              },
+              {
+                path: "printouts",
+                element: <PrintoutLayout />,
+                children: [
+                  {
+                    path: "",
+                    element: <PrintoutDashboard />,
+                    // element: (
+                    //   <PerformancePermissionRoute
+                    //     element={<PrintoutDashboard />}
+                    //     permissions={[
+                    //       PERMISSIONS.SIDEBAR_PRINTOUTS,
+                    //       PERMISSIONS.PRINTOUT_MONTHLY_TOTAL_PRINTOUT,
+                    //       PERMISSIONS.PRINTOUT_ADD_PRINTOUT,
+                    //       PERMISSIONS.PRINTOUT_MANAGE_PRINTOUT,
+                    //       PERMISSIONS.PRINTOUT_REPORT_PRINTOUT,
+                    //     ]}
+                    //   />
+                    // ),
+                    index: true,
+                  },
+                  {
+                    path: "add-printout",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<AddPrintout />}
+                        permissions={[PERMISSIONS.PRINTOUT_ADD_PRINTOUT]}
+                      />
+                    ),
+                  },
+                  {
+                    path: "manage-printout",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<ManagePrintout />}
+                        permissions={[PERMISSIONS.PRINTOUT_MANAGE_PRINTOUT]}
+                      />
+                    ),
+                  },
+                  {
+                    path: "report-printout",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<ReportPrintout />}
+                        permissions={[PERMISSIONS.PRINTOUT_REPORT_PRINTOUT]}
+                      />
+                    ),
                   },
                 ],
               },
@@ -4112,10 +4180,6 @@ export const routes = createBrowserRouter([
             ],
           },
         ],
-      },
-      {
-        path: "secret-logs",
-        element: <LogPage />,
       },
       {
         path: "unauthorized",

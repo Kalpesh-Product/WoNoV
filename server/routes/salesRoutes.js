@@ -103,7 +103,10 @@ router.patch(
 );
 router.post("/onboard-co-working-client", createCoworkingClient);
 router.patch("/update-co-working-clients/:clientId", updateCoworkingClient);
-router.patch("/co-working-clients/:clientId/reset-credits", resetCoworkingClientCredits);
+router.patch(
+  "/co-working-clients/:clientId/reset-credits",
+  resetCoworkingClientCredits,
+);
 router.get("/consolidated-clients", getConsolidatedClients);
 router.get("/co-working-clients", getCoworkingClients);
 router.patch("/co-working-client/:clientId/status", updateClientStatus);
@@ -141,7 +144,7 @@ router.post(
   upload.single("virtualoffice"),
   bulkInsertVirtualOfficeClients,
 );
-router.post(
+router.patch(
   "/bulk-edit-virtual-office-clients",
   upload.single("virtualoffice"),
   bulkUpdateVirtualOfficeClients,

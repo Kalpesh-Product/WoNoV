@@ -29,6 +29,7 @@ const AgTableComponent = React.memo(
     handleClick,
     buttonTitle,
     headerActions,
+    searchRowActions,
     tableHeight = 400,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
@@ -38,6 +39,7 @@ const AgTableComponent = React.memo(
     isRowSelectable,
     batchButton,
     hideTitle,
+    hideHeaderDivider,
     tableRef,
     onSelectionChange,
   }) => {
@@ -325,7 +327,7 @@ const AgTableComponent = React.memo(
           </div>
         </div>
 
-        <hr className="my-2" />
+        {!hideHeaderDivider && <hr className="my-2" />}
 
         <div
           className={`flex ${search ? "justify-between" : "justify-end"
@@ -353,7 +355,10 @@ const AgTableComponent = React.memo(
               ""
             ) : (
               <div className="flex flex-col items-end gap-2">
-                {renderExportButton()}
+                <div className="flex items-center gap-2">
+                  {searchRowActions ? searchRowActions : ""}
+                  {renderExportButton()}
+                </div>
                 <div
                   className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
                   onClick={() => setFilterDrawerOpen(true)}

@@ -27,7 +27,7 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
-import { TimePicker } from "@mui/x-date-pickers";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
@@ -37,6 +37,7 @@ import useAuth from "../../hooks/useAuth";
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [checklists, setChecklists] = useState({});
@@ -45,11 +46,40 @@ const ManageMeetings = () => {
   const isTechDepartment = auth?.user?.departments?.some(
     (dept) => dept._id === "6798ba9de469e809084e2494",
   );
+  const departmentNames =
+    auth?.user?.departments?.map((dept) => dept?.name?.trim()) || [];
   const [newItem, setNewItem] = useState("");
   const [modalMode, setModalMode] = useState("update"); // 'update', or 'view'
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
+  const [currentTime, setCurrentTime] = useState(() =>
+    dayjs().second(0).millisecond(0),
+  );
+  const adminTimingRoles = [
+    "Admin Admin",
+    "Admin Manager",
+    "Admin Employee",
+    "Administration Admin",
+    "Administration Manager",
+    "Administration Employee",
+  ];
+  const isAdminTimingUser =
+    roleTitles.some((roleTitle) => adminTimingRoles.includes(roleTitle)) ||
+    departmentNames.some((deptName) =>
+      ["Admin", "Administration"].includes(deptName),
+    );
+  const meetingDateEditRoles = [
+    "Super Admin",
+    "Master Admin",
+    "Tech Admin",
+    "Tech Employee",
+  ];
+  const canEditMeetingDate = roleTitles.some((roleTitle) =>
+    meetingDateEditRoles.includes(roleTitle),
+  );
+  const hasSpecialEditWindowAccess = isAdminTimingUser || canEditMeetingDate;
+  const isAdminTimingRestrictedUser = isAdminTimingUser;
 
   const statusColors = {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
@@ -77,6 +107,14 @@ const ManageMeetings = () => {
     { name: "Tissue placed on the table", checked: false },
   ];
   // const meetings = useSelector((state) => state.meetings?.data);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(dayjs().second(0).millisecond(0));
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   //-----------------------API-----------------------------//
   //-------------------------------API-------------------------------//
@@ -140,6 +178,7 @@ const ManageMeetings = () => {
     formState: { errors: editErrors },
   } = useForm({
     defaultValues: {
+      date: null,
       startTime: null,
       endTime: null,
       internalParticipants: [],
@@ -176,6 +215,9 @@ const ManageMeetings = () => {
         .filter(Boolean);
     const payload = {
       ...data,
+      date: data.date ? dayjs(data.date).toISOString() : undefined,
+      startTime: data.startTime ? dayjs(data.startTime).toISOString() : null,
+      endTime: data.endTime ? dayjs(data.endTime).toISOString() : null,
       // internalParticipants: data.internalParticipants?.map((p) => p._id),
       // clientParticipants: data.clientParticipants?.map((p) => p._id),
       internalParticipants: mapParticipantIds(data.internalParticipants),
@@ -188,6 +230,7 @@ const ManageMeetings = () => {
 
   useEffect(() => {
     if (selectedMeeting) {
+      setEditValue("date", dayjs(new Date(selectedMeeting.startTime)));
       setEditValue("startTime", dayjs(new Date(selectedMeeting.startTime)));
       setEditValue("endTime", dayjs(new Date(selectedMeeting.endTime)));
 
@@ -308,6 +351,53 @@ const ManageMeetings = () => {
 
     return `${durationInMinutes}min`;
   };
+
+  const canEditMeeting = (meeting) => {
+    if (!meeting) return false;
+    if (
+      meeting.meetingStatus === "Cancelled" ||
+      meeting.meetingStatus === "Completed"
+    ) {
+      return false;
+    }
+
+    const meetingStart = dayjs(meeting.startTime);
+
+    if (meetingStart.isAfter(currentTime)) {
+      return true;
+    }
+
+    if (!hasSpecialEditWindowAccess) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const getEditTimeBounds = (meetingTime) => {
+    if (!meetingTime) return {};
+
+    const originalTime = dayjs(meetingTime);
+
+    if (isAdminTimingRestrictedUser) {
+      return {
+        minTime: isAdminTimingBufferExpired
+          ? originalTime
+          : originalTime.subtract(30, "minute"),
+      };
+    }
+
+    if (isTechDepartment) return {};
+
+    return {
+      minTime: originalTime,
+    };
+  };
+
+  const isAdminTimingBufferExpired =
+    isAdminTimingRestrictedUser &&
+    selectedMeeting?.startTime &&
+    currentTime.isAfter(dayjs(selectedMeeting.startTime).add(30, "minute"));
 
   // API mutation for submitting housekeeping tasks
   const housekeepingMutation = useMutation({
@@ -651,6 +741,7 @@ const ManageMeetings = () => {
         const isCompleted = status === "Completed";
         const isHousekeepingPending = housekeepingStatus === "Pending";
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
+        const isEditAllowed = canEditMeeting(params.data);
 
         const menuItems = [
           !isOngoing &&
@@ -659,7 +750,7 @@ const ManageMeetings = () => {
               onClick: () =>
                 handleOpenChecklistModal("update", params.data._id),
             },
-          isUpcoming && {
+          isEditAllowed && {
             label: "Edit",
             onClick: () => handleEditMeeting("edit", params.data),
           },
@@ -1050,6 +1141,61 @@ const ManageMeetings = () => {
               onSubmit={handleEditMeetingSubmit(onEditSubmit)}
               className="grid grid-cols-2 gap-4"
             >
+              {canEditMeetingDate && (
+                <div className="col-span-2">
+                  <Controller
+                    name="date"
+                    control={editControl}
+                    rules={{
+                      required: "Date is required",
+                    }}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="Date"
+                        format="DD-MM-YYYY"
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            error: !!editErrors.date,
+                            helperText: editErrors.date?.message,
+                          },
+                        }}
+                        onChange={(value) => {
+                          field.onChange(value);
+
+                          if (!value) return;
+
+                          const nextDate = dayjs(value);
+                          const currentStart = getValues("startTime");
+                          const currentEnd = getValues("endTime");
+
+                          if (currentStart) {
+                            setEditValue(
+                              "startTime",
+                              dayjs(currentStart)
+                                .year(nextDate.year())
+                                .month(nextDate.month())
+                                .date(nextDate.date()),
+                            );
+                          }
+
+                          if (currentEnd) {
+                            setEditValue(
+                              "endTime",
+                              dayjs(currentEnd)
+                                .year(nextDate.year())
+                                .month(nextDate.month())
+                                .date(nextDate.date()),
+                            );
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </div>
+              )}
               {/* <Controller
                 name="startTime"
                 control={editControl}
@@ -1081,6 +1227,7 @@ const ManageMeetings = () => {
                   <TimePicker
                     {...field}
                     label="Start Time"
+                    {...getEditTimeBounds(selectedMeeting?.startTime)}
                     slotProps={{
                       textField: {
                         size: "small",
@@ -1089,16 +1236,22 @@ const ManageMeetings = () => {
                       },
                     }}
                     shouldDisableTime={(time, view) => {
-                      if (isTechDepartment) return false;
+                      if (isAdminTimingBufferExpired) return true;
+                      if (canEditMeetingDate) return false;
                       const startTime = selectedMeeting.startTime;
                       const timeValue = time.$d;
 
                       if (!startTime) return false;
 
                       const startDate = new Date(startTime);
+                      const thresholdDate =
+                        isAdminTimingRestrictedUser &&
+                        !isAdminTimingBufferExpired
+                          ? new Date(startDate.getTime() - 30 * 60000)
+                          : startDate;
 
                       if (view === "hours") {
-                        return timeValue.getHours() < startDate.getHours();
+                        return timeValue.getHours() < thresholdDate.getHours();
                       }
 
                       if (view === "minutes") {
@@ -1107,8 +1260,8 @@ const ManageMeetings = () => {
                           : null;
 
                         return (
-                          selectedHour === startDate.getHours() &&
-                          timeValue.getMinutes() < startDate.getMinutes()
+                          selectedHour === thresholdDate.getHours() &&
+                          timeValue.getMinutes() < thresholdDate.getMinutes()
                         );
                       }
 
@@ -1147,6 +1300,7 @@ const ManageMeetings = () => {
                 render={({ field }) => (
                   <TimePicker
                     {...field}
+                    {...getEditTimeBounds(selectedMeeting?.endTime)}
                     slotProps={{
                       textField: {
                         size: "small",
@@ -1156,16 +1310,22 @@ const ManageMeetings = () => {
                     }}
                     label={"End Time"}
                     shouldDisableTime={(time, view) => {
-                      if (isTechDepartment) return false;
+                      if (isAdminTimingBufferExpired) return true;
+                      if (canEditMeetingDate) return false;
                       const endTime = selectedMeeting.endTime;
                       const timeValue = time.$d;
 
                       if (!endTime) return false;
 
                       const endDate = new Date(endTime);
+                      const thresholdDate =
+                        isAdminTimingRestrictedUser &&
+                        !isAdminTimingBufferExpired
+                          ? new Date(endDate.getTime() - 30 * 60000)
+                          : endDate;
 
                       if (view === "hours") {
-                        return timeValue.getHours() < endDate.getHours();
+                        return timeValue.getHours() < thresholdDate.getHours();
                       }
 
                       if (view === "minutes") {
@@ -1174,8 +1334,8 @@ const ManageMeetings = () => {
                           : null;
 
                         return (
-                          selectedHour === endDate.getHours() &&
-                          timeValue.getMinutes() < endDate.getMinutes()
+                          selectedHour === thresholdDate.getHours() &&
+                          timeValue.getMinutes() < thresholdDate.getMinutes()
                         );
                       }
 
@@ -1218,6 +1378,13 @@ const ManageMeetings = () => {
                   // />
                 )}
               />
+              {isAdminTimingBufferExpired && !editErrors.startTime?.message && (
+                <div className="col-span-2 -mt-2 text-[12px] text-[#d32f2f]">
+                  You have exceeded the 30 min buffer to Edit the timings.
+                  {" "}
+                  "Please Raise a Ticket" to fix
+                </div>
+              )}
               {!selectedMeeting?.clientBookedBy ? (
                 <div className="col-span-2">
                   <Controller
