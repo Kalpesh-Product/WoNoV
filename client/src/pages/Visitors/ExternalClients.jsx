@@ -43,6 +43,9 @@ const ExternalClients = ({
 }) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const isAdminUser = auth?.user?.role?.some((role) =>
+    role?.roleTitle?.trim()?.toLowerCase()?.endsWith("admin"),
+  );
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -1188,21 +1191,33 @@ const ExternalClients = ({
                     <Controller
                       name="dateOfVisit"
                       control={control}
-                      render={({ field }) => (
-                        <DatePicker
-                          {...field}
-                          format="DD-MM-YYYY"
-                          label="Date of Visit"
-                          value={field.value ? dayjs(field.value) : null}
-                          onChange={(value) => field.onChange(value)}
-                          slotProps={{
-                            textField: {
-                              fullWidth: true,
-                              size: "small",
-                            },
-                          }}
-                        />
-                      )}
+                      render={({ field }) => {
+                        const selectedDate = field.value ? dayjs(field.value) : null;
+
+                        return (
+                          <DatePicker
+                            {...field}
+                            format="DD-MM-YYYY"
+                            label="Date of Visit"
+                            value={selectedDate}
+                            onChange={(value) => field.onChange(value)}
+                            shouldDisableDate={(date) => {
+                              if (!isAdminUser) return false;
+                              if (selectedDate?.isValid() && date.isSame(selectedDate, "day")) {
+                                return false;
+                              }
+
+                              return date.isBefore(dayjs().startOf("day"), "day");
+                            }}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                size: "small",
+                              },
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </LocalizationProvider>
                 ) : (

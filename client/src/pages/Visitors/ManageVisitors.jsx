@@ -8,7 +8,7 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { TextField } from "@mui/material";
-import { TimePicker } from "@mui/x-date-pickers";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -23,10 +23,32 @@ import useAuth from "../../hooks/useAuth";
 const ManageVisitors = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
+  const allowedVisitScheduleEditorIds = [
+    "67b83885daad0f7bab2f18a9",
+    "6961fcd737afa664ab215d0a",
+  ];
   const [modalMode, setModalMode] = useState("view");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const { setValue, handleSubmit, reset, control } = useForm();
+  const userDepartments = Array.isArray(auth?.user?.departments)
+    ? auth.user.departments
+    : [];
+  const userRoles = Array.isArray(auth?.user?.role) ? auth.user.role : [];
+  const isTopManagementUser = userDepartments.some(
+    (department) =>
+      String(department?.name || "").trim().toLowerCase() === "top management",
+  );
+  const isTechManager = userDepartments.some(
+    (department) => String(department?.name || "").trim().toLowerCase() === "tech",
+  )
+    && userRoles.some((role) =>
+      String(role?.roleTitle || "").trim().toLowerCase().includes("manager"),
+    );
+  const canEditVisitSchedule =
+    allowedVisitScheduleEditorIds.includes(String(auth?.user?._id || "")) ||
+    isTopManagementUser ||
+    isTechManager;
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["visitors"],
@@ -79,6 +101,18 @@ const ManageVisitors = () => {
       setValue("phoneNumber", visitor.phoneNumber || "");
       setValue("purposeOfVisit", visitor.purposeOfVisit || "");
       setValue(
+        "visitDate",
+        visitor.checkIn
+          ? dayjs(visitor.checkIn)
+          : visitor.date
+            ? dayjs(visitor.date)
+            : null,
+      );
+      setValue(
+        "checkInRaw",
+        visitor.checkIn ? dayjs(visitor.checkIn) : null,
+      );
+      setValue(
         "checkOutRaw",
         visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null,
       );
@@ -89,6 +123,7 @@ const ManageVisitors = () => {
     setIsModalOpen(false);
     setModalMode("view");
     setSelectedVisitor(null);
+    reset();
   };
 
   // const submit = (data) => {
@@ -99,9 +134,28 @@ const ManageVisitors = () => {
   // };
 
   const submit = (data) => {
-    const checkInDate = selectedVisitor?.checkIn
+    const { visitDate, checkInRaw, ...restData } = data;
+    const existingCheckIn = selectedVisitor?.checkIn
       ? dayjs(selectedVisitor.checkIn)
       : null;
+    const selectedVisitDate = visitDate ? dayjs(visitDate) : null;
+    const selectedCheckInTime = checkInRaw ? dayjs(checkInRaw) : null;
+    const checkInDate =
+      canEditVisitSchedule && (selectedVisitDate || selectedCheckInTime)
+        ? (selectedVisitDate || existingCheckIn || dayjs())
+            .hour(selectedCheckInTime?.hour?.() ?? existingCheckIn?.hour?.() ?? 0)
+            .minute(
+              selectedCheckInTime?.minute?.() ?? existingCheckIn?.minute?.() ?? 0,
+            )
+            .second(
+              selectedCheckInTime?.second?.() ?? existingCheckIn?.second?.() ?? 0,
+            )
+            .millisecond(
+              selectedCheckInTime?.millisecond?.() ??
+                existingCheckIn?.millisecond?.() ??
+                0,
+            )
+        : existingCheckIn;
     const checkOutRaw = data.checkOutRaw ? dayjs(data.checkOutRaw) : null;
 
     const combinedCheckout =
@@ -121,7 +175,11 @@ const ManageVisitors = () => {
       : "-";
 
     mutate({
-      ...data,
+      ...restData,
+      checkIn: checkInDate ? checkInDate.toISOString() : selectedVisitor?.checkIn,
+      dateOfVisit: checkInDate
+        ? checkInDate.toISOString()
+        : selectedVisitor?.checkIn || null,
       checkOut: combinedCheckout ? combinedCheckout.toISOString() : null,
       checkOutBy: checkOutByName,
     });
@@ -427,6 +485,43 @@ const ManageVisitors = () => {
                   />
                 )}
               />
+              {canEditVisitSchedule && (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="visitDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        label="Date"
+                        format="DD-MM-YYYY"
+                        value={field.value}
+                        onChange={field.onChange}
+                        slotProps={{
+                          textField: { size: "small", fullWidth: true },
+                        }}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+              )}
+              {canEditVisitSchedule && (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Controller
+                    name="checkInRaw"
+                    control={control}
+                    render={({ field }) => (
+                      <TimePicker
+                        label="Check In Time"
+                        value={field.value}
+                        onChange={field.onChange}
+                        slotProps={{
+                          textField: { size: "small", fullWidth: true },
+                        }}
+                      />
+                    )}
+                  />
+                </LocalizationProvider>
+              )}
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <Controller
                   name="checkOutRaw"
