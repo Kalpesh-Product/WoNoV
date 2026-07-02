@@ -1233,13 +1233,20 @@ const ExternalMeetingCLients = () => {
               detail={selectedMeeting.receptionist}
               // detail={`N/A`}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Department"
               detail={
-                selectedMeeting.department?.map((item) => item.name) ||
-                "Top Management"
+                selectedMeeting.departmentLabel ||
+                (Array.isArray(selectedMeeting.department)
+                  ? selectedMeeting.department
+                      .map((item) => item?.name)
+                      .filter(Boolean)
+                      .join(", ")
+                  : selectedMeeting.department?.name ||
+                    selectedMeeting.department ||
+                    "N/A")
               }
-            />
+            /> */}
             <DetalisFormatted
               title="Client"
               detail={selectedMeeting.client || "Unknown"}
