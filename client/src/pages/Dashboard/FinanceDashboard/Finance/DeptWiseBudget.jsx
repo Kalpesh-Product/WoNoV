@@ -131,7 +131,7 @@ const DeptWiseBudget = () => {
           cellRenderer: (params) => {
             const handleClick = () => {
               navigate(
-               // `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`,
+                // `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`,
                 `/app/dashboard/finance-dashboard/mix-bag/department-wise-budget/${encodeURIComponent(params.value)}`,
                 {
                   state: {
