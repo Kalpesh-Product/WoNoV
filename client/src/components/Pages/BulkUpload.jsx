@@ -2,10 +2,10 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import YearWiseTable from "../Tables/YearWiseTable";
+//import YearWiseTable from "../Tables/YearWiseTable";
 import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
-import { MdUpload } from "react-icons/md";
+//import { MdUpload } from "react-icons/md";
 import { IoMdDownload } from "react-icons/io";
 import { useMemo, useState } from "react";
 import { Chip, MenuItem, TextField } from "@mui/material";
@@ -14,7 +14,7 @@ import MuiModal from "../MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import UploadFileInput from "../UploadFileInput";
 import { toast } from "sonner";
-import humanDate from "../../utils/humanDateForamt";
+//import humanDate from "../../utils/humanDateForamt";
 import bulkInsertRoutes from "../../constants/bulkInsertRoutes";
 import formatDateTime from "../../utils/formatDateTime";
 
@@ -129,6 +129,26 @@ export default function BulkUpload() {
     (item) => item.id === selectedDoc,
   );
 
+  const getTemplateRowId = (template) =>
+    template?._id || template?.id || template?.documentId || template?.name;
+
+  const formatTemplateTimestamp = (value) => {
+    if (!value) return "-";
+
+    const formattedValue = formatDateTime(value);
+
+    return formattedValue && formattedValue !== "N/A" ? formattedValue : "-";
+  };
+
+  const updateTemplateLastModified = async (templateId, type) => {
+    if (!deptDetails?._id || !templateId) return null;
+
+    const response = await axios.patch(
+      `/api/company/department-templates/${deptDetails._id}/${templateId}/${type}/lastmodified`,
+    );
+
+    return response.data;
+  };
   const buildDownloadTimestamp = () => {
     const now = new Date();
     const pad = (value) => String(value).padStart(2, "0");
@@ -140,11 +160,26 @@ export default function BulkUpload() {
     )}`;
   };
 
-  const handleTemplateDownload = (template) => {
+  const handleTemplateDownload = async (template) => {
     const originalUrl = template?.documentLink;
+    const templateId = getTemplateRowId(template);
     if (!originalUrl) {
       toast.error("Template download link is not available.");
       return;
+    }
+
+    try {
+      const data = await updateTemplateLastModified(templateId, "download");
+      setDownloadedAtByTemplate((prev) => ({
+        ...prev,
+        [templateId]: data?.downloadedAt,
+      }));
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update template download time.",
+      );
     }
 
     const extension =
@@ -157,10 +192,10 @@ export default function BulkUpload() {
     const link = document.createElement("a");
     link.href = originalUrl.replace("/upload/", "/upload/fl_attachment/");
     link.download = `${safeTemplateName}-downloaded-${buildDownloadTimestamp()}.${extension}`;
-    setDownloadedAtByTemplate((prev) => ({
-      ...prev,
-      [template.id || template.documentLink || template.name]: new Date().toISOString(),
-    }));
+    // setDownloadedAtByTemplate((prev) => ({
+    //   ...prev,
+    //   [template.id || template.documentLink || template.name]: new Date().toISOString(),
+    // }));
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -186,11 +221,24 @@ export default function BulkUpload() {
       });
       return response.data;
     },
-    onSuccess: (data) => {
-      setUploadedAtByTemplate((prev) => ({
-        ...prev,
-        [selectedTemplate?.id]: new Date().toISOString(),
-      }));
+   onSuccess: async (data) => {
+      try {
+        const lastModifiedData = await updateTemplateLastModified(
+          selectedTemplate?.id,
+          "upload",
+        );
+
+        setUploadedAtByTemplate((prev) => ({
+          ...prev,
+          [selectedTemplate?.id]: lastModifiedData?.uploadedAt,
+        }));
+      } catch (error) {
+        toast.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to update template upload time.",
+        );
+      }
       toast.success(data.message || "DATA UPLOADED");
       setOpenModal(false);
       reset();
@@ -215,16 +263,13 @@ export default function BulkUpload() {
         name: template.name,
         documentLink: template.documentLink,
         isActive: template.isActive ? "Active" : "Inactive",
-        date:
-          formatDateTime(
-            downloadedAtByTemplate[
-              template._id || template.documentId || template.name
-            ] || template.createdAt,
-          ) || humanDate(template.createdAt),
-        updatedAt: formatDateTime(
-          uploadedAtByTemplate[
-            template._id || template.documentId || template.name
-          ] || template.updatedAt,
+        date: formatTemplateTimestamp(
+          downloadedAtByTemplate[getTemplateRowId(template)] ||
+            template.downloadedAt,
+        ),
+        updatedAt: formatTemplateTimestamp(
+          uploadedAtByTemplate[getTemplateRowId(template)] ||
+            template.uploadedAt,
         ),
       }));
   }, [departmentDocuments, downloadedAtByTemplate, uploadedAtByTemplate]);
