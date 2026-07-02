@@ -205,7 +205,7 @@ router.post(
   handleDepartmentTemplateUpload,
 );
 router.patch(
-  "/department-templates/:departmentId/:templateId/lastmodified",
+  "/department-templates/:departmentId/:templateId/:type/lastmodified",
   updateDepartmentTemplateLastModifiedAt,
 );
 router.get("/department-templates/:departmentId", getDepartmentTemplates);

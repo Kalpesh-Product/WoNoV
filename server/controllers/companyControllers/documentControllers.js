@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Company = require("../../models/hr/Company");
 const User = require("../../models/hr/UserData");
 const {
@@ -7,7 +8,6 @@ const {
 const { PDFDocument } = require("pdf-lib");
 const path = require("path");
 const Department = require("../../models/Departments");
-const { mongoose } = require("mongoose");
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -1380,7 +1380,13 @@ const getDepartmentTemplates = async (req, res, next) => {
 
 const updateDepartmentTemplateLastModifiedAt = async (req, res, next) => {
   try {
-    const { departmentId, templateId } = req.params;
+    const { departmentId, templateId, type = "" } = req.params;
+
+    if (!type || !["download", "upload"].includes(type)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid type. Must be 'download' or 'upload'" });
+    }
 
     if (!mongoose.Types.ObjectId.isValid(departmentId)) {
       return res.status(400).json({ message: "Invalid department ID" });
@@ -1400,12 +1406,18 @@ const updateDepartmentTemplateLastModifiedAt = async (req, res, next) => {
       return res.status(404).json({ message: "Template not found" });
     }
 
-    template.lastmodifiedAt = new Date();
+    if (type === "download") {
+      template.downloadedAt = new Date();
+    } else if (type === "upload") {
+      template.uploadedAt = new Date();
+    }
+
     await department.save({ validateBeforeSave: false });
 
     return res.status(200).json({
       message: "Template last modified date updated successfully",
-      lastmodifiedAt: template.lastmodifiedAt,
+      downloadedAt: template.downloadedAt,
+      uploadedAt: template.uploadedAt,
       templateId: template._id,
     });
   } catch (error) {
