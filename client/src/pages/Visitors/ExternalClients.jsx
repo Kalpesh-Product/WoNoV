@@ -43,9 +43,29 @@ const ExternalClients = ({
 }) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
-  const isAdminUser = auth?.user?.role?.some((role) =>
-    role?.roleTitle?.trim()?.toLowerCase()?.endsWith("admin"),
+  const allowedVisitScheduleEditorIds = [
+    "67b83885daad0f7bab2f18a9",
+    "6961fcd737afa664ab215d0a",
+  ];
+  const userDepartments = Array.isArray(auth?.user?.departments)
+    ? auth.user.departments
+    : [];
+  const userRoles = Array.isArray(auth?.user?.role) ? auth.user.role : [];
+  const isTopManagementUser = userDepartments.some(
+    (department) =>
+      String(department?.name || "").trim().toLowerCase() === "top management",
   );
+  const isTechManager = userDepartments.some(
+    (department) =>
+      String(department?.name || "").trim().toLowerCase() === "tech",
+  )
+    && userRoles.some((role) =>
+      String(role?.roleTitle || "").trim().toLowerCase().includes("manager"),
+    );
+  const canEditVisitSchedule =
+    allowedVisitScheduleEditorIds.includes(String(auth?.user?._id || "")) ||
+    isTopManagementUser ||
+    isTechManager;
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -1202,8 +1222,14 @@ const ExternalClients = ({
                             value={selectedDate}
                             onChange={(value) => field.onChange(value)}
                             shouldDisableDate={(date) => {
-                              if (!isAdminUser) return false;
-                              if (selectedDate?.isValid() && date.isSame(selectedDate, "day")) {
+                              if (
+                                selectedDate?.isValid() &&
+                                date.isSame(selectedDate, "day")
+                              ) {
+                                return false;
+                              }
+
+                              if (canEditVisitSchedule) {
                                 return false;
                               }
 
@@ -1213,6 +1239,8 @@ const ExternalClients = ({
                               textField: {
                                 fullWidth: true,
                                 size: "small",
+                                error: false,
+                                helperText: "",
                               },
                             }}
                           />
