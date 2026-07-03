@@ -240,7 +240,7 @@ const ViewEmployees = () => {
                         employee.pFContributionRate ||
                         "",
                       employeePF: employee.employeePF || "",
-                      password: employee.password || employee.plainPassword || "",
+                      password: "",
                     })),
                 ]
             }

@@ -35,6 +35,8 @@ const EditDetails = () => {
   const { employeeName } = useParams();
   // const { employmentID } = location.state;
   const employmentID = useSelector((state) => state.hr.selectedEmployee);
+  const getPasswordPreviewStorageKey = (employeeId) =>
+    employeeId ? `employee-password-preview:${employeeId}` : "";
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const { data: employeeData, isLoading } = useQuery({
@@ -159,7 +161,8 @@ const EditDetails = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
-    const [visiblePasswords, setVisiblePasswords] = useState({
+  const [passwordPreview, setPasswordPreview] = useState("");
+  const [visiblePasswords, setVisiblePasswords] = useState({
     password: false,
     currentPassword: false,
     newPassword: false,
@@ -468,6 +471,10 @@ const togglePasswordVisibility = (fieldName) => {
   useEffect(() => {
     if (!employeeData) return;
 
+    const storedPasswordPreview =
+      sessionStorage.getItem(getPasswordPreviewStorageKey(employmentID)) || "";
+    setPasswordPreview(storedPasswordPreview || employeeData?.passwordPreview || "");
+
     reset({
       ...employeeData,
       // status:
@@ -527,6 +534,7 @@ const togglePasswordVisibility = (fieldName) => {
     });
   }, [
     employeeData,
+    employmentID,
     departmentIds,
     normalizedReportsTo,
     normalizedRoles,
@@ -753,18 +761,25 @@ const togglePasswordVisibility = (fieldName) => {
     },
     onSuccess: (data) => {
       toast.success(data?.message || "Password updated successfully");
+      const nextPasswordPreview = data?.passwordPreview || "";
+      setPasswordPreview(nextPasswordPreview);
+      if (employmentID) {
+        sessionStorage.setItem(
+          getPasswordPreviewStorageKey(employmentID),
+          nextPasswordPreview,
+        );
+      }
       queryClient.setQueryData(["employeeData", employmentID], (previousData) => {
         if (!previousData) return previousData;
         return {
           ...previousData,
-          plainPassword: data?.plainPassword || previousData?.plainPassword || "",
+          passwordPreview: nextPasswordPreview,
         };
       });
       queryClient.invalidateQueries({ queryKey: ["employeeData", employmentID] });
       setIsPasswordVerified(false);
       reset((prev) => ({
         ...prev,
-        plainPassword: data?.plainPassword || prev?.plainPassword || "",
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
@@ -1728,11 +1743,7 @@ const togglePasswordVisibility = (fieldName) => {
                       fullWidth
                       disabled
                       type={visiblePasswords.password ? "text" : "password"}
-                      value={
-                        watch("plainPassword") ||
-                        transformEmployeeData?.plainPassword ||
-                        ""
-                      }
+                      value={passwordPreview}
                       // InputProps={{ readOnly: true }}
                         InputProps={getPasswordInputProps("password", "Password")}
                     />
@@ -1747,9 +1758,7 @@ const togglePasswordVisibility = (fieldName) => {
                         <span>:</span>
                       </div>
                       <div className="w-full">
-                        <span className="text-gray-500">
-                          {transformEmployeeData?.plainPassword || ""}
-                        </span>
+                        <span className="text-gray-500">{passwordPreview}</span>
                       </div>
                     </div>
                   )}
