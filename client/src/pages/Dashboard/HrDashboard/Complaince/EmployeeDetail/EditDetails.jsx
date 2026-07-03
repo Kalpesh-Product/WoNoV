@@ -778,21 +778,44 @@ const EditDetails = () => {
     onSuccess: ({ payload }) => {
       toast.success("User details updated successfully");
 
+      const existingEmployeeData =
+        queryClient.getQueryData(["employeeData", employmentID]) || employeeData;
+      const nextEmployeeData = {
+        ...(existingEmployeeData || {}),
+        ...payload,
+        reportsTo: payload?.reportsTo || existingEmployeeData?.reportsTo,
+        payrollInformation: {
+          ...(existingEmployeeData?.payrollInformation || {}),
+          ...(payload?.payrollInformation || {}),
+        },
+      };
+      const matchesEmployee = (item) =>
+        item?._id === nextEmployeeData?._id ||
+        item?.employmentID === nextEmployeeData?.employmentID ||
+        item?.empId === nextEmployeeData?.employmentID ||
+        item?.employeeID === nextEmployeeData?.employeeID;
+      const updateEmployeeListCache = (queryKey, shouldInclude) => {
+        queryClient.setQueryData(queryKey, (previousData) => {
+          if (!Array.isArray(previousData)) return previousData;
+
+          const remainingEmployees = previousData.filter(
+            (item) => !matchesEmployee(item),
+          );
+
+          if (!shouldInclude) {
+            return remainingEmployees;
+          }
+
+          return [nextEmployeeData, ...remainingEmployees];
+        });
+      };
+
       queryClient.setQueryData(
         ["employeeData", employmentID],
-        (previousData) => {
-          if (!previousData) return previousData;
-          return {
-            ...previousData,
-            ...payload,
-            reportsTo: payload?.reportsTo || previousData?.reportsTo,
-            payrollInformation: {
-              ...(previousData?.payrollInformation || {}),
-              ...(payload?.payrollInformation || {}),
-            },
-          };
-        },
+        () => nextEmployeeData,
       );
+      updateEmployeeListCache(["employees"], payload?.isActive);
+      updateEmployeeListCache(["past-employees"], !payload?.isActive);
 
       setIsEditing(false);
       queryClient.invalidateQueries({
