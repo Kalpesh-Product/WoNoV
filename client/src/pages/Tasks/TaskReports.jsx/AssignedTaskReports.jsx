@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
@@ -15,31 +15,40 @@ import { formatDateTimeFields } from "../../../utils/formatDateTime";
 import StatusChip from "../../../components/StatusChip";
 import dayjs from "dayjs";
 import useAuth from "../../../hooks/useAuth";
+import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
+  const dispatch = useDispatch();
   const { auth } = useAuth();
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const currentDepartmentId = auth?.user?.departments?.[0]?._id;
+  const effectiveDeptId = deptId || currentDepartmentId;
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState([]);
   const [selectedTaskRange, setSelectedTaskRange] = useState(null);
+  React.useEffect(() => {
+    if (!deptId && currentDepartmentId) {
+      dispatch(setSelectedDepartment(currentDepartmentId));
+    }
+  }, [currentDepartmentId, deptId, dispatch]);
 
   const { data: taskList = [], isLoading } = useQuery({
-    queryKey: ["department-tasks", deptId],
+    queryKey: ["department-tasks", effectiveDeptId],
     queryFn: async () => {
-      if (!deptId) return [];
+      if (!effectiveDeptId) return [];
 
       const [pendingTasks, completedTasks] = await Promise.all([
-        axios.get(`/api/tasks/get-tasks?dept=${deptId}`),
-        axios.get(`/api/tasks/get-completed-tasks/${deptId}`),
+        axios.get(`/api/tasks/get-tasks?dept=${effectiveDeptId}`),
+        axios.get(`/api/tasks/get-completed-tasks/${effectiveDeptId}`),
       ]);
 
       return [...pendingTasks.data, ...completedTasks.data].filter(
         (task) => task.taskType === "Department"
       );
     },
-    enabled: Boolean(deptId),
+    enabled: Boolean(effectiveDeptId),
   });
 
   const handleViewDetails = (params) => {
