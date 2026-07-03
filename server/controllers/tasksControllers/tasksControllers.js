@@ -116,6 +116,14 @@ const createTasks = async (req, res, next) => {
       );
     }
 
+    if (parsedAssignedDate > parsedDueDate) {
+      throw new CustomError(
+        "Start date cannot be after end date",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
     // const timezone = getRequestTimezone(req);
     // const parsedAssignedDate = toUtcStartOfDay(assignedDate, timezone);
 
@@ -206,7 +214,6 @@ const createTasks = async (req, res, next) => {
     const deptEmployees = await UserData.find({
       departments: { $in: department },
     });
-    console.log(department);
 
     // const deptEmployees = await UserData.find({
     //   departments: { $in: [department] },
