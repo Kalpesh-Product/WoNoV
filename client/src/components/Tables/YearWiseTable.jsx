@@ -51,6 +51,7 @@ const YearWiseTable = ({
   customExportDisabled = false,
   exportButtonTitle = "Export",
   initialDateRange,
+  taskExportDateTimeFormatting = false,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -293,16 +294,24 @@ const YearWiseTable = ({
           if (value === null || value === undefined) return "";
 
           const normalizedField = field.toLowerCase();
-          const shouldPreserveAsText =
-            normalizedField.includes("date") ||
-            normalizedField.includes("time") ||
-            /(at)$/i.test(field);
+          if (taskExportDateTimeFormatting) {
+            const parsedValue = dayjs(value);
+
+            if (normalizedField.includes("date") && parsedValue.isValid()) {
+              return parsedValue.format("DD-MM-YYYY");
+            }
+
+            if (normalizedField.includes("time") && parsedValue.isValid()) {
+              return parsedValue.format("hh:mm A");
+            }
+          }
+
+          const shouldPreserveAsText = /(at)$/i.test(field);
 
           const stringValue = String(value);
 
           if (!shouldPreserveAsText) return stringValue;
 
-          // Keep date/time cells as literal text so Excel does not auto-convert them.
           return stringValue.startsWith(" ") ? stringValue : `${stringValue}`;
         },
         columnKeys: formattedColumns

@@ -194,24 +194,53 @@ const TasksDashboard = () => {
   );
 
 
-  const myTasksQuery = useQuery({
-    queryKey: ["dashboardMyTasks"],
+  const myPendingTasksQuery = useQuery({
+    queryKey: ["dashboardMyPendingTasks"],
     queryFn: async () => {
-      const response = await axios.get("/api/tasks/my-tasks");
+      const response = await axios.get("/api/tasks/my-tasks?flag=pending");
       return response.data;
     },
   });
 
-  const myTasks = myTasksQuery.isLoading ? [] : myTasksQuery.data || [];
+  const myCompletedTasksQuery = useQuery({
+    queryKey: ["dashboardMyCompletedTasks"],
+    queryFn: async () => {
+      const response = await axios.get("/api/tasks/get-my-completed-tasks");
+      return response.data;
+    },
+  });
+
+  const myPendingTasks = myPendingTasksQuery.isLoading
+    ? []
+    : myPendingTasksQuery.data || [];
+  const myCompletedTasks = myCompletedTasksQuery.isLoading
+    ? []
+    : myCompletedTasksQuery.data || [];
   const currentUserId = auth?.user?._id;
-  const visibleMyTasks = myTasks.filter((task) => {
+  const visibleMyPendingTasks = myPendingTasks.filter((task) => {
     const ownerId =
       task?.assignedBy?._id ||
       task?.assignedBy?.id ||
       task?.assignedBy ||
       "";
 
-    return String(ownerId) === String(currentUserId);
+    return (
+      String(ownerId) === String(currentUserId) &&
+      isCurrentMonthTask(task?.assignedDate)
+    );
+  });
+
+  const visibleMyCompletedTasks = myCompletedTasks.filter((task) => {
+    const ownerId =
+      task?.assignedBy?._id ||
+      task?.assignedBy?.id ||
+      task?.assignedBy ||
+      "";
+
+    return (
+      String(ownerId) === String(currentUserId) &&
+      isCurrentMonthTask(task?.assignedDate)
+    );
   });
 
 
@@ -370,6 +399,12 @@ const TasksDashboard = () => {
     : taskList
 
         .filter((task) => isTodayForUser(task?.assignedDate))
+        .sort((a, b) => {
+          const getStatusOrder = (status) =>
+            String(status || "").toLowerCase() === "pending" ? 0 : 1;
+
+          return getStatusOrder(a?.status) - getStatusOrder(b?.status);
+        })
 
         .map((task, index) => {
           const taskType = task.taskType ?? task.assignmentType ?? "Self";
@@ -782,30 +817,28 @@ const TasksDashboard = () => {
   
   const getTaskCardCount = (dataType) => {
     if (dataType === "my-all") {
-      return visibleMyTasks.length;
+      return visibleMyPendingTasks.filter((task) => task.status === "Pending")
+        .length + visibleMyCompletedTasks.length;
     }
     if (dataType === "my-pending") {
-      return visibleMyTasks.filter((task) => task.status === "Pending").length;
+      return visibleMyPendingTasks.filter((task) => task.status === "Pending")
+        .length;
     }
     if (dataType === "my-completed") {
-      return visibleMyTasks.filter((task) => task.status === "Completed").length;
+      return visibleMyCompletedTasks.length;
     }
     if (dataType === "all") {
-       return isSuperAdminView
-        ? currentMonthDepartmentTasks.length
-        : departmentTasks.length;
+      return currentMonthDepartmentTasks.length;
     }
     if (dataType === "pending") {
-      return (isSuperAdminView
-        ? currentMonthDepartmentTasks
-        : departmentTasks
-      ).filter((task) => task.status === "Pending").length;
+      return currentMonthDepartmentTasks.filter(
+        (task) => task.status === "Pending",
+      ).length;
     }
     if (dataType === "completed") {
-      return (isSuperAdminView
-        ? currentMonthDepartmentTasks
-        : departmentTasks
-      ).filter((task) => task.status === "Completed").length;
+      return currentMonthDepartmentTasks.filter(
+        (task) => task.status === "Completed",
+      ).length;
     }
 
     return 0;
@@ -855,7 +888,7 @@ const TasksDashboard = () => {
     },
     {
       key: PERMISSIONS.TASKS_TOTAL_DEPARTMENT_PENDING_TASKS.value,
-      title: "Department-wise Pending Tasks",
+      title: "Overall Department Pending Tasks",
       dataKey: "departmentPendingStats",
       optionsKey: "departmentPendingOptions",
     },
