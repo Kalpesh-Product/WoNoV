@@ -10,14 +10,17 @@ import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import StatusChip from "../../../components/StatusChip";
 import formatDateTime, {
   formatDateTimeFields,
 } from "../../../utils/formatDateTime";
+import dayjs from "dayjs";
 
 const MyTaskReports = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedTaskRange, setSelectedTaskRange] = useState(null);
 
   const { data: taskList = [], isLoading } = useQuery({
     queryKey: ["my-tasks"],
@@ -67,17 +70,43 @@ const MyTaskReports = () => {
       headerName: "Completed Time",
     },
     { field: "department", headerName: "Department" },
-    { field: "status", headerName: "Status", hide: true },
+    { field: "status", headerName: "Status", pinned: "right", cellRenderer: (params) => (
+         <StatusChip status={params.value} />
+       ) }   ,
   ];
+
+  const currentMonthLabel = (
+    selectedTaskRange?.startDate ? dayjs(selectedTaskRange.startDate) : dayjs()
+  ).format("MMMM");
+
+  const handleTaskRangeChange = ({ selectedRange }) => {
+    setSelectedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return selectedRange;
+    });
+  };
 
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
         <YearWiseTable
           exportData
+          taskExportDateTimeFormatting
           search={true}
           dateColumn={"assignedDate"}
-          tableTitle={"My Task Reports"}
+          tableTitle={`My Task Reports - ${currentMonthLabel}`}
           data={
             isLoading
               ? []
@@ -96,6 +125,7 @@ const MyTaskReports = () => {
                 }))
           }
           columns={myTaskReportsColumns}
+          onDateFilterChange={handleTaskRangeChange}
         />
       </PageFrame>
 

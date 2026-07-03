@@ -102,6 +102,8 @@ const EditDetails = () => {
     defaultValues: {},
   });
   const selectedStateCode = watch("state");
+  const newPasswordValue = watch("newPassword");
+  const confirmPasswordValue = watch("confirmPassword");
   const cityOptions = useMemo(
     () => {
       if (!selectedStateCode) {
@@ -247,7 +249,7 @@ const EditDetails = () => {
   const closePolicyPreview = () => {
     setPolicyPreview({ open: false, url: "", title: "" });
   };
-const togglePasswordVisibility = (fieldName) => {
+  const togglePasswordVisibility = (fieldName) => {
     setVisiblePasswords((prev) => ({
       ...prev,
       [fieldName]: !prev[fieldName],
@@ -270,6 +272,62 @@ const togglePasswordVisibility = (fieldName) => {
       </InputAdornment>
     ),
   });
+
+  useEffect(() => {
+    if (!isPasswordVerified || !newPasswordValue) {
+      if (errors.newPassword?.type === "minLength") {
+        clearErrors("newPassword");
+      }
+      return;
+    }
+
+    if (newPasswordValue.length < 8) {
+      setError("newPassword", {
+        type: "minLength",
+        message: "Password must be at least 8 characters long",
+      });
+      return;
+    }
+
+    if (errors.newPassword?.type === "minLength") {
+      clearErrors("newPassword");
+    }
+  }, [
+    clearErrors,
+    errors.newPassword?.type,
+    isPasswordVerified,
+    newPasswordValue,
+    setError,
+  ]);
+
+  useEffect(() => {
+    if (!isPasswordVerified || !confirmPasswordValue) {
+      if (errors.confirmPassword?.type === "passwordMismatch") {
+        clearErrors("confirmPassword");
+      }
+      return;
+    }
+
+    if (newPasswordValue !== confirmPasswordValue) {
+      setError("confirmPassword", {
+        type: "passwordMismatch",
+        message: "New password and confirm password do not match.",
+      });
+      return;
+    }
+
+    if (errors.confirmPassword?.type === "passwordMismatch") {
+      clearErrors("confirmPassword");
+    }
+  }, [
+    clearErrors,
+    confirmPasswordValue,
+    errors.confirmPassword?.type,
+    isPasswordVerified,
+    newPasswordValue,
+    setError,
+  ]);
+
   const uploadPolicyAgreement = async (file, agreementName) => {
     if (!(file instanceof File)) return "";
 
@@ -720,21 +778,44 @@ const togglePasswordVisibility = (fieldName) => {
     onSuccess: ({ payload }) => {
       toast.success("User details updated successfully");
 
+      const existingEmployeeData =
+        queryClient.getQueryData(["employeeData", employmentID]) || employeeData;
+      const nextEmployeeData = {
+        ...(existingEmployeeData || {}),
+        ...payload,
+        reportsTo: payload?.reportsTo || existingEmployeeData?.reportsTo,
+        payrollInformation: {
+          ...(existingEmployeeData?.payrollInformation || {}),
+          ...(payload?.payrollInformation || {}),
+        },
+      };
+      const matchesEmployee = (item) =>
+        item?._id === nextEmployeeData?._id ||
+        item?.employmentID === nextEmployeeData?.employmentID ||
+        item?.empId === nextEmployeeData?.employmentID ||
+        item?.employeeID === nextEmployeeData?.employeeID;
+      const updateEmployeeListCache = (queryKey, shouldInclude) => {
+        queryClient.setQueryData(queryKey, (previousData) => {
+          if (!Array.isArray(previousData)) return previousData;
+
+          const remainingEmployees = previousData.filter(
+            (item) => !matchesEmployee(item),
+          );
+
+          if (!shouldInclude) {
+            return remainingEmployees;
+          }
+
+          return [nextEmployeeData, ...remainingEmployees];
+        });
+      };
+
       queryClient.setQueryData(
         ["employeeData", employmentID],
-        (previousData) => {
-          if (!previousData) return previousData;
-          return {
-            ...previousData,
-            ...payload,
-            reportsTo: payload?.reportsTo || previousData?.reportsTo,
-            payrollInformation: {
-              ...(previousData?.payrollInformation || {}),
-              ...(payload?.payrollInformation || {}),
-            },
-          };
-        },
+        () => nextEmployeeData,
       );
+      updateEmployeeListCache(["employees"], payload?.isActive);
+      updateEmployeeListCache(["past-employees"], !payload?.isActive);
 
       setIsEditing(false);
       queryClient.invalidateQueries({
@@ -809,11 +890,35 @@ const togglePasswordVisibility = (fieldName) => {
   };
 
   const onSubmit = (data) => {
-    // setIsEditing(!isEditing);
-    // toast.success("User details updated successfully");
-    //updateEmployeeStatus.mutate(data.status);
+    const isPasswordChangeRequested = Boolean(
+      data?.currentPassword || data?.newPassword || data?.confirmPassword,
+    );
+
+    if (isPasswordChangeRequested && !isPasswordVerified) {
+      return toast.error("Please verify your current password first");
+    }
+
+    if (isPasswordChangeRequested && (data?.newPassword || "").length < 8) {
+      setError("newPassword", {
+        type: "minLength",
+        message: "Password must be at least 8 characters long",
+      });
+      return;
+    }
+
+    if (
+      isPasswordChangeRequested &&
+      (data?.newPassword || "") !== (data?.confirmPassword || "")
+    ) {
+      setError("confirmPassword", {
+        type: "passwordMismatch",
+        message: "New password and confirm password do not match.",
+      });
+      return;
+    }
+
     updateEmployeeStatus.mutate(data);
-     if (isPasswordVerified && data?.currentPassword && data?.newPassword && data?.confirmPassword) {
+    if (isPasswordVerified && data?.currentPassword && data?.newPassword && data?.confirmPassword) {
       updateEmployeePassword.mutate(data);
     }
   };
@@ -1790,11 +1895,18 @@ const togglePasswordVisibility = (fieldName) => {
                       render={({ field }) => (
                         <TextField
                           {...field}
+                          onChange={(event) => {
+                            field.onChange(event);
+                            if (isPasswordVerified) {
+                              setIsPasswordVerified(false);
+                            }
+                          }}
                           size="small"
                           label="Current Password *"
                           fullWidth
+                          disabled={isPasswordVerified}
                           // type="password"
-                                                    type={
+                          type={
                             visiblePasswords.currentPassword
                               ? "text"
                               : "password"
@@ -1806,11 +1918,16 @@ const togglePasswordVisibility = (fieldName) => {
                         />
                       )}
                     />
-                    <PrimaryButton
-                      title="Verify"
-                      type="button"
-                      handleSubmit={verifyCurrentPassword}
-                    />
+                    <div
+                      className={isPasswordVerified ? "invisible" : ""}
+                      aria-hidden={isPasswordVerified}
+                    >
+                      <PrimaryButton
+                        title="Verify"
+                        type="button"
+                        handleSubmit={verifyCurrentPassword}
+                      />
+                    </div>
                     <Controller
                       name="newPassword"
                       control={control}
@@ -1821,10 +1938,12 @@ const togglePasswordVisibility = (fieldName) => {
                           label="New Password *"
                           fullWidth
                           // type="password"
-                                                    type={
+                          type={
                             visiblePasswords.newPassword ? "text" : "password"
                           }
                           disabled={!isPasswordVerified}
+                          error={Boolean(errors.newPassword)}
+                          helperText={errors.newPassword?.message || ""}
                           InputProps={getPasswordInputProps(
                             "newPassword",
                             "New Password",
@@ -1843,12 +1962,14 @@ const togglePasswordVisibility = (fieldName) => {
                           label="Confirm Password *"
                           fullWidth
                           // type="password"
-                           type={
+                          type={
                             visiblePasswords.confirmPassword
                               ? "text"
                               : "password"
                           }
                           disabled={!isPasswordVerified}
+                          error={Boolean(errors.confirmPassword)}
+                          helperText={errors.confirmPassword?.message || ""}
                           InputProps={getPasswordInputProps(
                             "confirmPassword",
                             "Confirm Password",

@@ -12,13 +12,18 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
+import StatusChip from "../../../components/StatusChip";
+import dayjs from "dayjs";
+import useAuth from "../../../hooks/useAuth";
 
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const deptId = useSelector((state) => state.performance.selectedDepartment);
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState([]);
+  const [selectedTaskRange, setSelectedTaskRange] = useState(null);
 
   const { data: taskList = [], isLoading } = useQuery({
     queryKey: ["department-tasks", deptId],
@@ -42,6 +47,51 @@ const AssignedTaskReports = () => {
     setOpenModal(true);
   };
 
+  const formatAssignedTo = (assignedTo) => {
+    if (!assignedTo) return "";
+
+    const currentUserId = auth?.user?._id;
+    const currentUserName =
+      [
+        auth?.user?.firstName,
+        auth?.user?.lastName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || auth?.user?.name || "";
+
+    if (Array.isArray(assignedTo)) {
+      return assignedTo
+        .map((member) =>
+          typeof member === "string"
+            ? member === currentUserId && currentUserName
+              ? currentUserName
+              : member
+            : [
+                member?.firstName,
+                member?.lastName,
+              ]
+                .filter(Boolean)
+                .join(" "),
+        )
+        .filter(Boolean)
+        .join(", ");
+    }
+
+    if (typeof assignedTo === "string") {
+      return assignedTo === currentUserId && currentUserName
+        ? currentUserName
+        : assignedTo;
+    }
+
+    return [
+      assignedTo?.firstName,
+      assignedTo?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  };
+
   const myTaskReportsColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     {
@@ -58,6 +108,7 @@ const AssignedTaskReports = () => {
       ),
     },
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
+    { field: "assignedTo", headerName: "Assign To", width: 300 },
     { field: "completedBy", headerName: "Completed By", width: 300 },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
@@ -74,7 +125,9 @@ const AssignedTaskReports = () => {
       headerName: "Completed Time",
     },
     { field: "department", headerName: "Department" },
-    { field: "status", headerName: "Status" },
+    { field: "status", headerName: "Status", pinned: "right", cellRenderer: (params) => (
+      <StatusChip status={params.value} />
+    ) }   ,
     // {
     //   field: "actions",
     //   headerName: "Actions",
@@ -91,14 +144,38 @@ const AssignedTaskReports = () => {
     // },
   ];
 
+  const currentMonthLabel = (
+    selectedTaskRange?.startDate ? dayjs(selectedTaskRange.startDate) : dayjs()
+  ).format("MMMM");
+
+  const handleTaskRangeChange = ({ selectedRange }) => {
+    setSelectedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return selectedRange;
+    });
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
         <YearWiseTable
           exportData
+          taskExportDateTimeFormatting
           search={true}
           dateColumn={"assignedDate"}
-          tableTitle={"Department Tasks Reports"}
+          tableTitle={`Department Tasks Reports - ${currentMonthLabel}`}
           data={
             isLoading
               ? []
@@ -120,6 +197,7 @@ const AssignedTaskReports = () => {
                     .filter(Boolean)
                     .join(" ")
                   : "",
+                assignedTo: formatAssignedTo(task.assignedTo),
                 completedBy: task.completedBy,
                 department: task.department?.name || task.department,
                 description: task.description,
@@ -127,6 +205,7 @@ const AssignedTaskReports = () => {
               }))
           }
           columns={myTaskReportsColumns}
+          onDateFilterChange={handleTaskRangeChange}
         />
       </PageFrame>
 
@@ -149,6 +228,10 @@ const AssignedTaskReports = () => {
             <DetalisFormatted
               title="Assigned By"
               detail={selectedTask.assignedBy}
+            />
+            <DetalisFormatted
+              title="Assign To"
+              detail={selectedTask.assignedTo || "-"}
             />
             <DetalisFormatted
               title="Completed By"

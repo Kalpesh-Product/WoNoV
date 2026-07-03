@@ -1,5 +1,4 @@
 import React from "react";
-import AgTable from "../../../components/AgTable";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -9,22 +8,49 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import { CircularProgress } from "@mui/material";
 import MuiModal from "../../../components/MuiModal";
 import PageFrame from "../../../components/Pages/PageFrame";
+import dayjs from "dayjs";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import { useSelector } from "react-redux";
+import useAuth from "../../../hooks/useAuth";
 
 const TeamMember = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const deptId = useSelector((state) => state.performance.selectedDepartment);
   const [openModal, setOpenModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(dayjs());
   const { data: taskList, isLoading } = useQuery({
-    queryKey: ["taskList"],
+    queryKey: ["taskList", selectedMonth.format("YYYY-MM")],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/tasks/get-team-tasks");
+        const response = await axios.get(
+          `/api/tasks/get-team-tasks?month=${selectedMonth.format("YYYY-MM")}`,
+        );
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
     },
   });
+  const { data: departmentTaskSummaryData = { pending: [], completed: [] } } =
+    useQuery({
+      queryKey: ["team-member-task-summary", deptId],
+      queryFn: async () => {
+        if (!deptId) return { pending: [], completed: [] };
+
+        const [pendingTasks, completedTasks] = await Promise.all([
+          axios.get(`/api/tasks/get-tasks?dept=${deptId}`),
+          axios.get(`/api/tasks/get-completed-tasks/${deptId}`),
+        ]);
+
+        return {
+          pending: Array.isArray(pendingTasks.data) ? pendingTasks.data : [],
+          completed: Array.isArray(completedTasks.data) ? completedTasks.data : [],
+        };
+      },
+      enabled: Boolean(deptId),
+    });
 
   const handleSelectedMember = (meeting) => {
     setSelectedMember(meeting);
@@ -154,14 +180,94 @@ const TeamMember = () => {
     },
   ];
 
+  const handleMonthRangeChange = ({ selectedRange }) => {
+    setSelectedMonth((prev) => {
+      const prevStart = prev ? dayjs(prev).startOf("month").valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).startOf("month").valueOf()
+        : null;
+
+      if (prevStart === nextStart || nextStart === null) {
+        return prev;
+      }
+
+      return dayjs(selectedRange.startDate);
+    });
+  };
+
+  const taskSummary = React.useMemo(() => {
+    const isSelectedMonthTask = (value) => {
+      if (!value) return false;
+      const date = dayjs(value);
+      return date.isValid() && date.isSame(selectedMonth, "month");
+    };
+
+    const pendingTasks = (departmentTaskSummaryData.pending || []).filter(
+      (task) =>
+        task?.taskType === "Department" && isSelectedMonthTask(task?.assignedDate),
+    );
+
+    const completedTasks = (departmentTaskSummaryData.completed || []).filter(
+      (task) =>
+        task?.taskType === "Department" && isSelectedMonthTask(task?.assignedDate),
+    );
+
+    const currentUserId = auth?.user?._id;
+    const isTaskAssignedToCurrentUser = (assignedTo) => {
+      if (!currentUserId || !assignedTo) return false;
+
+      if (typeof assignedTo === "string") {
+        return assignedTo === currentUserId;
+      }
+
+      if (Array.isArray(assignedTo)) {
+        return assignedTo.some((member) => {
+          if (typeof member === "string") return member === currentUserId;
+          return member?._id === currentUserId || member?.id === currentUserId;
+        });
+      }
+
+      return assignedTo?._id === currentUserId || assignedTo?.id === currentUserId;
+    };
+
+    const assignedCount = [...pendingTasks, ...completedTasks].filter((task) =>
+      isTaskAssignedToCurrentUser(task?.assignedTo),
+    ).length;
+
+    return {
+      total: pendingTasks.length + completedTasks.length,
+      completed: completedTasks.length,
+      pending: pendingTasks.length,
+      assigned: assignedCount,
+    };
+  }, [auth?.user?._id, departmentTaskSummaryData, selectedMonth]);
+
   return (
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
         <div>
-          <AgTable
+          <div className="flex justify-end items-center gap-1.5 flex-wrap pb-4">
+            <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
+              <div>Total :</div>
+              <div>{taskSummary.total}</div>
+            </div>
+            <div className="flex gap-1 justify-center items-center uppercase bg-[#d8f0df] text-sm text-[#16784d] font-pmedium px-3 py-1.5 rounded-lg border border-[#a9ddba]">
+              <div>Completed :</div>
+              <div>{taskSummary.completed}</div>
+            </div>
+            <div className="flex gap-1 justify-center items-center uppercase bg-[#fce8e3] text-sm text-[#d96b4f] font-pmedium px-3 py-1.5 rounded-lg border border-[#f3b7a8]">
+              <div>Pending :</div>
+              <div>{taskSummary.pending}</div>
+            </div>
+            <div className="flex gap-1 justify-center items-center uppercase bg-[#FFECC5] text-sm text-[#CC8400] font-pmedium px-3 py-1.5 rounded-lg border border-[#F6D48F]">
+              <div>Assigned :</div>
+              <div>{taskSummary.assigned}</div>
+            </div>
+          </div>
+          <YearWiseTable
             search={true}
-            searchColumn={"kra"}
-            tableTitle={"Team Members"}
+            tableTitle={`Team Members - ${selectedMonth.format("MMMM")}`}
+            dateColumn={"reportMonthDate"}
             data={
               isLoading || !Array.isArray(taskList)
                 ? []
@@ -172,9 +278,11 @@ const TeamMember = () => {
                     role: task.role,
                     tasks: task.tasks,
                     status: task.status,
+                    reportMonthDate: selectedMonth.startOf("month").toISOString(),
                   }))
             }
             columns={teamMembersColumn}
+            onDateFilterChange={handleMonthRangeChange}
           />
         </div>
       </PageFrame>
