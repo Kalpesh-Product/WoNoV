@@ -46,6 +46,17 @@ const DailyTasks = () => {
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const [selectedTask, setSelectedTask] = useState({});
+  const getCurrentMonthRange = () => ({
+    startDate: dayjs().startOf("month").toDate(),
+    endDate: dayjs().endOf("month").toDate(),
+    key: "selection",
+  });
+  const [selectedMyTaskRange, setSelectedMyTaskRange] = useState(
+    getCurrentMonthRange,
+  );
+  const [selectedCompletedTaskRange, setSelectedCompletedTaskRange] = useState(
+    getCurrentMonthRange,
+  );
   const { auth } = useAuth();
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
   const deptId = useSelector((state) => state.performance.selectedDepartment);
@@ -480,20 +491,45 @@ const DailyTasks = () => {
         status: item.status,
       }));
 
+  const isDateInRange = (value, selectedRange) => {
+    if (!value || !selectedRange?.startDate || !selectedRange?.endDate) {
+      return false;
+    }
+
+    const date = dayjs(value);
+
+    if (!date.isValid()) return false;
+
+    return (
+      (date.isAfter(dayjs(selectedRange.startDate).startOf("day")) ||
+        date.isSame(dayjs(selectedRange.startDate).startOf("day"))) &&
+      (date.isBefore(dayjs(selectedRange.endDate).endOf("day")) ||
+        date.isSame(dayjs(selectedRange.endDate).endOf("day")))
+    );
+  };
+
   const visiblePendingTasks = useMemo(
     () =>
       Array.isArray(departmentKra)
-        ? departmentKra.filter((item) => isCurrentUserTaskOwner(item))
+        ? departmentKra.filter(
+            (item) =>
+              isCurrentUserTaskOwner(item) &&
+              isDateInRange(item?.assignedDate, selectedMyTaskRange),
+          )
         : [],
-    [departmentKra, currentUserId],
+    [departmentKra, currentUserId, selectedMyTaskRange],
   );
 
   const visibleCompletedEntries = useMemo(
     () =>
       Array.isArray(completedEntries)
-        ? completedEntries.filter((item) => isCurrentUserTaskOwner(item))
+        ? completedEntries.filter(
+            (item) =>
+              isCurrentUserTaskOwner(item) &&
+              isDateInRange(item?.assignedDate, selectedCompletedTaskRange),
+          )
         : [],
-    [completedEntries, currentUserId],
+    [completedEntries, currentUserId, selectedCompletedTaskRange],
   );
 
   const visibleCompletedData = useMemo(
@@ -545,6 +581,49 @@ const DailyTasks = () => {
     [pendingOnlyTasks, visibleCompletedEntries],
   );
 
+  const currentMyTaskMonthLabel = dayjs(
+    selectedMyTaskRange?.startDate || new Date(),
+  ).format("MMMM");
+  const currentCompletedMonthLabel = dayjs(
+    selectedCompletedTaskRange?.startDate || new Date(),
+  ).format("MMMM");
+  const handleMyTaskRangeChange = ({ selectedRange }) => {
+    setSelectedMyTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return selectedRange;
+    });
+  };
+  const handleMyCompletedTaskRangeChange = ({ selectedRange }) => {
+    setSelectedCompletedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return selectedRange;
+    });
+  };
+
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -553,7 +632,7 @@ const DailyTasks = () => {
             <div className="w-full pb-3">
               <div className="flex justify-between items-center gap-3 flex-wrap">
                 <span className="text-title text-primary font-pmedium uppercase">
-                  MY TASKS
+                  MY TASKS - {currentMyTaskMonthLabel}
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
@@ -572,7 +651,9 @@ const DailyTasks = () => {
               </div>
             </div>
             <YearWiseTable
-              key={pendingOnlyTasks.length}
+              key={`${dayjs(selectedMyTaskRange?.startDate).valueOf()}-${dayjs(
+                selectedMyTaskRange?.endDate,
+              ).valueOf()}-${pendingOnlyTasks.length}`}
               checkbox
               tableTitle={""}
               buttonTitle={"Add Task"}
@@ -596,8 +677,10 @@ const DailyTasks = () => {
                     assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                   })),
               ]}
-              dateColumn={"dueDate"}
+              dateColumn={"assignedDate"}
               columns={departmentColumns}
+              initialDateRange={selectedMyTaskRange}
+              onDateFilterChange={handleMyTaskRangeChange}
             />
           </WidgetSection>
         </PageFrame>
@@ -607,11 +690,17 @@ const DailyTasks = () => {
               <YearWiseTable
                 exportData={true}
                 taskExportDateTimeFormatting
-                key={visibleCompletedData.length}
-                tableTitle={`MY COMPLETED TASKS`}
+                key={`${dayjs(
+                  selectedCompletedTaskRange?.startDate,
+                ).valueOf()}-${dayjs(
+                  selectedCompletedTaskRange?.endDate,
+                ).valueOf()}-${visibleCompletedData.length}`}
+                tableTitle={`MY COMPLETED TASKS - ${currentCompletedMonthLabel}`}
                 data={visibleCompletedData}
-                dateColumn={"completionDate"}
+                dateColumn={"completedDate"}
                 columns={completedColumns}
+                initialDateRange={selectedCompletedTaskRange}
+                onDateFilterChange={handleMyCompletedTaskRangeChange}
               />
             </WidgetSection>
           ) : (

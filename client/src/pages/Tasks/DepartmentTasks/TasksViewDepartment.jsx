@@ -40,6 +40,11 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
 
 const TasksViewDepartment = () => {
+  const getCurrentMonthRange = () => ({
+    startDate: dayjs().startOf("month").toDate(),
+    endDate: dayjs().endOf("month").toDate(),
+    key: "selection",
+  });
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { department } = useParams();
@@ -48,9 +53,11 @@ const TasksViewDepartment = () => {
   const [openMultiModal, setOpenMultiModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState({});
   const [modalMode, setModalMode] = useState("");
-  const [selectedTaskRange, setSelectedTaskRange] = useState(null);
+  const [selectedTaskRange, setSelectedTaskRange] = useState(
+    getCurrentMonthRange,
+  );
   const [selectedCompletedTaskRange, setSelectedCompletedTaskRange] =
-    useState(null);
+    useState(getCurrentMonthRange);
   const EXCEPTIONAL_DEPARTMENT_IDS = [
     "67b2cf85b9b6ed5cedeb9a2e",
     // more exceptional department IDs...
@@ -545,6 +552,42 @@ const TasksViewDepartment = () => {
       ? dayjs(selectedCompletedTaskRange.startDate)
       : dayjs()
   ).format("MMMM");
+  const handlePendingTaskRangeChange = ({ selectedRange }) => {
+    setSelectedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return selectedRange;
+    });
+  };
+  const handleCompletedTaskRangeChange = ({ selectedRange }) => {
+    setSelectedCompletedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return selectedRange;
+    });
+  };
 
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
@@ -832,9 +875,8 @@ const TasksViewDepartment = () => {
                   data={visiblePendingTasks}
                   dateColumn={"assignedDate"}
                   columns={departmentColumns}
-                  onDateFilterChange={({ selectedRange }) =>
-                    setSelectedTaskRange(selectedRange)
-                  }
+                  initialDateRange={selectedTaskRange}
+                  onDateFilterChange={handlePendingTaskRangeChange}
                   hideTitle
                 />
               </WidgetSection>
@@ -857,9 +899,8 @@ const TasksViewDepartment = () => {
                   data={completedDepartmentTasks}
                   dateColumn={"completedDate"}
                   columns={completedColumns}
-                  onDateFilterChange={({ selectedRange }) =>
-                    setSelectedCompletedTaskRange(selectedRange)
-                  }
+                  initialDateRange={selectedCompletedTaskRange}
+                  onDateFilterChange={handleCompletedTaskRangeChange}
                 />
               </WidgetSection>
             ) : (

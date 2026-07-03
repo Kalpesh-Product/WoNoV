@@ -746,10 +746,15 @@ const getMyTodayTasks = async (req, res, next) => {
       isDeleted: { $ne: true },
       // assignedDate: { $gte: start, $lte: end },
       // assignedDate: { $gte: startOfDay, $lte: endOfDay },
-      $or: [{ assignedBy: { $in: [user] } }, { completedBy: { $in: [user] } }],
+      $or: [
+        { assignedBy: { $in: [user] } },
+        { assignedTo: { $in: [user] } },
+        { completedBy: { $in: [user] } },
+      ],
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate({
         path: "location",
@@ -862,6 +867,7 @@ const getTodayDeptTasks = async (req, res, next) => {
 const getTeamMembersTasks = async (req, res, next) => {
   try {
     const { company, departments } = req;
+    const { month } = req.query;
 
     if (!company || !departments || departments.length === 0) {
       return res
@@ -897,6 +903,14 @@ const getTeamMembersTasks = async (req, res, next) => {
     //   .select("-company")
     //   .lean();
 
+    const monthPattern = /^\d{4}-\d{2}$/;
+    const monthToUse = monthPattern.test(month || "")
+      ? month
+      : new Date().toISOString().slice(0, 7);
+    const [year, monthIndex] = monthToUse.split("-").map(Number);
+    const startDate = new Date(year, monthIndex - 1, 1);
+    const endDate = new Date(year, monthIndex, 1);
+
     const tasks = await Task.find({
       company,
       department: { $in: departments },
@@ -904,6 +918,7 @@ const getTeamMembersTasks = async (req, res, next) => {
       taskType: "Department",
       completedBy: { $ne: null },
       isDeleted: { $ne: true },
+      completedDate: { $gte: startDate, $lt: endDate },
     })
       .select("completedBy")
       .lean();
