@@ -606,6 +606,7 @@ const DailyTasks = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 exportData={true}
+                taskExportDateTimeFormatting
                 key={visibleCompletedData.length}
                 tableTitle={`MY COMPLETED TASKS`}
                 data={visibleCompletedData}

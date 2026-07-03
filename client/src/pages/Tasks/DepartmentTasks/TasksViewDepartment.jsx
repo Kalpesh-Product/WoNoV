@@ -853,6 +853,7 @@ const TasksViewDepartment = () => {
                 <YearWiseTable
                   tableTitle={`COMPLETED TASK - ${completedMonthLabel}`}
                   exportData={true}
+                  taskExportDateTimeFormatting
                   data={completedDepartmentTasks}
                   dateColumn={"completedDate"}
                   columns={completedColumns}

@@ -633,6 +633,7 @@ const getCompletedTasks = async (req, res, next) => {
     })
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName middleName lastName")
       .populate("completedBy", "firstName lastName")
       .populate({
         path: "location",
