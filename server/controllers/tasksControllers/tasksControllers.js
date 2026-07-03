@@ -517,7 +517,11 @@ const getAllTasks = async (req, res, next) => {
       .populate("assignedTo", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate("department", "name")
-      .populate({ path: "location", select: "unitNo unitName" })
+      .populate({
+        path: "location",
+        select: "unitNo unitName",
+        populate: { path: "building", select: "buildingName" },
+      })
       .select("-company")
       .lean();
 
