@@ -16,6 +16,8 @@ import { LuImageUp } from "react-icons/lu";
 const EmployeeOnboard = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+  const getPasswordPreviewStorageKey = (employeeId) =>
+    employeeId ? `employee-password-preview:${employeeId}` : "";
   const {
     control,
     handleSubmit,
@@ -201,7 +203,21 @@ const EmployeeOnboard = () => {
       return response.data;
     },
     onSuccess: (response) => {
-      toast.success(response?.message || "Employee onboarded successfully");
+      const employeeId = response?.employeeID;
+      const passwordPreview = response?.passwordPreview || "xyz@123";
+
+      if (employeeId) {
+        sessionStorage.setItem(
+          getPasswordPreviewStorageKey(employeeId),
+          passwordPreview,
+        );
+      }
+
+      toast.success(
+        response?.message
+          ? `${response.message}. Default password: ${passwordPreview}`
+          : `Employee onboarded successfully. Default password: ${passwordPreview}`,
+      );
       reset();
       navigate("/app/dashboard/HR-dashboard/employee/employee-list", {
         replace: true,
