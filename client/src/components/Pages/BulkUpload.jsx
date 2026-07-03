@@ -278,7 +278,7 @@ export default function BulkUpload() {
     {
       headerName: "S.No.",
       field: "srNo",
-      maxWidth: 80,
+      Width: 150,
     },
     {
       headerName: "Template Name",
@@ -288,6 +288,7 @@ export default function BulkUpload() {
     {
       headerName: "Status",
       field: "isActive",
+      flex: 1,
       sort: "desc",
       cellRenderer: () => {
         const statusColorMap = {
@@ -312,17 +313,20 @@ export default function BulkUpload() {
         );
       },
     },
-    {
-      headerName: "Date",
-      field: "date",
+     {
+      headerName: "Uploaded Date",
+      field: "updatedAt",
+      flex: 1,
     },
     {
-      headerName: "Last Modified",
-      field: "updatedAt",
+      headerName: "Downloaded Date",
+      field: "date",
+      flex: 1,
     },
     {
       headerName: "Download",
       field: "documentLink",
+      flex: 1,
       cellRenderer: (params) => (
         <div className="p-2">
           <a
