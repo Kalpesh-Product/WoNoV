@@ -33,24 +33,13 @@ const TeamMember = () => {
       }
     },
   });
-  const { data: departmentTaskSummaryData = { pending: [], completed: [] } } =
-    useQuery({
-      queryKey: ["team-member-task-summary", deptId],
-      queryFn: async () => {
-        if (!deptId) return { pending: [], completed: [] };
-
-        const [pendingTasks, completedTasks] = await Promise.all([
-          axios.get(`/api/tasks/get-tasks?dept=${deptId}`),
-          axios.get(`/api/tasks/get-completed-tasks/${deptId}`),
-        ]);
-
-        return {
-          pending: Array.isArray(pendingTasks.data) ? pendingTasks.data : [],
-          completed: Array.isArray(completedTasks.data) ? completedTasks.data : [],
-        };
-      },
-      enabled: Boolean(deptId),
-    });
+  const { data: departmentWideTasks = [] } = useQuery({
+    queryKey: ["team-member-department-wide-tasks"],
+    queryFn: async () => {
+      const response = await axios.get("/api/tasks/get-all-tasks");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
 
   const handleSelectedMember = (meeting) => {
     setSelectedMember(meeting);
@@ -196,51 +185,37 @@ const TeamMember = () => {
   };
 
   const taskSummary = React.useMemo(() => {
+    const selectedDepartmentName =
+      auth?.user?.departments?.find((dept) => dept?._id === deptId)?.name || "";
+
     const isSelectedMonthTask = (value) => {
       if (!value) return false;
       const date = dayjs(value);
       return date.isValid() && date.isSame(selectedMonth, "month");
     };
 
-    const pendingTasks = (departmentTaskSummaryData.pending || []).filter(
+    const departmentTasks = (departmentWideTasks || []).filter(
       (task) =>
-        task?.taskType === "Department" && isSelectedMonthTask(task?.assignedDate),
+        task?.taskType === "Department" &&
+        task?.isDeleted !== true &&
+        isSelectedMonthTask(task?.assignedDate) &&
+        String(task?.department || "").toLowerCase() ===
+          String(selectedDepartmentName || "").toLowerCase(),
     );
 
-    const completedTasks = (departmentTaskSummaryData.completed || []).filter(
-      (task) =>
-        task?.taskType === "Department" && isSelectedMonthTask(task?.assignedDate),
+    const pendingTasks = departmentTasks.filter(
+      (task) => String(task?.status || "").toLowerCase() !== "completed",
     );
-
-    const currentUserId = auth?.user?._id;
-    const isTaskAssignedToCurrentUser = (assignedTo) => {
-      if (!currentUserId || !assignedTo) return false;
-
-      if (typeof assignedTo === "string") {
-        return assignedTo === currentUserId;
-      }
-
-      if (Array.isArray(assignedTo)) {
-        return assignedTo.some((member) => {
-          if (typeof member === "string") return member === currentUserId;
-          return member?._id === currentUserId || member?.id === currentUserId;
-        });
-      }
-
-      return assignedTo?._id === currentUserId || assignedTo?.id === currentUserId;
-    };
-
-    const assignedCount = [...pendingTasks, ...completedTasks].filter((task) =>
-      isTaskAssignedToCurrentUser(task?.assignedTo),
-    ).length;
+    const completedTasks = departmentTasks.filter(
+      (task) => String(task?.status || "").toLowerCase() === "completed",
+    );
 
     return {
       total: pendingTasks.length + completedTasks.length,
       completed: completedTasks.length,
       pending: pendingTasks.length,
-      assigned: assignedCount,
     };
-  }, [auth?.user?._id, departmentTaskSummaryData, selectedMonth]);
+  }, [auth?.user?.departments, departmentWideTasks, deptId, selectedMonth]);
 
   return (
     <div className="flex flex-col gap-8 p-4">
@@ -258,10 +233,6 @@ const TeamMember = () => {
             <div className="flex gap-1 justify-center items-center uppercase bg-[#fce8e3] text-sm text-[#d96b4f] font-pmedium px-3 py-1.5 rounded-lg border border-[#f3b7a8]">
               <div>Pending :</div>
               <div>{taskSummary.pending}</div>
-            </div>
-            <div className="flex gap-1 justify-center items-center uppercase bg-[#FFECC5] text-sm text-[#CC8400] font-pmedium px-3 py-1.5 rounded-lg border border-[#F6D48F]">
-              <div>Assigned :</div>
-              <div>{taskSummary.assigned}</div>
             </div>
           </div>
           <YearWiseTable
