@@ -71,7 +71,7 @@ const createLead = async (req, res, next) => {
     }
 
     const currDate = new Date();
-    if (new Date(startDate) < currDate) {
+    if (new Date(startDate).getDate() < currDate.getDate()) {
       throw new CustomError(
         "Start date must be a future date",
         logPath,
