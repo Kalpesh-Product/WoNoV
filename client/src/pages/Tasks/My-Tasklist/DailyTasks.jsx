@@ -395,7 +395,12 @@ const DailyTasks = () => {
           role="button"
           onClick={() => {
             setModalMode("view-completed");
-            setSelectedTask(formatDateTimeFields(params.data));
+            setSelectedTask(
+              formatDateTimeFields({
+                ...params.data,
+                assignedTime: params.data?.assignedDate,
+              }),
+            );
             setOpenModal(true);
           }}
           className="text-primary underline cursor-pointer"
@@ -468,7 +473,12 @@ const DailyTasks = () => {
   const handleViewTask = (data) => {
     setModalMode("view");
     setOpenModal(true);
-    setSelectedTask(formatDateTimeFields(data));
+    setSelectedTask(
+      formatDateTimeFields({
+        ...data,
+        assignedTime: data?.assignedDate,
+      }),
+    );
   };
   //----------function handlers-------------//
 
@@ -859,6 +869,7 @@ const DailyTasks = () => {
                     label="End Date"
                     format="DD-MM-YYYY"
                     disabled={!startDate}
+                    minDate={startDate ? dayjs(startDate) : undefined}
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(date) =>
                       field.onChange(date ? date.toISOString() : null)
@@ -920,6 +931,10 @@ const DailyTasks = () => {
               detail={`${selectedTask?.assignedDate}`}
             />
             <DetalisFormatted
+              title={"Start Time"}
+              detail={selectedTask?.assignedTime}
+            />
+            <DetalisFormatted
               title={"Due Date"}
               detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
             />
@@ -939,6 +954,10 @@ const DailyTasks = () => {
             <DetalisFormatted
               title={"Start Date"}
               detail={selectedTask?.assignedDate}
+            />
+            <DetalisFormatted
+              title={"Start Time"}
+              detail={selectedTask?.assignedTime}
             />
             <DetalisFormatted
               title={"Completed Date"}

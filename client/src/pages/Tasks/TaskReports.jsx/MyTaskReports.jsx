@@ -32,7 +32,12 @@ const MyTaskReports = () => {
 
   const handleViewDetails = (params) => {
     // setSelectedTask(params.data);
-    setSelectedTask(formatDateTimeFields(params.data));
+    setSelectedTask(
+      formatDateTimeFields({
+        ...params.data,
+        startTime: params.data?.assignedDate,
+      }),
+    );
     setOpenModal(true);
   };
   const myTaskReportsColumns = [
@@ -51,6 +56,14 @@ const MyTaskReports = () => {
       ),
     },
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
+    {
+      field: "startDate",
+      headerName: "Start Date",
+    },
+    {
+      field: "startTime",
+      headerName: "Start Time",
+    },
     {
       field: "assignedDate",
       headerName: "Assigned Date",
@@ -114,6 +127,8 @@ const MyTaskReports = () => {
                   ...task,
                   taskName: task.taskName,
                   description: task.description,
+                  startDate: task.assignedDate,
+                  startTime: task.assignedDate,
                   assignedDate: task.assignedDate,
                   dueDate: task.dueDate,
                   dueTime: task.dueTime,
@@ -150,17 +165,33 @@ const MyTaskReports = () => {
               detail={selectedTask.assignedBy}
             />
             <DetalisFormatted
+              title="Start Date"
+              detail={selectedTask.startDate}
+            />
+            <DetalisFormatted
+              title="Start Time"
+              detail={selectedTask.startTime}
+            />
+            <DetalisFormatted
               title="Assigned Date"
               detail={selectedTask.assignedDate}
             />
             <DetalisFormatted
               title="Due Date"
-              detail={`${selectedTask.dueDate}, ${selectedTask.dueTime}`}
+              detail={selectedTask.dueDate}
+            />
+            <DetalisFormatted
+              title="Due Time"
+              detail={selectedTask.dueTime}
             />
 
             <DetalisFormatted
               title="Completed Date"
-              detail={`${selectedTask.completedDate}, ${selectedTask.completedTime}`}
+              detail={selectedTask.completedDate}
+            />
+            <DetalisFormatted
+              title="Completed Time"
+              detail={selectedTask.completedTime}
             />
 
             <DetalisFormatted
