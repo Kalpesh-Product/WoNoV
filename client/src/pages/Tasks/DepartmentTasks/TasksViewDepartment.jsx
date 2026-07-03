@@ -48,6 +48,9 @@ const TasksViewDepartment = () => {
   const [openMultiModal, setOpenMultiModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState({});
   const [modalMode, setModalMode] = useState("");
+  const [selectedTaskRange, setSelectedTaskRange] = useState(null);
+  const [selectedCompletedTaskRange, setSelectedCompletedTaskRange] =
+    useState(null);
   const EXCEPTIONAL_DEPARTMENT_IDS = [
     "67b2cf85b9b6ed5cedeb9a2e",
     // more exceptional department IDs...
@@ -483,9 +486,20 @@ const TasksViewDepartment = () => {
   );
 
   const taskSummary = useMemo(() => {
+    const selectedRangeStart = selectedTaskRange?.startDate
+      ? dayjs(selectedTaskRange.startDate)
+      : dayjs();
+
+    const isSelectedMonthTask = (value) => {
+      if (!value) return false;
+      const date = dayjs(value);
+      return date.isValid() && date.isSame(selectedRangeStart, "month");
+    };
+
     const departmentWideDepartmentTasks = (departmentWideTasks || []).filter(
       (item) =>
         item?.taskType === "Department" &&
+        isSelectedMonthTask(item?.assignedDate) &&
         String(item?.department || "").toLowerCase() ===
           String(department || "").toLowerCase(),
     );
@@ -500,7 +514,8 @@ const TasksViewDepartment = () => {
 
     const assignedCount = canViewAssignedSummary
       ? [...pendingDepartmentTasks, ...completedDepartmentTasks].filter((task) =>
-          isTaskAssignedToCurrentUser(task.rawAssignedTo),
+          isTaskAssignedToCurrentUser(task.rawAssignedTo) &&
+          isSelectedMonthTask(task?.assignedDate),
         ).length
       : 0;
 
@@ -516,11 +531,20 @@ const TasksViewDepartment = () => {
     departmentWideTasks,
     pendingDepartmentTasks,
     completedDepartmentTasks,
+    selectedTaskRange,
   ]);
 
   const visiblePendingTasks = canViewDepartmentWidePending
     ? departmentWidePendingTasks
     : pendingDepartmentTasks;
+  const currentMonthLabel = (
+    selectedTaskRange?.startDate ? dayjs(selectedTaskRange.startDate) : dayjs()
+  ).format("MMMM");
+  const completedMonthLabel = (
+    selectedCompletedTaskRange?.startDate
+      ? dayjs(selectedCompletedTaskRange.startDate)
+      : dayjs()
+  ).format("MMMM");
 
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
@@ -771,7 +795,7 @@ const TasksViewDepartment = () => {
                 <div className="w-full pb-3">
                   <div className="flex justify-between items-center gap-3 flex-wrap">
                     <span className="text-title text-primary font-pmedium uppercase">
-                      {department} DEPARTMENT TASKS
+                      {department} DEPARTMENT TASKS - {currentMonthLabel}
                     </span>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
@@ -808,6 +832,9 @@ const TasksViewDepartment = () => {
                   data={visiblePendingTasks}
                   dateColumn={"assignedDate"}
                   columns={departmentColumns}
+                  onDateFilterChange={({ selectedRange }) =>
+                    setSelectedTaskRange(selectedRange)
+                  }
                   hideTitle
                 />
               </WidgetSection>
@@ -824,11 +851,14 @@ const TasksViewDepartment = () => {
             {!departmentLoading ? (
               <WidgetSection padding>
                 <YearWiseTable
-                  tableTitle={`COMPLETED TASK`}
+                  tableTitle={`COMPLETED TASK - ${completedMonthLabel}`}
                   exportData={true}
                   data={completedDepartmentTasks}
                   dateColumn={"completedDate"}
                   columns={completedColumns}
+                  onDateFilterChange={({ selectedRange }) =>
+                    setSelectedCompletedTaskRange(selectedRange)
+                  }
                 />
               </WidgetSection>
             ) : (
