@@ -108,7 +108,7 @@ const AssignedTaskReports = () => {
       ),
     },
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
-    { field: "assignedTo", headerName: "Assign To", width: 300 },
+    { field: "assignedTo", headerName: "Assign To", width: 300,hide: true },
     { field: "completedBy", headerName: "Completed By", width: 300 },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },

@@ -404,15 +404,16 @@ const DailyTasks = () => {
         </div>
       ),
     },
-    { headerName: "Start Date", field: "assignedDate", hide: true },
-    { headerName: "Due Date", field: "dueDate", hide: true },
-    { headerName: "Due Time", field: "dueTime", hide: true },
-    { headerName: "Department", field: "department", hide: true },
+    { headerName: "Start Date", field: "assignedDate", hide: true ,flex: 1},
+    { headerName: "Due Date", field: "dueDate", hide: true ,flex: 1},
+    { headerName: "Due Time", field: "dueTime", hide: true , flex: 1},
+    { headerName: "Department", field: "department", hide: true ,flex: 1},
     // { headerName: "Completed By", field: "completedBy" },
-    { headerName: "Assigned By", field: "assignedBy" },
+    { headerName: "Assigned By", field: "assignedBy",flex: 1 },
     // { headerName: "Completed Date", field: "completedDate" },
     {
       headerName: "Completed Date",
+      flex: 1,
       // field: "completedTime",
       // cellRenderer: (params) => {
       //   const completedDate = params.data?.completedDate;
@@ -428,8 +429,9 @@ const DailyTasks = () => {
     {
       headerName: "Completed Time",
       field: "completedTime",
+      flex: 1
     },
-    {headerName: "Status", field: "status", hide: true },
+    {headerName: "Status", field: "status", hide: true,flex: 1 },
     // {
     //   field: "status",
     //   headerName: "Status",
@@ -587,40 +589,85 @@ const DailyTasks = () => {
   const currentCompletedMonthLabel = dayjs(
     selectedCompletedTaskRange?.startDate || new Date(),
   ).format("MMMM");
+  const getNormalizedRange = (selectedRange) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return null;
+
+    return {
+      startDate: selectedRange.startDate,
+      endDate: selectedRange.endDate,
+      key: selectedRange.key || "selection",
+    };
+  };
   const handleMyTaskRangeChange = ({ selectedRange }) => {
+    const normalizedRange = getNormalizedRange(selectedRange);
+
     setSelectedMyTaskRange((prev) => {
       const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
       const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
-      const nextStart = selectedRange?.startDate
-        ? dayjs(selectedRange.startDate).valueOf()
+      const nextStart = normalizedRange?.startDate
+        ? dayjs(normalizedRange.startDate).valueOf()
         : null;
-      const nextEnd = selectedRange?.endDate
-        ? dayjs(selectedRange.endDate).valueOf()
+      const nextEnd = normalizedRange?.endDate
+        ? dayjs(normalizedRange.endDate).valueOf()
         : null;
 
       if (prevStart === nextStart && prevEnd === nextEnd) {
         return prev;
       }
 
-      return selectedRange;
+      return normalizedRange;
     });
-  };
-  const handleMyCompletedTaskRangeChange = ({ selectedRange }) => {
     setSelectedCompletedTaskRange((prev) => {
       const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
       const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
-      const nextStart = selectedRange?.startDate
-        ? dayjs(selectedRange.startDate).valueOf()
+      const nextStart = normalizedRange?.startDate
+        ? dayjs(normalizedRange.startDate).valueOf()
         : null;
-      const nextEnd = selectedRange?.endDate
-        ? dayjs(selectedRange.endDate).valueOf()
+      const nextEnd = normalizedRange?.endDate
+        ? dayjs(normalizedRange.endDate).valueOf()
         : null;
 
       if (prevStart === nextStart && prevEnd === nextEnd) {
         return prev;
       }
 
-      return selectedRange;
+      return normalizedRange;
+    });
+  };
+  const handleMyCompletedTaskRangeChange = ({ selectedRange }) => {
+    const normalizedRange = getNormalizedRange(selectedRange);
+
+    setSelectedCompletedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = normalizedRange?.startDate
+        ? dayjs(normalizedRange.startDate).valueOf()
+        : null;
+      const nextEnd = normalizedRange?.endDate
+        ? dayjs(normalizedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return normalizedRange;
+    });
+    setSelectedMyTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = normalizedRange?.startDate
+        ? dayjs(normalizedRange.startDate).valueOf()
+        : null;
+      const nextEnd = normalizedRange?.endDate
+        ? dayjs(normalizedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return normalizedRange;
     });
   };
 
