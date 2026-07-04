@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
@@ -15,35 +15,49 @@ import { formatDateTimeFields } from "../../../utils/formatDateTime";
 import StatusChip from "../../../components/StatusChip";
 import dayjs from "dayjs";
 import useAuth from "../../../hooks/useAuth";
+import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
+  const dispatch = useDispatch();
   const { auth } = useAuth();
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const currentDepartmentId = auth?.user?.departments?.[0]?._id;
+  const effectiveDeptId = deptId || currentDepartmentId;
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState([]);
   const [selectedTaskRange, setSelectedTaskRange] = useState(null);
+  React.useEffect(() => {
+    if (!deptId && currentDepartmentId) {
+      dispatch(setSelectedDepartment(currentDepartmentId));
+    }
+  }, [currentDepartmentId, deptId, dispatch]);
 
   const { data: taskList = [], isLoading } = useQuery({
-    queryKey: ["department-tasks", deptId],
+    queryKey: ["department-tasks", effectiveDeptId],
     queryFn: async () => {
-      if (!deptId) return [];
+      if (!effectiveDeptId) return [];
 
       const [pendingTasks, completedTasks] = await Promise.all([
-        axios.get(`/api/tasks/get-tasks?dept=${deptId}`),
-        axios.get(`/api/tasks/get-completed-tasks/${deptId}`),
+        axios.get(`/api/tasks/get-tasks?dept=${effectiveDeptId}`),
+        axios.get(`/api/tasks/get-completed-tasks/${effectiveDeptId}`),
       ]);
 
       return [...pendingTasks.data, ...completedTasks.data].filter(
         (task) => task.taskType === "Department"
       );
     },
-    enabled: Boolean(deptId),
+    enabled: Boolean(effectiveDeptId),
   });
 
   const handleViewDetails = (params) => {
-    setSelectedTask(formatDateTimeFields(params));
+    setSelectedTask(
+      formatDateTimeFields({
+        ...params,
+        startTime: params?.assignedDate,
+      }),
+    );
     setOpenModal(true);
   };
 
@@ -108,8 +122,10 @@ const AssignedTaskReports = () => {
       ),
     },
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
-    { field: "assignedTo", headerName: "Assign To", width: 300 },
+    { field: "assignedTo", headerName: "Assign To", width: 300,hide: true },
     { field: "completedBy", headerName: "Completed By", width: 300 },
+    { field: "startDate", headerName: "Start Date" },
+    { field: "startTime", headerName: "Start Time" },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
     {
@@ -183,6 +199,8 @@ const AssignedTaskReports = () => {
                 srNo: index + 1,
                 ...task,
                 taskName: task.taskName,
+                startDate: task.assignedDate,
+                startTime: task.assignedDate,
                 assignedDate: task.assignedDate,
                 dueDate: task.dueDate,
                 dueTime: task.dueTime,
@@ -238,16 +256,32 @@ const AssignedTaskReports = () => {
               detail={selectedTask.completedBy}
             />
             <DetalisFormatted
+              title="Start Date"
+              detail={selectedTask.startDate}
+            />
+            <DetalisFormatted
+              title="Start Time"
+              detail={selectedTask.startTime}
+            />
+            <DetalisFormatted
               title="Assigned Date"
               detail={selectedTask.assignedDate}
             />
             <DetalisFormatted
               title="Due Date"
-              detail={`${selectedTask.dueDate}, ${selectedTask.dueTime}`}
+              detail={selectedTask.dueDate}
+            />
+            <DetalisFormatted
+              title="Due Time"
+              detail={selectedTask.dueTime}
             />
             <DetalisFormatted
               title="Completed Date"
-              detail={`${selectedTask.completedDate}, ${selectedTask.completedTime}`}
+              detail={selectedTask.completedDate}
+            />
+            <DetalisFormatted
+              title="Completed Time"
+              detail={selectedTask.completedTime}
             />
 
             <DetalisFormatted

@@ -10,16 +10,25 @@ import MuiModal from "../../../components/MuiModal";
 import PageFrame from "../../../components/Pages/PageFrame";
 import dayjs from "dayjs";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import useAuth from "../../../hooks/useAuth";
+import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 
 const TeamMember = () => {
   const axios = useAxiosPrivate();
+  const dispatch = useDispatch();
   const { auth } = useAuth();
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const currentDepartmentId = auth?.user?.departments?.[0]?._id;
+  const effectiveDeptId = deptId || currentDepartmentId;
   const [openModal, setOpenModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(dayjs());
+  React.useEffect(() => {
+    if (!deptId && currentDepartmentId) {
+      dispatch(setSelectedDepartment(currentDepartmentId));
+    }
+  }, [currentDepartmentId, deptId, dispatch]);
   const { data: taskList, isLoading } = useQuery({
     queryKey: ["taskList", selectedMonth.format("YYYY-MM")],
     queryFn: async () => {
@@ -186,7 +195,13 @@ const TeamMember = () => {
 
   const taskSummary = React.useMemo(() => {
     const selectedDepartmentName =
-      auth?.user?.departments?.find((dept) => dept?._id === deptId)?.name || "";
+      auth?.user?.departments?.find((dept) => dept?._id === effectiveDeptId)
+        ?.name ||
+      (Array.isArray(taskList) && taskList.length > 0
+        ? Array.isArray(taskList[0]?.department)
+          ? taskList[0].department[0] || ""
+          : taskList[0]?.department || ""
+        : "");
 
     const isSelectedMonthTask = (value) => {
       if (!value) return false;
@@ -215,7 +230,13 @@ const TeamMember = () => {
       completed: completedTasks.length,
       pending: pendingTasks.length,
     };
-  }, [auth?.user?.departments, departmentWideTasks, deptId, selectedMonth]);
+  }, [
+    auth?.user?.departments,
+    departmentWideTasks,
+    effectiveDeptId,
+    selectedMonth,
+    taskList,
+  ]);
 
   return (
     <div className="flex flex-col gap-8 p-4">

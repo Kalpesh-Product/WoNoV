@@ -536,13 +536,18 @@ const PerformanceMonthly = () => {
   const completedColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     { headerName: "KPA List", field: "taskName", flex: 1},
-    { headerName: "Start Date", field: "startDateTime", flex: 1, includeTime: true },
-    { headerName: "End Date", field: "endDateTime", flex: 1, includeTime: true },
+    { headerName: "Start Date", field: "startDateTime", flex: 1, exportFormat: "date" },
+    { headerName: "End Date", field: "endDateTime", flex: 1, exportFormat: "date" },
     { headerName: "Completed By", field: "completedBy" ,flex: 1},
     {
       headerName: "Completed At",
       field: "completedAt",
       flex: 1,
+      exportFormat: "datetime-comma",
+      valueFormatter: (params) =>
+        params.value
+          ? `${humanDate(params.value)}, ${humanTime(params.value)}`
+          : "",
     },
     {
       field: "status",
@@ -707,6 +712,7 @@ const PerformanceMonthly = () => {
                 tableTitle={`COMPLETED - Department Monthly KPA - ${activeMemberName} - ${selectedMonthLabel}`}
                 key={`${completedEntriesForSelectedMonth.length}-${selectedMonthLabel}`}
                 exportData={showCompletedExport}
+                taskExportDateTimeFormatting
                 hideDateControls
                 data={[
                    ...completedEntriesForSelectedMonth.map((item, index) => ({
@@ -717,9 +723,9 @@ const PerformanceMonthly = () => {
                     completionTime: item.completionDate,
                     completedBy: item.completedBy,
                     status: item.status,
-                    startDateTime: `${humanDate(item.assignedDate)} ${humanTime(item.assignedDate)}`,
-                    endDateTime: `${humanDate(item.dueDate)} ${humanTime(item.dueDate)}`,
-                    completedAt: `${humanDate(item.completionDate)} ${humanTime(item.completionDate)}`,
+                    startDateTime: item.assignedDate,
+                    endDateTime: item.dueDate,
+                    completedAt: item.completionDate,
                   })),
                 ]}
                  dateColumn={"completionDate"}

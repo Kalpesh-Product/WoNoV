@@ -463,13 +463,30 @@ const PerformanceTeamKpa = () => {
   const completedColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
-    { headerName: "Start Date", field: "startDateTime", flex: 1, includeTime: true },
-    { headerName: "End Date", field: "endDateTime", flex: 1, includeTime: true },
+    {
+      headerName: "Start Date",
+      field: "startDateTime",
+      flex: 1,
+      exportFormat: "date",
+      valueFormatter: (params) => (params.value ? humanDate(params.value) : ""),
+    },
+    {
+      headerName: "End Date",
+      field: "endDateTime",
+      flex: 1,
+      exportFormat: "date",
+      valueFormatter: (params) => (params.value ? humanDate(params.value) : ""),
+    },
     { headerName: "Completed By", field: "completedBy" ,flex: 1 },
     {
       headerName: "Completed At",
       field: "completedAt",
       flex: 1,
+      exportFormat: "datetime-comma",
+      valueFormatter: (params) =>
+        params.value
+          ? `${humanDate(params.value)}, ${humanTime(params.value)}`
+          : "",
     },
     {
       field: "status",
@@ -579,6 +596,7 @@ const PerformanceTeamKpa = () => {
                   // exportData={true}
                   tableTitle={`COMPLETED - TEAM MONTHLY KPA - ${activeMemberName} - ${selectedMonthLabel}`}
                   exportData={showCompletedExport}
+                  taskExportDateTimeFormatting
                   hideDateControls
                   checkAll={false}
                   // key={filteredCompletedEntries.length}
@@ -594,9 +612,9 @@ const PerformanceTeamKpa = () => {
                     completedBy: item.completedBy,
                     completionDate: item.completionDate,
                     completionTime: item.completionDate,
-                    startDateTime: `${humanDate(item.assignedDate)} ${humanTime(item.assignedDate)}`,
-                    endDateTime: `${humanDate(item.dueDate)} ${humanTime(item.dueDate)}`,
-                    completedAt: `${humanDate(item.completionDate)} ${humanTime(item.completionDate)}`,
+                    startDateTime: item.assignedDate,
+                    endDateTime: item.dueDate,
+                    completedAt: item.completionDate,
                   }))}
                   dateColumn={"completionDate"}
                   columns={completedColumns}

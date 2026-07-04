@@ -290,6 +290,7 @@ const YearWiseTable = ({
         processCellCallback: (params) => {
           const field = params?.column?.getColDef?.()?.field || "";
           const value = params?.value;
+          const exportFormat = params?.column?.getColDef?.()?.exportFormat;
 
           if (value === null || value === undefined) return "";
 
@@ -297,12 +298,30 @@ const YearWiseTable = ({
           if (taskExportDateTimeFormatting) {
             const parsedValue = dayjs(value);
 
-            if (normalizedField.includes("date") && parsedValue.isValid()) {
-              return parsedValue.format("DD-MM-YYYY");
-            }
+            if (parsedValue.isValid()) {
+              if (exportFormat === "datetime") {
+                return parsedValue.format("DD-MM-YYYY hh:mm A");
+              }
 
-            if (normalizedField.includes("time") && parsedValue.isValid()) {
-              return parsedValue.format("hh:mm A");
+              if (exportFormat === "datetime-comma") {
+                return parsedValue.format("DD-MM-YYYY, hh:mm A");
+              }
+
+              if (exportFormat === "time") {
+                return parsedValue.format("hh:mm A");
+              }
+
+              if (exportFormat === "date") {
+                return parsedValue.format("DD-MM-YYYY");
+              }
+
+              if (normalizedField.includes("date")) {
+                return parsedValue.format("DD-MM-YYYY");
+              }
+
+              if (normalizedField.includes("time")) {
+                return parsedValue.format("hh:mm A");
+              }
             }
           }
 
