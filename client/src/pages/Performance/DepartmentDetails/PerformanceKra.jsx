@@ -474,12 +474,14 @@ const PerformanceKra = () => {
       field: "completionDate",
       flex: 1,
       hide: true,
+      exportFormat: "date",
      // cellRenderer: (params) => humanDate(params.value),
     },
     {
       headerName: "Completed Time",
       field: "completionTime",
       flex: 1,
+      exportFormat: "time",
      // cellRenderer: (params) => humanTime(params.value),
     },
     {
@@ -659,6 +661,7 @@ const PerformanceKra = () => {
                   formatTime
                    tableTitle={`COMPLETED - DEPARTMENT DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
                   exportData={!isFutureDateView}
+                  taskExportDateTimeFormatting
                   checkAll={false}
                   // key={filteredCompletedEntries.length}
                   // data={filteredCompletedEntries.map((item, index) => ({

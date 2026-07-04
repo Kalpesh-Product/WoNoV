@@ -668,13 +668,30 @@ const PerformanceIndividualKpa = () => {
     const completedColumns = [
         { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
         { headerName: "KPA List", field: "taskName", flex: 1 },
-        { headerName: "Start Date", field: "startDate", flex: 1, includeTime: true },
-        { headerName: "End Date", field: "endDate", flex: 1, includeTime: true },
+        {
+            headerName: "Start Date",
+            field: "startDate",
+            flex: 1,
+            exportFormat: "date",
+            valueFormatter: (params) => (params.value ? humanDate(params.value) : ""),
+        },
+        {
+            headerName: "End Date",
+            field: "endDate",
+            flex: 1,
+            exportFormat: "date",
+            valueFormatter: (params) => (params.value ? humanDate(params.value) : ""),
+        },
         { headerName: "Completed By", field: "completedBy",flex: 1},
         {
             headerName: "Completed At",
             field: "completedAt",
-            flex: 1
+            flex: 1,
+            exportFormat: "datetime-comma",
+            valueFormatter: (params) =>
+                params.value
+                    ? `${humanDate(params.value)}, ${humanTime(params.value)}`
+                    : "",
         },
         {
             field: "status",
@@ -899,13 +916,14 @@ const PerformanceIndividualKpa = () => {
                                 key={completedEntriesForSelectedMonth.length}
                                 hideDateControls={true}
                                 exportData={selectedMonthContext !== "next"}
+                                taskExportDateTimeFormatting
                                 data={[
                                      ...completedEntriesForSelectedMonth.map((item, index) => ({    
                                     // ...filteredCompletedEntries.map((item, index) => ({
                                         taskName: item.taskName,
-                                        startDate: `${humanDate(item.assignedDate)} ${humanTime(item.assignedDate)}`,
-                                        endDate: `${humanDate(item.dueDate)} ${humanTime(item.dueDate)}`,
-                                        completedAt: `${humanDate(item.completionDate)} ${humanTime(item.completionDate)}`,
+                                        startDate: item.assignedDate,
+                                        endDate: item.dueDate,
+                                        completedAt: item.completionDate,
                                         completedBy: item.completedBy,
                                         status: item.status,
                                     })),
