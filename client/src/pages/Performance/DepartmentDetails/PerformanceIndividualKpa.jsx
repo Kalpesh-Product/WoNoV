@@ -880,6 +880,7 @@ const PerformanceIndividualKpa = () => {
                                 ]}
                                 dateColumn={"dueDate"}
                                 columns={departmentColumns}
+                                preserveCurrentMonthRange
                                  onDateFilterChange={({ selectedRange }) => {
                                     const monthSource = selectedRange?.startDate || selectedRange?.endDate;
                                     setSelectedMonthContext(getMonthContext(monthSource));

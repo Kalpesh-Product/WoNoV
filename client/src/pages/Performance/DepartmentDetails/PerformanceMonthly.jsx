@@ -687,6 +687,7 @@ const PerformanceMonthly = () => {
                 ]}
                 dateColumn={"dueDate"}
                 columns={departmentColumns}
+                preserveCurrentMonthRange
                 isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
                 onDateFilterChange={handleDepartmentDateFilterChange}
 

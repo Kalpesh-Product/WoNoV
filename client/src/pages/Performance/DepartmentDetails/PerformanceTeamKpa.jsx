@@ -576,6 +576,7 @@ const PerformanceTeamKpa = () => {
                   }))}
                 dateColumn={"dueDate"}
                 columns={teamColumns}
+                preserveCurrentMonthRange
                   isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
                 onDateFilterChange={handleTeamDateFilterChange}
               />

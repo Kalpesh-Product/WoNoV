@@ -52,6 +52,7 @@ const YearWiseTable = ({
   exportButtonTitle = "Export",
   initialDateRange,
   taskExportDateTimeFormatting = false,
+  preserveCurrentMonthRange = false,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -91,13 +92,24 @@ const YearWiseTable = ({
       return;
     }
 
+    const currentMonthStart = today.startOf("month");
+    const currentMonthEnd = today.endOf("month");
+
+    if (preserveCurrentMonthRange) {
+      setDateRange([
+        {
+          startDate: currentMonthStart.toDate(),
+          endDate: currentMonthEnd.toDate(),
+          key: "selection",
+        },
+      ]);
+      return;
+    }
+
     if (!data.length) {
       setDateRange([]);
       return;
     }
-
-    const currentMonthStart = today.startOf("month");
-    const currentMonthEnd = today.endOf("month");
 
     const monthHasData = data.some((item) => {
       const date = dayjs(item[dateColumn]);
@@ -148,6 +160,7 @@ const YearWiseTable = ({
     dateColumn,
     initialDateRange,
     isUserChangedRange,
+    preserveCurrentMonthRange,
     showDateNavigator,
     today,
   ]);
