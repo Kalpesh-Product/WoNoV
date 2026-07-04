@@ -125,7 +125,7 @@ const AssignedTaskReports = () => {
     { field: "assignedTo", headerName: "Assign To", width: 300,hide: true },
     { field: "completedBy", headerName: "Completed By", width: 300 },
     { field: "startDate", headerName: "Start Date" },
-    { field: "startTime", headerName: "Start Time" },
+    // { field: "startTime", headerName: "Start Time" },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
     {
@@ -259,10 +259,10 @@ const AssignedTaskReports = () => {
               title="Start Date"
               detail={selectedTask.startDate}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title="Start Time"
               detail={selectedTask.startTime}
-            />
+            /> */}
             <DetalisFormatted
               title="Assigned Date"
               detail={selectedTask.assignedDate}

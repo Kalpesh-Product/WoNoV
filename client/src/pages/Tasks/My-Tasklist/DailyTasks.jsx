@@ -930,10 +930,10 @@ const DailyTasks = () => {
               title={"Start Date"}
               detail={`${selectedTask?.assignedDate}`}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title={"Start Time"}
               detail={selectedTask?.assignedTime}
-            />
+            /> */}
             <DetalisFormatted
               title={"Due Date"}
               detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
@@ -955,10 +955,10 @@ const DailyTasks = () => {
               title={"Start Date"}
               detail={selectedTask?.assignedDate}
             />
-            <DetalisFormatted
+            {/* <DetalisFormatted
               title={"Start Time"}
               detail={selectedTask?.assignedTime}
-            />
+            /> */}
             <DetalisFormatted
               title={"Completed Date"}
               detail={`${selectedTask?.completedDate}, ${selectedTask?.completedTime}`}
