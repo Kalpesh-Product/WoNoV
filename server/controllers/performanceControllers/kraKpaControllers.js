@@ -47,9 +47,9 @@ const createDeptBasedTask = async (req, res, next) => {
     const isKraType = ["KRA", "INDIVIDUALKRA", "TEAMKRA"].includes(taskType);
     const isSameDate = currDate.toDateString() === parsedDueDate.toDateString();
 
-    if (isSameDate && !isKraType) {
-      return res.status(400).json({ message: "Task type should be KRA" });
-    }
+    // if (isSameDate && !isKraType) {
+    //   return res.status(400).json({ message: "Task type should be KRA" });
+    // }
 
     const kpaTypeMatch =
       parsedDueDate.getMonth() - parsedAssignedDate.getMonth() <= 1
