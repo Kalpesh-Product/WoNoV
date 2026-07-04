@@ -29,6 +29,7 @@ import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import { PERMISSIONS } from "../../../constants/permissions";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
@@ -38,6 +39,7 @@ const PerformanceMonthly = () => {
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
   const [selectedMonthRange, setSelectedMonthRange] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
@@ -352,6 +354,12 @@ const PerformanceMonthly = () => {
     },
   });
 
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteMonthlyKpaRecurrence(deleteTargetId);
+    setDeleteTargetId(null);
+  };
+
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
@@ -510,7 +518,7 @@ const PerformanceMonthly = () => {
                       isUpdatePending
                     }
                     onClick={() =>
-                      deleteMonthlyKpaRecurrence(params.data.mongoId)
+                      setDeleteTargetId(params.data.mongoId)
                     }
                     className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                   >
@@ -687,6 +695,7 @@ const PerformanceMonthly = () => {
                 ]}
                 dateColumn={"dueDate"}
                 columns={departmentColumns}
+                preserveCurrentMonthRange
                 isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
                 onDateFilterChange={handleDepartmentDateFilterChange}
 
@@ -739,6 +748,13 @@ const PerformanceMonthly = () => {
           )}
         </PageFrame>
       </div>
+
+      <ConfirmationModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletePending}
+      />
 
       <MuiModal
         open={openModal}

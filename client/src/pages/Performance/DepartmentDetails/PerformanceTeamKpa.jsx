@@ -25,6 +25,7 @@ import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const PerformanceTeamKpa = () => {
   const axios = useAxiosPrivate();
@@ -34,6 +35,7 @@ const PerformanceTeamKpa = () => {
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
     const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
      const [selectedMonthRange, setSelectedMonthRange] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
@@ -217,6 +219,12 @@ const PerformanceTeamKpa = () => {
       toast.error("Failed to remove recurrence");
     },
   });
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteMonthlyKpaRecurrence(deleteTargetId);
+    setDeleteTargetId(null);
+  };
 
   const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
     mutationKey: ["addTeamMonthlyKpa"],
@@ -447,7 +455,7 @@ const PerformanceTeamKpa = () => {
                   type="button"
                   title="Delete Recurrence"
                   // disabled={!params.node.selected || isDeletePending}
-                  onClick={() => deleteMonthlyKpaRecurrence(params.data.id)}
+                  onClick={() => setDeleteTargetId(params.data.id)}
                   className="ml-2 disabled:cursor-not-allowed"
                 >
                   {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
@@ -576,6 +584,7 @@ const PerformanceTeamKpa = () => {
                   }))}
                 dateColumn={"dueDate"}
                 columns={teamColumns}
+                preserveCurrentMonthRange
                   isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
                 onDateFilterChange={handleTeamDateFilterChange}
               />
@@ -629,6 +638,13 @@ const PerformanceTeamKpa = () => {
         </PageFrame>
 
       </div>
+
+      <ConfirmationModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletePending}
+      />
 
       <MuiModal
         open={openModal}

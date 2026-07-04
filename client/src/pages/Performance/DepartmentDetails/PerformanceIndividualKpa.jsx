@@ -29,6 +29,7 @@ import {
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const PerformanceIndividualKpa = () => {
     const axios = useAxiosPrivate();
@@ -39,6 +40,7 @@ const PerformanceIndividualKpa = () => {
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
+    const [deleteTargetId, setDeleteTargetId] = useState(null);
       const [modalTaskType, setModalTaskType] = useState("INDIVIDUALKPA");
     const deptId = useSelector((state) => state.performance.selectedDepartment);
 
@@ -148,7 +150,7 @@ const PerformanceIndividualKpa = () => {
      const showCheckBox = allowedDept || isManager || isMasterOrSuperAdmin;
 
     const matchingDepartment = auth.user?.departments?.some(
-          (dept) => dept._id === effectiveDeptId
+          (dept) => dept._id?.toString?.() === effectiveDeptId?.toString?.()
     );
 
        const normalizeValue = (value) =>
@@ -173,6 +175,11 @@ const PerformanceIndividualKpa = () => {
         //isManager && activeMember?.memberId && !isViewingOwnMember;
                     !isManager && !isMasterOrSuperAdmin && activeMember?.memberId && !isViewingOwnMember;
     const shouldHideRowActionsForSelectedMemberView = shouldHideAddButtonForSelectedMemberView;
+    const shouldHideManagerControlsForSelectedMemberView =
+        !isEmployeeKraKpaRoute &&
+        isManagerAdmin &&
+        !!activeMember?.memberId &&
+        !isViewingOwnMember;
     // const showCheckBoxForCurrentView =
     //     showCheckBox && !shouldHideRowActionsForSelectedMemberView;
     const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
@@ -229,8 +236,25 @@ const PerformanceIndividualKpa = () => {
             const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
             return response.data;
         },
-        onSuccess: (data) => {
-            queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
+        onSuccess: (data, deletedTaskId) => {
+            const removeDeletedTask = (prev = []) =>
+                Array.isArray(prev)
+                    ? prev.filter((item) => item?.id?.toString?.() !== deletedTaskId?.toString?.())
+                    : prev;
+
+            queryClient.setQueryData(
+                ["fetchedMonthlyKPA", effectiveDeptId],
+                removeDeletedTask
+            );
+            queryClient.setQueryData(
+                ["fetchedTeamKPAForIndividual", effectiveDeptId],
+                removeDeletedTask
+            );
+
+            queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA", effectiveDeptId] });
+            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKPAForIndividual", effectiveDeptId] });
+            queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA", effectiveDeptId] });
+            queryClient.refetchQueries({ queryKey: ["fetchedTeamKPAForIndividual", effectiveDeptId] });
             queryClient.refetchQueries({ queryKey: ["completedEntriesIndividualKPA", effectiveDeptId] });
             toast.success(data.message || "KPA recurrence removed");
         },
@@ -238,6 +262,12 @@ const PerformanceIndividualKpa = () => {
             toast.error("Failed to remove recurrence");
         },
     });
+
+    const handleConfirmDelete = () => {
+        if (!deleteTargetId) return;
+        deleteMonthlyKpaRecurrence(deleteTargetId);
+        setDeleteTargetId(null);
+    };
 
     //--------------POST REQUEST FOR MONTHLY KPA-----------------//
     const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
@@ -578,7 +608,10 @@ const PerformanceIndividualKpa = () => {
                 );
             },
         },
-        ...((matchingDepartment || isManager) && canShowControls && actionVisibility.showActionColumn   
+        ...((shouldForceOwnControlsInEmployeeRoute || matchingDepartment || isManager) &&
+        canShowControls &&
+        actionVisibility.showActionColumn &&
+        !shouldHideManagerControlsForSelectedMemberView
         // ...(matchingDepartment && canShowControls
     //    ...(matchingDepartment && !shouldHideRowActionsForSelectedMemberView
             ? [
@@ -643,7 +676,7 @@ const PerformanceIndividualKpa = () => {
                                             isUpdatePending
                                         }
                                         onClick={() =>
-                                            deleteMonthlyKpaRecurrence(params.data.mongoId)
+                                            setDeleteTargetId(params.data.mongoId)
                                         }
                                         className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                                     >
@@ -827,7 +860,11 @@ const PerformanceIndividualKpa = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                             // checkbox={showCheckBoxForCurrentView && !isRestrictedRoleInNonCurrentMonth}
-                             checkbox={showCheckBoxForCurrentView && canSelectRowsForMonthContext}
+                             checkbox={
+                                showCheckBoxForCurrentView &&
+                                canSelectRowsForMonthContext &&
+                                !shouldHideManagerControlsForSelectedMemberView
+                             }
                                 // checkbox={showCheckBoxForCurrentView}
                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
                                 // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
@@ -880,6 +917,7 @@ const PerformanceIndividualKpa = () => {
                                 ]}
                                 dateColumn={"dueDate"}
                                 columns={departmentColumns}
+                                preserveCurrentMonthRange
                                  onDateFilterChange={({ selectedRange }) => {
                                     const monthSource = selectedRange?.startDate || selectedRange?.endDate;
                                     setSelectedMonthContext(getMonthContext(monthSource));
@@ -939,6 +977,13 @@ const PerformanceIndividualKpa = () => {
                     )}
                 </PageFrame>
             </div>
+
+            <ConfirmationModal
+                open={!!deleteTargetId}
+                onClose={() => setDeleteTargetId(null)}
+                onConfirm={handleConfirmDelete}
+                isLoading={isDeletePending}
+            />
 
             <MuiModal
                 open={openModal}
