@@ -150,7 +150,7 @@ const PerformanceIndividualKpa = () => {
      const showCheckBox = allowedDept || isManager || isMasterOrSuperAdmin;
 
     const matchingDepartment = auth.user?.departments?.some(
-          (dept) => dept._id === effectiveDeptId
+          (dept) => dept._id?.toString?.() === effectiveDeptId?.toString?.()
     );
 
        const normalizeValue = (value) =>
@@ -175,6 +175,11 @@ const PerformanceIndividualKpa = () => {
         //isManager && activeMember?.memberId && !isViewingOwnMember;
                     !isManager && !isMasterOrSuperAdmin && activeMember?.memberId && !isViewingOwnMember;
     const shouldHideRowActionsForSelectedMemberView = shouldHideAddButtonForSelectedMemberView;
+    const shouldHideManagerControlsForSelectedMemberView =
+        !isEmployeeKraKpaRoute &&
+        isManagerAdmin &&
+        !!activeMember?.memberId &&
+        !isViewingOwnMember;
     // const showCheckBoxForCurrentView =
     //     showCheckBox && !shouldHideRowActionsForSelectedMemberView;
     const shouldShowManagerControlsInEmployeeRoute = isManager && isEmployeeKraKpaRoute;
@@ -586,7 +591,10 @@ const PerformanceIndividualKpa = () => {
                 );
             },
         },
-        ...((matchingDepartment || isManager) && canShowControls && actionVisibility.showActionColumn   
+        ...((shouldForceOwnControlsInEmployeeRoute || matchingDepartment || isManager) &&
+        canShowControls &&
+        actionVisibility.showActionColumn &&
+        !shouldHideManagerControlsForSelectedMemberView
         // ...(matchingDepartment && canShowControls
     //    ...(matchingDepartment && !shouldHideRowActionsForSelectedMemberView
             ? [
@@ -835,7 +843,11 @@ const PerformanceIndividualKpa = () => {
                         <WidgetSection padding layout={1}>
                             <YearWiseTable
                             // checkbox={showCheckBoxForCurrentView && !isRestrictedRoleInNonCurrentMonth}
-                             checkbox={showCheckBoxForCurrentView && canSelectRowsForMonthContext}
+                             checkbox={
+                                showCheckBoxForCurrentView &&
+                                canSelectRowsForMonthContext &&
+                                !shouldHideManagerControlsForSelectedMemberView
+                             }
                                 // checkbox={showCheckBoxForCurrentView}
                                // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA`}
                                 // tableTitle={`${departmentName} INDIVIDUAL - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
