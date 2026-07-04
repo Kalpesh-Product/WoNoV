@@ -213,8 +213,30 @@ const PerformanceIndividualKra = () => {
             const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
             return response.data;
         },
-        onSuccess: (data) => {
+        onSuccess: (data, deletedTaskId) => {
+            const removeDeletedTask = (oldData = []) =>
+                (oldData || []).filter((item) => {
+                    const rowId = item?.id || item?._id;
+                    return rowId?.toString?.() !== deletedTaskId?.toString?.();
+                });
+
+            queryClient.setQueryData(individualKraQueryKey, removeDeletedTask);
+            queryClient.setQueryData(
+                ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+                removeDeletedTask
+            );
+            queryClient.setQueryData(teamKraQueryKey, removeDeletedTask);
+
+            queryClient.invalidateQueries({ queryKey: individualKraQueryKey });
+            queryClient.invalidateQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
+            queryClient.invalidateQueries({ queryKey: teamKraQueryKey });
             queryClient.refetchQueries({ queryKey: individualKraQueryKey });
+            queryClient.refetchQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
+            queryClient.refetchQueries({ queryKey: teamKraQueryKey });
             queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
             toast.success(data.message || "KRA recurrence removed");
         },

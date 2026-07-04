@@ -236,8 +236,25 @@ const PerformanceIndividualKpa = () => {
             const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
             return response.data;
         },
-        onSuccess: (data) => {
-            queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
+        onSuccess: (data, deletedTaskId) => {
+            const removeDeletedTask = (prev = []) =>
+                Array.isArray(prev)
+                    ? prev.filter((item) => item?.id?.toString?.() !== deletedTaskId?.toString?.())
+                    : prev;
+
+            queryClient.setQueryData(
+                ["fetchedMonthlyKPA", effectiveDeptId],
+                removeDeletedTask
+            );
+            queryClient.setQueryData(
+                ["fetchedTeamKPAForIndividual", effectiveDeptId],
+                removeDeletedTask
+            );
+
+            queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA", effectiveDeptId] });
+            queryClient.invalidateQueries({ queryKey: ["fetchedTeamKPAForIndividual", effectiveDeptId] });
+            queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA", effectiveDeptId] });
+            queryClient.refetchQueries({ queryKey: ["fetchedTeamKPAForIndividual", effectiveDeptId] });
             queryClient.refetchQueries({ queryKey: ["completedEntriesIndividualKPA", effectiveDeptId] });
             toast.success(data.message || "KPA recurrence removed");
         },
