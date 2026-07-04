@@ -38,6 +38,7 @@ import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const TasksViewDepartment = () => {
   const getCurrentMonthRange = () => ({
@@ -53,6 +54,7 @@ const TasksViewDepartment = () => {
   const [openMultiModal, setOpenMultiModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState({});
   const [modalMode, setModalMode] = useState("");
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [selectedTaskRange, setSelectedTaskRange] = useState(
     getCurrentMonthRange,
   );
@@ -570,6 +572,13 @@ const TasksViewDepartment = () => {
       return selectedRange;
     });
   };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteDepartmentTask(deleteTargetId);
+    setDeleteTargetId(null);
+  };
+
   const handleCompletedTaskRangeChange = ({ selectedRange }) => {
     setSelectedCompletedTaskRange((prev) => {
       const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
@@ -732,7 +741,7 @@ const TasksViewDepartment = () => {
                 disabled={
                   !params.node.selected || isDeletePending || isUpdatePending
                 }
-                onClick={() => deleteDepartmentTask(params.data.id)}
+                onClick={() => setDeleteTargetId(params.data.id)}
                 className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
               >
                 {isDeletePending ? (
@@ -911,6 +920,13 @@ const TasksViewDepartment = () => {
           </div>
         </PageFrame>
       </div>
+
+      <ConfirmationModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletePending}
+      />
 
       <MuiModal
         open={openModal}

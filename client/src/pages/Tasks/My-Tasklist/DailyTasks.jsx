@@ -32,6 +32,7 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const DailyTasks = () => {
   const taskFormDefaultValues = {
@@ -46,6 +47,7 @@ const DailyTasks = () => {
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const [selectedTask, setSelectedTask] = useState({});
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
   const getCurrentMonthRange = () => ({
     startDate: dayjs().startOf("month").toDate(),
     endDate: dayjs().endOf("month").toDate(),
@@ -192,6 +194,12 @@ const DailyTasks = () => {
       toast.error(error.message || "Error deleting task");
     },
   });
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteMyTask(deleteTargetId);
+    setDeleteTargetId(null);
+  };
 
   const { mutate: editMyTask, isPending: isEditPending } = useMutation({
     mutationKey: ["editMyTask"],
@@ -344,7 +352,7 @@ const DailyTasks = () => {
               disabled={
                 !params.node.selected || isDeletePending || isUpdatePending
               }
-              onClick={() => deleteMyTask(params.data.id)}
+              onClick={() => setDeleteTargetId(params.data.id)}
               className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
             >
               {isDeletePending ? (
@@ -767,6 +775,13 @@ const DailyTasks = () => {
           )}
         </PageFrame>
       </div>
+
+      <ConfirmationModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletePending}
+      />
 
       <MuiModal
         open={openModal}

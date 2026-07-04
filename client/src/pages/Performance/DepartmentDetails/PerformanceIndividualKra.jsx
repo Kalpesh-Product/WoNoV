@@ -26,6 +26,7 @@ import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import useCurrentDay from "../../../hooks/useCurrentDay";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const PerformanceIndividualKra = () => {
     const axios = useAxiosPrivate();
@@ -35,6 +36,7 @@ const PerformanceIndividualKra = () => {
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
+    const [deleteTargetId, setDeleteTargetId] = useState(null);
     const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
     const today = useCurrentDay();
     const selectedMember = useSelector((state) => state.performance.selectedMember);
@@ -214,6 +216,12 @@ const PerformanceIndividualKra = () => {
             toast.error("Failed to remove recurrence");
         },
     });
+
+    const handleConfirmDelete = () => {
+        if (!deleteTargetId) return;
+        deleteDailyKraRecurrence(deleteTargetId);
+        setDeleteTargetId(null);
+    };
 
     //--------------POST REQUEST FOR DAILY KRA-----------------//
     const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
@@ -546,7 +554,7 @@ const PerformanceIndividualKra = () => {
                                         }
                                         onClick={() => {
                                             if (!isRowSelected || !rowCanEditDelete) return;
-                                            deleteDailyKraRecurrence(params.data.id);
+                                            setDeleteTargetId(params.data.id);
                                         }}
                                         // className="ml-2 disabled:cursor-not-allowed"
                                         className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
@@ -853,6 +861,13 @@ const PerformanceIndividualKra = () => {
                     </div>
                 </PageFrame>
             </div>
+
+            <ConfirmationModal
+                open={!!deleteTargetId}
+                onClose={() => setDeleteTargetId(null)}
+                onConfirm={handleConfirmDelete}
+                isLoading={isDeletePending}
+            />
 
             <MuiModal
                 open={openModal}

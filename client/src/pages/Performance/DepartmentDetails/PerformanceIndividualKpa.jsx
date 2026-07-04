@@ -29,6 +29,7 @@ import {
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const PerformanceIndividualKpa = () => {
     const axios = useAxiosPrivate();
@@ -39,6 +40,7 @@ const PerformanceIndividualKpa = () => {
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
+    const [deleteTargetId, setDeleteTargetId] = useState(null);
       const [modalTaskType, setModalTaskType] = useState("INDIVIDUALKPA");
     const deptId = useSelector((state) => state.performance.selectedDepartment);
 
@@ -238,6 +240,12 @@ const PerformanceIndividualKpa = () => {
             toast.error("Failed to remove recurrence");
         },
     });
+
+    const handleConfirmDelete = () => {
+        if (!deleteTargetId) return;
+        deleteMonthlyKpaRecurrence(deleteTargetId);
+        setDeleteTargetId(null);
+    };
 
     //--------------POST REQUEST FOR MONTHLY KPA-----------------//
     const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
@@ -643,7 +651,7 @@ const PerformanceIndividualKpa = () => {
                                             isUpdatePending
                                         }
                                         onClick={() =>
-                                            deleteMonthlyKpaRecurrence(params.data.mongoId)
+                                            setDeleteTargetId(params.data.mongoId)
                                         }
                                         className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
                                     >
@@ -940,6 +948,13 @@ const PerformanceIndividualKpa = () => {
                     )}
                 </PageFrame>
             </div>
+
+            <ConfirmationModal
+                open={!!deleteTargetId}
+                onClose={() => setDeleteTargetId(null)}
+                onConfirm={handleConfirmDelete}
+                isLoading={isDeletePending}
+            />
 
             <MuiModal
                 open={openModal}

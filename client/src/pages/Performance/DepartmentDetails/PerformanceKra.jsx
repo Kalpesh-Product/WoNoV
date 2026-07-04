@@ -26,6 +26,7 @@ import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useCurrentDay from "../../../hooks/useCurrentDay";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -34,6 +35,7 @@ const PerformanceKra = () => {
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
    const selectedMember = useSelector((state) => state.performance.selectedMember);
   const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
   const selectedDepartmentName = useSelector(
@@ -181,6 +183,12 @@ const PerformanceKra = () => {
       toast.error("Failed to remove recurrence");
     },
   });
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteDailyKraRecurrence(deleteTargetId);
+    setDeleteTargetId(null);
+  };
 
   //--------------POST REQUEST FOR DAILY KRA-----------------//
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
@@ -437,7 +445,7 @@ const PerformanceKra = () => {
                     }
                     onClick={() => {
                       if (!isRowSelected || !rowCanEditDelete) return;
-                      deleteDailyKraRecurrence(params.data.id || params.data._id);
+                      setDeleteTargetId(params.data.id || params.data._id);
                     }}
                     // className="ml-2 disabled:cursor-not-allowed"
                     className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
@@ -699,6 +707,13 @@ const PerformanceKra = () => {
           </div>
         </PageFrame>
       </div>
+
+      <ConfirmationModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletePending}
+      />
 
       <MuiModal
         open={openModal}
