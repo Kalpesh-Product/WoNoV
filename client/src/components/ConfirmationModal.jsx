@@ -14,7 +14,7 @@ const ConfirmationModal = ({
   return (
     <MuiModal open={open} onClose={onClose} title={title}>
       <div className="flex flex-col gap-4">
-        <p className="text-center text-content text-gray-700">{message}</p>
+        <p className="text-left text-content text-gray-700">{message}</p>
         <div className="flex justify-center gap-3">
           <PrimaryButton
             title={confirmText}
