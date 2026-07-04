@@ -750,6 +750,8 @@ const TasksDashboard = () => {
       ? rawCounts[selectedFY].reduce((sum, m) => sum + m.total, 0)
       : 0;
 
+  const currentMonthLabel = dayjs().format("MMMM");
+
   //---------------------------------------------
   // 📌 TASKS Dashboard Widget Configs
   //---------------------------------------------
@@ -759,7 +761,7 @@ const TasksDashboard = () => {
       key: "TASKS_MY_TOTAL_TASKS",
       title: "Total",
       dataType: "my-all",
-      description: "My Tasks",
+      description: `My Tasks - ${currentMonthLabel}`,
       route: "/app/tasks/my-tasks",
       permission: PERMISSIONS.TASKS_MY_TASKS.value,
     },
@@ -767,7 +769,7 @@ const TasksDashboard = () => {
       key: "TASKS_MY_PENDING_TASKS",
       title: "Total",
       dataType: "my-pending",
-      description: "My Pending Tasks",
+      description: `My Pending Tasks - ${currentMonthLabel}`,
       route: "/app/tasks/my-tasks",
       permission: PERMISSIONS.TASKS_MY_TASKS.value,
     },
@@ -775,7 +777,7 @@ const TasksDashboard = () => {
       key: "TASKS_MY_COMPLETED_TASKS",
       title: "Total",
       dataType: "my-completed",
-      description: "My Completed Tasks",
+      description: `My Completed Tasks - ${currentMonthLabel}`,
       route: "/app/tasks/my-tasks",
       permission: PERMISSIONS.TASKS_MY_TASKS.value,
     },
@@ -786,7 +788,7 @@ const TasksDashboard = () => {
       key: "TASKS_TOTAL_TASKS",
       title: "Total",
       dataType: "all", // you can use this to switch logic when mapping
-      description: "Dept. Tasks",
+      description: `Dept. Tasks - ${currentMonthLabel}`,
       route: "/app/tasks/department-tasks",
       permission: PERMISSIONS.TASKS_TOTAL_DEPARTMENT_TASKS.value,
     },
@@ -794,7 +796,7 @@ const TasksDashboard = () => {
       key: "TASKS_PENDING_TASKS",
       title: "Total",
       dataType: "pending",
-      description: "Dept. Pending Tasks",
+      description: `Dept. Pending Tasks - ${currentMonthLabel}`,
       route: "/app/tasks/department-tasks",
       permission: PERMISSIONS.TASKS_TOTAL_DEPARTMENT_PENDING_TASKS.value,
     },
@@ -802,7 +804,7 @@ const TasksDashboard = () => {
       key: "TASKS_COMPLETED_TASKS",
       title: "Total",
       dataType: "completed",
-      description: "Dept. Completed Tasks",
+      description: `Dept. Completed Tasks - ${currentMonthLabel}`,
       route: "/app/tasks/department-tasks",
       permission: PERMISSIONS.TASKS_TOTAL_DEPARTMENT_COMPLETED_TASKS.value,
     },
