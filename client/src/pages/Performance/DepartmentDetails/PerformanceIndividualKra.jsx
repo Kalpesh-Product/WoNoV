@@ -124,6 +124,12 @@ const PerformanceIndividualKra = () => {
     const isSelectedMemberManager = selectedMemberRole.includes("manager");
     const isSelectedMemberEmployee =
         !!activeMember?.memberId && !isSelectedMemberManager;
+    const shouldHideManagerControlsForSelectedMemberView =
+        !isEmployeeKraKpaRoute &&
+        isManager &&
+        !isSuperOrMasterAdmin &&
+        !!activeMember?.memberId &&
+        !isViewingOwnMember;
     const shouldUseTeamAddButton =
         !isEmployeeKraKpaRoute &&
         isSelectedMemberEmployee &&
@@ -470,7 +476,7 @@ const PerformanceIndividualKra = () => {
                 return <Chip label={params.value} style={{ backgroundColor, color }} />;
             },
         },
-        ...(((isSuperOrMasterAdmin || isCurrentDateView || (isFutureDateView && selectedMemberCanManageView)) && (matchingDepartment || selectedMemberCanManageView || shouldForceOwnControlsInEmployeeRoute) && canShowControls && !shouldHideActionsForEmployeeFuture)
+        ...(((isSuperOrMasterAdmin || isCurrentDateView || (isFutureDateView && selectedMemberCanManageView)) && (matchingDepartment || selectedMemberCanManageView || shouldForceOwnControlsInEmployeeRoute) && canShowControls && !shouldHideActionsForEmployeeFuture && !shouldHideManagerControlsForSelectedMemberView)
         //   ...((matchingDepartment || selectedMemberCanManageView) && canShowControls
        //   ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
             ? [
@@ -761,7 +767,7 @@ const PerformanceIndividualKra = () => {
                                 // }
                                 // buttonDisabled={
                                 //     isAddKraDisabled || shouldHideControlsForSelectedMemberView
-                                checkbox={canUseCheckbox && canShowControls && !(isEmployeeLevel && isFutureDateView)}
+                                checkbox={canUseCheckbox && canShowControls && !(isEmployeeLevel && isFutureDateView) && !shouldHideManagerControlsForSelectedMemberView}
                                 buttonTitle={
                                      canShowAddIndividualKraButton
                                         ? addButtonLabel

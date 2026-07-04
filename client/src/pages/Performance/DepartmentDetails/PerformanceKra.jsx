@@ -130,6 +130,12 @@ const PerformanceKra = () => {
     normalizeValue(targetMemberName) === normalizeValue(loggedInUserName);
   const canManageSelectedMemberView = isManager || isSuperOrMasterAdmin;
   const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+  const shouldHideManagerControlsForSelectedMemberView =
+    !isEmployeeKraKpaRoute &&
+    isManager &&
+    !isSuperOrMasterAdmin &&
+    !!activeMember?.memberId &&
+    !isViewingOwnMember;
   const selectedDateKey = selectedDate.format("YYYY-MM-DD");
   const todayKey = today.format("YYYY-MM-DD");
   const isCurrentDateView = selectedDateKey === todayKey;
@@ -361,7 +367,7 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-      ...(((isSuperOrMasterAdmin || !isPastDateView) && canShowControls && !shouldHideActionsForEmployeeFuture)
+      ...(((isSuperOrMasterAdmin || !isPastDateView) && canShowControls && !shouldHideActionsForEmployeeFuture && !shouldHideManagerControlsForSelectedMemberView)
    // ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
       ? [
         {
@@ -606,7 +612,7 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 formatTime
-                checkbox={canUseCheckbox && canShowControls && !shouldHideActionsForEmployeeFuture}
+                checkbox={canUseCheckbox && canShowControls && !shouldHideActionsForEmployeeFuture && !shouldHideManagerControlsForSelectedMemberView}
                 buttonTitle={
                   canShowAddDepartmentKraButton
                     ? "Add Department Daily KRA"
