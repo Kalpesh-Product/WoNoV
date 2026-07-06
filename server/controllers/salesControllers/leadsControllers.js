@@ -369,14 +369,14 @@ const editLead = async (req, res, next) => {
 
     // ✅ Future date validation
     const currDate = new Date();
-    if (hasValue(startDate) && new Date(startDate) < currDate) {
-      throw new CustomError(
-        "Start date must be a future date",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+    // if (hasValue(startDate) && new Date(startDate) < currDate) {
+    //   throw new CustomError(
+    //     "Start date must be a future date",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
 
     // ✅ Duplicate email check (excluding self)
     if (hasValue(emailAddress)) {
