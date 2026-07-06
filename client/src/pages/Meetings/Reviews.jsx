@@ -164,6 +164,15 @@ const Reviews = () => {
     enabled: activeTabKey === "clientCredit",
   });
 
+  const { data: meetingsData = [] } = useQuery({
+    queryKey: ["meetings", "client-credit"],
+    queryFn: async () => {
+      const response = await axios.get("/api/meetings/get-meetings");
+      return response.data;
+    },
+    enabled: activeTabKey === "clientCredit",
+  });
+
   const { mutate: replyReview, isPending: isReplyReviewPending } = useMutation({
     mutationFn: async (data) => {
       const response = await axios.post("/api/meetings/create-reply", {
@@ -318,6 +327,42 @@ const Reviews = () => {
 
     const startMonth = dayjs(startDate).startOf("month");
     const endMonth = dayjs(endDate).startOf("month");
+    const today = dayjs();
+    const normalizeClientKey = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase();
+    const meetingCreditsByClientMonth = meetingsData.reduce((acc, meeting) => {
+      const isInternalMeeting =
+        String(meeting?.meetingType || "").trim().toLowerCase() === "internal";
+      const isCancelledMeeting =
+        String(meeting?.meetingStatus || "").trim().toLowerCase() === "cancelled";
+      const meetingClientName = normalizeClientKey(meeting?.client);
+      const meetingMonthDate =
+        meeting?.date || meeting?.startDate || meeting?.startTime;
+
+      if (
+        !isInternalMeeting ||
+        isCancelledMeeting ||
+        !meetingClientName ||
+        !meetingMonthDate
+      ) {
+        return acc;
+      }
+
+      const monthKey = dayjs(meetingMonthDate).format("YYYY-MM");
+      const clientMonthKey = `${meetingClientName}__${monthKey}`;
+
+      if (!acc[clientMonthKey]) {
+        acc[clientMonthKey] = {
+          bookedCredits: 0,
+        };
+      }
+
+      acc[clientMonthKey].bookedCredits += Number(meeting?.creditsUsed || 0);
+
+      return acc;
+    }, {});
 
     // Generate all months in selected range
     const monthsArray = [];
@@ -331,35 +376,37 @@ const Reviews = () => {
       const clientId = client?._id;
       const clientName = client?.clientName || "-";
       const totalMonthlyCredit = Number(client?.totalMeetingCredits || 0);
+      const normalizedClientName = normalizeClientKey(clientName);
 
       return monthsArray.map((month) => {
         const monthLabel = month.format("MMM YYYY");
         const monthId = month.format("YYYY-MM");
-
-        // Try to find historical entry for this month
+        const clientMonthKey = `${normalizedClientName}__${monthId}`;
+        const bookingSummary = meetingCreditsByClientMonth[clientMonthKey];
         const historyEntry = client?.meetingCreditBalanceHistory?.find((h) =>
           dayjs(h.monthStartDate).isSame(month, "month"),
         );
+        const bookedConsumed = Number(bookingSummary?.bookedCredits || 0);
+        const hasHistoryEntry = Boolean(historyEntry?.monthStartDate);
 
-        let consumed = 0;
         let remaining = totalMonthlyCredit;
 
-        if (historyEntry) {
-          consumed = Number(historyEntry.consumedCredit || 0);
-          remaining = Number(historyEntry.remainingCredit || 0);
-        } else if (month.isSame(dayjs(), "month")) {
-          // Current month fallback if no history entry exists yet
-          remaining = Number(client?.meetingCreditBalance || 0);
-          consumed = Math.max(totalMonthlyCredit - remaining, 0);
-        } else if (month.isAfter(dayjs(), "month")) {
-          // Future months are "Fresh Start"
-          consumed = 0;
-          remaining = totalMonthlyCredit;
-        } else {
-          // Past months with no history
-          consumed = 0;
-          remaining = totalMonthlyCredit;
+        if (hasHistoryEntry) {
+          remaining = Number(historyEntry?.remainingCredit || 0);
+        } else if (
+          (month.isSame(today, "month") || month.isAfter(today, "month")) &&
+          bookedConsumed > 0
+        ) {
+          remaining = Math.max(
+            Number((totalMonthlyCredit - bookedConsumed).toFixed(2)),
+            0,
+          );
         }
+
+        const consumed = Math.max(
+          Number((totalMonthlyCredit - remaining).toFixed(2)),
+          0,
+        );
 
         return {
           id: `${clientId}-${monthId}`,
@@ -384,7 +431,7 @@ const Reviews = () => {
         ...row,
         srNo: index + 1,
       }));
-  }, [clientsData, dateRange]);
+  }, [clientsData, dateRange, meetingsData]);
 
 
   const clientCreditColumns = [
