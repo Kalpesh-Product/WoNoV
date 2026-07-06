@@ -143,6 +143,9 @@ const createLead = async (req, res, next) => {
     //   );
     // }
 
+    if (!serviceCategory) delete payload.serviceCategory;
+    if (!proposedLocations) delete payload.proposedLocations;
+
     const lead = new Lead({
       dateOfContact,
       companyName,

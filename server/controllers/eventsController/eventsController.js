@@ -2,6 +2,9 @@ const Event = require("../../models/events/Events");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const { default: mongoose } = require("mongoose");
+const {
+  fetchHolidayAndEventsService,
+} = require("../../services/reports/holidayEvent");
 
 const createEvent = async (req, res, next) => {
   const { company } = req;
@@ -125,47 +128,52 @@ const getAllEvents = async (req, res, next) => {
 
     let query = { company };
 
-    if (thisMonth === "true") {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth(); // 0-indexed
+    // if (thisMonth === "true") {
+    //   const now = new Date();
+    //   const year = now.getFullYear();
+    //   const month = now.getMonth(); // 0-indexed
 
-      const startOfMonth = new Date(year, month, 1);
-      const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    //   const startOfMonth = new Date(year, month, 1);
+    //   const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
 
-      query.start = { $gte: startOfMonth, $lte: endOfMonth };
-    }
+    //   query.start = { $gte: startOfMonth, $lte: endOfMonth };
+    // }
 
-    const events = await Event.find(query);
+    // const events = await Event.find(query);
 
-    if (!events || events.length === 0) {
-      return res.status(200).json([]);
-    }
+    // if (!events || events.length === 0) {
+    //   return res.status(200).json([]);
+    // }
 
-    const eventsData = events.map((event) => ({
-      id: event._id,
-      title: event.title,
-      start: event.start,
-      end: event.end,
-      allDay: event.allDay,
-      description: event.description,
-      active: event.active,
-      backgroundColor:
-        event.type === "Holiday"
-          ? "#4caf50"
-          : event.type === "Meeting"
-            ? "purple"
-            : event.type === "Task"
-              ? "yellow"
-              : event.type === "Event"
-                ? "blue"
-                : event.type === "Birthday"
-                  ? "#ff9800"
-                  : "",
-      extendedProps: {
-        type: event.type,
-      },
-    }));
+    // const eventsData = events.map((event) => ({
+    //   id: event._id,
+    //   title: event.title,
+    //   start: event.start,
+    //   end: event.end,
+    //   allDay: event.allDay,
+    //   description: event.description,
+    //   active: event.active,
+    //   backgroundColor:
+    //     event.type === "Holiday"
+    //       ? "#4caf50"
+    //       : event.type === "Meeting"
+    //         ? "purple"
+    //         : event.type === "Task"
+    //           ? "yellow"
+    //           : event.type === "Event"
+    //             ? "blue"
+    //             : event.type === "Birthday"
+    //               ? "#ff9800"
+    //               : "",
+    //   extendedProps: {
+    //     type: event.type,
+    //   },
+    // }));
+
+    const eventsData = await fetchHolidayAndEventsService({
+      company,
+      thisMonth,
+    });
 
     res.status(200).json(eventsData);
   } catch (error) {
