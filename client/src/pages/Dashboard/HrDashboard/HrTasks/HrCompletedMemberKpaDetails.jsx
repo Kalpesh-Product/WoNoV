@@ -15,17 +15,6 @@ const normalize = (value) =>
   (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
 
 const getMemberCandidates = (item) => [
-  item?.assignToId,
-  item?.assignedToId,
-  item?.createdById,
-  item?.managerId,
-  item?.ownerId,
-  item?.assignedTo,
-  item?.assignTo,
-  item?.createdBy,
-  item?.createdByName,
-  item?.managerName,
-  item?.ownerName,
   item?.completedById,
   item?.completedByName,
   item?.completedBy,
@@ -62,6 +51,24 @@ const HrCompletedMemberKpaDetails = ({ kpaType, title }) => {
     queryKey: ["hrCompletedMemberKpa", departmentId, kpaType],
     enabled: !!departmentId,
     queryFn: async () => {
+      if (kpaType === "INDIVIDUALKPA") {
+        const [individualResponse, teamResponse] = await Promise.all([
+          axios.get(
+            `/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKPA`,
+          ),
+          axios.get(
+            `/api/performance/get-completed-tasks?dept=${departmentId}&type=TEAMKPA`,
+          ),
+        ]);
+
+        return [
+          ...(Array.isArray(individualResponse.data)
+            ? individualResponse.data
+            : []),
+          ...(Array.isArray(teamResponse.data) ? teamResponse.data : []),
+        ];
+      }
+
       const response = await axios.get(
         `/api/performance/get-completed-tasks?dept=${departmentId}&type=${kpaType}`,
       );
@@ -76,6 +83,8 @@ const HrCompletedMemberKpaDetails = ({ kpaType, title }) => {
     const isSelectedMemberManager = normalize(selectedMember?.memberRole).includes(
       "manager",
     );
+    const shouldShowAllTeamCompletedRows =
+      kpaType === "TEAMKPA" && isSelectedMemberManager;
     const matchesSelectedMember = (value) => {
       const candidate = normalize(value);
       return (
@@ -87,9 +96,8 @@ const HrCompletedMemberKpaDetails = ({ kpaType, title }) => {
     const uniqueRows = new Map();
     completedEntries.forEach((item, index) => {
       if (
-        kpaType !== "KPA" &&
         hasSelectedMember &&
-        !(kpaType === "TEAMKPA" && isSelectedMemberManager) &&
+        !shouldShowAllTeamCompletedRows &&
         !getMemberCandidates(item).some(matchesSelectedMember)
       ) {
         return;

@@ -10,15 +10,196 @@ const path = require("path");
 const ClientService = require("../../models/sales/ClientService");
 const { fetchLeadReportService } = require("../../services/reports/lead");
 
-const createLead = async (req, res, next) => {
-  const logPath = "sales/SalesLog";
-  const logAction = "Create Lead";
-  const logSourceKey = "lead";
+// const hasValue = (value) => {
+//   if (Array.isArray(value)) {
+//     return value.length > 0;
+//   }
 
-  const { user, ip, company } = req;
+//   return value !== undefined && value !== null && value !== "";
+// };
+
+// const getDuplicateEmailQuery = (emailAddress, leadId) => {
+//   const query = {
+//     ...(leadId ? { _id: { $ne: leadId } } : {}),
+//   };
+
+//   if (hasValue(emailAddress)) {
+//     query.emailAddress = emailAddress.trim();
+//     return query;
+//   }
+
+//   query.$or = [
+//     { emailAddress: "" },
+//     { emailAddress: null },
+//     { emailAddress: { $exists: false } },
+//   ];
+
+//   return query;
+// };
+
+// const createLead = async (req, res, next) => {
+//   const logPath = "sales/SalesLog";
+//   const logAction = "Create Lead";
+//   const logSourceKey = "lead";
+
+//   const { user, ip, company } = req;
+
+//   try {
+//     const {
+//       dateOfContact,
+//       companyName,
+//       serviceCategory,
+//       leadStatus,
+//       proposedLocations,
+//       sector,
+//       headOfficeLocation,
+//       officeInGoa,
+//       pocName,
+//       designation,
+//       contactNumber,
+//       emailAddress,
+//       leadSource,
+//       period,
+//       openDesks,
+//       cabinDesks,
+//       totalDesks,
+//       clientBudget,
+//       startDate,
+//       remarksComments,
+//       lastFollowUpDate,
+//     } = req.body;
+//     const { company } = req;
+
+//     if (!companyName) {
+//       throw new CustomError(
+//         "Company name is required",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     const currDate = new Date();
+//     if (
+//       hasValue(startDate) &&
+//       new Date(startDate).getDate() < currDate.getDate()
+//     ) {
+//       throw new CustomError(
+//         "Start date must be a future date",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     if (emailAddress) {
+//       const leadExists = await Lead.findOne({
+//         emailAddress,
+//       });
+
+//       if (leadExists) {
+//         throw new CustomError(
+//           "Lead already exists",
+//           logPath,
+//           logAction,
+//           logSourceKey,
+//         );
+//       }
+//     }
+
+//     if (
+//       hasValue(proposedLocations) &&
+//       !mongoose.Types.ObjectId.isValid(proposedLocations)
+//     ) {
+//       throw new CustomError(
+//         "Invalid proposed location ID",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     if (hasValue(proposedLocations)) {
+//       const unitExists = await Unit.findOne({ _id: proposedLocations });
+//       if (!unitExists) {
+//         throw new CustomError(
+//           "Proposed location doesn't exist",
+//           logPath,
+//           logAction,
+//           logSourceKey,
+//         );
+//       }
+//     }
+
+//     // if (
+//     //   (hasValue(totalDesks) && totalDesks < 1) ||
+//     //   (hasValue(clientBudget) && clientBudget <= 0)
+//     // ) {
+//     //   throw new CustomError(
+//     //     "Invalid numerical values",
+//     //     logPath,
+//     //     logAction,
+//     //     logSourceKey,
+//     //   );
+//     // }
+
+//     const lead = new Lead({
+//       dateOfContact,
+//       companyName,
+//       serviceCategory,
+//       leadStatus,
+//       proposedLocations,
+//       sector,
+//       headOfficeLocation,
+//       officeInGoa,
+//       pocName,
+//       designation,
+//       contactNumber,
+//       emailAddress,
+//       leadSource,
+//       period,
+//       openDesks,
+//       cabinDesks,
+//       totalDesks,
+//       clientBudget,
+//       startDate,
+//       company,
+//       remarksComments,
+//       lastFollowUpDate,
+//     });
+
+//     await lead.save();
+
+//     await createLog({
+//       path: logPath,
+//       action: logAction,
+//       remarks: "Lead created successfully",
+//       status: "Success",
+//       user: user,
+//       ip: ip,
+//       company: company,
+//       sourceKey: logSourceKey,
+//       sourceId: lead._id,
+//       changes: lead,
+//     });
+
+//     return res.status(201).json({ message: "Lead created successfully" });
+//   } catch (error) {
+//     if (error instanceof CustomError) {
+//       next(error);
+//     } else {
+//       next(
+//         new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+//       );
+//     }
+//   }
+// };
+
+const createLead = async (req, res, next) => {
+  const { company } = req;
 
   try {
-    const {
+    let {
       dateOfContact,
       companyName,
       serviceCategory,
@@ -31,6 +212,7 @@ const createLead = async (req, res, next) => {
       designation,
       contactNumber,
       emailAddress,
+      source,
       leadSource,
       period,
       openDesks,
@@ -41,86 +223,52 @@ const createLead = async (req, res, next) => {
       remarksComments,
       lastFollowUpDate,
     } = req.body;
-    const { company } = req;
 
-    if (
-      !dateOfContact ||
-      !companyName ||
-      !serviceCategory ||
-      !leadStatus ||
-      !proposedLocations ||
-      !sector ||
-      !headOfficeLocation ||
-      officeInGoa === undefined ||
-      !pocName ||
-      !designation ||
-      !contactNumber ||
-      !emailAddress ||
-      !leadSource ||
-      !period ||
-      !totalDesks ||
-      !clientBudget ||
-      !startDate
-    ) {
-      throw new CustomError(
-        "All required fields must be provided",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    const currDate = new Date();
-    if (new Date(startDate).getDate() < currDate.getDate()) {
-      throw new CustomError(
-        "Start date must be a future date",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    const leadExists = await Lead.findOne({ emailAddress });
-    if (leadExists) {
-      throw new CustomError(
-        "Lead already exists",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(proposedLocations)) {
-      throw new CustomError(
-        "Invalid proposed location ID",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    const unitExists = await Unit.findOne({ _id: proposedLocations });
-    if (!unitExists) {
-      throw new CustomError(
-        "Proposed location doesn't exist",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    if (totalDesks < 1 || clientBudget <= 0) {
-      throw new CustomError(
-        "Invalid numerical values",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    const lead = new Lead({
+    // Required fields
+    const requiredFields = {
       dateOfContact,
       companyName,
+      serviceCategory,
+      leadStatus,
+      proposedLocations,
+      officeInGoa,
+      pocName,
+      contactNumber,
+      leadSource,
+      openDesks,
+      cabinDesks,
+      totalDesks,
+      clientBudget,
+      startDate,
+    };
+
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (
+        value === undefined ||
+        value === null ||
+        value === "" ||
+        (Array.isArray(value) && value.length === 0)
+      ) {
+        throw new CustomError(`${key} is required`);
+      }
+    }
+
+    // Duplicate company name
+    const companyExists = await Lead.findOne({
+      company,
+      companyName: {
+        $regex: new RegExp(`^${companyName.trim()}$`, "i"),
+      },
+    });
+
+    if (companyExists) {
+      throw new CustomError("Lead already exists");
+    }
+
+    const leadData = {
+      company,
+      dateOfContact,
+      companyName: companyName.trim(),
       serviceCategory,
       leadStatus,
       proposedLocations,
@@ -131,6 +279,7 @@ const createLead = async (req, res, next) => {
       designation,
       contactNumber,
       emailAddress,
+      source,
       leadSource,
       period,
       openDesks,
@@ -138,35 +287,49 @@ const createLead = async (req, res, next) => {
       totalDesks,
       clientBudget,
       startDate,
-      company,
       remarksComments,
       lastFollowUpDate,
-    });
+    };
 
-    await lead.save();
+    // Remove optional empty ObjectId fields
+    if (!leadData.serviceCategory) delete leadData.serviceCategory;
 
-    await createLog({
-      path: logPath,
-      action: logAction,
-      remarks: "Lead created successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: lead._id,
-      changes: lead,
-    });
-
-    return res.status(201).json({ message: "Lead created successfully" });
-  } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-      );
+    if (
+      !leadData.proposedLocations ||
+      leadData.proposedLocations.length === 0
+    ) {
+      delete leadData.proposedLocations;
     }
+
+    // Remove optional empty string fields
+    [
+      "sector",
+      "headOfficeLocation",
+      "designation",
+      "emailAddress",
+      "source",
+      "period",
+      "remarksComments",
+      "lastFollowUpDate",
+    ].forEach((field) => {
+      if (
+        leadData[field] === "" ||
+        leadData[field] === undefined ||
+        leadData[field] === null
+      ) {
+        delete leadData[field];
+      }
+    });
+
+    const lead = await Lead.create(leadData);
+
+    return res.status(201).json({
+      success: true,
+      message: "Lead created successfully.",
+      lead,
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -204,35 +367,27 @@ const editLead = async (req, res, next) => {
       startDate,
     } = req.body;
 
-    // ✅ Required field validation (same discipline as create)
-    const requiredFields = [
-      "dateOfContact",
-      "companyName",
-      "serviceCategory",
-      "leadStatus",
-      "proposedLocations",
-      "sector",
-      "headOfficeLocation",
-      "officeInGoa",
-      "pocName",
-      "designation",
-      "contactNumber",
-      "emailAddress",
-      "leadSource",
-      "period",
-      "totalDesks",
-      "clientBudget",
-      "startDate",
-    ];
+    // ✅ Future date validation
+    const currDate = new Date();
+    // if (hasValue(startDate) && new Date(startDate) < currDate) {
+    //   throw new CustomError(
+    //     "Start date must be a future date",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
 
-    for (const field of requiredFields) {
-      if (
-        req.body[field] === undefined ||
-        req.body[field] === null ||
-        req.body[field] === ""
-      ) {
+    // ✅ Duplicate email check (excluding self)
+    if (hasValue(emailAddress)) {
+      const emailExists = await Lead.findOne({
+        emailAddress,
+        _id: { $ne: leadId },
+      });
+
+      if (emailExists) {
         throw new CustomError(
-          "All required fields must be provided",
+          "Another lead with this email already exists",
           logPath,
           logAction,
           logSourceKey,
@@ -240,34 +395,11 @@ const editLead = async (req, res, next) => {
       }
     }
 
-    // ✅ Future date validation
-    const currDate = new Date();
-    if (new Date(startDate) < currDate) {
-      throw new CustomError(
-        "Start date must be a future date",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    // ✅ Duplicate email check (excluding self)
-    const emailExists = await Lead.findOne({
-      emailAddress,
-      _id: { $ne: leadId },
-    });
-
-    if (emailExists) {
-      throw new CustomError(
-        "Another lead with this email already exists",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
     // ✅ Proposed location validation
-    if (!mongoose.Types.ObjectId.isValid(proposedLocations)) {
+    if (
+      hasValue(proposedLocations) &&
+      !mongoose.Types.ObjectId.isValid(proposedLocations)
+    ) {
       throw new CustomError(
         "Invalid proposed location ID",
         logPath,
@@ -276,25 +408,30 @@ const editLead = async (req, res, next) => {
       );
     }
 
-    const unitExists = await Unit.findById(proposedLocations);
-    if (!unitExists) {
-      throw new CustomError(
-        "Proposed location doesn't exist",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+    if (hasValue(proposedLocations)) {
+      const unitExists = await Unit.findById(proposedLocations);
+      if (!unitExists) {
+        throw new CustomError(
+          "Proposed location doesn't exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
     }
 
     // ✅ Numeric validation
-    if (totalDesks < 1 || clientBudget <= 0) {
-      throw new CustomError(
-        "Invalid numerical values",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+    // if (
+    //   (hasValue(totalDesks) && totalDesks < 0) ||
+    //   (hasValue(clientBudget) && clientBudget <= 0)
+    // ) {
+    //   throw new CustomError(
+    //     "Invalid numerical values",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
 
     // ✅ Whitelist fields for update
     const allowedFields = [
