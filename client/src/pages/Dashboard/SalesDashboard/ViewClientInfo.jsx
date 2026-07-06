@@ -324,7 +324,7 @@ const ViewClientInfo = () => {
       label: "Company Name",
       rules: {
         required: "Company Name is required",
-        validate: noOnlyWhitespace,
+       // validate: noOnlyWhitespace,
       },
     },
     {
@@ -357,12 +357,12 @@ const ViewClientInfo = () => {
     {
       name: "pocName",
       label: "POC Name",
-      rules: { validate: noOnlyWhitespace },
+      //rules: { validate: noOnlyWhitespace },
     },
     {
       name: "designation",
       label: "Designation",
-      rules: { validate: isAlphanumeric },
+      //rules: { validate: isAlphanumeric },
     },
     {
       name: "contactNumber",
@@ -389,7 +389,7 @@ const ViewClientInfo = () => {
     {
       name: "remarksComments",
       label: "Remarks",
-      rules: { validate: noOnlyWhitespace },
+      //rules: { validate: noOnlyWhitespace },
     },
     {
       name: "lastFollowUpDate",
