@@ -22,7 +22,7 @@ const buildMonthFilter = () => {
 const getEventBackgroundColor = (type = "") =>
   EVENT_TYPE_COLORS[type.toLowerCase()] || "";
 
-const formatCalendarEvent = ({ event, isReport }) => ({
+const formatCalendarEvent = (event, isReport) => ({
   id: event._id,
   title: event.title,
   start: event.start,
@@ -56,7 +56,7 @@ const fetchHolidayAndEventsService = async ({
     return [];
   }
 
-  return events.map(formatCalendarEvent);
+  return events.map((event) => formatCalendarEvent(event, isReport));
 };
 
 module.exports = {
