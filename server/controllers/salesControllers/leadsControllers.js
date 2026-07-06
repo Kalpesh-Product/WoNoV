@@ -131,17 +131,17 @@ const createLead = async (req, res, next) => {
       }
     }
 
-    if (
-      (hasValue(totalDesks) && totalDesks < 1) ||
-      (hasValue(clientBudget) && clientBudget <= 0)
-    ) {
-      throw new CustomError(
-        "Invalid numerical values",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+    // if (
+    //   (hasValue(totalDesks) && totalDesks < 1) ||
+    //   (hasValue(clientBudget) && clientBudget <= 0)
+    // ) {
+    //   throw new CustomError(
+    //     "Invalid numerical values",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
 
     const lead = new Lead({
       dateOfContact,
