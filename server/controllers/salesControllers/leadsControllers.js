@@ -10,6 +10,14 @@ const path = require("path");
 const ClientService = require("../../models/sales/ClientService");
 const { fetchLeadReportService } = require("../../services/reports/lead");
 
+const hasValue = (value) => {
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+
+  return value !== undefined && value !== null && value !== "";
+};
+
 const createLead = async (req, res, next) => {
   const logPath = "sales/SalesLog";
   const logAction = "Create Lead";
@@ -43,35 +51,11 @@ const createLead = async (req, res, next) => {
     } = req.body;
     const { company } = req;
 
-    if (
-      !dateOfContact ||
-      !companyName ||
-      !serviceCategory ||
-      !leadStatus ||
-      !proposedLocations ||
-      !sector ||
-      !headOfficeLocation ||
-      officeInGoa === undefined ||
-      !pocName ||
-      !designation ||
-      !contactNumber ||
-      !emailAddress ||
-      !leadSource ||
-      !period ||
-      !totalDesks ||
-      !clientBudget ||
-      !startDate
-    ) {
-      throw new CustomError(
-        "All required fields must be provided",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
     const currDate = new Date();
-    if (new Date(startDate).getDate() < currDate.getDate()) {
+    if (
+      hasValue(startDate) &&
+      new Date(startDate).getDate() < currDate.getDate()
+    ) {
       throw new CustomError(
         "Start date must be a future date",
         logPath,
@@ -80,17 +64,22 @@ const createLead = async (req, res, next) => {
       );
     }
 
-    const leadExists = await Lead.findOne({ emailAddress });
-    if (leadExists) {
-      throw new CustomError(
-        "Lead already exists",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+    if (hasValue(emailAddress)) {
+      const leadExists = await Lead.findOne({ emailAddress });
+      if (leadExists) {
+        throw new CustomError(
+          "Lead already exists",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
     }
 
-    if (!mongoose.Types.ObjectId.isValid(proposedLocations)) {
+    if (
+      hasValue(proposedLocations) &&
+      !mongoose.Types.ObjectId.isValid(proposedLocations)
+    ) {
       throw new CustomError(
         "Invalid proposed location ID",
         logPath,
@@ -99,17 +88,22 @@ const createLead = async (req, res, next) => {
       );
     }
 
-    const unitExists = await Unit.findOne({ _id: proposedLocations });
-    if (!unitExists) {
-      throw new CustomError(
-        "Proposed location doesn't exist",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+    if (hasValue(proposedLocations)) {
+      const unitExists = await Unit.findOne({ _id: proposedLocations });
+      if (!unitExists) {
+        throw new CustomError(
+          "Proposed location doesn't exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
     }
 
-    if (totalDesks < 1 || clientBudget <= 0) {
+    if (
+      (hasValue(totalDesks) && totalDesks < 1) ||
+      (hasValue(clientBudget) && clientBudget <= 0)
+    ) {
       throw new CustomError(
         "Invalid numerical values",
         logPath,
@@ -204,45 +198,9 @@ const editLead = async (req, res, next) => {
       startDate,
     } = req.body;
 
-    // ✅ Required field validation (same discipline as create)
-    const requiredFields = [
-      "dateOfContact",
-      "companyName",
-      "serviceCategory",
-      "leadStatus",
-      "proposedLocations",
-      "sector",
-      "headOfficeLocation",
-      "officeInGoa",
-      "pocName",
-      "designation",
-      "contactNumber",
-      "emailAddress",
-      "leadSource",
-      "period",
-      "totalDesks",
-      "clientBudget",
-      "startDate",
-    ];
-
-    for (const field of requiredFields) {
-      if (
-        req.body[field] === undefined ||
-        req.body[field] === null ||
-        req.body[field] === ""
-      ) {
-        throw new CustomError(
-          "All required fields must be provided",
-          logPath,
-          logAction,
-          logSourceKey,
-        );
-      }
-    }
-
     // ✅ Future date validation
     const currDate = new Date();
-    if (new Date(startDate) < currDate) {
+    if (hasValue(startDate) && new Date(startDate) < currDate) {
       throw new CustomError(
         "Start date must be a future date",
         logPath,
@@ -252,22 +210,27 @@ const editLead = async (req, res, next) => {
     }
 
     // ✅ Duplicate email check (excluding self)
-    const emailExists = await Lead.findOne({
-      emailAddress,
-      _id: { $ne: leadId },
-    });
+    if (hasValue(emailAddress)) {
+      const emailExists = await Lead.findOne({
+        emailAddress,
+        _id: { $ne: leadId },
+      });
 
-    if (emailExists) {
-      throw new CustomError(
-        "Another lead with this email already exists",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      if (emailExists) {
+        throw new CustomError(
+          "Another lead with this email already exists",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
     }
 
     // ✅ Proposed location validation
-    if (!mongoose.Types.ObjectId.isValid(proposedLocations)) {
+    if (
+      hasValue(proposedLocations) &&
+      !mongoose.Types.ObjectId.isValid(proposedLocations)
+    ) {
       throw new CustomError(
         "Invalid proposed location ID",
         logPath,
@@ -276,18 +239,23 @@ const editLead = async (req, res, next) => {
       );
     }
 
-    const unitExists = await Unit.findById(proposedLocations);
-    if (!unitExists) {
-      throw new CustomError(
-        "Proposed location doesn't exist",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+    if (hasValue(proposedLocations)) {
+      const unitExists = await Unit.findById(proposedLocations);
+      if (!unitExists) {
+        throw new CustomError(
+          "Proposed location doesn't exist",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
     }
 
     // ✅ Numeric validation
-    if (totalDesks < 1 || clientBudget <= 0) {
+    if (
+      (hasValue(totalDesks) && totalDesks < 1) ||
+      (hasValue(clientBudget) && clientBudget <= 0)
+    ) {
       throw new CustomError(
         "Invalid numerical values",
         logPath,

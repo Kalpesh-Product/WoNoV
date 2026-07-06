@@ -11,6 +11,7 @@ const LeadSchema = new mongoose.Schema(
     },
     companyName: {
       type: String,
+      required: true,
     },
     serviceCategory: {
       type: mongoose.Schema.Types.ObjectId,
