@@ -322,7 +322,10 @@ const ViewClientInfo = () => {
     {
       name: "companyName",
       label: "Company Name",
-      rules: { validate: noOnlyWhitespace },
+      rules: {
+        required: "Company Name is required",
+        validate: noOnlyWhitespace,
+      },
     },
     {
       name: "serviceCategory",

@@ -19,7 +19,6 @@ const HrMemberKpaDetailsLayout = () => {
   const basePath = pathname.includes("/mix-bag/department-kpa-kra/")
     ? `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KPA/${encodeURIComponent(department)}/member-wise`
     : `/app/dashboard/HR-dashboard/overall-KPA/department-KPA/${encodeURIComponent(department)}/member-wise`;
-  const consistentSpacingClass = "-mt-8 -mx-5 -mb-3";
 
   const canManageTeam =
     userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) ||
@@ -72,13 +71,11 @@ const HrMemberKpaDetailsLayout = () => {
   ]);
 
   return (
-    <div className={consistentSpacingClass}>
-      <TabLayout
-        basePath={basePath}
-        defaultTabPath="individual-Monthly-KPA"
-        tabs={tabs}
-      />
-    </div>
+    <TabLayout
+      basePath={basePath}
+      defaultTabPath="individual-Monthly-KPA"
+      tabs={tabs}
+    />
   );
 };
 
