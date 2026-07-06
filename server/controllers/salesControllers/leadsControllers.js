@@ -18,6 +18,25 @@ const hasValue = (value) => {
   return value !== undefined && value !== null && value !== "";
 };
 
+const getDuplicateEmailQuery = (emailAddress, leadId) => {
+  const query = {
+    ...(leadId ? { _id: { $ne: leadId } } : {}),
+  };
+
+  if (hasValue(emailAddress)) {
+    query.emailAddress = emailAddress.trim();
+    return query;
+  }
+
+  query.$or = [
+    { emailAddress: "" },
+    { emailAddress: null },
+    { emailAddress: { $exists: false } },
+  ];
+
+  return query;
+};
+
 const createLead = async (req, res, next) => {
   const logPath = "sales/SalesLog";
   const logAction = "Create Lead";
@@ -51,6 +70,15 @@ const createLead = async (req, res, next) => {
     } = req.body;
     const { company } = req;
 
+    if (!companyName) {
+      throw new CustomError(
+        "Company name is required",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
     const currDate = new Date();
     if (
       hasValue(startDate) &&
@@ -64,8 +92,11 @@ const createLead = async (req, res, next) => {
       );
     }
 
-    if (hasValue(emailAddress)) {
-      const leadExists = await Lead.findOne({ emailAddress });
+    if (emailAddress) {
+      const leadExists = await Lead.findOne({
+        emailAddress,
+      });
+
       if (leadExists) {
         throw new CustomError(
           "Lead already exists",
