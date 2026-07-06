@@ -53,3 +53,6 @@ require("./hr/Vendor");
 //Performance
 require("./performances/kraKpaRole");
 require("./performances/kraKpaTask");
+
+//Events
+require("./events/Events");
