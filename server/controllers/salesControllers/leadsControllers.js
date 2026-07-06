@@ -283,17 +283,17 @@ const editLead = async (req, res, next) => {
     }
 
     // ✅ Numeric validation
-    if (
-      (hasValue(totalDesks) && totalDesks < 1) ||
-      (hasValue(clientBudget) && clientBudget <= 0)
-    ) {
-      throw new CustomError(
-        "Invalid numerical values",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+    // if (
+    //   (hasValue(totalDesks) && totalDesks < 0) ||
+    //   (hasValue(clientBudget) && clientBudget <= 0)
+    // ) {
+    //   throw new CustomError(
+    //     "Invalid numerical values",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
 
     // ✅ Whitelist fields for update
     const allowedFields = [
