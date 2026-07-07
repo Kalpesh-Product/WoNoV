@@ -118,11 +118,17 @@ const StatutoryPayments = () => {
       const monthKey = dayjs(item.dueDate).format("MMM-YY");
 
       if (!monthMap[monthKey]) {
-        monthMap[monthKey] = { total: 0, approved: 0, amount: 0 };
+        monthMap[monthKey] = {
+          total: 0,
+          approved: 0,
+          actualAmount: 0,
+          projectedAmount: 0,
+        };
       }
 
       monthMap[monthKey].total += 1;
-      monthMap[monthKey].amount += item.projectedAmount || 0;
+      monthMap[monthKey].actualAmount += item.actualAmount || 0;
+      monthMap[monthKey].projectedAmount += item.projectedAmount || 0;
 
       if (item.status === "Approved") {
         monthMap[monthKey].approved += 1;
@@ -130,7 +136,7 @@ const StatutoryPayments = () => {
     });
 
     return Object.entries(monthMap).map(
-      ([month, { total, approved, amount }]) => {
+      ([month, { total, approved, actualAmount, projectedAmount }]) => {
         const paid = Math.round((approved / total) * 100);
         return {
           month,
@@ -139,7 +145,9 @@ const StatutoryPayments = () => {
           approved,
           unapproved: total - approved,
           total,
-          amount,
+          amount: actualAmount,
+          actualAmount,
+          projectedAmount,
         };
       },
     );
@@ -188,8 +196,8 @@ const StatutoryPayments = () => {
 
      return {
       chartData: [
-        { name: "Paid", data: fyBuckets.map((entry) => entry.paid) },
-        { name: "Unpaid", data: fyBuckets.map((entry) => entry.unpaid) },
+        { name: "Approved", data: fyBuckets.map((entry) => entry.paid) },
+        { name: "Pending", data: fyBuckets.map((entry) => entry.unpaid) },
       ],
       meta: fyBuckets.map((entry) => entry.meta),
       totalAmount: fyBuckets.reduce((sum, entry) => sum + entry.amount, 0),
@@ -256,19 +264,8 @@ const StatutoryPayments = () => {
 
         return `
       <div style="padding:10px;font-family:Poppins-Regular;font-size:13px; width: 220px">
-        <div style="display:flex; justify-content:space-between;"><strong>Month</strong> ${
-          item.month
-        }</div>
-        <div style="display:flex; justify-content:space-between;"><strong>Total Payments</strong> ${
-          item.total
-        }</div>
-        <div style="display:flex; justify-content:space-between;"><strong>Amount</strong> INR ${item.amount.toLocaleString()}</div>
-        <div style="color:#54C4A7; display:flex; justify-content:space-between;"><strong>Approved</strong> ${
-          item.approved
-        }</div>
-        <div style="color:#EB5C45; display:flex; justify-content:space-between;"><strong>Unapproved</strong> ${
-          item.unapproved
-        }</div>
+        <div style="display:flex; justify-content:space-between;"><strong style="color:#54C4A7;">Actual Amount : </strong><span style="color:#000;">INR ${item.actualAmount.toLocaleString("en-IN")}</span></div>
+        <div style="display:flex; justify-content:space-between;"><strong style="color:#EB5C45;">Projected Amount :  </strong><span style="color:#000;">INR ${item.projectedAmount.toLocaleString("en-IN")}</span></div>
       </div>
     `;
       },
