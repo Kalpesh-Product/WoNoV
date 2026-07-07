@@ -1161,7 +1161,7 @@ const bulkInsertBudgets = async (req, res, next) => {
           // status: row["Status"] || "Pending",
           status: "Approved",
           month,
-          dueDate: month,
+          dueDate: row["Due Date"] ? new Date(row["Due Date"]) : null,
           expanseType: row["Expanse Type"],
           category: row["Expanse Category"],
           // isPaid: row["Status"] === "Approved" ? "Paid" : "Unpaid",
