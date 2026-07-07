@@ -170,6 +170,11 @@ const FinanceDashboard = () => {
     (item) => item.expanseType === "Statutory Payments"
   );
 
+  const currentMonthStatutoryPayments = financeBudgets.filter(
+    (item) =>
+      item?.dueDate && dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
+  );
+
   const testExpense = revenueExpenseData
     .filter((item) => item.expense)
     .flatMap((item) => item.expense);
@@ -838,10 +843,10 @@ const FinanceDashboard = () => {
   //   { label: "PT", amount: 10000 },
   // ];
 
-  const approvedPayments = financeBudgets.filter(
+  const approvedPayments = currentMonthStatutoryPayments.filter(
     (item) => item.status === "Approved"
   );
-  const pendingPayments = financeBudgets.filter(
+  const pendingPayments = currentMonthStatutoryPayments.filter(
     (item) => item.status !== "Approved"
   );
 
@@ -867,39 +872,22 @@ const FinanceDashboard = () => {
   );
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
-  const rentalPayments = sortedExpenses.map((monthData) => {
-    // Filter only Monthly Rent
-    const rentExpenses = monthData.expenses.filter(
-      (exp) => exp.expanseType === "Monthly Rent"
+  const currentMonthRentalPayments = isBudgetDataLoading
+    ? []
+    : budgetData.filter(
+      (item) =>
+        item?.expanseType === "Monthly Rent" &&
+        item?.dueDate &&
+        dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
     );
 
-    // Sum actualAmount
-    const amount = rentExpenses.reduce(
-      (sum, exp) => sum + (exp.actualAmount || 0),
-      0
-    );
+  const totalPaid = currentMonthRentalPayments
+    .filter((item) => item.status === "Approved")
+    .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
 
-    // Determine status
-    const status =
-      rentExpenses.length > 0 &&
-        rentExpenses.every((exp) => exp.status === "Approved")
-        ? "paid"
-        : "unpaid";
-
-    return {
-      month: monthData.month,
-      amount,
-      status,
-    };
-  });
-
-  const totalPaid = rentalPayments
-    .filter((item) => item.status === "paid")
-    .reduce((sum, item) => sum + item.amount, 0);
-
-  const totalUnpaid = rentalPayments
-    .filter((item) => item.status === "unpaid")
-    .reduce((sum, item) => sum + item.amount, 0);
+  const totalUnpaid = currentMonthRentalPayments
+    .filter((item) => item.status !== "Approved")
+    .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
 
   // Donut chart props
   const donutRentalLabels = ["Paid", "Unpaid"];
@@ -991,7 +979,7 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       key: "financeStatutory",
-      title: "Statutory Payments Due MAR-25 ",
+      title: `Statutory Payments Due ${chartPayoutMonth} `,
       border: true,
       centerLabel: "Statutory",
       labels: statutoryDonutLabels,
@@ -1004,7 +992,7 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       key: "financeRental",
-      title: "Rental Payments Due MAR-25 ",
+      title: `Rental Payments Due ${chartPayoutMonth} `,
       border: true,
       centerLabel: "Rental Status",
       labels: donutRentalLabels,
@@ -1143,7 +1131,7 @@ const FinanceDashboard = () => {
       key: PERMISSIONS.FINANCE_UNIT_WISE_DUE_TASKS.value,
       type: "PieChartMui",
       border: true,
-      title: "Unit Wise Due Tasks",
+      title: "Overall Unit Wise Due Tasks",
       data: unitWisePieData,
       options: unitPieChartOptions,
       centerAlign: true,
@@ -1154,7 +1142,7 @@ const FinanceDashboard = () => {
       key: PERMISSIONS.FINANCE_EXECUTIVE_WISE_DUE_TASKS.value,
       type: "DonutChart",
       border: true,
-      title: "Executive Wise Due Tasks",
+      title: "Overall Executive Wise Due Tasks",
       centerLabel: "Tasks",
       labels: executiveTaskLabels,
       colors: executiveTaskColors,
