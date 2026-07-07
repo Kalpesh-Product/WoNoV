@@ -131,6 +131,7 @@ const reportServiceRegistry = {
     fetchInventoryBuildingUnitsReportService,
     {
       dateField: "createdAt",
+      staticParams: { type: "offices" },
     },
   ),
 

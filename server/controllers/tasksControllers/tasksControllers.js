@@ -743,11 +743,6 @@ const getMyTodayTasks = async (req, res, next) => {
     const endOfDay = new Date();
     // endOfDay.setHours(23, 59, 59, 999);
 
-    // console.log("start:", startOfDay);
-    // console.log("end:", endOfDay);
-    console.log("start:", start);
-    console.log("end:", end);
-
     const tasks = await Task.find({
       company,
       isDeleted: { $ne: true },
@@ -774,8 +769,6 @@ const getMyTodayTasks = async (req, res, next) => {
     if (!tasks) {
       return res.status(400).json({ message: "Failed to fetch the tasks" });
     }
-
-    console.log("tasks:", tasks);
 
     const transformedTasks = tasks.map((task) => {
       const completedBy = task.completedBy
