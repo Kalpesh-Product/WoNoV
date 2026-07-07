@@ -123,6 +123,10 @@ const FinanceDashboard = () => {
           console.error(error);
         }
       },
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
     });
 
   const { data: budgetData = [], isLoading: isBudgetDataLoading } = useQuery({
@@ -131,14 +135,30 @@ const FinanceDashboard = () => {
       const res = await axios.get("/api/budget/company-budget");
       return res.data?.allBudgets;
     },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
-  const march2025Payments = isBudgetDataLoading
+  const selectedPayoutMonth = dayjs().subtract(1, "month").format("MMM-YY");
+  const chartPayoutMonth = dayjs().format("MMM-YY");
+
+  const payoutMonthPayments = isBudgetDataLoading
     ? []
-    : budgetData.filter((item) => {
-      const due = new Date(item.dueDate);
-      return due.getFullYear() === 2025 && due.getMonth() === 2;
-    });
+    : budgetData.filter(
+      (item) =>
+        item?.dueDate &&
+        dayjs(item.dueDate).format("MMM-YY") === selectedPayoutMonth,
+    );
+
+  const chartPayoutMonthPayments = isBudgetDataLoading
+    ? []
+    : budgetData.filter(
+      (item) =>
+        item?.dueDate &&
+        dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth,
+    );
 
   const financeBudgetsRaw = isBudgetDataLoading
     ? []
@@ -582,57 +602,38 @@ const FinanceDashboard = () => {
 
   //-----------------------------------------------------DataCards------------------------------------------------------//
   //-----------------------------------------------------Pie Monthly Payout------------------------------------------------------//
-  const availableMonths = sortedExpenses.map((e) => e.month);
-  const todayMonth = dayjs().format("MMM-YY");
-
-  // 1. Filter available months where actualAmount > 0 exists
-  const monthsWithPositiveAmount = sortedExpenses
-    .filter((monthData) =>
-      (monthData.expenses || []).some((exp) => Number(exp.actualAmount) > 0)
-    )
-    .map((e) => e.month);
-
-  // 2. Determine the latest applicable month (closest to today)
-  let selectedMonth = todayMonth;
-  if (!monthsWithPositiveAmount.includes(todayMonth)) {
-    const todayIndex = monthsWithPositiveAmount.indexOf(todayMonth);
-    selectedMonth =
-      monthsWithPositiveAmount[Math.max(0, todayIndex - 1)] ||
-      monthsWithPositiveAmount.at(-1);
-  }
-
-  // 3. Get that month's data
-  const selectedMonthData = sortedExpenses.find(
-    (item) => item.month === selectedMonth
-  );
-
-  // 4. Transform to `clientPayouts`
-
-  const clientPayouts = (selectedMonthData?.expenses || []).map((expense) => ({
+  const clientPayouts = chartPayoutMonthPayments.map((expense) => ({
     clientName: expense.expanseName,
     amount: expense.actualAmount || 0,
-    status: expense.status === "Approved" ? "paid" : "unpaid",
+    status: expense.status === "Approved" ? "approved" : "pending",
     date: dayjs(expense.dueDate).format("DD-MMM-YYYY"), // e.g., "15-May-2024"
   }));
 
-  // Group and sum by status
-  const paidClients = clientPayouts.filter((c) => c.status === "paid");
-  const unpaidClients = clientPayouts.filter((c) => c.status === "unpaid");
+  const approvedClients = clientPayouts.filter((c) => c.status === "approved");
+  const pendingClients = clientPayouts.filter((c) => c.status === "pending");
+  const approvedPayoutValue = approvedClients.reduce(
+    (sum, client) => sum + client.amount,
+    0,
+  );
+  const pendingPayoutValue = pendingClients.reduce(
+    (sum, client) => sum + client.amount,
+    0,
+  );
+  const totalPayoutValue = approvedPayoutValue + pendingPayoutValue;
+  const payoutPieStartAngle = totalPayoutValue
+    ? 180 - (approvedPayoutValue / totalPayoutValue) * 180
+    : 90;
 
   const pieMonthlyPayoutData = [
     {
-      label: "Paid",
-      value: Math.round(
-        paidClients.reduce((sum, client) => sum + client.amount, 0)
-      ),
-      clients: paidClients,
+      label: "Approved",
+      value: Math.round(approvedPayoutValue),
+      clients: approvedClients,
     },
     {
-      label: "Unpaid",
-      value: Math.round(
-        unpaidClients.reduce((sum, client) => sum + client.amount, 0)
-      ),
-      clients: unpaidClients,
+      label: "Pending",
+      value: Math.round(pendingPayoutValue),
+      clients: pendingClients,
     },
   ];
 
@@ -654,7 +655,7 @@ const FinanceDashboard = () => {
         },
       },
     },
-    colors: ["#4CAF50", "#F44336"],
+    colors: ["#4CAF50", "#FFECC5"],
     labels: pieMonthlyPayoutData.map((item) => item.label),
     legend: {
       show: true,
@@ -676,6 +677,8 @@ const FinanceDashboard = () => {
     },
     plotOptions: {
       pie: {
+        // startAngle: payoutPieStartAngle,
+        // endAngle: payoutPieStartAngle + 180,
         expandOnClick: true,
       },
     },
@@ -951,7 +954,7 @@ const FinanceDashboard = () => {
   const pieChartConfigs = [
     {
       key: "financePayouts",
-      title: "Payouts MAR-25 ",
+      title: `Payouts ${chartPayoutMonth} `,
       layout: 1,
       border: true,
       data: pieMonthlyPayoutData,
@@ -1016,16 +1019,16 @@ const FinanceDashboard = () => {
     {
       layout: 1,
       key: "financePayouts",
-      Title: "Payouts Mar-25 ",
+      Title: `Payouts ${selectedPayoutMonth} `,
       columns: marchPaymentColumns,
-      rows: march2025Payments.map((item, index) => ({
+      rows: payoutMonthPayments.map((item, index) => ({
         srNo: index + 1,
         ...item,
         dueDate: item.dueDate,
       })),
       rowKey: "_id",
       scroll: true,
-      rowsToDisplay: march2025Payments.length,
+      rowsToDisplay: payoutMonthPayments.length,
 
       permission: PERMISSIONS.FINANCE_PAYOUTS_MUI_TABLE.value,
     },
