@@ -692,6 +692,7 @@ const FinanceDashboard = () => {
     : null;
 
   const income = incomeEntry?.income;
+  const currentCollectionsMonth = dayjs().format("MMM-YY");
 
   // 2. Calculation function (unchanged but included for completeness)
   const calculatePaidVsUnpaid = (income = {}) => {
@@ -708,6 +709,13 @@ const FinanceDashboard = () => {
 
     revenueSources.forEach((source) => {
       source.forEach((item) => {
+        const rawDate =
+          item.date || item.rentDate || item.invoiceCreationDate;
+        if (!rawDate || !dayjs(rawDate).isValid()) return;
+
+        const monthKey = dayjs(rawDate).format("MMM-YY");
+        if (monthKey !== currentCollectionsMonth) return;
+
         const amount = item.revenue || item.taxableAmount || 0;
 
         if (item.status === "paid") {
@@ -963,7 +971,7 @@ const FinanceDashboard = () => {
     },
     {
       key: "financeCustomerCollections",
-      title: "Customer Collections MAR-25 ",
+      title: `Customer Collections ${dayjs().format("MMM-YY")} `,
       layout: 1,
       border: true,
       data: pieChartData,
