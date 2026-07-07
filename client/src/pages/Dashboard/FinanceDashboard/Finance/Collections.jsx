@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import MuiModal from "../../../../components/MuiModal";
@@ -8,46 +8,84 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormat } from "../../../../utils/currencyFormat";
-import YearWiseTable from "../../../../components/Tables/YearWiseTable";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
+// import YearWiseTable from "../../../../components/Tables/YearWiseTable";
+// import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "../../../../utils/humanDateForamt";
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import StatusChip from "../../../../components/StatusChip";
 
-const fiscalYears = ["FY 2024-25", "FY 2025-26"];
+// const fiscalYears = ["FY 2024-25", "FY 2025-26"];
 
-const fiscalYearMonthMap = {
-  "FY 2024-25": [
-    "Apr-24",
-    "May-24",
-    "Jun-24",
-    "Jul-24",
-    "Aug-24",
-    "Sep-24",
-    "Oct-24",
-    "Nov-24",
-    "Dec-24",
-    "Jan-25",
-    "Feb-25",
-    "Mar-25",
-  ],
-  "FY 2025-26": [
-    "Apr-25",
-    "May-25",
-    "Jun-25",
-    "Jul-25",
-    "Aug-25",
-    "Sep-25",
-    "Oct-25",
-    "Nov-25",
-    "Dec-25",
-    "Jan-26",
-    "Feb-26",
-    "Mar-26",
-  ],
+// const fiscalYearMonthMap = {
+//   "FY 2024-25": [
+//     "Apr-24",
+//     "May-24",
+//     "Jun-24",
+//     "Jul-24",
+//     "Aug-24",
+//     "Sep-24",
+//     "Oct-24",
+//     "Nov-24",
+//     "Dec-24",
+//     "Jan-25",
+//     "Feb-25",
+//     "Mar-25",
+//   ],
+//   "FY 2025-26": [
+//     "Apr-25",
+//     "May-25",
+//     "Jun-25",
+//     "Jul-25",
+//     "Aug-25",
+//     "Sep-25",
+//     "Oct-25",
+//     "Nov-25",
+//     "Dec-25",
+//     "Jan-26",
+//     "Feb-26",
+//     "Mar-26",
+//   ],
+dayjs.extend(customParseFormat);
+
+const fiscalMonths = [
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+];
+
+const getFiscalYearStart = (date = dayjs()) => {
+  const parsedDate = dayjs(date);
+  return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+};
+
+const formatFiscalYear = (startYear) =>
+  `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+
+const getFiscalYearMonths = (startYear) =>
+  fiscalMonths.map((month, index) => {
+    const year = index < 9 ? startYear : startYear + 1;
+    return `${month}-${String(year).slice(-2)}`;
+  });
+
+const getFiscalYearStartFromMonth = (monthLabel) => {
+  const parsedMonth = dayjs(`01-${monthLabel}`, "DD-MMM-YY", true);
+
+  if (!parsedMonth.isValid()) return null;
+
+  return parsedMonth.month() >= 3 ? parsedMonth.year() : parsedMonth.year() - 1;
 };
 
 const Collections = () => {
@@ -56,7 +94,9 @@ const Collections = () => {
   const [selectedMonthData, setSelectedMonthData] = useState([]);
   const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
   const [selectedExportRange, setSelectedExportRange] = useState(null);
-  const [selectedYearIndex, setSelectedYearIndex] = useState(1);
+  const [selectedFiscalYearStart, setSelectedFiscalYearStart] = useState(() =>
+    getFiscalYearStart()
+  );
   const axios = useAxiosPrivate();
 
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
@@ -97,7 +137,10 @@ const Collections = () => {
       field: "status",
       headerName: "Status",
       flex: 1,
-      cellRenderer: (params) => <StatusChip status={params.value || params.data.rentStatus} />,
+       cellRenderer: (params) => (
+        <StatusChip status={params.value || params.data.rentStatus} />
+      ),
+      //cellRenderer: (params) => <StatusChip status={params.value || params.data.rentStatus} />,
     },
   ];
 
@@ -110,29 +153,29 @@ const Collections = () => {
   }, [coWorkingData]);
 
   const fiscalGraphData = useMemo(() => {
-    const fyBuckets = {
-      "FY 2024-25": fiscalYearMonthMap["FY 2024-25"].map((month) => ({
-        month,
-        paid: 0,
-        unpaid: 0,
-        tooltipMeta: null,
-      })),
-      "FY 2025-26": fiscalYearMonthMap["FY 2025-26"].map((month) => ({
-        month,
-        paid: 0,
-        unpaid: 0,
-        tooltipMeta: null,
-      })),
-    };
+    const fiscalYearMonths = getFiscalYearMonths(selectedFiscalYearStart);
+    const fyBuckets = fiscalYearMonths.map((month) => ({
+      month,
+      paid: 0,
+      unpaid: 0,
+      paidAmount: 0,
+      dueAmount: 0,
+      tooltipMeta: null,
+    }));
 
     sortedData.forEach((entry) => {
+       if (getFiscalYearStartFromMonth(entry.month) !== selectedFiscalYearStart) {
+        return;
+      }
       let paidClients = 0;
       let unpaidClients = 0;
       let paidAmount = 0;
+       let dueAmount = 0;
 
       entry.clients?.forEach((c) => {
         if (c.rentStatus === "Unpaid") {
           unpaidClients++;
+          dueAmount += c.revenue || 0;
         } else {
           paidClients++;
           paidAmount += c.revenue || 0;
@@ -140,29 +183,15 @@ const Collections = () => {
       });
 
       const total = paidClients + unpaidClients || 1;
-      const monthIndex = dayjs(`01-${entry.month}`, "DD-MMM-YY").month();
-      const yearSuffix = Number(entry.month.split("-")[1]);
-      const fullYear = 2000 + yearSuffix;
-
-      let fiscalYear = null;
-      if ((fullYear === 2024 && monthIndex >= 3) || (fullYear === 2025 && monthIndex <= 2)) {
-        fiscalYear = "FY 2024-25";
-      } else if (
-        (fullYear === 2025 && monthIndex >= 3) ||
-        (fullYear === 2026 && monthIndex <= 2)
-      ) {
-        fiscalYear = "FY 2025-26";
-      }
-
-      if (!fiscalYear) return;
-
-      const targetMonthIndex = fiscalYearMonthMap[fiscalYear].indexOf(entry.month);
+      const targetMonthIndex = fiscalYearMonths.indexOf(entry.month);
       if (targetMonthIndex === -1) return;
 
-      fyBuckets[fiscalYear][targetMonthIndex] = {
+      fyBuckets[targetMonthIndex] = {
         month: entry.month,
         paid: Math.round((paidClients / total) * 100),
         unpaid: Math.round((unpaidClients / total) * 100),
+         paidAmount,
+        dueAmount,
         tooltipMeta: {
           month: entry.month,
           paidClients,
@@ -173,29 +202,41 @@ const Collections = () => {
       };
     });
 
-    return fiscalYears.reduce((acc, fy) => {
-      acc[fy] = {
-        chartData: [
-          { name: "Collected", data: fyBuckets[fy].map((item) => item.paid) },
-          { name: "Due", data: fyBuckets[fy].map((item) => item.unpaid) },
-        ],
-        tooltipMeta: fyBuckets[fy].map((item) => item.tooltipMeta),
-      };
-      return acc;
-    }, {});
+  return {
+      chartData: [
+        { name: "Collected", data: fyBuckets.map((item) => item.paid) },
+        { name: "Due", data: fyBuckets.map((item) => item.unpaid) },
+      ],
+      tooltipMeta: fyBuckets.map((item) => item.tooltipMeta),
+      paidTotal: fyBuckets.reduce((sum, item) => sum + item.paidAmount, 0),
+      dueTotal: fyBuckets.reduce((sum, item) => sum + item.dueAmount, 0),
+    };
+  }, [selectedFiscalYearStart, sortedData]);
+
+  const latestDataFiscalYearStart = useMemo(() => {
+    const fiscalYearStarts = sortedData
+      .map((entry) => getFiscalYearStartFromMonth(entry.month))
+      .filter((yearStart) => yearStart !== null);
+
+    return fiscalYearStarts.length ? Math.max(...fiscalYearStarts) : null;
   }, [sortedData]);
 
-  const selectedFiscalYear = fiscalYears[selectedYearIndex];
-  const selectedGraph = fiscalGraphData[selectedFiscalYear] || {
-    chartData: [
-      { name: "Collected", data: Array(12).fill(0) },
-      { name: "Due", data: Array(12).fill(0) },
-    ],
-    tooltipMeta: Array(12).fill(null),
-  };
+   useEffect(() => {
+    if (latestDataFiscalYearStart !== null) {
+      setSelectedFiscalYearStart(latestDataFiscalYearStart);
+    }
+  }, [latestDataFiscalYearStart]);
+
+  const selectedFiscalYear = formatFiscalYear(selectedFiscalYearStart);
+  const selectedFiscalYearMonths = useMemo(
+    () => getFiscalYearMonths(selectedFiscalYearStart),
+    [selectedFiscalYearStart]
+  );
+  const selectedGraph = fiscalGraphData;
 
   const barValues = selectedGraph.chartData.map((item) => item.data);
   const completed = barValues[0].reduce((sum, item) => item + sum, 0);
+  const due = barValues[1].reduce((sum, item) => item + sum, 0);
 
   const barGraphOptions = {
     chart: {
@@ -216,7 +257,7 @@ const Collections = () => {
       formatter: (val) => `${val}%`,
     },
     xaxis: {
-      categories: fiscalYearMonthMap[selectedFiscalYear],
+       categories: selectedFiscalYearMonths,
     },
     yaxis: {
       max: 100,
@@ -317,6 +358,16 @@ const Collections = () => {
     );
   }, [selectedMonthData]);
 
+   const selectedCollectionMonthTitle = useMemo(() => {
+    const selectedMonth = selectedMonthLabel
+      ? dayjs(selectedMonthLabel, "MMM-YYYY")
+      : dayjs();
+
+    return selectedMonth.isValid()
+      ? `COLLECTIONS - ${selectedMonth.format("MMMM").toUpperCase()}`
+      : "COLLECTIONS";
+  }, [selectedMonthLabel]);
+
   const buildExportFileName = (range) => {
     const start = range?.startDate ? dayjs(range.startDate) : null;
     const end = range?.endDate ? dayjs(range.endDate) : null;
@@ -400,8 +451,8 @@ const Collections = () => {
       <WidgetSection
         layout={1}
         title={"COLLECTIONS"}
-        titleLabel={"FY 2025-26"}
-        TitleAmount={`INR ${inrFormat(grandTotal)}`}
+         titleLabel={selectedFiscalYear}
+        TitleAmount={`INR ${inrFormat(selectedGraph.paidTotal)}`}
         border
       >
         <BarGraph data={selectedGraph.chartData} options={barGraphOptions} />
@@ -410,16 +461,18 @@ const Collections = () => {
           <div className="flex items-center gap-4">
             <SecondaryButton
               title={<MdNavigateBefore />}
-              handleSubmit={() => setSelectedYearIndex((prev) => Math.max(0, prev - 1))}
-              disabled={selectedYearIndex === 0}
+              handleSubmit={() =>
+                setSelectedFiscalYearStart((prev) => prev - 1)
+              }
             />
-            <div className="text-primary text-content font-semibold">{selectedFiscalYear}</div>
+            <div className="text-primary text-content font-semibold">
+              {selectedFiscalYear}
+            </div>
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={() =>
-                setSelectedYearIndex((prev) => Math.min(fiscalYears.length - 1, prev + 1))
+                setSelectedFiscalYearStart((prev) => prev + 1)
               }
-              disabled={selectedYearIndex === fiscalYears.length - 1}
             />
           </div>
         </div>
@@ -429,22 +482,22 @@ const Collections = () => {
           <DataCard
             title={"Collected"}
             // description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
-            description={`Total : INR ${inrFormat(grandTotal)}`}
+             description={`Total : INR ${inrFormat(selectedGraph.paidTotal)}`}
             data={`${(completed / 12).toFixed(0) || 0}%`}
           />
           <DataCard
             title={"Due"}
             // description={`Current Month: ${sortedData[0]?.month || "N/A"}`}
-            description={`Total : INR 0`}
-            data={`${selectedGraph.chartData[1]?.data?.[0] || 0}%`}
+            description={`Total : INR ${inrFormat(selectedGraph.dueTotal)}`}
+            data={`${(due / 12).toFixed(0) || 0}%`}
           />
         </WidgetSection>
-      </WidgetSection>
+      </WidgetSection>  
 
       <WidgetSection
         border
-        title={"COLLECTIONS"}
-        TitleAmount={`INR ${inrFormat(grandTotal)}`}
+        title={selectedCollectionMonthTitle}
+        TitleAmount={`INR ${inrFormat(currentMonthTotal)}`}
       >
         <div className="flex justify-end px-4 pt-4">
           <PrimaryButton title="Export" handleSubmit={handleExport} />
