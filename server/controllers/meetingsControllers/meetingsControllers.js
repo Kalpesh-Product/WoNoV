@@ -1866,12 +1866,33 @@ const updateMeetingStatus = async (req, res, next) => {
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ message: "Invalid status value" });
   }
+  const meeting = await Meeting.findById(meetingId);
+
+  if (!meeting) {
+    return res.status(404).json({ message: "Meeting not found" });
+  }
 
   const currDate = new Date();
 
+  // Prevent completing/ongoing meeting before start date/time
+  // if (status && currDate < new Date(meeting.startTime)) {
+  //   return res.status(400).json({
+  //     message:
+  //       "Meeting cannot be marked completed/ongoing before its start time",
+  //   });
+  // }
+
+  const updatePayload = {
+    status,
+    ...(status === "Completed" && {
+      completedAt: currDate,
+      completedBy: user,
+    }),
+  };
+
   const updatedMeeting = await Meeting.findByIdAndUpdate(
     meetingId,
-    { status, completedAt: currDate, completedBy: user },
+    updatePayload,
     { new: true },
   ).populate("bookedBy", "firstName lastName");
 
