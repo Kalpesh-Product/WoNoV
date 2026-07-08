@@ -1874,12 +1874,13 @@ const updateMeetingStatus = async (req, res, next) => {
 
   const currDate = new Date();
 
-  // Prevent completing meeting before start date/time
-  if (status === "Completed" && currDate < new Date(meeting.startTime)) {
-    return res.status(400).json({
-      message: "Meeting cannot be marked completed before its start time",
-    });
-  }
+  // Prevent completing/ongoing meeting before start date/time
+  // if (status && currDate < new Date(meeting.startTime)) {
+  //   return res.status(400).json({
+  //     message:
+  //       "Meeting cannot be marked completed/ongoing before its start time",
+  //   });
+  // }
 
   const updatePayload = {
     status,
