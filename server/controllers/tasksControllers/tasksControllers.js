@@ -13,11 +13,163 @@ const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const Unit = require("../../models/locations/Unit");
 const emitter = require("../../utils/eventEmitter");
+const { Readable } = require("stream");
+const csvParser = require("csv-parser");
 const {
   toUtcStartOfDay,
   getTodayUtcRange,
   getRequestTimezone,
 } = require("../../utils/dateTimezone");
+
+const VALID_BULK_TASK_STATUSES = ["Pending", "InProgress", "Completed"];
+const BULK_TASK_REQUIRED_FIELDS = [
+  "taskName",
+  "department",
+  // "description",
+  "assignedDate",
+  // "dueDate",t
+  "dueTime",
+  "taskType",
+];
+const CSV_MIME_TYPES = [
+  "text/csv",
+  "application/csv",
+  "application/vnd.ms-excel",
+  "text/plain",
+];
+
+const normalizeCsvValue = (value) => String(value || "").trim();
+
+const normalizeLookupValue = (value) => normalizeCsvValue(value).toLowerCase();
+
+const escapeRegex = (value) =>
+  normalizeCsvValue(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const isValidCsvUpload = (file) => {
+  const originalName = normalizeLookupValue(file?.originalname);
+  return (
+    CSV_MIME_TYPES.includes(file?.mimetype) || originalName.endsWith(".csv")
+  );
+};
+
+const parseCsvRows = (csvData) =>
+  new Promise((resolve, reject) => {
+    const rows = [];
+
+    Readable.from(csvData)
+      .pipe(csvParser())
+      .on("data", (row) => rows.push(row))
+      .on("end", () => resolve(rows))
+      .on("error", reject);
+  });
+
+const parseTaskDate = (value) => {
+  const parsedDate = new Date(normalizeCsvValue(value));
+  return isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
+const parseTaskDueTime = (value, dueDate) => {
+  const rawDueTime = normalizeCsvValue(value);
+  if (!rawDueTime) return null;
+
+  const parsedTime = new Date(rawDueTime);
+  if (!isNaN(parsedTime.getTime())) return parsedTime;
+
+  const timeMatch = rawDueTime.match(
+    /^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i,
+  );
+  if (!timeMatch || !dueDate) return null;
+
+  let hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  const seconds = Number(timeMatch[3] || 0);
+  const meridiem = timeMatch[4]?.toUpperCase();
+
+  if (minutes > 59 || seconds > 59 || hours > (meridiem ? 12 : 23)) {
+    return null;
+  }
+
+  if (meridiem === "PM" && hours !== 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+
+  const dateWithTime = new Date(dueDate);
+  dateWithTime.setHours(hours, minutes, seconds, 0);
+  return dateWithTime;
+};
+
+const splitUserName = (name) => {
+  const parts = normalizeCsvValue(name).split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return null;
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
+};
+
+const resolveBulkTaskUser = async (value, company) => {
+  const normalizedValue = normalizeCsvValue(value);
+  if (!normalizedValue) return null;
+
+  const baseQuery = company ? { company } : {};
+  if (mongoose.Types.ObjectId.isValid(normalizedValue)) {
+    return UserData.findOne({ firstName: normalizedValue, ...baseQuery })
+      .select("_id")
+      .lean();
+  }
+
+  const name = splitUserName(normalizedValue);
+  if (!name) return null;
+
+  return UserData.findOne({
+    ...baseQuery,
+    firstName: new RegExp(`^${escapeRegex(name.firstName)}$`, "i"),
+    lastName: new RegExp(`^${escapeRegex(name.lastName)}$`, "i"),
+  })
+    .select("_id")
+    .lean();
+};
+
+const resolveBulkTaskDepartment = async (value) => {
+  const normalizedValue = normalizeCsvValue(value);
+  if (!normalizedValue) return null;
+
+  if (mongoose.Types.ObjectId.isValid(normalizedValue)) {
+    return Department.findOne({ _id: normalizedValue, isActive: true })
+      .select("_id")
+      .lean();
+  }
+
+  return Department.findOne({
+    name: new RegExp(`^${escapeRegex(normalizedValue)}$`, "i"),
+    isActive: true,
+  })
+    .select("_id")
+    .lean();
+};
+
+const resolveBulkTaskLocation = async (value, company) => {
+  const normalizedValue = normalizeCsvValue(value);
+  if (!normalizedValue) return null;
+
+  const baseQuery = { isActive: true, ...(company ? { company } : {}) };
+  if (mongoose.Types.ObjectId.isValid(normalizedValue)) {
+    return Unit.findOne({ _id: normalizedValue, ...baseQuery })
+      .select("_id")
+      .lean();
+  }
+
+  const escapedValue = escapeRegex(normalizedValue);
+  return Unit.findOne({
+    ...baseQuery,
+    $or: [
+      { unitNo: new RegExp(`^${escapedValue}$`, "i") },
+      { unitName: new RegExp(`^${escapedValue}$`, "i") },
+      { unitName: new RegExp(escapedValue, "i") },
+    ],
+  })
+    .select("_id")
+    .lean();
+};
 
 const createTasks = async (req, res, next) => {
   const { user, ip, company } = req;
@@ -1271,6 +1423,157 @@ const getTasksSummary = async (req, res, next) => {
   }
 };
 
+const bulkInsertTasks = async (req, res, next) => {
+  try {
+    const { company, user } = req;
+    const file = req.file;
+
+    if (!file || !isValidCsvUpload(file)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid CSV file",
+      });
+    }
+
+    const csvData = file.buffer.toString("utf-8").trim();
+    if (!csvData) {
+      return res.status(400).json({
+        success: false,
+        message: "CSV file is empty",
+      });
+    }
+
+    const rows = await parseCsvRows(csvData);
+    const tasks = [];
+    const invalidRows = [];
+
+    for (const [index, row] of rows.entries()) {
+      const rowNumber = index + 2;
+      const reasons = [];
+      const taskName = normalizeCsvValue(row.taskName);
+      const taskType = normalizeCsvValue(row.taskType);
+      const assignedBy = normalizeCsvValue(row.assignedBy);
+      const assignedTo = normalizeCsvValue(row.assignedTo);
+      const description = normalizeCsvValue(row.description);
+      const assignedDate = normalizeCsvValue(row.assignedDate);
+      const dueDate = normalizeCsvValue(row.dueDate);
+      const dueTime = normalizeCsvValue(row.dueTime);
+      const status = normalizeCsvValue(row.status) || "Pending";
+      const location = normalizeCsvValue(row.location);
+      const department = normalizeCsvValue(row.department);
+
+      const missingFields = BULK_TASK_REQUIRED_FIELDS.filter(
+        (field) => !normalizeCsvValue(row[field]),
+      );
+      if (missingFields.length > 0) {
+        reasons.push(`Missing required fields: ${missingFields.join(", ")}`);
+      }
+
+      if (taskType && !["Self", "Department"].includes(taskType)) {
+        reasons.push("Invalid taskType. Must be Self or Department");
+      }
+
+      if (!VALID_BULK_TASK_STATUSES.includes(status)) {
+        reasons.push(
+          "Invalid status. Must be Pending, InProgress, or Completed",
+        );
+      }
+
+      if (
+        description &&
+        (typeof description !== "string" ||
+          !description.length ||
+          description.replace(/\s/g, "").length > 100)
+      ) {
+        reasons.push("Character limit exceeded");
+      }
+
+      const parsedAssignedDate = parseTaskDate(assignedDate);
+      const parsedDueDate = parseTaskDate(dueDate);
+      if (assignedDate && !parsedAssignedDate) {
+        reasons.push("Invalid assignedDate format");
+      }
+      if (dueDate && !parsedDueDate) reasons.push("Invalid dueDate format");
+      if (
+        parsedAssignedDate &&
+        parsedDueDate &&
+        parsedAssignedDate > parsedDueDate
+      ) {
+        reasons.push("Start date cannot be after end date");
+      }
+
+      const parsedDueTime = parseTaskDueTime(dueTime, parsedDueDate);
+      if (dueTime && !parsedDueTime) reasons.push("Invalid dueTime format");
+
+      const resolvedDepartment = department
+        ? await resolveBulkTaskDepartment(department)
+        : null;
+      if (department && !resolvedDepartment) {
+        reasons.push(`Invalid department: ${department}`);
+      }
+
+      const resolvedLocation = location
+        ? await resolveBulkTaskLocation(location, company)
+        : null;
+      if (location && !resolvedLocation) {
+        reasons.push(`Invalid location: ${location}`);
+      }
+
+      const resolvedAssignedTo = assignedTo
+        ? await resolveBulkTaskUser(assignedTo, company)
+        : null;
+      if (assignedTo && !resolvedAssignedTo) {
+        reasons.push(`Invalid assignedTo user: ${assignedTo}`);
+      }
+
+      const resolvedAssignedBy = assignedBy
+        ? await resolveBulkTaskUser(assignedBy, company)
+        : null;
+      if (assignedBy && !resolvedAssignedBy) {
+        reasons.push(`Invalid assignedBy user: ${assignedBy}`);
+      }
+
+      if (reasons.length > 0) {
+        invalidRows.push({ rowNumber, row, reasons });
+        continue;
+      }
+
+      tasks.push({
+        taskName,
+        taskType,
+        department: resolvedDepartment._id,
+        description,
+        assignedTo: resolvedAssignedTo ? [resolvedAssignedTo._id] : [],
+        assignedBy: resolvedAssignedBy?._id || user,
+        assignedDate: parsedAssignedDate,
+        dueDate: parsedDueDate,
+        dueTime: parsedDueTime,
+        status,
+        company,
+        location: resolvedLocation?._id || null,
+      });
+    }
+
+    let insertedTasks = [];
+    if (tasks.length > 0) {
+      insertedTasks = await Task.insertMany(tasks, { ordered: false });
+    }
+
+    return res.status(insertedTasks.length > 0 ? 201 : 400).json({
+      success: insertedTasks.length > 0,
+      message:
+        insertedTasks.length > 0
+          ? "Tasks uploaded successfully"
+          : "No valid task rows found in the CSV",
+      insertedCount: insertedTasks.length,
+      skippedCount: invalidRows.length,
+      invalidRows,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createTasks,
   updateTask,
@@ -1289,4 +1592,5 @@ module.exports = {
   getMyAssignedTasks,
   getTodayDeptTasks,
   getTasksSummary,
+  bulkInsertTasks,
 };
