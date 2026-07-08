@@ -24,32 +24,6 @@ const normalizeMonth = (value) => {
   return String(value).trim().slice(0, 3).toLowerCase();
 };
 
-// const getMonthDate = (monthValue) => {
-//   const normalizedMonth = normalizeMonth(monthValue);
-
-//   const monthIndex = [
-//     "jan",
-//     "feb",
-//     "mar",
-//     "apr",
-//     "may",
-//     "jun",
-//     "jul",
-//     "aug",
-//     "sep",
-//     "oct",
-//     "nov",
-//     "dec",
-//   ].indexOf(normalizedMonth);
-
-//   if (monthIndex === -1) return null;
-
-//   const currentYear = new Date().getFullYear();
-//   const fiscalYear = monthIndex <= 2 ? currentYear + 1 : currentYear;
-
-//   return new Date(Date.UTC(fiscalYear, monthIndex, 1));
-// };
-
 const getMonthDate = (monthValue) => {
   const normalizedMonth = normalizeMonth(monthValue);
 
@@ -1129,10 +1103,9 @@ const bulkInsertBudgets = async (req, res, next) => {
         const rawMonth = row["Month"]?.trim();
 
         const normalizedMonth = normalizeMonth(rawMonth);
+        const month = getMonthDate(normalizedMonth);
 
-        const month = rawDueDate
-          ? new Date(rawDueDate)
-          : getMonthDate(normalizedMonth);
+        const dueDate = rawDueDate ? new Date(rawDueDate) : month;
 
         const department = departmentMap.get(normalize(row["Department"]));
 
@@ -1161,7 +1134,7 @@ const bulkInsertBudgets = async (req, res, next) => {
           // status: row["Status"] || "Pending",
           status: "Approved",
           month,
-          dueDate: month,
+          dueDate: dueDate || null,
           expanseType: row["Expanse Type"],
           category: row["Expanse Category"],
           // isPaid: row["Status"] === "Approved" ? "Paid" : "Unpaid",

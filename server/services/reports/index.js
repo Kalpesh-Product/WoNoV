@@ -47,6 +47,7 @@ const {
 const { fetchLeadReportService } = require("./lead");
 const { fetchUnitReportService } = require("./unit");
 const { fetchHolidayAndEventsService } = require("./holidayEvent");
+const { fetchInventoryService } = require("./inventory");
 const normalizeReportIdentifier = (value = "") =>
   value
     .trim()
@@ -110,6 +111,9 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
+  inventory: createReportService(fetchInventoryService, {
+    dateField: "createdAt",
+  }),
   holidayevent: createReportService(fetchHolidayAndEventsService, {
     dateField: "createdAt",
   }),
@@ -127,6 +131,7 @@ const reportServiceRegistry = {
     fetchInventoryBuildingUnitsReportService,
     {
       dateField: "createdAt",
+      staticParams: { type: "offices" },
     },
   ),
 
