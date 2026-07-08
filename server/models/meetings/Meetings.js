@@ -44,7 +44,6 @@ const meetingSchema = new mongoose.Schema(
 
     completedAt: {
       type: Date,
-      required: true,
     },
     completedBy: {
       type: mongoose.Schema.Types.ObjectId,
