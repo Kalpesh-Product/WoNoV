@@ -12,6 +12,8 @@ import PageFrame from "../../components/Pages/PageFrame";
 const ChangePassword = ({ pageTitle }) => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
+  const getPasswordPreviewStorageKey = (employeeId) =>
+    employeeId ? `employee-password-preview:${employeeId}` : "";
   const userDepartments = auth?.user?.departments || [];
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
@@ -106,10 +108,17 @@ const ChangePassword = ({ pageTitle }) => {
       }
 
       // Simulate password change success
-      await axios.post("/api/users/update-password", {
+      const response = await axios.post("/api/users/update-password", {
         newPassword: formData.newPassword,
         confirmPassword: formData.confirmPassword,
       });
+      const nextPasswordPreview = response?.data?.passwordPreview || formData.newPassword;
+      if (auth?.user?.empId) {
+        sessionStorage.setItem(
+          getPasswordPreviewStorageKey(auth.user.empId),
+          nextPasswordPreview,
+        );
+      }
       setSuccessMessage("Password changed successfully!");
       setFormData({
         currentPassword: "",

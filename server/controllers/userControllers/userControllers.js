@@ -399,7 +399,6 @@ const createUser = async (req, res, next) => {
       role,
       company,
       password: hashedPassword,
-      plainPassword: defaultPassword,
       attendanceSource: resolvedAttendanceSource,
       departments,
       employeeType,
@@ -436,7 +435,12 @@ const createUser = async (req, res, next) => {
       }
     }
 
-    return res.status(201).json({ message: "Employee onboarded successfully" });
+    return res.status(201).json({
+      message: "Employee onboarded successfully",
+      employeeID: savedUser.empId,
+      userId: savedUser._id,
+      passwordPreview: defaultPassword,
+    });
   } catch (error) {
     next(error);
   }
@@ -508,7 +512,6 @@ const fetchSingleUser = async (req, res) => {
     const { empid } = req.params;
 
     const user = await User.findOne({ empId: empid })
-      .select("-password")
       .populate([
         { path: "reportsTo" },
         { path: "departments", select: "name" },
@@ -563,6 +566,12 @@ const fetchSingleUser = async (req, res) => {
       if (policy?.name && !acc[policy.name]) acc[policy.name] = policy;
       return acc;
     }, {});
+    const defaultPassword = "xyz@123";
+    const passwordPreview =
+      user?.password &&
+      (await bcrypt.compare(defaultPassword, user.password).catch(() => false))
+        ? defaultPassword
+        : "";
 
     const formattedUser = {
       _id: user._id,
@@ -647,7 +656,7 @@ const fetchSingleUser = async (req, res) => {
       tdsCalculationBasedOn:
         user.payrollInformation?.tdsCalculationBasedOn || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
-      plainPassword: user.plainPassword || "",
+      passwordPreview,
     };
 
     res.status(200).json(formattedUser);
@@ -703,8 +712,10 @@ const updatePassword = async (req, res, next) => {
     // Find the user by ID and update the password
     const updatedUser = await User.findByIdAndUpdate(
       { _id: user },
-      { $set: { password: hashedPassword, plainPassword: newPassword } }, // Update the password field
-      // { $set: { password: hashedPassword } }, // Update the password field
+      {
+        $set: { password: hashedPassword },
+        $unset: { plainPassword: "" },
+      },
       { new: true, runValidators: true }, // Return the updated document and enforce validation
     )
       .lean()
@@ -716,6 +727,7 @@ const updatePassword = async (req, res, next) => {
 
     res.status(200).json({
       message: "Password updated successfully",
+      passwordPreview: newPassword,
     });
   } catch (error) {
     console.error("Error updating password: ", error);
@@ -1090,7 +1102,6 @@ const bulkInsertUsers = async (req, res, next) => {
                   email: row["Company Email"].trim().toLowerCase(),
                   company: new mongoose.Types.ObjectId(companyId),
                   password: hashedPassword,
-                  plainPassword: defaultPassword,
                   departments: departmentObjectIds,
                   role: roleObjectIds,
                   reportsTo: reportsToId,
@@ -1378,13 +1389,19 @@ const updateEmployeePasswordByEmpId = async (req, res, next) => {
         .json({ message: "Password should be at least 8 characters long" });
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
-    user.plainPassword = newPassword;
-    await user.save();
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: { password: hashedPassword },
+        $unset: { plainPassword: "" },
+      },
+    );
 
     return res.status(200).json({
       message: "Password updated successfully",
-      plainPassword: user.plainPassword,
+      passwordPreview: newPassword,
     });
   } catch (error) {
     next(error);

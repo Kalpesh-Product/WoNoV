@@ -8,7 +8,7 @@ import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
 import { useNavigate } from "react-router-dom";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import { inrFormat } from "../../../../utils/currencyFormat";
-import YearlyGraph2 from "../../../../components/graphs/YearlyGraph2";
+import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import { parseAmount } from "../../../../utils/parseAmount";
 import { CircularProgress } from "@mui/material";
 
@@ -131,7 +131,7 @@ const DeptWiseBudget = () => {
           cellRenderer: (params) => {
             const handleClick = () => {
               navigate(
-               // `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`,
+                // `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`,
                 `/app/dashboard/finance-dashboard/mix-bag/department-wise-budget/${encodeURIComponent(params.value)}`,
                 {
                   state: {
@@ -312,7 +312,7 @@ const expenseRawSeries = useMemo(() => {
   return (
     // <div className="flex flex-col gap-8">
        <div className="p-4 flex flex-col gap-8">
-      <YearlyGraph2
+      <YearlyGraph
         data={expenseRawSeries}
         options={expenseOptions}
         title={"BIZ Nest DEPARTMENT WISE EXPENSE"}

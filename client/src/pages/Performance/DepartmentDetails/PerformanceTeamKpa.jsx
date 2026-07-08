@@ -25,6 +25,7 @@ import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const PerformanceTeamKpa = () => {
   const axios = useAxiosPrivate();
@@ -34,6 +35,7 @@ const PerformanceTeamKpa = () => {
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
     const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
      const [selectedMonthRange, setSelectedMonthRange] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
@@ -217,6 +219,12 @@ const PerformanceTeamKpa = () => {
       toast.error("Failed to remove recurrence");
     },
   });
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteMonthlyKpaRecurrence(deleteTargetId);
+    setDeleteTargetId(null);
+  };
 
   const { mutate: addMonthlyKpa, isPending: isAddKpaPending } = useMutation({
     mutationKey: ["addTeamMonthlyKpa"],
@@ -447,7 +455,7 @@ const PerformanceTeamKpa = () => {
                   type="button"
                   title="Delete Recurrence"
                   // disabled={!params.node.selected || isDeletePending}
-                  onClick={() => deleteMonthlyKpaRecurrence(params.data.id)}
+                  onClick={() => setDeleteTargetId(params.data.id)}
                   className="ml-2 disabled:cursor-not-allowed"
                 >
                   {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
@@ -463,13 +471,30 @@ const PerformanceTeamKpa = () => {
   const completedColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     { headerName: "KPA List", field: "taskName", flex: 1 },
-    { headerName: "Start Date", field: "startDateTime", flex: 1, includeTime: true },
-    { headerName: "End Date", field: "endDateTime", flex: 1, includeTime: true },
+    {
+      headerName: "Start Date",
+      field: "startDateTime",
+      flex: 1,
+      exportFormat: "date",
+      valueFormatter: (params) => (params.value ? humanDate(params.value) : ""),
+    },
+    {
+      headerName: "End Date",
+      field: "endDateTime",
+      flex: 1,
+      exportFormat: "date",
+      valueFormatter: (params) => (params.value ? humanDate(params.value) : ""),
+    },
     { headerName: "Completed By", field: "completedBy" ,flex: 1 },
     {
       headerName: "Completed At",
       field: "completedAt",
       flex: 1,
+      exportFormat: "datetime-comma",
+      valueFormatter: (params) =>
+        params.value
+          ? `${humanDate(params.value)}, ${humanTime(params.value)}`
+          : "",
     },
     {
       field: "status",
@@ -559,6 +584,7 @@ const PerformanceTeamKpa = () => {
                   }))}
                 dateColumn={"dueDate"}
                 columns={teamColumns}
+                preserveCurrentMonthRange
                   isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
                 onDateFilterChange={handleTeamDateFilterChange}
               />
@@ -579,6 +605,7 @@ const PerformanceTeamKpa = () => {
                   // exportData={true}
                   tableTitle={`COMPLETED - TEAM MONTHLY KPA - ${activeMemberName} - ${selectedMonthLabel}`}
                   exportData={showCompletedExport}
+                  taskExportDateTimeFormatting
                   hideDateControls
                   checkAll={false}
                   // key={filteredCompletedEntries.length}
@@ -594,9 +621,9 @@ const PerformanceTeamKpa = () => {
                     completedBy: item.completedBy,
                     completionDate: item.completionDate,
                     completionTime: item.completionDate,
-                    startDateTime: `${humanDate(item.assignedDate)} ${humanTime(item.assignedDate)}`,
-                    endDateTime: `${humanDate(item.dueDate)} ${humanTime(item.dueDate)}`,
-                    completedAt: `${humanDate(item.completionDate)} ${humanTime(item.completionDate)}`,
+                    startDateTime: item.assignedDate,
+                    endDateTime: item.dueDate,
+                    completedAt: item.completionDate,
                   }))}
                   dateColumn={"completionDate"}
                   columns={completedColumns}
@@ -611,6 +638,13 @@ const PerformanceTeamKpa = () => {
         </PageFrame>
 
       </div>
+
+      <ConfirmationModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletePending}
+      />
 
       <MuiModal
         open={openModal}

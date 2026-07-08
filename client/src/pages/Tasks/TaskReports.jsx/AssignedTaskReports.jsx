@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
@@ -12,34 +12,98 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
+import StatusChip from "../../../components/StatusChip";
+import dayjs from "dayjs";
+import useAuth from "../../../hooks/useAuth";
+import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
+  const dispatch = useDispatch();
+  const { auth } = useAuth();
   const deptId = useSelector((state) => state.performance.selectedDepartment);
+  const currentDepartmentId = auth?.user?.departments?.[0]?._id;
+  const effectiveDeptId = deptId || currentDepartmentId;
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState([]);
+  const [selectedTaskRange, setSelectedTaskRange] = useState(null);
+  React.useEffect(() => {
+    if (!deptId && currentDepartmentId) {
+      dispatch(setSelectedDepartment(currentDepartmentId));
+    }
+  }, [currentDepartmentId, deptId, dispatch]);
 
   const { data: taskList = [], isLoading } = useQuery({
-    queryKey: ["department-tasks", deptId],
+    queryKey: ["department-tasks", effectiveDeptId],
     queryFn: async () => {
-      if (!deptId) return [];
+      if (!effectiveDeptId) return [];
 
       const [pendingTasks, completedTasks] = await Promise.all([
-        axios.get(`/api/tasks/get-tasks?dept=${deptId}`),
-        axios.get(`/api/tasks/get-completed-tasks/${deptId}`),
+        axios.get(`/api/tasks/get-tasks?dept=${effectiveDeptId}`),
+        axios.get(`/api/tasks/get-completed-tasks/${effectiveDeptId}`),
       ]);
 
       return [...pendingTasks.data, ...completedTasks.data].filter(
         (task) => task.taskType === "Department"
       );
     },
-    enabled: Boolean(deptId),
+    enabled: Boolean(effectiveDeptId),
   });
 
   const handleViewDetails = (params) => {
-    setSelectedTask(formatDateTimeFields(params));
+    setSelectedTask(
+      formatDateTimeFields({
+        ...params,
+        startTime: params?.assignedDate,
+      }),
+    );
     setOpenModal(true);
+  };
+
+  const formatAssignedTo = (assignedTo) => {
+    if (!assignedTo) return "";
+
+    const currentUserId = auth?.user?._id;
+    const currentUserName =
+      [
+        auth?.user?.firstName,
+        auth?.user?.lastName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim() || auth?.user?.name || "";
+
+    if (Array.isArray(assignedTo)) {
+      return assignedTo
+        .map((member) =>
+          typeof member === "string"
+            ? member === currentUserId && currentUserName
+              ? currentUserName
+              : member
+            : [
+                member?.firstName,
+                member?.lastName,
+              ]
+                .filter(Boolean)
+                .join(" "),
+        )
+        .filter(Boolean)
+        .join(", ");
+    }
+
+    if (typeof assignedTo === "string") {
+      return assignedTo === currentUserId && currentUserName
+        ? currentUserName
+        : assignedTo;
+    }
+
+    return [
+      assignedTo?.firstName,
+      assignedTo?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ");
   };
 
   const myTaskReportsColumns = [
@@ -58,7 +122,10 @@ const AssignedTaskReports = () => {
       ),
     },
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
+    { field: "assignedTo", headerName: "Assign To", width: 300,hide: true },
     { field: "completedBy", headerName: "Completed By", width: 300 },
+    { field: "startDate", headerName: "Start Date" },
+    // { field: "startTime", headerName: "Start Time" },
     { field: "assignedDate", headerName: "Assigned Date" },
     { field: "dueDate", headerName: "Due Date" },
     {
@@ -74,7 +141,9 @@ const AssignedTaskReports = () => {
       headerName: "Completed Time",
     },
     { field: "department", headerName: "Department" },
-    { field: "status", headerName: "Status" },
+    { field: "status", headerName: "Status", pinned: "right", cellRenderer: (params) => (
+      <StatusChip status={params.value} />
+    ) }   ,
     // {
     //   field: "actions",
     //   headerName: "Actions",
@@ -91,14 +160,38 @@ const AssignedTaskReports = () => {
     // },
   ];
 
+  const currentMonthLabel = (
+    selectedTaskRange?.startDate ? dayjs(selectedTaskRange.startDate) : dayjs()
+  ).format("MMMM");
+
+  const handleTaskRangeChange = ({ selectedRange }) => {
+    setSelectedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return selectedRange;
+    });
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <PageFrame>
         <YearWiseTable
           exportData
+          taskExportDateTimeFormatting
           search={true}
           dateColumn={"assignedDate"}
-          tableTitle={"Department Tasks Reports"}
+          tableTitle={`Department Tasks Reports - ${currentMonthLabel}`}
           data={
             isLoading
               ? []
@@ -106,6 +199,8 @@ const AssignedTaskReports = () => {
                 srNo: index + 1,
                 ...task,
                 taskName: task.taskName,
+                startDate: task.assignedDate,
+                startTime: task.assignedDate,
                 assignedDate: task.assignedDate,
                 dueDate: task.dueDate,
                 dueTime: task.dueTime,
@@ -120,6 +215,7 @@ const AssignedTaskReports = () => {
                     .filter(Boolean)
                     .join(" ")
                   : "",
+                assignedTo: formatAssignedTo(task.assignedTo),
                 completedBy: task.completedBy,
                 department: task.department?.name || task.department,
                 description: task.description,
@@ -127,6 +223,7 @@ const AssignedTaskReports = () => {
               }))
           }
           columns={myTaskReportsColumns}
+          onDateFilterChange={handleTaskRangeChange}
         />
       </PageFrame>
 
@@ -151,20 +248,40 @@ const AssignedTaskReports = () => {
               detail={selectedTask.assignedBy}
             />
             <DetalisFormatted
+              title="Assign To"
+              detail={selectedTask.assignedTo || "-"}
+            />
+            <DetalisFormatted
               title="Completed By"
               detail={selectedTask.completedBy}
             />
+            <DetalisFormatted
+              title="Start Date"
+              detail={selectedTask.startDate}
+            />
+            {/* <DetalisFormatted
+              title="Start Time"
+              detail={selectedTask.startTime}
+            /> */}
             <DetalisFormatted
               title="Assigned Date"
               detail={selectedTask.assignedDate}
             />
             <DetalisFormatted
               title="Due Date"
-              detail={`${selectedTask.dueDate}, ${selectedTask.dueTime}`}
+              detail={selectedTask.dueDate}
+            />
+            <DetalisFormatted
+              title="Due Time"
+              detail={selectedTask.dueTime}
             />
             <DetalisFormatted
               title="Completed Date"
-              detail={`${selectedTask.completedDate}, ${selectedTask.completedTime}`}
+              detail={selectedTask.completedDate}
+            />
+            <DetalisFormatted
+              title="Completed Time"
+              detail={selectedTask.completedTime}
             />
 
             <DetalisFormatted

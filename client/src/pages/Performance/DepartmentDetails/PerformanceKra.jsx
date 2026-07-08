@@ -26,6 +26,7 @@ import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useCurrentDay from "../../../hooks/useCurrentDay";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -34,6 +35,7 @@ const PerformanceKra = () => {
   const [openModal, setOpenModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
    const selectedMember = useSelector((state) => state.performance.selectedMember);
   const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
   const selectedDepartmentName = useSelector(
@@ -128,6 +130,12 @@ const PerformanceKra = () => {
     normalizeValue(targetMemberName) === normalizeValue(loggedInUserName);
   const canManageSelectedMemberView = isManager || isSuperOrMasterAdmin;
   const shouldForceOwnControlsInEmployeeRoute = isEmployeeKraKpaRoute;
+  const shouldHideManagerControlsForSelectedMemberView =
+    !isEmployeeKraKpaRoute &&
+    isManager &&
+    !isSuperOrMasterAdmin &&
+    !!activeMember?.memberId &&
+    !isViewingOwnMember;
   const selectedDateKey = selectedDate.format("YYYY-MM-DD");
   const todayKey = today.format("YYYY-MM-DD");
   const isCurrentDateView = selectedDateKey === todayKey;
@@ -181,6 +189,12 @@ const PerformanceKra = () => {
       toast.error("Failed to remove recurrence");
     },
   });
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteDailyKraRecurrence(deleteTargetId);
+    setDeleteTargetId(null);
+  };
 
   //--------------POST REQUEST FOR DAILY KRA-----------------//
   const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
@@ -353,7 +367,7 @@ const PerformanceKra = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-      ...(((isSuperOrMasterAdmin || !isPastDateView) && canShowControls && !shouldHideActionsForEmployeeFuture)
+      ...(((isSuperOrMasterAdmin || !isPastDateView) && canShowControls && !shouldHideActionsForEmployeeFuture && !shouldHideManagerControlsForSelectedMemberView)
    // ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
       ? [
         {
@@ -437,7 +451,7 @@ const PerformanceKra = () => {
                     }
                     onClick={() => {
                       if (!isRowSelected || !rowCanEditDelete) return;
-                      deleteDailyKraRecurrence(params.data.id || params.data._id);
+                      setDeleteTargetId(params.data.id || params.data._id);
                     }}
                     // className="ml-2 disabled:cursor-not-allowed"
                     className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
@@ -474,12 +488,14 @@ const PerformanceKra = () => {
       field: "completionDate",
       flex: 1,
       hide: true,
+      exportFormat: "date",
      // cellRenderer: (params) => humanDate(params.value),
     },
     {
       headerName: "Completed Time",
       field: "completionTime",
       flex: 1,
+      exportFormat: "time",
      // cellRenderer: (params) => humanTime(params.value),
     },
     {
@@ -596,7 +612,7 @@ const PerformanceKra = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 formatTime
-                checkbox={canUseCheckbox && canShowControls && !shouldHideActionsForEmployeeFuture}
+                checkbox={canUseCheckbox && canShowControls && !shouldHideActionsForEmployeeFuture && !shouldHideManagerControlsForSelectedMemberView}
                 buttonTitle={
                   canShowAddDepartmentKraButton
                     ? "Add Department Daily KRA"
@@ -659,6 +675,7 @@ const PerformanceKra = () => {
                   formatTime
                    tableTitle={`COMPLETED - DEPARTMENT DAILY KRA - ${activeMemberName} - ${selectedDateLabel}`}
                   exportData={!isFutureDateView}
+                  taskExportDateTimeFormatting
                   checkAll={false}
                   // key={filteredCompletedEntries.length}
                   // data={filteredCompletedEntries.map((item, index) => ({
@@ -696,6 +713,13 @@ const PerformanceKra = () => {
           </div>
         </PageFrame>
       </div>
+
+      <ConfirmationModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletePending}
+      />
 
       <MuiModal
         open={openModal}

@@ -134,11 +134,13 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
             headerName: "Assigned Date",
             field: "assignedDate",
             includeTime: true,
+            exportFormat: "date",
         },
         {
             headerName: "Due Date",
             field: "dueDate",
             includeTime: true,
+            exportFormat: "date",
         },
         ...(activeStatusTab === "Completed"
             ? [
@@ -146,6 +148,7 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
                     headerName: "Completed On",
                     field: "completionDate",
                     includeTime: true,
+                    exportFormat: "datetime-comma",
                 },
             ]
             : []),
@@ -222,6 +225,7 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
                         search
                         tableTitle={`${activeStatusTab} ${selectedDepartment?.name} ${activeTypeTab} REPORT`}
                         exportData
+                        taskExportDateTimeFormatting
                         loading={isPending}
                     />
                 </div>

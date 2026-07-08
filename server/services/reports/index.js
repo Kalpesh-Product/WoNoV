@@ -46,6 +46,8 @@ const {
 } = require("./employees");
 const { fetchLeadReportService } = require("./lead");
 const { fetchUnitReportService } = require("./unit");
+const { fetchHolidayAndEventsService } = require("./holidayEvent");
+const { fetchInventoryService } = require("./inventory");
 const normalizeReportIdentifier = (value = "") =>
   value
     .trim()
@@ -109,6 +111,12 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
+  inventory: createReportService(fetchInventoryService, {
+    dateField: "createdAt",
+  }),
+  holidayevent: createReportService(fetchHolidayAndEventsService, {
+    dateField: "createdAt",
+  }),
   verticalwisetotalrevenuebreakup: async (context = {}) =>
     fetchVerticalRevenueReportService({
       dateFilter: context.dateFilter,
@@ -123,6 +131,7 @@ const reportServiceRegistry = {
     fetchInventoryBuildingUnitsReportService,
     {
       dateField: "createdAt",
+      staticParams: { type: "offices" },
     },
   ),
 

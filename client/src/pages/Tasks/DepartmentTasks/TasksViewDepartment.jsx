@@ -38,8 +38,14 @@ import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const TasksViewDepartment = () => {
+  const getCurrentMonthRange = () => ({
+    startDate: dayjs().startOf("month").toDate(),
+    endDate: dayjs().endOf("month").toDate(),
+    key: "selection",
+  });
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { department } = useParams();
@@ -48,6 +54,12 @@ const TasksViewDepartment = () => {
   const [openMultiModal, setOpenMultiModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState({});
   const [modalMode, setModalMode] = useState("");
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [selectedTaskRange, setSelectedTaskRange] = useState(
+    getCurrentMonthRange,
+  );
+  const [selectedCompletedTaskRange, setSelectedCompletedTaskRange] =
+    useState(getCurrentMonthRange);
   const EXCEPTIONAL_DEPARTMENT_IDS = [
     "67b2cf85b9b6ed5cedeb9a2e",
     // more exceptional department IDs...
@@ -483,9 +495,20 @@ const TasksViewDepartment = () => {
   );
 
   const taskSummary = useMemo(() => {
+    const selectedRangeStart = selectedTaskRange?.startDate
+      ? dayjs(selectedTaskRange.startDate)
+      : dayjs();
+
+    const isSelectedMonthTask = (value) => {
+      if (!value) return false;
+      const date = dayjs(value);
+      return date.isValid() && date.isSame(selectedRangeStart, "month");
+    };
+
     const departmentWideDepartmentTasks = (departmentWideTasks || []).filter(
       (item) =>
         item?.taskType === "Department" &&
+        isSelectedMonthTask(item?.assignedDate) &&
         String(item?.department || "").toLowerCase() ===
           String(department || "").toLowerCase(),
     );
@@ -500,7 +523,8 @@ const TasksViewDepartment = () => {
 
     const assignedCount = canViewAssignedSummary
       ? [...pendingDepartmentTasks, ...completedDepartmentTasks].filter((task) =>
-          isTaskAssignedToCurrentUser(task.rawAssignedTo),
+          isTaskAssignedToCurrentUser(task.rawAssignedTo) &&
+          isSelectedMonthTask(task?.assignedDate),
         ).length
       : 0;
 
@@ -516,11 +540,63 @@ const TasksViewDepartment = () => {
     departmentWideTasks,
     pendingDepartmentTasks,
     completedDepartmentTasks,
+    selectedTaskRange,
   ]);
 
   const visiblePendingTasks = canViewDepartmentWidePending
     ? departmentWidePendingTasks
     : pendingDepartmentTasks;
+  const currentMonthLabel = (
+    selectedTaskRange?.startDate ? dayjs(selectedTaskRange.startDate) : dayjs()
+  ).format("MMMM");
+  const completedMonthLabel = (
+    selectedCompletedTaskRange?.startDate
+      ? dayjs(selectedCompletedTaskRange.startDate)
+      : dayjs()
+  ).format("MMMM");
+  const handlePendingTaskRangeChange = ({ selectedRange }) => {
+    setSelectedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return selectedRange;
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteDepartmentTask(deleteTargetId);
+    setDeleteTargetId(null);
+  };
+
+  const handleCompletedTaskRangeChange = ({ selectedRange }) => {
+    setSelectedCompletedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return selectedRange;
+    });
+  };
 
   const departmentColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
@@ -665,7 +741,7 @@ const TasksViewDepartment = () => {
                 disabled={
                   !params.node.selected || isDeletePending || isUpdatePending
                 }
-                onClick={() => deleteDepartmentTask(params.data.id)}
+                onClick={() => setDeleteTargetId(params.data.id)}
                 className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
               >
                 {isDeletePending ? (
@@ -771,7 +847,7 @@ const TasksViewDepartment = () => {
                 <div className="w-full pb-3">
                   <div className="flex justify-between items-center gap-3 flex-wrap">
                     <span className="text-title text-primary font-pmedium uppercase">
-                      {department} DEPARTMENT TASKS
+                      {department} DEPARTMENT TASKS - {currentMonthLabel}
                     </span>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
@@ -808,6 +884,8 @@ const TasksViewDepartment = () => {
                   data={visiblePendingTasks}
                   dateColumn={"assignedDate"}
                   columns={departmentColumns}
+                  initialDateRange={selectedTaskRange}
+                  onDateFilterChange={handlePendingTaskRangeChange}
                   hideTitle
                 />
               </WidgetSection>
@@ -824,11 +902,14 @@ const TasksViewDepartment = () => {
             {!departmentLoading ? (
               <WidgetSection padding>
                 <YearWiseTable
-                  tableTitle={`COMPLETED TASK`}
+                  tableTitle={`COMPLETED TASK - ${completedMonthLabel}`}
                   exportData={true}
+                  taskExportDateTimeFormatting
                   data={completedDepartmentTasks}
                   dateColumn={"completedDate"}
                   columns={completedColumns}
+                  initialDateRange={selectedCompletedTaskRange}
+                  onDateFilterChange={handleCompletedTaskRangeChange}
                 />
               </WidgetSection>
             ) : (
@@ -839,6 +920,13 @@ const TasksViewDepartment = () => {
           </div>
         </PageFrame>
       </div>
+
+      <ConfirmationModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletePending}
+      />
 
       <MuiModal
         open={openModal}

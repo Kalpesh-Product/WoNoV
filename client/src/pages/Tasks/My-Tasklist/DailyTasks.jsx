@@ -32,6 +32,7 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const DailyTasks = () => {
   const taskFormDefaultValues = {
@@ -46,6 +47,18 @@ const DailyTasks = () => {
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("");
   const [selectedTask, setSelectedTask] = useState({});
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const getCurrentMonthRange = () => ({
+    startDate: dayjs().startOf("month").toDate(),
+    endDate: dayjs().endOf("month").toDate(),
+    key: "selection",
+  });
+  const [selectedMyTaskRange, setSelectedMyTaskRange] = useState(
+    getCurrentMonthRange,
+  );
+  const [selectedCompletedTaskRange, setSelectedCompletedTaskRange] = useState(
+    getCurrentMonthRange,
+  );
   const { auth } = useAuth();
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
   const deptId = useSelector((state) => state.performance.selectedDepartment);
@@ -181,6 +194,12 @@ const DailyTasks = () => {
       toast.error(error.message || "Error deleting task");
     },
   });
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    deleteMyTask(deleteTargetId);
+    setDeleteTargetId(null);
+  };
 
   const { mutate: editMyTask, isPending: isEditPending } = useMutation({
     mutationKey: ["editMyTask"],
@@ -333,7 +352,7 @@ const DailyTasks = () => {
               disabled={
                 !params.node.selected || isDeletePending || isUpdatePending
               }
-              onClick={() => deleteMyTask(params.data.id)}
+              onClick={() => setDeleteTargetId(params.data.id)}
               className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
             >
               {isDeletePending ? (
@@ -384,7 +403,12 @@ const DailyTasks = () => {
           role="button"
           onClick={() => {
             setModalMode("view-completed");
-            setSelectedTask(formatDateTimeFields(params.data));
+            setSelectedTask(
+              formatDateTimeFields({
+                ...params.data,
+                assignedTime: params.data?.assignedDate,
+              }),
+            );
             setOpenModal(true);
           }}
           className="text-primary underline cursor-pointer"
@@ -393,15 +417,16 @@ const DailyTasks = () => {
         </div>
       ),
     },
-    { headerName: "Start Date", field: "assignedDate", hide: true },
-    { headerName: "Due Date", field: "dueDate", hide: true },
-    { headerName: "Due Time", field: "dueTime", hide: true },
-    { headerName: "Department", field: "department", hide: true },
+    { headerName: "Start Date", field: "assignedDate", hide: true ,flex: 1},
+    { headerName: "Due Date", field: "dueDate", hide: true ,flex: 1},
+    { headerName: "Due Time", field: "dueTime", hide: true , flex: 1},
+    { headerName: "Department", field: "department", hide: true ,flex: 1},
     // { headerName: "Completed By", field: "completedBy" },
-    { headerName: "Assigned By", field: "assignedBy" },
+    { headerName: "Assigned By", field: "assignedBy",flex: 1 },
     // { headerName: "Completed Date", field: "completedDate" },
     {
       headerName: "Completed Date",
+      flex: 1,
       // field: "completedTime",
       // cellRenderer: (params) => {
       //   const completedDate = params.data?.completedDate;
@@ -417,8 +442,9 @@ const DailyTasks = () => {
     {
       headerName: "Completed Time",
       field: "completedTime",
+      flex: 1
     },
-    {headerName: "Status", field: "status", hide: true },
+    {headerName: "Status", field: "status", hide: true,flex: 1 },
     // {
     //   field: "status",
     //   headerName: "Status",
@@ -455,7 +481,12 @@ const DailyTasks = () => {
   const handleViewTask = (data) => {
     setModalMode("view");
     setOpenModal(true);
-    setSelectedTask(formatDateTimeFields(data));
+    setSelectedTask(
+      formatDateTimeFields({
+        ...data,
+        assignedTime: data?.assignedDate,
+      }),
+    );
   };
   //----------function handlers-------------//
 
@@ -480,20 +511,45 @@ const DailyTasks = () => {
         status: item.status,
       }));
 
+  const isDateInRange = (value, selectedRange) => {
+    if (!value || !selectedRange?.startDate || !selectedRange?.endDate) {
+      return false;
+    }
+
+    const date = dayjs(value);
+
+    if (!date.isValid()) return false;
+
+    return (
+      (date.isAfter(dayjs(selectedRange.startDate).startOf("day")) ||
+        date.isSame(dayjs(selectedRange.startDate).startOf("day"))) &&
+      (date.isBefore(dayjs(selectedRange.endDate).endOf("day")) ||
+        date.isSame(dayjs(selectedRange.endDate).endOf("day")))
+    );
+  };
+
   const visiblePendingTasks = useMemo(
     () =>
       Array.isArray(departmentKra)
-        ? departmentKra.filter((item) => isCurrentUserTaskOwner(item))
+        ? departmentKra.filter(
+            (item) =>
+              isCurrentUserTaskOwner(item) &&
+              isDateInRange(item?.assignedDate, selectedMyTaskRange),
+          )
         : [],
-    [departmentKra, currentUserId],
+    [departmentKra, currentUserId, selectedMyTaskRange],
   );
 
   const visibleCompletedEntries = useMemo(
     () =>
       Array.isArray(completedEntries)
-        ? completedEntries.filter((item) => isCurrentUserTaskOwner(item))
+        ? completedEntries.filter(
+            (item) =>
+              isCurrentUserTaskOwner(item) &&
+              isDateInRange(item?.assignedDate, selectedCompletedTaskRange),
+          )
         : [],
-    [completedEntries, currentUserId],
+    [completedEntries, currentUserId, selectedCompletedTaskRange],
   );
 
   const visibleCompletedData = useMemo(
@@ -545,6 +601,94 @@ const DailyTasks = () => {
     [pendingOnlyTasks, visibleCompletedEntries],
   );
 
+  const currentMyTaskMonthLabel = dayjs(
+    selectedMyTaskRange?.startDate || new Date(),
+  ).format("MMMM");
+  const currentCompletedMonthLabel = dayjs(
+    selectedCompletedTaskRange?.startDate || new Date(),
+  ).format("MMMM");
+  const getNormalizedRange = (selectedRange) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return null;
+
+    return {
+      startDate: selectedRange.startDate,
+      endDate: selectedRange.endDate,
+      key: selectedRange.key || "selection",
+    };
+  };
+  const handleMyTaskRangeChange = ({ selectedRange }) => {
+    const normalizedRange = getNormalizedRange(selectedRange);
+
+    setSelectedMyTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = normalizedRange?.startDate
+        ? dayjs(normalizedRange.startDate).valueOf()
+        : null;
+      const nextEnd = normalizedRange?.endDate
+        ? dayjs(normalizedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return normalizedRange;
+    });
+    setSelectedCompletedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = normalizedRange?.startDate
+        ? dayjs(normalizedRange.startDate).valueOf()
+        : null;
+      const nextEnd = normalizedRange?.endDate
+        ? dayjs(normalizedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return normalizedRange;
+    });
+  };
+  const handleMyCompletedTaskRangeChange = ({ selectedRange }) => {
+    const normalizedRange = getNormalizedRange(selectedRange);
+
+    setSelectedCompletedTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = normalizedRange?.startDate
+        ? dayjs(normalizedRange.startDate).valueOf()
+        : null;
+      const nextEnd = normalizedRange?.endDate
+        ? dayjs(normalizedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return normalizedRange;
+    });
+    setSelectedMyTaskRange((prev) => {
+      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
+      const nextStart = normalizedRange?.startDate
+        ? dayjs(normalizedRange.startDate).valueOf()
+        : null;
+      const nextEnd = normalizedRange?.endDate
+        ? dayjs(normalizedRange.endDate).valueOf()
+        : null;
+
+      if (prevStart === nextStart && prevEnd === nextEnd) {
+        return prev;
+      }
+
+      return normalizedRange;
+    });
+  };
+
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -553,7 +697,7 @@ const DailyTasks = () => {
             <div className="w-full pb-3">
               <div className="flex justify-between items-center gap-3 flex-wrap">
                 <span className="text-title text-primary font-pmedium uppercase">
-                  MY TASKS
+                  MY TASKS - {currentMyTaskMonthLabel}
                 </span>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
@@ -572,7 +716,9 @@ const DailyTasks = () => {
               </div>
             </div>
             <YearWiseTable
-              key={pendingOnlyTasks.length}
+              key={`${dayjs(selectedMyTaskRange?.startDate).valueOf()}-${dayjs(
+                selectedMyTaskRange?.endDate,
+              ).valueOf()}-${pendingOnlyTasks.length}`}
               checkbox
               tableTitle={""}
               buttonTitle={"Add Task"}
@@ -596,8 +742,10 @@ const DailyTasks = () => {
                     assignedBy: `${item.assignedBy.firstName} ${item.assignedBy.lastName}`,
                   })),
               ]}
-              dateColumn={"dueDate"}
+              dateColumn={"assignedDate"}
               columns={departmentColumns}
+              initialDateRange={selectedMyTaskRange}
+              onDateFilterChange={handleMyTaskRangeChange}
             />
           </WidgetSection>
         </PageFrame>
@@ -606,11 +754,18 @@ const DailyTasks = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 exportData={true}
-                key={visibleCompletedData.length}
-                tableTitle={`MY COMPLETED TASKS`}
+                taskExportDateTimeFormatting
+                key={`${dayjs(
+                  selectedCompletedTaskRange?.startDate,
+                ).valueOf()}-${dayjs(
+                  selectedCompletedTaskRange?.endDate,
+                ).valueOf()}-${visibleCompletedData.length}`}
+                tableTitle={`MY COMPLETED TASKS - ${currentCompletedMonthLabel}`}
                 data={visibleCompletedData}
-                dateColumn={"completionDate"}
+                dateColumn={"completedDate"}
                 columns={completedColumns}
+                initialDateRange={selectedCompletedTaskRange}
+                onDateFilterChange={handleMyCompletedTaskRangeChange}
               />
             </WidgetSection>
           ) : (
@@ -620,6 +775,13 @@ const DailyTasks = () => {
           )}
         </PageFrame>
       </div>
+
+      <ConfirmationModal
+        open={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeletePending}
+      />
 
       <MuiModal
         open={openModal}
@@ -722,6 +884,7 @@ const DailyTasks = () => {
                     label="End Date"
                     format="DD-MM-YYYY"
                     disabled={!startDate}
+                    minDate={startDate ? dayjs(startDate) : undefined}
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(date) =>
                       field.onChange(date ? date.toISOString() : null)
@@ -782,6 +945,10 @@ const DailyTasks = () => {
               title={"Start Date"}
               detail={`${selectedTask?.assignedDate}`}
             />
+            {/* <DetalisFormatted
+              title={"Start Time"}
+              detail={selectedTask?.assignedTime}
+            /> */}
             <DetalisFormatted
               title={"Due Date"}
               detail={`${selectedTask?.dueDate}, ${selectedTask?.dueTime}`}
@@ -803,6 +970,10 @@ const DailyTasks = () => {
               title={"Start Date"}
               detail={selectedTask?.assignedDate}
             />
+            {/* <DetalisFormatted
+              title={"Start Time"}
+              detail={selectedTask?.assignedTime}
+            /> */}
             <DetalisFormatted
               title={"Completed Date"}
               detail={`${selectedTask?.completedDate}, ${selectedTask?.completedTime}`}

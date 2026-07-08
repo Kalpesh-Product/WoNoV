@@ -43,6 +43,29 @@ const ExternalClients = ({
 }) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const allowedVisitScheduleEditorIds = [
+    "67b83885daad0f7bab2f18a9",
+    "6961fcd737afa664ab215d0a",
+  ];
+  const userDepartments = Array.isArray(auth?.user?.departments)
+    ? auth.user.departments
+    : [];
+  const userRoles = Array.isArray(auth?.user?.role) ? auth.user.role : [];
+  const isTopManagementUser = userDepartments.some(
+    (department) =>
+      String(department?.name || "").trim().toLowerCase() === "top management",
+  );
+  const isTechManager = userDepartments.some(
+    (department) =>
+      String(department?.name || "").trim().toLowerCase() === "tech",
+  )
+    && userRoles.some((role) =>
+      String(role?.roleTitle || "").trim().toLowerCase().includes("manager"),
+    );
+  const canEditVisitSchedule =
+    allowedVisitScheduleEditorIds.includes(String(auth?.user?._id || "")) ||
+    isTopManagementUser ||
+    isTechManager;
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -1188,21 +1211,41 @@ const ExternalClients = ({
                     <Controller
                       name="dateOfVisit"
                       control={control}
-                      render={({ field }) => (
-                        <DatePicker
-                          {...field}
-                          format="DD-MM-YYYY"
-                          label="Date of Visit"
-                          value={field.value ? dayjs(field.value) : null}
-                          onChange={(value) => field.onChange(value)}
-                          slotProps={{
-                            textField: {
-                              fullWidth: true,
-                              size: "small",
-                            },
-                          }}
-                        />
-                      )}
+                      render={({ field }) => {
+                        const selectedDate = field.value ? dayjs(field.value) : null;
+
+                        return (
+                          <DatePicker
+                            {...field}
+                            format="DD-MM-YYYY"
+                            label="Date of Visit"
+                            value={selectedDate}
+                            onChange={(value) => field.onChange(value)}
+                            shouldDisableDate={(date) => {
+                              if (
+                                selectedDate?.isValid() &&
+                                date.isSame(selectedDate, "day")
+                              ) {
+                                return false;
+                              }
+
+                              if (canEditVisitSchedule) {
+                                return false;
+                              }
+
+                              return date.isBefore(dayjs().startOf("day"), "day");
+                            }}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                size: "small",
+                                error: false,
+                                helperText: "",
+                              },
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </LocalizationProvider>
                 ) : (

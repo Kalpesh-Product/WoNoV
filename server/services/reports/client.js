@@ -377,6 +377,7 @@ const toObjectId = (value) => new mongoose.Types.ObjectId(value);
 const fetchInventoryBuildingUnitsReportService = async ({
   company,
   buildingName = DEFAULT_BUILDING_NAME,
+  type = "",
 }) => {
   const companyExists = await Company.findById(company).lean().exec();
 
@@ -437,11 +438,13 @@ const fetchInventoryBuildingUnitsReportService = async ({
       unitName: unit.unitName,
       buildingName: unit.building.buildingName,
       sqft: unit.sqft || 0,
-      totalDesks,
-      openDesks: unit.openDesks || 0,
-      cabinDesks: unit.cabinDesks || 0,
       occupiedDesks,
-      freeDesks: Math.max(totalDesks - occupiedDesks, 0),
+      ...(type !== "offices" && {
+        totalDesks,
+        openDesks: unit.openDesks || 0,
+        cabinDesks: unit.cabinDesks || 0,
+        freeDesks: Math.max(totalDesks - occupiedDesks, 0),
+      }),
     };
   });
 

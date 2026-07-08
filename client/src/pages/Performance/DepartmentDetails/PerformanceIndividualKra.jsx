@@ -26,6 +26,7 @@ import { FaCheckSquare } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import useCurrentDay from "../../../hooks/useCurrentDay";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 
 const PerformanceIndividualKra = () => {
     const axios = useAxiosPrivate();
@@ -35,6 +36,7 @@ const PerformanceIndividualKra = () => {
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
+    const [deleteTargetId, setDeleteTargetId] = useState(null);
     const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
     const today = useCurrentDay();
     const selectedMember = useSelector((state) => state.performance.selectedMember);
@@ -122,6 +124,12 @@ const PerformanceIndividualKra = () => {
     const isSelectedMemberManager = selectedMemberRole.includes("manager");
     const isSelectedMemberEmployee =
         !!activeMember?.memberId && !isSelectedMemberManager;
+    const shouldHideManagerControlsForSelectedMemberView =
+        !isEmployeeKraKpaRoute &&
+        isManager &&
+        !isSuperOrMasterAdmin &&
+        !!activeMember?.memberId &&
+        !isViewingOwnMember;
     const shouldUseTeamAddButton =
         !isEmployeeKraKpaRoute &&
         isSelectedMemberEmployee &&
@@ -205,8 +213,30 @@ const PerformanceIndividualKra = () => {
             const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
             return response.data;
         },
-        onSuccess: (data) => {
+        onSuccess: (data, deletedTaskId) => {
+            const removeDeletedTask = (oldData = []) =>
+                (oldData || []).filter((item) => {
+                    const rowId = item?.id || item?._id;
+                    return rowId?.toString?.() !== deletedTaskId?.toString?.();
+                });
+
+            queryClient.setQueryData(individualKraQueryKey, removeDeletedTask);
+            queryClient.setQueryData(
+                ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+                removeDeletedTask
+            );
+            queryClient.setQueryData(teamKraQueryKey, removeDeletedTask);
+
+            queryClient.invalidateQueries({ queryKey: individualKraQueryKey });
+            queryClient.invalidateQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
+            queryClient.invalidateQueries({ queryKey: teamKraQueryKey });
             queryClient.refetchQueries({ queryKey: individualKraQueryKey });
+            queryClient.refetchQueries({
+                queryKey: ["fetchedTeamKRAForIndividual", effectiveDeptId, selectedDateKey],
+            });
+            queryClient.refetchQueries({ queryKey: teamKraQueryKey });
             queryClient.refetchQueries({ queryKey: ["completedEntries", effectiveDeptId] });
             toast.success(data.message || "KRA recurrence removed");
         },
@@ -214,6 +244,12 @@ const PerformanceIndividualKra = () => {
             toast.error("Failed to remove recurrence");
         },
     });
+
+    const handleConfirmDelete = () => {
+        if (!deleteTargetId) return;
+        deleteDailyKraRecurrence(deleteTargetId);
+        setDeleteTargetId(null);
+    };
 
     //--------------POST REQUEST FOR DAILY KRA-----------------//
     const { mutate: addDailyKra, isPending: isAddKraPending } = useMutation({
@@ -462,7 +498,7 @@ const PerformanceIndividualKra = () => {
                 return <Chip label={params.value} style={{ backgroundColor, color }} />;
             },
         },
-        ...(((isSuperOrMasterAdmin || isCurrentDateView || (isFutureDateView && selectedMemberCanManageView)) && (matchingDepartment || selectedMemberCanManageView || shouldForceOwnControlsInEmployeeRoute) && canShowControls && !shouldHideActionsForEmployeeFuture)
+        ...(((isSuperOrMasterAdmin || isCurrentDateView || (isFutureDateView && selectedMemberCanManageView)) && (matchingDepartment || selectedMemberCanManageView || shouldForceOwnControlsInEmployeeRoute) && canShowControls && !shouldHideActionsForEmployeeFuture && !shouldHideManagerControlsForSelectedMemberView)
         //   ...((matchingDepartment || selectedMemberCanManageView) && canShowControls
        //   ...(matchingDepartment && !shouldHideControlsForSelectedMemberView
             ? [
@@ -546,7 +582,7 @@ const PerformanceIndividualKra = () => {
                                         }
                                         onClick={() => {
                                             if (!isRowSelected || !rowCanEditDelete) return;
-                                            deleteDailyKraRecurrence(params.data.id);
+                                            setDeleteTargetId(params.data.id);
                                         }}
                                         // className="ml-2 disabled:cursor-not-allowed"
                                         className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
@@ -753,7 +789,7 @@ const PerformanceIndividualKra = () => {
                                 // }
                                 // buttonDisabled={
                                 //     isAddKraDisabled || shouldHideControlsForSelectedMemberView
-                                checkbox={canUseCheckbox && canShowControls && !(isEmployeeLevel && isFutureDateView)}
+                                checkbox={canUseCheckbox && canShowControls && !(isEmployeeLevel && isFutureDateView) && !shouldHideManagerControlsForSelectedMemberView}
                                 buttonTitle={
                                      canShowAddIndividualKraButton
                                         ? addButtonLabel
@@ -853,6 +889,13 @@ const PerformanceIndividualKra = () => {
                     </div>
                 </PageFrame>
             </div>
+
+            <ConfirmationModal
+                open={!!deleteTargetId}
+                onClose={() => setDeleteTargetId(null)}
+                onConfirm={handleConfirmDelete}
+                isLoading={isDeletePending}
+            />
 
             <MuiModal
                 open={openModal}

@@ -41,6 +41,14 @@ const meetingSchema = new mongoose.Schema(
     extendTime: {
       type: Date,
     },
+
+    completedAt: {
+      type: Date,
+    },
+    completedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
     meetingType: {
       type: String,
       enum: ["Internal", "External"],

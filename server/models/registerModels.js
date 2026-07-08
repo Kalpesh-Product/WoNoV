@@ -43,6 +43,10 @@ require("./meetings/Rooms");
 require("./category/Category");
 require("./category/SubCategories");
 
+//Inventory
+require("./inventory/Inventory");
+require("./Item");
+
 //Assets
 require("./assets/Assets");
 require("./assets/AssignAsset");
@@ -53,3 +57,6 @@ require("./hr/Vendor");
 //Performance
 require("./performances/kraKpaRole");
 require("./performances/kraKpaTask");
+
+//Events
+require("./events/Events");
