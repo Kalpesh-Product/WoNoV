@@ -890,15 +890,18 @@ const EditDetails = () => {
   };
 
   const onSubmit = (data) => {
+    const currentPassword = String(data?.currentPassword || "").trim();
+    const newPassword = String(data?.newPassword || "").trim();
+    const confirmPassword = String(data?.confirmPassword || "").trim();
     const isPasswordChangeRequested = Boolean(
-      data?.currentPassword || data?.newPassword || data?.confirmPassword,
+      currentPassword && newPassword && confirmPassword,
     );
 
     if (isPasswordChangeRequested && !isPasswordVerified) {
       return toast.error("Please verify your current password first");
     }
 
-    if (isPasswordChangeRequested && (data?.newPassword || "").length < 8) {
+    if (isPasswordChangeRequested && newPassword.length < 8) {
       setError("newPassword", {
         type: "minLength",
         message: "Password must be at least 8 characters long",
@@ -908,7 +911,7 @@ const EditDetails = () => {
 
     if (
       isPasswordChangeRequested &&
-      (data?.newPassword || "") !== (data?.confirmPassword || "")
+      newPassword !== confirmPassword
     ) {
       setError("confirmPassword", {
         type: "passwordMismatch",
@@ -918,8 +921,13 @@ const EditDetails = () => {
     }
 
     updateEmployeeStatus.mutate(data);
-    if (isPasswordVerified && data?.currentPassword && data?.newPassword && data?.confirmPassword) {
-      updateEmployeePassword.mutate(data);
+    if (isPasswordVerified && isPasswordChangeRequested) {
+      updateEmployeePassword.mutate({
+        ...data,
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
     }
   };
 
@@ -1905,6 +1913,7 @@ const EditDetails = () => {
                           label="Current Password *"
                           fullWidth
                           disabled={isPasswordVerified}
+                          autoComplete="new-password"
                           // type="password"
                           type={
                             visiblePasswords.currentPassword
@@ -1937,6 +1946,7 @@ const EditDetails = () => {
                           size="small"
                           label="New Password *"
                           fullWidth
+                          autoComplete="new-password"
                           // type="password"
                           type={
                             visiblePasswords.newPassword ? "text" : "password"
@@ -1961,6 +1971,7 @@ const EditDetails = () => {
                           size="small"
                           label="Confirm Password *"
                           fullWidth
+                          autoComplete="new-password"
                           // type="password"
                           type={
                             visiblePasswords.confirmPassword

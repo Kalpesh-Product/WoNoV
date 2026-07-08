@@ -1,9 +1,16 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import humanDate from "../../../../utils/humanDateForamt";
@@ -16,35 +23,43 @@ import StatusChip from "../../../../components/StatusChip";
 
 const fiscalYears = ["FY 2024-25", "FY 2025-26"];
 
-const fiscalYearMonthMap = {
-  "FY 2024-25": [
-    "Apr-24",
-    "May-24",
-    "Jun-24",
-    "Jul-24",
-    "Aug-24",
-    "Sep-24",
-    "Oct-24",
-    "Nov-24",
-    "Dec-24",
-    "Jan-25",
-    "Feb-25",
-    "Mar-25",
-  ],
-  "FY 2025-26": [
-    "Apr-25",
-    "May-25",
-    "Jun-25",
-    "Jul-25",
-    "Aug-25",
-    "Sep-25",
-    "Oct-25",
-    "Nov-25",
-    "Dec-25",
-    "Jan-26",
-    "Feb-26",
-    "Mar-26",
-  ],
+dayjs.extend(customParseFormat);
+
+const fiscalMonths = [
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+];
+
+const getFiscalYearStart = (date = dayjs()) => {
+  const parsedDate = dayjs(date);
+  return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+};
+
+const formatFiscalYear = (startYear) =>
+  `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+
+const getFiscalYearMonths = (startYear) =>
+  fiscalMonths.map((month, index) => {
+    const year = index < 9 ? startYear : startYear + 1;
+    return `${month}-${String(year).slice(-2)}`;
+  });
+
+const getFiscalYearStartFromMonth = (monthLabel) => {
+  const parsedMonth = dayjs(`01-${monthLabel}`, "DD-MMM-YY", true);
+
+  if (!parsedMonth.isValid()) return null;
+
+  return parsedMonth.month() >= 3 ? parsedMonth.year() : parsedMonth.year() - 1;
 };
 
 const buildCsvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -73,7 +88,10 @@ const monthLookup = {
 const StatutoryPayments = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
-  const [selectedYearIndex, setSelectedYearIndex] = useState(1);
+   const [selectedFiscalYearStart, setSelectedFiscalYearStart] = useState(() =>
+    getFiscalYearStart()
+  );
+  const [selectedMonthLabel, setSelectedMonthLabel] = useState("");
   const widgetTableWrapRef = useRef(null);
 
   const axios = useAxiosPrivate();
@@ -100,11 +118,17 @@ const StatutoryPayments = () => {
       const monthKey = dayjs(item.dueDate).format("MMM-YY");
 
       if (!monthMap[monthKey]) {
-        monthMap[monthKey] = { total: 0, approved: 0, amount: 0 };
+        monthMap[monthKey] = {
+          total: 0,
+          approved: 0,
+          actualAmount: 0,
+          projectedAmount: 0,
+        };
       }
 
       monthMap[monthKey].total += 1;
-      monthMap[monthKey].amount += item.projectedAmount || 0;
+      monthMap[monthKey].actualAmount += item.actualAmount || 0;
+      monthMap[monthKey].projectedAmount += item.projectedAmount || 0;
 
       if (item.status === "Approved") {
         monthMap[monthKey].approved += 1;
@@ -112,7 +136,7 @@ const StatutoryPayments = () => {
     });
 
     return Object.entries(monthMap).map(
-      ([month, { total, approved, amount }]) => {
+      ([month, { total, approved, actualAmount, projectedAmount }]) => {
         const paid = Math.round((approved / total) * 100);
         return {
           month,
@@ -121,86 +145,85 @@ const StatutoryPayments = () => {
           approved,
           unapproved: total - approved,
           total,
-          amount,
+          amount: actualAmount,
+          actualAmount,
+          projectedAmount,
         };
       },
     );
   };
 
-  const statutoryRaw = isHrLoading
-    ? []
-    : hrFinance.filter((item) => item.expanseType === "Statutory Payments");
-  const statutoryFormatted = transformToCollectionData(statutoryRaw);
+   const statutoryRaw = useMemo(
+    () =>
+      isHrLoading
+        ? []
+        : hrFinance.filter((item) => item.expanseType === "Statutory Payments"),
+    [hrFinance, isHrLoading]
+  );
+
+  const statutoryFormatted = useMemo(
+    () => transformToCollectionData(statutoryRaw),
+    [statutoryRaw]
+  );
+
 
   const fiscalGraphData = useMemo(() => {
-    const fyBuckets = {
-      "FY 2024-25": fiscalYearMonthMap["FY 2024-25"].map((month) => ({
-        month,
-        paid: 0,
-        unpaid: 0,
-        meta: null,
-      })),
-      "FY 2025-26": fiscalYearMonthMap["FY 2025-26"].map((month) => ({
-        month,
-        paid: 0,
-        unpaid: 0,
-        meta: null,
-      })),
-    };
+    const fiscalYearMonths = getFiscalYearMonths(selectedFiscalYearStart);
+    const fyBuckets = fiscalYearMonths.map((month) => ({
+      month,
+      paid: 0,
+      unpaid: 0,
+      amount: 0,
+      meta: null,
+    }));
 
     statutoryFormatted.forEach((item) => {
-      const monthIndex = dayjs(`01-${item.month}`, "DD-MMM-YY").month();
-      const yearSuffix = Number(item.month.split("-")[1]);
-      const fullYear = 2000 + yearSuffix;
-
-      let fiscalYear = null;
-      if (
-        (fullYear === 2024 && monthIndex >= 3) ||
-        (fullYear === 2025 && monthIndex <= 2)
-      ) {
-        fiscalYear = "FY 2024-25";
-      } else if (
-        (fullYear === 2025 && monthIndex >= 3) ||
-        (fullYear === 2026 && monthIndex <= 2)
-      ) {
-        fiscalYear = "FY 2025-26";
+      if (getFiscalYearStartFromMonth(item.month) !== selectedFiscalYearStart) {
+        return;
       }
 
-      if (!fiscalYear) return;
-
-      const targetMonthIndex = fiscalYearMonthMap[fiscalYear].indexOf(
-        item.month,
-      );
+      const targetMonthIndex = fiscalYearMonths.indexOf(item.month);
       if (targetMonthIndex === -1) return;
 
-      fyBuckets[fiscalYear][targetMonthIndex] = {
+      fyBuckets[targetMonthIndex] = {
         month: item.month,
         paid: item.paid,
         unpaid: item.unpaid,
+        amount: item.amount,
         meta: item,
       };
     });
 
-    return fiscalYears.reduce((acc, fy) => {
-      acc[fy] = {
-        chartData: [
-          { name: "Paid", data: fyBuckets[fy].map((entry) => entry.paid) },
-          { name: "Unpaid", data: fyBuckets[fy].map((entry) => entry.unpaid) },
-        ],
-        meta: fyBuckets[fy].map((entry) => entry.meta),
-      };
-      return acc;
-    }, {});
+     return {
+      chartData: [
+        { name: "Approved", data: fyBuckets.map((entry) => entry.paid) },
+        { name: "Pending", data: fyBuckets.map((entry) => entry.unpaid) },
+      ],
+      meta: fyBuckets.map((entry) => entry.meta),
+      totalAmount: fyBuckets.reduce((sum, entry) => sum + entry.amount, 0),
+    };
+  }, [selectedFiscalYearStart, statutoryFormatted]);
+
+  const latestDataFiscalYearStart = useMemo(() => {
+    const fiscalYearStarts = statutoryFormatted
+      .map((item) => getFiscalYearStartFromMonth(item.month))
+      .filter((yearStart) => yearStart !== null);
+
+    return fiscalYearStarts.length ? Math.max(...fiscalYearStarts) : null;
   }, [statutoryFormatted]);
 
-  const selectedFiscalYear = fiscalYears[selectedYearIndex];
-  const selectedGraph = fiscalGraphData[selectedFiscalYear] || {
-    chartData: [
-      { name: "Paid", data: Array(12).fill(0) },
-      { name: "Unpaid", data: Array(12).fill(0) },
-    ],
-    meta: Array(12).fill(null),
-  };
+   useEffect(() => {
+    if (latestDataFiscalYearStart !== null) {
+      setSelectedFiscalYearStart(latestDataFiscalYearStart);
+    }
+  }, [latestDataFiscalYearStart]);
+
+  const selectedFiscalYear = formatFiscalYear(selectedFiscalYearStart);
+  const selectedFiscalYearMonths = useMemo(
+    () => getFiscalYearMonths(selectedFiscalYearStart),
+    [selectedFiscalYearStart]
+  );
+  const selectedGraph = fiscalGraphData;
   const barGraphOptions = {
     chart: {
       type: "bar",
@@ -220,7 +243,7 @@ const StatutoryPayments = () => {
       formatter: (val) => `${val}%`,
     },
     xaxis: {
-      categories: fiscalYearMonthMap[selectedFiscalYear],
+      categories: selectedFiscalYearMonths, 
     },
     yaxis: {
       max: 100,
@@ -241,19 +264,8 @@ const StatutoryPayments = () => {
 
         return `
       <div style="padding:10px;font-family:Poppins-Regular;font-size:13px; width: 220px">
-        <div style="display:flex; justify-content:space-between;"><strong>Month</strong> ${
-          item.month
-        }</div>
-        <div style="display:flex; justify-content:space-between;"><strong>Total Payments</strong> ${
-          item.total
-        }</div>
-        <div style="display:flex; justify-content:space-between;"><strong>Amount</strong> INR ${item.amount.toLocaleString()}</div>
-        <div style="color:#54C4A7; display:flex; justify-content:space-between;"><strong>Approved</strong> ${
-          item.approved
-        }</div>
-        <div style="color:#EB5C45; display:flex; justify-content:space-between;"><strong>Unapproved</strong> ${
-          item.unapproved
-        }</div>
+        <div style="display:flex; justify-content:space-between;"><strong style="color:#54C4A7;">Actual Amount : </strong><span style="color:#000;">INR ${item.actualAmount.toLocaleString("en-IN")}</span></div>
+        <div style="display:flex; justify-content:space-between;"><strong style="color:#EB5C45;">Projected Amount :  </strong><span style="color:#000;">INR ${item.projectedAmount.toLocaleString("en-IN")}</span></div>
       </div>
     `;
       },
@@ -288,7 +300,7 @@ const StatutoryPayments = () => {
     },
   ];
 
-  const selectedFiscalYearMonths = fiscalYearMonthMap[selectedFiscalYear] || [];
+  //const selectedFiscalYearMonths = fiscalYearMonthMap[selectedFiscalYear] || [];
   const selectedFiscalYearRows = useMemo(
     () =>
       statutoryRaw.filter((item) =>
@@ -341,12 +353,41 @@ const StatutoryPayments = () => {
     const startDate = parseDisplayDate(rangeNodes[0]?.textContent);
     const endDate = parseDisplayDate(rangeNodes[1]?.textContent);
 
-    if (!startDate || !endDate || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      if (
+      !startDate ||
+      !endDate ||
+      Number.isNaN(startDate.getTime()) ||
+      Number.isNaN(endDate.getTime())
+    ) {
       return null;
     }
 
     return { startDate, endDate };
   }, [parseDisplayDate]);
+
+  const handleMonthChange = useCallback(
+    (_total, filteredRows = [], range = null) => {
+      if (range?.startDate) {
+        setSelectedMonthLabel(dayjs(range.startDate).format("MMM-YYYY"));
+      } else if (filteredRows.length > 0) {
+        setSelectedMonthLabel(dayjs(filteredRows[0].dueDate).format("MMM-YYYY"));
+      } else {
+        setSelectedMonthLabel("");
+      }
+    },
+    []
+  );
+
+  const selectedStatutoryMonthTitle = useMemo(() => {
+    const selectedMonth = selectedMonthLabel
+      ? dayjs(selectedMonthLabel, "MMM-YYYY")
+      : dayjs();
+
+    return selectedMonth.isValid()
+      ? `Statutory Payments - ${selectedMonth.format("MMMM").toUpperCase()}`
+      : "Statutory Payments";
+  }, [selectedMonthLabel]);
+
 
   const buildExportFileName = (range = null) => {
     const start = range?.startDate ? dayjs(range.startDate) : null;
@@ -358,7 +399,9 @@ const StatutoryPayments = () => {
       return `statutory-payments-${startLabel}-to-${endLabel}.csv`;
     }
 
-    return `statutory-payments-${selectedFiscalYear.replace(/\s+/g, "-").toLowerCase()}.csv`;
+    return `statutory-payments-${selectedFiscalYear
+      .replace(/\s+/g, "-")
+      .toLowerCase()}.csv`;
   };
 
   const handleExport = () => {
@@ -367,8 +410,10 @@ const StatutoryPayments = () => {
       ? statutoryRaw.filter((item) => {
           const itemDate = dayjs(item.dueDate);
           if (!itemDate.isValid()) return false;
-          return itemDate.isAfter(dayjs(selectedRange.startDate).subtract(1, "day")) &&
-            itemDate.isBefore(dayjs(selectedRange.endDate).add(1, "day"));
+             return (
+            itemDate.isAfter(dayjs(selectedRange.startDate).subtract(1, "day")) &&
+            itemDate.isBefore(dayjs(selectedRange.endDate).add(1, "day"))
+          );
         })
       : selectedFiscalYearRows;
 
@@ -398,7 +443,10 @@ const StatutoryPayments = () => {
       row.dueDate ? humanDate(row.dueDate) : "-",
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map((row) => row.map(buildCsvCell).join(","))].join("\n");
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map(buildCsvCell).join(",")),
+    ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -412,12 +460,12 @@ const StatutoryPayments = () => {
 
   const canExport = selectedFiscalYearRows.length > 0;
 
-  const grandTotal = useMemo(() => {
-    return selectedFiscalYearRows.reduce(
-      (sum, item) => sum + (item.projectedAmount || 0),
-      0,
-    );
-  }, [selectedFiscalYearRows]);
+  // const grandTotal = useMemo(() => {
+  //   return selectedFiscalYearRows.reduce(
+  //     (sum, item) => sum + (item.projectedAmount || 0),
+  //     0,
+  //   );
+  // }, [selectedFiscalYearRows]);
 
   //--------------------------------------------------------TableData----------------------------------------------------//
 
@@ -426,7 +474,7 @@ const StatutoryPayments = () => {
       <WidgetSection
         border
         title={`Statutory Payments ${selectedFiscalYear}`}
-        TitleAmount={`INR ${inrFormat(grandTotal)}`}
+        TitleAmount={`INR ${inrFormat(selectedGraph.totalAmount)}`}
       >
         <BarGraph data={selectedGraph.chartData} options={barGraphOptions} />
 
@@ -435,9 +483,9 @@ const StatutoryPayments = () => {
             <SecondaryButton
               title={<MdNavigateBefore />}
               handleSubmit={() =>
-                setSelectedYearIndex((prev) => Math.max(0, prev - 1))
+                 setSelectedFiscalYearStart((prev) => prev - 1)
               }
-              disabled={selectedYearIndex === 0}
+              //disabled={selectedYearIndex === 0}
             />
             <div className="text-primary text-content font-semibold">
               {selectedFiscalYear}
@@ -445,11 +493,9 @@ const StatutoryPayments = () => {
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={() =>
-                setSelectedYearIndex((prev) =>
-                  Math.min(fiscalYears.length - 1, prev + 1),
-                )
+                setSelectedFiscalYearStart((prev) => prev + 1)
               }
-              disabled={selectedYearIndex === fiscalYears.length - 1}
+              //disabled={selectedYearIndex === fiscalYears.length - 1}
             />
           </div>
         </div>
@@ -470,8 +516,12 @@ const StatutoryPayments = () => {
           dateColumn={"dueDate"}
           totalKey="actualAmount"
           columns={kraColumn}
-          tableTitle={`Statutory Payments ${selectedFiscalYear}`}
-           buttonTitle={canExport ? "Export" : undefined}
+          // tableTitle={`Statutory Payments ${selectedFiscalYear}`}
+          //  buttonTitle={canExport ? "Export" : undefined}
+           tableTitle={selectedStatutoryMonthTitle}
+          totalText="INR"
+          buttonTitle={canExport ? "Export" : undefined}
+          onMonthChange={handleMonthChange}
           handleSubmit={handleExport}
         />
       </div>

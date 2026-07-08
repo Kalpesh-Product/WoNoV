@@ -22,17 +22,20 @@ const fetchDeptTaskReportService = async ({
     const hasGlobalAccess = hasGlobalReportAccess(roles);
     const hasDepartmentAccess = hasDepartmentAdminAccess(roles);
 
-    let dept = query ? query.dept : departments;
+    const requestedDepartments = query?.dept
+      ? Array.isArray(query.dept)
+        ? query.dept
+        : [query.dept]
+      : departments;
 
     const queryObj = {
       company,
       isDeleted: { $ne: true },
       ...(!hasGlobalAccess &&
         !hasDepartmentAccess && { assignedTo: { $in: [user] } }),
-      ...(!hasGlobalAccess &&
-        dept && {
-          department: { $in: departments },
-        }),
+      ...(requestedDepartments?.length && {
+        department: { $in: requestedDepartments },
+      }),
       taskType: "Department",
       ...(!isReport && {
         status: "Pending",
