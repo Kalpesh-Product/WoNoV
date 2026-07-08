@@ -112,21 +112,23 @@ const resolveBulkTaskUser = async (value, company) => {
 
   const baseQuery = company ? { company } : {};
   if (mongoose.Types.ObjectId.isValid(normalizedValue)) {
-    return UserData.findOne({ firstName: normalizedValue, ...baseQuery })
+    return UserData.findOne({ _id: normalizedValue, ...baseQuery })
       .select("_id")
       .lean();
   }
 
   const name = splitUserName(normalizedValue);
-  if (!name) return null;
-
-  return UserData.findOne({
+  const firstName = name?.firstName || normalizedValue;
+  const userQuery = {
     ...baseQuery,
-    firstName: new RegExp(`^${escapeRegex(name.firstName)}$`, "i"),
-    lastName: new RegExp(`^${escapeRegex(name.lastName)}$`, "i"),
-  })
-    .select("_id")
-    .lean();
+    firstName: new RegExp(`^${escapeRegex(firstName)}$`, "i"),
+  };
+
+  if (name?.lastName) {
+    userQuery.lastName = new RegExp(`^${escapeRegex(name.lastName)}$`, "i");
+  }
+
+  return UserData.findOne(userQuery).select("_id").lean();
 };
 
 const resolveBulkTaskDepartment = async (value) => {
