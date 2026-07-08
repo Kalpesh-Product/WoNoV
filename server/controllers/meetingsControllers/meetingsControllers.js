@@ -1861,9 +1861,17 @@ const updateMeetingPaymentStatus = async (req, res, next) => {
 const updateMeetingStatus = async (req, res, next) => {
   const { status, meetingId } = req.body;
   const { user } = req;
+
+  const validStatuses = ["Ongoing", "Completed"];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ message: "Invalid status value" });
+  }
+
+  const currDate = new Date();
+
   const updatedMeeting = await Meeting.findByIdAndUpdate(
     meetingId,
-    { status },
+    { status, completedAt: currDate, completedBy: user },
     { new: true },
   ).populate("bookedBy", "firstName lastName");
 
@@ -2080,8 +2088,7 @@ const updateMeetingDetails = async (req, res, next) => {
         ["Admin", "Administration"].includes(deptName),
       );
     const canEditMeetingDate = roles?.some((r) => dateEditRoles.includes(r));
-    const hasSpecialEditWindowAccess =
-      isAdminTimingUser || canEditMeetingDate;
+    const hasSpecialEditWindowAccess = isAdminTimingUser || canEditMeetingDate;
     const isAdminTimingRestrictedUser = isAdminTimingUser;
     const meetingStartTime = new Date(meeting.startTime);
     const meetingEndTime = new Date(meeting.endTime);
@@ -2115,11 +2122,7 @@ const updateMeetingDetails = async (req, res, next) => {
       endTimeObj = normalizeDateTime(requestedDateObj, endTimeObj);
     }
 
-    if (
-      !isTech &&
-      !isUpcoming &&
-      !hasSpecialEditWindowAccess
-    ) {
+    if (!isTech && !isUpcoming && !hasSpecialEditWindowAccess) {
       return res.status(403).json({
         message: "You are not allowed to edit meeting timings to past time",
       });
