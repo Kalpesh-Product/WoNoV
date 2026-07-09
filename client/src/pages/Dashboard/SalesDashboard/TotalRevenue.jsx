@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
+import dayjs from "dayjs";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
@@ -17,6 +18,53 @@ const VERTICAL_ROUTE_MAP = {
   "Virtual Office": "virtual-office",
   Workation: "workation",
   "Co-Working": "co-working",
+};
+
+const getNormalizedPaymentStatus = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase();
+  return value ? "paid" : "unpaid";
+};
+
+const getNumericAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsedValue = parseFloat(value.replace(/,/g, ""));
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+  return 0;
+};
+
+const getRevenueSummaryForDateRange = (data, dateRange) => {
+  const selectedRange = Array.isArray(dateRange) ? dateRange[0] : null;
+
+  const filteredData =
+    selectedRange?.startDate && selectedRange?.endDate
+      ? data.filter((item) => {
+          const itemDate = dayjs(item.date);
+          if (!itemDate.isValid()) return false;
+
+          return (
+            itemDate.isAfter(dayjs(selectedRange.startDate).startOf("day").subtract(1, "millisecond")) &&
+            itemDate.isBefore(dayjs(selectedRange.endDate).endOf("day").add(1, "millisecond"))
+          );
+        })
+      : data;
+
+  return filteredData.reduce(
+    (summary, item) => {
+      const amount = getNumericAmount(item.revenue);
+      summary.total += amount;
+
+      if (item.normalizedStatus === "paid") {
+        summary.paid += amount;
+      } else {
+        summary.unpaid += amount;
+      }
+
+      return summary;
+    },
+    { total: 0, paid: 0, unpaid: 0 },
+  );
 };
 
 const TotalRevenue = () => {
@@ -314,70 +362,60 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
     simpleRevenue.meetingRevenue?.forEach((item) => {
       flatten.push({
         vertical: "Meeting",
-        revenue: item.taxable,
+        revenue: getNumericAmount(item.taxable),
         date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
       });
     });
 
     simpleRevenue.alternateRevenues?.forEach((item) => {
       flatten.push({
         vertical: "Alternate",
-        revenue: item.taxableAmount,
+        revenue: getNumericAmount(item.taxableAmount),
         date: item.invoiceCreationDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
       });
     });
 
     simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
       flatten.push({
         vertical: "Virtual Office",
-        revenue: item.taxableAmount,
+        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
         date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(
+          item.status ?? item.rentStatus,
+        ),
       });
     });
 
     simpleRevenue.workationRevenues?.forEach((item) => {
       flatten.push({
         vertical: "Workation",
-        revenue: item.taxableAmount,
+        revenue: getNumericAmount(item.taxableAmount),
         date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
       });
     });
 
     simpleRevenue.coworkingRevenues?.forEach((item) => {
       flatten.push({
         vertical: "Co-Working",
-        revenue: item.revenue,
+        revenue: getNumericAmount(item.revenue),
         date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
       });
     });
 
     return flatten;
   }, [simpleRevenue]);
 
-  const revenueByVertical = useMemo(() => {
-    const grouped = {};
-
-    unifiedRevenueData.forEach((entry) => {
-      const amount = parseFloat(entry.revenue) || 0;
-      if (!grouped[entry.vertical]) {
-        grouped[entry.vertical] = 0;
-      }
-      grouped[entry.vertical] += amount;
-    });
-
-    return Object.entries(grouped).map(([vertical, revenue], idx) => ({
-      srNo: idx + 1,
-      vertical,
-      revenue: inrFormat(revenue),
-    }));
-  }, [unifiedRevenueData]);
-
-  const totalAnnualRevenue = useMemo(() => {
-    return revenueByVertical.reduce(
-      (sum, item) => sum + parseFloat(item.revenue.replace(/,/g, "")),
-      0,
-    );
-  }, [revenueByVertical]);
+  const paidRevenueData = useMemo(
+    () =>
+      unifiedRevenueData.filter(
+        (item) => item.normalizedStatus === "paid",
+      ),
+    [unifiedRevenueData],
+  );
 
   return (
     <div className="flex flex-col gap-4 ">
@@ -387,7 +425,7 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
         </div>
       ) : (
         <FyBarGraphPercentage
-          data={isTotalLoading ? [] : unifiedRevenueData}
+          data={isTotalLoading ? [] : paidRevenueData}
           dateKey="date"
           valueKey="revenue"
           graphTitle="ANNUAL MONTHLY MIX INCOME"
@@ -416,8 +454,33 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
             //cellRenderer: verticalLinkRenderer,
           },
         ]}
-        amount={`INR ${inrFormat(totalAnnualRevenue)}`}
-        data={unifiedRevenueData}
+        titleAmountOverride=""
+        titleAmountTotal={({ dateRange }) => {
+          const summary = getRevenueSummaryForDateRange(
+            unifiedRevenueData,
+            dateRange,
+          );
+          return `INR ${inrFormat(summary.total)}`;
+        }}
+        titleAmountGreen={({ dateRange }) => {
+          const summary = getRevenueSummaryForDateRange(
+            unifiedRevenueData,
+            dateRange,
+          );
+          return `INR ${inrFormat(summary.paid)}`;
+        }}
+        titleAmountRed={({ dateRange }) => {
+          const summary = getRevenueSummaryForDateRange(
+            unifiedRevenueData,
+            dateRange,
+          );
+          return `INR ${inrFormat(summary.unpaid)}`;
+        }}
+        greenTitle="Paid"
+        redTitle="Unpaid"
+        totalTitle="Total"
+        summaryChipVariant="ticket"
+        data={paidRevenueData}
         exportData
       />
     </div>

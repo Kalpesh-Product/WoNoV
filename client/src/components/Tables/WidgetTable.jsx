@@ -40,6 +40,14 @@ const WidgetTable = ({
   sortByString = "",
   sortByNo = "",
   sortOrder = "asc", // default sort order
+  titleAmountOverride,
+  titleAmountGreen,
+  titleAmountRed,
+  titleAmountTotal,
+  greenTitle,
+  redTitle,
+  totalTitle,
+  summaryChipVariant,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -146,6 +154,14 @@ const WidgetTable = ({
       return sum + (isNaN(numericValue) ? 0 : numericValue);
     }, 0);
   }, [filteredData, totalKey]);
+
+  const resolveSummaryValue = (value, fallback = null) => {
+    if (typeof value === "function") {
+      return value({ filteredData, rangeTotal, dateRange });
+    }
+
+    return value ?? fallback;
+  };
 
   useEffect(() => {
     if (!onMonthChange || !filteredData.length) return;
@@ -272,7 +288,17 @@ const WidgetTable = ({
       <WidgetSection
         border={border}
         title={tableTitle}
-        TitleAmount={`${totalText}  ${inrFormat(rangeTotal)}`}
+        TitleAmount={resolveSummaryValue(
+          titleAmountOverride,
+          `${totalText}  ${inrFormat(rangeTotal)}`
+        )}
+        TitleAmountGreen={resolveSummaryValue(titleAmountGreen)}
+        TitleAmountRed={resolveSummaryValue(titleAmountRed)}
+        TitleAmountTotal={resolveSummaryValue(titleAmountTotal)}
+        greenTitle={greenTitle}
+        redTitle={redTitle}
+        totalTitle={totalTitle}
+        summaryChipVariant={summaryChipVariant}
       >
          <div className="w-full flex justify-end">
           <div className="flex gap-2 items-center justify-end flex-wrap">
