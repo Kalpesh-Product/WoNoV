@@ -43,16 +43,53 @@ const getCsvValue = (row, fieldName) => {
   return matchedKey ? row[matchedKey]?.toString().trim() : "";
 };
 
+// const parseOptionalCsvDate = (value, fieldName, rowNumber, errors) => {
+//   if (!value) return undefined;
+
+//   const [year, month, day] = value.split("-").map(Number);
+
+//   if (!year || !month || !day) {
+//     errors.push({
+//       row: rowNumber,
+//       field: fieldName,
+//       message: "Invalid date",
+//     });
+//     return undefined;
+//   }
+
+//   // 9:30 AM IST = 4:00 AM UTC
+//   return new Date(Date.UTC(year, month - 1, day, 4, 0, 0));
+// };
+
 const parseOptionalCsvDate = (value, fieldName, rowNumber, errors) => {
   if (!value) return undefined;
 
-  const parsedDate = new Date(value);
-  if (Number.isNaN(parsedDate.getTime())) {
-    errors.push({ row: rowNumber, field: fieldName, message: "Invalid date" });
+  const [year, month, day] = value.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    errors.push({
+      row: rowNumber,
+      field: fieldName,
+      message: "Invalid date",
+    });
     return undefined;
   }
 
-  return parsedDate;
+  let hoursUTC = 0;
+  let minutesUTC = 0;
+
+  // IST = UTC + 5:30
+  if (fieldName === "assignedDate") {
+    // 9:30 AM IST = 4:00 AM UTC
+    hoursUTC = 4;
+    minutesUTC = 0;
+  } else if (fieldName === "dueDate") {
+    // 6:30 PM IST = 1:00 PM UTC
+    hoursUTC = 13;
+    minutesUTC = 0;
+  }
+
+  return new Date(Date.UTC(year, month - 1, day, hoursUTC, minutesUTC, 0));
 };
 
 const createDeptBasedTask = async (req, res, next) => {
@@ -1205,6 +1242,9 @@ const bulkInsertKraKpaTasks = async (req, res, next) => {
         dueTime: dueTime || undefined,
         department,
         status,
+        kpaDuration: ["KPA", "TEAMKPA"].includes(taskType)
+          ? "Monthly"
+          : undefined,
       };
     });
 
