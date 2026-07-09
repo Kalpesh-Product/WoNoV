@@ -15,8 +15,25 @@ import { CircularProgress } from "@mui/material";
 const DeptWiseBudget = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
+  const getFiscalYearStart = (date = dayjs()) => {
+  const parsedDate = dayjs(date);
+  return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+};
 
+const formatFiscalYear = (startYear) =>
+  `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+
+const getFiscalMonthIndex = (date) => {
+  const parsedDate = dayjs(date);
+  const month = parsedDate.month();
+
+  return month >= 3 ? month - 3 : month + 9;
+};
+
+const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
+  formatFiscalYear(getFiscalYearStart())
+);
+  
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["allBudgets"],
     queryFn: async () => {
@@ -175,50 +192,39 @@ const DeptWiseBudget = () => {
   }, [isHrLoading, hrFinance]);
 
 const expenseRawSeries = useMemo(() => {
-  // Initialize monthly buckets
-  const months = Array.from({ length: 12 }, (_, index) =>
-    dayjs(`2024-04-01`).add(index, "month").format("MMM")
-  );
-
-  const fyData = {
-    "FY 2024-25": Array(12).fill(0),
-    "FY 2025-26": Array(12).fill(0),
-  };
+  const fyData = {};
 
   hrFinance.forEach((item) => {
-    const date = dayjs(item.dueDate);
-    const year = date.year();
-    const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
 
-    if (year === 2024 && monthIndex >= 3) {
-      // Apr 2024 to Dec 2024 (month 3 to 11)
-      fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-    } else if (year === 2025) {
-      if (monthIndex <= 2) {
-        // Jan to Mar 2025 (months 0–2)
-        fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-      } else if (monthIndex >= 3) {
-        // Apr 2025 to Dec 2025 (months 3–11)
-        fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-      }
-    } else if (year === 2026 && monthIndex <= 2) {
-      // Jan to Mar 2026
-      fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+    const fiscalYearStart = getFiscalYearStart(item.dueDate);
+    const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
+    const monthIndex = getFiscalMonthIndex(item.dueDate);
+
+    if (!fyData[fiscalYearLabel]) {
+      fyData[fiscalYearLabel] = Array(12).fill(0);
     }
+
+    fyData[fiscalYearLabel][monthIndex] += Number(item.actualAmount || 0);
   });
 
-  return [
-    {
+  const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
+
+  if (!fyData[currentFiscalYear]) {
+    fyData[currentFiscalYear] = Array(12).fill(0);
+  }
+
+  return Object.entries(fyData)
+    .sort(([fyA], [fyB]) => {
+      const startA = Number(fyA.slice(3, 7));
+      const startB = Number(fyB.slice(3, 7));
+      return startA - startB;
+    })
+    .map(([fiscalYear, data]) => ({
       name: "total",
-      group: "FY 2024-25",
-      data: fyData["FY 2024-25"],
-    },
-    {
-      name: "total",
-      group: "FY 2025-26",
-      data: fyData["FY 2025-26"],
-    },
-  ];
+      group: fiscalYear,
+      data,
+    }));
 }, [hrFinance]);
 
 
@@ -295,8 +301,10 @@ const expenseRawSeries = useMemo(() => {
     },
   };
 
- const totalUtilised =
-  budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
+const totalUtilised =
+  expenseRawSeries
+    .find((item) => item.group === selectedFiscalYear)
+    ?.data?.reduce((acc, val) => acc + val, 0) || 0;
 
   // ✅ BLOCK RENDERING UNTIL DATA IS READY
   // if (isHrLoading || !budgetBar || !budgetBar.utilisedBudget) {
