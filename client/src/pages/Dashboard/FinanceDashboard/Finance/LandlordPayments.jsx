@@ -78,21 +78,103 @@ const LandlordPayments = () => {
     return hrFinance.filter((item) => item.expanseType === "Monthly Rent");
   }, [hrFinance]);
 
+  // const monthlyRentMap = useMemo(() => {
+  //   const rentMap = {};
+
+  //   landLordData.forEach((item) => {
+  //     if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+
+  //     const monthKey = dayjs(item.dueDate).format("MMM-YY");
+  //     if (excludedMonths.includes(monthKey)) return;
+
+  //     rentMap[monthKey] =
+  //       (rentMap[monthKey] || 0) + (item.actualAmount || 0);
+  //   });
+
+  //   return rentMap;
+  // }, [landLordData]);
   const monthlyRentMap = useMemo(() => {
-    const rentMap = {};
+  const rentMap = {};
 
-    landLordData.forEach((item) => {
-      if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+  landLordData.forEach((item) => {
+    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
 
-      const monthKey = dayjs(item.dueDate).format("MMM-YY");
-      if (excludedMonths.includes(monthKey)) return;
+    const paymentStatus = String(item.isPaid || "")
+      .trim()
+      .toLowerCase();
 
-      rentMap[monthKey] =
-        (rentMap[monthKey] || 0) + (item.actualAmount || 0);
+    // Only paid records should be counted in graph
+    if (paymentStatus !== "paid") return;
+
+    const monthKey = dayjs(item.dueDate).format("MMM-YY");
+    if (excludedMonths.includes(monthKey)) return;
+
+    rentMap[monthKey] =
+      (rentMap[monthKey] || 0) + (Number(item.actualAmount) || 0);
+  });
+
+  return rentMap;
+}, [landLordData]);
+
+const monthlyUnpaidMap = useMemo(() => {
+  const unpaidMap = {};
+
+  landLordData.forEach((item) => {
+    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+
+    const paymentStatus = String(item.isPaid || "")
+      .trim()
+      .toLowerCase();
+
+    // Only unpaid records for tooltip
+    if (paymentStatus !== "unpaid") return;
+
+    const monthKey = dayjs(item.dueDate).format("MMM-YY");
+    if (excludedMonths.includes(monthKey)) return;
+
+    const unitNo = item.unit?.unitNo || "Unknown Unit";
+    const amount = Number(item.actualAmount) || 0;
+
+    if (!unpaidMap[monthKey]) {
+      unpaidMap[monthKey] = [];
+    }
+
+    unpaidMap[monthKey].push({
+      unitNo,
+      amount,
     });
+  });
 
-    return rentMap;
-  }, [landLordData]);
+  return unpaidMap;
+}, [landLordData]);
+
+const monthlyPaidUnitMap = useMemo(() => {
+  const paidMap = {};
+
+  landLordData.forEach((item) => {
+    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+
+    const paymentStatus = String(item.isPaid || "")
+      .trim()
+      .toLowerCase();
+
+    // Only paid records for tooltip unit list
+    if (paymentStatus !== "paid") return;
+
+    const monthKey = dayjs(item.dueDate).format("MMM-YY");
+    if (excludedMonths.includes(monthKey)) return;
+
+    const unitNo = item.unit?.unitNo || "Unknown Unit";
+
+    if (!paidMap[monthKey]) {
+      paidMap[monthKey] = [];
+    }
+
+    paidMap[monthKey].push(unitNo);
+  });
+
+  return paidMap;
+}, [landLordData]);
 
   const latestDataFiscalYearStart = useMemo(() => {
     const fiscalYearStarts = Object.keys(monthlyRentMap)
@@ -118,6 +200,24 @@ const LandlordPayments = () => {
     () => selectedFiscalYearMonths.map((month) => monthlyRentMap[month] || 0),
     [monthlyRentMap, selectedFiscalYearMonths]
   );
+
+  const selectedFiscalYearUnpaidData = useMemo(
+  () =>
+    selectedFiscalYearMonths.map((month) => ({
+      month,
+      unpaid: monthlyUnpaidMap[month] || [],
+    })),
+  [monthlyUnpaidMap, selectedFiscalYearMonths]
+);
+
+const selectedFiscalYearPaidUnitsData = useMemo(
+  () =>
+    selectedFiscalYearMonths.map((month) => ({
+      month,
+      paidUnits: monthlyPaidUnitMap[month] || [],
+    })),
+  [monthlyPaidUnitMap, selectedFiscalYearMonths]
+);
 
   const graphData = useMemo(
     () => [
@@ -175,11 +275,202 @@ const LandlordPayments = () => {
     legend: {
       position: "top",
     },
-    tooltip: {
-      y: {
-        formatter: (val) => `INR ${val.toLocaleString("en-IN")}`,
-      },
-    },
+    // tooltip: {
+    //   y: {
+    //     formatter: (val) => `INR ${val.toLocaleString("en-IN")}`,
+    //   },
+    // },
+//     tooltip: {
+//   custom: ({ series, seriesIndex, dataPointIndex }) => {
+//     const month = selectedFiscalYearMonths[dataPointIndex];
+//     const paidAmount = series?.[seriesIndex]?.[dataPointIndex] || 0;
+
+//     const unpaidItems =
+//       selectedFiscalYearUnpaidData[dataPointIndex]?.unpaid || [];
+
+//     const unpaidText =
+//       unpaidItems.length > 0
+//         ? unpaidItems
+//             .map(
+//               (item) =>
+//                 `${item.unitNo} - INR ${item.amount.toLocaleString("en-IN")}`
+//             )
+//             .join(", ")
+//         : "No unpaid amount";
+
+//     return `
+//       <div style="padding: 10px 12px; font-family: Poppins-Regular; font-size: 12px; max-width: 360px;">
+//         <div style="font-weight: 600; margin-bottom: 6px;">${month}</div>
+//         <div>Paid: INR ${paidAmount.toLocaleString("en-IN")}</div>
+//         <div style="margin-top: 4px; white-space: normal;">
+//           Unpaid: ${unpaidText}
+//         </div>
+//       </div>
+//     `;
+//   },
+// },
+
+tooltip: {
+  custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+    const month = selectedFiscalYearMonths[dataPointIndex];
+    const paidAmount = series?.[seriesIndex]?.[dataPointIndex] || 0;
+
+    const unpaidItems =
+      selectedFiscalYearUnpaidData[dataPointIndex]?.unpaid || [];
+
+    const paidUnits =
+  selectedFiscalYearPaidUnitsData[dataPointIndex]?.paidUnits || [];
+
+const paidUnitRows =
+  paidUnits.length > 0
+    ? paidUnits.reduce((rows, unitNo, index) => {
+        const rowIndex = Math.floor(index / 3);
+
+        if (!rows[rowIndex]) {
+          rows[rowIndex] = [];
+        }
+
+        rows[rowIndex].push(unitNo);
+
+        return rows;
+      }, [])
+    : [];
+
+const paidUnitText =
+  paidUnitRows.length > 0
+    ? paidUnitRows
+        .map((row, rowIndex) => {
+          const rowText = row.join(", ");
+          const shouldAddComma = rowIndex < paidUnitRows.length - 1;
+
+          return `${rowText}${shouldAddComma ? "," : ""}`;
+        })
+        .join("<br />")
+    : "No paid units";
+
+    const unpaidTotal = unpaidItems.reduce(
+      (sum, item) => sum + (Number(item.amount) || 0),
+      0
+    );
+
+    const unpaidRows =
+  unpaidItems.length > 0
+    ? unpaidItems.reduce((rows, item, index) => {
+        const rowIndex = Math.floor(index / 3);
+
+        if (!rows[rowIndex]) {
+          rows[rowIndex] = [];
+        }
+
+        rows[rowIndex].push(
+          `${item.unitNo} - INR ${item.amount.toLocaleString("en-IN")}`
+        );
+
+        return rows;
+      }, [])
+    : [];
+
+const unpaidText =
+  unpaidRows.length > 0
+    ? unpaidRows
+        .map((row, rowIndex) => {
+          const rowText = row.join(", ");
+          const shouldAddComma = rowIndex < unpaidRows.length - 1;
+
+          return `${rowText}${shouldAddComma ? "," : ""}`;
+        })
+        .join("<br />")
+    : "No unpaid amount";
+
+    return `
+      <div class="apexcharts-tooltip-title" style="
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        padding: 6px 10px;
+        margin-bottom: 0;
+      ">
+        ${month}
+      </div>
+
+      <div style="
+        padding: 8px 10px;
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        background: #fff;
+        min-width: 260px;
+        max-width: 460px;
+      ">
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 6px;
+          white-space: nowrap;
+        ">
+          <span style="
+            width: 12px;
+            height: 12px;
+            min-width: 12px;
+            border-radius: 50%;
+            background: ${w.globals.colors[seriesIndex]};
+            display: inline-block;
+          "></span>
+
+          <span>Monthly Rent Paid:</span>
+
+          <span style="font-weight: 600;">
+            INR ${paidAmount.toLocaleString("en-IN")}
+          </span>
+        </div>
+
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 6px;
+          white-space: nowrap;
+        ">
+          <span style="
+            width: 12px;
+            height: 12px;
+            min-width: 12px;
+            border-radius: 50%;
+            background: #EF4444;
+            display: inline-block;
+          "></span>
+
+          <span>Monthly Rent Due:</span>
+
+          <span style="font-weight: 600;">
+            INR ${unpaidTotal.toLocaleString("en-IN")}
+          </span>
+        </div>
+
+      <div style="
+  border-top: 1px solid #e5e7eb;
+  margin-top: 6px;
+  padding-top: 6px;
+  line-height: 1.5;
+  white-space: normal;
+">
+  <div>
+    <span>Paid: </span>
+    <span style="font-weight: 600;">
+      ${paidUnitText}
+    </span>
+  </div>
+
+  <div style="margin-top: 4px;">
+    <span>Unpaid: </span>
+    <span style="font-weight: 600;">
+      ${unpaidText}
+    </span>
+  </div>
+</div>
+      </div>
+    `;
+  },
+},
     colors: ["#54C4A7"],
     noData: {
       text: "No data available",

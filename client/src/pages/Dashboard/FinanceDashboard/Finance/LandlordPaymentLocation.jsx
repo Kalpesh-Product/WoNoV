@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -15,6 +15,56 @@ import { calculateMonthTotal } from "../../../../utils/calculateMonthTotal";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import StatusChip from "../../../../components/StatusChip";
 
+const fiscalMonths = [
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+];
+
+const parseAmount = (value) => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "string") {
+    const normalizedValue = value.replace(/,/g, "").trim();
+    const parsedValue = Number(normalizedValue);
+    return Number.isFinite(parsedValue) ? parsedValue : 0;
+  }
+  return 0;
+};
+
+const getFiscalYearStart = (dateInput) => {
+  const parsedDate = dayjs(dateInput);
+  if (!parsedDate.isValid()) return null;
+  return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+};
+
+const formatFiscalYear = (startYear) =>
+  `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+
+const getFiscalYearMonths = (startYear) =>
+  fiscalMonths.map((month, index) => {
+    const year = index < 9 ? startYear : startYear + 1;
+    return `${month}-${String(year).slice(-2)}`;
+  });
+
+const getPaymentSignature = (payment = {}) =>
+  [
+    payment?._id,
+    payment?.id,
+    payment?.expanseName,
+    payment?.dueDate,
+    payment?.actualAmount,
+    payment?.isPaid,
+  ].join("|");
+
 const LandlordPaymentLocation = () => {
   const axios = useAxiosPrivate();
   const [searchParams] = useSearchParams();
@@ -24,6 +74,7 @@ const LandlordPaymentLocation = () => {
   const [viewDetails, setViewDetails] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [rangeTotal, setRangeTotal] = useState(0);
+  const [visiblePayments, setVisiblePayments] = useState(null);
 
   const building = searchParams.get("location") || "";
   const rawUnit = searchParams.get("floor") || "";
@@ -48,61 +99,59 @@ const LandlordPaymentLocation = () => {
     },
   });
 
-  const yearCategories = {
-    "FY 2024-25": [
-      "Apr-24",
-      "May-24",
-      "Jun-24",
-      "Jul-24",
-      "Aug-24",
-      "Sep-24",
-      "Oct-24",
-      "Nov-24",
-      "Dec-24",
-      "Jan-25",
-      "Feb-25",
-      "Mar-25",
-    ],
-    "FY 2025-26": [
-      "Apr-25",
-      "May-25",
-      "Jun-25",
-      "Jul-25",
-      "Aug-25",
-      "Sep-25",
-      "Oct-25",
-      "Nov-25",
-      "Dec-25",
-      "Jan-26",
-      "Feb-26",
-      "Mar-26",
-    ],
-  };
-
-  const monthlyRentMap = {};
   const payments = Array.isArray(landlordPayments?.allBudgets)
     ? landlordPayments.allBudgets
     : [];
+  const effectivePayments = visiblePayments ?? payments;
+  const tablePayments = useMemo(
+    () =>
+      payments.map((payment) => ({
+        ...payment,
+        projectedAmount: inrFormat(payment.projectedAmount),
+        actualAmount: inrFormat(payment.actualAmount),
+      })),
+    [payments],
+  );
+  const monthlyRentMap = {};
+  const fiscalYearStarts = new Set();
 
   payments.forEach((item) => {
     if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+    const paymentStatus = String(item.isPaid || "")
+      .trim()
+      .toLowerCase();
+    if (paymentStatus !== "paid") return;
+
     const monthKey = dayjs(item.dueDate).format("MMM-YY");
     monthlyRentMap[monthKey] =
-      (monthlyRentMap[monthKey] || 0) + (item.actualAmount || 0);
+      (monthlyRentMap[monthKey] || 0) + parseAmount(item.actualAmount);
+
+    const fiscalYearStart = getFiscalYearStart(item.dueDate);
+    if (fiscalYearStart !== null) {
+      fiscalYearStarts.add(fiscalYearStart);
+    }
   });
 
-  const graphData = Object.entries(yearCategories).map(
-    ([fiscalYear, months]) => ({
+  const graphData = [...fiscalYearStarts]
+    .sort((a, b) => a - b)
+    .map((startYear) => ({
       name: "Monthly Rent",
-      group: fiscalYear,
-      data: months.map((month) => monthlyRentMap[month] || 0),
-    })
-  );
+      group: formatFiscalYear(startYear),
+      data: getFiscalYearMonths(startYear).map(
+        (month) => monthlyRentMap[month] || 0,
+      ),
+    }));
 
-  const totalUnitRent = payments.reduce(
-    (sum, item) => sum + (item.actualAmount || 0),
+  const totalUnitRent = effectivePayments.reduce(
+    (sum, item) => sum + parseAmount(item.actualAmount),
     0
   );
+  const paidAmount = effectivePayments
+    .filter((item) => String(item?.isPaid || "").trim().toLowerCase() === "paid")
+    .reduce((sum, item) => sum + parseAmount(item.actualAmount), 0);
+  const unpaidAmount = effectivePayments
+    .filter((item) => String(item?.isPaid || "").trim().toLowerCase() === "unpaid")
+    .reduce((sum, item) => sum + parseAmount(item.actualAmount), 0);
 
   const currentMonthTotal = calculateMonthTotal(
     payments,
@@ -212,6 +261,22 @@ const LandlordPaymentLocation = () => {
     setViewModalOpen(true);
   };
 
+  const handleDateFilterChange = useCallback(({ filteredData }) => {
+    const nextPayments = filteredData || [];
+
+    setVisiblePayments((prev) => {
+      if (prev === null) return nextPayments;
+      if (prev.length !== nextPayments.length) return nextPayments;
+
+      const isSame = prev.every(
+        (item, index) =>
+          getPaymentSignature(item) === getPaymentSignature(nextPayments[index]),
+      );
+
+      return isSame ? prev : nextPayments;
+    });
+  }, []);
+
   return (
     <div className="flex flex-col gap-4">
       {landlordPaymentsError ? (
@@ -233,24 +298,26 @@ const LandlordPaymentLocation = () => {
             chartId="unit-wise-rent"
             data={graphData}
             options={barGraphOptions}
-            titleAmount={`INR ${inrFormat(totalUnitRent)}`}
           />
 
           <WidgetSection
             layout={1}
             title={`Landlord Payments (${unit})`}
-            TitleAmount={`INR ${inrFormat(rangeTotal)}`}
+            TitleAmountTotal={`INR ${inrFormat(totalUnitRent)}`}
+            TitleAmountGreen={`INR ${inrFormat(paidAmount)}`}
+            TitleAmountRed={`INR ${inrFormat(unpaidAmount)}`}
+            totalTitle="Total"
+            greenTitle="Paid"
+            redTitle="Unpaid"
+            summaryChipVariant="ticket"
             border
           >
             <YearWiseTable
               dateColumn={"dueDate"}
-              data={payments.map((payment, index) => ({
-                ...payment,
-                projectedAmount: inrFormat(payment.projectedAmount),
-                actualAmount: inrFormat(payment.actualAmount),
-              }))}
+              data={tablePayments}
               columns={paymentColumns}
               onMonthChange={setRangeTotal}
+              onDateFilterChange={handleDateFilterChange}
               TitleAmount={`INR ${inrFormat(rangeTotal)}`}
               exportData
             />
