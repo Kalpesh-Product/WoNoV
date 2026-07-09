@@ -951,31 +951,70 @@ const FinanceDashboard = () => {
   );
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
-  const currentMonthRentalPayments = isBudgetDataLoading
-    ? []
-    : budgetData.filter(
+  // const currentMonthRentalPayments = isBudgetDataLoading
+  //   ? []
+  //   : budgetData.filter(
+  //     (item) =>
+  //       item?.expanseType === "Monthly Rent" &&
+  //       item?.dueDate &&
+  //       dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
+  //   );
+
+  // const totalPaid = currentMonthRentalPayments
+  //   .filter((item) => item.status === "Approved")
+  //   .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+
+  // const totalUnpaid = currentMonthRentalPayments
+  //   .filter((item) => item.status !== "Approved")
+  //   .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+
+  // // Donut chart props
+  // const donutRentalLabels = ["Paid", "Unpaid"];
+  // const donutRentalSeries = [totalPaid, totalUnpaid];
+  // const donutRentalTooltipValue = [
+  //   ` INR ${totalPaid.toLocaleString()}`,
+  //   ` INR ${totalUnpaid.toLocaleString()}`,
+  // ];
+  // const donutRentalColors = ["#4CAF50", "#F44336"];
+
+  //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
+const currentMonthRentalPayments = isBudgetDataLoading
+  ? []
+  : budgetData.filter(
       (item) =>
         item?.expanseType === "Monthly Rent" &&
         item?.dueDate &&
         dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
     );
 
-  const totalPaid = currentMonthRentalPayments
-    .filter((item) => item.status === "Approved")
-    .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+const totalPaid = currentMonthRentalPayments
+  .filter(
+    (item) =>
+      String(item.isPaid || "")
+        .trim()
+        .toLowerCase() === "paid"
+  )
+  .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
 
-  const totalUnpaid = currentMonthRentalPayments
-    .filter((item) => item.status !== "Approved")
-    .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+const totalUnpaid = currentMonthRentalPayments
+  .filter(
+    (item) =>
+      String(item.isPaid || "")
+        .trim()
+        .toLowerCase() === "unpaid"
+  )
+  .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
 
-  // Donut chart props
-  const donutRentalLabels = ["Paid", "Unpaid"];
-  const donutRentalSeries = [totalPaid, totalUnpaid];
-  const donutRentalTooltipValue = [
-    ` INR ${totalPaid.toLocaleString()}`,
-    ` INR ${totalUnpaid.toLocaleString()}`,
-  ];
-  const donutRentalColors = ["#4CAF50", "#F44336"];
+// Donut chart props
+const donutRentalLabels = ["Paid", "Unpaid"];
+const donutRentalSeries = [totalPaid, totalUnpaid];
+const donutRentalTooltipValue = [
+  ` INR ${totalPaid.toLocaleString("en-IN")}`,
+  ` INR ${totalUnpaid.toLocaleString("en-IN")}`,
+];
+const donutRentalColors = ["#66DB66", "#EA9A87"];
+
+//-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
 
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
   //-----------------------------------------------------Table Priority Tasks------------------------------------------------------//
