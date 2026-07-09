@@ -8,6 +8,12 @@ import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
 
+const getNormalizedRentStatus = (status) =>
+  String(status || "").trim().toLowerCase();
+
+const getNumericAmount = (value) =>
+  parseFloat(String(value || "0").replace(/,/g, "")) || 0;
+
 const CoWorking = () => {
   const axios = useAxiosPrivate();
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
@@ -23,7 +29,14 @@ const CoWorking = () => {
   });
   const graphData = isCoWorkingLoading
     ? []
-    : coWorkingData.flatMap((item) => item.clients);
+    : coWorkingData.flatMap((item) =>
+      (item.clients || []).filter(
+        (client) => getNormalizedRentStatus(client.rentStatus) === "paid"
+      ).map((client) => ({
+        ...client,
+        vertical: "Co-Working",
+      }))
+    );
 
   const options = {
     dataLabels: {
@@ -45,7 +58,30 @@ const CoWorking = () => {
       },
     },
     tooltip: {
-      enabled: false,
+      enabled: true,
+      custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+        const label =
+          w?.globals?.categoryLabels?.[dataPointIndex] ||
+          w?.config?.xaxis?.categories?.[dataPointIndex] ||
+          "";
+        const seriesName =
+          w?.globals?.seriesNames?.[seriesIndex] || "Co-Working";
+        const value = series?.[seriesIndex]?.[dataPointIndex] || 0;
+        const color = w?.globals?.colors?.[seriesIndex] || "#1E88E5";
+
+        return `
+          <div style="min-width: 160px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18); border: 1px solid #e5e7eb;">
+            <div style="background: #eef2f6; color: #1f2937; font-size: 12px; padding: 8px 12px; border-bottom: 1px solid #dbe1e8;">
+              ${label}
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 12px; color: #111827;">
+              <span style="width: 12px; height: 12px; border-radius: 999px; background: ${color}; display: inline-block;"></span>
+              <span>${seriesName}:</span>
+              <span style="font-weight: 700;">INR ${inrFormat(value)}</span>
+            </div>
+          </div>
+        `;
+      },
       y: {
         formatter: (val) => `INR ${val.toLocaleString()}`,
       },
@@ -76,6 +112,7 @@ const CoWorking = () => {
         totalTerm: client.totalTerm || 0,
         rentDate: client.rentDate,
         rentStatus: client.rentStatus,
+        normalizedRentStatus: getNormalizedRentStatus(client.rentStatus),
         pastDueDate: client.pastDueDate,
         annualIncrement: client.annualIncrement || 0,
         nextIncrementDate: client.nextIncrementDate,
@@ -114,6 +151,28 @@ const CoWorking = () => {
           formatDate
           tableTitle={"MONTHLY REVENUE WITH CLIENT DETAILS"}
           totalKey="revenue"
+          titleAmountOverride=""
+          titleAmountGreen={({ filteredData }) =>
+            `INR ${inrFormat(
+              filteredData.reduce((sum, item) => {
+                if (item.normalizedRentStatus !== "paid") return sum;
+                return sum + getNumericAmount(item.revenue);
+              }, 0)
+            )}`
+          }
+          titleAmountRed={({ filteredData }) =>
+            `INR ${inrFormat(
+              filteredData.reduce((sum, item) => {
+                if (item.normalizedRentStatus !== "unpaid") return sum;
+                return sum + getNumericAmount(item.revenue);
+              }, 0)
+            )}`
+          }
+          titleAmountTotal={({ rangeTotal }) => `INR ${inrFormat(rangeTotal)}`}
+          greenTitle="Paid"
+          redTitle="Unpaid"
+          totalTitle="Total"
+          summaryChipVariant="ticket"
           columns={[
             { headerName: "Sr No", field: "id", width: 100 },
             { headerName: "Client Name", field: "clientName", width: 350 },

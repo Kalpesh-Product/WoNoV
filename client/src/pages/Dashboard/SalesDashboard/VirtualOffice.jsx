@@ -12,6 +12,14 @@ import StatusChip from "../../../components/StatusChip";
 import humanDate from "../../../utils/humanDateForamt";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
 
+const getNormalizedPaymentStatus = (status) => {
+  if (typeof status === "string") return status.trim().toLowerCase();
+  return status ? "paid" : "unpaid";
+};
+
+const getNumericAmount = (value) =>
+  parseFloat(String(value || "0").replace(/,/g, "")) || 0;
+
 const VirtualOffice = () => {
   const axios = useAxiosPrivate();
   const {
@@ -52,7 +60,30 @@ const VirtualOffice = () => {
       },
     },
     tooltip: {
-      enabled: false,
+      enabled: true,
+      custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+        const label =
+          w?.globals?.categoryLabels?.[dataPointIndex] ||
+          w?.config?.xaxis?.categories?.[dataPointIndex] ||
+          "";
+        const seriesName =
+          w?.globals?.seriesNames?.[seriesIndex] || "Virtual Office";
+        const value = series?.[seriesIndex]?.[dataPointIndex] || 0;
+        const color = w?.globals?.colors?.[seriesIndex] || "#11daf5";
+
+        return `
+          <div style="min-width: 160px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18); border: 1px solid #e5e7eb;">
+            <div style="background: #eef2f6; color: #1f2937; font-size: 12px; padding: 8px 12px; border-bottom: 1px solid #dbe1e8;">
+              ${label}
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 12px; color: #111827;">
+              <span style="width: 12px; height: 12px; border-radius: 999px; background: ${color}; display: inline-block;"></span>
+              <span>${seriesName}:</span>
+              <span style="font-weight: 700;">INR ${inrFormat(value)}</span>
+            </div>
+          </div>
+        `;
+      },
       y: {
         formatter: (val) => `INR ${val.toLocaleString()}`, // Format tooltip
       },
@@ -74,14 +105,24 @@ const VirtualOffice = () => {
     : virtualOfficeRevenue.map((item) => ({
         ...item,
         clientName: item.client?.clientName,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
       }));
+  const graphData = isLoadingVirtualOfficeRevenue
+    ? []
+    : tableData
+        .filter((item) => item.normalizedStatus === "paid")
+        .map((item) => ({
+          ...item,
+          revenue: getNumericAmount(item.revenue),
+          vertical: "Virtual Office",
+        }));
 
   return (
     <div className="flex flex-col gap-4">
       {!isLoadingVirtualOfficeRevenue ? (
         <FyBarGraph
           graphTitle="ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"
-          data={isLoadingVirtualOfficeRevenue ? [] : virtualOfficeRevenue}
+          data={graphData}
           dateKey="rentDate"
           valueKey="revenue"
           chartOptions={options}
@@ -97,6 +138,28 @@ const VirtualOffice = () => {
           totalKey="revenue"
           exportData
           dateColumn={"rentDate"}
+          titleAmountOverride=""
+          titleAmountGreen={({ filteredData }) =>
+            `INR ${inrFormat(
+              filteredData.reduce((sum, item) => {
+                if (item.normalizedStatus !== "paid") return sum;
+                return sum + getNumericAmount(item.revenue);
+              }, 0)
+            )}`
+          }
+          titleAmountRed={({ filteredData }) =>
+            `INR ${inrFormat(
+              filteredData.reduce((sum, item) => {
+                if (item.normalizedStatus !== "unpaid") return sum;
+                return sum + getNumericAmount(item.revenue);
+              }, 0)
+            )}`
+          }
+          titleAmountTotal={({ rangeTotal }) => `INR ${inrFormat(rangeTotal)}`}
+          greenTitle="Paid"
+          redTitle="Unpaid"
+          totalTitle="Total"
+          summaryChipVariant="ticket"
           columns={[
             { headerName: "Sr No", field: "srNo", flex: 1 },
             { headerName: "Client Name", field: "clientName", flex: 1 },

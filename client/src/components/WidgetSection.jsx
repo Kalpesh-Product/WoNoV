@@ -27,6 +27,7 @@ const WidgetSection = ({
   titleLabel,
   fun,
   normalCase,
+  summaryChipVariant,
 }) => {
   const visibleChildren = React.Children.toArray(children).filter(Boolean);
   // Tailwind grid classes for different layouts
@@ -39,10 +40,21 @@ const WidgetSection = ({
     6: "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-6",
   };
 
-   const effectiveLayout = Math.max(
+  const effectiveLayout = Math.max(
     1,
     Math.min(layout, visibleChildren.length || 1)
   );
+
+  const useTicketSummaryChipStyle = summaryChipVariant === "ticket";
+  const totalChipClasses = useTicketSummaryChipStyle
+    ? "flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]"
+    : "flex gap-2 justify-center items-center uppercase bg-[#dbe4ff] p-2 rounded-lg";
+  const greenChipClasses = useTicketSummaryChipStyle
+    ? "flex gap-1 justify-center items-center uppercase bg-[#d8f0df] text-sm text-[#16784d] font-pmedium px-3 py-1.5 rounded-lg border border-[#a9ddba]"
+    : "flex gap-2 justify-center items-center uppercase bg-[#54c4a657] p-2 rounded-lg";
+  const redChipClasses = useTicketSummaryChipStyle
+    ? "flex gap-1 justify-center items-center uppercase bg-[#fce8e3] text-sm text-[#d96b4f] font-pmedium px-3 py-1.5 rounded-lg border border-[#f3b7a8]"
+    : "flex gap-2 justify-center items-center uppercase bg-[#fc5e4640] p-2 rounded-lg";
 
 
   return (
@@ -83,16 +95,18 @@ const WidgetSection = ({
                 </span>
               </span>
             )}
-            <div>
-              <span
-                className={`${
-                  titleFont
-                    ? "text-subtitle text-primary "
-                    : "text-widgetTitle text-primary font-pmedium"
-                }`}>
-                {TitleAmount}{" "}
-              </span>
-              <div className="flex gap-2">
+            <div className="flex flex-col items-end gap-2">
+              {TitleAmount ? (
+                <span
+                  className={`${
+                    titleFont
+                      ? "text-subtitle text-primary "
+                      : "text-widgetTitle text-primary font-pmedium"
+                  }`}>
+                  {TitleAmount}{" "}
+                </span>
+              ) : null}
+              <div className="flex gap-2 flex-wrap justify-end">
                 {TitleAmountTotal !== undefined &&
                   TitleAmountTotal !== null && (
                     <span
@@ -101,7 +115,7 @@ const WidgetSection = ({
                           ? "text-subtitle text-slate-800"
                           : "text-body text-slate-800 font-pmedium"
                       }`}>
-                      <div className="flex gap-2 justify-center items-center uppercase bg-[#dbe4ff] p-2 rounded-lg">
+                      <div className={totalChipClasses}>
                         {totalTitle && <div>{totalTitle} : </div>}
                         <div>{TitleAmountTotal}</div>
                       </div>
@@ -115,7 +129,7 @@ const WidgetSection = ({
                           ? "text-subtitle text-green-800"
                           : "text-body text-green-800 font-pmedium"
                       }`}>
-                      <div className="flex gap-2 justify-center items-center uppercase bg-[#54c4a657] p-2 rounded-lg">
+                      <div className={greenChipClasses}>
                         {/* <FaArrowTrendUp /> */}
                         {greenTitle && <div>{greenTitle} : </div>}
                         <div>{TitleAmountGreen}</div>
@@ -129,9 +143,9 @@ const WidgetSection = ({
                         ? "text-subtitle text-red-800"
                         : "text-body text-red-800 font-pmedium"
                     }`}>
-                    <div className="flex gap-2 justify-center items-center uppercase bg-[#fc5e4640] p-2 rounded-lg">
-                      {/* <FaArrowTrendDown /> */}
-                      {redTitle && <div>{redTitle} : </div>}
+                      <div className={redChipClasses}>
+                        {/* <FaArrowTrendDown /> */}
+                        {redTitle && <div>{redTitle} : </div>}
 
                       <div>{TitleAmountRed}</div>
                     </div>
