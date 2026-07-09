@@ -70,7 +70,7 @@ const parseTaskDate = (value) => {
 
 const parseTaskDueTime = (value, dueDate) => {
   const rawDueTime = normalizeCsvValue(value);
-  if (!rawDueTime) return null;
+  if (!rawDueTime || !dueDate) return null;
 
   const parsedTime = new Date(rawDueTime);
   if (!isNaN(parsedTime.getTime())) return parsedTime;
@@ -78,7 +78,7 @@ const parseTaskDueTime = (value, dueDate) => {
   const timeMatch = rawDueTime.match(
     /^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i,
   );
-  if (!timeMatch || !dueDate) return null;
+  if (!timeMatch) return null;
 
   let hours = Number(timeMatch[1]);
   const minutes = Number(timeMatch[2]);
@@ -1505,7 +1505,9 @@ const bulkInsertTasks = async (req, res, next) => {
       }
 
       const parsedDueTime = parseTaskDueTime(dueTime, parsedDueDate);
-      if (dueTime && !parsedDueTime) reasons.push("Invalid dueTime format");
+      if (dueTime && parsedDueDate && !parsedDueTime) {
+        reasons.push("Invalid dueTime format");
+      }
 
       const resolvedDepartment = department
         ? await resolveBulkTaskDepartment(department)
