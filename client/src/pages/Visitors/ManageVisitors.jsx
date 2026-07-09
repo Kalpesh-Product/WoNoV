@@ -30,7 +30,7 @@ const ManageVisitors = () => {
   const [modalMode, setModalMode] = useState("view");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
-  const { setValue, handleSubmit, reset, control } = useForm();
+  const { setValue, handleSubmit, reset, control, watch } = useForm();
   const userDepartments = Array.isArray(auth?.user?.departments)
     ? auth.user.departments
     : [];
@@ -49,6 +49,7 @@ const ManageVisitors = () => {
     allowedVisitScheduleEditorIds.includes(String(auth?.user?._id || "")) ||
     isTopManagementUser ||
     isTechManager;
+  const editedCheckInRaw = watch("checkInRaw");
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["visitors"],
@@ -535,10 +536,10 @@ const ManageVisitors = () => {
                         textField: { size: "small", fullWidth: true },
                       }}
                       shouldDisableTime={(time, view) => {
-                        const startTime = selectedVisitor.checkIn;
-                        const timeValue = time.$d;
+                        const startTime = editedCheckInRaw || selectedVisitor?.checkIn;
+                        const timeValue = time?.$d;
 
-                        if (!startTime) return false;
+                        if (!startTime || !timeValue) return false;
 
                         const startDate = new Date(startTime);
 

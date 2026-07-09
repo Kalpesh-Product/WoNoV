@@ -677,7 +677,29 @@ const updateVisitor = async (req, res, next) => {
         message: "Visitor not found",
       });
     }
-    if (updateData.checkOut) {
+    const hasCheckInUpdate = Object.prototype.hasOwnProperty.call(
+      updateData,
+      "checkIn",
+    );
+    const hasVisitDateUpdate = Object.prototype.hasOwnProperty.call(
+      updateData,
+      "dateOfVisit",
+    );
+    const hasCheckOutUpdate = Object.prototype.hasOwnProperty.call(
+      updateData,
+      "checkOut",
+    );
+
+    if (hasCheckInUpdate) {
+      const parsedCheckin = new Date(updateData.checkIn);
+      if (isNaN(parsedCheckin.getTime())) {
+        return res.status(400).json({
+          message: "Invalid checkin time",
+        });
+      }
+    }
+
+    if (hasCheckOutUpdate && updateData.checkOut) {
       const parsedCheckout = new Date(updateData.checkOut);
       const parsedCheckin = new Date(updateData.checkIn || visitor.checkIn);
       if (isNaN(parsedCheckout.getTime())) {
@@ -691,7 +713,7 @@ const updateVisitor = async (req, res, next) => {
         });
       }
 
-      if (parsedCheckout.getDate() !== parsedCheckin.getDate()) {
+      if (parsedCheckout.toDateString() !== parsedCheckin.toDateString()) {
         return res.status(400).json({
           message: "Check-in and Check-out date should be the same",
         });
@@ -773,17 +795,34 @@ const updateVisitor = async (req, res, next) => {
       );
     }
 
-    if (updateData.checkOut) {
-      await ExternalVisits.findOneAndUpdate(
-        { visitorId, checkOut: null },
-        {
-          $set: {
-            checkOut: updatedVisitor.checkOut,
-            checkedOutBy: updatedVisitor.checkedOutBy || user,
+    if (hasCheckInUpdate || hasVisitDateUpdate || hasCheckOutUpdate) {
+      const externalVisitUpdates = {};
+
+      if (hasCheckInUpdate) {
+        externalVisitUpdates.checkIn = updatedVisitor.checkIn;
+      }
+
+      if (hasVisitDateUpdate || hasCheckInUpdate) {
+        externalVisitUpdates.dateOfVisit =
+          updatedVisitor.dateOfVisit || updatedVisitor.checkIn;
+      }
+
+      if (hasCheckOutUpdate) {
+        externalVisitUpdates.checkOut = updatedVisitor.checkOut || null;
+        externalVisitUpdates.checkedOutBy = updatedVisitor.checkOut
+          ? updatedVisitor.checkedOutBy || user
+          : null;
+      }
+
+      if (Object.keys(externalVisitUpdates).length > 0) {
+        await ExternalVisits.findOneAndUpdate(
+          { visitorId },
+          {
+            $set: externalVisitUpdates,
           },
-        },
-        { sort: { checkIn: -1 } },
-      );
+          { sort: { checkIn: -1 } },
+        );
+      }
     }
 
     await createLog({
