@@ -141,6 +141,23 @@ const FinanceDashboard = () => {
     refetchOnReconnect: true,
   });
 
+  const { data: simpleRevenue = {} } = useQuery({
+    queryKey: ["finance-dashboard-simpleRevenue"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/simple-consolidated-revenue");
+        return response.data || {};
+      } catch (error) {
+        console.error(error);
+        return {};
+      }
+    },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+
   const selectedPayoutMonth = dayjs().subtract(1, "month").format("MMM-YY");
   const chartPayoutMonth = dayjs().format("MMM-YY");
 
@@ -660,7 +677,7 @@ const FinanceDashboard = () => {
         },
       },
     },
-    colors: ["#4CAF50", "#FFECC5"],
+    colors: ["#4CAF50", "#FDE3A7"],
     labels: pieMonthlyPayoutData.map((item) => item.label),
     legend: {
       show: true,
@@ -673,11 +690,23 @@ const FinanceDashboard = () => {
       },
     },
     tooltip: {
-      y: {
-        formatter: function (value, { seriesIndex }) {
-          const category = pieMonthlyPayoutData[seriesIndex];
-          return `INR ${category?.value?.toLocaleString("en-IN") || 0}`;
-        },
+      custom: function ({ seriesIndex }) {
+        const category = pieMonthlyPayoutData[seriesIndex];
+        const isPending = category?.label === "Pending";
+
+        return `
+          <div style="
+            padding: 6px 10px;
+            border-radius: 4px;
+            background: ${isPending ? "#FDE3A7" : "#4CAF50"};
+            color: ${isPending ? "#000000" : "#FFFFFF"};
+            font-family: Poppins-Regular;
+            font-size: 12px;
+            font-weight: 600;
+          ">
+            ${category?.label || ""}: INR ${category?.value?.toLocaleString("en-IN") || 0}
+          </div>
+        `;
       },
     },
     plotOptions: {
@@ -699,58 +728,108 @@ const FinanceDashboard = () => {
   const income = incomeEntry?.income;
   const currentCollectionsMonth = dayjs().format("MMM-YY");
 
-  // 2. Calculation function (unchanged but included for completeness)
-  const calculatePaidVsUnpaid = (income = {}) => {
-    const revenueSources = [
-      income.meetingRevenue || [],
-      income.alternateRevenues || [],
-      income.virtualOfficeRevenues || [],
-      income.workationRevenues || [],
-      income.coworkingRevenues || [],
-    ];
+  const getNormalizedPaymentStatus = (value) => {
+    if (typeof value === "string") return value.trim().toLowerCase();
+    return value ? "paid" : "unpaid";
+  };
 
+  const getNumericAmount = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const parsedValue = parseFloat(value.replace(/,/g, ""));
+      return Number.isNaN(parsedValue) ? 0 : parsedValue;
+    }
+    return 0;
+  };
+
+  const unifiedRevenueData = useMemo(() => {
+    const flatten = [];
+
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(
+          item.status ?? item.rentStatus,
+        ),
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
+
+    return flatten;
+  }, [simpleRevenue]);
+
+  // 2. Calculation function (unchanged but included for completeness)
+  const calculatePaidVsUnpaid = (revenueData = []) => {
     let paid = 0;
     let unpaid = 0;
 
-    revenueSources.forEach((source) => {
-      source.forEach((item) => {
-        const rawDate =
-          item.date || item.rentDate || item.invoiceCreationDate;
-        if (!rawDate || !dayjs(rawDate).isValid()) return;
+    revenueData.forEach((item) => {
+      if (!item.date || !dayjs(item.date).isValid()) return;
 
-        const monthKey = dayjs(rawDate).format("MMM-YY");
-        if (monthKey !== currentCollectionsMonth) return;
+      const monthKey = dayjs(item.date).format("MMM-YY");
+      if (monthKey !== currentCollectionsMonth) return;
 
-        const amount = item.revenue || item.taxableAmount || 0;
+      const amount = getNumericAmount(item.revenue);
 
-        if (item.status === "paid") {
-          paid += amount;
-        } else {
-          unpaid += amount;
-        }
-      });
+      if (item.normalizedStatus === "paid") {
+        paid += amount;
+      } else {
+        unpaid += amount;
+      }
     });
 
     return { paid, unpaid };
   };
 
   // 3. Safely calculate paid and unpaid values
-  const { paid, unpaid } = income
-    ? calculatePaidVsUnpaid(income)
+  const { paid, unpaid } = unifiedRevenueData.length
+    ? calculatePaidVsUnpaid(unifiedRevenueData)
     : { paid: 0, unpaid: 0 };
 
   // 4. Prepare pie chart data
   const pieChartData = [
-    { label: "Collected", value: paid },
-    { label: "Due", value: unpaid },
+    { label: "Paid", value: paid },
+    { label: "Unpaid", value: unpaid },
   ];
 
   const pieChartOptions = {
     chart: {
       fontFamily: "Poppins-Regular",
     },
-    labels: ["Collected", "Due"],
-    colors: ["#2196F3", "#FF9800"],
+    labels: ["Paid", "Unpaid"],
+    colors: ["#66DB66", "#EA9A87"],
     legend: {
       position: "right",
     },
@@ -866,37 +945,76 @@ const FinanceDashboard = () => {
   ];
 
   const statutoryDonutLabels = ["Approved", "Pending"];
-  const statutoryDonutColors = ["#4CAF50", "#FF9800"];
+  const statutoryDonutColors = ["#4CAF50", "#FDE3A7"];
   const statutoryTooltipValues = statutoryDonutSeries.map(
     (amount, i) => `${statutoryDonutLabels[i]}: ₹ ${amount}`
   );
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
-  const currentMonthRentalPayments = isBudgetDataLoading
-    ? []
-    : budgetData.filter(
+  // const currentMonthRentalPayments = isBudgetDataLoading
+  //   ? []
+  //   : budgetData.filter(
+  //     (item) =>
+  //       item?.expanseType === "Monthly Rent" &&
+  //       item?.dueDate &&
+  //       dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
+  //   );
+
+  // const totalPaid = currentMonthRentalPayments
+  //   .filter((item) => item.status === "Approved")
+  //   .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+
+  // const totalUnpaid = currentMonthRentalPayments
+  //   .filter((item) => item.status !== "Approved")
+  //   .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+
+  // // Donut chart props
+  // const donutRentalLabels = ["Paid", "Unpaid"];
+  // const donutRentalSeries = [totalPaid, totalUnpaid];
+  // const donutRentalTooltipValue = [
+  //   ` INR ${totalPaid.toLocaleString()}`,
+  //   ` INR ${totalUnpaid.toLocaleString()}`,
+  // ];
+  // const donutRentalColors = ["#4CAF50", "#F44336"];
+
+  //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
+const currentMonthRentalPayments = isBudgetDataLoading
+  ? []
+  : budgetData.filter(
       (item) =>
         item?.expanseType === "Monthly Rent" &&
         item?.dueDate &&
         dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
     );
 
-  const totalPaid = currentMonthRentalPayments
-    .filter((item) => item.status === "Approved")
-    .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+const totalPaid = currentMonthRentalPayments
+  .filter(
+    (item) =>
+      String(item.isPaid || "")
+        .trim()
+        .toLowerCase() === "paid"
+  )
+  .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
 
-  const totalUnpaid = currentMonthRentalPayments
-    .filter((item) => item.status !== "Approved")
-    .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+const totalUnpaid = currentMonthRentalPayments
+  .filter(
+    (item) =>
+      String(item.isPaid || "")
+        .trim()
+        .toLowerCase() === "unpaid"
+  )
+  .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
 
-  // Donut chart props
-  const donutRentalLabels = ["Paid", "Unpaid"];
-  const donutRentalSeries = [totalPaid, totalUnpaid];
-  const donutRentalTooltipValue = [
-    ` INR ${totalPaid.toLocaleString()}`,
-    ` INR ${totalUnpaid.toLocaleString()}`,
-  ];
-  const donutRentalColors = ["#4CAF50", "#F44336"];
+// Donut chart props
+const donutRentalLabels = ["Paid", "Unpaid"];
+const donutRentalSeries = [totalPaid, totalUnpaid];
+const donutRentalTooltipValue = [
+  ` INR ${totalPaid.toLocaleString("en-IN")}`,
+  ` INR ${totalUnpaid.toLocaleString("en-IN")}`,
+];
+const donutRentalColors = ["#66DB66", "#EA9A87"];
+
+//-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
 
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
   //-----------------------------------------------------Table Priority Tasks------------------------------------------------------//

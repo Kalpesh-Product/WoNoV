@@ -113,7 +113,7 @@ const ExternalClients = ({
     },
   });
 
-  const { handleSubmit, reset, control, setValue } = useForm({
+  const { handleSubmit, reset, control, setValue, watch } = useForm({
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -146,6 +146,7 @@ const ExternalClients = ({
       registeredClientCompany: "",
     },
   });
+  const editedCheckInRaw = watch("checkInRaw");
   const handleEditToggle = () => {
     if (!isEditing && selectedVisitor) {
       reset({
@@ -670,7 +671,10 @@ const ExternalClients = ({
         "dateOfVisit",
         selectedVisitor.dateOfVisit ? dayjs(selectedVisitor.dateOfVisit) : null,
       );
-      setValue("checkInRaw", selectedVisitor.checkInRaw || "");
+      setValue(
+        "checkInRaw",
+        selectedVisitor.checkInRaw ? dayjs(selectedVisitor.checkInRaw) : null,
+      );
       setValue("checkInBy", selectedVisitor.checkInBy || "");
 
       setValue("checkOutBy", selectedVisitor.checkOutBy || "");
@@ -701,9 +705,27 @@ const ExternalClients = ({
 
   const submit = async (data) => {
     if (isEditing && selectedVisitor) {
-      const checkInDate = selectedVisitor.checkIn
+      const existingCheckIn = selectedVisitor.checkIn
         ? dayjs(selectedVisitor.checkIn)
         : null;
+      const selectedVisitDate = data.dateOfVisit ? dayjs(data.dateOfVisit) : null;
+      const selectedCheckInTime = data.checkInRaw ? dayjs(data.checkInRaw) : null;
+      const checkInDate =
+        canEditVisitSchedule && (selectedVisitDate || selectedCheckInTime)
+          ? (selectedVisitDate || existingCheckIn || dayjs())
+              .hour(selectedCheckInTime?.hour?.() ?? existingCheckIn?.hour?.() ?? 0)
+              .minute(
+                selectedCheckInTime?.minute?.() ?? existingCheckIn?.minute?.() ?? 0,
+              )
+              .second(
+                selectedCheckInTime?.second?.() ?? existingCheckIn?.second?.() ?? 0,
+              )
+              .millisecond(
+                selectedCheckInTime?.millisecond?.() ??
+                  existingCheckIn?.millisecond?.() ??
+                  0,
+              )
+          : existingCheckIn;
       const checkOutRaw = data.checkOutRaw ? dayjs(data.checkOutRaw) : null;
 
       const combinedCheckout =
@@ -728,9 +750,8 @@ const ExternalClients = ({
         name: `${data.firstName} ${data.lastName}`,
         email: data.email,
         phoneNumber: data.phoneNumber,
-        dateOfVisit: data.dateOfVisit
-          ? dayjs(data.dateOfVisit).toISOString()
-          : null,
+        dateOfVisit: checkInDate ? checkInDate.toISOString() : null,
+        checkIn: checkInDate ? checkInDate.toISOString() : selectedVisitor?.checkIn,
         purposeOfVisit: data.purposeOfVisit,
         // checkOut: data.checkOutRaw
         //   ? dayjs(data.checkOutRaw).toISOString()
@@ -1270,33 +1291,6 @@ const ExternalClients = ({
                           renderInput={(params) => (
                             <TextField {...params} size="small" fullWidth />
                           )}
-                          shouldDisableTime={(time, view) => {
-                            const startTime = selectedVisitor.checkIn;
-                            const timeValue = time.$d;
-
-                            if (!startTime) return false;
-
-                            const startDate = new Date(startTime);
-
-                            if (view === "hours") {
-                              return (
-                                timeValue.getHours() < startDate.getHours()
-                              );
-                            }
-
-                            if (view === "minutes") {
-                              const selectedHour = field.value
-                                ? new Date(field.value).getHours()
-                                : startDate.getHours();
-
-                              return (
-                                timeValue.getHours() === selectedHour &&
-                                timeValue.getMinutes() < startDate.getMinutes()
-                              );
-                            }
-
-                            return false;
-                          }}
                         />
                       )}
                     />
@@ -1360,10 +1354,10 @@ const ExternalClients = ({
                             <TextField {...params} size="small" fullWidth />
                           )}
                           shouldDisableTime={(time, view) => {
-                            const startTime = selectedVisitor.checkIn;
-                            const timeValue = time.$d;
+                            const startTime = editedCheckInRaw || selectedVisitor?.checkIn;
+                            const timeValue = time?.$d;
 
-                            if (!startTime) return false;
+                            if (!startTime || !timeValue) return false;
 
                             const startDate = new Date(startTime);
 
