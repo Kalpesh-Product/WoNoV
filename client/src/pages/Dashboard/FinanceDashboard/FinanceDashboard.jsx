@@ -302,36 +302,36 @@ const FinanceDashboard = () => {
     "#E91E63",
   ];
 
-  const yearCategories = {
-    "FY 2024-25": [
-      "Apr-24",
-      "May-24",
-      "Jun-24",
-      "Jul-24",
-      "Aug-24",
-      "Sep-24",
-      "Oct-24",
-      "Nov-24",
-      "Dec-24",
-      "Jan-25",
-      "Feb-25",
-      "Mar-25",
-    ],
-    "FY 2025-26": [
-      "Apr-25",
-      "May-25",
-      "Jun-25",
-      "Jul-25",
-      "Aug-25",
-      "Sep-25",
-      "Oct-25",
-      "Nov-25",
-      "Dec-25",
-      "Jan-26",
-      "Feb-26",
-      "Mar-26",
-    ],
-  };
+  // const yearCategories = {
+  //   "FY 2024-25": [
+  //     "Apr-24",
+  //     "May-24",
+  //     "Jun-24",
+  //     "Jul-24",
+  //     "Aug-24",
+  //     "Sep-24",
+  //     "Oct-24",
+  //     "Nov-24",
+  //     "Dec-24",
+  //     "Jan-25",
+  //     "Feb-25",
+  //     "Mar-25",
+  //   ],
+  //   "FY 2025-26": [
+  //     "Apr-25",
+  //     "May-25",
+  //     "Jun-25",
+  //     "Jul-25",
+  //     "Aug-25",
+  //     "Sep-25",
+  //     "Oct-25",
+  //     "Nov-25",
+  //     "Dec-25",
+  //     "Jan-26",
+  //     "Feb-26",
+  //     "Mar-26",
+  //   ],
+  // };
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
 
   const incomeSources = revenueExpenseData.flatMap((item) => {
@@ -344,6 +344,63 @@ const FinanceDashboard = () => {
       ...(income.coworkingRevenues || []),
     ];
   });
+
+   const getFiscalYearLabel = (dateInput) => {
+    const parsedDate = dayjs(dateInput);
+    if (!parsedDate.isValid()) return null;
+
+    const startYear = parsedDate.month() >= 3
+      ? parsedDate.year()
+      : parsedDate.year() - 1;
+
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  };
+
+  const buildFiscalYearMonths = (fiscalYear) => {
+    const startYear = Number(String(fiscalYear).match(/\d{4}/)?.[0]);
+    if (!startYear) return [];
+
+    return [
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+    ].map((month, index) => {
+      const year = index < 9 ? startYear : startYear + 1;
+      return `${month}-${String(year).slice(-2)}`;
+    });
+  };
+
+  const yearCategories = useMemo(() => {
+    const fiscalYears = new Set(["FY 2024-25", "FY 2025-26"]);
+
+    incomeSources.forEach((income) => {
+      const fiscalYear = getFiscalYearLabel(
+        income.date || income.rentDate || income.invoiceCreationDate,
+      );
+      if (fiscalYear) fiscalYears.add(fiscalYear);
+    });
+
+    testExpense.forEach((expense) => {
+      const fiscalYear = getFiscalYearLabel(expense.dueDate);
+      if (fiscalYear) fiscalYears.add(fiscalYear);
+    });
+
+    return [...fiscalYears]
+      .sort((a, b) => Number(a.match(/\d{4}/)?.[0] || 0) - Number(b.match(/\d{4}/)?.[0] || 0))
+      .reduce((acc, fiscalYear) => {
+        acc[fiscalYear] = buildFiscalYearMonths(fiscalYear);
+        return acc;
+      }, {});
+  }, [incomeSources, testExpense]);
 
   const monthWiseIncome = {};
   incomeSources.forEach((income) => {
@@ -1307,6 +1364,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
           TitleAmountGreen={item.TitleAmountGreen}
           TitleAmountRed={item.TitleAmountRed}
           onYearChange={item.onYearChange}
+          currentYear={selectedFiscalYear}
         />
       )),
     },
