@@ -1242,7 +1242,7 @@ const bulkInsertKraKpaTasks = async (req, res, next) => {
         dueTime: dueTime || undefined,
         department,
         status,
-        kpaDuration: ["KPA", "TEAMKPA"].includes(taskType)
+        kpaDuration: ["KPA", "TEAMKPA", "INDIVIDUALKPA"].includes(taskType)
           ? "Monthly"
           : undefined,
       };
@@ -1277,4 +1277,5 @@ module.exports = {
   deleteTaskRecurrence,
   getCompletedKraKpaTasks,
   bulkInsertKraKpaTasks,
+  fetchPerSqFtExpenseReportService,
 };
