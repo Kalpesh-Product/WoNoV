@@ -48,6 +48,21 @@ const SqWiseData = () => {
     },
   });
 
+  const { data: simpleRevenue = [], isLoading: isSimpleRevenueLoading } =
+    useQuery({
+      queryKey: ["simpleRevenue"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            "/api/sales/simple-consolidated-revenue"
+          );
+          return response.data;
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    });
+
   //-----------------API-----------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
@@ -58,71 +73,136 @@ const SqWiseData = () => {
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
   const monthWiseExpenses = {};
 
+  const getFiscalYearLabel = (dateInput) => {
+    const parsedDate = dayjs(dateInput);
+    if (!parsedDate.isValid()) return null;
+
+    const startYear =
+      parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  };
+
+  const buildFiscalYearMonths = (fiscalYear) => {
+    const startYear = Number(String(fiscalYear).match(/\d{4}/)?.[0]);
+    if (!startYear) return [];
+
+    return [
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+    ].map((month, index) => {
+      const year = index < 9 ? startYear : startYear + 1;
+      return `${month}-${String(year).slice(-2)}`;
+    });
+  };
+
+  const getNormalizedPaymentStatus = (value) => {
+    if (typeof value === "string") return value.trim().toLowerCase();
+    return value ? "paid" : "unpaid";
+  };
+
+  const getNumericAmount = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const parsedValue = parseFloat(value.replace(/,/g, ""));
+      return Number.isNaN(parsedValue) ? 0 : parsedValue;
+    }
+    return 0;
+  };
+
   //-------INCOME-------//
   const monthWiseIncome = {};
 
-  // Flatten all income arrays from all sources
-  const incomeSources = (revenueExpenseData || []).flatMap((item) => {
-    const income = item.income || {};
-    return [
-      ...(income.meetingRevenue || []),
-      ...(income.alternateRevenues || []),
-      ...(income.virtualOfficeRevenues || []),
-      ...(income.workationRevenues || []),
-      ...(income.coworkingRevenues || []),
-    ];
-  });
+  const incomeSources = useMemo(() => {
+    if (!simpleRevenue) return [];
+    const flatten = [];
 
-  const testExpense = revenueExpenseData
-    .filter((item) => item.expense)
-    .flatMap((item) => item.expense);
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(
+          item.status ?? item.rentStatus
+        ),
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
+
+    return flatten;
+  }, [simpleRevenue]);
+
+  const testExpense = Array.isArray(budgetData) ? budgetData : [];
   const testIncome = revenueExpenseData.filter((item) => item.income);
   const testUnits = revenueExpenseData
     .filter((item) => item.units)
     .flatMap((item) => item.units);
 
   const yearCategories = useMemo(() => {
-    const getFinancialYearStart = (date) =>
-      date.month() < 3 ? date.year() - 1 : date.year();
-
-    const buildFinancialYearMonths = (startYear) => [
-      `Apr-${String(startYear).slice(-2)}`,
-      `May-${String(startYear).slice(-2)}`,
-      `Jun-${String(startYear).slice(-2)}`,
-      `Jul-${String(startYear).slice(-2)}`,
-      `Aug-${String(startYear).slice(-2)}`,
-      `Sep-${String(startYear).slice(-2)}`,
-      `Oct-${String(startYear).slice(-2)}`,
-      `Nov-${String(startYear).slice(-2)}`,
-      `Dec-${String(startYear).slice(-2)}`,
-      `Jan-${String(startYear + 1).slice(-2)}`,
-      `Feb-${String(startYear + 1).slice(-2)}`,
-      `Mar-${String(startYear + 1).slice(-2)}`,
-    ];
-
-    const fyStartYears = new Set([
-      getFinancialYearStart(dayjs()),
+    const fiscalYears = new Set([
+      "FY 2024-25",
+      "FY 2025-26",
+      getCurrentFinancialYearLabel(),
     ]);
 
     incomeSources.forEach((income) => {
-      const rawDate =
-        income.date || income.rentDate || income.invoiceCreationDate;
-      const parsedDate = dayjs(rawDate);
-      if (!parsedDate.isValid()) return;
-      fyStartYears.add(getFinancialYearStart(parsedDate));
+      const fiscalYear = getFiscalYearLabel(income.date);
+      if (fiscalYear) fiscalYears.add(fiscalYear);
     });
 
     testExpense.forEach((expense) => {
-      const parsedDate = dayjs(expense?.dueDate);
-      if (!parsedDate.isValid()) return;
-      fyStartYears.add(getFinancialYearStart(parsedDate));
+      const fiscalYear = getFiscalYearLabel(expense.dueDate);
+      if (fiscalYear) fiscalYears.add(fiscalYear);
     });
 
-    return Array.from(fyStartYears)
-      .sort((a, b) => a - b)
-      .reduce((acc, startYear) => {
-        acc[`FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`] =
-          buildFinancialYearMonths(startYear);
+    return [...fiscalYears]
+      .sort(
+        (a, b) =>
+          Number(a.match(/\d{4}/)?.[0] || 0) -
+          Number(b.match(/\d{4}/)?.[0] || 0)
+      )
+      .reduce((acc, fiscalYear) => {
+        acc[fiscalYear] = buildFiscalYearMonths(fiscalYear);
         return acc;
       }, {});
   }, [incomeSources, testExpense]);
@@ -130,19 +210,14 @@ const SqWiseData = () => {
   // Process each income item
   incomeSources.forEach((income) => {
     // Pick the most relevant date for grouping by month
-    const rawDate =
-      income.date || income.rentDate || income.invoiceCreationDate;
-    // income.paDueDate ||
-    // income.dueTerm;
-
+    const rawDate = income.date;
     if (!rawDate || !dayjs(rawDate).isValid()) return;
     const monthKey = dayjs(rawDate).format("MMM-YY");
 
-    // Skip excluded months
     if (excludedMonths.includes(monthKey)) return;
+    if (income.normalizedStatus !== "paid") return;
 
-    const amount =
-      income.taxableAmount || income.revenue || income.taxable || 0;
+    const amount = income.revenue || 0;
 
     if (!monthWiseIncome[monthKey]) {
       monthWiseIncome[monthKey] = {
@@ -161,13 +236,10 @@ const SqWiseData = () => {
     dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
   );
 
-  const incomeMap = useMemo(() => {
-    const map = {};
-    transformedIncomes.forEach((item) => {
-      map[item.month] = item.actualIncome;
-    });
-    return map;
-  }, [transformedIncomes]);
+  const incomeMap = {};
+  transformedIncomes.forEach((item) => {
+    incomeMap[item.month] = item.actualIncome;
+  });
 
   //-------INCOME-------//
 
@@ -175,7 +247,7 @@ const SqWiseData = () => {
   const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
   const totalExpense = testExpense.reduce(
     (sum, item) => (item.actualAmount || 0) + sum,
-    0,
+    0
   );
   const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     const incomeSources = item.income || {};
@@ -213,53 +285,36 @@ const SqWiseData = () => {
 
   const transformedExpenses = Object.values(monthWiseExpenses);
 
-  const sortedExpenses = transformedExpenses.sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
+  const sortedExpenses = transformedExpenses
+    .filter((e) => e.month && dayjs(e.month, "MMM-YY").isValid())
+    .sort((a, b) =>
+      dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
   );
 
-  // Build map of month => actualExpense
-  const expenseMap = useMemo(() => {
-    const map = {};
-    sortedExpenses.forEach((item) => {
-      map[item.month] = item.actualExpense;
-    });
-    return map;
-  }, [sortedExpenses]);
+  const expenseMap = {};
+  sortedExpenses.forEach((item) => {
+    expenseMap[item.month] = item.actualExpense;
+  });
 
-  const visibleYearCategories = useMemo(() => {
-    return Object.entries(yearCategories).reduce((acc, [fiscalYear, months]) => {
-      const lastVisibleMonthIndex = months.reduce((latestIndex, month, index) => {
-        const hasIncome = Number(incomeMap[month] || 0) > 0;
-        const hasExpense = Number(expenseMap[month] || 0) > 0;
-        return hasIncome || hasExpense ? index : latestIndex;
-      }, -1);
-
-      acc[fiscalYear] =
-        lastVisibleMonthIndex >= 0
-          ? months.slice(0, lastVisibleMonthIndex + 1)
-          : [];
-
-      return acc;
-    }, {});
-  }, [yearCategories, incomeMap, expenseMap]);
-
-  const incomeData = Object.entries(visibleYearCategories).map(
+  const incomeData = Object.entries(yearCategories).map(
     ([fiscalYear, months]) => ({
       name: "Income",
       group: fiscalYear,
       data: months.map((month) => (incomeMap ? incomeMap[month] || 0 : 0)),
-    }),
+    })
   );
 
-  // Generate expenseData for all fiscal years defined in `yearCategories`
-  const expenseData = Object.entries(visibleYearCategories).map(
+  const expenseData = Object.entries(yearCategories).map(
     ([fiscalYear, months]) => ({
       name: "Expense",
       group: fiscalYear,
       data: months.map((month) => (expenseMap ? expenseMap[month] || 0 : 0)),
-    }),
+    })
   );
   //------------------Expensedata----------------------//
+
+  const currentIncomeSeries = incomeData.find((item) => item.group === selectedFY);
+  const currentExpenseSeries = expenseData.find((item) => item.group === selectedFY);
 
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
@@ -291,22 +346,6 @@ const SqWiseData = () => {
       cellRenderer: (params) => inrFormat(params.value),
     },
     { field: "perSqFt", headerName: "Per Sq.Ft Income (INR)", flex: 1 },
-    // {
-    //   field: "actions",
-    //   headerName: "Actions",
-    //   cellRenderer: (params) => (
-    //     <>
-    //       <div className="p-2 mb-2 flex gap-2">
-    //         <span
-    //           className="text-subtitle cursor-pointer"
-    //           onClick={() => handleViewModal(params.data)}
-    //         >
-    //           <MdOutlineRemoveRedEye />
-    //         </span>
-    //       </div>
-    //     </>
-    //   ),
-    // },
   ];
 
   const handleViewModal = (rowData) => {
@@ -315,6 +354,26 @@ const SqWiseData = () => {
   };
 
   const incomeExpenseData = [...incomeData, ...expenseData];
+  const incomeExpenseAxisMax = useMemo(() => {
+    const visibleSeries = [currentIncomeSeries, currentExpenseSeries].filter(
+      Boolean
+    );
+    const maxValue = visibleSeries.reduce((currentMax, series) => {
+      const seriesMax = (series?.data || []).reduce(
+        (max, value) => Math.max(max, Number(value) || 0),
+        0
+      );
+
+      return Math.max(currentMax, seriesMax);
+    }, 0);
+
+    if (maxValue <= 0) return 100000;
+
+    const paddedMax = maxValue * 1.15;
+    const magnitude = 10 ** Math.floor(Math.log10(paddedMax));
+
+    return Math.ceil(paddedMax / magnitude) * magnitude;
+  }, [currentExpenseSeries, currentIncomeSeries]);
 
   const incomeExpenseOptions = {
     chart: {
@@ -349,7 +408,8 @@ const SqWiseData = () => {
       colors: ["transparent"],
     },
     yaxis: {
-      max: 8000000,
+      min: 0,
+      max: incomeExpenseAxisMax,
       title: {
         text: "Amount In Lakhs (INR)",
       },
@@ -364,11 +424,14 @@ const SqWiseData = () => {
     tooltip: {
       custom: ({ dataPointIndex, w }) => {
         const monthIndex = dataPointIndex;
-        const income = w.globals.initialSeries.find((s) => s.name === "Income")
-          ?.data[monthIndex];
-        const expense = w.globals.initialSeries.find(
-          (s) => s.name === "Expense",
-        )?.data[monthIndex];
+        const income =
+          w.globals.initialSeries.find((s) => s.name === "Income")?.data[
+            monthIndex
+          ] ?? 0;
+        const expense =
+          w.globals.initialSeries.find((s) => s.name === "Expense")?.data[
+            monthIndex
+          ] ?? 0;
 
         const monthLabel =
           w.globals.labels && w.globals.labels[monthIndex]
@@ -397,7 +460,15 @@ const SqWiseData = () => {
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
 
-  const selectedFYMonths = visibleYearCategories[selectedFY] || [];
+  const selectedFYMonths = yearCategories[selectedFY] || [];
+  const selectedFYIncome = selectedFYMonths.reduce(
+    (sum, month) => sum + (incomeMap[month] || 0),
+    0
+  );
+  const selectedFYExpense = selectedFYMonths.reduce(
+    (sum, month) => sum + (expenseMap[month] || 0),
+    0
+  );
   const monthlyProfitLossData = selectedFYMonths.map((month, index) => {
     const income = incomeMap[month] || 0;
 
@@ -409,10 +480,6 @@ const SqWiseData = () => {
       perSqFt: (income / totalSqft).toFixed(0),
     };
   });
-  // const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
-  //   const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
-  //   return sum + numericalPnL;
-  // }, 0);
 
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const techWidgets = [
@@ -424,14 +491,15 @@ const SqWiseData = () => {
           options={incomeExpenseOptions}
           chartId={"bargraph-finance-income"}
           title={"BIZNest FINANCE INCOME Per Sq. ft."}
-          TitleAmountGreen={`INR ${inrFormat(totalIncomeAmount)} `}
-          TitleAmountRed={`INR ${inrFormat(totalExpense)}`}
+          TitleAmountGreen={`INR ${inrFormat(selectedFYIncome)}`}
+          TitleAmountRed={`INR ${inrFormat(selectedFYExpense)}`}
           onYearChange={setSelectedFY}
+          currentYear={selectedFY}
         />,
       ],
     },
   ];
-  if (isRevenueExpenseLoading || isBudgetDataLoading) {
+  if (isRevenueExpenseLoading || isBudgetDataLoading || isSimpleRevenueLoading) {
     return (
       <div className="p-4 h-72 flex justify-center items-center text-center text-gray-500">
         <CircularProgress />

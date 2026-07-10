@@ -4,6 +4,7 @@ const {
   fetchVoucherService,
   fetchBudgetVoucherService,
   fetchProfitLossReportService,
+  fetchPerSqFtExpenseService,
 } = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
 const { fetchVendorReportService } = require("./vendor");
@@ -285,6 +286,17 @@ const reportServiceRegistry = {
       staticParams: { type: "total" },
     },
   ),
+
+  persqftexpense: createReportService(fetchPerSqFtExpenseService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+  }),
+
+  persqftelectricalexpense: createReportService(fetchPerSqFtExpenseService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "electrical" },
+  }),
 
   // "historical-profit-loss": createReportService(fetchProfitLossReportService, {
   //   dateField: "dueDate",

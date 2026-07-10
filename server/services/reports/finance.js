@@ -615,9 +615,110 @@ const fetchProfitLossReportService = async ({
   });
 };
 
+const fetchPerSqFtExpenseService = async ({
+  company,
+  dateFilter,
+  departmentId,
+  type = "",
+}) => {
+  const query = { company };
+
+  if (departmentId) {
+    query.department = departmentId;
+  }
+
+  if (dateFilter) {
+    query.dueDate = dateFilter.dueDate;
+  }
+
+  if (type === "electrical") {
+    query.expanseType = /^electricity$/i;
+  }
+
+  const [budgets, units] = await Promise.all([
+    Budget.find(query)
+      .populate([
+        { path: "department", select: "name" },
+        {
+          path: "unit",
+          select: "unitName unitNo sqft building",
+          populate: {
+            path: "building",
+            model: "Building",
+            select: "buildingName",
+          },
+        },
+      ])
+      .lean()
+      .exec(),
+    Unit.find({ company })
+      .select("unitName unitNo sqft building")
+      .populate({
+        path: "building",
+        model: "Building",
+        select: "buildingName",
+      })
+      .lean()
+      .exec(),
+  ]);
+
+  const groupedByUnits = units.reduce((acc, unit) => {
+    if (!unit?._id) return acc;
+
+    acc[unit._id.toString()] = {
+      unitNo: unit.unitNo || "-",
+      unitName: unit.unitName || "-",
+      buildingName: unit.building?.buildingName || "-",
+      sqft: Number(unit.sqft) || 0,
+      totalExpense: 0,
+    };
+
+    return acc;
+  }, {});
+
+  budgets.forEach((budget) => {
+    const unit = budget?.unit;
+
+    if (!unit?._id) return;
+
+    const unitId = unit._id.toString();
+
+    if (!groupedByUnits[unitId]) {
+      groupedByUnits[unitId] = {
+        unitNo: unit.unitNo || "-",
+        unitName: unit.unitName || "-",
+        buildingName: unit.building?.buildingName || "-",
+        sqft: Number(unit.sqft) || 0,
+        totalExpense: 0,
+      };
+    }
+
+    groupedByUnits[unitId].totalExpense += Number(budget?.actualAmount) || 0;
+  });
+
+  return Object.values(groupedByUnits)
+    .sort((a, b) =>
+      a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true }),
+    )
+    .map((group, index) => {
+      const expensePerSqFt = group.sqft ? group.totalExpense / group.sqft : 0;
+
+      return {
+        unitNo: group.unitNo,
+        unitName: group.unitName,
+        buildingName: group.buildingName,
+        expense: expensePerSqFt.toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      };
+    });
+};
+
 module.exports = {
   fetchBudgetVoucherService,
   fetchBudgetService,
   fetchVoucherService,
   fetchProfitLossReportService,
+  fetchPerSqFtExpenseService,
 };

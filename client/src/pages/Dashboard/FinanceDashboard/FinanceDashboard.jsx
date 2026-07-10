@@ -12,7 +12,7 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../../context/SideBarContext";
 import { useEffect, useMemo, useState } from "react";
-import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -41,7 +41,16 @@ const FinanceDashboard = () => {
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
   const navigate = useNavigate();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
+  const currentFiscalYearLabel = useMemo(() => {
+    const today = dayjs();
+    const startYear = today.month() >= 3 ? today.year() : today.year() - 1;
+
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  }, []);
+
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(
+    currentFiscalYearLabel
+  );
 
   //------------------------PAGE ACCESS CARD START-------------------//
   const cardsConfig = [
@@ -192,9 +201,7 @@ const FinanceDashboard = () => {
       item?.dueDate && dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
   );
 
-  const testExpense = revenueExpenseData
-    .filter((item) => item.expense)
-    .flatMap((item) => item.expense);
+  const testExpense = Array.isArray(budgetData) ? budgetData : [];
 
   const testIncome = revenueExpenseData.filter((item) => item.income);
 
@@ -302,59 +309,172 @@ const FinanceDashboard = () => {
     "#E91E63",
   ];
 
-  const yearCategories = {
-    "FY 2024-25": [
-      "Apr-24",
-      "May-24",
-      "Jun-24",
-      "Jul-24",
-      "Aug-24",
-      "Sep-24",
-      "Oct-24",
-      "Nov-24",
-      "Dec-24",
-      "Jan-25",
-      "Feb-25",
-      "Mar-25",
-    ],
-    "FY 2025-26": [
-      "Apr-25",
-      "May-25",
-      "Jun-25",
-      "Jul-25",
-      "Aug-25",
-      "Sep-25",
-      "Oct-25",
-      "Nov-25",
-      "Dec-25",
-      "Jan-26",
-      "Feb-26",
-      "Mar-26",
-    ],
-  };
+  // const yearCategories = {
+  //   "FY 2024-25": [
+  //     "Apr-24",
+  //     "May-24",
+  //     "Jun-24",
+  //     "Jul-24",
+  //     "Aug-24",
+  //     "Sep-24",
+  //     "Oct-24",
+  //     "Nov-24",
+  //     "Dec-24",
+  //     "Jan-25",
+  //     "Feb-25",
+  //     "Mar-25",
+  //   ],
+  //   "FY 2025-26": [
+  //     "Apr-25",
+  //     "May-25",
+  //     "Jun-25",
+  //     "Jul-25",
+  //     "Aug-25",
+  //     "Sep-25",
+  //     "Oct-25",
+  //     "Nov-25",
+  //     "Dec-25",
+  //     "Jan-26",
+  //     "Feb-26",
+  //     "Mar-26",
+  //   ],
+  // };
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
 
-  const incomeSources = revenueExpenseData.flatMap((item) => {
-    const income = item.income || {};
+  const getGraphNormalizedPaymentStatus = (value) => {
+    if (typeof value === "string") return value.trim().toLowerCase();
+    return value ? "paid" : "unpaid";
+  };
+
+  const getGraphNumericAmount = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const parsedValue = parseFloat(value.replace(/,/g, ""));
+      return Number.isNaN(parsedValue) ? 0 : parsedValue;
+    }
+    return 0;
+  };
+
+  const incomeSources = useMemo(() => {
+    if (!simpleRevenue) return [];
+    const flatten = [];
+
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.revenue ?? item.taxableAmount),
+        date: item.rentDate,
+        normalizedStatus: getGraphNormalizedPaymentStatus(
+          item.status ?? item.rentStatus
+        ),
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
+
+    return flatten;
+  }, [simpleRevenue]);
+
+   const getFiscalYearLabel = (dateInput) => {
+    const parsedDate = dayjs(dateInput);
+    if (!parsedDate.isValid()) return null;
+
+    const startYear = parsedDate.month() >= 3
+      ? parsedDate.year()
+      : parsedDate.year() - 1;
+
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  };
+
+  const buildFiscalYearMonths = (fiscalYear) => {
+    const startYear = Number(String(fiscalYear).match(/\d{4}/)?.[0]);
+    if (!startYear) return [];
+
     return [
-      ...(income.meetingRevenue || []),
-      ...(income.alternateRevenues || []),
-      ...(income.virtualOfficeRevenues || []),
-      ...(income.workationRevenues || []),
-      ...(income.coworkingRevenues || []),
-    ];
-  });
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+    ].map((month, index) => {
+      const year = index < 9 ? startYear : startYear + 1;
+      return `${month}-${String(year).slice(-2)}`;
+    });
+  };
+
+  const yearCategories = useMemo(() => {
+    const fiscalYears = new Set([
+      "FY 2024-25",
+      "FY 2025-26",
+      currentFiscalYearLabel,
+    ]);
+
+    incomeSources.forEach((income) => {
+      const fiscalYear = getFiscalYearLabel(
+        income.date,
+      );
+      if (fiscalYear) fiscalYears.add(fiscalYear);
+    });
+
+    testExpense.forEach((expense) => {
+      const fiscalYear = getFiscalYearLabel(expense.dueDate);
+      if (fiscalYear) fiscalYears.add(fiscalYear);
+    });
+
+    return [...fiscalYears]
+      .sort((a, b) => Number(a.match(/\d{4}/)?.[0] || 0) - Number(b.match(/\d{4}/)?.[0] || 0))
+      .reduce((acc, fiscalYear) => {
+        acc[fiscalYear] = buildFiscalYearMonths(fiscalYear);
+        return acc;
+      }, {});
+  }, [currentFiscalYearLabel, incomeSources, testExpense]);
 
   const monthWiseIncome = {};
   incomeSources.forEach((income) => {
-    const rawDate =
-      income.date || income.rentDate || income.invoiceCreationDate;
+    const rawDate = income.date;
     if (!rawDate) return;
     const monthKey = dayjs(rawDate).format("MMM-YY");
     if (excludedMonths.includes(monthKey)) return;
 
-    const amount =
-      income.taxableAmount || income.revenue || income.taxable || 0;
+    if (income.normalizedStatus !== "paid") return;
+
+    const amount = income.revenue || 0;
     if (!monthWiseIncome[monthKey]) {
       monthWiseIncome[monthKey] = {
         month: monthKey,
@@ -380,7 +500,15 @@ const FinanceDashboard = () => {
   );
 
   const selectedYearMonths = yearCategories[selectedFiscalYear] || [];
-  const lastMonthLabel = selectedYearMonths[selectedYearMonths.length - 1] || "-";
+  const previousCalendarMonthLabel = dayjs()
+    .subtract(1, "month")
+    .format("MMM-YY");
+  const summaryMonthLabel = selectedYearMonths.includes(previousCalendarMonthLabel)
+    ? previousCalendarMonthLabel
+    : selectedYearMonths[selectedYearMonths.length - 1] || "-";
+  const summaryMonthIndex = selectedYearMonths.findIndex(
+    (month) => month === summaryMonthLabel
+  );
 
   const monthWiseExpenses = {};
   testExpense.forEach((exp) => {
@@ -446,12 +574,34 @@ const FinanceDashboard = () => {
 
   //------------------Expensedata----------------------//
 
-  const lastMonthDataIncome = currentIncomeSeries?.data?.at(-1) || 0;
-  const lastMonthData = currentExpenseSeries?.data?.at(-1) || 0;
+  const summaryMonthIncome =
+    summaryMonthIndex >= 0 ? currentIncomeSeries?.data?.[summaryMonthIndex] || 0 : 0;
+  const summaryMonthExpense =
+    summaryMonthIndex >= 0 ? currentExpenseSeries?.data?.[summaryMonthIndex] || 0 : 0;
   //----------INCOME-EXPENSE GRAPH conversion------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [...incomeData, ...expenseData];
+  const incomeExpenseAxisMax = useMemo(() => {
+    const visibleSeries = [currentIncomeSeries, currentExpenseSeries].filter(
+      Boolean
+    );
+    const maxValue = visibleSeries.reduce((currentMax, series) => {
+      const seriesMax = (series?.data || []).reduce(
+        (max, value) => Math.max(max, Number(value) || 0),
+        0
+      );
+
+      return Math.max(currentMax, seriesMax);
+    }, 0);
+
+    if (maxValue <= 0) return 100000;
+
+    const paddedMax = maxValue * 1.15;
+    const magnitude = 10 ** Math.floor(Math.log10(paddedMax));
+
+    return Math.ceil(paddedMax / magnitude) * magnitude;
+  }, [currentExpenseSeries, currentIncomeSeries]);
 
   const incomeExpenseOptions = {
     chart: {
@@ -491,7 +641,8 @@ const FinanceDashboard = () => {
       colors: ["transparent"],
     },
     yaxis: {
-      max: 8000000,
+      min: 0,
+      max: incomeExpenseAxisMax,
       title: {
         text: "Amount In Lakhs (INR)",
       },
@@ -544,8 +695,8 @@ const FinanceDashboard = () => {
     timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: lastMonthLabel,
-        value: `INR ${inrFormat(lastMonthDataIncome)}`,
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(summaryMonthIncome)}`,
         route: "monthly-profit-loss",
       },
       {
@@ -571,8 +722,8 @@ const FinanceDashboard = () => {
     timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: lastMonthLabel,
-        value: `INR ${inrFormat(lastMonthData)}`,
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(summaryMonthExpense)}`,
         route: "monthly-profit-loss",
       },
       {
@@ -598,8 +749,8 @@ const FinanceDashboard = () => {
     timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: lastMonthLabel,
-        value: `INR ${inrFormat(lastMonthDataIncome - lastMonthData)}`,
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(summaryMonthIncome - summaryMonthExpense)}`,
         route: "monthly-profit-loss",
       },
       {
@@ -1297,7 +1448,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
     {
       layout: allowedYearlyGraphs.length,
       widgets: allowedYearlyGraphs.map((item) => (
-        <YearlyGraph2
+        <YearlyGraph
           layout={item.layout}
           key={item.key}
           data={item.data}
@@ -1307,6 +1458,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
           TitleAmountGreen={item.TitleAmountGreen}
           TitleAmountRed={item.TitleAmountRed}
           onYearChange={item.onYearChange}
+          currentYear={selectedFiscalYear}
         />
       )),
     },
