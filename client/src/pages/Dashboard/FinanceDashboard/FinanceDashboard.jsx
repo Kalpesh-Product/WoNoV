@@ -12,7 +12,7 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../../context/SideBarContext";
 import { useEffect, useMemo, useState } from "react";
-import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -1297,7 +1297,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
     {
       layout: allowedYearlyGraphs.length,
       widgets: allowedYearlyGraphs.map((item) => (
-        <YearlyGraph2
+        <YearlyGraph
           layout={item.layout}
           key={item.key}
           data={item.data}
