@@ -169,8 +169,8 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
             );
           },
         },
-        { field: "projectedAmount", headerName: "Projected (INR)", flex: 1 },
-        { field: "actualAmount", headerName: "Actual (INR)", flex: 1 },
+        { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
+        { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
       ];
 
       return {
