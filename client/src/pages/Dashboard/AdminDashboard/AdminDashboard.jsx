@@ -1600,7 +1600,7 @@ const roundedMax = useMemo(() => {
           <WidgetSection normalCase layout={1} padding>
            {allowedDeptExpenseGrpah.map((config) => (
   <YearlyGraph
-    key={`${config.chartId}-${selectedFiscalYear}`}
+    key={config.chartId}
     data={config.data}
     responsiveResize={config.responsiveResize}
     chartId={config.chartId}

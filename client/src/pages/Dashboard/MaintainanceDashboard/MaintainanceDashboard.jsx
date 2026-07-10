@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
-import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
@@ -30,9 +30,55 @@ import { filterPermissions } from "../../../utils/accessConfig";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
-  const department = usePageDepartment();
-  const axios = useAxiosPrivate();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
+const department = usePageDepartment();
+const axios = useAxiosPrivate();
+const navigate = useNavigate();
+
+const getFiscalYearStart = (date = dayjs()) => {
+  const parsedDate = dayjs(date);
+  return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+};
+
+const formatFiscalYear = (startYear) =>
+  `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+
+const getFiscalMonthIndex = (date) => {
+  const parsedDate = dayjs(date);
+  const month = parsedDate.month();
+
+  return month >= 3 ? month - 3 : month + 9;
+};
+
+const getAmount = (value) => {
+  if (typeof value === "number") return value;
+
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/,/g, ""));
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  return 0;
+};
+
+const fiscalMonths = [
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+];
+
+const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
+
+const [selectedFiscalYear, setSelectedFiscalYear] =
+  useState(currentFiscalYear);
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -116,57 +162,57 @@ const MaintainanceDashboard = () => {
   });
 
   //------------------------Graph round functions-------------------//
-  const expenseSeries = useMemo(() => {
-    // Initialize monthly buckets
-    const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
-    );
+  // const expenseSeries = useMemo(() => {
+  //   // Initialize monthly buckets
+  //   const months = Array.from({ length: 12 }, (_, index) =>
+  //     dayjs(`2024-04-01`).add(index, "month").format("MMM")
+  //   );
 
-    const fyData = {
-      "FY 2024-25": Array(12).fill(0),
-      "FY 2025-26": Array(12).fill(0),
-    };
+  //   const fyData = {
+  //     "FY 2024-25": Array(12).fill(0),
+  //     "FY 2025-26": Array(12).fill(0),
+  //   };
 
-    hrFinance.forEach((item) => {
-      const date = dayjs(item.dueDate);
-      const year = date.year();
-      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+  //   hrFinance.forEach((item) => {
+  //     const date = dayjs(item.dueDate);
+  //     const year = date.year();
+  //     const monthIndex = date.month(); // 0 = Jan, 11 = Dec
 
-      if (year === 2024 && monthIndex >= 3) {
-        // Apr 2024 to Dec 2024 (month 3 to 11)
-        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-      } else if (year === 2025) {
-        if (monthIndex <= 2) {
-          // Jan to Mar 2025 (months 0–2)
-          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-        } else if (monthIndex >= 3) {
-          // Apr 2025 to Dec 2025 (months 3–11)
-          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-        }
-      } else if (year === 2026 && monthIndex <= 2) {
-        // Jan to Mar 2026
-        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-      }
-    });
+  //     if (year === 2024 && monthIndex >= 3) {
+  //       // Apr 2024 to Dec 2024 (month 3 to 11)
+  //       fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+  //     } else if (year === 2025) {
+  //       if (monthIndex <= 2) {
+  //         // Jan to Mar 2025 (months 0–2)
+  //         fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+  //       } else if (monthIndex >= 3) {
+  //         // Apr 2025 to Dec 2025 (months 3–11)
+  //         fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+  //       }
+  //     } else if (year === 2026 && monthIndex <= 2) {
+  //       // Jan to Mar 2026
+  //       fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+  //     }
+  //   });
 
-    return [
-      {
-        name: "total",
-        group: "FY 2024-25",
-        data: fyData["FY 2024-25"],
-      },
-      {
-        name: "total",
-        group: "FY 2025-26",
-        data: fyData["FY 2025-26"],
-      },
-    ];
-  }, [hrFinance]);
+  //   return [
+  //     {
+  //       name: "total",
+  //       group: "FY 2024-25",
+  //       data: fyData["FY 2024-25"],
+  //     },
+  //     {
+  //       name: "total",
+  //       group: "FY 2025-26",
+  //       data: fyData["FY 2025-26"],
+  //     },
+  //   ];
+  // }, [hrFinance]);
 
-  const maxExpenseValue = Math.max(
-    ...expenseSeries.flatMap((series) => series.data)
-  );
-  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+  // const maxExpenseValue = Math.max(
+  //   ...expenseSeries.flatMap((series) => series.data)
+  // );
+  // const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
   //------------------------Graph round functions-------------------//
   //----------------------Monthly average-----------------------//
   //----------------------KPA Data-----------------------//
@@ -291,146 +337,281 @@ const MaintainanceDashboard = () => {
   );
 
   const expenseRawSeries = useMemo(() => {
-    // Initialize monthly buckets
-    const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM")
+  const fyData = {};
+
+  hrFinance.forEach((item) => {
+    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+
+    const fiscalYearStart = getFiscalYearStart(item.dueDate);
+    const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
+    const monthIndex = getFiscalMonthIndex(item.dueDate);
+
+    if (!fyData[fiscalYearLabel]) {
+      fyData[fiscalYearLabel] = {
+        actual: Array(12).fill(0),
+        projectedTotal: Array(12).fill(0),
+      };
+    }
+
+    const actualAmount = getAmount(item.actualAmount);
+    const projectedAmount = getAmount(item.projectedAmount);
+
+    fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
+    fyData[fiscalYearLabel].projectedTotal[monthIndex] += projectedAmount;
+  });
+
+  if (!fyData[currentFiscalYear]) {
+    fyData[currentFiscalYear] = {
+      actual: Array(12).fill(0),
+      projectedTotal: Array(12).fill(0),
+    };
+  }
+
+  return Object.entries(fyData)
+    .sort(([fyA], [fyB]) => {
+      const startA = Number(fyA.slice(3, 7));
+      const startB = Number(fyB.slice(3, 7));
+      return startA - startB;
+    })
+    .flatMap(([fiscalYear, data]) => {
+      const projectedBalance = data.projectedTotal.map((projected, index) => {
+        const actual = data.actual[index] || 0;
+
+        return Math.max(projected - actual, 0);
+      });
+
+      return [
+        {
+          name: "Actual Amount",
+          group: fiscalYear,
+          data: data.actual,
+        },
+        {
+          name: "Projected Amount",
+          group: fiscalYear,
+          data: projectedBalance,
+        },
+      ];
+    });
+}, [hrFinance, currentFiscalYear]);
+
+const roundedMax = useMemo(() => {
+  const fiscalYears = [
+    ...new Set(expenseRawSeries.map((series) => series.group)),
+  ];
+
+  const maxValue = fiscalYears.reduce((max, fiscalYear) => {
+    const actualSeries = expenseRawSeries.find(
+      (series) =>
+        series.group === fiscalYear && series.name === "Actual Amount"
     );
 
-    const fyData = {
-      "FY 2024-25": Array(12).fill(0),
-      "FY 2025-26": Array(12).fill(0),
-    };
+    const projectedSeries = expenseRawSeries.find(
+      (series) =>
+        series.group === fiscalYear && series.name === "Projected Amount"
+    );
 
-    hrFinance.forEach((item) => {
-      const date = dayjs(item.dueDate);
-      const year = date.year();
-      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+    const monthlyMax = Array.from({ length: 12 }, (_, index) => {
+      const actual = actualSeries?.data?.[index] || 0;
+      const projectedBalance = projectedSeries?.data?.[index] || 0;
 
-      if (year === 2024 && monthIndex >= 3) {
-        // Apr 2024 to Dec 2024 (month 3 to 11)
-        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-      } else if (year === 2025) {
-        if (monthIndex <= 2) {
-          // Jan to Mar 2025 (months 0–2)
-          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-        } else if (monthIndex >= 3) {
-          // Apr 2025 to Dec 2025 (months 3–11)
-          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-        }
-      } else if (year === 2026 && monthIndex <= 2) {
-        // Jan to Mar 2026
-        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-      }
+      return actual + projectedBalance;
     });
 
-    return [
-      {
-        name: "total",
-        group: "FY 2024-25",
-        data: fyData["FY 2024-25"],
-      },
-      {
-        name: "total",
-        group: "FY 2025-26",
-        data: fyData["FY 2025-26"],
-      },
-    ];
-  }, [hrFinance]);
+    return Math.max(max, ...monthlyMax);
+  }, 0);
+
+  return Math.ceil((maxValue + 100000) / 100000) * 100000;
+}, [expenseRawSeries]);
 
   const expenseOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-
-      stacked: false,
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("finance/budget");
+  chart: {
+    type: "bar",
+    toolbar: { show: false },
+    stacked: true,
+    fontFamily: "Poppins-Regular, Arial, sans-serif",
+    events: {
+      dataPointSelection: () => {
+        navigate("finance/budget");
+      },
+    },
+  },
+  colors: ["#54C4A7", "#c4c4c4"],
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: "40%",
+      borderRadius: 5,
+      borderRadiusApplication: "end",
+      dataLabels: {
+        position: "top",
+        total: {
+          enabled: false,
         },
       },
     },
-    colors: ["#54C4A7", "#EB5C45"],
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "40%",
-        borderRadius: 5,
-        borderRadiusApplication: "none",
-        dataLabels: {
-          position: "top",
-        },
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: (val) => {
-        return inrFormat(val);
-      },
+  },
+  dataLabels: {
+    enabled: true,
+    formatter: (val, opts) => {
+      if (!val) return "";
 
-      style: {
-        fontSize: "12px",
-        colors: ["#000"],
-      },
-      offsetY: -22,
-    },
+      const monthLabel = opts.w.globals.labels?.[opts.dataPointIndex];
+      const currentMonthLabel = dayjs().format("MMM");
 
-    yaxis: {
-      min: 0,
-      tickAmount: 4,
-      max: roundedMax,
-      title: { text: "Amount In Lakhs (INR)" },
-      labels: {
-        formatter: (val) => `${val / 100000}`,
-      },
-    },
-    fill: {
-      opacity: 1,
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
+      // Current month ke bar ke upar amount hide rahega
+      if (monthLabel === currentMonthLabel) return "";
 
-    tooltip: {
-      enabled: false,
-      custom: function ({ series, seriesIndex, dataPointIndex }) {
-        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
-        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
-        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
-        //     </div>`;
-        return `
-              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-          
-                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                  <div><strong>Finance Expense:</strong></div>
-                  <div style="width: 10px;"></div>
-               <div style="text-align: left;">INR ${Math.round(
-          rawData
-        ).toLocaleString("en-IN")}</div>
-  
-                </div>
-       
-              </div>
-            `;
+      const seriesName = opts.w.globals.seriesNames[opts.seriesIndex];
+
+      const actualSeries = opts.w.globals.initialSeries.find(
+        (item) => item.name === "Actual Amount"
+      );
+
+      const projectedSeries = opts.w.globals.initialSeries.find(
+        (item) => item.name === "Projected Amount"
+      );
+
+      const actualAmount = actualSeries?.data?.[opts.dataPointIndex] || 0;
+      const projectedBalance =
+        projectedSeries?.data?.[opts.dataPointIndex] || 0;
+
+      const projectedTotal = actualAmount + projectedBalance;
+
+      if (seriesName === "Projected Amount") {
+        return inrFormat(projectedTotal);
+      }
+
+      if (seriesName === "Actual Amount" && projectedBalance === 0) {
+        return inrFormat(actualAmount);
+      }
+
+      return "";
+    },
+    style: {
+      fontSize: "12px",
+      colors: ["#000"],
+    },
+    offsetY: -22,
+  },
+  xaxis: {
+    categories: fiscalMonths,
+  },
+  yaxis: {
+    min: 0,
+    tickAmount: 4,
+    max: roundedMax,
+    title: { text: "Amount In Lakhs (INR)" },
+    labels: {
+      formatter: (val) => `${val / 100000}`,
+    },
+  },
+  fill: {
+    opacity: 1,
+  },
+  states: {
+    hover: {
+      filter: {
+        type: "none",
       },
     },
-  };
+    active: {
+      filter: {
+        type: "none",
+      },
+    },
+  },
+  legend: {
+    show: true,
+    position: "top",
+  },
+  tooltip: {
+    enabled: true,
+    custom: function ({ seriesIndex, dataPointIndex, w }) {
+      const seriesName = w.globals.seriesNames?.[seriesIndex];
+
+      const actualSeries = w.globals.initialSeries.find(
+        (item) => item.name === "Actual Amount"
+      );
+
+      const projectedSeries = w.globals.initialSeries.find(
+        (item) => item.name === "Projected Amount"
+      );
+
+      const actualAmount = actualSeries?.data?.[dataPointIndex] || 0;
+      const projectedBalance = projectedSeries?.data?.[dataPointIndex] || 0;
+      const projectedTotal = actualAmount + projectedBalance;
+
+      const monthLabel =
+        w.globals.labels && w.globals.labels[dataPointIndex]
+          ? w.globals.labels[dataPointIndex]
+          : `Month ${dataPointIndex + 1}`;
+
+      const isActual = seriesName === "Actual Amount";
+
+      const label = isActual ? "Actual Amount" : "Projected Amount";
+      const amount = isActual ? actualAmount : projectedTotal;
+      const color = isActual ? "#54C4A7" : "#c4c4c4";
+
+      return `
+        <div class="apexcharts-tooltip-title" style="
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          padding: 6px 10px;
+          margin-bottom: 0;
+        ">
+          ${monthLabel}
+        </div>
+
+        <div style="
+          padding: 8px 10px;
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          background: #fff;
+          min-width: 230px;
+        ">
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+          ">
+            <span style="
+              width: 12px;
+              height: 12px;
+              border-radius: 50%;
+              background: ${color};
+              display: inline-block;
+            "></span>
+
+            <span>${label}:</span>
+
+            <span style="font-weight: 600;">
+              INR ${Math.round(amount).toLocaleString("en-IN")}
+            </span>
+          </div>
+        </div>
+      `;
+    },
+  },
+};
 
   const budgetBar = useMemo(() => {
     if (isHrFinanceLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(isHrFinanceLoading ? [] : hrFinance);
   }, [isHrFinanceLoading, hrFinance]);
-  const totalUtilised =
-    budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
-      (acc, val) => acc + val,
-      0
-    ) || 0;
+ const totalUtilised =
+  expenseRawSeries
+    .find(
+      (item) =>
+        item.group === selectedFiscalYear && item.name === "Actual Amount"
+    )
+    ?.data?.reduce((acc, val) => acc + val, 0) || 0;
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
 
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
   const managerByDepartmentName = useMemo(() => {
     const map = new Map();
     selectedDepartments.forEach((item) => {
@@ -1131,7 +1312,7 @@ const MaintainanceDashboard = () => {
         >
           <WidgetSection normalCase layout={1} padding>
             {allowedMaintenanceYearlyGraphs.map((config) => (
-              <YearlyGraph2
+              <YearlyGraph
                 data={config.data}
                 responsiveResize
                 chartId={config.chartId}
