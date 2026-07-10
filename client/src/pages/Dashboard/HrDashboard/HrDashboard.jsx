@@ -426,52 +426,26 @@ const marchProjectedExpense = Math.round(
       dataLabels: {
         position: "top",
         total: {
-          enabled: false,
+          enabled: true,
+          formatter: (_, config) => {
+            const total =
+              config?.w?.globals?.stackedSeriesTotals?.[config?.dataPointIndex] ||
+              0;
+
+            return total ? Math.round(Number(total)).toLocaleString("en-IN") : "";
+          },
+          style: {
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#000",
+          },
+          offsetY: -8,
         },
       },
     },
   },
   dataLabels: {
-    enabled: true,
-    formatter: (val, opts) => {
-      if (!val) return "";
-
-      const monthLabel = opts.w.globals.labels?.[opts.dataPointIndex];
-      const currentMonthLabel = dayjs().format("MMM");
-
-      if (monthLabel === currentMonthLabel) return "";
-
-      const seriesName = opts.w.globals.seriesNames[opts.seriesIndex];
-
-      const actualSeries = opts.w.globals.initialSeries.find(
-        (item) => item.name === "Actual Amount"
-      );
-
-      const projectedSeries = opts.w.globals.initialSeries.find(
-        (item) => item.name === "Projected Amount"
-      );
-
-      const actualAmount = actualSeries?.data?.[opts.dataPointIndex] || 0;
-      const projectedBalance =
-        projectedSeries?.data?.[opts.dataPointIndex] || 0;
-
-      const projectedTotal = actualAmount + projectedBalance;
-
-      if (seriesName === "Projected Amount") {
-        return Math.round(projectedTotal).toLocaleString("en-IN");
-      }
-
-      if (seriesName === "Actual Amount" && projectedBalance === 0) {
-        return Math.round(actualAmount).toLocaleString("en-IN");
-      }
-
-      return "";
-    },
-    style: {
-      fontSize: "12px",
-      colors: ["#000"],
-    },
-    offsetY: -22,
+    enabled: false,
   },
   xaxis: {
     categories: fiscalMonths,
