@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import BarGraph from "../../../../components/graphs/BarGraph";
 import MuiModal from "../../../../components/MuiModal";
 import WidgetSection from "../../../../components/WidgetSection";
 import { inrFormat } from "../../../../utils/currencyFormat";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import dayjs from "dayjs";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
@@ -16,18 +14,16 @@ import { useNavigate } from "react-router-dom";
 const OverallProfitLoss = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  const [selectedFY, setSelectedFY] = useState("FY 2025-26");
-  const [dynamicIncome, setDynamicIncome] = useState("0");
-  const [dynamicExpense, setDynamicExpense] = useState("0");
 
-  //-----------------API-----------------//
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
     useQuery({
       queryKey: ["revenueExpenseData"],
       queryFn: async () => {
         try {
           const response = await axios.get("/api/finance/income-expense");
-          return response.data?.response;
+          return Array.isArray(response.data?.response)
+            ? response.data.response
+            : [];
         } catch (error) {
           console.error(error);
         }
@@ -39,102 +35,188 @@ const OverallProfitLoss = () => {
     queryFn: async () => {
       try {
         const response = await axios.get("/api/budget/company-budget");
-        return response.data?.allBudgets;
+        return Array.isArray(response.data?.allBudgets)
+          ? response.data.allBudgets
+          : [];
       } catch (error) {
         console.error(error);
       }
     },
   });
-  //-----------------API-----------------//
 
-  //-----------------------------------------------------Graph------------------------------------------------------//
+  const { data: simpleRevenue = [], isLoading: isSimpleRevenueLoading } =
+    useQuery({
+      queryKey: ["simpleRevenue"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            "/api/sales/simple-consolidated-revenue"
+          );
+          return response.data;
+        } catch (error) {
+          console.error(error);
+        }
+      },
+    });
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetails, setViewDetails] = useState(null);
 
-  const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
-  const monthWiseExpenses = {};
-  const yearCategories = {
-    "FY 2024-25": [
-      "Apr-24",
-      "May-24",
-      "Jun-24",
-      "Jul-24",
-      "Aug-24",
-      "Sep-24",
-      "Oct-24",
-      "Nov-24",
-      "Dec-24",
-      "Jan-25",
-      "Feb-25",
-      "Mar-25",
-    ],
-    "FY 2025-26": [
-      "Apr-25",
-      "May-25",
-      "Jun-25",
-      "Jul-25",
-      "Aug-25",
-      "Sep-25",
-      "Oct-25",
-      "Nov-25",
-      "Dec-25",
-      "Jan-26",
-      "Feb-26",
-      "Mar-26",
-    ],
-  };
+  const currentFiscalYearLabel = useMemo(() => {
+    const today = dayjs();
+    const startYear = today.month() >= 3 ? today.year() : today.year() - 1;
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  }, []);
 
-  //-------INCOME-------//
-  const monthWiseIncome = {};
-
-  // Flatten all income arrays from all sources
-  const incomeSources = (revenueExpenseData || []).flatMap((item) => {
-    const income = item.income || {};
-    return [
-      ...(income.meetingRevenue || []),
-      ...(income.alternateRevenues || []),
-      ...(income.virtualOfficeRevenues || []),
-      ...(income.workationRevenues || []),
-      ...(income.coworkingRevenues || []),
-    ];
-  });
+  const [selectedFY, setSelectedFY] = useState(currentFiscalYearLabel);
 
   const handleYearChange = (fiscalYear) => {
     setSelectedFY(fiscalYear);
-
-    const months = yearCategories[fiscalYear] || [];
-
-    const incomeTotal = months.reduce(
-      (sum, month) => sum + (incomeMap[month] || 0),
-      0,
-    );
-
-    const expenseTotal = months.reduce(
-      (sum, month) => sum + (expenseMap[month] || 0),
-      0,
-    );
-
-    setDynamicIncome(`INR ${inrFormat(incomeTotal)}`);
-    setDynamicExpense(`INR ${inrFormat(expenseTotal)}`);
   };
 
-  // Process each income item
+  const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
+  const monthWiseExpenses = {};
+
+  const getFiscalYearLabel = (dateInput) => {
+    const parsedDate = dayjs(dateInput);
+    if (!parsedDate.isValid()) return null;
+
+    const startYear = parsedDate.month() >= 3
+      ? parsedDate.year()
+      : parsedDate.year() - 1;
+
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  };
+
+  const buildFiscalYearMonths = (fiscalYear) => {
+    const startYear = Number(String(fiscalYear).match(/\d{4}/)?.[0]);
+    if (!startYear) return [];
+
+    return [
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+    ].map((month, index) => {
+      const year = index < 9 ? startYear : startYear + 1;
+      return `${month}-${String(year).slice(-2)}`;
+    });
+  };
+
+  const getNormalizedPaymentStatus = (value) => {
+    if (typeof value === "string") return value.trim().toLowerCase();
+    return value ? "paid" : "unpaid";
+  };
+
+  const getNumericAmount = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const parsedValue = parseFloat(value.replace(/,/g, ""));
+      return Number.isNaN(parsedValue) ? 0 : parsedValue;
+    }
+    return 0;
+  };
+
+  const monthWiseIncome = {};
+
+  const incomeSources = useMemo(() => {
+    if (!simpleRevenue) return [];
+    const flatten = [];
+
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(
+          item.status ?? item.rentStatus
+        ),
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
+
+    return flatten;
+  }, [simpleRevenue]);
+
+  const testExpense = Array.isArray(budgetData) ? budgetData : [];
+
+  const yearCategories = useMemo(() => {
+    const fiscalYears = new Set([
+      "FY 2024-25",
+      "FY 2025-26",
+      currentFiscalYearLabel,
+    ]);
+
+    incomeSources.forEach((income) => {
+      const fiscalYear = getFiscalYearLabel(income.date);
+      if (fiscalYear) fiscalYears.add(fiscalYear);
+    });
+
+    testExpense.forEach((expense) => {
+      const fiscalYear = getFiscalYearLabel(expense.dueDate);
+      if (fiscalYear) fiscalYears.add(fiscalYear);
+    });
+
+    return [...fiscalYears]
+      .sort(
+        (a, b) =>
+          Number(a.match(/\d{4}/)?.[0] || 0) -
+          Number(b.match(/\d{4}/)?.[0] || 0)
+      )
+      .reduce((acc, fiscalYear) => {
+        acc[fiscalYear] = buildFiscalYearMonths(fiscalYear);
+        return acc;
+      }, {});
+  }, [currentFiscalYearLabel, incomeSources, testExpense]);
+
   incomeSources.forEach((income) => {
-    // Pick the most relevant date for grouping by month
-    const rawDate =
-      income.date || income.rentDate || income.invoiceCreationDate;
-    // income.paDueDate ||
-    // income.dueTerm;
+    const rawDate = income.date;
 
     if (!rawDate || !dayjs(rawDate).isValid()) return;
+
     const monthKey = dayjs(rawDate).format("MMM-YY");
-
-    // Skip excluded months
     if (excludedMonths.includes(monthKey)) return;
+    if (income.normalizedStatus !== "paid") return;
 
-    const amount =
-      income.taxableAmount || income.revenue || income.taxable || 0;
+    const amount = income.revenue || 0;
 
     if (!monthWiseIncome[monthKey]) {
       monthWiseIncome[monthKey] = {
@@ -148,9 +230,8 @@ const OverallProfitLoss = () => {
     monthWiseIncome[monthKey].incomes.push(income);
   });
 
-  // Convert to array and sort
   const transformedIncomes = Object.values(monthWiseIncome).sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
+    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
   );
 
   const incomeMap = {};
@@ -163,49 +244,11 @@ const OverallProfitLoss = () => {
       name: "Income",
       group: fiscalYear,
       data: months.map((month) => (incomeMap ? incomeMap[month] || 0 : 0)),
-    }),
+    })
   );
 
-  const lastMonthRawIncome = incomeData.filter(
-    (item) => item.group === "FY 2025-26",
-  );
-  const lastMonthDataIncome = lastMonthRawIncome.map(
-    (item) => item.data[item.data.length - 1],
-  );
-
-  //-------INCOME-------//
-
-  //------------------Expensedata----------------------//
-  const testExpense = revenueExpenseData
-    .filter((item) => item.expense)
-    .flatMap((item) => item.expense);
-  const testIncome = revenueExpenseData.filter((item) => item.income);
-  const testUnits = revenueExpenseData
-    .filter((item) => item.units)
-    .flatMap((item) => item.units);
-  const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
-  const totalExpense = testExpense.reduce(
-    (sum, item) => (item.actualAmount || 0) + sum,
-    0,
-  );
-  const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
-    const incomeSources = item.income || {};
-
-    const incomeValues = Object.values(incomeSources);
-
-    const allRevenues = incomeValues.flat();
-
-    const sourceTotals = allRevenues.reduce((sum, revenueItem, i) => {
-      const value = revenueItem.taxableAmount ?? revenueItem.revenue ?? 0;
-      return sum + value;
-    }, 0);
-
-    return grandTotal + sourceTotals;
-  }, 0);
   testExpense.forEach((exp) => {
-    const monthKey = dayjs(exp.dueDate).format("MMM-YY"); // e.g., "Apr-24"
-
-    // Skip excluded months
+    const monthKey = dayjs(exp.dueDate).format("MMM-YY");
     if (excludedMonths.includes(monthKey)) return;
 
     if (!monthWiseExpenses[monthKey]) {
@@ -224,28 +267,28 @@ const OverallProfitLoss = () => {
 
   const transformedExpenses = Object.values(monthWiseExpenses);
 
-  const sortedExpenses = transformedExpenses.sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
-  );
+  const sortedExpenses = transformedExpenses
+    .filter((e) => e.month && dayjs(e.month, "MMM-YY").isValid())
+    .sort((a, b) =>
+      dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+    );
 
-  // Build map of month => actualExpense
   const expenseMap = {};
   sortedExpenses.forEach((item) => {
     expenseMap[item.month] = item.actualExpense;
   });
 
-  // Generate expenseData for all fiscal years defined in `yearCategories`
   const expenseData = Object.entries(yearCategories).map(
     ([fiscalYear, months]) => ({
       name: "Expense",
       group: fiscalYear,
       data: months.map((month) => (expenseMap ? expenseMap[month] || 0 : 0)),
-    }),
+    })
   );
-  //------------------Expensedata----------------------//
 
-  //-----------------------------------------------------Graph------------------------------------------------------//
-  //-----------------------------------------------------Table columns/Data------------------------------------------------------//
+  const currentIncomeSeries = incomeData.find((item) => item.group === selectedFY);
+  const currentExpenseSeries = expenseData.find((item) => item.group === selectedFY);
+
   const monthlyProfitLossColumns = [
     { field: "id", headerName: "Sr No", width: 100 },
     { field: "month", headerName: "Month", flex: 1 },
@@ -258,7 +301,7 @@ const OverallProfitLoss = () => {
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/overall-profit-loss/income-details",
+              "/app/dashboard/finance-dashboard/overall-profit-loss/income-details"
             )
           }
           className="text-primary underline cursor-pointer"
@@ -276,7 +319,7 @@ const OverallProfitLoss = () => {
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget",
+              "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget"
             )
           }
           className="text-primary underline cursor-pointer"
@@ -286,22 +329,6 @@ const OverallProfitLoss = () => {
       ),
     },
     { field: "pnl", headerName: "P&L (INR)", flex: 1 },
-    // {
-    //   field: "actions",
-    //   headerName: "Actions",
-    //   cellRenderer: (params) => (
-    //     <>
-    //       <div className="p-2 mb-2 flex gap-2">
-    //         <span
-    //           className="text-subtitle cursor-pointer"
-    //           onClick={() => handleViewModal(params.data)}
-    //         >
-    //           <MdOutlineRemoveRedEye />
-    //         </span>
-    //       </div>
-    //     </>
-    //   ),
-    // },
   ];
 
   const handleViewModal = (rowData) => {
@@ -310,22 +337,42 @@ const OverallProfitLoss = () => {
   };
 
   const incomeExpenseData = [...incomeData, ...expenseData];
+  const incomeExpenseAxisMax = useMemo(() => {
+    const visibleSeries = [currentIncomeSeries, currentExpenseSeries].filter(
+      Boolean
+    );
+    const maxValue = visibleSeries.reduce((currentMax, series) => {
+      const seriesMax = (series?.data || []).reduce(
+        (max, value) => Math.max(max, Number(value) || 0),
+        0
+      );
+
+      return Math.max(currentMax, seriesMax);
+    }, 0);
+
+    if (maxValue <= 0) return 100000;
+
+    const paddedMax = maxValue * 1.15;
+    const magnitude = 10 ** Math.floor(Math.log10(paddedMax));
+
+    return Math.ceil(paddedMax / magnitude) * magnitude;
+  }, [currentExpenseSeries, currentIncomeSeries]);
 
   const incomeExpenseOptions = {
     chart: {
       id: "income-vs-expense-bar",
       animations: {
-        enabled: false, // ✅ disables all animations
+        enabled: false,
       },
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#54C4A7", "#EB5C45"], // Green for income, Red for expense
+    colors: ["#54C4A7", "#EB5C45"],
     plotOptions: {
       bar: {
         horizontal: false,
         columnWidth: "70%",
-        borderRadius: 6, // Adds rounded corners to the top of bars
+        borderRadius: 6,
         dataLabels: {
           position: "top",
         },
@@ -344,7 +391,8 @@ const OverallProfitLoss = () => {
       colors: ["transparent"],
     },
     yaxis: {
-      max: 8000000,
+      min: 0,
+      max: incomeExpenseAxisMax,
       title: {
         text: "Amount In Lakhs (INR)",
       },
@@ -359,11 +407,14 @@ const OverallProfitLoss = () => {
     tooltip: {
       custom: ({ dataPointIndex, w }) => {
         const monthIndex = dataPointIndex;
-        const income = w.globals.initialSeries.find((s) => s.name === "Income")
-          ?.data[monthIndex];
-        const expense = w.globals.initialSeries.find(
-          (s) => s.name === "Expense",
-        )?.data[monthIndex];
+        const income =
+          w.globals.initialSeries.find((s) => s.name === "Income")?.data[
+            monthIndex
+          ] ?? 0;
+        const expense =
+          w.globals.initialSeries.find((s) => s.name === "Expense")?.data[
+            monthIndex
+          ] ?? 0;
 
         const monthLabel =
           w.globals.labels && w.globals.labels[monthIndex]
@@ -390,8 +441,17 @@ const OverallProfitLoss = () => {
     },
   };
 
-  //-----------------------------------------------------Table columns/Data------------------------------------------------------//
   const selectedFYMonths = yearCategories[selectedFY] || [];
+
+  const selectedFYIncome = selectedFYMonths.reduce(
+    (sum, month) => sum + (incomeMap[month] || 0),
+    0
+  );
+
+  const selectedFYExpense = selectedFYMonths.reduce(
+    (sum, month) => sum + (expenseMap[month] || 0),
+    0
+  );
 
   const monthlyProfitLossData = selectedFYMonths.map((month, index) => {
     const income = incomeMap[month] || 0;
@@ -406,12 +466,9 @@ const OverallProfitLoss = () => {
       pnl: inrFormat(pnl),
     };
   });
-  const totalPnL = monthlyProfitLossData.reduce((sum, item) => {
-    const numericalPnL = parseInt(item.pnl.replace(/,/g, ""), 10);
-    return sum + numericalPnL;
-  }, 0);
 
-  //-----------------------------------------------------Table columns/Data------------------------------------------------------//
+  const totalPnL = selectedFYIncome - selectedFYExpense;
+
   const techWidgets = [
     {
       layout: 1,
@@ -421,14 +478,20 @@ const OverallProfitLoss = () => {
           options={incomeExpenseOptions}
           chartId={"bargraph-finance-income"}
           title={"BIZNest FINANCE INCOME V/S EXPENSE"}
-          TitleAmountGreen={dynamicIncome}
-          TitleAmountRed={dynamicExpense}
+          TitleAmountGreen={`INR ${inrFormat(selectedFYIncome)}`}
+          TitleAmountRed={`INR ${inrFormat(selectedFYExpense)}`}
           onYearChange={handleYearChange}
+          currentYear={selectedFY}
         />,
       ],
     },
   ];
-  if (isRevenueExpenseLoading || isBudgetDataLoading) {
+
+  if (
+    isRevenueExpenseLoading ||
+    isBudgetDataLoading ||
+    isSimpleRevenueLoading
+  ) {
     return (
       <div className="p-4 h-72 flex justify-center items-center text-center text-gray-500">
         <CircularProgress />
@@ -462,7 +525,7 @@ const OverallProfitLoss = () => {
         ) : (
           <WidgetSection title="Monthly P&L">
             <p className="text-center text-gray-500 py-8">
-              {`No data available for ${selectedFY}`}
+              No data available for {selectedFY}
             </p>
           </WidgetSection>
         )}
@@ -478,19 +541,19 @@ const OverallProfitLoss = () => {
             <DetalisFormatted
               title="Income"
               detail={`INR ${Number(
-                viewDetails.income.replace(/,/g, ""),
+                viewDetails.income.replace(/,/g, "")
               ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted
               title="Expense"
               detail={`INR ${Number(
-                viewDetails.expense.replace(/,/g, ""),
+                viewDetails.expense.replace(/,/g, "")
               ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted
               title="P&L"
               detail={`INR ${Number(
-                viewDetails.pnl.replace(/,/g, ""),
+                viewDetails.pnl.replace(/,/g, "")
               ).toLocaleString("en-IN")}`}
             />
           </div>

@@ -42,7 +42,18 @@ const YearlyGraph = ({
     return fyStartYear;
   };
 
+  const getStartYearFromFiscalYear = (fiscalYear) => {
+    if (typeof fiscalYear === "number") return fiscalYear;
+
+    const parsedYear = Number(String(fiscalYear || "").match(/\d{4}/)?.[0]);
+    return parsedYear || null;
+  };
+
+
   const [selectedYearStart, setSelectedYearStart] = useState(() => {
+     const currentYearStart = getStartYearFromFiscalYear(currentYear);
+    if (currentYearStart) return currentYearStart;
+    
     if (dateKey && data?.length > 0) {
       const dateValue = data[0]?.[dateKey];
       if (dateValue) return getYearIndexFromDate(dateValue);
