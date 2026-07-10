@@ -1,16 +1,12 @@
-import BarGraph from "../../../../components/graphs/BarGraph";
-import WidgetSection from "../../../../components/WidgetSection";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircularProgress } from "@mui/material";
-import MonthWiseAgTable from "../../../../components/Tables/MonthWiseAgTable";
-import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
-import FyBarGraph from "../../../../components/graphs/FyBarGraph";
 import FyBarGraphPercentage from "../../../../components/graphs/FyBarGraphPercentage";
+import dayjs from "dayjs";
 
 const FINANCE_REVENUE_BASE_PATH =
   "/app/dashboard/finance-dashboard/mix-bag/revenue";
@@ -22,15 +18,72 @@ const VERTICAL_ROUTE_MAP = {
   Workation: "workation",
   Coworking: "co-working",
 };
+
+const getNormalizedPaymentStatus = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase();
+  return value ? "paid" : "unpaid";
+};
+
+const getNumericAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsedValue = parseFloat(value.replace(/,/g, ""));
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+  return 0;
+};
+
+const getRevenueSummaryForDateRange = (data, dateRange) => {
+  const selectedRange = Array.isArray(dateRange) ? dateRange[0] : null;
+
+  const filteredData =
+    selectedRange?.startDate && selectedRange?.endDate
+      ? data.filter((item) => {
+          const itemDate = dayjs(item.date);
+          if (!itemDate.isValid()) return false;
+
+          return (
+            itemDate.isAfter(
+              dayjs(selectedRange.startDate)
+                .startOf("day")
+                .subtract(1, "millisecond")
+            ) &&
+            itemDate.isBefore(
+              dayjs(selectedRange.endDate)
+                .endOf("day")
+                .add(1, "millisecond")
+            )
+          );
+        })
+      : data;
+
+  return filteredData.reduce(
+    (summary, item) => {
+      const amount = getNumericAmount(item.revenue);
+      summary.total += amount;
+
+      if (item.normalizedStatus === "paid") {
+        summary.paid += amount;
+      } else {
+        summary.unpaid += amount;
+      }
+
+      return summary;
+    },
+    { total: 0, paid: 0, unpaid: 0 }
+  );
+};
+
 const IncomeDetails = () => {
   const axios = useAxiosPrivate();
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+
   const { data: simpleRevenue = [], isLoading: isTotalLoading } = useQuery({
     queryKey: ["simpleRevenue"],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "/api/sales/simple-consolidated-revenue",
+          "/api/sales/simple-consolidated-revenue"
         );
         return response.data;
       } catch (error) {
@@ -39,70 +92,67 @@ const IncomeDetails = () => {
     },
   });
 
-  // const { data: totalRevenue = [], isLoading } = useQuery({
-  //   queryKey: ["totalRevenue"],
-  //   queryFn: async () => {
-  //     try {
-  //       const response = await axios.get("/api/sales/consolidated-revenue");
-  //       return response.data;
-  //     } catch (error) {
-  //       console.error(error);
-  //     }
-  //   },
-  // });
-
   const unifiedRevenueData = useMemo(() => {
     if (!simpleRevenue) return [];
+    const flatten = [];
 
-    const revenueSources = [
-      {
-        key: "meetingRevenue",
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
         vertical: "Meeting",
-        revenueKey: "taxable",
-        dateKeys: ["date"],
-      },
-      {
-        key: "alternateRevenues",
+        revenue: getNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
         vertical: "Alternate Revenue",
-        revenueKey: "taxableAmount",
-        dateKeys: ["invoiceCreationDate", "invoicePaidDate", "createdAt"],
-      },
-      {
-        key: "virtualOfficeRevenues",
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
         vertical: "Virtual Office",
-        revenueKey: "taxableAmount",
-        dateKeys: ["rentDate", "createdAt"],
-      },
-      {
-        key: "workationRevenues",
+        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(
+          item.status ?? item.rentStatus
+        ),
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
         vertical: "Workation",
-        revenueKey: "taxableAmount",
-        dateKeys: ["date", "createdAt"],
-      },
-      {
-        key: "coworkingRevenues",
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
         vertical: "Coworking",
-        revenueKey: "revenue",
-        dateKeys: ["rentDate", "createdAt"],
-      },
-    ];
+        revenue: getNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
 
-    return revenueSources.flatMap(({ key, vertical, revenueKey, dateKeys }) =>
-      (simpleRevenue[key] || []).flatMap((item) => {
-        const validDateKey = dateKeys.find((dateKey) => item?.[dateKey]);
-
-        if (!validDateKey) {
-          return [];
-        }
-
-        return {
-          vertical,
-          revenue: Number(item?.[revenueKey]) || 0,
-          date: item[validDateKey],
-        };
-      }),
-    );
+    return flatten;
   }, [simpleRevenue]);
+
+  const paidRevenueData = useMemo(
+    () =>
+      unifiedRevenueData.filter(
+        (item) => item.normalizedStatus === "paid"
+      ),
+    [unifiedRevenueData]
+  );
 
   const handleVerticalNavigation = (vertical) => {
     const targetPath = VERTICAL_ROUTE_MAP[vertical];
@@ -134,11 +184,11 @@ const IncomeDetails = () => {
 
   const options = {
     colors: [
-      "#1E3D73", // Dark Blue (Co-Working)
-      "#2196F3", // Bright Blue (Meetings)
-      "#11daf5", // Light Mint Green (Virtual Office)
-      "#00BCD4", // Cyan Blue (Workation)
-      "#1976D2", // Medium Blue (Alt Revenues)
+      "#1E3D73",
+      "#2196F3",
+      "#11daf5",
+      "#00BCD4",
+      "#1976D2",
     ],
   };
 
@@ -150,7 +200,7 @@ const IncomeDetails = () => {
         </div>
       ) : (
         <FyBarGraphPercentage
-          data={isTotalLoading ? [] : unifiedRevenueData}
+          data={paidRevenueData}
           dateKey="date"
           valueKey="revenue"
           graphTitle="ANNUAL MONTHLY MIX INCOME"
@@ -160,15 +210,40 @@ const IncomeDetails = () => {
 
       <WidgetTable
         tableTitle="Annual Monthly Income Breakup"
-        data={unifiedRevenueData}
+        data={paidRevenueData}
         dateColumn="date"
         totalKey="revenue"
         totalText="INR"
-        groupByKey="vertical" // ✅ triggers dynamic grouping by vertical
+        titleAmountOverride=""
+        titleAmountTotal={({ dateRange }) => {
+          const summary = getRevenueSummaryForDateRange(
+            unifiedRevenueData,
+            dateRange
+          );
+          return `INR ${inrFormat(summary.total)}`;
+        }}
+        titleAmountGreen={({ dateRange }) => {
+          const summary = getRevenueSummaryForDateRange(
+            unifiedRevenueData,
+            dateRange
+          );
+          return `INR ${inrFormat(summary.paid)}`;
+        }}
+        titleAmountRed={({ dateRange }) => {
+          const summary = getRevenueSummaryForDateRange(
+            unifiedRevenueData,
+            dateRange
+          );
+          return `INR ${inrFormat(summary.unpaid)}`;
+        }}
+        greenTitle="Paid"
+        redTitle="Unpaid"
+        totalTitle="Total"
+        summaryChipVariant="ticket"
+        groupByKey="vertical"
         columns={[
           { headerName: "Sr No", field: "srNo", flex: 1 },
-          //{ headerName: "Vertical", field: "vertical", flex: 1 },
-                    {
+          {
             headerName: "Vertical",
             field: "vertical",
             flex: 1,

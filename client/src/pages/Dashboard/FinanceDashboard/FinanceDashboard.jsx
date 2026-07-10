@@ -41,7 +41,16 @@ const FinanceDashboard = () => {
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
   const navigate = useNavigate();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
+  const currentFiscalYearLabel = useMemo(() => {
+    const today = dayjs();
+    const startYear = today.month() >= 3 ? today.year() : today.year() - 1;
+
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  }, []);
+
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(
+    currentFiscalYearLabel
+  );
 
   //------------------------PAGE ACCESS CARD START-------------------//
   const cardsConfig = [
@@ -192,9 +201,7 @@ const FinanceDashboard = () => {
       item?.dueDate && dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
   );
 
-  const testExpense = revenueExpenseData
-    .filter((item) => item.expense)
-    .flatMap((item) => item.expense);
+  const testExpense = Array.isArray(budgetData) ? budgetData : [];
 
   const testIncome = revenueExpenseData.filter((item) => item.income);
 
@@ -334,16 +341,68 @@ const FinanceDashboard = () => {
   // };
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
 
-  const incomeSources = revenueExpenseData.flatMap((item) => {
-    const income = item.income || {};
-    return [
-      ...(income.meetingRevenue || []),
-      ...(income.alternateRevenues || []),
-      ...(income.virtualOfficeRevenues || []),
-      ...(income.workationRevenues || []),
-      ...(income.coworkingRevenues || []),
-    ];
-  });
+  const getGraphNormalizedPaymentStatus = (value) => {
+    if (typeof value === "string") return value.trim().toLowerCase();
+    return value ? "paid" : "unpaid";
+  };
+
+  const getGraphNumericAmount = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const parsedValue = parseFloat(value.replace(/,/g, ""));
+      return Number.isNaN(parsedValue) ? 0 : parsedValue;
+    }
+    return 0;
+  };
+
+  const incomeSources = useMemo(() => {
+    if (!simpleRevenue) return [];
+    const flatten = [];
+
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.revenue ?? item.taxableAmount),
+        date: item.rentDate,
+        normalizedStatus: getGraphNormalizedPaymentStatus(
+          item.status ?? item.rentStatus
+        ),
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
+
+    return flatten;
+  }, [simpleRevenue]);
 
    const getFiscalYearLabel = (dateInput) => {
     const parsedDate = dayjs(dateInput);
@@ -380,11 +439,15 @@ const FinanceDashboard = () => {
   };
 
   const yearCategories = useMemo(() => {
-    const fiscalYears = new Set(["FY 2024-25", "FY 2025-26"]);
+    const fiscalYears = new Set([
+      "FY 2024-25",
+      "FY 2025-26",
+      currentFiscalYearLabel,
+    ]);
 
     incomeSources.forEach((income) => {
       const fiscalYear = getFiscalYearLabel(
-        income.date || income.rentDate || income.invoiceCreationDate,
+        income.date,
       );
       if (fiscalYear) fiscalYears.add(fiscalYear);
     });
@@ -400,18 +463,18 @@ const FinanceDashboard = () => {
         acc[fiscalYear] = buildFiscalYearMonths(fiscalYear);
         return acc;
       }, {});
-  }, [incomeSources, testExpense]);
+  }, [currentFiscalYearLabel, incomeSources, testExpense]);
 
   const monthWiseIncome = {};
   incomeSources.forEach((income) => {
-    const rawDate =
-      income.date || income.rentDate || income.invoiceCreationDate;
+    const rawDate = income.date;
     if (!rawDate) return;
     const monthKey = dayjs(rawDate).format("MMM-YY");
     if (excludedMonths.includes(monthKey)) return;
 
-    const amount =
-      income.taxableAmount || income.revenue || income.taxable || 0;
+    if (income.normalizedStatus !== "paid") return;
+
+    const amount = income.revenue || 0;
     if (!monthWiseIncome[monthKey]) {
       monthWiseIncome[monthKey] = {
         month: monthKey,
@@ -509,6 +572,26 @@ const FinanceDashboard = () => {
 
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [...incomeData, ...expenseData];
+  const incomeExpenseAxisMax = useMemo(() => {
+    const visibleSeries = [currentIncomeSeries, currentExpenseSeries].filter(
+      Boolean
+    );
+    const maxValue = visibleSeries.reduce((currentMax, series) => {
+      const seriesMax = (series?.data || []).reduce(
+        (max, value) => Math.max(max, Number(value) || 0),
+        0
+      );
+
+      return Math.max(currentMax, seriesMax);
+    }, 0);
+
+    if (maxValue <= 0) return 100000;
+
+    const paddedMax = maxValue * 1.15;
+    const magnitude = 10 ** Math.floor(Math.log10(paddedMax));
+
+    return Math.ceil(paddedMax / magnitude) * magnitude;
+  }, [currentExpenseSeries, currentIncomeSeries]);
 
   const incomeExpenseOptions = {
     chart: {
@@ -548,7 +631,8 @@ const FinanceDashboard = () => {
       colors: ["transparent"],
     },
     yaxis: {
-      max: 8000000,
+      min: 0,
+      max: incomeExpenseAxisMax,
       title: {
         text: "Amount In Lakhs (INR)",
       },
