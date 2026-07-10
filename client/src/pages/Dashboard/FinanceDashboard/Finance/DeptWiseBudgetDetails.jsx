@@ -56,6 +56,13 @@ const getAmount = (value) => {
   return 0;
 };
 
+const getRoundedAxisMax = (value) => {
+  if (!value || value <= 0) return 500000;
+
+  const axisStep = 500000;
+  return Math.ceil((value * 1.1) / axisStep) * axisStep;
+};
+
 const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
   formatFiscalYear(getFiscalYearStart())
 );
@@ -232,6 +239,26 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
     });
 }, [departmentBudget]);
 
+  const selectedActualSeries =
+    expenseRawSeries.find(
+      (item) =>
+        item.group === selectedFiscalYear && item.name === "Actual Amount"
+    )?.data || [];
+
+  const selectedProjectedSeries =
+    expenseRawSeries.find(
+      (item) =>
+        item.group === selectedFiscalYear && item.name === "Projected Amount"
+    )?.data || [];
+
+  const selectedYearAxisMax = getRoundedAxisMax(
+    selectedActualSeries.reduce((maxValue, actualAmount, index) => {
+      const stackedTotal =
+        actualAmount + (selectedProjectedSeries[index] || 0);
+      return Math.max(maxValue, stackedTotal);
+    }, 0)
+  );
+
   const expenseOptions = {
   chart: {
     type: "bar",
@@ -249,54 +276,29 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
       dataLabels: {
         position: "top",
         total: {
-          enabled: false,
+          enabled: true,
+          formatter: (_, config) => {
+            const total =
+              config?.w?.globals?.stackedSeriesTotals?.[config?.dataPointIndex] ||
+              0;
+
+            return total ? inrFormat(Number(total)) : "";
+          },
+          style: {
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#000",
+          },
+          offsetY: -8,
         },
       },
     },
   },
   dataLabels: {
-    enabled: true,
-    formatter: (val, opts) => {
-      if (!val) return "";
-
-      const monthLabel = opts.w.globals.labels?.[opts.dataPointIndex];
-      const currentMonthLabel = dayjs().format("MMM-YY");
-
-      // Current month ke bar ke upar amount hide rahega
-      if (monthLabel === currentMonthLabel) return "";
-
-      const seriesName = opts.w.globals.seriesNames[opts.seriesIndex];
-
-      const actualSeries = opts.w.globals.initialSeries.find(
-        (item) => item.name === "Actual Amount"
-      );
-
-      const projectedSeries = opts.w.globals.initialSeries.find(
-        (item) => item.name === "Projected Amount"
-      );
-
-      const actualAmount = actualSeries?.data?.[opts.dataPointIndex] || 0;
-      const projectedBalance = projectedSeries?.data?.[opts.dataPointIndex] || 0;
-      const projectedTotal = actualAmount + projectedBalance;
-
-      if (seriesName === "Projected Amount") {
-        return inrFormat(projectedTotal);
-      }
-
-      if (seriesName === "Actual Amount" && projectedBalance === 0) {
-        return inrFormat(actualAmount);
-      }
-
-      return "";
-    },
-    style: {
-      fontSize: "12px",
-      colors: ["#000"],
-    },
-    offsetY: -22,
+    enabled: false,
   },
   yaxis: {
-    max: 5000000,
+    max: selectedYearAxisMax,
     title: { text: "Amount In Lakhs (INR)" },
     labels: {
       formatter: (val) => `${val / 100000}`,
