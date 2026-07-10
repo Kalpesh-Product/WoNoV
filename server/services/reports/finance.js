@@ -652,26 +652,47 @@ const fetchPerSqFtExpenseService = async ({
     .lean()
     .exec();
 
-  return budgets.map((budget, index) => {
-    const actualAmount = Number(budget?.actualAmount) || 0;
-    const sqft = Number(budget?.unit?.sqft) || 0;
-    const expense = sqft ? actualAmount / sqft : 0;
+  console.log("Fetched budgets for per-sq-ft expense:", budgets);
+  const groupedByUnits = budgets.reduce((acc, budget) => {
+    const unit = budget?.unit;
 
-    return {
-      id: index + 1,
-      srNo: index + 1,
-      expanseName: budget?.expanseName || "-",
-      expanseType: budget?.expanseType || "-",
-      department: budget?.department?.name || "-",
-      actualAmount,
-      unitNo: budget?.unit?.unitNo || "-",
-      unit: budget?.unit?.unitName || "-",
-      building: budget?.unit?.building?.buildingName || "-",
-      sqft,
-      expense: expense.toFixed(2),
-      dueDate: budget?.dueDate || null,
-    };
-  });
+    if (!unit?._id) return acc;
+
+    const unitNo = unit.unitNo || "-";
+    const unitName = unit.unitName || "-";
+
+    if (!acc[unitNo]) {
+      acc[unitNo] = {
+        unitNo,
+        unitName,
+        buildingName: unit.building?.buildingName || "-",
+        sqft: Number(unit.sqft) || 0,
+        totalExpense: 0,
+      };
+    }
+
+    acc[unitNo].totalExpense += Number(budget?.actualAmount) || 0;
+
+    return acc;
+  }, {});
+
+  return Object.values(groupedByUnits)
+    .sort((a, b) =>
+      a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true }),
+    )
+    .map((group, index) => {
+      const expensePerSqFt = group.sqft ? group.totalExpense / group.sqft : 0;
+
+      return {
+        unitNo: group.unitNo,
+        unitName: group.unitName,
+        buildingName: group.buildingName,
+        expense: expensePerSqFt.toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      };
+    });
 };
 
 module.exports = {
