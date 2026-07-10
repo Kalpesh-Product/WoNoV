@@ -665,101 +665,102 @@ const marchProjectedExpense = Math.round(
     "March",
   ];
 
-  // Init counters
-  const departmentMonthlyTotals = {};
-  const departmentMonthlyAchieved = {};
-  fyMonths.forEach((m) => {
-    departmentMonthlyTotals[m] = 0;
-    departmentMonthlyAchieved[m] = 0;
-  });
+  const buildCompletionSeriesByFiscalYear = (
+    departments,
+    completedLabel,
+    remainingLabel,
+    taskFilter = () => true
+  ) => {
+    const fyData = {};
 
-  if (Array.isArray(tasksRawData)) {
-    tasksRawData.forEach((dept) => {
-      dept.tasks?.forEach((task) => {
-        const [day, month, year] = task.assignedDate.split("-").map(Number);
-        const dateObj = new Date(year, month - 1, day);
-        const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
+    (Array.isArray(departments) ? departments : []).forEach((dept) => {
+      (Array.isArray(dept?.tasks) ? dept.tasks : []).forEach((task) => {
+        if (!taskFilter(task)) return;
 
-        departmentMonthlyTotals[fyMonth]++;
+        const assignedDate = task?.assignedDate;
+        if (!assignedDate) return;
+
+        const [day, month, year] = assignedDate.split("-").map(Number);
+        if (!day || !month || !year) return;
+
+        const taskDate = dayjs(new Date(year, month - 1, day));
+        if (!taskDate.isValid()) return;
+
+        const fiscalYearLabel = formatFiscalYear(getFiscalYearStart(taskDate));
+        const monthIndex = getFiscalMonthIndex(taskDate);
+
+        if (!fyData[fiscalYearLabel]) {
+          fyData[fiscalYearLabel] = {
+            totals: Array(12).fill(0),
+            completed: Array(12).fill(0),
+          };
+        }
+
+        fyData[fiscalYearLabel].totals[monthIndex] += 1;
         if (task.status === "Completed") {
-          departmentMonthlyAchieved[fyMonth]++;
+          fyData[fiscalYearLabel].completed[monthIndex] += 1;
         }
       });
     });
-  }
 
-  const overallMonthlyTotals = {};
-  const overallMonthlyAchieved = {};
-  fyMonths.forEach((m) => {
-    overallMonthlyTotals[m] = 0;
-    overallMonthlyAchieved[m] = 0;
-  });
+    if (!fyData[currentFiscalYear]) {
+      fyData[currentFiscalYear] = {
+        totals: Array(12).fill(0),
+        completed: Array(12).fill(0),
+      };
+    }
 
-  if (Array.isArray(tasksOverallRedux)) {
-    tasksOverallRedux.forEach((dept) => {
-      dept.tasks?.forEach((task) => {
-        if (!isDepartmentTask(task)) return;
+    return Object.entries(fyData)
+      .sort(([fyA], [fyB]) => {
+        const startA = Number(fyA.slice(3, 7));
+        const startB = Number(fyB.slice(3, 7));
+        return startA - startB;
+      })
+      .flatMap(([fiscalYear, data]) => {
+        const completedSeries = fyMonths.map((month, index) => {
+          const total = data.totals[index] || 0;
+          const completed = data.completed[index] || 0;
+          const percent = total > 0 ? (completed / total) * 100 : 0;
 
-        const [day, month, year] = task.assignedDate.split("-").map(Number);
-        const dateObj = new Date(year, month - 1, day);
-        const fyMonth = fyMonths[(dateObj.getMonth() + 9) % 12];
+          return { x: month, y: +percent.toFixed(1), raw: completed };
+        });
 
-        overallMonthlyTotals[fyMonth]++;
-        if (task.status === "Completed") {
-          overallMonthlyAchieved[fyMonth]++;
-        }
+        const remainingSeries = fyMonths.map((month, index) => {
+          const total = data.totals[index] || 0;
+          const completed = data.completed[index] || 0;
+          const remaining = total - completed;
+          const percent = total > 0 ? (remaining / total) * 100 : 0;
+
+          return { x: month, y: +percent.toFixed(1), raw: remaining };
+        });
+
+        return [
+          {
+            name: completedLabel,
+            group: fiscalYear,
+            data: completedSeries,
+          },
+          {
+            name: remainingLabel,
+            group: fiscalYear,
+            data: remainingSeries,
+          },
+        ];
       });
-    });
-  }
+  };
 
-  // Final structure
-  const tasksData = [
-    {
-      name: "Completed KPA",
-      group: "FY 2025-26",
-      data: fyMonths.map((month) => {
-        const total = departmentMonthlyTotals[month];
-        const achieved = departmentMonthlyAchieved[month];
-        const percent = total > 0 ? (achieved / total) * 100 : 0;
-        return { x: month, y: +percent.toFixed(1), raw: achieved };
-      }),
-    },
-    {
-      name: "Remaining KPA",
-      group: "FY 2025-26",
-      data: fyMonths.map((month) => {
-        const total = departmentMonthlyTotals[month];
-        const achieved = departmentMonthlyAchieved[month];
-        const remaining = total - achieved;
-        const percent = total > 0 ? (remaining / total) * 100 : 0;
-        return { x: month, y: +percent.toFixed(1), raw: remaining };
-      }),
-    },
-  ];
+  const tasksData = buildCompletionSeriesByFiscalYear(
+    tasksRawData,
+    "Completed KPA",
+    "Remaining KPA"
+  );
 
-  const tasksGraphData = [
-    {
-      name: "Completed Tasks",
-      group: "FY 2025-26",
-      data: fyMonths.map((month) => {
-        const total = overallMonthlyTotals[month];
-        const achieved = overallMonthlyAchieved[month];
-        const percent = total > 0 ? (achieved / total) * 100 : 0;
-        return { x: month, y: +percent.toFixed(1), raw: achieved };
-      }),
-    },
-    {
-      name: "Remaining Tasks",
-      group: "FY 2025-26",
-      data: fyMonths.map((month) => {
-        const total = overallMonthlyTotals[month];
-        const achieved = overallMonthlyAchieved[month];
-        const remaining = total - achieved;
-        const percent = total > 0 ? (remaining / total) * 100 : 0;
-        return { x: month, y: +percent.toFixed(1), raw: remaining };
-      }),
-    },
-  ];
+  const tasksGraphData = buildCompletionSeriesByFiscalYear(
+    tasksOverallRedux,
+    "Completed Tasks",
+    "Remaining Tasks",
+    isDepartmentTask
+  );
 
    const annualKpaTotals = useMemo(() => {
     const selectedYearSeries = tasksData.filter(
