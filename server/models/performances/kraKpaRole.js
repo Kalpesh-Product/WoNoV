@@ -28,7 +28,14 @@ const kraKpaRolesSchema = new mongoose.Schema(
     },
     taskType: {
       type: String,
-      enum: ["KPA", "KRA", "INDIVIDUALKPA", "INDIVIDUALKRA", "TEAMKPA", "TEAMKRA"],
+      enum: [
+        "KPA",
+        "KRA",
+        "INDIVIDUALKPA",
+        "INDIVIDUALKRA",
+        "TEAMKPA",
+        "TEAMKRA",
+      ],
       required: true,
     },
     completedDate: [{ type: Date }],
@@ -48,7 +55,6 @@ const kraKpaRolesSchema = new mongoose.Schema(
     },
     dueDate: {
       type: Date,
-      required: true,
     },
     dueTime: {
       type: String,
@@ -63,7 +69,7 @@ const kraKpaRolesSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const kraKpaRole = mongoose.model("kraKpaRole", kraKpaRolesSchema);
