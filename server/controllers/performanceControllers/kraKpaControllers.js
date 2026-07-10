@@ -1277,5 +1277,4 @@ module.exports = {
   deleteTaskRecurrence,
   getCompletedKraKpaTasks,
   bulkInsertKraKpaTasks,
-  fetchPerSqFtExpenseReportService,
 };
