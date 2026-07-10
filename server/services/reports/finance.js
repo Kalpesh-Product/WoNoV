@@ -623,7 +623,6 @@ const fetchPerSqFtExpenseService = async ({
 }) => {
   const query = { company };
 
-  console.log("fetchPerSqFtExpenseService called with:", type);
   if (departmentId) {
     query.department = departmentId;
   }
@@ -636,45 +635,66 @@ const fetchPerSqFtExpenseService = async ({
     query.expanseType = /^electricity$/i;
   }
 
-  const budgets = await Budget.find(query)
-    .populate([
-      { path: "department", select: "name" },
-      {
-        path: "unit",
-        select: "unitName unitNo sqft building",
-        populate: {
-          path: "building",
-          model: "Building",
-          select: "buildingName",
+  const [budgets, units] = await Promise.all([
+    Budget.find(query)
+      .populate([
+        { path: "department", select: "name" },
+        {
+          path: "unit",
+          select: "unitName unitNo sqft building",
+          populate: {
+            path: "building",
+            model: "Building",
+            select: "buildingName",
+          },
         },
-      },
-    ])
-    .lean()
-    .exec();
+      ])
+      .lean()
+      .exec(),
+    Unit.find({ company })
+      .select("unitName unitNo sqft building")
+      .populate({
+        path: "building",
+        model: "Building",
+        select: "buildingName",
+      })
+      .lean()
+      .exec(),
+  ]);
 
-  console.log("Fetched budgets for per-sq-ft expense:", budgets);
-  const groupedByUnits = budgets.reduce((acc, budget) => {
-    const unit = budget?.unit;
-
+  const groupedByUnits = units.reduce((acc, unit) => {
     if (!unit?._id) return acc;
 
-    const unitNo = unit.unitNo || "-";
-    const unitName = unit.unitName || "-";
+    acc[unit._id.toString()] = {
+      unitNo: unit.unitNo || "-",
+      unitName: unit.unitName || "-",
+      buildingName: unit.building?.buildingName || "-",
+      sqft: Number(unit.sqft) || 0,
+      totalExpense: 0,
+    };
 
-    if (!acc[unitNo]) {
-      acc[unitNo] = {
-        unitNo,
-        unitName,
+    return acc;
+  }, {});
+
+  budgets.forEach((budget) => {
+    const unit = budget?.unit;
+
+    if (!unit?._id) return;
+
+    const unitId = unit._id.toString();
+
+    if (!groupedByUnits[unitId]) {
+      groupedByUnits[unitId] = {
+        unitNo: unit.unitNo || "-",
+        unitName: unit.unitName || "-",
         buildingName: unit.building?.buildingName || "-",
         sqft: Number(unit.sqft) || 0,
         totalExpense: 0,
       };
     }
 
-    acc[unitNo].totalExpense += Number(budget?.actualAmount) || 0;
-
-    return acc;
-  }, {});
+    groupedByUnits[unitId].totalExpense += Number(budget?.actualAmount) || 0;
+  });
 
   return Object.values(groupedByUnits)
     .sort((a, b) =>
