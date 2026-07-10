@@ -191,6 +191,53 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
 
+// const expenseRawSeries = useMemo(() => {
+//   const fyData = {};
+
+//   hrFinance.forEach((item) => {
+//     if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+
+//     const fiscalYearStart = getFiscalYearStart(item.dueDate);
+//     const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
+//     const monthIndex = getFiscalMonthIndex(item.dueDate);
+
+//     if (!fyData[fiscalYearLabel]) {
+//       fyData[fiscalYearLabel] = Array(12).fill(0);
+//     }
+
+//     fyData[fiscalYearLabel][monthIndex] += Number(item.actualAmount || 0);
+//   });
+
+//   const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
+
+//   if (!fyData[currentFiscalYear]) {
+//     fyData[currentFiscalYear] = Array(12).fill(0);
+//   }
+
+//   return Object.entries(fyData)
+//     .sort(([fyA], [fyB]) => {
+//       const startA = Number(fyA.slice(3, 7));
+//       const startB = Number(fyB.slice(3, 7));
+//       return startA - startB;
+//     })
+//     .map(([fiscalYear, data]) => ({
+//       name: "total",
+//       group: fiscalYear,
+//       data,
+//     }));
+// }, [hrFinance]);
+
+const getAmount = (value) => {
+  if (typeof value === "number") return value;
+
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/,/g, ""));
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  return 0;
+};
+
 const expenseRawSeries = useMemo(() => {
   const fyData = {};
 
@@ -202,16 +249,26 @@ const expenseRawSeries = useMemo(() => {
     const monthIndex = getFiscalMonthIndex(item.dueDate);
 
     if (!fyData[fiscalYearLabel]) {
-      fyData[fiscalYearLabel] = Array(12).fill(0);
+      fyData[fiscalYearLabel] = {
+        actual: Array(12).fill(0),
+        projectedTotal: Array(12).fill(0),
+      };
     }
 
-    fyData[fiscalYearLabel][monthIndex] += Number(item.actualAmount || 0);
+    const actualAmount = getAmount(item.actualAmount);
+const projectedAmount = getAmount(item.projectedAmount);
+
+    fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
+    fyData[fiscalYearLabel].projectedTotal[monthIndex] += projectedAmount;
   });
 
   const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
 
   if (!fyData[currentFiscalYear]) {
-    fyData[currentFiscalYear] = Array(12).fill(0);
+    fyData[currentFiscalYear] = {
+      actual: Array(12).fill(0),
+      projectedTotal: Array(12).fill(0),
+    };
   }
 
   return Object.entries(fyData)
@@ -220,46 +277,94 @@ const expenseRawSeries = useMemo(() => {
       const startB = Number(fyB.slice(3, 7));
       return startA - startB;
     })
-    .map(([fiscalYear, data]) => ({
-      name: "total",
-      group: fiscalYear,
-      data,
-    }));
+    .flatMap(([fiscalYear, data]) => {
+      const projectedBalance = data.projectedTotal.map((projected, index) => {
+        const actual = data.actual[index] || 0;
+        return Math.max(projected - actual, 0);
+      });
+
+      return [
+        {
+          name: "Actual Amount",
+          group: fiscalYear,
+          data: data.actual,
+        },
+        {
+          name: "Projected Amount",
+          group: fiscalYear,
+          data: projectedBalance,
+        },
+      ];
+    });
 }, [hrFinance]);
 
 
   const expenseOptions = {
     chart: {
-      type: "bar",
-      toolbar: { show: false },
-
-      stacked: false,
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-    },
-    colors: ["#54C4A7", "#EB5C45"],
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "40%",
-        borderRadius: 5,
-        borderRadiusApplication: "none",
-        dataLabels: {
-          position: "top",
-        },
-      },
-    },
+  type: "bar",
+  toolbar: { show: false },
+  stacked: true,
+  fontFamily: "Poppins-Regular, Arial, sans-serif",
+},
+  colors: ["#54C4A7", "#c4c4c4"],
+   plotOptions: {
+  bar: {
+    horizontal: false,
+    columnWidth: "40%",
+    borderRadius: 5,
+    borderRadiusApplication: "end",
     dataLabels: {
-      enabled: true,
-      formatter: (val) => {
-        return inrFormat(val);
+      position: "top",
+      total: {
+        enabled: false,
       },
-
-      style: {
-        fontSize: "12px",
-        colors: ["#000"],
-      },
-      offsetY: -22,
     },
+  },
+},
+   dataLabels: {
+  enabled: true,
+  formatter: (val, opts) => {
+    if (!val) return "";
+
+    const monthLabel = opts.w.globals.labels?.[opts.dataPointIndex];
+    const currentMonthLabel = dayjs().format("MMM-YY");
+
+    // Current month ke bar ke upar amount hide rahega
+    if (monthLabel === currentMonthLabel) return "";
+
+    const seriesName = opts.w.globals.seriesNames[opts.seriesIndex];
+
+    const actualSeries = opts.w.globals.initialSeries.find(
+      (item) => item.name === "Actual Amount"
+    );
+
+    const projectedSeries = opts.w.globals.initialSeries.find(
+      (item) => item.name === "Projected Amount"
+    );
+
+    const actualAmount = actualSeries?.data?.[opts.dataPointIndex] || 0;
+    const projectedBalance = projectedSeries?.data?.[opts.dataPointIndex] || 0;
+
+    const projectedTotal = actualAmount + projectedBalance;
+
+    // Gray projected bar ke top pe projected total dikhana
+    if (seriesName === "Projected Amount") {
+      return inrFormat(projectedTotal);
+    }
+
+    // Agar sirf actual bar hai, tab actual label dikhao
+    if (seriesName === "Actual Amount" && projectedBalance === 0) {
+      return inrFormat(actualAmount);
+    }
+
+    return "";
+  },
+  style: {
+    fontSize: "12px",
+    colors: ["#000"],
+  },
+  offsetY: -22,
+},
 
     yaxis: {
       max: 7000000,
@@ -268,42 +373,105 @@ const expenseRawSeries = useMemo(() => {
         formatter: (val) => `${val / 100000}`,
       },
     },
-    fill: {
-      opacity: 1,
+   fill: {
+  opacity: 1,
+},
+states: {
+  hover: {
+    filter: {
+      type: "none",
     },
-    legend: {
-      show: true,
-      position: "top",
+  },
+  active: {
+    filter: {
+      type: "none",
     },
+  },
+},
+legend: {
+  show: true,
+  position: "top",
+},
 
-    tooltip: {
-      enabled: false,
-      custom: function ({ series, seriesIndex, dataPointIndex }) {
-        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
-        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
-        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
-        //     </div>`;
-        return `
-              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-          
-                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                  <div><strong>Finance Expense:</strong></div>
-                  <div style="width: 10px;"></div>
-               <div style="text-align: left;">INR ${Math.round(
-                 rawData
-               ).toLocaleString("en-IN")}</div>
-  
-                </div>
-       
-              </div>
-            `;
-      },
-    },
-  };
+  tooltip: {
+  enabled: true,
+  custom: function ({ seriesIndex, dataPointIndex, w }) {
+    const seriesName = w.globals.seriesNames?.[seriesIndex];
+
+    const actualSeries = w.globals.initialSeries.find(
+      (item) => item.name === "Actual Amount"
+    );
+
+    const projectedSeries = w.globals.initialSeries.find(
+      (item) => item.name === "Projected Amount"
+    );
+
+    const actualAmount = actualSeries?.data?.[dataPointIndex] || 0;
+    const projectedBalance = projectedSeries?.data?.[dataPointIndex] || 0;
+
+    // Projected series me balance store hai, tooltip me total projected dikhana hai
+    const projectedTotal = actualAmount + projectedBalance;
+
+    const monthLabel =
+      w.globals.labels && w.globals.labels[dataPointIndex]
+        ? w.globals.labels[dataPointIndex]
+        : `Month ${dataPointIndex + 1}`;
+
+    const isActual = seriesName === "Actual Amount";
+
+    const label = isActual ? "Actual Amount" : "Projected Amount";
+    const amount = isActual ? actualAmount : projectedTotal;
+    const color = isActual ? "#54C4A7" : "#c4c4c4";
+
+    return `
+      <div class="apexcharts-tooltip-title" style="
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        padding: 6px 10px;
+        margin-bottom: 0;
+      ">
+        ${monthLabel}
+      </div>
+
+      <div style="
+        padding: 8px 10px;
+        font-family: Poppins-Regular;
+        font-size: 12px;
+        background: #fff;
+        min-width: 230px;
+      ">
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+        ">
+          <span style="
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: ${color};
+            display: inline-block;
+          "></span>
+
+          <span>${label}:</span>
+
+          <span style="font-weight: 600;">
+            INR ${Math.round(amount).toLocaleString("en-IN")}
+          </span>
+        </div>
+      </div>
+    `;
+  },
+},
+  }
 
 const totalUtilised =
   expenseRawSeries
-    .find((item) => item.group === selectedFiscalYear)
+    .find(
+      (item) =>
+        item.group === selectedFiscalYear && item.name === "Actual Amount"
+    )
     ?.data?.reduce((acc, val) => acc + val, 0) || 0;
 
   // ✅ BLOCK RENDERING UNTIL DATA IS READY
