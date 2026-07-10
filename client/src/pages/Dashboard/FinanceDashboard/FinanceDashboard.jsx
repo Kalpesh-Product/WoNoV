@@ -500,7 +500,15 @@ const FinanceDashboard = () => {
   );
 
   const selectedYearMonths = yearCategories[selectedFiscalYear] || [];
-  const lastMonthLabel = selectedYearMonths[selectedYearMonths.length - 1] || "-";
+  const previousCalendarMonthLabel = dayjs()
+    .subtract(1, "month")
+    .format("MMM-YY");
+  const summaryMonthLabel = selectedYearMonths.includes(previousCalendarMonthLabel)
+    ? previousCalendarMonthLabel
+    : selectedYearMonths[selectedYearMonths.length - 1] || "-";
+  const summaryMonthIndex = selectedYearMonths.findIndex(
+    (month) => month === summaryMonthLabel
+  );
 
   const monthWiseExpenses = {};
   testExpense.forEach((exp) => {
@@ -566,8 +574,10 @@ const FinanceDashboard = () => {
 
   //------------------Expensedata----------------------//
 
-  const lastMonthDataIncome = currentIncomeSeries?.data?.at(-1) || 0;
-  const lastMonthData = currentExpenseSeries?.data?.at(-1) || 0;
+  const summaryMonthIncome =
+    summaryMonthIndex >= 0 ? currentIncomeSeries?.data?.[summaryMonthIndex] || 0 : 0;
+  const summaryMonthExpense =
+    summaryMonthIndex >= 0 ? currentExpenseSeries?.data?.[summaryMonthIndex] || 0 : 0;
   //----------INCOME-EXPENSE GRAPH conversion------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
@@ -685,8 +695,8 @@ const FinanceDashboard = () => {
     timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: lastMonthLabel,
-        value: `INR ${inrFormat(lastMonthDataIncome)}`,
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(summaryMonthIncome)}`,
         route: "monthly-profit-loss",
       },
       {
@@ -712,8 +722,8 @@ const FinanceDashboard = () => {
     timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: lastMonthLabel,
-        value: `INR ${inrFormat(lastMonthData)}`,
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(summaryMonthExpense)}`,
         route: "monthly-profit-loss",
       },
       {
@@ -739,8 +749,8 @@ const FinanceDashboard = () => {
     timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: lastMonthLabel,
-        value: `INR ${inrFormat(lastMonthDataIncome - lastMonthData)}`,
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(summaryMonthIncome - summaryMonthExpense)}`,
         route: "monthly-profit-loss",
       },
       {
