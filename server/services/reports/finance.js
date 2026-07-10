@@ -615,9 +615,69 @@ const fetchProfitLossReportService = async ({
   });
 };
 
+const fetchPerSqFtExpenseService = async ({
+  company,
+  dateFilter,
+  departmentId,
+  type = "",
+}) => {
+  const query = { company };
+
+  console.log("fetchPerSqFtExpenseService called with:", type);
+  if (departmentId) {
+    query.department = departmentId;
+  }
+
+  if (dateFilter) {
+    query.dueDate = dateFilter.dueDate;
+  }
+
+  if (type === "electrical") {
+    query.expanseType = /^electricity$/i;
+  }
+
+  const budgets = await Budget.find(query)
+    .populate([
+      { path: "department", select: "name" },
+      {
+        path: "unit",
+        select: "unitName unitNo sqft building",
+        populate: {
+          path: "building",
+          model: "Building",
+          select: "buildingName",
+        },
+      },
+    ])
+    .lean()
+    .exec();
+
+  return budgets.map((budget, index) => {
+    const actualAmount = Number(budget?.actualAmount) || 0;
+    const sqft = Number(budget?.unit?.sqft) || 0;
+    const expense = sqft ? actualAmount / sqft : 0;
+
+    return {
+      id: index + 1,
+      srNo: index + 1,
+      expanseName: budget?.expanseName || "-",
+      expanseType: budget?.expanseType || "-",
+      department: budget?.department?.name || "-",
+      actualAmount,
+      unitNo: budget?.unit?.unitNo || "-",
+      unit: budget?.unit?.unitName || "-",
+      building: budget?.unit?.building?.buildingName || "-",
+      sqft,
+      expense: expense.toFixed(2),
+      dueDate: budget?.dueDate || null,
+    };
+  });
+};
+
 module.exports = {
   fetchBudgetVoucherService,
   fetchBudgetService,
   fetchVoucherService,
   fetchProfitLossReportService,
+  fetchPerSqFtExpenseService,
 };
