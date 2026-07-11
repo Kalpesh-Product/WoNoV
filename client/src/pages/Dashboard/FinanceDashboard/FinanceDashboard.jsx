@@ -168,7 +168,7 @@ const FinanceDashboard = () => {
   });
 
   const selectedPayoutMonth = dayjs().subtract(1, "month").format("MMM-YY");
-  const chartPayoutMonth = dayjs().format("MMM-YY");
+  const chartPayoutMonth = dayjs().subtract(1, "month").format("MMM-YY");
 
   const payoutMonthPayments = isBudgetDataLoading
     ? []
@@ -877,7 +877,7 @@ const FinanceDashboard = () => {
     : null;
 
   const income = incomeEntry?.income;
-  const currentCollectionsMonth = dayjs().format("MMM-YY");
+  const currentCollectionsMonth = dayjs().subtract(1, "month").format("MMM-YY");
 
   const getNormalizedPaymentStatus = (value) => {
     if (typeof value === "string") return value.trim().toLowerCase();
@@ -1228,7 +1228,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
     },
     {
       key: "financeCustomerCollections",
-      title: `Customer Collections ${dayjs().format("MMM-YY")} `,
+      title: `Customer Collections ${currentCollectionsMonth} `,
       layout: 1,
       border: true,
       data: pieChartData,
