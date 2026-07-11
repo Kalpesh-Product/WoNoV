@@ -173,6 +173,10 @@ const MyTaskReports = () => {
         {selectedTask ? (
           <div className="grid grid-cols-1 gap-4">
             <DetalisFormatted
+              title="Sr No"
+              detail={selectedTask.srNo}
+            />
+            <DetalisFormatted
               title="Task Name"
               detail={selectedTask.taskName}
             />
@@ -220,10 +224,6 @@ const MyTaskReports = () => {
             />
             {/* <DetalisFormatted title="Priority" detail={selectedTask.priority} /> */}
             <DetalisFormatted title="Status" detail={selectedTask.status} />
-            <DetalisFormatted
-              title="Sr No"
-              detail={selectedTask.srNo}
-            />
             <DetalisFormatted title="Comment" detail={selectedTask.comment || "-"} />
             {/* <DetalisFormatted title="Remarks" detail={selectedTask.remarks} /> */}
           </div>
