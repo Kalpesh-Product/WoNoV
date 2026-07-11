@@ -1471,14 +1471,14 @@ const extendMeeting = async (req, res, next) => {
       ? monthHistory.remainingCredit
       : bookingUserCompany.meetingCreditBalance;
 
-    if (meeting.meetingType === "Internal" && availableCredits < addedCredits) {
-      throw new CustomError(
-        "Insufficient credits to extend this meeting",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+    // if (meeting.meetingType === "Internal" && availableCredits < addedCredits) {
+    //   throw new CustomError(
+    //     "Insufficient credits to extend this meeting",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
 
     const updateFields = {
       $inc: {
