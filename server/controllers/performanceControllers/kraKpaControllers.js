@@ -222,6 +222,8 @@ const updateTaskStatus = async (req, res, next) => {
 
   try {
     const { taskId, taskType } = req.params;
+    const comment =
+      typeof req.body?.comment === "string" ? req.body.comment.trim() : "";
 
     if (!taskId) {
       // throw new CustomError(
@@ -311,6 +313,7 @@ const updateTaskStatus = async (req, res, next) => {
       task: taskId,
       completedBy: user,
       status: "Completed",
+      comment,
       completionDate,
       company,
     });
@@ -838,6 +841,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
               dueTime: "6:30 PM",
               completionDate: task.completionDate ? task.completionDate : "N/A",
               status: task.status,
+              comment: task.comment || "",
             };
           });
 
@@ -1018,6 +1022,7 @@ const getAllKpaTasks = async (req, res, next) => {
         assignedDate: task.task.assignedDate,
         dueDate: task.task.dueDate,
         status: task.status,
+        comment: task.comment || "",
       };
 
       if (!transformedByDepartment[departmentName]) {

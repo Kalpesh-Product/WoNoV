@@ -423,10 +423,20 @@ const updateTaskStatus = async (req, res, next) => {
 
   try {
     const { id } = req.params;
+ const { comment } = req.body;
 
     if (!id) {
       throw new CustomError(
         "Task ID must be provided",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    if (comment === undefined) {
+      throw new CustomError(
+        "Comment must be provided",
         logPath,
         logAction,
         logSourceKey,
@@ -445,7 +455,8 @@ const updateTaskStatus = async (req, res, next) => {
     const currDate = new Date();
     const updatedTask = await Task.findOneAndUpdate(
       { _id: id, company, isDeleted: { $ne: true } },
-      { status: "Completed", completedBy: user, completedDate: currDate },
+      { status: "Completed", completedBy: user, completedDate: currDate,comment: comment },
+
       { new: true, runValidators: true },
     );
 
@@ -1243,10 +1254,15 @@ const completeTasks = async (req, res, next) => {
   const logSourceKey = "task";
 
   try {
-    const { taskIds } = req.body;
+    const { taskIds, comment } = req.body;
 
-    if (!taskIds || !taskIds.length) {
-      throw new CustomError("Missing tasks", logPath, logAction, logSourceKey);
+    if (!taskIds || !taskIds.length || comment === undefined) {
+      throw new CustomError(
+        "Missing task ID or comment",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
     }
 
     // Step 1: Fetch tasks before updating
@@ -1273,6 +1289,7 @@ const completeTasks = async (req, res, next) => {
     // Step 3: Fetch updated tasks
     const updatedTasks = await Task.find({
       _id: { $in: taskIds },
+      comment: comment,
       company,
       isDeleted: { $ne: true },
     });

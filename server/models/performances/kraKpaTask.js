@@ -23,8 +23,13 @@ const kraKpaTasksSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    comment: {
+      type: String,
+      trim: true,
+      default: "",
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const kraKpaTask = mongoose.model("kraKpaTask", kraKpaTasksSchema);

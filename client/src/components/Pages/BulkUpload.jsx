@@ -17,6 +17,35 @@ import { toast } from "sonner";
 //import humanDate from "../../utils/humanDateForamt";
 import bulkInsertRoutes from "../../constants/bulkInsertRoutes";
 import formatDateTime from "../../utils/formatDateTime";
+const normalizeTemplateName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const hasNormalizedToken = (value, token) =>
+  new RegExp(`(^| )${token}( |$)`).test(value);
+
+const templateNameMatchesRoute = (templateName, routeConfig) => {
+  const normalizedTemplateName = normalizeTemplateName(templateName);
+  const normalizedRouteName = normalizeTemplateName(routeConfig?.name);
+
+  if (normalizedRouteName === normalizedTemplateName) return true;
+
+  return (routeConfig?.aliases || []).some((alias) => {
+    const normalizedAlias = normalizeTemplateName(alias);
+
+    return (
+      normalizedAlias === normalizedTemplateName ||
+      hasNormalizedToken(normalizedTemplateName, normalizedAlias) ||
+      normalizedTemplateName.includes(normalizedAlias)
+    );
+  });
+};    
+
 
 export default function BulkUpload() {
   const axios = useAxiosPrivate();
@@ -86,14 +115,14 @@ export default function BulkUpload() {
     },
   });
 
-  const normalizeTemplateName = (value) =>
-    String(value || "")
-      .trim()
-      .toLowerCase()
-      .replace(/&/g, "and")
-      .replace(/[^a-z0-9]+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+  // const normalizeTemplateName = (value) =>
+  //   String(value || "")
+  //     .trim()
+  //     .toLowerCase()
+  //     .replace(/&/g, "and")
+  //     .replace(/[^a-z0-9]+/g, " ")
+  //     .replace(/\s+/g, " ")
+  //     .trim();
 
   const selectedDoc = watch("documentName");
   const templateOptions = useMemo(() => {
@@ -107,14 +136,19 @@ export default function BulkUpload() {
         //   (item) => item.name?.toLowerCase() === templateName.toLowerCase(),
         // );
         const normalizedTemplateName = normalizeTemplateName(templateName);
-        const routeConfig = departmentDrop.find((item) => {
-          const configuredNames = [item.name, ...(item.aliases || [])];
+        // const routeConfig = departmentDrop.find((item) => {
+        //   const configuredNames = [item.name, ...(item.aliases || [])];
 
-          return configuredNames.some(
-            (configuredName) =>
-              normalizeTemplateName(configuredName) === normalizedTemplateName,
-          );
-        });
+        //   return configuredNames.some(
+        //     (configuredName) =>
+        //       normalizeTemplateName(configuredName) === normalizedTemplateName,
+        //   );
+        // });
+
+         const routeConfig = departmentDrop.find((item) =>
+          templateNameMatchesRoute(templateName, item),
+        );
+
 
         return {
           id: template._id || template.documentId || templateName,
