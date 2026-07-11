@@ -849,6 +849,12 @@ const TasksViewDepartment = () => {
       field: "completedTime",
       flex:1,
     },
+    {
+      headerName: "Comment",
+      field: "comment",
+      hide: true,
+      flex: 1,
+    },
     {headerName: "Status", field: "status", hide: true },
 
     // {

@@ -112,14 +112,6 @@ const AssignedTaskReports = () => {
       field: "taskName",
       headerName: "Task",
       width: 250,
-      cellRenderer: (params) => (
-        <span
-          className="text-primary underline cursor-pointer"
-          onClick={() => handleViewDetails(params.data)}
-        >
-          {params.value}
-        </span>
-      ),
     },
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
     { field: "assignedTo", headerName: "Assign To", width: 300,hide: true },
@@ -141,23 +133,37 @@ const AssignedTaskReports = () => {
       headerName: "Completed Time",
     },
     { field: "department", headerName: "Department" },
-    { field: "status", headerName: "Status", pinned: "right", cellRenderer: (params) => (
-      <StatusChip status={params.value} />
-    ) }   ,
-    // {
-    //   field: "actions",
-    //   headerName: "Actions",
-    //   cellRenderer: (params) => (
-    //     <div className="p-2 mb-2 flex gap-2">
-    //       <span
-    //         className="text-primary hover:underline text-content cursor-pointer"
-    //         onClick={() => handleViewDetails(params)}
-    //       >
-    //         View Details
-    //       </span>
-    //     </div>
-    //   ),
-    // },
+    {
+      field: "status",
+      headerName: "Status",
+      pinned: "right",
+      width: 130,
+      minWidth: 130,
+      cellRenderer: (params) => (
+        <StatusChip status={params.value} />
+      ),
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      pinned: "right",
+      width: 100,
+      minWidth: 100,
+      maxWidth: 100,
+      lockPinned: true,
+      suppressMovable: true,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          title="View Task Details"
+          onClick={() => handleViewDetails(params.data)}
+          className="h-8 w-8 flex items-center justify-center"
+        >
+          <MdOutlineRemoveRedEye size={22} color="#111827" />
+        </button>
+      ),
+    },
+    { field: "comment", headerName: "Comment", hide: true },
   ];
 
   const currentMonthLabel = (
@@ -220,6 +226,7 @@ const AssignedTaskReports = () => {
                 department: task.department?.name || task.department,
                 description: task.description,
                 status: task.status,
+                comment: task.comment,
               }))
           }
           columns={myTaskReportsColumns}
@@ -235,6 +242,10 @@ const AssignedTaskReports = () => {
       >
         {selectedTask && (
           <div className="grid grid-cols-1 gap-4">
+            <DetalisFormatted
+              title="Sr No"
+              detail={selectedTask.srNo}
+            />
             <DetalisFormatted
               title="Task Name"
               detail={selectedTask.taskName}
@@ -292,6 +303,10 @@ const AssignedTaskReports = () => {
             <DetalisFormatted
               title="Status"
               detail={selectedTask.status || "—"}
+            />
+            <DetalisFormatted
+              title="Comment"
+              detail={selectedTask.comment || "-"}
             />
           </div>
         )}

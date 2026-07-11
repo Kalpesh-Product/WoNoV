@@ -46,13 +46,33 @@ const MyTaskReports = () => {
       field: "taskName",
       headerName: "Task",
       width: 250,
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      pinned: "right",
+      width: 130,
+      minWidth: 130,
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      pinned: "right",
+      width: 100,
+      minWidth: 100,
+      maxWidth: 100,
+      lockPinned: true,
+      suppressMovable: true,
       cellRenderer: (params) => (
-        <span
-          className="text-primary hover:underline cursor-pointer"
+        <button
+          type="button"
+          title="View Task Details"
           onClick={() => handleViewDetails(params)}
+          className="h-8 w-8 flex items-center justify-center"
         >
-          {params.value}
-        </span>
+          <MdOutlineRemoveRedEye size={22} color="#111827" />
+        </button>
       ),
     },
     { field: "assignedBy", headerName: "Assigned By", width: 300 },
@@ -83,9 +103,7 @@ const MyTaskReports = () => {
       headerName: "Completed Time",
     },
     { field: "department", headerName: "Department" },
-    { field: "status", headerName: "Status", pinned: "right", cellRenderer: (params) => (
-         <StatusChip status={params.value} />
-       ) }   ,
+    { field: "comment", headerName: "Comment", hide: true },
   ];
 
   const currentMonthLabel = (
@@ -124,6 +142,7 @@ const MyTaskReports = () => {
             isLoading
               ? []
               : taskList.map((task, index) => ({
+                  srNo: index + 1,
                   ...task,
                   taskName: task.taskName,
                   description: task.description,
@@ -137,6 +156,7 @@ const MyTaskReports = () => {
                   assignedBy: `${task.assignedBy.firstName} ${task.assignedBy.lastName}`,
                   department: task.department?.name,
                   status: task.status,
+                  comment: task.comment,
                 }))
           }
           columns={myTaskReportsColumns}
@@ -200,6 +220,11 @@ const MyTaskReports = () => {
             />
             {/* <DetalisFormatted title="Priority" detail={selectedTask.priority} /> */}
             <DetalisFormatted title="Status" detail={selectedTask.status} />
+            <DetalisFormatted
+              title="Sr No"
+              detail={selectedTask.srNo}
+            />
+            <DetalisFormatted title="Comment" detail={selectedTask.comment || "-"} />
             {/* <DetalisFormatted title="Remarks" detail={selectedTask.remarks} /> */}
           </div>
         ) : (
