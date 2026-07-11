@@ -58,7 +58,6 @@ const TasksViewDepartment = () => {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [completionComment, setCompletionComment] = useState("");
   const [completionCommentError, setCompletionCommentError] = useState("");
-  const [completionComments, setCompletionComments] = useState({});
   const [selectedTaskRange, setSelectedTaskRange] = useState(
     getCurrentMonthRange,
   );
@@ -265,16 +264,7 @@ const TasksViewDepartment = () => {
       );
       return response.data;
     },
-    onSuccess: (data, variables) => {
-      const trimmedComment = variables?.comment?.trim() || "";
-
-      if (variables?.taskId && trimmedComment) {
-        setCompletionComments((prev) => ({
-          ...prev,
-          [variables.taskId]: trimmedComment,
-        }));
-      }
-
+    onSuccess: (data) => {
       refreshDepartmentTaskQueries();
       toast.success(data.message || "DATA UPDATED");
       setCompletionComment("");
@@ -532,7 +522,7 @@ const TasksViewDepartment = () => {
                   : item.assignedBy || "-",
               status: item.status,
             })),
-    [completedTasks, completedTasksFetchPending, completionComments, departmentMemberMap],
+    [completedTasks, completedTasksFetchPending, departmentMemberMap],
   );
 
   const taskSummary = useMemo(() => {
