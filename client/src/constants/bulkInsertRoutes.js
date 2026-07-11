@@ -59,6 +59,12 @@ const bulkInsertRoutes = [
         route:
           "/api/performance/bulk-upload-performance-tasks",
       },
+      {
+        name: "tasks",    
+        fileKey: "file",
+        route:
+          "api/tasks/bulk-insert",
+      },
     ],
   },
   {
