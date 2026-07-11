@@ -169,6 +169,7 @@ const DailyTasks = () => {
     mutationFn: async (data) => {
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data.taskId}`,
+        { comment: data.comment },
       );
       return response.data;
     },
@@ -555,7 +556,7 @@ const DailyTasks = () => {
         completedDateTime: `${humanDate(item.completedDate)}, ${humanTime(
           item.completedDate,
         )}`,
-        comment: completionComments[item._id] || "",
+        comment: item.comment,
         status: item.status,
       }));
 
@@ -618,7 +619,7 @@ const DailyTasks = () => {
         completedDateTime: `${humanDate(item.completedDate)}, ${humanTime(
           item.completedDate,
         )}`,
-        comment: completionComments[item._id] || "",
+        comment: item.comment,
         status: item.status,
       })),
     [completionComments, visibleCompletedEntries],

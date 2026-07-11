@@ -423,10 +423,20 @@ const updateTaskStatus = async (req, res, next) => {
 
   try {
     const { id } = req.params;
+ const { comment } = req.body;
 
     if (!id) {
       throw new CustomError(
         "Task ID must be provided",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    if (comment === undefined) {
+      throw new CustomError(
+        "Comment must be provided",
         logPath,
         logAction,
         logSourceKey,
@@ -445,7 +455,8 @@ const updateTaskStatus = async (req, res, next) => {
     const currDate = new Date();
     const updatedTask = await Task.findOneAndUpdate(
       { _id: id, company, isDeleted: { $ne: true } },
-      { status: "Completed", completedBy: user, completedDate: currDate },
+      { status: "Completed", completedBy: user, completedDate: currDate,comment: comment },
+
       { new: true, runValidators: true },
     );
 

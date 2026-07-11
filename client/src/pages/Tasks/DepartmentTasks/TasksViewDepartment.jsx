@@ -261,6 +261,7 @@ const TasksViewDepartment = () => {
     mutationFn: async (data) => {
       const response = await axios.patch(
         `/api/tasks/update-task-status/${data.taskId}`,
+         { comment: data.comment },
       );
       return response.data;
     },
@@ -522,7 +523,7 @@ const TasksViewDepartment = () => {
               completedDate: item.completedDate,
               completedDateLabel: humanDate(item.completedDate),
               completedTime: item.completedDate,
-              comment: completionComments[item._id] || "",
+               comment: item.comment,
               assignedTo: formatAssignedTo(item.assignedTo),
               rawAssignedTo: item.assignedTo,
               assignedBy:
