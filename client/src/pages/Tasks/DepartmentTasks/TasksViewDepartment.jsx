@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
+import SecondaryButton from "../../../components/SecondaryButton";
 import useAuth from "../../../hooks/useAuth";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
@@ -34,7 +35,7 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import PageFrame from "../../../components/Pages/PageFrame";
 // import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { noOnlyWhitespace } from "../../../utils/validators";
-import { MdDeleteForever } from "react-icons/md";
+import { MdDeleteForever, MdOutlineRemoveRedEye } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
@@ -55,6 +56,9 @@ const TasksViewDepartment = () => {
   const [selectedTask, setSelectedTask] = useState({});
   const [modalMode, setModalMode] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [completionComment, setCompletionComment] = useState("");
+  const [completionCommentError, setCompletionCommentError] = useState("");
+  const [completionComments, setCompletionComments] = useState({});
   const [selectedTaskRange, setSelectedTaskRange] = useState(
     getCurrentMonthRange,
   );
@@ -256,13 +260,26 @@ const TasksViewDepartment = () => {
     mutationKey: ["updateDailyTasks"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/tasks/update-task-status/${data}`,
+        `/api/tasks/update-task-status/${data.taskId}`,
       );
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      const trimmedComment = variables?.comment?.trim() || "";
+
+      if (variables?.taskId && trimmedComment) {
+        setCompletionComments((prev) => ({
+          ...prev,
+          [variables.taskId]: trimmedComment,
+        }));
+      }
+
       refreshDepartmentTaskQueries();
       toast.success(data.message || "DATA UPDATED");
+      setCompletionComment("");
+      setCompletionCommentError("");
+      setSelectedTask({});
+      setOpenModal(false);
     },
     onError: (error) => {
       toast.error(error.message || "Error Updating");
@@ -287,6 +304,28 @@ const TasksViewDepartment = () => {
   });
 
   //--------------POST REQUEST FOR DAILY KRA-----------------//
+
+  const openMarkDoneModal = (taskData) => {
+    setSelectedTask(taskData);
+    setCompletionComment("");
+    setCompletionCommentError("");
+    setModalMode("comment");
+    setOpenModal(true);
+  };
+
+  const handleMarkAsDoneWithComment = () => {
+    const trimmedComment = completionComment.trim();
+
+    if (!trimmedComment) {
+      setCompletionCommentError("Comment is required");
+      return;
+    }
+
+    updateDailyKra({
+      taskId: selectedTask?.id,
+      comment: trimmedComment,
+    });
+  };
 
   const fetchDepartments = async () => {
     try {
@@ -483,6 +522,7 @@ const TasksViewDepartment = () => {
               completedDate: item.completedDate,
               completedDateLabel: humanDate(item.completedDate),
               completedTime: item.completedDate,
+              comment: completionComments[item._id] || "",
               assignedTo: formatAssignedTo(item.assignedTo),
               rawAssignedTo: item.assignedTo,
               assignedBy:
@@ -491,7 +531,7 @@ const TasksViewDepartment = () => {
                   : item.assignedBy || "-",
               status: item.status,
             })),
-    [completedTasks, completedTasksFetchPending, departmentMemberMap],
+    [completedTasks, completedTasksFetchPending, completionComments, departmentMemberMap],
   );
 
   const taskSummary = useMemo(() => {
@@ -598,7 +638,7 @@ const TasksViewDepartment = () => {
     });
   };
 
-  const departmentColumns = [
+  const departmentColumns = useMemo(() => [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     {
       headerName: "Task List",
@@ -682,7 +722,7 @@ const TasksViewDepartment = () => {
               onClick={() => {
                 if (!params.node.selected || isUpdatePending || isDeletePending)
                   return;
-                updateDailyKra(params.data.id);
+                openMarkDoneModal(params.data);
               }}
               className="p-2"
             >
@@ -758,26 +798,20 @@ const TasksViewDepartment = () => {
         );
       },
     },
-  ];
-  const completedColumns = [
+  ], [
+    isDeletePending,
+    isEditPending,
+    isManagerLevel,
+    isUpdatePending,
+    reset,
+  ]);
+  const completedColumns = useMemo(() => [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     {
       headerName: "Task List",
       field: "taskName",
       flex:1,
-      cellRenderer: (params) => (
-        <div
-          role="button"
-          onClick={() => {
-            setModalMode("completed");
-            setSelectedTask(formatDateTimeFields(params.data));
-            setOpenMultiModal(true);
-          }}
-          className="text-primary underline cursor-pointer"
-        >
-          {params.value}
-        </div>
-      ),
+      cellRenderer: (params) => <span>{params.value}</span>,
     },
     // { headerName: "Assigned Time", field: "assignedDate" },
     {headerName: "Added By", field: "assignedBy", flex:1,hide: true,},
@@ -787,6 +821,26 @@ const TasksViewDepartment = () => {
     { headerName: "Due Date", field: "dueDate", hide: true },
     { headerName: "Due Time", field: "dueTime", hide: true },
     { headerName: "Completed By", field: "completedBy", flex:1, },
+    {
+      headerName: "Action",
+      field: "action",
+      pinned: "right",
+      width: 110,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          title="View Completed Task"
+          onClick={() => {
+            setModalMode("completed");
+            setSelectedTask(formatDateTimeFields(params.data));
+            setOpenMultiModal(true);
+          }}
+          className="h-8 w-8 flex items-center justify-center"
+        >
+          <MdOutlineRemoveRedEye size={22} color="#111827" />
+        </button>
+      ),
+    },
     { headerName: "Completed Date", field: "completedDate" },
     {
       headerName: "Unit No",
@@ -835,7 +889,7 @@ const TasksViewDepartment = () => {
     //     );
     //   },
     // },
-  ];
+  ], []);
 
   return (
     <>
@@ -931,8 +985,15 @@ const TasksViewDepartment = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={modalMode === "edit-task" ? "Edit Department Task" : "Add Department Task"}
+        title={
+          modalMode === "edit-task"
+            ? "Edit Department Task"
+            : modalMode === "comment"
+              ? "Comment"
+              : "Add Department Task"
+        }
       >
+        {(modalMode === "add-task" || modalMode === "edit-task") && (
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
           className="grid grid-cols-1 lg:grid-cols-1 gap-4"
@@ -1182,6 +1243,45 @@ const TasksViewDepartment = () => {
             disabled={modalMode === "edit-task" ? isEditPending : isAddKraPending}
           />
         </form>
+        )}
+        {modalMode === "comment" && (
+          <div className="grid grid-cols-1 gap-4">
+            <TextField
+              label="Comment"
+              size="small"
+              multiline
+              rows={4}
+              value={completionComment}
+              onChange={(event) => {
+                setCompletionComment(event.target.value);
+                if (completionCommentError) {
+                  setCompletionCommentError("");
+                }
+              }}
+              error={!!completionCommentError}
+              helperText={completionCommentError}
+              fullWidth
+            />
+            <div className="flex items-center justify-center gap-3">
+              <PrimaryButton
+                title="Done"
+                handleSubmit={handleMarkAsDoneWithComment}
+                isLoading={isUpdatePending}
+                disabled={isUpdatePending}
+              />
+              <SecondaryButton
+                title="Cancel"
+                handleSubmit={() => {
+                  setCompletionComment("");
+                  setCompletionCommentError("");
+                  setSelectedTask({});
+                  setOpenModal(false);
+                }}
+                disabled={isUpdatePending}
+              />
+            </div>
+          </div>
+        )}
       </MuiModal>
 
       <MuiModal
@@ -1278,6 +1378,10 @@ const TasksViewDepartment = () => {
             />
 
             <DetalisFormatted title={"Status"} detail={selectedTask?.status} />
+              <DetalisFormatted
+              title={"Comment"}
+              detail={selectedTask?.comment || "-"}
+            />
           </div>
         )}
       </MuiModal>
