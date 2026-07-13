@@ -307,6 +307,7 @@ const TicketReports = () => {
                   raisedBy: getFullName(item.raisedBy),
                   description: item.description || "",
                   status: item.status || "",
+                  image: item?.image?.url || "",
                   assignees:
                     item.assignees?.map(
                       (assignee) =>
@@ -501,6 +502,15 @@ const TicketReports = () => {
               />
             ) : (
               ""
+            )}
+            {selectedMeeting?.image && (
+              <div className="lg:col-span-1">
+                <img
+                  src={selectedMeeting.image}
+                  alt="Ticket Attachment"
+                  className="max-w-full max-h-96 rounded border"
+                />
+              </div>
             )}
           </div>
         ) : (
