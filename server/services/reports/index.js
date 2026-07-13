@@ -44,6 +44,7 @@ const {
   fetchUsersReportService,
   fetchLeavesReportService,
   fetchAttendanceReportService,
+  fetchHousekeepingStaffReportService,
 } = require("./employees");
 const { fetchLeadReportService } = require("./lead");
 const { fetchUnitReportService } = require("./unit");
@@ -150,6 +151,10 @@ const reportServiceRegistry = {
 
   employees: createReportService(fetchUsersReportService, {
     dateField: "startDate",
+  }),
+
+  housekeepingstaff: createReportService(fetchHousekeepingStaffReportService, {
+    dateField: "dateOfJoining",
   }),
 
   "external-clients": createReportService(fetchClientVisitorsReportService, {
