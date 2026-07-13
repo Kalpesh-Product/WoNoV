@@ -50,7 +50,6 @@ const DailyTasks = () => {
   const [selectedTask, setSelectedTask] = useState({});
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [completionCommentError, setCompletionCommentError] = useState("");
-  const [completionComments, setCompletionComments] = useState({});
   const completionCommentRef = useRef("");
   const getCurrentMonthRange = () => ({
     startDate: dayjs().startOf("month").toDate(),
@@ -173,16 +172,7 @@ const DailyTasks = () => {
       );
       return response.data;
     },
-    onSuccess: (data, variables) => {
-      const trimmedComment = variables?.comment?.trim() || "";
-
-      if (variables?.taskId && trimmedComment) {
-        setCompletionComments((prev) => ({
-          ...prev,
-          [variables.taskId]: trimmedComment,
-        }));
-      }
-
+    onSuccess: (data) => {
       queryClient.refetchQueries({ queryKey: ["fetchMyTask"] });
       queryClient.invalidateQueries({ queryKey: ["fetchMyTask"] });
       queryClient.invalidateQueries({ queryKey: ["completedTasks"] });
@@ -492,6 +482,12 @@ const DailyTasks = () => {
       field: "completedTime",
       flex: 1
     },
+    {
+      headerName: "Comment",
+      field: "comment",
+      hide: true,
+      flex: 1,
+    },
     {headerName: "Status", field: "status", hide: true,flex: 1 },
     // {
     //   field: "status",
@@ -622,7 +618,7 @@ const DailyTasks = () => {
         comment: item.comment,
         status: item.status,
       })),
-    [completionComments, visibleCompletedEntries],
+    [visibleCompletedEntries],
   );
 
   const pendingOnlyTasks = useMemo(

@@ -1,18 +1,38 @@
-import React from "react";
+import React, { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import StatusChip from "../../../components/StatusChip";
+import formatDateTime, {
+  formatDateTimeFields,
+} from "../../../utils/formatDateTime";
 
 const DepartmentTaskReports = () => {
+  const axios = useAxiosPrivate();
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
-  const axios = useAxiosPrivate()
+  const handleViewDetails = (params) => {
+    setSelectedTask(
+      formatDateTimeFields({
+        ...params.data,
+        startDate: params.data?.startDate,
+        endDate: params.data?.endDate,
+      }),
+    );
+    setOpenModal(true);
+  };
+
   const { data: taskList, isLoading } = useQuery({
     queryKey: ["taskList"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/tasks/get-tasks");
-        return response.data
+        return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
       }
@@ -48,18 +68,28 @@ const DepartmentTaskReports = () => {
     { field: "startDate", headerName: "Start Date", flex: 1 },
     { field: "endDate", headerName: "End Date", flex: 1 },
     {
-      field: "actions",
-      headerName: "Actions",
+      field: "status",
+      headerName: "Status",
+      pinned: "right",
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      pinned: "right",
+      width: 100,
       cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            <span className="text-primary hover:underline text-content cursor-pointer">
-              View Details
-            </span>
-          </div>
-        </>
+        <button
+          type="button"
+          title="View Task Details"
+          onClick={() => handleViewDetails(params)}
+          className="h-8 w-8 flex items-center justify-center"
+        >
+          <MdOutlineRemoveRedEye size={22} color="#111827" />
+        </button>
       ),
     },
+    { field: "comment", headerName: "Comment", hide: true },
   ];
 
   const departmentTaskReportsData = [
@@ -121,20 +151,54 @@ const DepartmentTaskReports = () => {
         <AgTable
           search={true}
           tableTitle={"Department Task Reports"}
-          data={isLoading? []:[...taskList.map((task, index)=>({
-            srNo : index + 1,
-            task:task.taskName,
-            project : task.project.projectName,
-            department : task.project.department.name,
-            assignedBy : task.assignedBy.firstName,
-            assignedTo : task.assignedTo.map((asignee)=> asignee.firstName),
-            priority : task.priority,
-            startDate : task.assignedDate,
-            endDate : task.dueDate,
+          data={isLoading ? [] : [...taskList.map((task, index) => ({
+            srNo: index + 1,
+            task: task.taskName,
+            project: task.project?.projectName || "-",
+            department: task.project?.department?.name || task.department?.name || "-",
+            assignedBy: task.assignedBy?.firstName
+              ? `${task.assignedBy.firstName} ${task.assignedBy.lastName || ""}`.trim()
+              : "-",
+            assignedTo: Array.isArray(task.assignedTo)
+              ? task.assignedTo
+                  .map((assignee) =>
+                    assignee?.firstName
+                      ? `${assignee.firstName} ${assignee.lastName || ""}`.trim()
+                      : ""
+                  )
+                  .filter(Boolean)
+                  .join(", ")
+              : "-",
+            priority: task.priority,
+            startDate: task.assignedDate,
+            endDate: task.dueDate,
+            status: task.status,
+            comment: task.comment,
           }))]}
           columns={departmentTaskReportsColumns}
         />
       </div>
+      <MuiModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        title={"Task Details"}
+      >
+        {selectedTask && (
+          <div className="grid grid-cols-1 gap-4">
+            <DetalisFormatted title="Sr No" detail={selectedTask.srNo} />
+            <DetalisFormatted title="Task" detail={selectedTask.task} />
+            <DetalisFormatted title="Project" detail={selectedTask.project} />
+            <DetalisFormatted title="Department" detail={selectedTask.department} />
+            <DetalisFormatted title="Assigned By" detail={selectedTask.assignedBy} />
+            <DetalisFormatted title="Assigned To" detail={selectedTask.assignedTo} />
+            <DetalisFormatted title="Priority" detail={selectedTask.priority} />
+            <DetalisFormatted title="Start Date" detail={selectedTask.startDate} />
+            <DetalisFormatted title="End Date" detail={selectedTask.endDate} />
+            <DetalisFormatted title="Status" detail={selectedTask.status || "-"} />
+            <DetalisFormatted title="Comment" detail={selectedTask.comment || "-"} />
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };
