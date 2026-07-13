@@ -1474,7 +1474,7 @@ const filterMyTickets = async (req, res, next) => {
         },
         {
           path: "escalatedTo",
-          select: "status raisedToDepartment createdAt",
+          select: "status raisedToDepartment createdAt description",
           populate: {
             path: "raisedToDepartment",
             select: "name",

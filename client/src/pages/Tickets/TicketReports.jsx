@@ -264,6 +264,7 @@ const TicketReports = () => {
         escalatedAt: "",
         escalatedAtDate: "",
         escalatedAtTime: "",
+        reasonForEscalated: "",
       };
     }
 
@@ -285,6 +286,7 @@ const TicketReports = () => {
       escalatedAt: escalatedAtRaw ? formatDateTime(escalatedAtRaw) : "",
       escalatedAtDate: escalatedAtRaw || "",
       escalatedAtTime: escalatedAtRaw || "",
+      reasonForEscalated: latest?.description || "",
     };
   };
 
@@ -482,6 +484,10 @@ const TicketReports = () => {
             <DetalisFormatted
               title={"Escalated At"}
               detail={selectedMeeting?.escalatedAt || ""}
+            />
+            <DetalisFormatted
+              title={"Reason for Escalated"}
+              detail={selectedMeeting?.reasonForEscalated || ""}
             />
             <DetalisFormatted
               title="Closed By"
