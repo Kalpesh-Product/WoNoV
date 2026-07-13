@@ -972,17 +972,28 @@ const roundedMax = useMemo(() => {
 
   const techWidgets = [
     {
-      layout: allowedSalesGraph.length,
-      widgets: allowedSalesGraph.map((config) => (
-        <WidgetSection
-          layout={1}
-          border
-          title={config.title}
-          titleLabel={config.titleLabel}
+      layout: allowedExpenseGraph.length,
+      widgets: [
+        <Suspense
+          fallback={
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Simulating chart skeleton */}
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </Box>
+          }
         >
-          <BarGraph data={config.data} options={config.options} />
-        </WidgetSection>
-      )),
+          {allowedExpenseGraph.map((config) => (
+            <YearlyGraph
+              data={config.data}
+              options={config.options}
+              title={config.title}
+              onYearChange={config.onYearChange}
+              titleAmount={config.titleAmount}
+            />
+          ))}
+        </Suspense>,
+      ],
     },
     {
       layout: allowedCards.length,
@@ -1042,28 +1053,17 @@ const roundedMax = useMemo(() => {
       )),
     },
     {
-      layout: allowedExpenseGraph.length,
-      widgets: [
-        <Suspense
-          fallback={
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {/* Simulating chart skeleton */}
-              <Skeleton variant="text" width={200} height={30} />
-              <Skeleton variant="rectangular" width="100%" height={300} />
-            </Box>
-          }
+      layout: allowedSalesGraph.length,
+      widgets: allowedSalesGraph.map((config) => (
+        <WidgetSection
+          layout={1}
+          border
+          title={config.title}
+          titleLabel={config.titleLabel}
         >
-          {allowedExpenseGraph.map((config) => (
-            <YearlyGraph
-              data={config.data}
-              options={config.options}
-              title={config.title}
-              onYearChange={config.onYearChange}
-              titleAmount={config.titleAmount}
-            />
-          ))}
-        </Suspense>,
-      ],
+          <BarGraph data={config.data} options={config.options} />
+        </WidgetSection>
+      )),
     },
     {
       layout: allowedIssuesGraph.length,
