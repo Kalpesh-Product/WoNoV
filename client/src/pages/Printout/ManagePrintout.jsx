@@ -413,6 +413,7 @@ const ManagePrintout = () => {
             //hideFilter
             //hideTitle
             paginationPageSize={10}
+            //exportData
           />
           {isPrintoutsLoading ? (
             <div className="flex justify-center p-4">

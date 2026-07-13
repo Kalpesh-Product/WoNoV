@@ -50,6 +50,10 @@ const { fetchLeadReportService } = require("./lead");
 const { fetchUnitReportService } = require("./unit");
 const { fetchHolidayAndEventsService } = require("./holidayEvent");
 const { fetchInventoryService } = require("./inventory");
+const {
+  fetchWeeklyScheduleReportService,
+  fetchHousekeepingScheduleReportService,
+} = require("./weeklySchedule");
 const normalizeReportIdentifier = (value = "") =>
   value
     .trim()
@@ -150,6 +154,16 @@ const reportServiceRegistry = {
   }),
 
   employees: createReportService(fetchUsersReportService, {
+    dateField: "startDate",
+  }),
+
+  housekeepingschedule: createReportService(
+    fetchHousekeepingScheduleReportService,
+    {
+      dateField: "startDate",
+    },
+  ),
+  weeklyschedule: createReportService(fetchWeeklyScheduleReportService, {
     dateField: "startDate",
   }),
 
