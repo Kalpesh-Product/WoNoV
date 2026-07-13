@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Chip, Tab, Tabs } from "@mui/material";
 import AgTable from "../../components/AgTable";
@@ -9,6 +9,9 @@ import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import PageFrame from "../../components/Pages/PageFrame";
+import MuiModal from "../../components/MuiModal";
+import DetalisFormatted from "../../components/DetalisFormatted";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 
 const tabSx = {
     backgroundColor: "white",
@@ -32,7 +35,8 @@ const tabSx = {
 
 const PerformanceReportKraKpa = () => {
     const axios = useAxiosPrivate();
-   const navigate = useNavigate();
+    const navigate = useNavigate();
+    const [completedTaskView, setCompletedTaskView] = useState(null);
     const { departmentName: routeDepartmentName, reportType: routeReportType, reportStatus: routeReportStatus } = useParams();
 
     const { data: departmentMembers = [] } = useQuery({
@@ -124,6 +128,26 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
     const reportColumns = [
         { headerName: "Sr No", field: "srNo", width: 100 },
         { headerName: `${activeTypeTab} Name`, field: "taskName", flex: 1 },
+        ...(activeStatusTab === "Completed"
+            ? [
+                {
+                    headerName: "Action",
+                    field: "action",
+                    pinned: "right",
+                    width: 110,
+                    cellRenderer: (params) => (
+                        <button
+                            type="button"
+                            title={`View Completed ${activeTypeTab}`}
+                            onClick={() => setCompletedTaskView(params.data)}
+                            className="h-8 w-8 flex items-center justify-center"
+                        >
+                            <MdOutlineRemoveRedEye size={22} color="#111827" />
+                        </button>
+                    ),
+                },
+            ]
+            : []),
         { headerName: "Department", field: "department", flex: 1 },
         {
             headerName: activeStatusTab === "Completed" ? "Completed By" : "Assigned To",
@@ -149,6 +173,12 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
                     field: "completionDate",
                     includeTime: true,
                     exportFormat: "datetime-comma",
+                },
+                {
+                    headerName: "Comment",
+                    field: "comment",
+                    hide: true,
+                    flex: 1,
                 },
             ]
             : []),
@@ -230,6 +260,37 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
                     />
                 </div>
             </PageFrame>
+            <MuiModal
+                open={!!completedTaskView}
+                onClose={() => setCompletedTaskView(null)}
+                title={`Completed ${activeTypeTab}`}
+            >
+                {completedTaskView && (
+                    <div className="grid grid-cols-1 gap-4">
+                        <DetalisFormatted title={activeTypeTab} detail={completedTaskView?.taskName} />
+                        <DetalisFormatted title={"Department"} detail={completedTaskView?.department} />
+                        <DetalisFormatted title={"Completed By"} detail={completedTaskView?.completedBy || "-"} />
+                        <DetalisFormatted
+                            title={"Assigned Date"}
+                            detail={completedTaskView?.assignedDate ? humanDate(completedTaskView.assignedDate) : "-"}
+                        />
+                        <DetalisFormatted
+                            title={"Due Date"}
+                            detail={completedTaskView?.dueDate ? humanDate(completedTaskView.dueDate) : "-"}
+                        />
+                        <DetalisFormatted
+                            title={"Completed On"}
+                            detail={
+                                completedTaskView?.completionDate
+                                    ? `${humanDate(completedTaskView.completionDate)}, ${humanTime(completedTaskView.completionDate)}`
+                                    : "-"
+                            }
+                        />
+                         <DetalisFormatted title={"Status"} detail={completedTaskView?.status || "-"} />
+                        <DetalisFormatted title={"Comment"} detail={completedTaskView?.comment || "-"} />
+                    </div>
+                )}
+            </MuiModal>
         </div>
     );
 };

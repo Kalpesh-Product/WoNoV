@@ -1,4 +1,5 @@
 const Attendance = require("../../models/hr/Attendance");
+const HouseKeepingStaff = require("../../models/hr/HouseKeepingStaff");
 const Leave = require("../../models/hr/Leaves");
 const UserData = require("../../models/hr/UserData");
 
@@ -412,8 +413,48 @@ const fetchAttendanceReportService = async ({ company, dateFilter } = {}) => {
   return formatted;
 };
 
+const fetchHousekeepingStaffReportService = async ({
+  query = {},
+  dateFilter,
+} = {}) => {
+  const { status = "true", houseKeepingType, deptId } = query;
+
+  if (status && !["true", "false"].includes(status)) {
+    throw new Error("Status must be true/false");
+  }
+
+  const filter = {
+    isActive: status === "true",
+  };
+
+  if (houseKeepingType) {
+    filter.houseKeepingType = houseKeepingType;
+  }
+
+  if (deptId) {
+    filter.department = deptId;
+  }
+
+  // if (dateFilter?.dateOfJoining) {
+  //   filter.dateOfJoining = dateFilter.dateOfJoining;
+  // }
+
+  const staff = await HouseKeepingStaff.find(filter)
+    .select("-password -isDeleted")
+    .populate([
+      { path: "manager", select: "roleTitle" },
+      { path: "department", select: "name" },
+    ])
+    .sort({ dateOfJoining: 1, firstName: 1 })
+    .lean()
+    .exec();
+
+  return staff || [];
+};
+
 module.exports = {
   fetchUsersReportService,
   fetchLeavesReportService,
   fetchAttendanceReportService,
+  fetchHousekeepingStaffReportService,
 };
