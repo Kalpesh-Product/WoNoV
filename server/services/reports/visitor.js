@@ -49,13 +49,16 @@ const populateVisitorListFields = [
   },
 ];
 
-const attachExternalVisits = async (visitors) => {
+const attachExternalVisits = async (visitors, companyId) => {
   if (!Array.isArray(visitors) || visitors.length === 0) {
     return visitors;
   }
 
-  const visitorIds = visitors.map((visitor) => visitor._id);
-  const visits = await ExternalVisits.find({ visitorId: { $in: visitorIds } })
+  const visitorIds = visitors.map((visitor) => visitor._id).filter(Boolean);
+  const visits = await ExternalVisits.find({
+    visitorId: { $in: visitorIds },
+    ...(companyId && { company: companyId }),
+  })
     .select("-__v")
     .sort({ checkIn: -1 })
     .lean()
@@ -158,52 +161,16 @@ const fetchVisitorReportService = async ({
           .populate(populateVisitorListFields)
           .lean()
           .exec();
-        visitors = await attachExternalVisits(visitors);
+        visitors = await attachExternalVisits(visitors, companyId);
         break;
 
       default:
-        visitors = await Visitor.find(filter).populate([
-          {
-            path: "department",
-            select: "name",
-          },
-          {
-            path: "toMeet",
-            select: "firstName lastName email",
-          },
-          {
-            path: "toMeetCompany",
-            select: "clientName companyName name",
-          },
-          {
-            path: "visitorCompany",
-            select: "companyName pocName",
-          },
-          {
-            path: "clientToMeet",
-            select: "employeeName email",
-          },
-          {
-            path: "checkedInBy",
-            select: "firstName lastName",
-          },
-          {
-            path: "checkedOutBy",
-            select: "firstName lastName",
-          },
-          {
-            path: "meeting",
-          },
-          {
-            path: "building",
-            select: "buildingName",
-          },
-          {
-            path: "unit",
-            select: "unitNo unitName",
-          },
-        ]);
-        visitors = await attachExternalVisits(visitors);
+        visitors = await Visitor.find(filter)
+          .select("-__v")
+          .populate(populateVisitorListFields)
+          .lean()
+          .exec();
+        visitors = await attachExternalVisits(visitors, companyId);
     }
 
     return visitors;

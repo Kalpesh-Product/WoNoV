@@ -164,6 +164,7 @@ const externalVisitSchema = new mongoose.Schema(
 
 externalVisitSchema.index({ visitorId: 1, checkIn: -1 });
 externalVisitSchema.index({ company: 1, checkIn: -1, visitorType: 1 });
+externalVisitSchema.index({ company: 1, visitorId: 1, checkIn: -1 });
 
 const ExternalVisits = mongoose.model("ExternalVisits", externalVisitSchema);
 
