@@ -165,12 +165,85 @@ const fetchVisitorReportService = async ({
         break;
 
       default:
-        visitors = await Visitor.find(filter)
-          .select("-__v")
-          .populate(populateVisitorListFields)
-          .lean()
-          .exec();
-        visitors = await attachExternalVisits(visitors, companyId);
+        // visitors = await Visitor.find(filter)
+        //   .select("-__v")
+        //   .populate(populateVisitorListFields)
+        //   .lean()
+        //   .exec();
+        visitors = await Visitor.aggregate([
+          {
+            $match: filter,
+          },
+
+          {
+            $project: {
+              firstName: 1,
+              middleName: 1,
+              lastName: 1,
+              email: 1,
+              gender: 1,
+              phoneNumber: 1,
+              city: 1,
+              state: 1,
+              sector: 1,
+              visitorType: 1,
+              purposeOfVisit: 1,
+              visitorRoles: 1,
+              department: 1,
+              visitorCompany: 1,
+              toMeet: 1,
+              toMeetCompany: 1,
+              checkedInBy: 1,
+              checkedOutBy: 1,
+              building: 1,
+              unit: 1,
+              dateOfVisit: 1,
+              checkIn: 1,
+              checkOut: 1,
+              amount: 1,
+              gstAmount: 1,
+              discount: 1,
+              totalAmount: 1,
+              paymentStatus: 1,
+              paymentMode: 1,
+              notes: 1,
+            },
+          },
+
+          {
+            $lookup: {
+              from: "externalvisits",
+              let: {
+                visitorId: "$_id",
+                companyId: "$company",
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ["$visitorId", "$$visitorId"] },
+                        { $eq: ["$company", "$$companyId"] },
+                      ],
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    __v: 0,
+                  },
+                },
+                {
+                  $sort: {
+                    checkIn: -1,
+                  },
+                },
+              ],
+              as: "externalVisits",
+            },
+          },
+        ]);
+      // visitors = await attachExternalVisits(visitors, companyId);
     }
 
     return visitors;
