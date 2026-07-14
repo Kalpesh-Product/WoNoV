@@ -42,6 +42,7 @@ const fetchMeetingReportService = async ({
         startDate: dateFilter?.startDate,
       }),
     })
+      .populate({ path: "company", select: "meetingCreditBalance" })
       .populate({
         path: "bookedRoom",
         select: "name housekeepingStatus",
@@ -193,7 +194,11 @@ const fetchMeetingReportService = async ({
       };
     });
 
-    const hostCompany = await Company.findById(company);
+    // const hostCompany = await Company.findById(company)
+    //   .select("meetingCreditBalance")
+    //   .lean();
+
+    const hostCompany = meetings[0]?.company.meetingCreditBalance;
 
     if (isReport) {
       const meetingTypeFilter = String(type || "")
