@@ -32,7 +32,7 @@ import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
 import FinanceCard from "../../../components/FinanceCard";
 import { YearCalendar } from "@mui/x-date-pickers";
-import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import humanDate from "../../../utils/humanDateForamt";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 import SectorLegend from "../../../components/graphs/SectorLegend";
@@ -50,9 +50,32 @@ import {
 } from "./salesAccessConfig";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 
+const getCurrentFinancialYearLabel = () => {
+  const today = dayjs();
+  const startYear = today.month() < 3 ? today.year() - 1 : today.year();
+
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
+const getNormalizedPaymentStatus = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase();
+  return value ? "paid" : "unpaid";
+};
+
+const getNumericAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsedValue = parseFloat(value.replace(/,/g, ""));
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+  return 0;
+};
+
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(
+    getCurrentFinancialYearLabel(),
+  );
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -224,40 +247,74 @@ const SalesDashboard = () => {
   //------------------------PAGE ACCESS END-------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
-  function aggregateMonthlyRevenueByYear(data = []) {
+  function aggregateMonthlyPaidRevenueByYear(simpleRevenue = {}) {
     const monthsInYear = 12;
     const revenueByYear = {};
 
-    data.forEach((item) => {
-      Object.entries(item?.data || {}).forEach(([year, revenueArray]) => {
-        if (!revenueByYear[year]) {
-          revenueByYear[year] = new Array(monthsInYear).fill(0);
-        }
+    const addRevenue = (dateValue, amountValue, statusValue) => {
+      if (getNormalizedPaymentStatus(statusValue) !== "paid") return;
 
-        for (let i = 0; i < monthsInYear; i++) {
-          revenueByYear[year][i] += revenueArray?.[i] || 0;
-        }
-      });
+      const parsedDate = dayjs(dateValue);
+      if (!parsedDate.isValid()) return;
+
+      const calendarMonth = parsedDate.month();
+      const startYear =
+        calendarMonth < 3 ? parsedDate.year() - 1 : parsedDate.year();
+      const financialYearKey = `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+      const financialMonthIndex =
+        calendarMonth >= 3 ? calendarMonth - 3 : calendarMonth + 9;
+
+      if (!revenueByYear[financialYearKey]) {
+        revenueByYear[financialYearKey] = new Array(monthsInYear).fill(0);
+      }
+
+      revenueByYear[financialYearKey][financialMonthIndex] +=
+        getNumericAmount(amountValue);
+    };
+
+    (simpleRevenue?.meetingRevenue || []).forEach((item) => {
+      addRevenue(item?.date, item?.taxable, item?.status);
+    });
+
+    (simpleRevenue?.alternateRevenues || []).forEach((item) => {
+      addRevenue(item?.invoiceCreationDate, item?.taxableAmount, item?.status);
+    });
+
+    (simpleRevenue?.virtualOfficeRevenues || []).forEach((item) => {
+      addRevenue(
+        item?.rentDate,
+        item?.revenue ?? item?.taxableAmount,
+        item?.status ?? item?.rentStatus,
+      );
+    });
+
+    (simpleRevenue?.workationRevenues || []).forEach((item) => {
+      addRevenue(item?.date, item?.taxableAmount, item?.status);
+    });
+
+    (simpleRevenue?.coworkingRevenues || []).forEach((item) => {
+      addRevenue(item?.rentDate, item?.revenue, item?.rentStatus);
     });
 
     return revenueByYear;
   }
 
-  const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
-    queryKey: ["totalRevenue"],
+  const { data: simpleRevenue = {}, isLoading: isTotalLoading } = useQuery({
+    queryKey: ["sales-dashboard-simple-revenue"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/sales/consolidated-revenue");
-        return response.data;
+        const response = await axios.get("/api/sales/simple-consolidated-revenue");
+        return response.data || {};
       } catch (error) {
         console.error(error);
+        return {};
       }
     },
   });
 
   const revenueByFiscalYear = useMemo(
-    () => aggregateMonthlyRevenueByYear(totalRevenue),
-    [totalRevenue],
+    () => aggregateMonthlyPaidRevenueByYear(simpleRevenue),
+    [simpleRevenue],
   );
 
   const incomeExpenseData = useMemo(
@@ -272,19 +329,40 @@ const SalesDashboard = () => {
     [revenueByFiscalYear],
   );
 
-  const selectedSeries = incomeExpenseData.find(
-    (item) => item.group === selectedFiscalYear,
-  );
+  const selectedSeries =
+    incomeExpenseData.find((item) => item.group === selectedFiscalYear) || {
+      name: "Expense",
+      group: selectedFiscalYear,
+      data: new Array(12).fill(0),
+    };
 
   const totalValue = useMemo(() => {
     if (!selectedSeries) return 0;
     return selectedSeries.data.reduce((sum, val) => sum + val, 0);
   }, [selectedSeries]);
 
-  const selectedFiscalYearShort = selectedSeries?.group?.replace("FY ", "");
+  const maxSelectedRevenue = useMemo(() => {
+    return Math.max(...(selectedSeries?.data || []), 0);
+  }, [selectedSeries]);
+
+  const yAxisTickCount = 4;
+
+  const yAxisMax = useMemo(() => {
+    if (maxSelectedRevenue <= 0) return 100000;
+    return (
+      Math.ceil((maxSelectedRevenue * 1.15) / (100000 * yAxisTickCount)) *
+      100000 *
+      yAxisTickCount
+    );
+  }, [maxSelectedRevenue]);
+
+  const selectedFiscalYearShort = selectedFiscalYear?.replace("FY ", "");
   const selectedFiscalYearStart = Number(
     selectedFiscalYearShort?.split("-")?.[0],
   );
+  const currentMonthName = dayjs().format("MMMM");
+  const currentFiscalMonthIndex =
+    dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
   const incomeExpenseCategories =
     Number.isFinite(selectedFiscalYearStart) && selectedFiscalYearStart > 0
       ? [
@@ -334,7 +412,7 @@ const SalesDashboard = () => {
         fontSize: "12px",
         colors: ["#000"],
       },
-      offsetY: -22,
+      offsetY: -20,
     },
 
     stroke: {
@@ -347,11 +425,15 @@ const SalesDashboard = () => {
     },
     yaxis: {
       min: 0,
-      max: 6000000,
-      tickAmount: 4,
+      max: yAxisMax,
+      tickAmount: yAxisTickCount,
+      forceNiceScale: true,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => val / 100000, // Converts value to Lakhs
+        formatter: (val) =>
+          Number(val / 100000).toLocaleString("en-IN", {
+            maximumFractionDigits: 0,
+          }),
       },
     },
 
@@ -493,12 +575,12 @@ const SalesDashboard = () => {
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
-        title: `March ${
+        title: `${currentMonthName} ${
           Number.isFinite(selectedFiscalYearStart)
             ? selectedFiscalYearStart + 1
             : ""
         }`,
-        value: `INR ${inrFormat(selectedSeries?.data?.[11] || 0)}`,
+        value: `INR ${inrFormat(selectedSeries?.data?.[currentFiscalMonthIndex] || 0)}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
@@ -1083,7 +1165,7 @@ const SalesDashboard = () => {
     "bargraph-sales-dashboard",
     incomeExpenseData,
     incomeExpenseOptions,
-    "BIZ Nest SALES DEPARTMENT REVENUES",
+    `BIZ Nest SALES DEPARTMENT REVENUES ${selectedFiscalYear}`,
     `INR ${inrFormat(totalValue)}`,
     setSelectedFiscalYear,
   );
@@ -1246,13 +1328,14 @@ const SalesDashboard = () => {
         <>
           {!isTotalLoading ? (
             allowedGraph.map((config) => (
-              <YearlyGraph2
+              <YearlyGraph
                 key={config.key}
                 chartId={config.chartId}
                 data={config.data}
                 options={config.options}
                 title={config.title}
                 titleAmount={config.titleAmount}
+                currentYear={selectedFiscalYear}
                 onYearChange={config.onYearChange}
               />
             ))

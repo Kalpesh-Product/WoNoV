@@ -208,7 +208,7 @@ const VisitorDashboard = () => {
       minWidth: 180,
       width: 220,
     },
-    { id: "toMeet", label: "To Meet", align: "left", minWidth: 150, width: 180 },
+    //{ id: "toMeet", label: "To Meet", align: "left", minWidth: 150, width: 180 },
     { id: "email", label: "Email", minWidth: 180, width: 220 },
     { id: "phoneNumber", label: "Phone No", minWidth: 130, width: 150 },
     { id: "dateOfVisit", label: "Date of Visit", minWidth: 130, width: 150 },
