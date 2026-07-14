@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -98,12 +98,41 @@ const ExternalClients = ({
     );
   };
 
+  const initialClientDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [clientDateRange, setClientDateRange] = useState(
+    initialClientDateRange,
+  );
+  const clientDateFilterPayload = useMemo(
+    () =>
+      buildDateFilterPayload({
+        startDate: clientDateRange?.startDate,
+        endDate: clientDateRange?.endDate,
+        field: "checkIn",
+      }),
+    [clientDateRange],
+  );
+  const handleClientDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+    setClientDateRange(selectedRange);
+  }, []);
+
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-    queryKey: ["clients"],
+    queryKey: [
+      "clients",
+      clientDateFilterPayload.dateFilter.checkIn.$gte,
+      clientDateFilterPayload.dateFilter.checkIn.$lte,
+    ],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/visitors/fetch-visitors", {
-          dateFilter: buildDateFilterPayload(),
+          params: clientDateFilterPayload,
         });
         return response.data;
       } catch (error) {
@@ -861,6 +890,8 @@ const ExternalClients = ({
           search={true}
           tableTitle={tableTitle}
           dateColumn={"checkIn"}
+          initialDateRange={initialClientDateRange}
+          onDateFilterChange={handleClientDateFilterChange}
           data={[
             ...visitorsData
 
