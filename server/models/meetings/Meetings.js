@@ -175,5 +175,12 @@ const meetingSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+meetingSchema.index({ company: 1, startDate: -1 });
+meetingSchema.index({ company: 1, meetingType: 1, startDate: -1 });
+meetingSchema.index({ company: 1, bookedBy: 1, startDate: -1 });
+meetingSchema.index({ company: 1, clientBookedBy: 1, startDate: -1 });
+meetingSchema.index({ company: 1, internalParticipants: 1, startDate: -1 });
+meetingSchema.index({ company: 1, clientParticipants: 1, startDate: -1 });
+
 const Meeting = mongoose.model("Meeting", meetingSchema);
 module.exports = Meeting;
