@@ -24,6 +24,7 @@ async function fetchVisitors(req, res) {
     roles: req.body?.roles || [],
     company: req.company,
     query: req.query?.query,
+    dateFilter: req.body?.dateFilter,
   });
 
   return res.status(200).json(payload);

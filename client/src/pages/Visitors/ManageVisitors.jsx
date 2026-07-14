@@ -19,6 +19,7 @@ import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import useAuth from "../../hooks/useAuth";
+import buildDateFilterPayload from "../../utils/buildDateFilter";
 
 const ManageVisitors = () => {
   const { auth } = useAuth();
@@ -37,13 +38,22 @@ const ManageVisitors = () => {
   const userRoles = Array.isArray(auth?.user?.role) ? auth.user.role : [];
   const isTopManagementUser = userDepartments.some(
     (department) =>
-      String(department?.name || "").trim().toLowerCase() === "top management",
+      String(department?.name || "")
+        .trim()
+        .toLowerCase() === "top management",
   );
-  const isTechManager = userDepartments.some(
-    (department) => String(department?.name || "").trim().toLowerCase() === "tech",
-  )
-    && userRoles.some((role) =>
-      String(role?.roleTitle || "").trim().toLowerCase().includes("manager"),
+  const isTechManager =
+    userDepartments.some(
+      (department) =>
+        String(department?.name || "")
+          .trim()
+          .toLowerCase() === "tech",
+    ) &&
+    userRoles.some((role) =>
+      String(role?.roleTitle || "")
+        .trim()
+        .toLowerCase()
+        .includes("manager"),
     );
   const canEditVisitSchedule =
     allowedVisitScheduleEditorIds.includes(String(auth?.user?._id || "")) ||
@@ -54,7 +64,9 @@ const ManageVisitors = () => {
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: ["visitors"],
     queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors");
+      const response = await axios.get("/api/visitors/fetch-visitors", {
+        data: buildDateFilterPayload(),
+      });
       return response.data;
     },
   });
@@ -109,10 +121,7 @@ const ManageVisitors = () => {
             ? dayjs(visitor.date)
             : null,
       );
-      setValue(
-        "checkInRaw",
-        visitor.checkIn ? dayjs(visitor.checkIn) : null,
-      );
+      setValue("checkInRaw", visitor.checkIn ? dayjs(visitor.checkIn) : null);
       setValue(
         "checkOutRaw",
         visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null,
@@ -144,12 +153,18 @@ const ManageVisitors = () => {
     const checkInDate =
       canEditVisitSchedule && (selectedVisitDate || selectedCheckInTime)
         ? (selectedVisitDate || existingCheckIn || dayjs())
-            .hour(selectedCheckInTime?.hour?.() ?? existingCheckIn?.hour?.() ?? 0)
+            .hour(
+              selectedCheckInTime?.hour?.() ?? existingCheckIn?.hour?.() ?? 0,
+            )
             .minute(
-              selectedCheckInTime?.minute?.() ?? existingCheckIn?.minute?.() ?? 0,
+              selectedCheckInTime?.minute?.() ??
+                existingCheckIn?.minute?.() ??
+                0,
             )
             .second(
-              selectedCheckInTime?.second?.() ?? existingCheckIn?.second?.() ?? 0,
+              selectedCheckInTime?.second?.() ??
+                existingCheckIn?.second?.() ??
+                0,
             )
             .millisecond(
               selectedCheckInTime?.millisecond?.() ??
@@ -177,7 +192,9 @@ const ManageVisitors = () => {
 
     mutate({
       ...restData,
-      checkIn: checkInDate ? checkInDate.toISOString() : selectedVisitor?.checkIn,
+      checkIn: checkInDate
+        ? checkInDate.toISOString()
+        : selectedVisitor?.checkIn,
       dateOfVisit: checkInDate
         ? checkInDate.toISOString()
         : selectedVisitor?.checkIn || null,
@@ -536,7 +553,8 @@ const ManageVisitors = () => {
                         textField: { size: "small", fullWidth: true },
                       }}
                       shouldDisableTime={(time, view) => {
-                        const startTime = editedCheckInRaw || selectedVisitor?.checkIn;
+                        const startTime =
+                          editedCheckInRaw || selectedVisitor?.checkIn;
                         const timeValue = time?.$d;
 
                         if (!startTime || !timeValue) return false;

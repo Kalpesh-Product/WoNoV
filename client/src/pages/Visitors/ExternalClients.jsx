@@ -23,6 +23,7 @@ import useAuth from "../../hooks/useAuth";
 import UploadFileInput from "../../components/UploadFileInput";
 import humanDate from "../../utils/humanDateForamt";
 import { State } from "country-state-city";
+import buildDateFilterPayload from "../../utils/buildDateFilter";
 
 const getStateName = (stateValue) => {
   if (!stateValue) return "N/A";
@@ -53,14 +54,22 @@ const ExternalClients = ({
   const userRoles = Array.isArray(auth?.user?.role) ? auth.user.role : [];
   const isTopManagementUser = userDepartments.some(
     (department) =>
-      String(department?.name || "").trim().toLowerCase() === "top management",
+      String(department?.name || "")
+        .trim()
+        .toLowerCase() === "top management",
   );
-  const isTechManager = userDepartments.some(
-    (department) =>
-      String(department?.name || "").trim().toLowerCase() === "tech",
-  )
-    && userRoles.some((role) =>
-      String(role?.roleTitle || "").trim().toLowerCase().includes("manager"),
+  const isTechManager =
+    userDepartments.some(
+      (department) =>
+        String(department?.name || "")
+          .trim()
+          .toLowerCase() === "tech",
+    ) &&
+    userRoles.some((role) =>
+      String(role?.roleTitle || "")
+        .trim()
+        .toLowerCase()
+        .includes("manager"),
     );
   const canEditVisitSchedule =
     allowedVisitScheduleEditorIds.includes(String(auth?.user?._id || "")) ||
@@ -93,7 +102,9 @@ const ExternalClients = ({
     queryKey: ["clients"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/visitors/fetch-visitors");
+        const response = await axios.get("/api/visitors/fetch-visitors", {
+          dateFilter: buildDateFilterPayload(),
+        });
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -496,7 +507,7 @@ const ExternalClients = ({
           {
             field: "paymentStatus",
             headerName: "Payment Status",
-            pinned:"right",
+            pinned: "right",
             cellRenderer: (params) => (
               <Chip
                 label={isPaymentCompleted(params.value) ? "Paid" : "Unpaid"}
@@ -516,7 +527,7 @@ const ExternalClients = ({
           {
             field: "financeStatus",
             headerName: "Finance Status",
-            pinned:"right",
+            pinned: "right",
             cellRenderer: (params) => {
               const status = params.value || "Wait for Payment";
               const chipStyle = getFinanceStatusChipStyle(status);
@@ -708,17 +719,27 @@ const ExternalClients = ({
       const existingCheckIn = selectedVisitor.checkIn
         ? dayjs(selectedVisitor.checkIn)
         : null;
-      const selectedVisitDate = data.dateOfVisit ? dayjs(data.dateOfVisit) : null;
-      const selectedCheckInTime = data.checkInRaw ? dayjs(data.checkInRaw) : null;
+      const selectedVisitDate = data.dateOfVisit
+        ? dayjs(data.dateOfVisit)
+        : null;
+      const selectedCheckInTime = data.checkInRaw
+        ? dayjs(data.checkInRaw)
+        : null;
       const checkInDate =
         canEditVisitSchedule && (selectedVisitDate || selectedCheckInTime)
           ? (selectedVisitDate || existingCheckIn || dayjs())
-              .hour(selectedCheckInTime?.hour?.() ?? existingCheckIn?.hour?.() ?? 0)
+              .hour(
+                selectedCheckInTime?.hour?.() ?? existingCheckIn?.hour?.() ?? 0,
+              )
               .minute(
-                selectedCheckInTime?.minute?.() ?? existingCheckIn?.minute?.() ?? 0,
+                selectedCheckInTime?.minute?.() ??
+                  existingCheckIn?.minute?.() ??
+                  0,
               )
               .second(
-                selectedCheckInTime?.second?.() ?? existingCheckIn?.second?.() ?? 0,
+                selectedCheckInTime?.second?.() ??
+                  existingCheckIn?.second?.() ??
+                  0,
               )
               .millisecond(
                 selectedCheckInTime?.millisecond?.() ??
@@ -751,7 +772,9 @@ const ExternalClients = ({
         email: data.email,
         phoneNumber: data.phoneNumber,
         dateOfVisit: checkInDate ? checkInDate.toISOString() : null,
-        checkIn: checkInDate ? checkInDate.toISOString() : selectedVisitor?.checkIn,
+        checkIn: checkInDate
+          ? checkInDate.toISOString()
+          : selectedVisitor?.checkIn,
         purposeOfVisit: data.purposeOfVisit,
         // checkOut: data.checkOutRaw
         //   ? dayjs(data.checkOutRaw).toISOString()
@@ -1233,7 +1256,9 @@ const ExternalClients = ({
                       name="dateOfVisit"
                       control={control}
                       render={({ field }) => {
-                        const selectedDate = field.value ? dayjs(field.value) : null;
+                        const selectedDate = field.value
+                          ? dayjs(field.value)
+                          : null;
 
                         return (
                           <DatePicker
@@ -1254,7 +1279,10 @@ const ExternalClients = ({
                                 return false;
                               }
 
-                              return date.isBefore(dayjs().startOf("day"), "day");
+                              return date.isBefore(
+                                dayjs().startOf("day"),
+                                "day",
+                              );
                             }}
                             slotProps={{
                               textField: {
@@ -1354,7 +1382,8 @@ const ExternalClients = ({
                             <TextField {...params} size="small" fullWidth />
                           )}
                           shouldDisableTime={(time, view) => {
-                            const startTime = editedCheckInRaw || selectedVisitor?.checkIn;
+                            const startTime =
+                              editedCheckInRaw || selectedVisitor?.checkIn;
                             const timeValue = time?.$d;
 
                             if (!startTime || !timeValue) return false;

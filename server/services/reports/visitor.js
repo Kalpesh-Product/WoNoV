@@ -91,6 +91,7 @@ const fetchVisitorReportService = async ({
   isMeeting = false,
   isOpendDesk = false,
 }) => {
+  console.log("dateFilter", dateFilter);
   try {
     const companyId = new mongoose.Types.ObjectId(company);
     const queryKey = normalizeVisitorQuery(query);
