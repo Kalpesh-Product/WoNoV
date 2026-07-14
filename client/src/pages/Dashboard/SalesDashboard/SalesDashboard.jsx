@@ -497,6 +497,23 @@ const SalesDashboard = () => {
     },
   });
 
+  const currentMonthUniqueClients = useMemo(() => {
+    const now = dayjs();
+
+    return (clientsData || []).filter((client) => {
+      const clientDate = client?.rentDate || client?.createdAt;
+      if (!clientDate) return false;
+
+      const parsedDate = dayjs(clientDate);
+      if (!parsedDate.isValid()) return false;
+
+      return (
+        parsedDate.month() === now.month() &&
+        parsedDate.year() === now.year()
+      );
+    }).length;
+  }, [clientsData]);
+
   const activeUnits = useMemo(
     () =>
       (unitsData || []).filter(
@@ -585,7 +602,7 @@ const SalesDashboard = () => {
       },
       {
         title: "Closing Desks",
-        value: totalCoWorkingSeats || 0,
+        value: totalOccupancyFromInventory || 0,
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
@@ -635,7 +652,7 @@ const SalesDashboard = () => {
       },
       {
         title: "Unique Clients",
-        value: clientsData.length || 0,
+        value: currentMonthUniqueClients || 0,
         route: "/app/dashboard/sales-dashboard/clients",
       },
     ],
