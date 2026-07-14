@@ -275,6 +275,7 @@ const AssignedAssets = () => {
           tableTitle={tableTitle}
           data={tableData}
           columns={assetsColumns}
+          exportData
         />
       </PageFrame>
       <MuiModal

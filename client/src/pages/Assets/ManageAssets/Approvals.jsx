@@ -317,9 +317,10 @@ const Approvals = () => {
         <AgTable
           key={assignedAssets.length}
           search={true}
-          tableTitle={"Assigned Assets"}
+          tableTitle={"Approval Assets"}
           data={tableData}
           columns={assetsColumns}
+          exportData
         />
       </PageFrame>
       <MuiModal
